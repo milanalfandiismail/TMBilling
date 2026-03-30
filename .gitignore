@@ -1,0 +1,30 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments (common names)
+venv/
+.venv/
+env/
+bin/
+include/
+lib/
+share/
+
+# Flask-specific
+instance/
+.webassets-cache
+
+# Environment variables and secrets
+.env
+.flaskenv
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE-specific (e.g., VS Code or PyCharm)
+.vscode/
+.idea/
