@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TMBilling - Kasir{% endblock %}</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        /* Sleek Chamber Noir Scrollbars */
+        .scrollbar-thin::-webkit-scrollbar,
+        .scrollbar-mono::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-track,
+        .scrollbar-mono::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb,
+        .scrollbar-mono::-webkit-scrollbar-thumb {
+            background: #2a2a2a;
+            border-radius: 2px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover,
+        .scrollbar-mono::-webkit-scrollbar-thumb:hover {
+            background: #3a3a3a;
+        }
+
+        /* Refined Eye-Friendly Monochromatic Input Overrides */
+        input[type="text"],
+        input[type="number"],
+        input[type="password"],
+        input[type="email"],
+        select {
+            background-color: #0a0a0a !important;
+            border-color: #2a2a2a !important;
+            color: #e5e5e5 !important;
+            border-width: 1px !important;
+            border-style: solid !important;
+            border-radius: 6px !important;
+            transition: border-color 0.15s ease-in-out !important;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="password"]:focus,
+        input[type="email"]:focus,
+        select:focus {
+            border-color: #555 !important;
+            outline: none !important;
+        }
+
+        /* Card hover transitions */
+        .hover-card-trigger {
+            transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+        }
+
+        /* Modal open animation */
+        @keyframes modal-in {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .fixed.inset-0 > div {
+            animation: modal-in 0.18s ease-out;
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+
+<body class="bg-[#050505] text-neutral-200 font-sans antialiased flex h-screen w-screen overflow-hidden">
+
+    {% block content %}{% endblock %}
+
+    <!-- ===== SCRIPTS ===== -->
+    <script src="{{ url_for('static', filename='js/kasir/core/api.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/utils.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/toast.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/modal.js') }}?v=8"></script>
+    
+    <!-- Components -->
+    <script src="{{ url_for('static', filename='js/kasir/components/modal-buka.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/components/modal-tambah.js') }}?v=8"></script>
+    
+    <!-- Modules / Subfolders -->
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/sidebar.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_cards.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/index.js') }}?v=8"></script>
+    
+    <script src="{{ url_for('static', filename='js/kasir/modules/grup/index.js') }}?v=8"></script>
+    
+    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_grid.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_modal.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/pc/index.js') }}?v=8"></script>
+    
+    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_table.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_modal.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/paket/index.js') }}?v=8"></script>
+    
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_table.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_modal.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_refill.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/index.js') }}?v=8"></script>
+    
+    <script src="{{ url_for('static', filename='js/kasir/modules/laporan/index.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/log/index.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/monitor/index.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/blackout/index.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/settings/index.js') }}?v=8"></script>
+    
+    <script src="{{ url_for('static', filename='js/kasir/modules/struk/struk_preview.js') }}?v=8"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/struk/index.js') }}?v=8"></script>
+    
+    <script src="{{ url_for('static', filename='js/kasir/modules/user/index.js') }}?v=8"></script>
+    
+    <script src="{{ url_for('static', filename='js/kasir/app.js') }}?v=8"></script>
+</body>
+
+</html>
