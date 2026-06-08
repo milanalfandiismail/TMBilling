@@ -1,260 +1,35 @@
-<!-- app/templates/kasir/index.html - FIXED -->
+{% extends 'kasir/base.html' %}
 
-<!DOCTYPE html>
-<html lang="id">
+{% block content %}
+    <!-- ===== SIDEBAR ===== -->
+    {% include 'kasir/components/sidebar.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Warnet Billing</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/kasir.css') }}">
-</head>
+    <!-- Overlay -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 hidden lg:hidden"
+        onclick="Dashboard.toggleSidebar()"></div>
 
-<body>
-    <!-- Header -->
-    <div class="header">
-        <h1>WARNET BILLING</h1>
-        <div class="stats">
-            <div class="stat">
-                <div class="lbl">Aktif</div>
-                <div class="val" id="stat-active">0</div>
-            </div>
-            <div class="stat">
-                <div class="lbl">Pendapatan</div>
-                <div class="val">Rp <span id="stat-income">0</span></div>
-            </div>
+    <!-- ===== MAIN ===== -->
+    <main class="flex-1 flex flex-col min-h-0 bg-[#050505] overflow-x-hidden">
+        <!-- ===== HEADER/NAVBAR ===== -->
+        {% include 'kasir/components/navbar.html' %}
+
+        <div id="main-scroll" class="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto overflow-x-hidden scrollbar-mono">
+            <!-- Tabs Content -->
+            {% include 'kasir/tabs/dashboard.html' %}
+            {% include 'kasir/tabs/pc.html' %}
+            {% include 'kasir/tabs/paket.html' %}
+            {% include 'kasir/tabs/member.html' %}
+            {% include 'kasir/tabs/grup.html' %}
+            {% include 'kasir/tabs/laporan.html' %}
+            {% include 'kasir/tabs/log.html' %}
+            {% include 'kasir/tabs/monitor.html' %}
+            {% include 'kasir/tabs/blackout.html' %}
+            {% include 'kasir/tabs/user.html' %}
+            {% include 'kasir/tabs/settings.html' %}
+            {% include 'kasir/tabs/struk.html' %}
+            
+            <!-- ===== MODALS ===== -->
+            {% include 'kasir/components/modals.html' %}
         </div>
-    </div>
-
-    <!-- Nav -->
-    <div class="nav">
-        <button class="active" onclick="App.toTab('dash')">Dashboard</button>
-        <button onclick="App.toTab('pc')">Kelola PC</button>
-        <button onclick="App.toTab('paket')">Kelola Paket</button>
-        <button onclick="App.toTab('member')">Member</button>
-        <button onclick="App.toTab('laporan')">Laporan</button>
-    </div>
-
-    <!-- Container -->
-    <div class="container">
-        <!-- Dashboard -->
-        <div id="tab-dash">
-            <div id="pc-area">
-                <div class="center"><span class="loading"></span> Loading...</div>
-            </div>
-        </div>
-
-        <!-- PC Management -->
-        <div id="tab-pc" class="hide">
-            <div class="panel">
-                <div class="panel-title">Tambah PC Baru</div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Kode PC</label>
-                        <input type="text" id="inp-pc-kode" placeholder="PC-01">
-                    </div>
-                    <div class="form-group">
-                        <label>Nama</label>
-                        <input type="text" id="inp-pc-nama" placeholder="Komputer 1">
-                    </div>
-                    <div class="form-group">
-                        <label>IP Address</label>
-                        <input type="text" id="inp-pc-ip" placeholder="192.168.1.1">
-                    </div>
-                    <div class="form-group">
-                        <label>Grup</label>
-                        <select id="inp-pc-grup">
-                            <option value="reguler">Reguler</option>
-                            <option value="vip">VIP</option>
-                            <option value="vvip">VVIP</option>
-                        </select>
-                    </div>
-                </div>
-                <button class="btn primary" onclick="PCManager.add()">Tambah PC</button>
-            </div>
-
-            <div class="panel">
-                <div class="panel-title">Tambah Batch PC</div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Prefix</label>
-                        <input type="text" id="inp-batch-prefix" value="PC">
-                    </div>
-                    <div class="form-group">
-                        <label>Dari</label>
-                        <input type="number" id="inp-batch-start" value="1" min="1">
-                    </div>
-                    <div class="form-group">
-                        <label>Sampai</label>
-                        <input type="number" id="inp-batch-end" value="5" min="1">
-                    </div>
-                    <div class="form-group">
-                        <label>Grup</label>
-                        <select id="inp-batch-grup">
-                            <option value="reguler">Reguler</option>
-                            <option value="vip">VIP</option>
-                            <option value="vvip">VVIP</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group" style="margin-bottom: 12px;">
-                    <label>Base IP (opsional)</label>
-                    <input type="text" id="inp-batch-ip" placeholder="192.168.1">
-                </div>
-                <button class="btn primary" onclick="PCManager.addBatch()">Tambah Batch</button>
-            </div>
-
-            <div class="panel">
-                <div class="panel-title">Daftar PC</div>
-                <div id="pc-table" class="table-wrap">
-                    <div class="center"><span class="loading"></span></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Paket Management -->
-        <div id="tab-paket" class="hide">
-            <div class="panel">
-                <div class="panel-title">Tambah Paket</div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Nama Paket</label>
-                        <input type="text" id="inp-paket-nama" placeholder="3 Jam">
-                    </div>
-                    <div class="form-group">
-                        <label>Durasi (menit)</label>
-                        <input type="number" id="inp-paket-durasi" placeholder="180">
-                    </div>
-                    <div class="form-group">
-                        <label>Harga (Rp)</label>
-                        <input type="number" id="inp-paket-harga" placeholder="12000">
-                    </div>
-                    <div class="form-group">
-                        <label>Kadaluarsa (hari) <small style="color:#ffaa44;">min 1</small></label>
-                        <input type="number" id="inp-paket-kadaluarsa" value="30" min="1">
-                    </div>
-                </div>
-                <button class="btn primary" onclick="PaketManager.add()">Tambah Paket</button>
-            </div>
-
-            <div class="panel">
-                <div class="panel-title">Daftar Paket</div>
-                <div id="paket-table" class="table-wrap">
-                    <div class="center"><span class="loading"></span></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Member Management -->
-        <div id="tab-member" class="hide">
-            <div class="panel">
-                <div class="panel-title">Tambah Member</div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Username</label>
-                        <input type="text" id="inp-mem-user" placeholder="johndoe">
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="inp-mem-pass" placeholder="******">
-                    </div>
-                    <div class="form-group">
-                        <label>Nama Lengkap</label>
-                        <input type="text" id="inp-mem-nama" placeholder="John Doe">
-                    </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="inp-mem-email" placeholder="email@example.com">
-                    </div>
-                    <div class="form-group">
-                        <label>No HP</label>
-                        <input type="text" id="inp-mem-nohp" placeholder="08123456789">
-                    </div>
-                </div>
-                <button class="btn primary" onclick="MemberManager.add()">Tambah Member</button>
-            </div>
-
-            <div class="panel">
-                <div class="panel-title">Daftar Member</div>
-                <div id="member-table" class="table-wrap">
-                    <div class="center"><span class="loading"></span> Loading...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Laporan -->
-        <div id="tab-laporan" class="hide">
-            <div class="panel">
-                <div class="panel-title">Laporan Hari Ini</div>
-                <div id="laporan-area">
-                    <div class="center"><span class="loading"></span></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- END Container -->
-
-    <!-- Modal Buka Sesi - Hanya Guest -->
-    <div class="modal" id="mod-buka">
-        <div class="modal-box">
-            <div class="modal-head">
-                <h3>Buka Sesi Guest</h3>
-                <button class="modal-close" onclick="Modals.close('mod-buka')">&times;</button>
-            </div>
-            <input type="hidden" id="buka-pc-kode">
-
-            <div class="form-group">
-                <label>Nama Guest</label>
-                <input type="text" id="buka-guest" value="Guest" placeholder="Nama Guest">
-            </div>
-
-            <div class="form-group">
-                <label>Paket</label>
-                <select id="buka-paket"></select>
-            </div>
-
-            <div class="modal-foot">
-                <button class="btn" onclick="Modals.close('mod-buka')">Batal</button>
-                <button class="btn primary" onclick="BukaModal.submit()">Buka Sesi</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Tambah Waktu -->
-    <div class="modal" id="mod-tambah">
-        <div class="modal-box">
-            <div class="modal-head">
-                <h3>Tambah Waktu</h3>
-                <button class="modal-close" onclick="Modals.close('mod-tambah')">&times;</button>
-            </div>
-            <input type="hidden" id="tambah-sesi-id">
-            <div class="form-group">
-                <label>Paket</label>
-                <select id="tambah-paket"></select>
-            </div>
-            <div class="modal-foot">
-                <button class="btn" onclick="Modals.close('mod-tambah')">Batal</button>
-                <button class="btn primary" onclick="TambahModal.submit()">Tambah</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast -->
-    <div class="toast" id="toast"></div>
-
-    <!-- Scripts - Modular -->
-    <script src="{{ url_for('static', filename='js/kasir/utils.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/api.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/toast.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modals.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/dashboard.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/buka-modal.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/tambah-modal.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/pc-manager.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/paket-manager.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/member-manager.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/laporan.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/main.js') }}"></script>
-</body>
-
-</html>
+    </main>
+{% endblock %}

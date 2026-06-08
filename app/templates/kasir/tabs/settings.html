@@ -1,0 +1,80 @@
+<!-- ===== TAB: SETTINGS ===== -->
+<div id="tab-settings" class="tab-content hidden space-y-6">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+        <h3 class="text-xs font-bold text-neutral-200 uppercase tracking-wider mb-4">Auto Shutdown</h3>
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs text-neutral-400 uppercase font-bold tracking-wider">Timer shutdown (detik)</p>
+                <p class="text-[9px] text-neutral-500 mt-1">Waktu tunggu sebelum PC mati saat tidak dipakai</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="number" id="shutdown-timer"
+                    class="w-24 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 text-center focus:outline-none focus:border-neutral-500"
+                    value="180" step="10" min="30" max="600">
+                <span class="text-xs text-neutral-500 font-mono">dtk</span>
+            </div>
+        </div>
+        <div class="flex justify-end mt-4">
+            <button onclick="Settings.saveAutoShutdown()"
+                class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors">Simpan</button>
+        </div>
+    </div>
+
+    <!-- ===== CARDS: UNINSTALL TOKEN CLIENT ===== -->
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+        <h3 class="text-xs font-bold text-neutral-200 uppercase tracking-wider mb-4">Uninstall Token Client</h3>
+        <div class="flex items-center justify-between gap-4">
+            <div>
+                <p class="text-xs text-neutral-400 uppercase font-bold tracking-wider">Token Keamanan Uninstall</p>
+                <p class="text-[9px] text-neutral-500 mt-1">Token dinamis untuk mematikan proteksi client secara aman demi maintenance tanpa memicu BSOD.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="text" id="uninstall-token-input"
+                    class="w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
+                    placeholder="Contoh: TM_UNINSTALL_SAFE_2026">
+            </div>
+        </div>
+        <div class="flex justify-end mt-4">
+            <button onclick="Settings.saveUninstallToken()"
+                class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors">Simpan</button>
+        </div>
+    </div>
+
+    <!-- ===== CARDS: API KEY SYSTEM ===== -->
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+        <h3 class="text-xs font-bold text-neutral-200 uppercase tracking-wider mb-4">API Key System</h3>
+        <div class="flex items-center justify-between gap-4">
+            <div>
+                <p class="text-xs text-neutral-400 uppercase font-bold tracking-wider">Client API Key</p>
+                <p class="text-[9px] text-neutral-500 mt-1">API Key global yang digunakan oleh klien untuk terhubung secara aman dengan server.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="text" id="client-apikey-input"
+                    class="w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
+                    placeholder="Contoh: TM2026QWERTY-api-key">
+            </div>
+        </div>
+        <div class="flex justify-end mt-4">
+            <button onclick="Settings.saveClientApiKey()"
+                class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors">Simpan API Key</button>
+        </div>
+    </div>
+
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center">
+                <svg class="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
+                    </path>
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-xs font-bold text-neutral-200 uppercase tracking-wider">Database Backup</h3>
+                <p class="text-[9px] text-neutral-500 mt-1">Simpan salinan data transaksi & sesi</p>
+            </div>
+        </div>
+        <button onclick="Settings.openBackupModal()"
+            class="w-full py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors">Backup Database Sekarang</button>
+    </div>
+</div>
