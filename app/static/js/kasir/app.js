@@ -105,7 +105,7 @@ const App = {
     updatePageTitle(tab) {
         const titles = {
             dash: 'Dashboard', pc: 'Unit PC', paket: 'Paket', member: 'Member',
-            grup: 'Grup', laporan: 'Laporan', log: 'Log Sistem',
+            grup: 'Grup', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Sistem',
             monitor: 'Hardware Monitor', blackout: 'Blackout',
             user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat',
             menu: 'Kantin / POS F&B'
@@ -122,6 +122,7 @@ const App = {
             case 'paket': await Paket.load(); break;
             case 'member': await Member.load(); break;
             case 'laporan': await Laporan.load(); break;
+            case 'laporan_menu': if (typeof LaporanMenu !== 'undefined') await LaporanMenu.load(); break;
             case 'log': await Log.load(); break;
             case 'grup': await Grup.load(); break;
             case 'monitor': if (typeof Monitor !== 'undefined') await Monitor.load(); break;
@@ -155,6 +156,7 @@ window.PC = PC;
 window.Paket = Paket;
 window.Member = Member;
 window.Laporan = Laporan;
+window.LaporanMenu = LaporanMenu;
 window.Log = Log;
 window.BukaModal = BukaModal;
 window.Blackout = Blackout;

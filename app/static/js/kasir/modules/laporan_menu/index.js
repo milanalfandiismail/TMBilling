@@ -1,6 +1,5 @@
-const Laporan = {
+const LaporanMenu = {
     currentDate: null,
-    currentPage: 1,
     currentKasirId: '',
 
     async load() {
@@ -9,7 +8,7 @@ const Laporan = {
     },
 
     async loadKasirList() {
-        const select = document.getElementById('laporan-kasir-select');
+        const select = document.getElementById('laporan-menu-kasir-select');
         if (!select) return;
 
         try {
@@ -29,13 +28,13 @@ const Laporan = {
                 select.innerHTML += `<option value="${k.id}">${k.nama}</option>`;
             });
         } catch (err) {
-            console.error('Gagal memuat kasir', err);
+            console.error('Gagal memuat kasir untuk laporan menu:', err);
         }
     },
 
     async loadTanggalList() {
-        const select = document.getElementById('laporan-tanggal-select');
-        const area = document.getElementById('laporan-area');
+        const select = document.getElementById('laporan-menu-tanggal-select');
+        const area = document.getElementById('laporan-menu-area');
         if (!select || !area) return;
 
         try {
@@ -62,33 +61,30 @@ const Laporan = {
             select.value = firstDate;
             await this.loadByDate(firstDate);
         } catch (err) {
-            const area = document.getElementById('laporan-area');
-            if (area) area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">Gagal memuat laporan</div>';
+            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">Gagal memuat daftar tanggal laporan menu</div>';
         }
     },
 
-    async loadByDate(tanggal, kasirId = '', page = 1) {
+    async loadByDate(tanggal, kasirId = '') {
         if (!tanggal) return;
         this.currentDate = tanggal;
         this.currentKasirId = kasirId;
-        this.currentPage = page;
         
-        const area = document.getElementById('laporan-area');
+        const area = document.getElementById('laporan-menu-area');
         if (!area) return;
 
         area.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
         try {
-            const data = await API.report.byTanggal(tanggal, kasirId, page, 12);
-            console.log('[Laporan] Data:', data);
+            const data = await API.report.byTanggal(tanggal, kasirId, 1, 100);
             this.render(data);
         } catch (err) {
-            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">Gagal memuat laporan</div>';
+            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">Gagal memuat data laporan menu</div>';
         }
     },
 
     render(data) {
-        const area = document.getElementById('laporan-area');
+        const area = document.getElementById('laporan-menu-area');
         if (!area) return;
 
         if (!data || data.error) {
@@ -98,89 +94,79 @@ const Laporan = {
 
         let html = '';
 
-        // Ringkasan cards untuk Billing saja
+        // Ringkasan card khusus Kantin
         html += `
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-20">
-                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">Total Pendapatan Billing</span>
-                    <span class="text-base font-bold text-neutral-100 font-mono mt-1">${Utils.formatRupiah(data.total_pendapatan_billing || 0)}</span>
-                </div>
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-20">
-                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">Total Sesi</span>
-                    <span class="text-lg font-bold text-neutral-100 font-mono mt-1">${data.total_sesi || 0}</span>
-                </div>
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-20">
-                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">Sesi Member</span>
-                    <span class="text-lg font-bold text-neutral-100 font-mono mt-1">${data.total_member || 0}</span>
-                </div>
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-20">
-                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">Sesi Guest</span>
-                    <span class="text-lg font-bold text-neutral-100 font-mono mt-1">${data.total_guest || 0}</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 flex flex-col justify-between min-h-24">
+                    <span class="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Total Pendapatan Kantin & F&B</span>
+                    <span class="text-2xl font-bold text-green-400 font-mono mt-2">${Utils.formatRupiah(data.total_pendapatan_menu || 0)}</span>
                 </div>
             </div>`;
 
-        // Table transaksi Billing
-        html += `<h4 class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Detail Pendapatan Billing</h4>`;
-        const transaksiList = data.history_struk || [];
-        if (transaksiList.length > 0) {
+        // Table transaksi Kantin / POS F&B
+        const menuList = data.history_menu || [];
+        if (menuList.length > 0) {
             html += `
-                <div class="overflow-x-hidden w-full mb-6">
+                <div class="overflow-x-hidden w-full">
                     <table class="w-full text-xs block lg:table">
                         <thead class="hidden lg:table-header-group">
                             <tr class="text-[10px] text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
                                 <th class="px-4 py-3 text-left">Waktu</th>
                                 <th class="px-4 py-3 text-left">Nota</th>
-                                <th class="px-4 py-3 text-left">Pelanggan</th>
-                                <th class="px-4 py-3 text-right">Jumlah</th>
-                                <th class="px-4 py-3 text-left">PC</th>
+                                <th class="px-4 py-3 text-left">Item Menu</th>
+                                <th class="px-4 py-3 text-center">Jumlah</th>
+                                <th class="px-4 py-3 text-right">Total Harga</th>
+                                <th class="px-4 py-3 text-left">PC / Keterangan</th>
+                                <th class="px-4 py-3 text-left">Kasir</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] block lg:table-row-group">
-                            ${transaksiList.map(t => `
+                            ${menuList.map(tm => `
                                 <tr class="hover:bg-[#121212] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#2a2a2a] last:border-b-0 lg:border-b-0">
                                     <td class="px-4 py-3 text-neutral-400 font-mono flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Waktu</span>
-                                        <span>${t.waktu || '-'}</span>
+                                        <span>${tm.waktu || '-'}</span>
                                     </td>
                                     <td class="px-4 py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
                                         <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota</span>
-                                        <span class="font-mono text-neutral-300">${t.no_nota || '-'}</span>
+                                        <span class="font-mono text-neutral-300">${tm.no_nota || '-'}</span>
                                     </td>
-                                    <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pelanggan</span>
-                                        <span>${t.nama_pelanggan || '-'}</span>
+                                    <td class="px-4 py-3 text-neutral-200 flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Item Menu</span>
+                                        <span class="font-semibold">${tm.menu_nama || '-'}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center font-mono flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Jumlah</span>
+                                        <span>${tm.jumlah || 0}</span>
                                     </td>
                                     <td class="px-4 py-3 text-right font-mono font-bold text-neutral-200 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Jumlah</span>
-                                        <span>${Utils.formatRupiah(t.jumlah || 0)}</span>
+                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Total Harga</span>
+                                        <span>${Utils.formatRupiah(tm.total_harga || 0)}</span>
                                     </td>
                                     <td class="px-4 py-3 text-neutral-500 font-mono flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">PC</span>
-                                        <span>${t.pc_kode || '-'}</span>
+                                        <span>${tm.pc_kode || '-'}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-neutral-500 flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir</span>
+                                        <span>${tm.kasir_nama || '-'}</span>
                                     </td>
                                 </tr>`).join('')}
                         </tbody>
                     </table>
                 </div>`;
-
-            if (data.pages && data.pages > 1) {
-                html += `
-                    <div class="flex items-center justify-center gap-2 mt-2 mb-6">
-                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage - 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs font-bold rounded transition-colors ${this.currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage <= 1 ? 'disabled' : ''}>&larr;</button>
-                        <span class="px-4 py-1.5 text-xs text-neutral-200 font-mono">${this.currentPage} / ${data.pages}</span>
-                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage + 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs font-bold rounded transition-colors ${this.currentPage >= data.pages ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage >= data.pages ? 'disabled' : ''}>&rarr;</button>
-                    </div>`;
-            }
         } else {
-            html += '<div class="text-center py-10 text-neutral-500 text-xs mb-6">Tidak ada transaksi billing di tanggal ini</div>';
+            html += '<div class="text-center py-10 text-neutral-500 text-xs">Tidak ada transaksi F&B pada tanggal ini</div>';
         }
 
         area.innerHTML = html;
     },
 
     filter() {
-        const tanggal = document.getElementById('laporan-tanggal-select').value;
-        const kasirId = document.getElementById('laporan-kasir-select').value;
+        const tanggal = document.getElementById('laporan-menu-tanggal-select').value;
+        const kasirId = document.getElementById('laporan-menu-kasir-select').value;
         this.loadByDate(tanggal, kasirId);
     }
 };
+
+window.LaporanMenu = LaporanMenu;
