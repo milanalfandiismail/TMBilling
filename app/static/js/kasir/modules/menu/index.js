@@ -69,7 +69,8 @@ const Menu = {
         }
 
         grid.innerHTML = data.map(m => {
-            const isOutOfStock = m.stok <= 0;
+            const isUnlimited = m.stok < 0;
+            const isOutOfStock = !isUnlimited && m.stok <= 0;
             const imgHtml = m.gambar_path 
                 ? `<img src="${m.gambar_path}" alt="${m.nama}" class="w-full h-24 object-cover rounded-lg border border-[#1f1f1f] bg-[#0c0c0c]">`
                 : `<div class="w-full h-24 rounded-lg border border-[#1f1f1f] bg-[#080808] flex items-center justify-center text-neutral-600">
@@ -82,7 +83,8 @@ const Menu = {
                 ? `<button disabled class="w-full py-1.5 rounded bg-neutral-900 border border-[#1c1c1c] text-[10px] text-neutral-600 font-bold uppercase cursor-not-allowed">Stok Habis</button>`
                 : `<button onclick="Menu.addToCart(${m.id})" class="w-full py-1.5 rounded bg-neutral-100 hover:bg-white text-[#050505] text-[10px] font-bold uppercase transition-colors">Tambah</button>`;
 
-            const stokColor = m.stok < 5 ? 'text-amber-500 font-bold' : 'text-neutral-500';
+            const stokText = isUnlimited ? 'Unlimited' : `Stok: ${m.stok}`;
+            const stokColor = isUnlimited ? 'text-green-500 font-bold' : (m.stok < 5 ? 'text-amber-500 font-bold' : 'text-neutral-500');
 
             return `
                 <div class="bg-[#0c0c0c] border border-[#1c1c1c] hover:border-[#2a2a2a] transition-all rounded-xl p-3 flex flex-col justify-between group relative">
@@ -102,7 +104,7 @@ const Menu = {
                             <h4 class="text-xs font-bold text-neutral-100 truncate">${m.nama}</h4>
                             <div class="flex items-center justify-between mt-1">
                                 <span class="text-xs text-neutral-300 font-bold font-mono">Rp ${m.harga.toLocaleString('id-ID')}</span>
-                                <span class="text-[9px] ${stokColor} font-mono">Stok: ${m.stok}</span>
+                                <span class="text-[9px] ${stokColor} font-mono">${stokText}</span>
                             </div>
                         </div>
                     </div>
@@ -125,7 +127,8 @@ const Menu = {
 
         const cartItem = this.cart.find(c => c.menu.id === menuId);
         if (cartItem) {
-            if (cartItem.jumlah >= menu.stok) {
+            const isUnlimited = menu.stok < 0;
+            if (!isUnlimited && cartItem.jumlah >= menu.stok) {
                 Toast.error(`Stok '${menu.nama}' tidak mencukupi untuk ditambah lagi`);
                 return;
             }
@@ -153,7 +156,8 @@ const Menu = {
             return;
         }
 
-        if (newQty > cartItem.menu.stok) {
+        const isUnlimited = cartItem.menu.stok < 0;
+        if (!isUnlimited && newQty > cartItem.menu.stok) {
             Toast.error(`Stok '${cartItem.menu.nama}' hanya tersedia ${cartItem.menu.stok}`);
             cartItem.jumlah = cartItem.menu.stok;
         } else {
