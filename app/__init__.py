@@ -63,7 +63,8 @@ def create_app():
         grup_bp,
         settings_bp,
         monitor_bp,
-        user_bp
+        user_bp,
+        menu_bp
     )
 
     app.register_blueprint(dashboard_bp, url_prefix="/kasir")
@@ -86,6 +87,7 @@ def create_app():
     app.register_blueprint(settings_bp, url_prefix="/api")
     app.register_blueprint(monitor_bp, url_prefix="/api")
     app.register_blueprint(user_bp, url_prefix="/api/user")
+    app.register_blueprint(menu_bp, url_prefix="/api")
 
     @app.route("/")
     def index():

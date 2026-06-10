@@ -5,7 +5,11 @@ const API = {
     async request(url, options = {}) {
         try {
             const method = (options.method || 'GET').toUpperCase();
-            const headers = { 'Content-Type': 'application/json', ...options.headers };
+            const headers = { ...options.headers };
+            
+            if (!(options.body instanceof FormData)) {
+                headers['Content-Type'] = 'application/json';
+            }
 
             // Tambahkan CSRF Token untuk metode yang mengubah data
             if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
@@ -200,6 +204,19 @@ const API = {
             method: 'POST'
         }),
     },
+
+    // 🔗 KANTIN / POS F&B
+    menu: {
+        list: () => API.request('/api/menu'),
+        create: (formData) => API.request('/api/menu', { method: 'POST', body: formData }),
+        update: (id, formData) => API.request(`/api/menu/${id}`, { method: 'PUT', body: formData }),
+        delete: (id) => API.request(`/api/menu/${id}`, { method: 'DELETE' }),
+        checkout: (cartItems, pcKode = null) => API.request('/api/menu/checkout', {
+            method: 'POST',
+            body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode })
+        }),
+        transaksi: () => API.request('/api/menu/transaksi')
+    }
 
 };
 

@@ -30,5 +30,6 @@ from app.models.transaksi import Transaksi
 from app.models.user import User
 from app.models.settings import Settings
 from app.models.hardware import HardwareMonitor
+from app.models.menu import MenuItem, TransaksiMenu
 
-__all__ = ['db', 'now_local', 'Grup', 'Paket', 'Member', 'PC', 'Sesi', 'Transaksi', 'User', 'Settings', 'HardwareMonitor']
+__all__ = ['db', 'now_local', 'Grup', 'Paket', 'Member', 'PC', 'Sesi', 'Transaksi', 'User', 'Settings', 'HardwareMonitor', 'MenuItem', 'TransaksiMenu']

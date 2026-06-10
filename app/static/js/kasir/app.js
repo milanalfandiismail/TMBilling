@@ -107,13 +107,14 @@ const App = {
             dash: 'Dashboard', pc: 'Unit PC', paket: 'Paket', member: 'Member',
             grup: 'Grup', laporan: 'Laporan', log: 'Log Sistem',
             monitor: 'Hardware Monitor', blackout: 'Blackout',
-            user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat'
+            user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat',
+            menu: 'Kantin / POS F&B'
         };
-
+ 
         const titleEl = document.getElementById('page-title');
         if (titleEl) titleEl.innerText = titles[tab] || 'Panel';
     },
-
+ 
     async loadTab(tab) {
         switch (tab) {
             case 'dash': await Dashboard.load(); break;
@@ -128,11 +129,12 @@ const App = {
             case 'user': if (typeof User !== 'undefined') await User.load(); break;
             case 'struk': if (typeof Struk !== 'undefined') await Struk.init(); break;
             case 'settings': if (typeof Settings !== 'undefined') await Settings.load(); break;
+            case 'menu': if (typeof Menu !== 'undefined') await Menu.load(); break;
         }
     },
-
+ 
     showTab(tab) { this.switchTab(tab); },
-
+ 
     async logout() {
         Modal.confirm('Yakin ingin logout?', async () => {
             try {
@@ -144,9 +146,9 @@ const App = {
         });
     }
 };
-
+ 
 document.addEventListener('DOMContentLoaded', () => App.init());
-
+ 
 window.App = App;
 window.Dashboard = Dashboard;
 window.PC = PC;
@@ -161,3 +163,4 @@ window.TambahModal = TambahModal;
 window.Modal = Modal;
 window.Toast = Toast;
 window.User = User;
+window.Menu = Menu;
