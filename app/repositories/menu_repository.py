@@ -52,3 +52,25 @@ class MenuRepository:
         from datetime import datetime, time
         today_start = datetime.combine(datetime.now().date(), time.min)
         return TransaksiMenu.query.filter(TransaksiMenu.tanggal >= today_start).count()
+
+    @staticmethod
+    def get_total_pemasukan_by_date(date_obj, kasir_id=None):
+        """Menghitung total pendapatan F&B pada tanggal tertentu, opsional difilter kasir."""
+        query = TransaksiMenu.query.filter(db.func.date(TransaksiMenu.tanggal) == date_obj)
+        if kasir_id:
+            query = query.filter(TransaksiMenu.kasir_id == kasir_id)
+        res = db.session.query(db.func.sum(TransaksiMenu.total_harga)).select_from(TransaksiMenu).filter(
+            db.func.date(TransaksiMenu.tanggal) == date_obj
+        )
+        if kasir_id:
+            res = res.filter(TransaksiMenu.kasir_id == kasir_id)
+        val = res.scalar()
+        return int(val) if val else 0
+
+    @staticmethod
+    def get_transactions_by_date(date_obj, kasir_id=None):
+        """Mendapatkan daftar transaksi F&B pada tanggal tertentu, opsional difilter kasir."""
+        query = TransaksiMenu.query.filter(db.func.date(TransaksiMenu.tanggal) == date_obj)
+        if kasir_id:
+            query = query.filter(TransaksiMenu.kasir_id == kasir_id)
+        return query.order_by(TransaksiMenu.tanggal.desc()).all()
