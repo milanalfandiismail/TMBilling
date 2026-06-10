@@ -185,6 +185,33 @@ class ReportService:
         }
 
     @staticmethod
+    def get_struk_menu_data(t_menu_id, kasir_name="Kasir"):
+        """Mengambil dan memetakan data transaksi menu ke format struk belanja."""
+        from app.repositories.menu_repository import MenuRepository
+        tm = MenuRepository.get_transaksi_by_id(t_menu_id)
+        if not tm:
+            return None
+
+        # Penentuan nama kasir (prioritas nama lengkap)
+        nama_kasir = "Kasir"
+        if tm.kasir:
+            nama_kasir = tm.kasir.nama_lengkap or tm.kasir.username
+        else:
+            nama_kasir = kasir_name
+
+        return {
+            "no_nota": tm.no_nota,
+            "tanggal": tm.tanggal.strftime("%d/%m/%Y %H:%M:%S") if tm.tanggal else "",
+            "pc_kode": tm.pc_kode or "-",
+            "tipe": "kantin",
+            "nama_pelanggan": "Pelanggan POS",
+            "rincian": [{"keterangan": tm.menu.nama if tm.menu else "Menu Terhapus", "durasi": tm.jumlah, "harga": tm.total_harga}],
+            "total_durasi": tm.jumlah,
+            "total_harga": tm.total_harga,
+            "kasir": nama_kasir
+        }
+
+    @staticmethod
     def get_kasir_list(kasir_id, kasir_role):
         """Ambil daftar kasir sesuai role."""
         from app.repositories.user_repository import UserRepository

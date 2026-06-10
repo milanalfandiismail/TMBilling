@@ -224,19 +224,65 @@ const Menu = {
             jumlah: c.jumlah
         }));
 
-        try {
-            const res = await window.API.menu.checkout(cartItems, pcKode);
-            if (res.success) {
-                Toast.success("Penjualan F&B berhasil diproses!");
-                this.cart = [];
-                this.renderCart();
-                await this.loadCatalog(); // Reload catalog to update stock numbers
-            } else {
-                Toast.error(res.error || "Gagal memproses checkout");
+        // Generate dynamic items list for confirmation dialog
+        let total = 0;
+        const itemsListHtml = this.cart.map(c => {
+            const subtotal = c.menu.harga * c.jumlah;
+            total += subtotal;
+            const formattedPrice = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(subtotal);
+            return `<li>${c.menu.nama} x${c.jumlah} (${formattedPrice})</li>`;
+        }).join('');
+
+        const targetDest = pcKode ? `PC: ${pcKode}` : 'Take Away / Mandiri';
+        const formattedTotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(total);
+
+        const msg = `
+            Apakah Anda yakin ingin memproses transaksi F&B berikut?
+            <ul class="list-disc list-inside mt-2 text-neutral-300 font-mono text-[11px] space-y-1">
+                ${itemsListHtml}
+            </ul>
+            <div class="mt-3 text-neutral-300 text-xs border-t border-[#222] pt-2">
+                Tujuan: <strong>${targetDest}</strong><br>
+                Total: <strong class="text-emerald-400">${formattedTotal}</strong>
+            </div>
+        `;
+
+        Modal.confirm(msg, async () => {
+            try {
+                const res = await window.API.menu.checkout(cartItems, pcKode);
+                if (res.success) {
+                    Toast.success("Penjualan F&B berhasil diproses!");
+                    this.cart = [];
+                    this.renderCart();
+                    await this.loadCatalog(); // Reload catalog to update stock numbers
+
+                    // Prompt to print receipt
+                    if (res.data && res.data.length > 0) {
+                        Modal.confirm("Transaksi F&B berhasil diproses. Apakah Anda ingin mencetak struk?", () => {
+                            res.data.forEach(tm => {
+                                const strukData = {
+                                    no_nota: tm.no_nota,
+                                    tanggal: tm.tanggal,
+                                    pc_kode: tm.pc_kode || "-",
+                                    tipe: "kantin",
+                                    nama_pelanggan: "Pelanggan POS",
+                                    rincian: [{ keterangan: tm.menu_nama, durasi: tm.jumlah, harga: tm.total_harga }],
+                                    total_durasi: tm.jumlah,
+                                    total_harga: tm.total_harga,
+                                    kasir: tm.kasir_nama
+                                };
+                                StrukPreview.currentData = strukData;
+                                StrukPreview.printPreview();
+                            });
+                        });
+                    }
+                } else {
+                    Toast.error(res.error || "Gagal memproses checkout");
+                }
+            } catch (error) {
+                Toast.error("Gagal checkout: error koneksi");
             }
-        } catch (error) {
-            Toast.error("Gagal checkout: error koneksi");
-        }
+        });
     },
 
     // =========================================================================
