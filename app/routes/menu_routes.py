@@ -77,7 +77,7 @@ def create_menu_item():
         if file:
             gambar_path = handle_image_upload(file)
 
-        operator = session.get("username", "system")
+        operator = session.get("kasir_username", "system")
         menu = MenuService.create_menu({
             "nama": nama,
             "harga": harga,
@@ -110,7 +110,7 @@ def update_menu_item(menu_id):
         if file:
             data["gambar_path"] = handle_image_upload(file)
 
-        operator = session.get("username", "system")
+        operator = session.get("kasir_username", "system")
         menu = MenuService.update_menu(menu_id, data, operator=operator)
         return jsonify({"success": True, "data": menu.to_dict(), "message": "Menu berhasil diperbarui!"}), 200
     except ValueError as val_e:
@@ -124,7 +124,7 @@ def update_menu_item(menu_id):
 def delete_menu_item(menu_id):
     """Menghapus item menu dari katalog."""
     try:
-        operator = session.get("username", "system")
+        operator = session.get("kasir_username", "system")
         nama = MenuService.delete_menu(menu_id, operator=operator)
         return jsonify({"success": True, "message": f"Menu '{nama}' berhasil dihapus!"}), 200
     except ValueError as val_e:
@@ -146,7 +146,7 @@ def checkout_order():
         pc_kode = payload.get("pc_kode")
 
         # Ambil identitas kasir dari session aktif
-        kasir_username = session.get("username")
+        kasir_username = session.get("kasir_username")
         if not kasir_username:
             return jsonify({"success": False, "error": "Kasir tidak terautentikasi"}), 401
 

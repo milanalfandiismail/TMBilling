@@ -46,16 +46,36 @@ class ReportService:
                 tanggal = now_local().date()
 
             # 1. Ambil angka dasar pendapatan & refund (Filter Kasir)
-            total_pendapatan = TransaksiRepository.get_total_pemasukan(tanggal, kasir_id)
+            total_pendapatan_billing = TransaksiRepository.get_total_pemasukan(tanggal, kasir_id)
             total_refund = TransaksiRepository.get_total_refund(tanggal, kasir_id)
             
-            # 2. Ambil statistik kuantitas sesi per tipe (Global, unless kasir_id is needed, but we keep sesi global or by kasir. Since sesi belongs to kasir? No, sesi has no user_id, transaction has. So sesi stats might be global, but transaction is kasir specific. Let's keep sesi overall for now, or just limit it)
+            # Ambil pendapatan F&B
+            from app.repositories.menu_repository import MenuRepository
+            total_pendapatan_menu = MenuRepository.get_total_pemasukan_by_date(tanggal, kasir_id)
+            total_pendapatan_gabungan = total_pendapatan_billing + total_pendapatan_menu
+
+            # 2. Ambil statistik kuantitas sesi per tipe
             total_guest = SesiRepository.count_by_tanggal_dan_tipe(tanggal, 'guest')
             total_member = SesiRepository.count_by_tanggal_dan_tipe(tanggal, 'member')
 
             # History transaksi difilter berdasarkan kasir_id dengan pagination
             pagination = TransaksiRepository.get_history_nota_paginated(tanggal, page, per_page, kasir_id)
             history_struk = pagination.items
+
+            # Ambil seluruh history transaksi menu/F&B pada hari tersebut
+            history_menu_raw = MenuRepository.get_transactions_by_date(tanggal, kasir_id)
+            history_menu = [
+                {
+                    "id": tm.id,
+                    "no_nota": tm.no_nota,
+                    "menu_nama": tm.menu.nama if tm.menu else "Menu Terhapus",
+                    "jumlah": tm.jumlah,
+                    "total_harga": tm.total_harga,
+                    "pc_kode": tm.pc_kode or "-",
+                    "waktu": tm.tanggal.strftime('%d/%m/%Y %H:%M'),
+                    "kasir_nama": tm.kasir.username if tm.kasir else "System"
+                } for tm in history_menu_raw
+            ]
 
             return {
                 "status": "success",
@@ -67,7 +87,9 @@ class ReportService:
                 "has_next": pagination.has_next,
                 "has_prev": pagination.has_prev,
                 # Data Card Atas
-                "total_pendapatan": total_pendapatan,
+                "total_pendapatan": total_pendapatan_gabungan,
+                "total_pendapatan_billing": total_pendapatan_billing,
+                "total_pendapatan_menu": total_pendapatan_menu,
                 "total_refund": total_refund,
                 "total_sesi": total_guest + total_member, # Global sesi count
                 # Statistik Per Tipe
@@ -78,7 +100,8 @@ class ReportService:
                 "pendapatan_member": ReportService.get_pendapatan_kategori(tanggal, 'member', kasir_id),
                 # Footer & Histori
                 "sesi_aktif": len(SesiRepository.get_all_aktif()),
-                "history_struk": ReportService._format_history_struk(history_struk)
+                "history_struk": ReportService._format_history_struk(history_struk),
+                "history_menu": history_menu
             }
         except Exception as e:
             raise Exception(f"Gagal hitung laporan: {str(e)}")
