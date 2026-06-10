@@ -7,7 +7,6 @@ const Menu = {
     async load() {
         try {
             await this.loadCatalog();
-            await this.loadPCList();
         } catch (error) {
             console.error("Gagal inisialisasi modul menu:", error);
         }
@@ -31,29 +30,7 @@ const Menu = {
         }
     },
 
-    async loadPCList() {
-        const select = document.getElementById("menu-order-pc-select");
-        if (!select) return;
 
-        try {
-            const res = await window.API.dashboard.pcList();
-            if (res.success) {
-                // Bersihkan dropdown kecuali pilihan default
-                select.innerHTML = '<option value="">-- Take Away / Mandiri --</option>';
-                res.data.forEach(pc => {
-                    // Hanya tampilkan PC yang online / sedang aktif bermain
-                    if (pc.online || pc.status === 'aktif') {
-                        const option = document.createElement("option");
-                        option.value = pc.kode;
-                        option.textContent = `${pc.kode} (${pc.pc_nama || 'User'})`;
-                        select.appendChild(option);
-                    }
-                });
-            }
-        } catch (error) {
-            console.error("Gagal memuat daftar PC untuk order menu:", error);
-        }
-    },
 
     renderCatalog(data) {
         const grid = document.getElementById("menu-catalog-grid");
@@ -233,7 +210,7 @@ const Menu = {
             return `<li>${c.menu.nama} x${c.jumlah} (${formattedPrice})</li>`;
         }).join('');
 
-        const targetDest = pcKode ? `PC: ${pcKode}` : 'Take Away / Mandiri';
+        const targetDest = pcKode === 'Tempat' ? 'Makan di Tempat' : 'Take Away (Bawa Pulang)';
         const formattedTotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(total);
 
         const msg = `
