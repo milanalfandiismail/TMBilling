@@ -22,6 +22,8 @@ def get_all_hardware():
             m_dict = m.to_dict()
             m_dict["pc_kode"] = m.pc.kode if m.pc else "Unknown"
             m_dict["pc_nama"] = m.pc.nama if m.pc else "Unknown"
+            # Evaluasi warning status secara real-time in-memory
+            m_dict["health"] = HardwareService.check_pc_warning(m.pc_id, m_dict)
             result.append(m_dict)
             
         return jsonify({"success": True, "data": result}), 200

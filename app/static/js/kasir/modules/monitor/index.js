@@ -75,6 +75,31 @@ const Monitor = {
         `;
 
         data.forEach(m => {
+            const hasWarning = m.health && m.health.has_warning;
+            const rowClass = hasWarning 
+                ? 'bg-red-500/5 hover:bg-red-500/10 border-b border-red-500/25 block lg:table-row py-3 lg:py-0 transition-colors' 
+                : 'hover:bg-[#0c0c0c] border-b border-[#2a2a2a] block lg:table-row py-3 lg:py-0 transition-colors';
+            
+            let pcBadge = `<span class="w-1.5 h-1.5 rounded-full bg-neutral-200"></span>`;
+            let warningText = '';
+            if (hasWarning) {
+                pcBadge = `
+                    <div class="relative flex h-1.5 w-1.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                    </div>
+                `;
+                const warningList = m.health.warnings.join(', ');
+                warningText = `
+                    <div class="text-[10px] text-red-400 mt-1 font-sans font-bold flex items-center gap-1 animate-pulse" title="${warningList}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span class="truncate max-w-[120px] lg:max-w-none">${warningList}</span>
+                    </div>
+                `;
+            }
+
             const cpuUsagePct = m.cpu_usage || 0;
             const cpuBar = `
                 <div class="flex items-center justify-center gap-2">
@@ -119,12 +144,13 @@ const Monitor = {
             }
 
             html += `
-                <tr class="hover:bg-[#0c0c0c] transition-colors border-b border-[#2a2a2a] block lg:table-row py-3 lg:py-0">
+                <tr class="${rowClass}">
                     <td class="px-6 py-4 block lg:table-cell">
                         <div class="flex items-center gap-2">
-                            <span class="w-1.5 h-1.5 rounded-full bg-neutral-200"></span>
+                            ${pcBadge}
                             <span class="font-bold text-neutral-100 font-mono">${m.pc_kode}</span>
                         </div>
+                        ${warningText}
                     </td>
                     <td class="px-6 py-4 block lg:table-cell border-t border-[#2a2a2a]/50 lg:border-t-0">
                         <div class="text-xs text-neutral-200 font-semibold" title="Processor">${m.cpu_name || '--'}</div>

@@ -7,12 +7,19 @@ oleh C# Hardware Monitor Agent dan menyimpannya ke database
 untuk ditampilkan di dashboard kasir.
 """
 
+import re
+from datetime import datetime
 from app.models.base import db
 from app.models.hardware import HardwareMonitor
 from app.repositories.hardware_repository import HardwareRepository
 from app.repositories.process_repository import ProcessRepository
 from app.repositories.pc_repository import PCRepository
 from app.utils.logger import write_log
+
+# Histori telemetry in-memory global untuk deteksi warning PC
+# Key: pc_id (int), Value: list of dict {"cpu_usage": float, "ram_usage_pct": float}
+TELEMETRY_HISTORY = {}
+
 
 class HardwareService:
     """Service untuk memproses log metric hardware PC."""
@@ -84,7 +91,20 @@ class HardwareService:
             if process_list is not None and isinstance(process_list, list):
                 ProcessRepository.sync_processes(pc.id, process_list)
 
-            # 6. Simpan secara atomik di Service Layer
+            # 6. Update Histori Telemetry In-Memory
+            ram_pct = HardwareService.calculate_ram_pct(hardware.total_ram, process_list)
+            if pc.id not in TELEMETRY_HISTORY:
+                TELEMETRY_HISTORY[pc.id] = []
+            
+            TELEMETRY_HISTORY[pc.id].append({
+                "cpu_usage": hardware.cpu_usage,
+                "ram_usage_pct": ram_pct
+            })
+            
+            if len(TELEMETRY_HISTORY[pc.id]) > 3:
+                TELEMETRY_HISTORY[pc.id].pop(0)
+
+            # 7. Simpan secara atomik di Service Layer
             db.session.add(hardware)
             db.session.commit()
             
@@ -94,6 +114,59 @@ class HardwareService:
             db.session.rollback()
             write_log("MONITOR_ERROR", f"Failed to process hardware metric for IP {client_ip}: {str(e)}")
             raise
+
+    @staticmethod
+    def calculate_ram_pct(total_ram_str, process_list):
+        """Menghitung persentase RAM terpakai berdasarkan sum memori proses."""
+        try:
+            total_gb = 16.0
+            parts = total_ram_str.lower().split()
+            if parts:
+                total_gb = float(parts[0])
+            total_mb = total_gb * 1024.0
+            
+            used_mb = 0
+            if process_list and isinstance(process_list, list):
+                for p in process_list:
+                    title = p.get("Title", p.get("title", ""))
+                    match = re.search(r'(\d+)\s*mb', title.lower())
+                    if match:
+                        used_mb += int(match.group(1))
+                        
+            if total_mb > 0:
+                return (used_mb / total_mb) * 100.0
+        except Exception:
+            pass
+        return 0.0
+
+    @staticmethod
+    def check_pc_warning(pc_id, telemetry_data):
+        """Memeriksa apakah data hardware memicu warning (suhu/CPU/RAM)."""
+        warnings = []
+        
+        cpu_temp = float(telemetry_data.get("cpu_temp", 0.0) or 0.0)
+        gpu_temp = float(telemetry_data.get("gpu_temp", 0.0) or 0.0)
+        
+        if cpu_temp > 85:
+            warnings.append(f"Suhu CPU tinggi ({cpu_temp}°C)")
+        if gpu_temp > 85:
+            warnings.append(f"Suhu GPU tinggi ({gpu_temp}°C)")
+            
+        history = TELEMETRY_HISTORY.get(pc_id, [])
+        if len(history) >= 3:
+            cpu_overload = all(h.get("cpu_usage", 0.0) > 95 for h in history)
+            ram_overload = all(h.get("ram_usage_pct", 0.0) > 95 for h in history)
+            
+            if cpu_overload:
+                warnings.append("Beban CPU > 95% selama 3 menit")
+            if ram_overload:
+                warnings.append("Beban RAM > 95% selama 3 menit")
+                
+        return {
+            "has_warning": len(warnings) > 0,
+            "warnings": warnings
+        }
+
 
     @staticmethod
     def get_processes_by_pc(pc_id):
