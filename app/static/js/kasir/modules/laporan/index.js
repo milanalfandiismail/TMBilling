@@ -98,13 +98,12 @@ const Laporan = {
 
         let html = '';
 
-        // Ringkasan cards dengan detail Billing vs Kantin
+        // Ringkasan cards untuk Billing saja
         html += `
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between min-h-20">
-                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">Total Pendapatan</span>
-                    <span class="text-base font-bold text-neutral-100 font-mono mt-1">${Utils.formatRupiah(data.total_pendapatan || 0)}</span>
-                    <span class="text-[8px] text-neutral-600 font-mono mt-1">Billing: ${Utils.formatRupiah(data.total_pendapatan_billing || 0)} | Kantin: ${Utils.formatRupiah(data.total_pendapatan_menu || 0)}</span>
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-20">
+                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">Total Pendapatan Billing</span>
+                    <span class="text-base font-bold text-neutral-100 font-mono mt-1">${Utils.formatRupiah(data.total_pendapatan_billing || 0)}</span>
                 </div>
                 <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-20">
                     <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">Total Sesi</span>
@@ -175,65 +174,6 @@ const Laporan = {
         } else {
             html += '<div class="text-center py-10 text-neutral-500 text-xs mb-6">Tidak ada transaksi billing di tanggal ini</div>';
         }
-
-        // Table transaksi Kantin / POS F&B
-        html += `<div class="mt-8 border-t border-[#1c1c1c] pt-6">
-            <h4 class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Detail Penjualan Kantin / POS F&B</h4>`;
-        const menuList = data.history_menu || [];
-        if (menuList.length > 0) {
-            html += `
-                <div class="overflow-x-hidden w-full">
-                    <table class="w-full text-xs block lg:table">
-                        <thead class="hidden lg:table-header-group">
-                            <tr class="text-[10px] text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
-                                <th class="px-4 py-3 text-left">Waktu</th>
-                                <th class="px-4 py-3 text-left">Nota</th>
-                                <th class="px-4 py-3 text-left">Item Menu</th>
-                                <th class="px-4 py-3 text-center">Jumlah</th>
-                                <th class="px-4 py-3 text-right">Total Harga</th>
-                                <th class="px-4 py-3 text-left">PC / Keterangan</th>
-                                <th class="px-4 py-3 text-left">Kasir</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] block lg:table-row-group">
-                            ${menuList.map(tm => `
-                                <tr class="hover:bg-[#121212] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#2a2a2a] last:border-b-0 lg:border-b-0">
-                                    <td class="px-4 py-3 text-neutral-400 font-mono flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Waktu</span>
-                                        <span>${tm.waktu || '-'}</span>
-                                    </td>
-                                    <td class="px-4 py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota</span>
-                                        <span class="font-mono text-neutral-300">${tm.no_nota || '-'}</span>
-                                    </td>
-                                    <td class="px-4 py-3 text-neutral-200 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Item Menu</span>
-                                        <span class="font-semibold">${tm.menu_nama || '-'}</span>
-                                    </td>
-                                    <td class="px-4 py-3 text-center font-mono flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Jumlah</span>
-                                        <span>${tm.jumlah || 0}</span>
-                                    </td>
-                                    <td class="px-4 py-3 text-right font-mono font-bold text-neutral-200 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Total Harga</span>
-                                        <span>${Utils.formatRupiah(tm.total_harga || 0)}</span>
-                                    </td>
-                                    <td class="px-4 py-3 text-neutral-500 font-mono flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">PC</span>
-                                        <span>${tm.pc_kode || '-'}</span>
-                                    </td>
-                                    <td class="px-4 py-3 text-neutral-500 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir</span>
-                                        <span>${tm.kasir_nama || '-'}</span>
-                                    </td>
-                                </tr>`).join('')}
-                        </tbody>
-                    </table>
-                </div>`;
-        } else {
-            html += '<div class="text-center py-10 text-neutral-500 text-xs">Tidak ada transaksi F&B pada tanggal ini</div>';
-        }
-        html += `</div>`;
 
         area.innerHTML = html;
     },
