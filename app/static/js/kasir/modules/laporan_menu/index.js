@@ -116,7 +116,7 @@ const LaporanMenu = {
                                 <th class="px-4 py-3 text-left">Item Menu</th>
                                 <th class="px-4 py-3 text-center">Jumlah</th>
                                 <th class="px-4 py-3 text-right">Total Harga</th>
-                                <th class="px-4 py-3 text-left">PC / Keterangan</th>
+                                <th class="px-4 py-3 text-left">Pemesanan</th>
                                 <th class="px-4 py-3 text-left">Kasir</th>
                                 <th class="px-4 py-3 text-center">Aksi</th>
                             </tr>
@@ -144,9 +144,9 @@ const LaporanMenu = {
                                         <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Total Harga</span>
                                         <span>${Utils.formatRupiah(tm.total_harga || 0)}</span>
                                     </td>
-                                    <td class="px-4 py-3 text-neutral-500 font-mono flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">PC</span>
-                                        <span>${tm.pc_kode || '-'}</span>
+                                    <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pemesanan</span>
+                                        <span>${tm.pc_kode === 'Tempat' ? 'Makan di Tempat' : 'Take Away'}</span>
                                     </td>
                                     <td class="px-4 py-3 text-neutral-500 flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir</span>
