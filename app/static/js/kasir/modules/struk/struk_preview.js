@@ -35,8 +35,8 @@ const StrukPreview = {
                         <span>${escape(tglTime)}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-neutral-400">PC</span>
-                        <span class="font-bold text-neutral-100">[ ${escape(data.pc_kode)} ]</span>
+                        <span class="text-neutral-400">${data.tipe === 'kantin' ? 'Pemesanan' : 'PC'}</span>
+                        <span class="font-bold text-neutral-100">${data.tipe === 'kantin' ? (data.pc_kode === 'Tempat' ? 'Makan di Tempat' : 'Take Away') : `[ ${escape(data.pc_kode)} ]`}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-neutral-400">Pelanggan</span>
@@ -125,7 +125,7 @@ const StrukPreview = {
                 <div class="flex"><span>No. Nota</span><span style="font-weight:bold;">${data.no_nota}</span></div>
                 <div class="flex"><span>Tanggal</span><span>${tglDatePrint}</span></div>
                 <div class="flex"><span>Jam</span><span>${tglTimePrint}</span></div>
-                <div class="flex"><span>PC</span><span style="font-weight:bold;">${data.pc_kode}</span></div>
+                <div class="flex"><span>${data.tipe === 'kantin' ? 'Pemesanan' : 'PC'}</span><span style="font-weight:bold;">${data.tipe === 'kantin' ? (data.pc_kode === 'Tempat' ? 'Makan di Tempat' : 'Take Away') : data.pc_kode}</span></div>
                 <div class="flex"><span>User</span><span>${data.nama_pelanggan}</span></div>
                 <div class="divider"></div>
                 <div style="font-size:9px;font-weight:bold;margin-bottom:6px;">Rincian:</div>
