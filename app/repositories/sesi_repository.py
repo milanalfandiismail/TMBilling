@@ -149,14 +149,17 @@ class SesiRepository:
 
     @staticmethod
     def get_distinct_tanggal():
-        """Mengambil daftar tanggal unik dari sesi dan transaksi untuk filter laporan."""
+        """Mengambil daftar tanggal unik dari sesi, transaksi, dan penjualan menu untuk filter laporan."""
         # Ambil tanggal unik dari Sesi
         dates_sesi = db.session.query(func.date(Sesi.mulai_pada)).distinct()
         # Ambil tanggal unik dari Transaksi
         dates_trans = db.session.query(func.date(Transaksi.dibuat_pada)).distinct()
+        # Ambil tanggal unik dari TransaksiMenu
+        from app.models.menu import TransaksiMenu
+        dates_menu = db.session.query(func.date(TransaksiMenu.tanggal)).distinct()
         
         # Union dan sort
-        all_dates = dates_sesi.union(dates_trans).all()
+        all_dates = dates_sesi.union(dates_trans).union(dates_menu).all()
         
         # Flatten and format as string, filter None
         result = sorted([str(row[0]) for row in all_dates if row[0]], reverse=True)

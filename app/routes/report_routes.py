@@ -129,6 +129,20 @@ def get_struk_by_no():
     return get_struk(f"T{t.id}")
 
 
+@report_bp.route("/struk/menu/<int:t_menu_id>", methods=["GET"])
+@login_required
+def get_struk_menu(t_menu_id):
+    """Ambil data struk lengkap untuk transaksi menu/F&B."""
+    try:
+        kasir = session.get("kasir_username", "Kasir")
+        data = ReportService.get_struk_menu_data(t_menu_id, kasir_name=kasir)
+        if not data:
+            return jsonify({"error": "Data transaksi menu tidak ditemukan"}), 404
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # =========================================================================
 # 3. SYSTEM LOGS & AUDIT (MONITORING)
 # =========================================================================

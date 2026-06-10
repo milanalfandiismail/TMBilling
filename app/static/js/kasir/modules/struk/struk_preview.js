@@ -50,7 +50,7 @@ const StrukPreview = {
                         ${(data.rincian || []).map(r => `
                             <div class="border-b border-dashed border-[#2a2a2a]/50 pb-1.5 last:border-0 last:pb-0">
                                 <div class="font-bold text-neutral-100">${escape(r.keterangan)}</div>
-                                <div class="text-[10px] text-neutral-400 font-bold">${r.durasi} menit</div>
+                                <div class="text-[10px] text-neutral-400 font-bold">${data.tipe === 'kantin' ? 'Jumlah: ' + r.durasi : r.durasi + ' menit'}</div>
                                 <div class="text-xs font-bold text-right mt-0.5 text-neutral-200">${rupiah(r.harga)}</div>
                             </div>
                         `).join('')}
@@ -60,8 +60,8 @@ const StrukPreview = {
 
                     <div class="flex justify-between items-end">
                         <div>
-                            <span class="text-[10px] text-neutral-400 uppercase font-bold">Total Durasi</span>
-                            <div class="font-bold text-neutral-200">${data.total_durasi} menit</div>
+                            <span class="text-[10px] text-neutral-400 uppercase font-bold">${data.tipe === 'kantin' ? 'Total Item' : 'Total Durasi'}</span>
+                            <div class="font-bold text-neutral-200">${data.total_durasi} ${data.tipe === 'kantin' ? 'pcs' : 'menit'}</div>
                         </div>
                         <div class="text-right">
                             <span class="text-[10px] text-neutral-400 uppercase font-bold">TOTAL BAYAR</span>
@@ -96,7 +96,7 @@ const StrukPreview = {
         const rincianHtml = (data.rincian || []).map(r =>
             `<div style="margin-bottom:6px;">
                 <div style="font-weight:bold;">${r.keterangan}</div>
-                <div style="font-size:10px;margin:2px 0;">${r.durasi} menit</div>
+                <div style="font-size:10px;margin:2px 0;">${data.tipe === 'kantin' ? 'Jumlah: ' + r.durasi : r.durasi + ' menit'}</div>
                 <div style="font-weight:bold;">${rupiah(r.harga)}</div>
             </div>`
         ).join('');
@@ -131,11 +131,11 @@ const StrukPreview = {
                 <div style="font-size:9px;font-weight:bold;margin-bottom:6px;">Rincian:</div>
                 ${rincianHtml}
                 <div class="divider"></div>
-                <div class="flex"><span>Durasi</span><span>${data.total_durasi} menit</span></div>
+                <div class="flex"><span>${data.tipe === 'kantin' ? 'Total Item' : 'Total Durasi'}</span><span>${data.total_durasi} ${data.tipe === 'kantin' ? 'pcs' : 'menit'}</span></div>
                 <div class="flex" style="font-weight:bold;font-size:13px;margin-top:4px;"><span>TOTAL</span><span>${rupiah(data.total_harga)}</span></div>
                 <div class="divider"></div>
                 <div class="flex" style="font-size:9px;"><span>Kasir</span><span>${data.kasir}</span></div>
-                <div class="text-center" style="margin-top:15px;font-size:9px;">Terima kasih, selamat bermain!</div>
+                <div class="text-center" style="margin-top:15px;font-size:9px;">${data.tipe === 'kantin' ? 'Terima kasih atas kunjungan Anda!' : 'Terima kasih, selamat bermain!'}</div>
             </body></html>
         `);
         doc.close();

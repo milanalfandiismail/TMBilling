@@ -157,6 +157,7 @@ const API = {
         },
         tanggalList: () => API.request('/api/report/tanggal'),
         kasirList: () => API.request('/api/report/kasir-list'),
+        strukMenu: (tMenuId) => API.request(`/api/report/struk/menu/${tMenuId}`),
         logs: (filter = '', limit = 500, kategori = '') => {
             const q = new URLSearchParams();
             if (filter) q.append('filter', filter);
