@@ -20,6 +20,7 @@ from app.repositories.sesi_repository import SesiRepository
 from app.repositories.transaksi_repository import TransaksiRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.settings_repository import SettingsRepository
+from app.repositories.menu_repository import MenuRepository
 
 __all__ = [
     "MemberRepository",
@@ -29,5 +30,6 @@ __all__ = [
     "SesiRepository",
     "TransaksiRepository",
     "UserRepository",
-    'SettingsRepository'
+    'SettingsRepository',
+    "MenuRepository"
 ]
