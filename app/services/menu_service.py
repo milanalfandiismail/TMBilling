@@ -135,11 +135,11 @@ class MenuService:
                 if not menu:
                     raise ValueError(f"Menu dengan ID {menu_id} tidak ditemukan")
 
-                if menu.stok < jumlah:
-                    raise ValueError(f"Stok '{menu.nama}' tidak mencukupi (Tersedia: {menu.stok}, Diminta: {jumlah})")
-
-                # Kurangi stok
-                menu.stok -= jumlah
+                # Kurangi stok jika tidak unlimited (stok >= 0)
+                if menu.stok >= 0:
+                    if menu.stok < jumlah:
+                        raise ValueError(f"Stok '{menu.nama}' tidak mencukupi (Tersedia: {menu.stok}, Diminta: {jumlah})")
+                    menu.stok -= jumlah
 
                 # Buat transaksi
                 no_nota = MenuService.generate_nota_menu()
