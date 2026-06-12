@@ -47,8 +47,8 @@ const Laporan = {
                 area.innerHTML = `
                     <div class="flex flex-col items-center justify-center py-16 text-neutral-500 bg-[#0c0c0c] border border-dashed border-[#1c1c1c] rounded">
                         <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
-                        <p class="text-xs font-bold uppercase tracking-wider text-neutral-300">Belum Ada Laporan</p>
-                        <p class="text-[10px] text-neutral-500 mt-1">Belum ada transaksi hari ini</p>
+                        <p class="text-xs lg:text-base font-bold uppercase tracking-wider text-neutral-300">Belum Ada Laporan</p>
+                        <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Belum ada transaksi hari ini</p>
                     </div>`;
                 return;
             }
@@ -63,7 +63,7 @@ const Laporan = {
             await this.loadByDate(firstDate);
         } catch (err) {
             const area = document.getElementById('laporan-area');
-            if (area) area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">Gagal memuat laporan</div>';
+            if (area) area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:text-base">Gagal memuat laporan</div>';
         }
     },
 
@@ -80,10 +80,9 @@ const Laporan = {
 
         try {
             const data = await API.report.byTanggal(tanggal, kasirId, page, 12);
-            console.log('[Laporan] Data:', data);
             this.render(data);
         } catch (err) {
-            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">Gagal memuat laporan</div>';
+            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:text-base">Gagal memuat laporan</div>';
         }
     },
 
@@ -92,7 +91,7 @@ const Laporan = {
         if (!area) return;
 
         if (!data || data.error) {
-            area.innerHTML = '<div class="text-center py-10 text-neutral-500 text-xs">Tidak ada data</div>';
+            area.innerHTML = '<div class="text-center py-10 text-neutral-500 text-xs lg:text-base">Tidak ada data</div>';
             return;
         }
 
@@ -102,32 +101,32 @@ const Laporan = {
         html += `
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                 <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-20">
-                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">Total Pendapatan Billing</span>
+                    <span class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold tracking-wider">Total Pendapatan Billing</span>
                     <span class="text-base font-bold text-neutral-100 font-mono mt-1">${Utils.formatRupiah(data.total_pendapatan_billing || 0)}</span>
                 </div>
                 <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-20">
-                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">Total Sesi</span>
+                    <span class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold tracking-wider">Total Sesi</span>
                     <span class="text-lg font-bold text-neutral-100 font-mono mt-1">${data.total_sesi || 0}</span>
                 </div>
                 <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-20">
-                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">Sesi Member</span>
+                    <span class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold tracking-wider">Sesi Member</span>
                     <span class="text-lg font-bold text-neutral-100 font-mono mt-1">${data.total_member || 0}</span>
                 </div>
                 <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-20">
-                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">Sesi Guest</span>
+                    <span class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold tracking-wider">Sesi Guest</span>
                     <span class="text-lg font-bold text-neutral-100 font-mono mt-1">${data.total_guest || 0}</span>
                 </div>
             </div>`;
 
         // Table transaksi Billing
-        html += `<h4 class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Detail Pendapatan Billing</h4>`;
+        html += `<h4 class="text-xs lg:text-base font-bold text-neutral-400 uppercase tracking-wider mb-3">Detail Pendapatan Billing</h4>`;
         const transaksiList = data.history_struk || [];
         if (transaksiList.length > 0) {
             html += `
                 <div class="overflow-x-hidden w-full mb-6">
-                    <table class="w-full text-xs block lg:table">
+                    <table class="w-full text-xs lg:text-base block lg:table">
                         <thead class="hidden lg:table-header-group">
-                            <tr class="text-[10px] text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
+                            <tr class="text-[10px] lg:text-base text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
                                 <th class="px-4 py-3 text-left">Waktu</th>
                                 <th class="px-4 py-3 text-left">Nota</th>
                                 <th class="px-4 py-3 text-left">Pelanggan</th>
@@ -139,23 +138,23 @@ const Laporan = {
                             ${transaksiList.map(t => `
                                 <tr class="hover:bg-[#121212] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#2a2a2a] last:border-b-0 lg:border-b-0">
                                     <td class="px-4 py-3 text-neutral-400 font-mono flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Waktu</span>
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Waktu</span>
                                         <span>${t.waktu || '-'}</span>
                                     </td>
                                     <td class="px-4 py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota</span>
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota</span>
                                         <span class="font-mono text-neutral-300">${t.no_nota || '-'}</span>
                                     </td>
                                     <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pelanggan</span>
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pelanggan</span>
                                         <span>${t.nama_pelanggan || '-'}</span>
                                     </td>
                                     <td class="px-4 py-3 text-right font-mono font-bold text-neutral-200 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Jumlah</span>
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Jumlah</span>
                                         <span>${Utils.formatRupiah(t.jumlah || 0)}</span>
                                     </td>
                                     <td class="px-4 py-3 text-neutral-500 font-mono flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">PC</span>
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">PC</span>
                                         <span>${t.pc_kode || '-'}</span>
                                     </td>
                                 </tr>`).join('')}
@@ -166,13 +165,13 @@ const Laporan = {
             if (data.pages && data.pages > 1) {
                 html += `
                     <div class="flex items-center justify-center gap-2 mt-2 mb-6">
-                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage - 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs font-bold rounded transition-colors ${this.currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage <= 1 ? 'disabled' : ''}>&larr;</button>
-                        <span class="px-4 py-1.5 text-xs text-neutral-200 font-mono">${this.currentPage} / ${data.pages}</span>
-                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage + 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs font-bold rounded transition-colors ${this.currentPage >= data.pages ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage >= data.pages ? 'disabled' : ''}>&rarr;</button>
+                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage - 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs lg:text-base font-bold rounded transition-colors ${this.currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage <= 1 ? 'disabled' : ''}>&larr;</button>
+                        <span class="px-4 py-1.5 text-xs lg:text-base text-neutral-200 font-mono">${this.currentPage} / ${data.pages}</span>
+                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage + 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs lg:text-base font-bold rounded transition-colors ${this.currentPage >= data.pages ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage >= data.pages ? 'disabled' : ''}>&rarr;</button>
                     </div>`;
             }
         } else {
-            html += '<div class="text-center py-10 text-neutral-500 text-xs mb-6">Tidak ada transaksi billing di tanggal ini</div>';
+            html += '<div class="text-center py-10 text-neutral-500 text-xs lg:text-base mb-6">Tidak ada transaksi billing di tanggal ini</div>';
         }
 
         area.innerHTML = html;

@@ -26,7 +26,7 @@ const Menu = {
             }
         } catch (error) {
             Toast.error("Koneksi gagal memuat katalog menu");
-            grid.innerHTML = `<div class="col-span-full text-center py-20 text-red-400 text-xs font-semibold">Gagal memuat data menu.</div>`;
+            grid.innerHTML = `<div class="col-span-full text-center py-20 text-red-400 text-xs lg:text-base font-semibold">Gagal memuat data menu.</div>`;
         }
     },
 
@@ -39,8 +39,8 @@ const Menu = {
         if (!data || data.length === 0) {
             grid.innerHTML = `
                 <div class="col-span-full flex flex-col items-center justify-center py-20 text-neutral-500">
-                    <p class="text-xs font-bold">Belum ada menu di katalog</p>
-                    <p class="text-[10px] text-neutral-600 mt-1">Klik 'Tambah Menu' untuk membuat makanan/minuman baru</p>
+                    <p class="text-xs lg:text-base font-bold">Belum ada menu di katalog</p>
+                    <p class="text-[10px] lg:text-base text-neutral-600 mt-1">Klik 'Tambah Menu' untuk membuat makanan/minuman baru</p>
                 </div>`;
             return;
         }
@@ -57,8 +57,8 @@ const Menu = {
                    </div>`;
 
             const btnHtml = isOutOfStock
-                ? `<button disabled class="w-full py-1.5 rounded bg-neutral-900 border border-[#1c1c1c] text-[10px] text-neutral-600 font-bold uppercase cursor-not-allowed">Stok Habis</button>`
-                : `<button onclick="Menu.addToCart(${m.id})" class="w-full py-1.5 rounded bg-neutral-100 hover:bg-white text-[#050505] text-[10px] font-bold uppercase transition-colors">Tambah</button>`;
+                ? `<button disabled class="w-full py-1.5 rounded bg-neutral-900 border border-[#1c1c1c] text-[10px] lg:text-base text-neutral-600 font-bold uppercase cursor-not-allowed">Stok Habis</button>`
+                : `<button onclick="Menu.addToCart(${m.id})" class="w-full py-1.5 rounded bg-neutral-100 hover:bg-white text-[#050505] text-[10px] lg:text-base font-bold uppercase transition-colors">Tambah</button>`;
 
             const stokText = isUnlimited ? 'Unlimited' : `Stok: ${m.stok}`;
             const stokColor = isUnlimited ? 'text-green-500 font-bold' : (m.stok < 5 ? 'text-amber-500 font-bold' : 'text-neutral-500');
@@ -78,10 +78,10 @@ const Menu = {
                     <div class="space-y-2.5">
                         ${imgHtml}
                         <div>
-                            <h4 class="text-xs font-bold text-neutral-100 truncate">${m.nama}</h4>
+                            <h4 class="text-xs lg:text-base font-bold text-neutral-100 truncate">${m.nama}</h4>
                             <div class="flex items-center justify-between mt-1">
-                                <span class="text-xs text-neutral-300 font-bold font-mono">Rp ${m.harga.toLocaleString('id-ID')}</span>
-                                <span class="text-[9px] ${stokColor} font-mono">${stokText}</span>
+                                <span class="text-xs lg:text-base text-neutral-300 font-bold font-mono">Rp ${m.harga.toLocaleString('id-ID')}</span>
+                                <span class="text-[9px] lg:text-base ${stokColor} font-mono">${stokText}</span>
                             </div>
                         </div>
                     </div>
@@ -150,7 +150,7 @@ const Menu = {
         if (!container || !totalEl) return;
 
         if (this.cart.length === 0) {
-            container.innerHTML = `<div class="text-center py-10 text-neutral-600 text-xs">Keranjang masih kosong</div>`;
+            container.innerHTML = `<div class="text-center py-10 text-neutral-600 text-xs lg:text-base">Keranjang masih kosong</div>`;
             totalEl.textContent = "Rp 0";
             return;
         }
@@ -163,23 +163,23 @@ const Menu = {
             return `
                 <div class="flex items-center justify-between gap-3 bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-2.5">
                     <div class="min-w-0 flex-1">
-                        <h5 class="text-xs font-bold text-neutral-200 truncate">${c.menu.nama}</h5>
-                        <span class="text-[10px] text-neutral-500 font-mono">Rp ${c.menu.harga.toLocaleString('id-ID')}</span>
+                        <h5 class="text-xs lg:text-base font-bold text-neutral-200 truncate">${c.menu.nama}</h5>
+                        <span class="text-[10px] lg:text-base text-neutral-500 font-mono">Rp ${c.menu.harga.toLocaleString('id-ID')}</span>
                     </div>
                     
                     <div class="flex items-center gap-1 shrink-0">
                         <button onclick="Menu.updateCartQty(${c.menu.id}, ${c.jumlah - 1})" 
-                            class="w-5 h-5 bg-[#161616] hover:bg-[#222] border border-[#262626] rounded flex items-center justify-center text-xs font-bold text-neutral-400 hover:text-white transition-colors">-</button>
+                            class="w-5 h-5 bg-[#161616] hover:bg-[#222] border border-[#262626] rounded flex items-center justify-center text-xs lg:text-base font-bold text-neutral-400 hover:text-white transition-colors">-</button>
                         <input type="number" value="${c.jumlah}" 
                             onchange="Menu.updateCartQty(${c.menu.id}, this.value)"
-                            class="w-8 text-center text-xs font-mono font-bold py-0.5 bg-black border border-[#262626] rounded focus:outline-none">
+                            class="w-8 text-center text-xs lg:text-base font-mono font-bold py-0.5 bg-black border border-[#262626] rounded focus:outline-none">
                         <button onclick="Menu.updateCartQty(${c.menu.id}, ${c.jumlah + 1})" 
-                            class="w-5 h-5 bg-[#161616] hover:bg-[#222] border border-[#262626] rounded flex items-center justify-center text-xs font-bold text-neutral-400 hover:text-white transition-colors">+</button>
+                            class="w-5 h-5 bg-[#161616] hover:bg-[#222] border border-[#262626] rounded flex items-center justify-center text-xs lg:text-base font-bold text-neutral-400 hover:text-white transition-colors">+</button>
                     </div>
 
                     <div class="text-right shrink-0">
-                        <div class="text-xs font-mono font-bold text-neutral-200">Rp ${itemTotal.toLocaleString('id-ID')}</div>
-                        <button onclick="Menu.removeFromCart(${c.menu.id})" class="text-[9px] text-red-500 hover:text-red-400 font-semibold mt-0.5">Hapus</button>
+                        <div class="text-xs lg:text-base font-mono font-bold text-neutral-200">Rp ${itemTotal.toLocaleString('id-ID')}</div>
+                        <button onclick="Menu.removeFromCart(${c.menu.id})" class="text-[9px] lg:text-base text-red-500 hover:text-red-400 font-semibold mt-0.5">Hapus</button>
                     </div>
                 </div>`;
         }).join('');
@@ -218,7 +218,7 @@ const Menu = {
             <ul class="list-disc list-inside mt-2 text-neutral-300 font-mono text-[11px] space-y-1">
                 ${itemsListHtml}
             </ul>
-            <div class="mt-3 text-neutral-300 text-xs border-t border-[#222] pt-2">
+            <div class="mt-3 text-neutral-300 text-xs lg:text-base border-t border-[#222] pt-2">
                 Tujuan: <strong>${targetDest}</strong><br>
                 Total: <strong class="text-emerald-400">${formattedTotal}</strong>
             </div>

@@ -9,6 +9,8 @@ hardware semua PC di dashboard kasir.
 from flask import Blueprint, request, jsonify
 from app.services.hardware_service import HardwareService
 from app.utils.logger import write_log
+from app.routes.auth_kasir_routes import login_required
+from app.routes.client_routes import api_key_required
 
 monitor_bp = Blueprint("monitor", __name__)
 
@@ -74,6 +76,114 @@ def delete_hardware_data(hardware_id):
         return jsonify({"success": True, "message": f"Data monitor PC {pc_kode} berhasil dibersihkan"}), 200
     except ValueError as val_e:
         return jsonify({"success": False, "error": str(val_e)}), 404
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@monitor_bp.route("/monitor/screenshot/trigger/<int:pc_id>", methods=["POST"])
+@login_required
+def trigger_screenshot(pc_id):
+    """Trigger request screenshot ke client PC berdasarkan PC ID."""
+    try:
+        from app.repositories.pc_repository import PCRepository
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+
+        from app.services.client_service import ClientService
+        ClientService.queue_command(pc.id, "screenshot")
+
+        return jsonify({"success": True, "message": f"Perintah screenshot berhasil dikirim ke {pc.kode}"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+@monitor_bp.route("/monitor/remote/<int:pc_id>/<string:action>", methods=["POST"])
+@login_required
+def trigger_remote_action(pc_id, action):
+    """Trigger remote action (shutdown atau restart) ke client PC berdasarkan PC ID."""
+    try:
+        if action not in ["shutdown", "restart"]:
+            return jsonify({"success": False, "error": "Aksi tidak valid"}), 400
+
+        from app.repositories.pc_repository import PCRepository
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+
+        from app.services.client_service import ClientService
+        ClientService.queue_command(pc.id, action)
+
+        action_label = "Shutdown" if action == "shutdown" else "Restart"
+        write_log("REMOTE_ACTION", f"Perintah {action_label} dikirim ke PC {pc.kode}")
+        return jsonify({"success": True, "message": f"Perintah {action_label} berhasil dikirim ke {pc.kode}"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@monitor_bp.route("/monitor/screenshot/upload", methods=["POST"])
+@api_key_required
+def upload_screenshot():
+    """Endpoint bagi client PC untuk mengunggah tangkapan layar (screenshot) terbaru."""
+    try:
+        import os
+        from flask import current_app
+        from app.repositories.pc_repository import PCRepository
+
+        client_ip = request.headers.get("X-IP-Address") or request.remote_addr
+        pc = PCRepository.get_by_ip(client_ip)
+        if not pc:
+            return jsonify({"error": "IP PC tidak dikenal"}), 404
+
+        # Ambil raw binary data dari body POST
+        image_data = request.data
+        if not image_data:
+            return jsonify({"error": "Data gambar kosong"}), 400
+
+        # Folder upload: app/static/uploads/screenshots/
+        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots')
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder, exist_ok=True)
+
+        # Simpan sebagai {kode_pc}.png
+        file_path = os.path.join(upload_folder, f"{pc.kode}.png")
+        with open(file_path, "wb") as f:
+            f.write(image_data)
+
+        write_log("SCREENSHOT_UPLOAD", f"Screenshot PC {pc.kode} berhasil disimpan")
+        return jsonify({"success": True, "message": "Screenshot berhasil diunggah"}), 200
+    except Exception as e:
+        write_log("SCREENSHOT_UPLOAD_ERROR", f"Gagal simpan screenshot: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+
+@monitor_bp.route("/monitor/screenshot/status/<int:pc_id>", methods=["GET"])
+@login_required
+def get_screenshot_status(pc_id):
+    """Mengecek status dan timestamp screenshot terakhir untuk PC tertentu."""
+    try:
+        import os
+        from flask import current_app
+        from app.repositories.pc_repository import PCRepository
+        from datetime import datetime
+
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+
+        screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{pc.kode}.png")
+        if os.path.exists(screenshot_path):
+            mtime = os.path.getmtime(screenshot_path)
+            screenshot_time = datetime.fromtimestamp(mtime).strftime("%d/%m/%Y %H:%M:%S")
+            return jsonify({
+                "success": True,
+                "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
+                "screenshot_time": screenshot_time
+            }), 200
+        else:
+            return jsonify({
+                "success": True,
+                "screenshot_url": None,
+                "screenshot_time": None
+            }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

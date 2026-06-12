@@ -302,14 +302,15 @@ TMBilling/
 │   │       │   └── window_manager.rs       # Taskbar control
 │   │       ├── state.rs                    # Global state
 │   │       └── models.rs                   # Data structs
-│   └── TMMonitor/                          # Telemetry helper (Rust)
+│   └── TMMonitor/                          # Telemetry helper (C# - DEPRECATED)
 │
 ├── WarnetAgent/                            # 🛡️ Agent & Guardian
 │   ├── MGCTM/                              # Core launcher (Rust)
 │   │   └── src/main.rs                     # 5s loop: spawn + sync + obfuscate
 │   ├── mtm/                                # Anti-kill scout (Rust)
 │   │   └── src/main.rs                     # Silent watchdog from AppData
-│   ├── TMBilling_Monitor/                  # Hardware telemetry (Rust)
+│   ├── TMBilling_Monitor/                  # Hardware telemetry (Rust - TMMonitor.exe)
+
 │   ├── TMBilling_Uninstaller/              # Uninstaller (Rust + Win32 GUI)
 │   │   └── src/main.rs                     # Password GUI, offline fallback
 │   └── Deploy/                             # 📦 Compiled binaries siap pakai
@@ -360,7 +361,24 @@ TMBilling/
 
 ## 🚀 Quick Start — Server
 
-### Prerequisites
+### 📦 Setup Portable Server (Produksi Windows)
+
+Jika Anda ingin mendistribusikan atau memasang server kasir TMBilling secara cepat di Windows OS tanpa perlu melakukan konfigurasi manual, Anda dapat menggunakan berkas batch otomatis:
+
+1. **Ekstrak berkas `.zip`** aplikasi ke folder tujuan di komputer kasir.
+2. **Jalankan `install.bat`** (klik ganda): Script akan membuat virtual environment `.venv` dan memasang seluruh dependensi otomatis. *(Membutuhkan koneksi internet pada pemasangan pertama)*.
+3. **Konfigurasi berkas `.env`** di folder root jika diperlukan (untuk menyesuaikan port, database URL, dll).
+4. **Jalankan `start.bat`** untuk menyalakan server kasir di latar belakang (*silent background mode* via `pythonw.exe`). Anda dapat langsung mengakses dashboard di browser Anda.
+5. **Jalankan `stop.bat`** kapan saja untuk menghentikan server yang sedang berjalan di background secara aman.
+
+> [!NOTE]  
+> Jika database (`warnet.db`) masih kosong pada saat server pertama kali dijalankan, sistem secara otomatis akan membuatkan akun administrator default untuk login awal:
+> * **Username:** `admin`
+> * **Password:** `admin123`
+
+---
+
+### Prerequisites (Manual Setup)
 
 - **Python 3.8+** — [Download](https://www.python.org/downloads/)
 - **Git** — [Download](https://git-scm.com/downloads)
@@ -986,7 +1004,16 @@ npm run tauri dev
 npm run tauri build  # -> src-tauri/target/release/TMBilling.exe
 ```
 
-### Rust Agent Development
+### Kompilasi Agen & Client (Unified Build & Deploy)
+
+Untuk mempermudah dan mengompilasi seluruh agen sekaligus serta menyalinnya ke folder Deploy, gunakan script batch yang telah disediakan:
+
+```bash
+# Jalankan dari root folder
+build_and_deploy.bat
+```
+
+Atau kompilasi secara manual per proyek:
 
 ```bash
 # MGCTM — Master Guardian
@@ -1009,6 +1036,7 @@ cd WarnetAgent/TMBilling_Uninstaller
 cargo build --release
 # -> target/release/TMBilling_Uninstaller.exe
 ```
+
 
 ### Compiling C# Telemetry Helper
 

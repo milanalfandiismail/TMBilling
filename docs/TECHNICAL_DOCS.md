@@ -91,8 +91,11 @@ Untuk mengatasi situasi darurat di mana server kasir mati total, terputus dari j
 | POST | `/status` | Polling status (tiap 5 detik) |
 | POST | `/selesai` | Logout dari client |
 | POST | `/admin-login` | Login admin langsung dari client |
+| POST | `/emergency-login` | Login darurat/emergency (bisa online/offline) |
+| GET | `/warnet` | Ambil konfigurasi lengkap Kiosk Client (Judul, Aturan, QRIS, & Paket) |
 
 **Status Response (dengan sesi):**
+
 ```json
 {
     "status": "aktif",
@@ -273,10 +276,14 @@ Prefix: `/api/monitor`
 | Method | Endpoint | Auth | Deskripsi |
 |--------|----------|------|-----------|
 | GET | `/all` | login | Semua data hardware + PC |
-| POST | `/` | - | Terima telemetry dari C# agent |
+| POST | `/` | - | Terima telemetry dari Rust agent (`TMMonitor.exe`) |
 | GET | `/processes/{pc_id}` | login | Daftar proses PC |
+| POST | `/remote/{pc_id}/{action}` | login | Trigger remote action (`shutdown` atau `restart`) pada PC client |
+| POST | `/screenshot/trigger/{pc_id}` | login | Kirim perintah ke antrean client untuk mengambil screenshot layar |
+| POST | `/screenshot/upload` | API Key | Endpoint bagi client PC untuk mengunggah tangkapan layar (screenshot) terbaru |
 
 **Telemetry Data (POST):**
+
 ```json
 {
     "cpu_usage": 45.2,
@@ -331,7 +338,9 @@ Prefix: `/api/settings` — Auth: `@login_required`
 | PUT | `/settings/{key}` | Update setting generic |
 | POST | `/settings/backup/manual` | Trigger backup manual |
 | GET | `/settings/backup/download` | Download database |
+| POST | `/settings/qris` | Unggah berkas gambar QRIS baru untuk pembayaran di Kiosk |
 | GET | `/settings/uninstall-token/client` | *(Bypass Auth — API Key)* Mengembalikan `uninstall_token` & `emergency_token` untuk sinkronisasi offline klien |
 
 ---
 *TMBilling v1.0 — API Documentation*
+

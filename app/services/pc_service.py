@@ -289,3 +289,98 @@ class PCService:
             write_log("BATCH_PC", f"Tambah {len(added)} PC via IP Range", user=operator)
             
         return {"added": added, "errors": []}
+
+
+    # =========================================================================
+    # 4. WAKE-ON-LAN (WoL)
+    # =========================================================================
+    # Fokus: Mengirim Magic Packet UDP ke MAC Address target agar PC menyala.
+
+    @staticmethod
+    def send_wol_packet(mac_address: str) -> bool:
+        """Kirim Magic Packet UDP ke MAC Address untuk menyalakan PC (WoL).
+        
+        Magic packet terdiri dari 6 byte FF diikuti MAC Address yang diulang 16x.
+        
+        Args:
+            mac_address (str): Alamat MAC dalam format 'XX:XX:XX:XX:XX:XX' atau 'XX-XX-XX-XX-XX-XX'.
+            
+        Returns:
+            bool: True jika packet berhasil dikirim.
+            
+        Raises:
+            ValueError: Jika MAC Address tidak valid atau kosong.
+        """
+        import socket
+        if not mac_address:
+            raise ValueError("MAC Address tidak boleh kosong")
+        
+        clean_mac = mac_address.replace(":", "").replace("-", "").upper()
+        if len(clean_mac) != 12:
+            raise ValueError(f"Format MAC Address tidak valid: {mac_address}")
+        
+        try:
+            mac_bytes = bytes.fromhex(clean_mac)
+        except ValueError:
+            raise ValueError(f"MAC Address mengandung karakter tidak valid: {mac_address}")
+        
+        # Bangun Magic Packet: 6x 0xFF + MAC address diulang 16 kali
+        magic_packet = b'\xff' * 6 + mac_bytes * 16
+        
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        try:
+            sock.sendto(magic_packet, ('255.255.255.255', 9))
+        finally:
+            sock.close()
+        
+        return True
+
+    @staticmethod
+    def wake_on_lan(mac_addresses: list, operator: str = "system") -> dict:
+        """Kirim WoL Magic Packet ke satu atau beberapa MAC Address.
+        
+        Args:
+            mac_addresses (list): Daftar MAC Address yang akan dikirim packet.
+            operator (str): Username kasir yang memicu aksi.
+            
+        Returns:
+            dict: {'success': [...], 'errors': [...]}
+        """
+        results = {"success": [], "errors": []}
+        for mac in mac_addresses:
+            try:
+                PCService.send_wol_packet(mac)
+                results["success"].append(mac)
+                write_log("WOL_PACKET", f"Magic Packet terkirim ke {mac}", user=operator)
+            except Exception as e:
+                results["errors"].append({"mac": mac, "error": str(e)})
+        return results
+
+    @staticmethod
+    def wake_by_pc_ids(pc_ids: list, operator: str = "system") -> dict:
+        """Kirim WoL ke sejumlah PC berdasarkan ID PC.
+        
+        Args:
+            pc_ids (list): Daftar ID PC.
+            operator (str): Username kasir yang memicu aksi.
+            
+        Returns:
+            dict: {'success': [...list pc_kode...], 'errors': [...]}
+        """
+        results = {"success": [], "errors": []}
+        for pc_id in pc_ids:
+            pc = PCRepository.get_by_id(pc_id)
+            if not pc:
+                results["errors"].append({"pc_id": pc_id, "error": "PC tidak ditemukan"})
+                continue
+            if not pc.mac_address:
+                results["errors"].append({"pc_id": pc_id, "error": f"{pc.kode} tidak memiliki MAC Address"})
+                continue
+            try:
+                PCService.send_wol_packet(pc.mac_address)
+                results["success"].append(pc.kode)
+                write_log("WOL_PACKET", f"Magic Packet terkirim ke {pc.kode} ({pc.mac_address})", user=operator)
+            except Exception as e:
+                results["errors"].append({"pc_id": pc_id, "error": f"{pc.kode}: {str(e)}"})
+        return results

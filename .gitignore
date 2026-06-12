@@ -51,6 +51,15 @@ htmlcov/
 backups/
 
 
+# Media qris upload
+app/static/uploads/qris
+
+# Media assets (PNG, JPG) - user upload sendiri
+WarnetClient/TMBillingTauri/src/assets/*.png
+WarnetClient/TMBillingTauri/src/assets/*.jpg
+WarnetClient/TMBillingTauri/src/assets/qris/
+!WarnetClient/TMBillingTauri/src/assets/**/placeholder
+
 # logs
 logs/
 warnet.log
@@ -548,5 +557,9 @@ $RECYCLE.BIN/
 # Agent tracks & Walkthroughs
 agent.md
 walkthrough.md
+CODEBASE_CONTEXT.md
 
 
+
+# Screenshot uploads
+app/static/uploads/screenshots/

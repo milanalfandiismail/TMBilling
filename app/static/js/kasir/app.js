@@ -2,19 +2,17 @@ const App = {
     currentTab: 'dash',
 
     async init() {
-        console.log('App.init() started');
+        console.log('[TMBilling] Initializing application...');
         const loggedIn = await this.checkAuth();
         if (!loggedIn) {
-            console.log('Not logged in, redirecting');
             return;
         }
-        console.log('Auth OK, loading dashboard...');
 
         await this.loadTab('dash');
         await Grup.load();
         this.updatePageTitle('dash');
 
-        console.log('App initialized, auto-refresh every 5s');
+        console.log('[TMBilling] Application initialized.');
         setInterval(() => {
             if (this.currentTab === 'dash') Dashboard.load();
             if (this.currentTab === 'monitor' && typeof Monitor !== 'undefined') Monitor.load();
@@ -23,12 +21,9 @@ const App = {
 
     async checkAuth() {
         try {
-            console.log('[Auth] Checking session...');
             const result = await API.auth.check();
-            console.log('[Auth] Response:', result);
             this.user = result;
             if (!result.logged_in) {
-                console.log('[Auth] Not logged in, redirecting');
                 window.location.href = '/kasir/login';
                 return false;
             }
@@ -49,7 +44,6 @@ const App = {
                     </div>
                 `;
             }
-            console.log('[Auth] Session valid, proceeding');
             return true;
         } catch (err) {
             console.error('[Auth] Error:', err);

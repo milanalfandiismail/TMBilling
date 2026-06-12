@@ -15,7 +15,7 @@
             theme: {
                 extend: {
                     colors: {
-                        accent: '#34d399', // Emerald accent to match Cashier app status
+                        accent: '#34d399',
                         dark: '#050505',
                         card: '#111111',
                     }
@@ -28,54 +28,145 @@
 <body class="bg-transparent" oncontextmenu="return false">
 
     <!-- 1. LAYAR LOGIN (MODE KIOSK) -->
-    <div id="login-screen" class="w-full h-full flex items-center justify-center p-6 lg:p-12">
-        <h1 class="fixed top-10 left-10 text-3xl font-black uppercase opacity-10 tracking-tighter">TMBilling</h1>
-        
-        <!-- Grid Container for Side-by-side Layout -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl w-full items-stretch justify-center">
-            
-            <!-- Left Card: Login Form -->
-            <div class="bg-card border border-[#2a2a2a] rounded-2xl p-8 lg:p-10 shadow-2xl flex flex-col justify-between">
-                <header class="mb-8 space-y-1">
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
-                        <span class="text-[9px] font-bold tracking-widest text-accent uppercase">Terkunci</span>
-                    </div>
-                    <h2 class="text-2xl lg:text-3xl font-extrabold tracking-tight">Nama PC : <span class="text-accent pc-name-display">PC-01</span></h2>
-                </header>
+    <div id="login-screen"
+        class="w-full h-full flex flex-row items-stretch justify-between p-4 lg:p-8 gap-4 lg:gap-6 xl:gap-8 overflow-hidden bg-cover bg-center">
 
-                <div class="space-y-4 flex-1 flex flex-col justify-center">
-                    <input type="text" id="username" placeholder="Username"
-                        class="w-full bg-white/5 border border-[#2a2a2a] rounded-xl px-5 py-3.5 text-sm outline-none focus:border-neutral-400 focus:bg-white/10 transition-colors">
-                    <input type="password" id="password" placeholder="Password"
-                        class="w-full bg-white/5 border border-[#2a2a2a] rounded-xl px-5 py-3.5 text-sm outline-none focus:border-neutral-400 focus:bg-white/10 transition-colors">
-                    <button id="login-btn"
-                        class="w-full bg-white hover:bg-neutral-200 text-black rounded-xl py-3.5 mt-4 font-bold text-xs tracking-wider transition-all">Mulai Sesi</button>
+        <!-- Left Sidebar: Brand & Informasi Card -->
+        <div class="kiosk-sidebar-left w-60 lg:w-72 xl:w-80 2xl:w-96 flex flex-col gap-4 lg:gap-6 shrink-0 z-10">
+            <!-- Brand / Nama Warnet (Top Left) -->
+            <div class="flex flex-col gap-1">
+                <h1 id="kiosk-title" class="text-2xl lg:text-3xl font-black uppercase tracking-wider text-white">
+                    TMBilling</h1>
+                <div class="w-12 lg:w-16 h-1 bg-accent rounded-full"></div>
+            </div>
+
+            <!-- Informasi Card (Tab: Aturan Warnet | Daftar Paket) -->
+            <div
+                class="premium-cyber-card border border-[#2a2a2a] rounded-3xl p-5 lg:p-6 shadow-2xl flex flex-col justify-between flex-1 min-h-0 backdrop-blur-md bg-opacity-90">
+                <!-- Tab Header -->
+                <div class="flex gap-1 mb-4">
+                    <button id="tab-rules-btn"
+                        class="flex-1 px-3 py-1.5 bg-white/10 border border-white/10 text-[9px] font-bold rounded-lg text-white transition-all">Aturan
+                        Warnet</button>
+                    <button id="tab-packages-btn"
+                        class="flex-1 px-3 py-1.5 bg-white/5 border border-white/5 text-[9px] font-bold rounded-lg text-neutral-400 hover:text-white transition-all">Daftar
+                        Paket</button>
                 </div>
 
-                <footer class="mt-8 pt-6 border-t border-white/5 flex justify-between items-end text-neutral-500 font-mono text-[9px]">
-                    <div class="space-y-1">
+                <!-- Tab Content: Rules Panel -->
+                <div id="panel-rules" class="flex-1 flex flex-col min-h-0">
+                    <header class="mb-3 space-y-1">
+                        <div class="flex items-center gap-2">
+                            <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
+                            <span class="text-[9px] font-bold tracking-widest text-accent uppercase">Informasi</span>
+                        </div>
+                        <h2 class="text-base font-extrabold tracking-tight text-white">Aturan Warnet</h2>
+                    </header>
+
+                    <div id="rules-container"
+                        class="flex-1 overflow-y-auto text-[10px] lg:text-[11px] text-neutral-400 space-y-2 pr-2 scrollbar-thin leading-relaxed">
+                        <p class="text-neutral-500">Memuat aturan...</p>
+                    </div>
+
+                    <div id="rules-pagination"
+                        class="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-neutral-500 font-mono text-[9px]">
+                        <button id="rules-prev-btn"
+                            class="hover:text-white transition-colors disabled:opacity-30 disabled:hover:text-neutral-500"
+                            disabled>&larr; Prev</button>
+                        <span id="rules-page-indicator">1 / 1</span>
+                        <button id="rules-next-btn"
+                            class="hover:text-white transition-colors disabled:opacity-30 disabled:hover:text-neutral-500"
+                            disabled>Next &rarr;</button>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Packages Panel -->
+                <div id="panel-packages" class="flex-1 flex flex-col min-h-0 hidden">
+                    <header class="mb-3 space-y-1">
+                        <div class="flex items-center gap-2">
+                            <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
+                            <span class="text-[9px] font-bold tracking-widest text-accent uppercase">Informasi</span>
+                        </div>
+                        <h2 class="text-base font-extrabold tracking-tight text-white">Daftar Paket</h2>
+                    </header>
+
+                    <!-- Group Tabs -->
+                    <div id="paket-tabs" class="flex gap-1 overflow-x-auto pb-1.5 scrollbar-thin mb-3">
+                        <!-- Dynamic tabs go here -->
+                    </div>
+
+                    <!-- Packages List -->
+                    <div id="paket-list-container" class="flex-1 flex flex-col gap-1.5 justify-start">
+                        <p class="text-xs text-neutral-500">Memuat paket...</p>
+                    </div>
+
+                    <!-- Pagination Controls -->
+                    <div id="paket-pagination"
+                        class="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-neutral-500 font-mono text-[9px]">
+                        <button id="paket-prev-btn"
+                            class="hover:text-white transition-colors disabled:opacity-30 disabled:hover:text-neutral-500"
+                            disabled>&larr; Prev</button>
+                        <span id="paket-page-indicator">1 / 1</span>
+                        <button id="paket-next-btn"
+                            class="hover:text-white transition-colors disabled:opacity-30 disabled:hover:text-neutral-500"
+                            disabled>Next &rarr;</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Workspace: Login Form Only -->
+        <div class="flex-1 flex items-center justify-center px-3 lg:px-6 z-10">
+            <div
+                class="premium-cyber-card kiosk-login-card border border-[#2a2a2a] rounded-3xl p-6 lg:p-8 xl:p-10 shadow-2xl flex flex-col w-full max-w-xl backdrop-blur-md bg-opacity-90 transition-all">
+                <header class="space-y-1 mb-4 xl:mb-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
+                        <span class="text-[9px] lg:text-[10px] font-bold tracking-widest text-accent uppercase">Sistem
+                            Terkunci</span>
+                    </div>
+                    <h2 class="text-xl lg:text-2xl xl:text-3xl font-extrabold tracking-tight text-white">Nama PC :
+                        <span class="text-accent pc-name-display">PC-01</span>
+                    </h2>
+                </header>
+
+                <div class="space-y-3 lg:space-y-4 flex-1 flex flex-col justify-center">
+                    <input type="text" id="username" placeholder="Username"
+                        class="w-full bg-white/5 border border-[#2a2a2a] rounded-xl px-4 py-3 xl:px-5 xl:py-4 text-sm xl:text-base outline-none focus:border-accent focus:bg-white/10 transition-all text-white">
+                    <input type="password" id="password" placeholder="Password"
+                        class="w-full bg-white/5 border border-[#2a2a2a] rounded-xl px-4 py-3 xl:px-5 xl:py-4 text-sm xl:text-base outline-none focus:border-accent focus:bg-white/10 transition-all text-white">
+                    <button id="login-btn"
+                        class="w-full premium-btn text-black rounded-xl py-3 xl:py-4 mt-2 xl:mt-3 font-bold text-xs tracking-wider transition-all">Mulai
+                        Sesi</button>
+                </div>
+
+                <footer
+                    class="mt-4 xl:mt-6 pt-3 xl:pt-4 border-t border-white/5 flex justify-between items-end text-neutral-500 font-mono text-[9px]">
+                    <div class="space-y-0.5 lg:space-y-1">
                         <p>IP Address: <span id="ip-display">Memuat...</span></p>
                         <p>Mac Address: <span id="mac-display">Memuat...</span></p>
                     </div>
                     <div class="text-right text-accent font-bold">
                         <p id="shutdown-status" class="tracking-wider text-[8px] uppercase">Off</p>
-                        <p id="shutdown-countdown" class="text-2xl text-white font-mono">--:--</p>
+                        <p id="shutdown-countdown" class="text-xl xl:text-2xl text-white font-mono">--:--</p>
                     </div>
                 </footer>
             </div>
+        </div>
 
-            <!-- Right Card: QRIS Panel -->
-            <div class="bg-card border border-[#2a2a2a] rounded-2xl p-8 lg:p-10 shadow-2xl flex flex-col justify-center items-center text-center">
-                <header class="mb-6 w-full text-left">
-                    <h2 class="text-2xl lg:text-3xl font-extrabold tracking-tight text-white">Pembayaran QRIS</h2>
+        <!-- Right Sidebar: QRIS Card Only -->
+        <div class="kiosk-sidebar-right w-60 lg:w-72 xl:w-80 2xl:w-96 flex flex-col shrink-0 z-10">
+            <div
+                class="premium-cyber-card border border-[#2a2a2a] rounded-3xl p-5 shadow-2xl backdrop-blur-md bg-opacity-90 flex-1 flex flex-col items-center justify-center">
+                <header class="flex items-center gap-2 mb-3 self-start">
+                    <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
+                    <span class="text-[9px] font-bold tracking-widest text-accent uppercase">Pembayaran</span>
                 </header>
-
-                <div class="my-auto flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-white/10 shadow-xl max-w-[200px]">
-                    <img src="assets/qris/qris.png" alt="QRIS Code" class="w-full h-auto rounded-lg">
+                <div class="flex-1 flex items-center justify-center w-full overflow-hidden">
+                    <img id="kiosk-qris-img" src="" alt="QRIS Code" class="w-full h-full object-contain rounded-lg">
                 </div>
+                <p class="text-center text-[10px] text-neutral-500 mt-2 font-semibold">Scan Qris untuk bayar</p>
             </div>
-            
         </div>
     </div>
 
@@ -112,7 +203,8 @@
                 <div class="w-full h-px bg-[#2a2a2a] my-3"></div>
                 <div class="space-y-1">
                     <span class="text-[9px] font-bold text-accent/70 uppercase tracking-wider">Sisa Waktu</span>
-                    <p class="text-2xl font-bold tracking-tight text-white whitespace-nowrap" id="overlay-time">00:00</p>
+                    <p class="text-2xl font-bold tracking-tight text-white whitespace-nowrap" id="overlay-time">00:00
+                    </p>
                 </div>
             </div>
 
@@ -166,14 +258,16 @@
         <div class="w-[280px] bg-card border border-[#2a2a2a] rounded-2xl p-6 shadow-2xl space-y-5 text-center">
             <header class="flex flex-col items-center">
                 <div class="w-10 h-10 bg-red-500/10 rounded-full flex items-center justify-center mb-3 text-red-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                 </div>
                 <h2 class="text-lg font-bold">Akhiri Sesi?</h2>
                 <p class="text-[10px] text-neutral-500 mt-1 uppercase tracking-wider font-bold">Yakin ingin keluar?</p>
             </header>
-    
+
             <div class="flex gap-2 pt-2">
                 <button id="logout-cancel-btn"
                     class="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider text-neutral-400 transition-all">Tidak</button>

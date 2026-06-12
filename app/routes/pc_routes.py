@@ -138,3 +138,58 @@ def reset_admin(pc_id):
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# =========================================================================
+# 3. WAKE-ON-LAN (WoL)
+# =========================================================================
+# Fokus: Mengirim Magic Packet UDP ke satu atau beberapa PC agar menyala.
+
+@pc_bp.route("/pc/wol", methods=["POST"])
+@login_required
+def wol_pc():
+    """Kirim Magic Packet WoL ke satu atau beberapa PC berdasarkan ID atau MAC Address."""
+    try:
+        data = request.get_json() or {}
+        kasir = session.get("kasir_username", "kasir")
+
+        # Mode 1: Daftar PC ID (paling umum digunakan dari UI)
+        pc_ids = data.get("pc_ids", [])
+        if pc_ids:
+            result = PCService.wake_by_pc_ids(pc_ids, operator=kasir)
+            total_ok = len(result["success"])
+            total_err = len(result["errors"])
+
+            if total_ok == 0 and total_err > 0:
+                err_msg = "; ".join([e["error"] for e in result["errors"]])
+                return jsonify({"error": err_msg}), 400
+
+            return jsonify({
+                "success": True,
+                "message": f"Magic Packet terkirim ke {total_ok} PC",
+                "result": result
+            }), 200
+
+        # Mode 2: Daftar MAC Address langsung
+        mac_addresses = data.get("mac_addresses", [])
+        if mac_addresses:
+            result = PCService.wake_on_lan(mac_addresses, operator=kasir)
+            total_ok = len(result["success"])
+            total_err = len(result["errors"])
+
+            if total_ok == 0 and total_err > 0:
+                err_msg = "; ".join([e["error"] for e in result["errors"]])
+                return jsonify({"error": err_msg}), 400
+
+            return jsonify({
+                "success": True,
+                "message": f"Magic Packet terkirim ke {total_ok} MAC",
+                "result": result
+            }), 200
+
+        return jsonify({"error": "Tidak ada pc_ids atau mac_addresses yang diberikan"}), 400
+
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

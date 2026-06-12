@@ -104,6 +104,22 @@ fn verify_file_integrity() -> Result<(), String> {
     }
 }
 
+async fn take_and_upload_screenshot(api: &crate::utils::api::ApiService, ip: &str) -> Result<(), String> {
+    let screens = screenshots::Screen::all().map_err(|e| format!("Gagal deteksi layar: {}", e))?;
+    let screen = screens.first().ok_or_else(|| "Layar tidak ditemukan".to_string())?;
+    
+    let image = screen.capture().map_err(|e| format!("Gagal capture layar: {}", e))?;
+    
+    let mut buffer = std::io::Cursor::new(Vec::new());
+    image.write_to(&mut buffer, screenshots::image::ImageOutputFormat::Png)
+        .map_err(|e| format!("Gagal convert PNG: {}", e))?;
+    
+    let png_bytes = buffer.into_inner();
+    api.upload_screenshot(ip, png_bytes).await?;
+    Ok(())
+}
+
+
 fn main() {
     // ========== SECURITY CHECKS (MUST RUN FIRST) ==========
     #[cfg(not(debug_assertions))]
@@ -297,6 +313,33 @@ fn main() {
                                     if let Some(cmd) = status.command {
                                         if cmd == "lock" || cmd == "logout" {
                                             let _ = window_polling.emit("force-lock", ());
+                                        } else if cmd == "screenshot" {
+                                            println!("Menerima perintah screenshot...");
+                                            let api_clone = api.clone();
+                                            let client_ip = net.ip.clone();
+                                            tauri::async_runtime::spawn(async move {
+                                                if let Err(e) = take_and_upload_screenshot(&api_clone, &client_ip).await {
+                                                    eprintln!("Gagal memproses screenshot: {}", e);
+                                                } else {
+                                                    println!("Screenshot berhasil diproses & diunggah!");
+                                                }
+                                            });
+                                        } else if cmd == "shutdown" {
+                                            println!("Menerima perintah shutdown! Mengeksekusi...");
+                                            #[cfg(target_os = "windows")]
+                                            {
+                                                let _ = std::process::Command::new("shutdown")
+                                                    .args(["/s", "/f", "/t", "0"])
+                                                    .spawn();
+                                            }
+                                        } else if cmd == "restart" {
+                                            println!("Menerima perintah restart! Mengeksekusi...");
+                                            #[cfg(target_os = "windows")]
+                                            {
+                                                let _ = std::process::Command::new("shutdown")
+                                                    .args(["/r", "/f", "/t", "0"])
+                                                    .spawn();
+                                            }
                                         }
                                     }
                                 }
@@ -337,6 +380,7 @@ fn main() {
             crate::commands::auth_commands::logout_process,
             crate::commands::system_commands::force_shutdown,
             crate::commands::system_commands::get_external_bg,
+            crate::commands::system_commands::get_client_warnet,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

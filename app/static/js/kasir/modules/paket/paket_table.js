@@ -9,7 +9,7 @@ const PaketTable = {
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-20 text-neutral-500 bg-[#0c0c0c] border border-dashed border-[#1c1c1c] rounded">
                     <svg class="w-12 h-12 mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                    <p class="text-xs font-bold uppercase tracking-wider">Belum Ada Paket Billing</p>
+                    <p class="text-xs lg:text-base font-bold uppercase tracking-wider">Belum Ada Paket Billing</p>
                 </div>`;
             return;
         }
@@ -27,13 +27,13 @@ const PaketTable = {
             html += `
                 <div class="mb-8 last:mb-0">
                     <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[#1c1c1c]">
-                        <h4 class="text-xs font-bold text-neutral-300 tracking-wider uppercase">${grupName}</h4>
-                        <span class="text-[10px] text-neutral-400 bg-[#171717] border border-[#262626] px-2.5 py-0.5 rounded font-bold">${list.length} Paket</span>
+                        <h4 class="text-xs lg:text-base font-bold text-neutral-300 tracking-wider uppercase">${grupName}</h4>
+                        <span class="text-[10px] lg:text-base text-neutral-400 bg-[#171717] border border-[#262626] px-2.5 py-0.5 rounded font-bold">${list.length} Paket</span>
                     </div>
                     <div class="overflow-x-hidden w-full">
-                        <table class="w-full text-xs block lg:table">
+                        <table class="w-full text-xs lg:text-base block lg:table">
                             <thead class="hidden lg:table-header-group">
-                                <tr class="text-[9px] text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
+                                <tr class="text-[9px] lg:text-base text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
                                     <th class="px-4 py-2 text-left w-[45%] md:w-[35%] font-bold">Nama</th>
                                     <th class="px-4 py-2 text-center w-[25%] md:w-[20%] font-bold">Durasi</th>
                                     <th class="px-4 py-2 text-center w-[20%] md:w-[15%] font-bold">Harga</th>
@@ -48,19 +48,19 @@ const PaketTable = {
                                             <span class="font-bold text-neutral-200">${Utils.escapeHtml(p.nama)}</span>
                                         </td>
                                         <td class="px-4 py-2 text-center font-mono flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                            <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Durasi</span>
+                                            <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Durasi</span>
                                             <span class="text-neutral-300 font-bold">${Utils.formatDurasiFriendly(p.durasi_menit)}</span>
                                         </td>
                                         <td class="px-4 py-2 text-center font-mono flex lg:table-cell justify-between items-center">
-                                            <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Harga</span>
+                                            <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Harga</span>
                                             <span class="text-neutral-100 font-bold">${Utils.formatRupiah(p.harga)}</span>
                                         </td>
                                         <td class="px-4 py-2 text-center font-mono flex lg:table-cell justify-between items-center">
-                                            <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Masa Aktif</span>
+                                            <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Masa Aktif</span>
                                             <span class="text-neutral-400 font-bold">${p.kadaluarsa_hari || 30} Hari</span>
                                         </td>
                                         <td class="px-4 py-2 text-right flex lg:table-cell justify-between items-center">
-                                            <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
+                                            <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
                                             <div class="flex justify-end gap-1.5">
                                                 <button onclick="Paket.edit(${p.id})" class="w-8 h-8 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors" title="Edit">
                                                     <svg class="w-3.5 h-3.5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>

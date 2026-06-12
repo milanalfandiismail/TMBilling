@@ -18,10 +18,10 @@ const StrukPreview = {
             <div class="thermal-paper w-[300px] mx-auto p-6 font-mono bg-[#161616] border border-[#2a2a2a] text-neutral-200 rounded-lg shadow-2xl select-none">
                 <div class="text-center mb-4 pb-3 border-b border-dashed border-[#2a2a2a]">
                     <h2 class="text-base font-extrabold tracking-tight">MILAN NET</h2>
-                    <p class="text-[10px] text-neutral-500 font-bold">Jl. Merdeka No. 123, Kota</p>
+                    <p class="text-[10px] lg:text-base text-neutral-500 font-bold">Jl. Merdeka No. 123, Kota</p>
                 </div>
 
-                <div class="space-y-2 text-xs">
+                <div class="space-y-2 text-xs lg:text-base">
                     <div class="flex justify-between">
                         <span class="text-neutral-400">No. Nota</span>
                         <span class="font-bold">${escape(data.no_nota)}</span>
@@ -45,13 +45,13 @@ const StrukPreview = {
 
                     <div class="border-t border-dashed border-[#2a2a2a] my-3"></div>
 
-                    <div class="font-bold text-[10px] uppercase mb-1 text-neutral-400 font-bold">Rincian:</div>
+                    <div class="font-bold text-[10px] lg:text-base uppercase mb-1 text-neutral-400 font-bold">Rincian:</div>
                     <div class="space-y-2">
                         ${(data.rincian || []).map(r => `
                             <div class="border-b border-dashed border-[#2a2a2a]/50 pb-1.5 last:border-0 last:pb-0">
                                 <div class="font-bold text-neutral-100">${escape(r.keterangan)}</div>
-                                <div class="text-[10px] text-neutral-400 font-bold">${data.tipe === 'kantin' ? 'Jumlah: ' + r.durasi : r.durasi + ' menit'}</div>
-                                <div class="text-xs font-bold text-right mt-0.5 text-neutral-200">${rupiah(r.harga)}</div>
+                                <div class="text-[10px] lg:text-base text-neutral-400 font-bold">${data.tipe === 'kantin' ? 'Jumlah: ' + r.durasi : r.durasi + ' menit'}</div>
+                                <div class="text-xs lg:text-base font-bold text-right mt-0.5 text-neutral-200">${rupiah(r.harga)}</div>
                             </div>
                         `).join('')}
                     </div>
@@ -60,22 +60,22 @@ const StrukPreview = {
 
                     <div class="flex justify-between items-end">
                         <div>
-                            <span class="text-[10px] text-neutral-400 uppercase font-bold">${data.tipe === 'kantin' ? 'Total Item' : 'Total Durasi'}</span>
+                            <span class="text-[10px] lg:text-base text-neutral-400 uppercase font-bold">${data.tipe === 'kantin' ? 'Total Item' : 'Total Durasi'}</span>
                             <div class="font-bold text-neutral-200">${data.total_durasi} ${data.tipe === 'kantin' ? 'pcs' : 'menit'}</div>
                         </div>
                         <div class="text-right">
-                            <span class="text-[10px] text-neutral-400 uppercase font-bold">TOTAL BAYAR</span>
+                            <span class="text-[10px] lg:text-base text-neutral-400 uppercase font-bold">TOTAL BAYAR</span>
                             <div class="text-sm font-black text-emerald-400">${rupiah(data.total_harga)}</div>
                         </div>
                     </div>
 
                     <div class="border-t border-dashed border-[#2a2a2a] my-3"></div>
 
-                    <div class="flex justify-between text-[10px]">
+                    <div class="flex justify-between text-[10px] lg:text-base">
                         <span class="text-neutral-400">Kasir</span>
                         <span class="text-neutral-200 font-bold">${escape(data.kasir)}</span>
                     </div>
-                    <div class="text-center text-[10px] text-neutral-500 font-bold pt-3 border-t border-dashed border-[#2a2a2a] mt-2">
+                    <div class="text-center text-[10px] lg:text-base text-neutral-500 font-bold pt-3 border-t border-dashed border-[#2a2a2a] mt-2">
                         Terima kasih, selamat bermain!
                     </div>
                 </div>

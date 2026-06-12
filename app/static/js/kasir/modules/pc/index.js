@@ -118,7 +118,7 @@ const PC = {
     },
 
     async delete(id) {
-        const message = '<div class="text-center"><p class="text-xs text-neutral-400">Hapus PC ini? Data akan dihapus permanen.</p></div>';
+        const message = '<div class="text-center"><p class="text-xs lg:text-base text-neutral-400">Hapus PC ini? Data akan dihapus permanen.</p></div>';
         Modal.confirm(message, async () => {
             try {
                 await API.pc.delete(id);
@@ -197,13 +197,13 @@ const PC = {
         if (!btnSingle || !btnBatch || !formSingle || !formBatch) return;
 
         if (mode === 'single') {
-            btnSingle.className = 'px-3.5 py-1.5 rounded text-xs font-bold bg-neutral-100 text-black transition-all';
-            btnBatch.className = 'px-3.5 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition-all';
+            btnSingle.className = 'px-3.5 py-1.5 rounded text-xs lg:text-base font-bold bg-neutral-100 text-black transition-all';
+            btnBatch.className = 'px-3.5 py-1.5 rounded text-xs lg:text-base font-bold text-neutral-400 hover:text-neutral-200 transition-all';
             formSingle.classList.remove('hidden');
             formBatch.classList.add('hidden');
         } else {
-            btnSingle.className = 'px-3.5 py-1.5 rounded text-xs font-bold text-neutral-400 hover:text-neutral-200 transition-all';
-            btnBatch.className = 'px-3.5 py-1.5 rounded text-xs font-bold bg-neutral-100 text-black transition-all';
+            btnSingle.className = 'px-3.5 py-1.5 rounded text-xs lg:text-base font-bold text-neutral-400 hover:text-neutral-200 transition-all';
+            btnBatch.className = 'px-3.5 py-1.5 rounded text-xs lg:text-base font-bold bg-neutral-100 text-black transition-all';
             formSingle.classList.add('hidden');
             formBatch.classList.remove('hidden');
         }

@@ -84,11 +84,11 @@ const Struk = {
                         <div class="flex items-center justify-between">
                             <div class="min-w-0 flex-1">
                                 <div class="text-sm font-bold text-neutral-200 lg:truncate break-words whitespace-normal">${nama}</div>
-                                <div class="text-[10px] text-neutral-500 font-mono mt-0.5">${waktu}</div>
+                                <div class="text-[10px] lg:text-base text-neutral-500 font-mono mt-0.5">${waktu}</div>
                             </div>
                             <div class="text-right ml-3 font-mono">
                                 <div class="text-sm font-black text-neutral-100">${window.Utils ? window.Utils.formatRupiah(totalBayar) : totalBayar}</div>
-                                <div class="text-[9px] text-neutral-600 mt-0.5">${noNota}</div>
+                                <div class="text-[9px] lg:text-base text-neutral-600 mt-0.5">${noNota}</div>
                             </div>
                         </div>
                     </div>`;
@@ -101,9 +101,9 @@ const Struk = {
                 if (res.pages > 1) {
                     pagContainer.innerHTML = `
                         <div class="flex items-center justify-between py-2 px-3 bg-[#0c0c0c] border border-[#1c1c1c] rounded mt-3">
-                            <button onclick="Struk.changePage(${res.page - 1})" class="px-2.5 py-1 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs font-bold rounded transition-colors ${!res.has_prev ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_prev ? 'disabled' : ''}>&larr;</button>
-                            <span class="text-xs font-bold text-neutral-400 font-mono">${res.page} / ${res.pages}</span>
-                            <button onclick="Struk.changePage(${res.page + 1})" class="px-2.5 py-1 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs font-bold rounded transition-colors ${!res.has_next ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_next ? 'disabled' : ''}>&rarr;</button>
+                            <button onclick="Struk.changePage(${res.page - 1})" class="px-2.5 py-1 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors ${!res.has_prev ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_prev ? 'disabled' : ''}>&larr;</button>
+                            <span class="text-xs lg:text-base font-bold text-neutral-400 font-mono">${res.page} / ${res.pages}</span>
+                            <button onclick="Struk.changePage(${res.page + 1})" class="px-2.5 py-1 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors ${!res.has_next ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_next ? 'disabled' : ''}>&rarr;</button>
                         </div>`;
                 } else {
                     pagContainer.innerHTML = '';
@@ -151,7 +151,7 @@ const Struk = {
     },
 
     async deleteReceipt(id, nota) {
-        Modal.confirm(`<div class="text-center"><p class="text-xs text-neutral-400">Hapus struk <span class="text-red-400 font-bold font-mono">${nota}</span>?</p><p class="text-[10px] text-neutral-500 mt-1">Data akan dihapus permanen.</p></div>`, async () => {
+        Modal.confirm(`<div class="text-center"><p class="text-xs lg:text-base text-neutral-400">Hapus struk <span class="text-red-400 font-bold font-mono">${nota}</span>?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Data akan dihapus permanen.</p></div>`, async () => {
             try {
                 await API.report.deleteTransaction(id);
                 Toast.success("Struk berhasil dihapus");
@@ -167,7 +167,7 @@ const Struk = {
         const targetDate = dateSelect ? dateSelect.value : '';
         if (!targetDate) { Toast.error("Pilih tanggal"); return; }
 
-        Modal.confirm(`<div class="text-center"><p class="text-xs text-neutral-400">Hapus semua transaksi tanggal <span class="text-red-400 font-bold font-mono">${targetDate}</span>?</p></div>`, async () => {
+        Modal.confirm(`<div class="text-center"><p class="text-xs lg:text-base text-neutral-400">Hapus semua transaksi tanggal <span class="text-red-400 font-bold font-mono">${targetDate}</span>?</p></div>`, async () => {
             try {
                 await API.report.deleteByDate(targetDate);
                 Toast.success(`Transaksi ${targetDate} dihapus`);
@@ -180,7 +180,7 @@ const Struk = {
     },
 
     async clearAllHistory() {
-        Modal.confirm('<div class="text-center"><p class="text-xs text-neutral-400 font-bold uppercase tracking-wider">Hapus semua riwayat transaksi?</p><p class="text-[10px] text-neutral-500 mt-1">Tindakan ini tidak dapat dibatalkan.</p></div>', async () => {
+        Modal.confirm('<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Hapus semua riwayat transaksi?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Tindakan ini tidak dapat dibatalkan.</p></div>', async () => {
             try {
                 await API.report.clearTransactions();
                 Toast.success("Riwayat berhasil dikosongkan");

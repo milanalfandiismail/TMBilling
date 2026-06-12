@@ -27,7 +27,16 @@ class SettingsService:
     @staticmethod
     def get_all():
         """Mengambil semua pengaturan dalam bentuk dictionary (Key: Value)."""
-        return SettingsRepository.get_all()
+        data = SettingsRepository.get_all()
+        defaults = {
+            "warnet_title": "TMBilling",
+            "warnet_announcement": "1. Jaga kebersihan dan ketertiban\n2. Dilarang membawa makanan dari luar\n3. Harap matikan PC setelah selesai bermain\n4. Hubungi kasir jika memerlukan bantuan",
+            "qris_image_url": "/static/uploads/qris/default_qris.png"
+        }
+        for k, v in defaults.items():
+            if k not in data or not data[k]:
+                data[k] = v
+        return data
 
 
     # =========================================================================

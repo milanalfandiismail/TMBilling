@@ -28,3 +28,8 @@ pub fn get_external_bg() -> Option<String> {
     }
     None
 }
+
+#[tauri::command]
+pub async fn get_client_warnet(api: tauri::State<'_, crate::utils::api::ApiService>) -> Result<crate::utils::api::WarnetConfig, String> {
+    api.get_warnet_config().await
+}

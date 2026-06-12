@@ -129,7 +129,7 @@ const Member = {
     },
 
     async delete(id) {
-        const message = `<div class="text-center"><p class="text-xs text-neutral-400 font-bold">Hapus member ini? Semua data dan sisa waktu akan <span class="text-red-400">dihapus permanen</span>.</p></div>`;
+        const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold">Hapus member ini? Semua data dan sisa waktu akan <span class="text-red-400">dihapus permanen</span>.</p></div>`;
         Modal.confirm(message, async () => {
             try {
                 await API.member.delete(id);
@@ -163,7 +163,7 @@ const Member = {
     },
 
     async refund(memberId, transaksiId) {
-        Modal.confirm('<div class="text-center"><p class="text-xs text-neutral-400 font-bold uppercase tracking-wider">Refund Paket Billing?</p><p class="text-[10px] text-neutral-500 mt-1">Saldo waktu member akan dikurangi sesuai durasi paket.</p></div>', async () => {
+        Modal.confirm('<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Refund Paket Billing?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Saldo waktu member akan dikurangi sesuai durasi paket.</p></div>', async () => {
             try {
                 const res = await API.member.refundPaket(memberId, transaksiId);
                 Toast.success(res.message || 'Refund berhasil');

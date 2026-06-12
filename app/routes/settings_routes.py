@@ -182,6 +182,51 @@ def download_db():
         return str(e), 500
 
 
+@settings_bp.route("/settings/qris", methods=["POST"])
+@login_required
+def upload_qris():
+    """Upload new QRIS image and update the setting path."""
+    try:
+        file = request.files.get("qris_image")
+        if not file or file.filename == '':
+            return jsonify({"error": "File QRIS wajib diunggah"}), 400
+            
+        # Validasi ekstensi
+        # Karena allowed_file didefinisikan di menu_routes, kita bisa mendefinisikannya kembali secara lokal agar modular
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        filename = file.filename
+        if not ('.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+            return jsonify({"error": "Ekstensi file tidak diizinkan (Gunakan: png, jpg, jpeg, gif, webp)"}), 400
+            
+        # Buat direktori upload jika belum ada
+        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'qris')
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder, exist_ok=True)
+            
+        from werkzeug.utils import secure_filename
+        filename = secure_filename(file.filename)
+        base, ext = os.path.splitext(filename)
+        
+        # Tambahkan timestamp unik di nama file untuk mencegah caching browser/client
+        import time
+        unique_filename = f"qris_{int(time.time())}{ext}"
+        
+        file_path = os.path.join(upload_folder, unique_filename)
+        file.save(file_path)
+        
+        # Simpan path url ke settings database
+        qris_url = f"/static/uploads/qris/{unique_filename}"
+        SettingsService.set("qris_image_url", qris_url)
+        
+        # Log manual action
+        operator = session.get("kasir_username", "admin")
+        write_log("SETTINGS_QRIS_CHANGE", f"User memperbarui gambar QRIS Kiosk", user=operator)
+        
+        return jsonify({"success": True, "qris_url": qris_url, "message": "QRIS berhasil diperbarui"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # =========================================================================
 # 4. CLIENT ACCESS ENDPOINT (MGCTM SECURE SINKRONISASI)
 # =========================================================================

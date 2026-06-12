@@ -129,7 +129,9 @@ const API = {
         create: data => API.request('/api/pc', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/pc/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
         delete: id => API.request(`/api/pc/${id}`, { method: 'DELETE' }),
-        batch: data => API.request('/api/pc/batch', { method: 'POST', body: JSON.stringify(data) })
+        batch: data => API.request('/api/pc/batch', { method: 'POST', body: JSON.stringify(data) }),
+        wol: (pcIds) => API.request('/api/pc/wol', { method: 'POST', body: JSON.stringify({ pc_ids: pcIds }) }),
+        wolMac: (macAddresses) => API.request('/api/pc/wol', { method: 'POST', body: JSON.stringify({ mac_addresses: macAddresses }) })
     },
 
     // 🔗 LOGIKA SESI (GUEST & MEMBER)

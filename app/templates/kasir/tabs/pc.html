@@ -4,17 +4,17 @@
     <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h3 class="text-sm font-bold text-neutral-100 tracking-wide">Unit PC</h3>
-                <p class="text-[10px] text-neutral-500 mt-0.5">Kelola stasiun warnet — tambah satu per satu atau secara massal</p>
+                <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide">Unit PC</h3>
+                <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Kelola stasiun warnet — tambah satu per satu atau secara massal</p>
             </div>
             <div class="flex items-center gap-2">
                 <button onclick="PC.showAddModal()"
-                    class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded-lg transition-colors flex items-center gap-2">
+                    class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Tambah PC
                 </button>
                 <button onclick="PC.showAddBatchModal()"
-                    class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded-lg transition-colors flex items-center gap-2">
+                    class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z"></path></svg>
                     Batch Import
                 </button>
@@ -24,20 +24,20 @@
 
     <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <h3 class="text-xs font-bold text-neutral-400 uppercase tracking-wider">Daftar PC</h3>
+            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-400 uppercase tracking-wider">Daftar PC</h3>
             <div class="flex flex-wrap items-center gap-2">
                 <input type="text" id="pc-search-input" placeholder="Cari PC / IP / MAC..."
-                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 w-48"
+                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 w-48"
                     onkeypress="if(event.key === 'Enter') PC.doSearch()">
                 <select id="pc-grup-filter-select"
-                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
+                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
                     onchange="PC.doSearch()">
                     <option value="">Semua Grup</option>
                 </select>
                 <button onclick="PC.doSearch()"
-                    class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded-lg transition-colors">Cari</button>
+                    class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Cari</button>
                 <button onclick="PC.clearSearch()"
-                    class="px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded-lg transition-colors">Reset</button>
+                    class="px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded-lg transition-colors">Reset</button>
             </div>
         </div>
         <div id="pc-table" class="overflow-x-hidden w-full">
