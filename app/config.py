@@ -27,7 +27,6 @@ class Config:
         PERMANENT_SESSION_LIFETIME (int): Lifetime session dalam detik (24 jam).
         CLIENT_API_KEY (str): API key untuk autentikasi client C#.
         DEBUG_MODE (bool): Flag mode debug aplikasi.
-        POLLING_INTERVAL (int): Interval polling client dalam detik.
     """
     
     SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -40,6 +39,5 @@ class Config:
     # Tambahan untuk kebutuhan aplikasi
     CLIENT_API_KEY = os.environ.get('CLIENT_API_KEY')
     DEBUG_MODE = os.environ.get('DEBUG_MODE', 'False').lower() == 'true'
-    POLLING_INTERVAL = int(os.environ.get('POLLING_INTERVAL', 5))
     BLACKOUT_THRESHOLD_MINUTES = int(os.environ.get('BLACKOUT_THRESHOLD_MINUTES', 60))
     WAITRESS_THREADS = int(os.environ.get('WAITRESS_THREADS', 8))
