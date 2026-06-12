@@ -1,17 +1,21 @@
 @echo off
-title TMBilling Server Stopper
+title TMBilling Server - Stop
 color 0C
 
 echo ==========================================================
-echo 🛑 Menghentikan server TMBilling di background...
+echo   TMBilling Server - Menghentikan Server...
 echo ==========================================================
 
-:: Hentikan proses pythonw.exe
+:: Hentikan proses pythonw.exe (server background)
 taskkill /f /im pythonw.exe >nul 2>&1
 
-echo.
-echo ==========================================================
-echo ✅ Server berhasil dihentikan!
-echo Jendela ini akan otomatis menutup dalam 3 detik.
+if %errorlevel% equ 0 (
+    echo.
+    echo [OK] Server TMBilling berhasil dihentikan.
+) else (
+    echo.
+    echo [INFO] Tidak ada proses server yang sedang berjalan.
+)
+
 echo ==========================================================
 timeout /t 3 >nul
