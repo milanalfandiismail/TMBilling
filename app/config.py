@@ -41,5 +41,5 @@ class Config:
     CLIENT_API_KEY = os.environ.get('CLIENT_API_KEY')
     DEBUG_MODE = os.environ.get('DEBUG_MODE', 'False').lower() == 'true'
     POLLING_INTERVAL = int(os.environ.get('POLLING_INTERVAL', 5))
-    BLACKOUT_THRESHOLD_MINUTES = int(os.environ.get('BLACKOUT_THRESHOLD_MINUTES', 1))
+    BLACKOUT_THRESHOLD_MINUTES = int(os.environ.get('BLACKOUT_THRESHOLD_MINUTES', 60))
     WAITRESS_THREADS = int(os.environ.get('WAITRESS_THREADS', 8))
