@@ -49,7 +49,7 @@ class BackupService:
         """
         thread = threading.Thread(target=self._run, daemon=True)
         thread.start()
-        print(f"[v1.0.2] Backup Service Active | Interval: {self.interval}s")
+        print(f"[v1.0] Backup Service Active | Interval: {self.interval}s")
 
     def _run(self):
         """Loop utama backup yang berjalan di background thread.

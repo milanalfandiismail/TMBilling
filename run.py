@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # Cegah double execution saat Flask debug mode (reloader) aktif
     if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         scheduler.start()
-        print("[v1.0.6-alpha2] Background Tasks Started (Cleanup & Backup)")
+        print("[v1.0] Background Tasks Started (Cleanup & Backup)")
     
     # Mode produksi menggunakan Waitress jika DEBUG_MODE = False
     is_debug = app.config.get("DEBUG_MODE", False)
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         # Mengambil konfigurasi threads dari app.config (default: 8)
         threads_count = app.config.get("WAITRESS_THREADS", 8)
         from waitress import serve
-        print("🚀 [PRODUCTION] Menjalankan server TMBilling menggunakan WSGI Waitress...")
-        print("🔗 [PRODUCTION] Alamat: http://0.0.0.0:7015")
-        print(f"🧵 [PRODUCTION] Threads (Workers): {threads_count}")
+        print("* [PRODUCTION] Menjalankan server TMBilling menggunakan WSGI Waitress...")
+        print("* [PRODUCTION] Alamat: http://0.0.0.0:7015")
+        print(f"* [PRODUCTION] Threads (Workers): {threads_count}")
         serve(app, host="0.0.0.0", port=7015, threads=threads_count)
