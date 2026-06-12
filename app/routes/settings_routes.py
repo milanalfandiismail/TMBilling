@@ -102,9 +102,8 @@ def update_client_api_key():
         current_app.config["CLIENT_API_KEY"] = value
         
         # 2. Update .env file programmatically to persist across restarts
-        env_path = os.path.join(current_app.root_path, '.env')
-        if not os.path.exists(env_path):
-            env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.env'))
+        # current_app.root_path = folder app/, satu level naik ke root project
+        env_path = os.path.abspath(os.path.join(current_app.root_path, '..', '.env'))
             
         lines = []
         updated = False
