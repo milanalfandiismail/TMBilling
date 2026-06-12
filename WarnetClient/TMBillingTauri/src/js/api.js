@@ -45,6 +45,10 @@ export const Api = {
         return await invoke('get_external_bg');
     },
 
+    async getWarnetConfig() {
+        return await invoke('get_client_warnet');
+    },
+
     // Listener Event dari Rust
     async onEvent(name, callback) {
         return await listen(name, (event) => callback(event.payload));

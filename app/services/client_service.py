@@ -15,10 +15,17 @@ from app.services.settings_service import SettingsService
 from app.utils.logger import write_log
 
 
+# Antrean instruksi perintah real-time per PC (Key: pc_id, Value: command_type)
+PENDING_COMMANDS = {}
 
 
 class ClientService:
     """Service untuk endpoint client C#."""
+
+    @staticmethod
+    def queue_command(pc_id, command_type):
+        """Menambahkan perintah ke antrean PC."""
+        PENDING_COMMANDS[pc_id] = command_type
 
     @staticmethod
     def _normalize_mac(mac):
@@ -102,90 +109,106 @@ class ClientService:
             # Jika klien ngaku admin tapi di DB sudah dimatikan (oleh kasir),
             # maka kita paksa klien untuk LOCK (kembali ke mode kiosk).
             # PENGECUALIAN: role "emergency" selalu diizinkan tanpa soal is_admin_mode
+            res = None
+
+            # 🔥 STATUS ADMIN AUTHORITY
+            # Jika klien ngaku admin tapi di DB sudah dimatikan (oleh kasir),
+            # maka kita paksa klien untuk LOCK (kembali ke mode kiosk).
+            # PENGECUALIAN: role "emergency" selalu diizinkan tanpa soal is_admin_mode
             if role == "admin" and not pc.is_admin_mode:
                 write_log("REMOTE_LOGOUT", f"PC {pc.kode} dipaksa logout admin oleh server")
-                return {
+                res = {
                     "status": "kosong",
                     "pc_kode": pc.kode,
                     "command": "lock"
                 }
 
-            # Sebaliknya, jika klien bukan admin tapi di DB tercatat admin, 
-            # maka sync status DB agar dashboard kasir akurat.
-            if role != "admin" and pc.is_admin_mode:
-                pc.is_admin_mode = False
-                db.session.commit()
-
-            # Cek apakah PC sedang dalam mode Admin (Maintenance)
-            # Jika admin mode aktif di DB, maka PC TIDAK BOLEH dianggap kosong.
-            if pc.is_admin_mode:
-                return {
-                    "status": "admin",
-                    "pc_kode": pc.kode,
-                    "shutdown_timer": 0
-                }
-            
-            # Jika PC Kosong (Tidak ada Sesi & Bukan Admin) -> Kirim Timer Auto-Shutdown
-            if not sesi:
-                timer_str = SettingsService.get("auto_shutdown_timer_seconds", "180")
-                try:
-                    shutdown_timer = int(timer_str)
-                except ValueError:
-                    shutdown_timer = 180
-                shutdown_timer = max(30, min(600, shutdown_timer))
-                return {
-                    "status": "kosong",
-                    "pc_kode": pc.kode,
-                    "shutdown_timer": shutdown_timer
-                }
-
-            # C. Sesi Ada -> Update Sync & Hitung Sisa Waktu
-            try:
-                sesi.last_sync = now_local()
-                db.session.commit()
-            except:
-                write_log("SYNC_ERROR", f"Gagal update last_sync PC {pc.kode}")
-                pass
-
-            try:
-                sisa = SesiService.sync_waktu_member(sesi)
-            except Exception as inner_e:
-                write_log("CLIENT_STATUS_ERROR", f"Error sync PC {pc.kode}: {inner_e}")
-                sisa = 0
-
-            # D. Jika Waktu Habis -> Selesaikan Sesi
-            if sisa <= 0:
-                sesi.status = "selesai"
-                sesi.selesai_pada = now_local()
-                db.session.commit()
-                
-                timer_str = SettingsService.get("auto_shutdown_timer_seconds", "180")
-                try:
-                    shutdown_timer = int(timer_str)
-                except ValueError:
-                    shutdown_timer = 180
-                shutdown_timer = max(30, min(600, shutdown_timer))
-                return {
-                    "status": "kosong",
-                    "message": "Waktu habis",
-                    "pc_kode": pc.kode,
-                    "shutdown_timer": shutdown_timer
-                }
-
-            # E. Return Status Aktif Normal
-            if role == "admin":
-                status_text = "admin"
             else:
-                status_text = "aktif"
+                # Sebaliknya, jika klien bukan admin tapi di DB tercatat admin, 
+                # maka sync status DB agar dashboard kasir akurat.
+                if role != "admin" and pc.is_admin_mode:
+                    pc.is_admin_mode = False
+                    db.session.commit()
 
-            return {
-                "status": status_text,
-                "sisa_waktu": sisa,
-                "nama": sesi.member.username if sesi.member else (sesi.nama_guest or "Guest"),
-                "grup": pc.grup.nama if pc.grup else "reguler",
-                "pc_kode": pc.kode,
-                "shutdown_timer": 0 
-            }
+                # Cek apakah PC sedang dalam mode Admin (Maintenance)
+                # Jika admin mode aktif di DB, maka PC TIDAK BOLEH dianggap kosong.
+                if pc.is_admin_mode:
+                    res = {
+                        "status": "admin",
+                        "pc_kode": pc.kode,
+                        "shutdown_timer": 0
+                    }
+                
+                # Jika PC Kosong (Tidak ada Sesi & Bukan Admin) -> Kirim Timer Auto-Shutdown
+                elif not sesi:
+                    timer_str = SettingsService.get("auto_shutdown_timer_seconds", "180")
+                    try:
+                        shutdown_timer = int(timer_str)
+                    except ValueError:
+                        shutdown_timer = 180
+                    shutdown_timer = max(30, min(600, shutdown_timer))
+                    res = {
+                        "status": "kosong",
+                        "pc_kode": pc.kode,
+                        "shutdown_timer": shutdown_timer
+                    }
+
+                else:
+                    # C. Sesi Ada -> Update Sync & Hitung Sisa Waktu
+                    try:
+                        sesi.last_sync = now_local()
+                        db.session.commit()
+                    except:
+                        write_log("SYNC_ERROR", f"Gagal update last_sync PC {pc.kode}")
+                        pass
+
+                    try:
+                        sisa = SesiService.sync_waktu_member(sesi)
+                    except Exception as inner_e:
+                        write_log("CLIENT_STATUS_ERROR", f"Error sync PC {pc.kode}: {inner_e}")
+                        sisa = 0
+
+                    # D. Jika Waktu Habis -> Selesaikan Sesi
+                    if sisa <= 0:
+                        sesi.status = "selesai"
+                        sesi.selesai_pada = now_local()
+                        db.session.commit()
+                        
+                        timer_str = SettingsService.get("auto_shutdown_timer_seconds", "180")
+                        try:
+                            shutdown_timer = int(timer_str)
+                        except ValueError:
+                            shutdown_timer = 180
+                        shutdown_timer = max(30, min(600, shutdown_timer))
+                        res = {
+                            "status": "kosong",
+                            "message": "Waktu habis",
+                            "pc_kode": pc.kode,
+                            "shutdown_timer": shutdown_timer
+                        }
+                    else:
+                        # E. Return Status Aktif Normal
+                        if role == "admin":
+                            status_text = "admin"
+                        else:
+                            status_text = "aktif"
+
+                        res = {
+                            "status": status_text,
+                            "sisa_waktu": sisa,
+                            "nama": sesi.member.username if sesi.member else (sesi.nama_guest or "Guest"),
+                            "grup": pc.grup.nama if pc.grup else "reguler",
+                            "pc_kode": pc.kode,
+                            "shutdown_timer": 0 
+                        }
+
+            if res and "command" not in res:
+                cmd = PENDING_COMMANDS.pop(pc.id, None)
+                if cmd:
+                    res["command"] = cmd
+
+            return res
+
 
         except Exception as e:
             write_log("CLIENT_STATUS_CRASH", f"Error fatal polling {ip_address}: {e}")

@@ -40,7 +40,7 @@ const Blackout = {
             const data = await API.blackout.list(date);
             this.renderList(data.data || []);
         } catch (err) {
-            area.innerHTML = '<div class="text-center text-neutral-500 py-10 text-xs">Gagal memuat data</div>';
+            area.innerHTML = '<div class="text-center text-neutral-500 py-10 text-xs lg:text-base">Gagal memuat data</div>';
         }
     },
 
@@ -50,8 +50,8 @@ const Blackout = {
         area.innerHTML = `
             <div class="flex flex-col items-center justify-center py-16 text-neutral-500 bg-[#0c0c0c] border border-dashed border-[#1c1c1c] rounded">
                 <svg class="w-12 h-12 mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                <p class="text-xs font-bold uppercase tracking-wider text-neutral-300">Sistem Stabil</p>
-                <p class="text-[10px] mt-1 text-neutral-500">Tidak ada sesi blackout yang terdeteksi.</p>
+                <p class="text-xs lg:text-base font-bold uppercase tracking-wider text-neutral-300">Sistem Stabil</p>
+                <p class="text-[10px] lg:text-base mt-1 text-neutral-500">Tidak ada sesi blackout yang terdeteksi.</p>
             </div>`;
     },
 
@@ -59,7 +59,7 @@ const Blackout = {
         const area = document.getElementById('blackout-list');
         if (!area) return;
         if (list.length === 0) {
-            area.innerHTML = '<div class="text-center text-neutral-500 py-12 text-xs">— Tidak Ada Riwayat Blackout —</div>';
+            area.innerHTML = '<div class="text-center text-neutral-500 py-12 text-xs lg:text-base">— Tidak Ada Riwayat Blackout —</div>';
             return;
         }
 
@@ -72,7 +72,7 @@ const Blackout = {
             html += `
                 <div class="mb-4 flex items-center gap-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                    <h4 class="text-xs font-bold text-red-400 uppercase tracking-wider">Tertunda (${pending.length})</h4>
+                    <h4 class="text-xs lg:text-base font-bold text-red-400 uppercase tracking-wider">Tertunda (${pending.length})</h4>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">`;
             pending.forEach(s => { html += this.renderCard(s); });
@@ -82,8 +82,8 @@ const Blackout = {
         if (resolved.length > 0) {
             html += `
                 <div class="mb-4 flex items-center justify-between">
-                    <h4 class="text-xs font-bold text-neutral-400 uppercase tracking-wider">Selesai (${resolved.length})</h4>
-                    <button onclick="Blackout.clearResolved()" class="text-xs text-red-400 hover:text-red-300 font-bold uppercase tracking-wider transition-colors">Bersihkan Log</button>
+                    <h4 class="text-xs lg:text-base font-bold text-neutral-400 uppercase tracking-wider">Selesai (${resolved.length})</h4>
+                    <button onclick="Blackout.clearResolved()" class="text-xs lg:text-base text-red-400 hover:text-red-300 font-bold uppercase tracking-wider transition-colors">Bersihkan Log</button>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-60">`;
             resolved.forEach(s => { html += this.renderCard(s, true); });
@@ -102,23 +102,23 @@ const Blackout = {
                 aksiHtml = `
                     <div class="flex gap-2">
                         <button onclick="Blackout.resolveMember(${s.id}, '${s.username}', ${s.sisa_waktu_mati})" 
-                            class="px-3 py-1.5 bg-[#171717] hover:bg-neutral-100 border border-[#262626] text-neutral-300 hover:text-black text-xs font-bold rounded transition-colors">REFUND ${s.sisa_waktu_mati}m</button>
+                            class="px-3 py-1.5 bg-[#171717] hover:bg-neutral-100 border border-[#262626] text-neutral-300 hover:text-black text-xs lg:text-base font-bold rounded transition-colors">REFUND ${s.sisa_waktu_mati}m</button>
                         <button onclick="Blackout.resolveGuestTutup(${s.id}, '${s.username}')" 
-                            class="px-3 py-1.5 bg-[#2d1215] hover:bg-[#ef4444] border border-[#ef4444]/30 text-red-400 hover:text-white text-xs font-bold rounded transition-colors">CLOSE</button>
+                            class="px-3 py-1.5 bg-[#2d1215] hover:bg-[#ef4444] border border-[#ef4444]/30 text-red-400 hover:text-white text-xs lg:text-base font-bold rounded transition-colors">CLOSE</button>
                     </div>`;
             } else {
                 aksiHtml = `
                     <div class="flex gap-2 flex-wrap">
                         <button onclick="Blackout.resolveGuestSama(${s.id}, '${s.username}')" 
-                            class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#171717] text-neutral-300 text-xs font-bold rounded transition-colors">SAME PC</button>
+                            class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#171717] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors">SAME PC</button>
                         <button onclick="Blackout.showLanjutModal(${s.id}, '${s.username}', '${s.grup}')" 
-                            class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors">MOVE PC</button>
+                            class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">MOVE PC</button>
                         <button onclick="Blackout.resolveGuestTutup(${s.id}, '${s.username}')" 
-                            class="px-3 py-1.5 bg-[#2d1215] hover:bg-[#ef4444] border border-[#ef4444]/30 text-red-400 hover:text-white text-xs font-bold rounded transition-colors">CLOSE</button>
+                            class="px-3 py-1.5 bg-[#2d1215] hover:bg-[#ef4444] border border-[#ef4444]/30 text-red-400 hover:text-white text-xs lg:text-base font-bold rounded transition-colors">CLOSE</button>
                     </div>`;
             }
         } else {
-            aksiHtml = `<span class="text-xs font-bold text-neutral-400 flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg> Teratasi</span>`;
+            aksiHtml = `<span class="text-xs lg:text-base font-bold text-neutral-400 flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg> Teratasi</span>`;
         }
 
         const borderClass = resolved ? 'border-[#1c1c1c] opacity-50' : 'border-[#262626]';
@@ -133,8 +133,8 @@ const Blackout = {
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 mb-1">
-                            <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-[#050505] text-neutral-400 border border-[#1c1c1c]">${isMember ? 'MEMBER' : 'GUEST'}</span>
-                            <span class="text-xs font-bold text-neutral-200 lg:truncate break-words whitespace-normal font-mono">${s.username}</span>
+                            <span class="text-[9px] lg:text-base font-bold px-2 py-0.5 rounded bg-[#050505] text-neutral-400 border border-[#1c1c1c]">${isMember ? 'MEMBER' : 'GUEST'}</span>
+                            <span class="text-xs lg:text-base font-bold text-neutral-200 lg:truncate break-words whitespace-normal font-mono">${s.username}</span>
                         </div>
                         <div class="flex items-center gap-3 text-[11px] text-neutral-500">
                             <span class="text-neutral-300 font-bold font-mono">PC ${s.pc_kode}</span>
@@ -165,7 +165,7 @@ const Blackout = {
     },
 
     async resolveMember(sesiId, username, sisa) {
-        const message = `<div class="text-center"><p class="text-xs text-neutral-400">Refund <span class="text-neutral-200 font-bold font-mono">${sisa} menit</span> ke member <span class="text-neutral-200 font-bold font-mono">"${username}"</span>?</p></div>`;
+        const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-400">Refund <span class="text-neutral-200 font-bold font-mono">${sisa} menit</span> ke member <span class="text-neutral-200 font-bold font-mono">"${username}"</span>?</p></div>`;
         Modal.confirm(message, async () => {
             try {
                 await API.blackout.resolveMember(sesiId);
@@ -178,7 +178,7 @@ const Blackout = {
     },
 
     async resolveGuestSama(sesiId, namaGuest) {
-        const message = `<div class="text-center"><p class="text-xs text-neutral-400">Lanjutkan sesi <span class="text-neutral-200 font-bold font-mono">"${namaGuest}"</span> di PC yang sama?</p></div>`;
+        const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-400">Lanjutkan sesi <span class="text-neutral-200 font-bold font-mono">"${namaGuest}"</span> di PC yang sama?</p></div>`;
         Modal.confirm(message, async () => {
             try {
                 await API.blackout.resolveGuestSama(sesiId);
@@ -204,8 +204,8 @@ const Blackout = {
             kosong.forEach(pc => {
                 cardsHtml += `
                     <div class="pc-card-tujuan bg-[#050505] border border-[#1c1c1c] rounded p-3 cursor-pointer hover:border-neutral-500 transition-colors text-center" data-pc-id="${pc.id}">
-                        <div class="font-bold text-neutral-200 font-mono text-xs">${pc.kode}</div>
-                        <div class="text-[9px] text-neutral-500 font-mono">${pc.ip_address || '-'}</div>
+                        <div class="font-bold text-neutral-200 font-mono text-xs lg:text-base">${pc.kode}</div>
+                        <div class="text-[9px] lg:text-base text-neutral-500 font-mono">${pc.ip_address || '-'}</div>
                     </div>`;
             });
             cardsHtml += '</div>';
@@ -214,14 +214,14 @@ const Blackout = {
                 <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 max-w-2xl w-[calc(100%-2rem)] mx-auto md:w-full">
                     <div class="flex items-center justify-between mb-4 pb-4 border-b border-[#1c1c1c]">
                         <div>
-                            <h3 class="text-xs font-bold text-neutral-200 uppercase tracking-wider">Pindahkan Sesi</h3>
-                            <p class="text-[9px] text-neutral-500 mt-1">Guest: ${namaGuest} &middot; ${grup.toUpperCase()}</p>
+                            <h3 class="text-xs lg:text-base font-bold text-neutral-200 uppercase tracking-wider">Pindahkan Sesi</h3>
+                            <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Guest: ${namaGuest} &middot; ${grup.toUpperCase()}</p>
                         </div>
                         <button onclick="Modal.closeModal()" class="text-neutral-500 hover:text-neutral-300 text-xl leading-none">&times;</button>
                     </div>
                     ${cardsHtml}
                     <div class="flex justify-end mt-4">
-                        <button onclick="Modal.closeModal()" class="px-4 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-400 text-xs font-bold rounded transition-colors">Batal</button>
+                        <button onclick="Modal.closeModal()" class="px-4 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded transition-colors">Batal</button>
                     </div>
                 </div>
             `);
@@ -247,7 +247,7 @@ const Blackout = {
     },
 
     async resolveGuestTutup(sesiId, namaGuest) {
-        const message = `<div class="text-center"><p class="text-xs text-neutral-400">Tutup sesi untuk guest <span class="text-red-400 font-bold">"${namaGuest}"</span>?</p></div>`;
+        const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-400">Tutup sesi untuk guest <span class="text-red-400 font-bold">"${namaGuest}"</span>?</p></div>`;
         Modal.confirm(message, async () => {
             try {
                 await API.blackout.resolveGuestTutup(sesiId);
@@ -261,7 +261,7 @@ const Blackout = {
 
     async clearResolved() {
         if (!this.currentDate) return;
-        const message = `<div class="text-center"><p class="text-xs text-neutral-400 font-bold uppercase tracking-wider">Hapus semua data terselesaikan?</p><p class="text-[10px] text-neutral-500 mt-1">Tanggal: ${this.currentDate}</p></div>`;
+        const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Hapus semua data terselesaikan?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Tanggal: ${this.currentDate}</p></div>`;
         Modal.confirm(message, async () => {
             try {
                 await API.blackout.clearResolved(this.currentDate);

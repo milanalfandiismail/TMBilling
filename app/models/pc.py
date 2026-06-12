@@ -77,7 +77,22 @@ class PC(db.Model):
         Returns:
             dict: Dictionary berisi detail PC, status penggunaan, dan info sesi aktif.
         """
+        import os
+        from flask import current_app
+        from datetime import datetime
+
         s = self.sesi_aktif
+
+        screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{self.kode}.png")
+        has_screenshot = os.path.exists(screenshot_path)
+        screenshot_time = None
+        if has_screenshot:
+            try:
+                mtime = os.path.getmtime(screenshot_path)
+                screenshot_time = datetime.fromtimestamp(mtime).strftime("%d/%m/%Y %H:%M:%S")
+            except Exception:
+                pass
+
         return {
             "id": self.id,
             "kode": self.kode,
@@ -89,5 +104,7 @@ class PC(db.Model):
             "aktif": self.aktif,
             "status": "terpakai" if s else ("admin" if self.is_admin_mode else "kosong"),
             "sesi_id": s.id if s else None,
-            "is_admin_mode": self.is_admin_mode
+            "is_admin_mode": self.is_admin_mode,
+            "screenshot_url": f"/static/uploads/screenshots/{self.kode}.png" if has_screenshot else None,
+            "screenshot_time": screenshot_time
         }

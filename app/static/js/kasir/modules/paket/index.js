@@ -119,7 +119,7 @@ const Paket = {
     },
 
     async delete(id) {
-        const message = '<div class="text-center"><p class="text-xs text-neutral-400">Hapus paket ini? Sesi berjalan tidak terpengaruh.</p></div>';
+        const message = '<div class="text-center"><p class="text-xs lg:text-base text-neutral-400">Hapus paket ini? Sesi berjalan tidak terpengaruh.</p></div>';
         Modal.confirm(message, async () => {
             try {
                 await API.paket.delete(id);

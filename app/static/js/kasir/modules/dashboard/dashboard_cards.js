@@ -83,7 +83,7 @@ const DashboardCards = {
         const isLostConnection = isActive && (pc.status_koneksi === 'no_heartbeat' || pc.status_koneksi === 'offline');
 
         const customColor = Dashboard.lastData?.grup_meta?.[pc.grup]?.warna || '#737373';
-        const labelHtml = `<span class="px-1 py-0.5 rounded-[3px] text-[8px] font-bold border leading-none tracking-wide" style="color: ${customColor}; border-color: ${customColor}30; background-color: ${customColor}10">${pc.grup.toUpperCase()}</span>`;
+        const labelHtml = `<span class="px-1 py-0.5 rounded-[3px] text-[8px] lg:text-[10px] font-bold border leading-none tracking-wide" style="color: ${customColor}; border-color: ${customColor}30; background-color: ${customColor}10">${pc.grup.toUpperCase()}</span>`;
 
         let cardContent = '';
         let buttons = '';
@@ -104,8 +104,8 @@ const DashboardCards = {
             cardContent = `
                 <div class="text-center py-2">
                     <div class="text-lg font-black text-red-500 font-mono tracking-tight">${sesi ? Utils.formatMenit(sesi.sisa_menit) : '--:--'}</div>
-                    <div class="text-[9px] text-[#f43f5e] font-black tracking-widest animate-pulse mt-1">⚠️ TERPUTUS</div>
-                    <div class="text-[10px] text-neutral-400 font-medium lg:truncate break-words whitespace-normal mt-1">${sesi ? (sesi.nama_guest || sesi.member_nama || 'Guest') : ''}</div>
+                    <div class="text-[10px] text-[#f43f5e] font-black tracking-widest animate-pulse mt-1">⚠️ TERPUTUS</div>
+                    <div class="text-[10px] text-neutral-400 font-medium truncate block mt-1" title="${sesi ? (sesi.nama_guest || sesi.member_nama || 'Guest') : ''}">${sesi ? (sesi.nama_guest || sesi.member_nama || 'Guest') : ''}</div>
                 </div>
             `;
             buttons = `
@@ -132,7 +132,7 @@ const DashboardCards = {
                 cardContent = `
                     <div class="text-center py-2 ${textColorClass}">
                         <div class="text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1 py-0.5 rounded inline-block">ADMIN MODE</div>
-                        <div class="text-xs font-bold lg:truncate break-words whitespace-normal mt-1.5">${sesi.member_nama || 'ADMIN'}</div>
+                        <div class="text-xs font-bold truncate block mt-1.5">${sesi.member_nama || 'ADMIN'}</div>
                     </div>
                 `;
                 buttons = `
@@ -163,7 +163,7 @@ const DashboardCards = {
                 cardContent = `
                     <div class="text-center py-2 ${textColorClass}">
                         <div class="text-lg font-black font-mono tracking-tight">${timeStr}</div>
-                        <div class="text-[10px] font-bold lg:truncate break-words whitespace-normal opacity-80">${sesi.nama_guest || sesi.member_nama || 'Guest'}</div>
+                        <div class="text-[10px] font-bold truncate block opacity-80" title="${sesi.nama_guest || sesi.member_nama || 'Guest'}">${sesi.nama_guest || sesi.member_nama || 'Guest'}</div>
                         ${progressBarHtml}
                     </div>
                 `;
@@ -189,7 +189,7 @@ const DashboardCards = {
             cardContent = `
                 <div class="text-center py-2 ${textColorClass}">
                     <div class="text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1 py-0.5 rounded inline-block">ADMIN BYPASS</div>
-                    ${pc.active_window ? `<div class="text-[10px] font-medium lg:truncate break-words whitespace-normal mt-1 opacity-70">${pc.active_window}</div>` : ''}
+                    ${pc.active_window ? `<div class="text-[10px] font-medium truncate block mt-1 opacity-70" title="${pc.active_window}">${pc.active_window}</div>` : ''}
                 </div>
             `;
             buttons = `
@@ -242,7 +242,8 @@ const DashboardCards = {
 
         return `
             <div class="border ${cardBorderClass} ${cardBgClass} ${cardOpacityClass} rounded-lg p-3 cursor-pointer transition-all hover-card-trigger" 
-                 oncontextmenu="event.preventDefault(); Dashboard.showDetail(${pc.id})">
+                 onclick="Dashboard.showDetail(${pc.id})"
+                 oncontextmenu="event.preventDefault(); event.stopPropagation(); Dashboard.showContextMenu(event, ${pc.id})">
                 <!-- Row 1: Kode + Status -->
                 <div class="flex items-center justify-between mb-1">
                     <span class="text-sm font-bold tracking-tight ${textColorClass}">${pc.kode}</span>

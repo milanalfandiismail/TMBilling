@@ -134,3 +134,27 @@ def emergency_login():
         return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@client_bp.route("/warnet", methods=["GET"])
+@api_key_required
+def get_warnet_config():
+    """Ambil konfigurasi lengkap Kiosk Client (Judul, Aturan, QRIS, & Paket)."""
+    try:
+        from app.services.settings_service import SettingsService
+        from app.services.paket_service import PaketService
+        
+        title = SettingsService.get("warnet_title", "TMBilling")
+        announcement = SettingsService.get("warnet_announcement", "1. Jaga kebersihan dan ketertiban\n2. Dilarang membawa makanan dari luar\n3. Harap matikan PC setelah selesai bermain\n4. Hubungi kasir jika memerlukan bantuan")
+        qris_url = SettingsService.get("qris_image_url", "/static/uploads/qris/default_qris.png")
+        
+        paket = PaketService.get_all(aktif_only=True)
+        
+        return jsonify({
+            "title": title,
+            "announcement": announcement,
+            "qris_url": qris_url,
+            "paket": [p.to_dict() for p in paket]
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

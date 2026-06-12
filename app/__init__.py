@@ -94,7 +94,33 @@ def create_app():
         """Redirect root URL to login page."""
         return redirect("/kasir/login")
 
+    @app.context_processor
+    def inject_global_settings():
+        try:
+            from app.services.settings_service import SettingsService
+            title = SettingsService.get("warnet_title", "TMBilling")
+        except Exception:
+            title = "TMBilling"
+        return dict(warnet_title=title)
+
     with app.app_context():
         db.create_all()
+        
+        # Otomatis buat user admin default jika database kosong
+        try:
+            from app.models import User
+            if User.query.count() == 0:
+                admin = User(
+                    username="admin",
+                    nama_lengkap="Administrator",
+                    role="admin",
+                    aktif=True
+                )
+                admin.set_password("admin123")
+                db.session.add(admin)
+                db.session.commit()
+                print("✅ [TMBilling] Database kosong. Admin default otomatis dibuat (username: admin, password: admin123)")
+        except Exception as e:
+            app.logger.error(f"Gagal membuat admin default saat bootstrap: {e}")
 
     return app

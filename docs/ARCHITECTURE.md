@@ -163,7 +163,7 @@ Client & Agent Components:
 │   ├── Low-Level Keyboard Hook (`WH_KEYBOARD_LL`): Disuntikkan via Windows Hook API dalam thread Rust terpisah untuk menghadang total Alt+Tab, Alt+F4, tombol Windows, dan kombinasi Ctrl+Shift+Esc secara low-level. Hook dilepas secara instan saat Admin masuk.
 │   ├── 🔊 Asynchronous Audio Warning Alert: Sistem alarm 5 menit hemat resource. Memutar `warning_5min.mp3` secara asinkron di latar belakang menggunakan HTML5 Audio API sehingga 100% aman tanpa memicu unfocus mouse/keyboard game fullscreen pemain.
 │   └── 🔑 Automatic Hex-XOR De-Obfuscation: Backend Tauri (`api.rs`) mendeteksi dan secara otomatis men-deobfuscate `ApiKey` ter-scramble dari `config.ini` menggunakan sandi internal `TMBillingSecretKey2026SecureObfuscation` sebelum mengirimkannya ke server Flask.
-├── WarnetClient/TMMonitor/        — Telemetry helper (Rust target GNU)
+├── WarnetAgent/TMBilling_Monitor/ — Telemetry helper (Rust) (Proyek C# lama di WarnetClient/TMMonitor/ telah didepresiasi)
 │   ├── Mengirim data metrik sistem (CPU, GPU, RAM, Suhu) secara asinkron ke server setiap 60 detik.
 │   └── Memiliki modul watchdog siluman terpisah yang memantau keaktifan Master Guardian setiap 5 detik.
 ├── WarnetAgent/MGCTM/             — Core launcher agent (Rust) yang memicu startup otomatis seluruh komponen client.
@@ -171,6 +171,7 @@ Client & Agent Components:
 ├── WarnetAgent/mtm/               — Aggressive anti-kill watchdog (Rust) yang berjalan dari `%APPDATA%\Microsoft\Protect\`, bertugas membangkitkan kembali launcher secara paksa jika proses dimatikan secara tidak wajar.
 └── WarnetAgent/TMBilling_Uninstaller/ — Offline Fallback Uninstaller (Rust)
     └── Membaca dan men-deobfuscate cached `EmergencyToken` dari Registry secara aman untuk otentikasi kata sandi darurat luring tanpa memerlukan koneksi internet.
+
 ```
 
 ## Database Migrations

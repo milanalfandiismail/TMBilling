@@ -3,12 +3,12 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="md:col-span-1 bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 max-h-[85vh] flex flex-col">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xs font-bold text-neutral-200 uppercase tracking-wider">Riwayat Transaksi</h3>
+                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Riwayat Transaksi</h3>
                 <button onclick="Struk.loadHistory()"
-                    class="text-xs text-neutral-500 hover:text-neutral-300 font-bold">↻</button>
+                    class="text-xs lg:text-base text-neutral-500 hover:text-neutral-300 font-bold">↻</button>
             </div>
             <select id="struk-date-picker" onchange="Struk.loadHistory(this.value)"
-                class="mb-3 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500">
+                class="mb-3 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
                 <option value="">Memuat...</option>
             </select>
             <div id="struk-history-list" class="flex-1 space-y-2 overflow-y-auto scrollbar-mono min-h-0">
@@ -19,19 +19,19 @@
             <div id="struk-pagination" class="mt-4"></div>
         </div>
         <div class="md:col-span-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-            <h3 class="text-xs font-bold text-neutral-200 uppercase tracking-wider mb-4">Detail Struk</h3>
+            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Detail Struk</h3>
             <div class="flex gap-3 mb-4">
                 <input type="text" id="struk-no" placeholder="Cari nomor struk..."
-                    class="flex-1 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500">
+                    class="flex-1 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500">
                 <button onclick="Struk.cariByNomor()"
-                    class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors">Cari</button>
+                    class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">Cari</button>
             </div>
             <div id="struk-preview"
-                class="bg-[#050505] border border-[#1c1c1c] rounded p-4 text-xs min-h-[300px] flex items-center justify-center text-neutral-500">
+                class="bg-[#050505] border border-[#1c1c1c] rounded p-4 text-xs lg:text-base min-h-[300px] flex items-center justify-center text-neutral-500">
                 Pilih transaksi untuk preview struk.</div>
             <div class="flex justify-end mt-4">
                 <button onclick="Struk.printPreview()" id="btn-print-struk"
-                    class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors hidden">Cetak Struk</button>
+                    class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors hidden">Cetak Struk</button>
             </div>
         </div>
     </div>

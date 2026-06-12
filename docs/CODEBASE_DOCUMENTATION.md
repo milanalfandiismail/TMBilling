@@ -152,11 +152,12 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 - File lock (deny delete/rename while running)
 - Hotkey Ctrl+Alt+A / F11 → admin login modal
 
-### 2.2 Rust Telemetry Helper (`TMMonitor/`)
+### 2.2 Rust Telemetry Helper (`WarnetAgent/TMBilling_Monitor/`)
 
-**Tech**: Rust
+**Tech**: Rust (menghasilkan binary `TMMonitor.exe`, menggantikan proyek C# lama di `WarnetClient/TMMonitor/`)
 
 **Fungsi**: Mengirim hardware telemetry (CPU/GPU temp, usage, RAM) ke server setiap 60 detik + watchdog siluman monitor MGCTM setiap 5 detik.
+
 
 ---
 
@@ -340,7 +341,6 @@ BLACKOUT_THRESHOLD_MINUTES=1
 | `EmergencyUser` | Hex-XOR obfuscated |
 | `EmergencyToken` | Hex-XOR obfuscated |
 | `Hash_*` | SHA256 hashes |
-
 ### Config.ini (C:\TMBILLING\config.ini)
 
 ```ini
@@ -351,7 +351,22 @@ emergency_user=...
 emergency_token=...
 ```
 
+
+### Database Settings Table (Dynamic Configuration)
+
+Pengaturan dinamis yang disimpan di tabel `settings` database SQLite/PostgreSQL (bisa diubah dari tab Settings dashboard kasir):
+
+| Key | Default Value | Description |
+|-----|---------------|-------------|
+| `auto_shutdown_timer_seconds` | `180` | Batas waktu mati otomatis PC client setelah logout (detik) |
+| `qris_image_url` | `/static/uploads/qris/default_qris.png` | Path gambar kode QRIS untuk pembayaran mandiri di lockscreen Kiosk |
+| `warnet_title` | `TMBilling` | Nama/judul warnet yang ditampilkan pada lockscreen PC Client |
+| `warnet_announcement` | *(Teks tata tertib)* | Aturan dan pengumuman yang dimunculkan pada Kiosk Client |
+| `uninstall_token` | `TM_UNINSTALL_SAFE_2026` | Token otentikasi online untuk mencopot (uninstall) billing klien |
+| `emergency_token` | `TM123qaz!@#` | Token keamanan darurat untuk uninstall offline dan bypass luring |
+
 ---
+
 
 ## 🚀 8. Quick Start
 
@@ -374,15 +389,21 @@ python run.py   # Waitress on :7015
 # Flask dev
 cd app && cp .env.example .env && python ../run.py
 
-# Tauri
+# Kompilasi Cepat: Build & Deploy semua komponen (Tauri + Rust) sekaligus
+# Jalankan script batch dari root folder:
+build_and_deploy.bat
+
+# Atau kompilasi secara manual satu per satu:
+# 1. Tauri Client UI
 cd WarnetClient/TMBillingTauri && npm install && npm run tauri dev
 
-# Rust agents
+# 2. Rust Agent/Watchdogs (MGCTM, Uninstaller, mtm, Telemetry Monitor)
 cd WarnetAgent/MGCTM && cargo build --release
 cd WarnetAgent/TMBilling_Uninstaller && cargo build --release
 cd WarnetAgent/mtm && cargo build --release
 cd WarnetAgent/TMBilling_Monitor && cargo build --release
 ```
+
 
 ---
 

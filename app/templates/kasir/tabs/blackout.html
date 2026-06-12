@@ -1,18 +1,18 @@
 <!-- ===== TAB: BLACKOUT ===== -->
 <div id="tab-blackout" class="tab-content hidden space-y-4">
     <div class="flex items-center justify-between">
-        <h3 class="text-xs font-bold text-amber-500 uppercase tracking-wider">Pemulihan Blackout</h3>
+        <h3 class="text-xs lg:text-[22px] font-bold text-amber-500 uppercase tracking-wider">Pemulihan Blackout</h3>
         <button onclick="Blackout.deteksi()"
-            class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded transition-colors">Deteksi Blackout</button>
+            class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs lg:text-base font-bold rounded transition-colors">Deteksi Blackout</button>
     </div>
     <div class="flex items-center gap-3">
         <select id="blackout-date-picker"
-            class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"></select>
+            class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"></select>
         <button onclick="Blackout.loadList(document.getElementById('blackout-date-picker').value)"
-            class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors">Tampilkan</button>
+            class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">Tampilkan</button>
         <button onclick="Blackout.load()"
-            class="px-4 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded transition-colors">↻ Refresh</button>
+            class="px-4 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors">↻ Refresh</button>
     </div>
     <div id="blackout-list"
-        class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 text-neutral-400 text-center text-xs">Klik "Deteksi Blackout" untuk mulai scan.</div>
+        class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 text-neutral-400 text-center text-xs lg:text-base">Klik "Deteksi Blackout" untuk mulai scan.</div>
 </div>

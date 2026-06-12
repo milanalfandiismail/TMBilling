@@ -46,8 +46,8 @@ const LaporanMenu = {
                 area.innerHTML = `
                     <div class="flex flex-col items-center justify-center py-16 text-neutral-500 bg-[#0c0c0c] border border-dashed border-[#1c1c1c] rounded">
                         <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
-                        <p class="text-xs font-bold uppercase tracking-wider text-neutral-300">Belum Ada Laporan</p>
-                        <p class="text-[10px] text-neutral-500 mt-1">Belum ada transaksi hari ini</p>
+                        <p class="text-xs lg:text-base font-bold uppercase tracking-wider text-neutral-300">Belum Ada Laporan</p>
+                        <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Belum ada transaksi hari ini</p>
                     </div>`;
                 return;
             }
@@ -61,7 +61,7 @@ const LaporanMenu = {
             select.value = firstDate;
             await this.loadByDate(firstDate);
         } catch (err) {
-            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">Gagal memuat daftar tanggal laporan menu</div>';
+            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:text-base">Gagal memuat daftar tanggal laporan menu</div>';
         }
     },
 
@@ -79,7 +79,7 @@ const LaporanMenu = {
             const data = await API.report.byTanggal(tanggal, kasirId, 1, 100);
             this.render(data);
         } catch (err) {
-            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs">Gagal memuat data laporan menu</div>';
+            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:text-base">Gagal memuat data laporan menu</div>';
         }
     },
 
@@ -88,7 +88,7 @@ const LaporanMenu = {
         if (!area) return;
 
         if (!data || data.error) {
-            area.innerHTML = '<div class="text-center py-10 text-neutral-500 text-xs">Tidak ada data</div>';
+            area.innerHTML = '<div class="text-center py-10 text-neutral-500 text-xs lg:text-base">Tidak ada data</div>';
             return;
         }
 
@@ -98,7 +98,7 @@ const LaporanMenu = {
         html += `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
                 <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 flex flex-col justify-between min-h-24">
-                    <span class="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Total Pendapatan Kantin & F&B</span>
+                    <span class="text-[10px] lg:text-base text-neutral-500 uppercase font-bold tracking-wider">Total Pendapatan Kantin & F&B</span>
                     <span class="text-2xl font-bold text-green-400 font-mono mt-2">${Utils.formatRupiah(data.total_pendapatan_menu || 0)}</span>
                 </div>
             </div>`;
@@ -108,9 +108,9 @@ const LaporanMenu = {
         if (menuList.length > 0) {
             html += `
                 <div class="overflow-x-hidden w-full">
-                    <table class="w-full text-xs block lg:table">
+                    <table class="w-full text-xs lg:text-base block lg:table">
                         <thead class="hidden lg:table-header-group">
-                            <tr class="text-[10px] text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
+                            <tr class="text-[10px] lg:text-base text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
                                 <th class="px-4 py-3 text-left">Waktu</th>
                                 <th class="px-4 py-3 text-left">Nota</th>
                                 <th class="px-4 py-3 text-left">Item Menu</th>
@@ -125,43 +125,43 @@ const LaporanMenu = {
                             ${menuList.map(tm => `
                                 <tr class="hover:bg-[#121212] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#2a2a2a] last:border-b-0 lg:border-b-0">
                                     <td class="px-4 py-3 text-neutral-400 font-mono flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Waktu</span>
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Waktu</span>
                                         <span>${tm.waktu || '-'}</span>
                                     </td>
                                     <td class="px-4 py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota</span>
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota</span>
                                         <span class="font-mono text-neutral-300">${tm.no_nota || '-'}</span>
                                     </td>
                                     <td class="px-4 py-3 text-neutral-200 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Item Menu</span>
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Item Menu</span>
                                         <span class="font-semibold">${tm.menu_nama || '-'}</span>
                                     </td>
                                     <td class="px-4 py-3 text-center font-mono flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Jumlah</span>
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Jumlah</span>
                                         <span>${tm.jumlah || 0}</span>
                                     </td>
                                     <td class="px-4 py-3 text-right font-mono font-bold text-neutral-200 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Total Harga</span>
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Total Harga</span>
                                         <span>${Utils.formatRupiah(tm.total_harga || 0)}</span>
                                     </td>
                                     <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pemesanan</span>
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pemesanan</span>
                                         <span>${tm.pc_kode === 'Tempat' ? 'Makan di Tempat' : 'Take Away'}</span>
                                     </td>
                                     <td class="px-4 py-3 text-neutral-500 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir</span>
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir</span>
                                         <span>${tm.kasir_nama || '-'}</span>
                                     </td>
                                     <td class="px-4 py-3 text-center flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
-                                        <button onclick="LaporanMenu.printStruk(${tm.id})" class="px-2.5 py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] font-bold rounded transition-colors">Cetak</button>
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
+                                        <button onclick="LaporanMenu.printStruk(${tm.id})" class="px-2.5 py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] lg:text-base font-bold rounded transition-colors">Cetak</button>
                                     </td>
                                 </tr>`).join('')}
                         </tbody>
                     </table>
                 </div>`;
         } else {
-            html += '<div class="text-center py-10 text-neutral-500 text-xs">Tidak ada transaksi F&B pada tanggal ini</div>';
+            html += '<div class="text-center py-10 text-neutral-500 text-xs lg:text-base">Tidak ada transaksi F&B pada tanggal ini</div>';
         }
 
         area.innerHTML = html;

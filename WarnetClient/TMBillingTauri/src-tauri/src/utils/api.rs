@@ -41,6 +41,14 @@ pub struct AdminLoginResponse {
     pub token_sesi: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WarnetConfig {
+    pub title: Option<String>,
+    pub announcement: Option<String>,
+    pub qris_url: Option<String>,
+    pub paket: Vec<serde_json::Value>,
+}
+
 fn deobfuscate(hex_input: &str) -> String {
     let key = b"TMBillingSecretKey2026SecureObfuscation";
     let mut bytes = Vec::new();
@@ -69,6 +77,7 @@ fn is_obfuscated(input: &str) -> bool {
     deobf.chars().all(|c| c.is_ascii() && !c.is_control())
 }
 
+#[derive(Clone)]
 pub struct ApiService {
     client: reqwest::Client,
     server_url: String,
@@ -406,5 +415,62 @@ impl ApiService {
 
         serde_json::from_str::<T>(&body_text)
             .map_err(|_e| format!("Gagal urai data dari server."))
+    }
+
+    pub async fn upload_screenshot(&self, ip: &str, img_bytes: Vec<u8>) -> Result<(), String> {
+        let base_url = self.server_url.replace("/client", "");
+        let url = format!("{}/api/monitor/screenshot/upload", base_url);
+
+        let res = self.client.post(&url)
+            .header("X-Client-Key", &self.api_key)
+            .header("Content-Type", "image/png")
+            .header("X-IP-Address", ip)
+            .body(img_bytes)
+            .send()
+            .await
+            .map_err(|e| format!("Koneksi Gagal: {}", e))?;
+
+        let status = res.status();
+        if !status.is_success() {
+            let body_text = res.text().await.unwrap_or_default();
+            return Err(format!("Gagal upload ({}): {}", status, body_text));
+        }
+
+        Ok(())
+    }
+
+    pub async fn get_warnet_config(&self) -> Result<WarnetConfig, String> {
+        let base_url = self.server_url.replace("/client", "");
+        let url = format!("{}/client/warnet", base_url);
+
+        let res = self.client.get(&url)
+            .header("X-Client-Key", &self.api_key)
+            .send()
+            .await
+            .map_err(|e| format!("Koneksi Gagal: {}", e))?;
+
+        let status = res.status();
+        let body_text = res.text().await.map_err(|e| format!("Gagal baca body: {}", e))?;
+
+        if !status.is_success() {
+            if let Ok(json_err) = serde_json::from_str::<serde_json::Value>(&body_text) {
+                if let Some(msg) = json_err.get("error") {
+                    return Err(msg.as_str().unwrap_or("Terjadi kesalahan").to_string());
+                }
+            }
+            return Err(format!("Gagal ({}): {}", status, body_text));
+        }
+
+        let mut config: WarnetConfig = serde_json::from_str(&body_text)
+            .map_err(|_| format!("Gagal urai data warnet dari server."))?;
+
+        // Prepend base_url to qris_url if relative path
+        if let Some(ref path) = config.qris_url {
+            if path.starts_with('/') {
+                config.qris_url = Some(format!("{}{}", base_url, path));
+            }
+        }
+
+        Ok(config)
     }
 }
