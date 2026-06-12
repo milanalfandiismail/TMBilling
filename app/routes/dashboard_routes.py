@@ -27,9 +27,19 @@ def dashboard():
 @dashboard_bp.route("/login", methods=["GET"])
 def login_page():
     """Halaman login khusus kasir/admin."""
-    # Jika sudah ada session, nggak perlu login lagi, langsung ke dashboard
-    if session.get("kasir_id"):
-        return redirect(url_for('dashboard.dashboard'))
+    # Jika sudah ada session, cek keaktifan di database
+    kasir_id = session.get("kasir_id")
+    if kasir_id:
+        from app.repositories.user_repository import UserRepository
+        user = UserRepository.get_by_id(kasir_id)
+        if user and user.aktif:
+            return redirect(url_for('dashboard.dashboard'))
+        else:
+            # Session tidak valid/user tidak aktif/dihapus, bersihkan session!
+            session.pop("kasir_id", None)
+            session.pop("kasir_username", None)
+            session.pop("kasir_role", None)
+            session.pop("kasir_nama", None)
     return render_template("kasir/login.html")
 
 

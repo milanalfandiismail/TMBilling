@@ -23,8 +23,20 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         """Wrapper untuk validasi session API."""
-        if not session.get("kasir_id"):
+        kasir_id = session.get("kasir_id")
+        if not kasir_id:
             return jsonify({"error": "Silakan login terlebih dahulu"}), 401
+            
+        from app.repositories.user_repository import UserRepository
+        user = UserRepository.get_by_id(kasir_id)
+        if not user or not user.aktif:
+            # Bersihkan session jika tidak valid
+            session.pop("kasir_id", None)
+            session.pop("kasir_username", None)
+            session.pop("kasir_role", None)
+            session.pop("kasir_nama", None)
+            return jsonify({"error": "Sesi tidak valid, silakan login kembali"}), 401
+            
         return f(*args, **kwargs)
     return decorated_function
 
@@ -42,8 +54,20 @@ def login_required_html(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         """Wrapper untuk validasi session HTML."""
-        if not session.get("kasir_id"):
+        kasir_id = session.get("kasir_id")
+        if not kasir_id:
             return redirect("/kasir/login")
+            
+        from app.repositories.user_repository import UserRepository
+        user = UserRepository.get_by_id(kasir_id)
+        if not user or not user.aktif:
+            # Bersihkan session jika tidak valid
+            session.pop("kasir_id", None)
+            session.pop("kasir_username", None)
+            session.pop("kasir_role", None)
+            session.pop("kasir_nama", None)
+            return redirect("/kasir/login")
+            
         return f(*args, **kwargs)
     return decorated_function
 
@@ -105,9 +129,14 @@ def logout():
 @auth_kasir_bp.route("/check", methods=["GET"])
 def check_session():
     """Cek status login untuk kebutuhan UI Frontend."""
-    result = AuthKasirService.check_session(
-        user_id=session.get("kasir_id")
-    )
+    kasir_id = session.get("kasir_id")
+    result = AuthKasirService.check_session(user_id=kasir_id)
+    if not result.get("logged_in"):
+        # Bersihkan session jika tidak valid
+        session.pop("kasir_id", None)
+        session.pop("kasir_username", None)
+        session.pop("kasir_role", None)
+        session.pop("kasir_nama", None)
     return jsonify(result), 200
 
 @auth_kasir_bp.route("/admin-check", methods=["POST"])
