@@ -333,23 +333,21 @@ with app.app_context():
 
 ## Environment Config
 
-File: `app/.env`
+File: `.env` (root project — auto-generated oleh `install.bat`)
 
 ```ini
-SECRET_KEY=ubah-dengan-rahasia-acak-yang-panjang
+SECRET_KEY=...            # Auto-generated acak saat install.bat dijalankan
 DATABASE_URL=sqlite:///warnet.db
-CLIENT_API_KEY=ubah-dengan-api-key-untuk-client-tauri
+CLIENT_API_KEY=...        # Dapat dirotasi dari dashboard Settings (langsung update .env)
 DEBUG_MODE=False
-
-# Waitress WSGI Production Thread Scaling
-# Mengatur jumlah concurrent worker thread untuk menangani ratusan polling client secara simultan
 WAITRESS_THREADS=8
-
-# System Thresholds & Timers
-AUTO_SHUTDOWN_MINUTES=3
-POLLING_INTERVAL=5
-BLACKOUT_THRESHOLD_MINUTES=1
+BLACKOUT_THRESHOLD_MINUTES=60   # Menit PC tidak polling sebelum dianggap mati lampu
 ```
+
+> **Catatan**:
+> - `AUTO_SHUTDOWN_MINUTES` dihapus — dikelola di database via `SettingsService` (default 180 detik, ubah dari tab Settings dashboard).
+> - `POLLING_INTERVAL` dihapus — interval polling diatur di sisi client (Tauri), bukan server.
+> - `CLIENT_API_KEY` di `.env` ditulis ulang otomatis setiap kali dirotasi dari dashboard.
 
 ### Switching Database (PostgreSQL)
 

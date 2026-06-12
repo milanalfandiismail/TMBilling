@@ -239,4 +239,4 @@ def api():
 | **Emergency Token** | Password bypass offline & uninstaller fallback (diatur saat instalasi, default `TM123qaz!@#`) |
 
 ---
-*Last Updated: 2026-05-22 | TMBilling Core Team*
+*Last Updated: 2026-06-12 | TMBilling Core Team*
