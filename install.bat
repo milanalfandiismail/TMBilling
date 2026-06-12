@@ -40,6 +40,14 @@ if %errorlevel% neq 0 (
     exit /b
 )
 
+:: 3. Salin .env.example ke .env jika belum ada dan generate SECRET_KEY acak
+if not exist .env (
+    if exist .env.example (
+        echo [TMBilling] Membuat berkas konfigurasi .env dan menghasilkan SECRET_KEY acak...
+        .venv\Scripts\python.exe -c "import secrets; c = open('.env.example').read().replace('SECRET_KEY=ganti-dengan-rahasia-abang-yang-panjang-dan-unik', 'SECRET_KEY=' + secrets.token_hex(32)); open('.env', 'w').write(c)"
+    )
+)
+
 echo.
 echo ==========================================================
 echo ✅ INSTALASI SUKSES!
