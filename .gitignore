@@ -563,3 +563,6 @@ CODEBASE_CONTEXT.md
 
 # Screenshot uploads
 app/static/uploads/screenshots/
+
+# Local notes
+zip.md
