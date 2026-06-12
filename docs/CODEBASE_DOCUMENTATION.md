@@ -1,4 +1,4 @@
-# TMBilling — Codebase Documentation
+﻿# TMBilling — Codebase Documentation
 
 > Manajemen Billing Warnet — Backend Flask + Frontend Vanilla JS + Client Tauri/Rust + Agent Rust
 
@@ -322,14 +322,12 @@ erDiagram
 ### Environment (`.env`)
 
 ```ini
-SECRET_KEY=...
+SECRET_KEY=...            # Flask session secret (auto-generated oleh install.bat)
 DATABASE_URL=sqlite:///warnet.db
-CLIENT_API_KEY=...
+CLIENT_API_KEY=...        # API Key auth client (dapat dirotasi dari dashboard Settings)
 DEBUG_MODE=False
 WAITRESS_THREADS=8
-AUTO_SHUTDOWN_MINUTES=3
-POLLING_INTERVAL=5
-BLACKOUT_THRESHOLD_MINUTES=1
+BLACKOUT_THRESHOLD_MINUTES=60   # Menit PC tidak polling sebelum dianggap mati lampu
 ```
 
 ### Registry (HKLM\Software\TMBilling)
@@ -387,7 +385,8 @@ python run.py   # Waitress on :7015
 ### Development
 ```bash
 # Flask dev
-cd app && cp .env.example .env && python ../run.py
+copy .env.example .env
+python run.py   # Waitress on :7015
 
 # Kompilasi Cepat: Build & Deploy semua komponen (Tauri + Rust) sekaligus
 # Jalankan script batch dari root folder:
@@ -421,4 +420,4 @@ cd WarnetAgent/TMBilling_Monitor && cargo build --release
 ---
 
 *TMBilling v1.0 — Codebase Documentation*
-*Updated: 2026-06-08*
+*Updated: 2026-06-12*
