@@ -79,6 +79,17 @@ const App = {
         const target = document.getElementById(`tab-${tab}`);
         if (target) target.classList.remove('hidden');
 
+        // Auto-collapse settings submenu when switching to other tabs, and auto-expand when entering settings tab
+        const settingsSubmenu = document.getElementById('settings-submenu');
+        const settingsArrow = document.getElementById('settings-arrow');
+        if (tab !== 'settings') {
+            if (settingsSubmenu) settingsSubmenu.classList.add('hidden');
+            if (settingsArrow) settingsArrow.classList.remove('rotate-180');
+        } else {
+            if (settingsSubmenu) settingsSubmenu.classList.remove('hidden');
+            if (settingsArrow) settingsArrow.classList.add('rotate-180');
+        }
+
         this.currentTab = tab;
         this.updatePageTitle(tab);
         this.loadTab(tab);

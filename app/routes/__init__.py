@@ -37,10 +37,11 @@ from app.routes.settings_routes import settings_bp
 from app.routes.monitor_routes import monitor_bp
 from app.routes.user_routes import user_bp
 from app.routes.menu_routes import menu_bp
+from app.routes.backup_routes import backup_bp
 
 __all__ = [
     'auth_bp', 'auth_kasir_bp', 'client_bp', 'dashboard_bp',
     'member_bp', 'paket_bp', 'pc_bp', 'report_bp', 'sesi_bp',
     'grup_bp', 'blackout_bp', 'settings_bp', 'monitor_bp', 'user_bp',
-    'menu_bp'
+    'menu_bp', 'backup_bp'
 ]

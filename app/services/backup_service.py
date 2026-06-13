@@ -16,9 +16,9 @@ from app.utils.logger import write_log
 class BackupService:
     """Service untuk backup database SQLite secara otomatis.
     
-    Menjalankan background thread yang secara periodik menyalin
-    file database ke folder backup. Mendukung cleanup otomatis
-    untuk file backup yang sudah lebih dari N hari.
+    Mengompresi file database SQLite ke dalam format ZIP dan
+    mengunggahnya ke provider cloud yang aktif (Discord, WebDAV, GDrive, NAS).
+    Mendukung cleanup otomatis untuk menyimpan maksimal N file cadangan terbaru.
     
     Attributes:
         db_path (str): Path absolut ke file database SQLite.
@@ -62,7 +62,6 @@ class BackupService:
         """
         while True:
             try:
-                # Cek dulu file DB-nya ada atau nggak sebelum di-copy
                 if os.path.exists(self.db_path):
                     self.create_backup()
                     self.cleanup_old_backups(max_keep=5)
@@ -73,20 +72,91 @@ class BackupService:
             
             time.sleep(self.interval)
 
-    def create_backup(self):
-        """Membuat salinan file database ke folder backup.
-        
-        File backup diberi nama dengan format: warnet_backup_YYYYMMDD_HHMMSS.db
-        menggunakan timestamp saat backup dilakukan.
-        """
+    def create_backup(self) -> str:
+        """Membuat salinan database terkompresi (.zip) dan mengunggahnya ke cloud provider aktif."""
+        import zipfile
+        from app.services.settings_service import SettingsService
+        from app.services.backup.providers import (
+            DiscordWebhookProvider, WebDAVProvider, GoogleDriveProvider, NASBackupProvider, send_multipart_request
+        )
+
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        # Nama file lebih spesifik
-        backup_filename = f"warnet_backup_{timestamp}.db"
+        backup_filename = f"warnet_backup_{timestamp}.zip"
         dest_path = os.path.join(self.backup_dir, backup_filename)
         
-        shutil.copy2(self.db_path, dest_path)
-        print(f"[BACKUP] Database berhasil diamankan ke: {backup_filename}")
+        # 1. Kompresi database SQLite aktif ke berkas ZIP
+        with zipfile.ZipFile(dest_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            arcname = os.path.basename(self.db_path)
+            zipf.write(self.db_path, arcname=arcname)
+            
+        print(f"[BACKUP] Database berhasil dikompresi ke: {backup_filename}")
         write_log("DATABASE_BACKUP", f"File: {backup_filename}", user="SYSTEM")
+
+        # 2. Ambil list provider aktif dari database Settings
+        providers = []
+        
+        discord_enabled = SettingsService.get("backup_discord_enabled", "false") == "true"
+        discord_url = SettingsService.get("backup_discord_webhook_url", "")
+        if discord_enabled and discord_url:
+            providers.append(DiscordWebhookProvider(discord_url))
+
+        webdav_enabled = SettingsService.get("backup_webdav_enabled", "false") == "true"
+        webdav_url = SettingsService.get("backup_webdav_url", "")
+        webdav_user = SettingsService.get("backup_webdav_username", "")
+        webdav_pass = SettingsService.get("backup_webdav_password", "")
+        if webdav_enabled and webdav_url:
+            providers.append(WebDAVProvider(webdav_url, webdav_user, webdav_pass))
+
+        gdrive_enabled = SettingsService.get("backup_gdrive_enabled", "false") == "true"
+        gdrive_client_id = SettingsService.get("backup_gdrive_client_id", "")
+        gdrive_client_secret = SettingsService.get("backup_gdrive_client_secret", "")
+        gdrive_refresh_token = SettingsService.get("backup_gdrive_refresh_token", "")
+        gdrive_folder_id = SettingsService.get("backup_gdrive_folder_id", "")
+        if gdrive_enabled and gdrive_client_id and gdrive_client_secret and gdrive_refresh_token:
+            providers.append(GoogleDriveProvider(gdrive_client_id, gdrive_client_secret, gdrive_refresh_token, gdrive_folder_id))
+
+        nas_enabled = SettingsService.get("backup_nas_enabled", "false") == "true"
+        nas_path = SettingsService.get("backup_nas_path", "")
+        if nas_enabled and nas_path:
+            providers.append(NASBackupProvider(nas_path))
+
+        # 3. Unggah ke masing-masing provider secara sekuensial
+        uploaded_success = []
+        uploaded_failed = []
+
+        for provider in providers:
+            try:
+                success = provider.upload(dest_path)
+                if success:
+                    uploaded_success.append(provider.name)
+                    write_log("BACKUP_CLOUD_SUCCESS", f"Berhasil mengunggah ke {provider.name}", user="SYSTEM")
+                else:
+                    uploaded_failed.append(provider.name)
+                    write_log("BACKUP_CLOUD_FAILED", f"Gagal mengunggah ke {provider.name}", user="SYSTEM")
+            except Exception as ex:
+                uploaded_failed.append(provider.name)
+                write_log("BACKUP_CLOUD_FAILED", f"Error pada {provider.name}: {str(ex)}", user="SYSTEM")
+
+        # 4. Kirim notifikasi ringkasan status ke Discord Webhook (jika terkonfigurasi)
+        if discord_url:
+            status_msg = f"🔔 **TMBilling Backup Summary**\n"
+            status_msg += f"• File: `{backup_filename}`\n"
+            status_msg += f"• Local Backup: ✅ Success\n"
+            
+            if uploaded_success:
+                status_msg += f"• Uploaded successfully: {', '.join(uploaded_success)} ✅\n"
+            if uploaded_failed:
+                status_msg += f"• Failed uploading: {', '.join(uploaded_failed)} ❌\n"
+                
+            try:
+                # Mengirimkan pesan teks ringkasan untuk meminimalisasi duplikasi file di Discord
+                has_discord_in_success = "Discord Webhook" in uploaded_success
+                if not has_discord_in_success or uploaded_failed:
+                    send_multipart_request(discord_url, {"content": status_msg}, {})
+            except Exception as e:
+                print(f"[Backup] Summary notification error: {e}")
+
+        return dest_path
 
     def cleanup_old_backups(self, max_keep=5):
         """Menghapus file backup lama dan mempertahankan maksimal N file backup terbaru.
@@ -96,8 +166,8 @@ class BackupService:
                            File yang lebih tua akan dihapus otomatis.
         """
         try:
-            # Cari semua file backup yang polanya warnet_backup_*.db
-            files = [f for f in os.listdir(self.backup_dir) if f.startswith("warnet_backup_") and f.endswith(".db")]
+            # Cari semua file backup yang polanya warnet_backup_*.zip
+            files = [f for f in os.listdir(self.backup_dir) if f.startswith("warnet_backup_") and f.endswith(".zip")]
             
             # Urutkan berdasarkan waktu modifikasi secara descending (paling baru di awal)
             files.sort(key=lambda x: os.path.getmtime(os.path.join(self.backup_dir, x)), reverse=True)
