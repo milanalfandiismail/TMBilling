@@ -64,10 +64,12 @@ def create_app():
         settings_bp,
         monitor_bp,
         user_bp,
-        menu_bp
+        menu_bp,
+        backup_bp
     )
 
     app.register_blueprint(dashboard_bp, url_prefix="/kasir")
+    app.register_blueprint(backup_bp)
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(auth_kasir_bp, url_prefix="/api/kasir")
     app.register_blueprint(client_bp, url_prefix="/client")
