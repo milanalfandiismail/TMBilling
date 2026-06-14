@@ -190,8 +190,8 @@ class MemberService:
 
         durasi = transaksi.menit or (transaksi.paket.durasi_menit if transaksi.paket else 0)
         
-        if member.waktu_tersimpan < durasi:
-            raise ValueError(f"Paket ini ({durasi}m) sudah terpakai/habis. Sisa saldo saat ini hanya {member.waktu_tersimpan}m.")
+        if member.waktu_tersimpan <= 0:
+            raise ValueError("Saldo waktu member sudah habis. Paket tidak dapat direfund.")
             
         kadaluarsa_hari = transaksi.paket.kadaluarsa_hari if transaksi.paket else 0
         
@@ -225,14 +225,14 @@ class MemberService:
         db.session.add(transaksi_refund)
         db.session.commit()
 
-        write_log("REFUND_PAKET", f"Member:{member.username} | Saldo: {sebelum}m → {waktu_baru}m", user=operator)
+        write_log("REFUND_PAKET", f"Member:{member.username} | Saldo: {sebelum}m -> {waktu_baru}m", user=operator)
         write_log("TRANSAKSI", f"REFUND | Nota:{transaksi_refund.no_nota} | Rp {transaksi_refund.jumlah}", user=operator)
         
         return {
             "username": member.username,
             "saldo_sebelum": sebelum,
             "saldo_sesudah": waktu_baru,
-            "durasi_dikurangi": durasi
+            "durasi_dikurangi": sebelum - waktu_baru
         }
 
 

@@ -113,7 +113,7 @@ const App = {
             grup: 'Grup', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Sistem',
             monitor: 'Hardware Monitor', blackout: 'Blackout',
             user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat',
-            menu: 'Kantin / POS F&B'
+            menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen'
         };
  
         const titleEl = document.getElementById('page-title');
@@ -136,6 +136,7 @@ const App = {
             case 'struk': if (typeof Struk !== 'undefined') await Struk.init(); break;
             case 'settings': if (typeof Settings !== 'undefined') await Settings.load(); break;
             case 'menu': if (typeof Menu !== 'undefined') await Menu.load(); break;
+            case 'tournament': if (typeof Tournament !== 'undefined') await Tournament.load(); break;
         }
     },
  
@@ -171,3 +172,4 @@ window.Modal = Modal;
 window.Toast = Toast;
 window.User = User;
 window.Menu = Menu;
+window.Tournament = Tournament;

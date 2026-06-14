@@ -65,7 +65,9 @@ def create_app():
         monitor_bp,
         user_bp,
         menu_bp,
-        backup_bp
+        backup_bp,
+        tournament_bp,
+        member_portal_bp
     )
 
     app.register_blueprint(dashboard_bp, url_prefix="/kasir")
@@ -73,6 +75,7 @@ def create_app():
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(auth_kasir_bp, url_prefix="/api/kasir")
     app.register_blueprint(client_bp, url_prefix="/client")
+    app.register_blueprint(member_portal_bp)
     
     # Kecualikan komunikasi Client dari proteksi CSRF (Pakai API Key / Token)
     csrf.exempt(client_bp)
@@ -90,6 +93,7 @@ def create_app():
     app.register_blueprint(monitor_bp, url_prefix="/api")
     app.register_blueprint(user_bp, url_prefix="/api/user")
     app.register_blueprint(menu_bp, url_prefix="/api")
+    app.register_blueprint(tournament_bp, url_prefix="/api")
 
     @app.route("/")
     def index():
