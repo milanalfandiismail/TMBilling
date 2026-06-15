@@ -151,6 +151,15 @@ fn main() {
     let system_tray = SystemTray::new().with_menu(tray_menu);
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+            println!("Deteksi instansi kedua! Argv: {:?}, Cwd: {}", argv, cwd);
+            if let Some(window) = app.get_window("main") {
+                let _ = window.unminimize();
+                let _ = window.show();
+                let _ = window.set_focus();
+                let _ = window.emit("single-instance-focus", ());
+            }
+        }))
         .manage(crate::utils::api::ApiService::new())
         .system_tray(system_tray)
         .on_system_tray_event(|app, event| match event {
