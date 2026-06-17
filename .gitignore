@@ -32,6 +32,9 @@ dist/
 # AI Agent internal directory (not source code)
 .commandcode/
 
+# Design document (internal documentation, not source code)
+DESIGN.md
+
 # Flask-specific
 instance/
 .webassets-cache
