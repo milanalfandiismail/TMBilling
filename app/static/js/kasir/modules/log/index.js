@@ -1,4 +1,6 @@
 const Log = {
+    currentCategory: 'Semua',
+
     async load(filter = '', kategori = '') {
         try {
             const data = await API.report.logs(filter, 500, kategori);
@@ -6,6 +8,22 @@ const Log = {
         } catch (err) {
             Toast.error('Gagal memuat log');
         }
+    },
+
+    switchCategory(category, btnEl) {
+        this.currentCategory = category;
+        const cats = ['Semua', 'sistem', 'transaksi', 'sesi', 'blackout'];
+        cats.forEach(c => {
+            const el = document.getElementById(`log-cat-${c}`);
+            if (el) {
+                if (c === category) {
+                    el.className = 'px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-neutral-100 text-black';
+                } else {
+                    el.className = 'px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200';
+                }
+            }
+        });
+        this.filter();
     },
     
     render(logs) {
@@ -49,7 +67,7 @@ const Log = {
     
     filter() {
         const filterStr = document.getElementById('filter-log').value.trim();
-        const filterCat = document.getElementById('filter-kategori-log').value;
+        const filterCat = this.currentCategory === 'Semua' ? '' : this.currentCategory;
         this.load(filterStr, filterCat);
     },
     

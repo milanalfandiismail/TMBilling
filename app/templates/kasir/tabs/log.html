@@ -2,16 +2,23 @@
 <div id="tab-log" class="tab-content hidden">
     <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
         <div class="flex flex-wrap gap-3 mb-4">
-            <select id="filter-kategori-log" onchange="Log.filter()"
-                class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
-                <option value="Semua">Semua Kategori</option>
-                <option value="Sistem">System & Error</option>
-                <option value="Transaksi">Transaksi & Struk</option>
-                <option value="Sesi">Sesi & Billing</option>
-                <option value="Blackout">Blackout</option>
-            </select>
+            <!-- Kategori tab bar -->
+            <div class="flex gap-1 bg-[#050505] border border-[#1c1c1c] rounded-lg p-1 w-full overflow-x-auto scrollbar-thin">
+                <button id="log-cat-Semua" onclick="Log.switchCategory('Semua', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-neutral-100 text-black">Semua</button>
+                <button id="log-cat-sistem" onclick="Log.switchCategory('sistem', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200">Sistem</button>
+                <button id="log-cat-transaksi" onclick="Log.switchCategory('transaksi', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200">Transaksi &amp; Struk</button>
+                <button id="log-cat-sesi" onclick="Log.switchCategory('sesi', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200">Sesi &amp; Billing</button>
+                <button id="log-cat-blackout" onclick="Log.switchCategory('blackout', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200">Blackout</button>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-3 mb-4">
             <input type="text" id="filter-log" placeholder="Cari log..."
-                class="flex-1 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500">
+                class="flex-1 min-w-[150px] px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500">
             <button onclick="Log.filter()"
                 class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">Cari</button>
             <button onclick="Log.clear()"

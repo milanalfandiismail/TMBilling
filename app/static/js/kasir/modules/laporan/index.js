@@ -132,6 +132,7 @@ const Laporan = {
                                 <th class="px-4 py-3 text-left">Pelanggan</th>
                                 <th class="px-4 py-3 text-right">Jumlah</th>
                                 <th class="px-4 py-3 text-left">PC</th>
+                                <th class="px-4 py-3 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] block lg:table-row-group">
@@ -157,6 +158,10 @@ const Laporan = {
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">PC</span>
                                         <span>${t.pc_kode || '-'}</span>
                                     </td>
+                                    <td class="px-4 py-3 text-center flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
+                                        <button onclick="Laporan.printStruk(${t.id})" class="px-2.5 py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] lg:text-base font-bold rounded transition-colors">Cetak</button>
+                                    </td>
                                 </tr>`).join('')}
                         </tbody>
                     </table>
@@ -181,5 +186,19 @@ const Laporan = {
         const tanggal = document.getElementById('laporan-tanggal-select').value;
         const kasirId = document.getElementById('laporan-kasir-select').value;
         this.loadByDate(tanggal, kasirId);
+    },
+
+    async printStruk(tId) {
+        try {
+            const res = await API.request(`/api/report/struk/${tId}`);
+            if (res) {
+                StrukPreview.currentData = res;
+                StrukPreview.printPreview();
+            } else {
+                Toast.error("Data struk tidak ditemukan");
+            }
+        } catch (err) {
+            Toast.error("Gagal memuat struk: error koneksi");
+        }
     }
 };

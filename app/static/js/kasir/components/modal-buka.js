@@ -89,7 +89,7 @@ const BukaModal = {
                                 <span class="text-[9px] text-neutral-500 font-mono mt-0.5">${durasiText}</span>
                             </div>
                         </div>
-                        <div class="text-xs font-bold text-emerald-400 font-mono shrink-0">Rp ${(p.harga || 0).toLocaleString('id-ID')}</div>
+                        <div class="text-xs font-bold text-emerald-400 font-mono shrink-0">${Utils.formatRupiah(p.harga || 0)}</div>
                     </div>
                 `;
             }).join('');

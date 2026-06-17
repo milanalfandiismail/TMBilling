@@ -23,16 +23,18 @@ const MemberModal = {
                             <div class="py-3 flex items-center justify-between gap-3">
                                 <div class="min-w-0 flex-1">
                                     <div class="font-bold text-neutral-200 text-xs lg:text-base lg:truncate break-words whitespace-normal">${t.nama}</div>
-                                    <div class="flex items-center gap-2 mt-0.5">
-                                        <span class="text-[9px] lg:text-base text-neutral-500 font-mono">${t.dibuat_pada}</span>
-                                        <span class="text-[9px] lg:text-base text-neutral-400 font-mono">${Utils.formatDurasiFriendly(t.durasi_menit)}</span>
+                                    <div class="text-[9px] lg:text-base text-neutral-400 mt-0.5 font-semibold">
+                                        QTY : <span class="text-neutral-200">${t.qty || 1}x</span> (${Utils.formatDurasiFriendly(t.durasi_menit)})
+                                    </div>
+                                    <div class="text-[9px] lg:text-base text-neutral-500 font-mono mt-0.5">
+                                        ${t.dibuat_pada}
                                     </div>
                                 </div>
                                 <div class="text-right flex items-center gap-3">
                                     <span class="text-xs lg:text-base font-mono font-bold text-neutral-300">${Utils.formatRupiah(t.harga)}</span>
                                     ${t.jenis === 'beli_paket_member' ? `
                                         <button onclick="Member.refund(${member.id}, ${t.id})" 
-                                            class="px-2 py-1 text-[9px] lg:text-base font-bold bg-[#3b1216] border border-[#ef4444]/30 text-red-200 hover:bg-red-600 hover:text-white rounded transition-colors uppercase">
+                                            class="px-2 py-1 text-[9px] lg:text-xs font-bold bg-[#3b1216] border border-[#ef4444]/30 text-red-200 hover:bg-red-600 hover:text-white rounded transition-colors uppercase shrink-0">
                                             REFUND
                                         </button>
                                     ` : ''}
@@ -44,7 +46,7 @@ const MemberModal = {
             }
 
             const detailHtml = `
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-4 md:p-6 max-w-3xl w-[calc(100%-2rem)] mx-auto md:w-full max-h-[85vh] overflow-y-auto scrollbar-thin my-auto">
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-4 md:p-6 max-w-5xl w-[calc(100%-2rem)] mx-auto md:w-full max-h-[85vh] overflow-y-auto scrollbar-thin my-auto">
                     <div class="flex items-center justify-between mb-4 pb-4 border-b border-[#1c1c1c]">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-200 font-bold">${member.username.charAt(0).toUpperCase()}</div>

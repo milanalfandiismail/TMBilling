@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    {% set page_title = "Spesifikasi PC | " ~ warnet_title %}
+    {% include 'public/components/_head.html' %}
+</head>
+
+<body class="bg-[#050505] text-neutral-200 min-h-screen flex flex-col font-sans antialiased">
+
+    <!-- Navbar -->
+    {% include 'public/components/_navbar_public.html' %}
+
+    <!-- Main Content -->
+    <main class="flex-1 w-full max-w-7xl mx-auto px-6 md:px-10 py-8 space-y-8">
+
+        <!-- Header Section -->
+        <section class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div class="space-y-2 max-w-2xl">
+                <div
+                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-800 bg-[#0c0c0c] text-xs font-mono text-neutral-400">
+                    <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span> Hardware Specifications
+                </div>
+                <h2 class="text-3xl font-black text-neutral-100 tracking-tight">
+                    Spesifikasi PC Sultan
+                </h2>
+                <p class="text-neutral-400 text-xs md:text-sm">
+                    Lihat detail spesifikasi hardware komputer di setiap zona. Data spesifikasi diambil langsung dan
+                    akurat dari unit komputer client.
+                </p>
+            </div>
+
+            <!-- Filters -->
+            <div
+                class="inline-flex rounded-lg bg-[#111] p-1 border border-neutral-800 text-xs shrink-0 self-start md:self-end">
+                <button onclick="filterSpecs('all')" id="filter-btn-all"
+                    class="px-3 py-1.5 rounded-md font-bold transition-all bg-neutral-800 text-neutral-100">Semua</button>
+                <button onclick="filterSpecs('reguler')" id="filter-btn-reguler"
+                    class="px-3 py-1.5 rounded-md font-bold transition-all text-neutral-400 hover:text-neutral-200">Reguler</button>
+                <button onclick="filterSpecs('vip')" id="filter-btn-vip"
+                    class="px-3 py-1.5 rounded-md font-bold transition-all text-neutral-400 hover:text-neutral-200">VIP</button>
+                <button onclick="filterSpecs('vvip')" id="filter-btn-vvip"
+                    class="px-3 py-1.5 rounded-md font-bold transition-all text-neutral-400 hover:text-neutral-200">VVIP</button>
+            </div>
+        </section>
+
+        <!-- Specs Sections (Grouped) -->
+        <section id="specs-container" class="space-y-12">
+            {% for g in groups %}
+            {% set nama_grup = g.nama.lower().strip() %}
+            <div class="group-section space-y-4" data-grup="{{ nama_grup }}">
+                <!-- Group Heading -->
+                <div class="flex items-center gap-3 border-b border-[#1f1f1f] pb-3">
+                    <span class="w-3.5 h-3.5 rounded-md block border shrink-0 spec-group-bullet"
+                        data-warna="{{ g.warna }}"></span>
+                    <h3 class="text-xl font-extrabold text-neutral-100 uppercase tracking-wider">{{ g.nama }} Zone</h3>
+                    <span
+                        class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-neutral-900 border border-neutral-800 text-neutral-400 uppercase tracking-widest">{{
+                        g.pc_list|length }} PC</span>
+                </div>
+
+                <!-- Group Grid (2 Columns on Desktop, 1 Column on Mobile) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    {% for pc in g.pc_list|sort(attribute='kode') %}
+                    {% set h = pc.hardware %}
+                    {% set warna_grup = g.warna %}
+                    <div class="bg-[#0a0a0a] border rounded-2xl p-5 md:p-6 flex flex-col justify-between space-y-5 relative overflow-hidden pc-spec-card shadow-xl shadow-black/35 hover:border-neutral-800 transition-all duration-300"
+                        data-warna="{{ warna_grup }}">
+                        <div class="absolute -right-10 -top-10 w-24 h-24 rounded-full blur-2xl card-glow"></div>
+
+                        <!-- Card Header -->
+                        <div class="border-b border-[#1f1f1f] pb-4 flex items-center justify-between">
+                            <div>
+                                <h4 class="font-black text-neutral-100 text-base md:text-lg uppercase tracking-wider">{{ pc.kode }}</h4>
+                                <p class="text-xs text-neutral-500 font-mono mt-0.5">{{ pc.nama or pc.kode }}</p>
+                            </div>
+                            <span class="px-2 py-1 text-[10px] font-bold rounded uppercase tracking-wider spec-badge">
+                                {{ g.nama }}
+                            </span>
+                        </div>
+
+                        <!-- Specs Details (Compact and Clean) -->
+                        <div class="space-y-3 flex-1 text-xs md:text-sm font-mono text-neutral-300">
+                            <div class="flex items-start gap-2 border-b border-[#111] pb-1.5">
+                                <span class="text-neutral-500 shrink-0 select-none w-20 sm:w-28 text-[10px] sm:text-xs">Processor:</span>
+                                <span class="text-neutral-100 font-bold leading-normal break-words whitespace-normal">{{ h.cpu_name if h and h.cpu_name else 'Belum Terkumpul' }}</span>
+                            </div>
+                            <div class="flex items-start gap-2 border-b border-[#111] pb-1.5">
+                                <span class="text-neutral-500 shrink-0 select-none w-20 sm:w-28 text-[10px] sm:text-xs">Graphics:</span>
+                                <span class="text-neutral-100 font-bold leading-normal break-words whitespace-normal">{{ h.gpu_name if h and h.gpu_name else 'Belum Terkumpul' }}</span>
+                            </div>
+                            <div class="flex items-start gap-2 border-b border-[#111] pb-1.5">
+                                <span class="text-neutral-500 shrink-0 select-none w-20 sm:w-28 text-[10px] sm:text-xs">RAM:</span>
+                                <span class="text-neutral-100 font-bold leading-normal break-words whitespace-normal">{{ h.total_ram if h and h.total_ram else 'Belum Terkumpul' }}</span>
+                            </div>
+                            <div class="flex items-start gap-2 pb-1">
+                                <span class="text-neutral-500 shrink-0 select-none w-20 sm:w-28 text-[10px] sm:text-xs">Motherboard:</span>
+                                <span class="text-neutral-100 leading-normal break-words whitespace-normal">{{ h.motherboard if h and h.motherboard else 'Belum Terkumpul' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Card Footer (Status Online/Offline) -->
+                        <div class="border-t border-[#1f1f1f] pt-4 flex items-center justify-between">
+                            <span class="text-[10px] text-neutral-500 font-mono">Last Sync: {{ h.last_update.strftime("%H:%M:%S") if h and h.last_update else '-' }}</span>
+                            {% if pc.aktif %}
+                            <span class="px-2 py-0.5 bg-emerald-950/60 border border-emerald-800/30 text-emerald-400 rounded-md text-[10px] font-mono font-bold flex items-center gap-1 shadow-md shadow-emerald-500/5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ONLINE
+                            </span>
+                            {% else %}
+                            <span class="px-2 py-0.5 bg-neutral-900 border border-neutral-800 text-neutral-500 rounded-md text-[10px] font-mono font-bold flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-neutral-600"></span> OFFLINE
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div
+                class="col-span-full py-16 text-center text-neutral-500 font-mono text-sm border border-[#1f1f1f] rounded-2xl bg-[#0a0a0a]">
+                Belum ada PC client yang terdaftar di sistem database.
+            </div>
+            {% endfor %}
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    {% set footer_label = "E-Sports & Gaming Arena" %}
+    {% include 'public/components/_footer.html' %}
+
+    <!-- Script Inline untuk Warna Grup Dinamis & Filter -->
+    <script>
+        function applyCardStyles() {
+            // Warnai bullet indicator grup
+            document.querySelectorAll('.spec-group-bullet').forEach(bullet => {
+                const warna = bullet.getAttribute('data-warna') || '#888888';
+                bullet.style.backgroundColor = `${warna}20`;
+                bullet.style.borderColor = `${warna}50`;
+            });
+
+            document.querySelectorAll('.pc-spec-card').forEach(card => {
+                const warna = card.getAttribute('data-warna') || '#888888';
+
+                // 1. Border card (opacity 30%)
+                card.style.borderColor = `${warna}30`;
+
+                // 2. Glow circle (opacity 8%)
+                const glow = card.querySelector('.card-glow');
+                if (glow) {
+                    glow.style.backgroundColor = `${warna}08`;
+                }
+
+                // 3. Badge background, text, border
+                const badge = card.querySelector('.spec-badge');
+                if (badge) {
+                    badge.style.backgroundColor = `${warna}20`;
+                    badge.style.color = warna;
+                    badge.style.borderColor = `${warna}30`;
+                    badge.style.borderWidth = '1px';
+                    badge.style.borderStyle = 'solid';
+                }
+            });
+        }
+
+        function filterSpecs(group) {
+            // Toggle active styling on tabs
+            ['all', 'reguler', 'vip', 'vvip'].forEach(g => {
+                const btn = document.getElementById(`filter-btn-${g}`);
+                if (!btn) return;
+                if (g === group) {
+                    btn.className = "px-3 py-1.5 rounded-md font-bold transition-all bg-neutral-800 text-neutral-100";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-md font-bold transition-all text-neutral-400 hover:text-neutral-200";
+                }
+            });
+
+            // Filter group sections
+            document.querySelectorAll('.group-section').forEach(section => {
+                const sectionGroup = section.getAttribute('data-grup') || 'reguler';
+                if (group === 'all' || sectionGroup === group) {
+                    section.style.display = 'block';
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            applyCardStyles();
+        });
+    </script>
+</body>
+
+</html>

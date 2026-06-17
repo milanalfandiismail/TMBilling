@@ -116,6 +116,8 @@ const LaporanMenu = {
                                 <th class="px-4 py-3 text-left">Item Menu</th>
                                 <th class="px-4 py-3 text-center">Jumlah</th>
                                 <th class="px-4 py-3 text-right">Total Harga</th>
+                                <th class="px-4 py-3 text-right">Tunai</th>
+                                <th class="px-4 py-3 text-right">Kembalian</th>
                                 <th class="px-4 py-3 text-left">Pemesanan</th>
                                 <th class="px-4 py-3 text-left">Kasir</th>
                                 <th class="px-4 py-3 text-center">Aksi</th>
@@ -143,6 +145,14 @@ const LaporanMenu = {
                                     <td class="px-4 py-3 text-right font-mono font-bold text-neutral-200 flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Total Harga</span>
                                         <span>${Utils.formatRupiah(tm.total_harga || 0)}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-right font-mono text-neutral-300 flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Tunai</span>
+                                        <span>${tm.tunai ? Utils.formatRupiah(tm.tunai) : '-'}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-right font-mono text-emerald-400 font-bold flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kembalian</span>
+                                        <span>${tm.kembalian ? Utils.formatRupiah(tm.kembalian) : '-'}</span>
                                     </td>
                                     <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pemesanan</span>

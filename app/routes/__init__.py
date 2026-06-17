@@ -22,28 +22,30 @@ Blueprints:
     user_bp: CRUD akun staff kasir/admin.
 """
 
-from app.routes.auth_routes import auth_bp
-from app.routes.auth_kasir_routes import auth_kasir_bp
-from app.routes.client_routes import client_bp
-from app.routes.dashboard_routes import dashboard_bp
-from app.routes.member_routes import member_bp
-from app.routes.paket_routes import paket_bp
-from app.routes.pc_routes import pc_bp
-from app.routes.report_routes import report_bp
-from app.routes.sesi_routes import sesi_bp
-from app.routes.grup_routes import grup_bp
-from app.routes.blackout_routes import blackout_bp
-from app.routes.settings_routes import settings_bp
-from app.routes.monitor_routes import monitor_bp
-from app.routes.user_routes import user_bp
-from app.routes.menu_routes import menu_bp
-from app.routes.backup_routes import backup_bp
-from app.routes.tournament_routes import tournament_bp
-from app.routes.member_portal_routes import member_portal_bp
+from app.routes.auth.auth_routes import auth_bp
+from app.routes.auth.auth_kasir_routes import auth_kasir_bp
+from app.routes.client.client_routes import client_bp
+from app.routes.dashboard.dashboard_routes import dashboard_bp
+from app.routes.member.member_routes import member_bp
+from app.routes.paket.paket_routes import paket_bp
+from app.routes.pc.pc_routes import pc_bp
+from app.routes.report.report_routes import report_bp
+from app.routes.sesi.sesi_routes import sesi_bp
+from app.routes.grup.grup_routes import grup_bp
+from app.routes.blackout.blackout_routes import blackout_bp
+from app.routes.settings.settings_routes import settings_bp
+from app.routes.monitor.monitor_routes import monitor_bp
+from app.routes.user.user_routes import user_bp
+from app.routes.menu.menu_routes import menu_bp
+from app.routes.backup.backup_routes import backup_bp
+from app.routes.tournament.tournament_routes import tournament_bp
+from app.routes.member.member_portal_routes import member_portal_bp
+from app.routes.shift.shift_routes import shift_bp
 
 __all__ = [
     'auth_bp', 'auth_kasir_bp', 'client_bp', 'dashboard_bp',
     'member_bp', 'paket_bp', 'pc_bp', 'report_bp', 'sesi_bp',
     'grup_bp', 'blackout_bp', 'settings_bp', 'monitor_bp', 'user_bp',
-    'menu_bp', 'backup_bp', 'tournament_bp', 'member_portal_bp'
+    'menu_bp', 'backup_bp', 'tournament_bp', 'member_portal_bp',
+    'shift_bp'
 ]

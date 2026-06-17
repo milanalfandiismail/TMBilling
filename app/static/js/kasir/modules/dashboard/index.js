@@ -513,7 +513,7 @@ const Dashboard = {
             if (statActive) statActive.innerText = activeCount;
             if (statAvailable) statAvailable.innerText = availableCount;
             if (statDisconnected) statDisconnected.innerText = disconnectedCount;
-            if (statIncome) statIncome.innerText = 'Rp ' + (data.total_pendapatan || 0).toLocaleString('id-ID');
+            if (statIncome) statIncome.innerText = Utils.formatRupiah(data.total_pendapatan || 0);
         } catch (err) {
             console.error('Stats error:', err);
         }

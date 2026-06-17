@@ -29,6 +29,9 @@ dist/
 /src-tauri/binaries/
 /src-tauri/gen/
 
+# AI Agent internal directory (not source code)
+.commandcode/
+
 # Flask-specific
 instance/
 .webassets-cache

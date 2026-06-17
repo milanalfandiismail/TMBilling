@@ -1,0 +1,25 @@
+/* app/static/css/member.css */
+
+/* Custom thin scrollbar */
+.scrollbar-thin::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+    border-radius: 2px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3a;
+}
+
+/* Glow effects for PC map status */
+.glow-emerald {
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+}
+.glow-rose {
+    box-shadow: 0 0 15px rgba(244, 63, 94, 0.1);
+}

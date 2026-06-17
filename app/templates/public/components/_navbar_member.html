@@ -1,0 +1,39 @@
+<!--
+  _navbar_member.html — Navbar untuk dashboard portal member
+  Variabel yang dibutuhkan:
+    - warnet_title : string — Nama warnet
+    - member        : object  — Member yang sedang login (member.username)
+-->
+
+<header class="w-full bg-[#0a0a0a] border-b border-[#1f1f1f] h-16 lg:h-20 flex items-center justify-between px-6 shrink-0">
+    <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded bg-neutral-100 flex items-center justify-center">
+            <span class="text-[#050505] font-black text-sm">TM</span>
+        </div>
+        <div>
+            <h1 class="text-sm lg:text-base font-extrabold text-neutral-100 leading-none">{{ warnet_title }}</h1>
+            <p class="text-[9px] lg:text-[10px] text-neutral-500 font-mono tracking-wider uppercase mt-1">Portal Member</p>
+        </div>
+    </div>
+    
+    <div class="flex items-center gap-4">
+        <div class="text-right hidden sm:block">
+            <p class="text-[10px] lg:text-xs text-neutral-500 font-semibold leading-none">Selamat Datang,</p>
+            <p class="text-xs lg:text-sm font-bold text-neutral-100 font-mono mt-1">{{ member.username }}</p>
+        </div>
+        <a href="/" 
+            class="px-3.5 py-2 bg-[#0f0f0f] border border-[#2a2a2a] hover:border-neutral-500 text-neutral-400 hover:text-neutral-100 text-xs lg:text-sm font-bold rounded-lg transition-colors flex items-center gap-2">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+            Beranda
+        </a>
+        <button onclick="submitLogout()" 
+            class="px-3.5 py-2 bg-[#0f0f0f] border border-[#2a2a2a] hover:border-neutral-500 text-neutral-400 hover:text-neutral-100 text-xs lg:text-sm font-bold rounded-lg transition-colors flex items-center gap-2">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+            Keluar
+        </button>
+    </div>
+</header>

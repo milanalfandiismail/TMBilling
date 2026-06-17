@@ -22,6 +22,10 @@ const Tournament = {
     activeStageId: null,
     activeData: null,
 
+    isKasir() {
+        return window.App && App.user && App.user.role === 'kasir';
+    },
+
     async load() {
         console.log('[Tournament] Loading list...');
         this.showListView();
@@ -54,9 +58,10 @@ const Tournament = {
                 grid.innerHTML = `
                     <div class="col-span-full py-16 border border-dashed border-[#2a2a2a] rounded-xl flex flex-col items-center justify-center text-center">
                         <p class="text-xs lg:text-base text-neutral-500">Belum ada turnamen yang dibuat.</p>
+                        ${this.isKasir() ? '' : `
                         <button onclick="Tournament.openCreateModal()" class="mt-4 px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-all">
                             Buat Turnamen Pertama
-                        </button>
+                        </button>`}
                     </div>
                 `;
                 return;
@@ -82,11 +87,12 @@ const Tournament = {
                         <div class="flex items-center justify-between mt-4 border-t border-[#171717]/80 pt-3">
                             <span class="text-[10px] lg:text-xs text-neutral-500 font-mono">${t.teams_count} Tim Terdaftar</span>
                             <div class="flex gap-2">
+                                ${this.isKasir() ? '' : `
                                 <button onclick="Tournament.deleteTournament(${t.id})" class="p-2 text-neutral-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Hapus Turnamen">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
-                                </button>
+                                </button>`}
                                 <button onclick="Tournament.showDetailView(${t.id})" class="px-3.5 py-2 bg-[#0f0f0f] border border-[#2a2a2a] hover:bg-[#151515] text-neutral-200 text-xs lg:text-sm font-bold rounded-lg transition-colors">
                                     Buka Turnamen
                                 </button>
@@ -245,8 +251,8 @@ const Tournament = {
                 }
 
                 html += `
-                    <div onclick="Tournament.openSkorModal(${m.id}, '${t1}', '${t2}', ${m.tim1_id || 0}, ${m.tim2_id || 0}, ${m.skor1}, ${m.skor2})"
-                        class="bg-[#0a0a0a] border ${cardBorder} rounded-xl p-4 cursor-pointer hover:bg-[#0c0c0c] transition-all space-y-2.5">
+                    <div ${this.isKasir() ? '' : `onclick="Tournament.openSkorModal(${m.id}, '${t1}', '${t2}', ${m.tim1_id || 0}, ${m.tim2_id || 0}, ${m.skor1}, ${m.skor2})"`}
+                        class="bg-[#0a0a0a] border ${cardBorder} rounded-xl p-4 ${this.isKasir() ? '' : 'cursor-pointer hover:bg-[#0c0c0c]'} transition-all space-y-2.5">
                         <div class="flex items-center justify-between text-[10px] lg:text-xs text-neutral-600 font-mono">
                             <span>Match #${m.match_number}</span>
                             ${boIndicators}
@@ -320,7 +326,7 @@ const Tournament = {
                 }
             }
 
-            const cardClickAction = m.tim2_id 
+            const cardClickAction = (m.tim2_id && !this.isKasir())
                 ? `onclick="Tournament.openSkorModal(${m.id}, '${t1}', '${t2}', ${m.tim1_id || 0}, ${m.tim2_id || 0}, ${m.skor1}, ${m.skor2})"`
                 : '';
 
@@ -350,16 +356,17 @@ const Tournament = {
         // Tampilkan tombol Lanjut Ronde atau Loloskan
         let actionButtons = '';
         const isLastStage = this.activeData.stages.find(s => s.urutan === stage.urutan + 1) === undefined;
+        const isKasir = this.isKasir();
 
         if (allCompleted) {
             if (isLastStage) {
-                actionButtons = `
+                actionButtons = isKasir ? '' : `
                     <button onclick="Tournament.finishStage(${stage.id})" class="w-full py-2.5 px-4 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">
                         Selesaikan Turnamen & Simpan Hasil
                     </button>
                 `;
             } else {
-                actionButtons = `
+                actionButtons = isKasir ? '' : `
                     <div class="grid grid-cols-2 gap-3">
                         <button onclick="Tournament.triggerNextSwiss(${t_id=stage.turnamen_id})" class="py-2.5 px-4 bg-[#0f0f0f] border border-[#2a2a2a] hover:bg-[#151515] text-neutral-200 text-xs lg:text-base font-bold rounded-lg transition-colors">
                             Buat Ronde Swiss #${maxRound + 1}
@@ -467,6 +474,10 @@ const Tournament = {
 
     // ===== MODAL ACTIONS: SCORE INPUT =====
     openSkorModal(matchId, t1Name, t2Name, t1Id, t2Id, s1, s2) {
+        if (this.isKasir()) {
+            Toast.error('Akses Ditolak: Hanya Admin yang dapat mengubah skor turnamen.');
+            return;
+        }
         if (!t1Id || !t2Id) {
             // Jika ada salah satu tim belum terisi di bracket, jangan ijinkan input
             return;

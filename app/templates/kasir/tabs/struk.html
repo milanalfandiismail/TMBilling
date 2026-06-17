@@ -1,5 +1,13 @@
 <!-- ===== TAB: STRUK ===== -->
 <div id="tab-struk" class="tab-content hidden">
+    <!-- Sub-tab navigation -->
+    <div class="flex gap-1 mb-5 bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-1 w-fit">
+        <button id="struk-sub-billing" onclick="Struk.switchSubTab('billing')"
+            class="px-4 py-1.5 text-xs font-bold rounded-md transition-all bg-neutral-100 text-black">BILLING</button>
+        <button id="struk-sub-kantin" onclick="Struk.switchSubTab('kantin')"
+            class="px-4 py-1.5 text-xs font-bold rounded-md transition-all bg-transparent text-neutral-400 hover:text-neutral-200">KANTIN / F&amp;B</button>
+    </div>
+
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="md:col-span-1 bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 max-h-[85vh] flex flex-col">
             <div class="flex items-center justify-between mb-4">

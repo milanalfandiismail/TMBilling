@@ -26,21 +26,28 @@ Services:
     UserService: CRUD akun staff kasir/admin.
 """
 
-from app.services.auth_kasir_service import AuthKasirService
-from app.services.auth_service import AuthService
-from app.services.blackout_service import BlackoutService
-from app.services.client_service import ClientService
-from app.services.dashboard_service import DashboardService
-from app.services.grup_service import GrupService
-from app.services.member_service import MemberService
-from app.services.paket_service import PaketService
-from app.services.pc_service import PCService
-from app.services.report_service import ReportService
-from app.services.sesi_service import SesiService
-from app.services.settings_service import SettingsService
-from app.services.backup_service import BackupService
+from app.services.settings.settings_service import SettingsService
+from app.services.backup.backup_service import BackupService
+from app.services.hardware.hardware_service import HardwareService
+from app.services.menu.menu_service import MenuService
+from app.services.transaksi.transaksi_service import TransaksiService
+from app.services.user.user_service import UserService
+
+from app.services.shift.shift_service import ShiftService
+from app.services.auth.auth_kasir_service import AuthKasirService
+from app.services.auth.auth_service import AuthService
+from app.services.blackout.blackout_service import BlackoutService
+from app.services.client.client_service import ClientService
+from app.services.dashboard.dashboard_service import DashboardService
+from app.services.grup.grup_service import GrupService
+from app.services.member.member_service import MemberService
+from app.services.paket.paket_service import PaketService
+from app.services.pc.pc_service import PCService
+from app.services.report.report_service import ReportService
+from app.services.sesi.sesi_service import SesiService
 
 __all__ = [
+    "ShiftService",
     "AuthKasirService",
     "AuthService",
     "BlackoutService", 
@@ -48,10 +55,14 @@ __all__ = [
     "ClientService",
     "DashboardService",
     "GrupService",
+    "HardwareService",
     "MemberService",
+    "MenuService",
     "PaketService",
     "PCService",
     "ReportService",
     "SesiService",
-    "SettingsService"
+    "SettingsService",
+    "TransaksiService",
+    "UserService"
 ]

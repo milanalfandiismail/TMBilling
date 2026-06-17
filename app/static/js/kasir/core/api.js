@@ -214,9 +214,10 @@ const API = {
         create: (formData) => API.request('/api/menu', { method: 'POST', body: formData }),
         update: (id, formData) => API.request(`/api/menu/${id}`, { method: 'PUT', body: formData }),
         delete: (id) => API.request(`/api/menu/${id}`, { method: 'DELETE' }),
-        checkout: (cartItems, pcKode = null) => API.request('/api/menu/checkout', {
+        deletePermanent: (id) => API.request(`/api/menu/${id}/permanent`, { method: 'DELETE' }),
+        checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0) => API.request('/api/menu/checkout', {
             method: 'POST',
-            body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode })
+            body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode, tunai, kembalian })
         }),
         transaksi: () => API.request('/api/menu/transaksi')
     }

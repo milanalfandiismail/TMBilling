@@ -4,6 +4,7 @@ const Struk = {
     currentData: null,
     currentPage: 1,
     currentDate: null,
+    currentSubTab: 'billing',
 
     async init() {
         await this.loadDateOptions();
@@ -19,6 +20,23 @@ const Struk = {
                 localStorage.removeItem('lastStrukData');
             }
         }
+    },
+
+    switchSubTab(type) {
+        this.currentSubTab = type;
+        // Update active state
+        ['billing', 'kantin'].forEach(t => {
+            const el = document.getElementById(`struk-sub-${t}`);
+            if (el) {
+                if (t === type) {
+                    el.className = 'px-4 py-1.5 text-xs font-bold rounded-md transition-all bg-neutral-100 text-black';
+                } else {
+                    el.className = 'px-4 py-1.5 text-xs font-bold rounded-md transition-all bg-transparent text-neutral-400 hover:text-neutral-200';
+                }
+            }
+        });
+        this.currentPage = 1;
+        this.loadHistory();
     },
 
     async loadDateOptions() {
@@ -63,7 +81,12 @@ const Struk = {
             container.innerHTML = '<div class="flex justify-center py-12"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
             const res = await window.API.report.byTanggal(targetDate, '', page, 5);
-            let listData = res.history_struk || [];
+            let listData = [];
+            if (this.currentSubTab === 'billing') {
+                listData = res.history_struk || [];
+            } else {
+                listData = res.history_menu || [];
+            }
 
             if (!listData || listData.length === 0) {
                 container.innerHTML = `
@@ -75,12 +98,13 @@ const Struk = {
 
             let html = listData.map(item => {
                 const noNota = item.no_nota || String(item.id);
-                const totalBayar = item.jumlah || item.total_bayar || 0;
-                const nama = item.nama_pelanggan || 'Guest';
+                const totalBayar = item.total_harga || item.total_bayar || item.jumlah || 0;
+                const nama = Struk.currentSubTab === 'kantin' ? 'Pelanggan POS' : (item.nama_pelanggan || 'Guest');
                 const waktu = item.waktu || '';
+                const clickId = Struk.currentSubTab === 'kantin' ? item.id : noNota;
 
                 return `
-                    <div onclick="Struk.cetak('${noNota}')" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3.5 cursor-pointer hover:border-neutral-400 transition-colors mb-2 hover-card-trigger">
+                    <div onclick="Struk.cetak('${clickId}')" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3.5 cursor-pointer hover:border-neutral-400 transition-colors mb-2 hover-card-trigger">
                         <div class="flex items-center justify-between">
                             <div class="min-w-0 flex-1">
                                 <div class="text-sm font-bold text-neutral-200 lg:truncate break-words whitespace-normal">${nama}</div>
@@ -120,7 +144,14 @@ const Struk = {
         if (!sesiId) { Toast.error("ID sesi tidak valid"); return; }
         try {
             document.getElementById('struk-preview').innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
-            const data = await API.request(`/api/report/struk/${sesiId}`);
+
+            let data;
+            if (this.currentSubTab === 'kantin') {
+                data = await API.report.strukMenu(sesiId);
+            } else {
+                data = await API.request(`/api/report/struk/${sesiId}`);
+            }
+
             this.currentData = data;
             localStorage.setItem('lastStrukData', JSON.stringify(data));
             this.renderPreview(data);

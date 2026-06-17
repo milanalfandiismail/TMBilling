@@ -12,15 +12,17 @@ Example:
     >>> sesi_aktif = SesiRepository.get_all_aktif()
 """
 
-from app.repositories.member_repository import MemberRepository
-from app.repositories.grup_repository import GrupRepository
-from app.repositories.paket_repository import PaketRepository
-from app.repositories.pc_repository import PCRepository
-from app.repositories.sesi_repository import SesiRepository
-from app.repositories.transaksi_repository import TransaksiRepository
-from app.repositories.user_repository import UserRepository
-from app.repositories.settings_repository import SettingsRepository
-from app.repositories.menu_repository import MenuRepository
+from app.repositories.member.member_repository import MemberRepository
+from app.repositories.grup.grup_repository import GrupRepository
+from app.repositories.paket.paket_repository import PaketRepository
+from app.repositories.pc.pc_repository import PCRepository
+from app.repositories.sesi.sesi_repository import SesiRepository
+from app.repositories.transaksi.transaksi_repository import TransaksiRepository
+from app.repositories.user.user_repository import UserRepository
+from app.repositories.settings.settings_repository import SettingsRepository
+from app.repositories.menu.menu_repository import MenuRepository
+from app.repositories.hardware.hardware_repository import HardwareRepository
+from app.repositories.process.process_repository import ProcessRepository
 
 __all__ = [
     "MemberRepository",
@@ -31,5 +33,7 @@ __all__ = [
     "TransaksiRepository",
     "UserRepository",
     'SettingsRepository',
-    "MenuRepository"
+    "MenuRepository",
+    "HardwareRepository",
+    "ProcessRepository"
 ]
