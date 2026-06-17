@@ -277,7 +277,7 @@ const Dashboard = {
                         const timeSpan = document.getElementById('screenshot-time');
                         const img = document.getElementById('screenshot-img');
                         const placeholder = document.getElementById('screenshot-placeholder');
-                        
+
                         const prevTime = timeSpan ? timeSpan.innerText.trim() : '';
                         if (statusData.screenshot_time && statusData.screenshot_time !== prevTime) {
                             clearInterval(interval);
@@ -287,9 +287,9 @@ const Dashboard = {
                                 img.classList.remove('hidden');
                             }
                             if (placeholder) placeholder.classList.add('hidden');
-                            
+
                             Toast.success('Tangkapan layar berhasil diperbarui!');
-                            
+
                             btn.disabled = false;
                             btn.classList.remove('opacity-40', 'cursor-not-allowed');
                             text.innerText = oldText;
@@ -440,7 +440,6 @@ const Dashboard = {
                     <div class="pc-card-tujuan bg-[#050505] border border-[#1c1c1c] rounded p-3 cursor-pointer hover:border-neutral-500 transition-colors text-center"
                          data-pc-kode="${pc.kode}">
                         <div class="font-bold text-neutral-200 font-mono text-xs lg:text-base">${pc.kode}</div>
-                        <div class="text-[9px] lg:text-base text-neutral-500 font-mono">${pc.ip_address || '-'}</div>
                     </div>
                 `;
             });
@@ -486,11 +485,11 @@ const Dashboard = {
     async updateStats() {
         try {
             const data = await API.report.harian();
-            
+
             let activeCount = 0;
             let availableCount = 0;
             let disconnectedCount = 0;
-            
+
             if (this.lastData && this.lastData.pc_list) {
                 this.lastData.pc_list.forEach(pc => {
                     if (pc.status === 'terpakai') {
@@ -504,12 +503,12 @@ const Dashboard = {
                     }
                 });
             }
-            
+
             const statActive = document.getElementById('stat-active');
             const statAvailable = document.getElementById('stat-available');
             const statDisconnected = document.getElementById('stat-disconnected');
             const statIncome = document.getElementById('stat-income');
-            
+
             if (statActive) statActive.innerText = activeCount;
             if (statAvailable) statAvailable.innerText = availableCount;
             if (statDisconnected) statDisconnected.innerText = disconnectedCount;
@@ -667,10 +666,10 @@ const Dashboard = {
         const mh = menu.offsetHeight || 220;
         let x = event.clientX;
         let y = event.clientY;
-        if (x + mw > window.innerWidth)  x = window.innerWidth - mw - 8;
+        if (x + mw > window.innerWidth) x = window.innerWidth - mw - 8;
         if (y + mh > window.innerHeight) y = window.innerHeight - mh - 8;
         menu.style.left = x + 'px';
-        menu.style.top  = y + 'px';
+        menu.style.top = y + 'px';
 
         // Tutup saat klik di luar (pasang listener baru, lepas yang lama dulu)
         if (this._ctxOutsideHandler) {
