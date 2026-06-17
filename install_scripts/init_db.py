@@ -6,7 +6,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import create_app
-from app.models.base import db
+from app.models.base.base import db
 
 app = create_app()
 with app.app_context():
