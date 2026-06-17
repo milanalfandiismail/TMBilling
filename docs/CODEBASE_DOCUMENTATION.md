@@ -1,4 +1,4 @@
-﻿# TMBilling — Codebase Documentation
+# TMBilling — Codebase Documentation
 
 > Manajemen Billing Warnet — Backend Flask + Frontend Vanilla JS + Client Tauri/Rust + Agent Rust
 
@@ -47,6 +47,9 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 | `grup.py` | Grup | nama (unique), warna |
 | `user.py` | User | username, role (admin/kasir) |
 | `settings.py` | Settings | Key-value store |
+| `menu/menu.py` | MenuItem, TransaksiMenu | nama, harga, stok, is_active, no_nota, menu_id, jumlah, total_harga, tunai, kembalian |
+| `shift/shift_record.py` | ShiftRecord | kasir_id, waktu_mulai, waktu_selesai, modal_awal, uang_fisik, status |
+| `tournament/tournament.py` | Turnamen, TurnamenTahap, TurnamenTim, TurnamenMatch | nama, status, tipe_jalur, teams, matches, scores, next_match_id |
 
 ### 1.3 Services (`app/services/`)
 
@@ -61,6 +64,9 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 | `blackout_service.py` | Deteksi & resolve sesi mati lampu |
 | `settings_service.py` | Auto-shutdown timer, API key rotation, backup |
 | `auth_service.py` | Validasi kredensial kasir/admin |
+| `menu_service.py` | CRUD katalog F&B menu, checkout pesanan kasir POS, data transaksi, soft/hard delete menu |
+| `backup/backup_service.py` | Kompresi ZIP database dan eksekusi upload ke cloud provider aktif |
+| `backup/providers.py` | Adapter/strategy untuk upload ke Discord, WebDAV, GDrive, dan NAS |
 
 ### 1.4 Routes (`app/routes/`)
 
@@ -79,6 +85,11 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 | `settings_routes.py` | `/api/settings/` | Mixed | Settings, API key rotation, backup, uninstall token |
 | `user_routes.py` | `/api/user/` | Admin | CRUD staff |
 | `auth_kasir_routes.py` | `/api/kasir/` | None | Login, logout, session check |
+| `menu/menu_routes.py` | `/api/` | Session | API katalog F&B menu, checkout POS, riwayat transaksi |
+| `backup/backup_routes.py` | `/api/backup/` | Admin | API backup manual, test connection, list/download/delete backup |
+| `tournament/tournament_routes.py` | `/api/` | Session | API turnamen, matchmaking Swiss, update skor, playoffs |
+| `member/member_portal_routes.py` | `/member/` | Member | Web portal member (login, logout, dashboard sisa waktu, riwayat) |
+| `shift/shift_routes.py` | `/api/` | Session | API shift handover (start, active, summary, end, history) |
 
 ### 1.5 Frontend Dashboard (`app/static/js/kasir/`)
 
@@ -110,7 +121,7 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 | Task | Interval | Fungsi |
 |------|----------|--------|
 | Cleanup expired sessions | 1 menit | Tutup sesi yang waktu habis |
-| Database backup | 60 menit | Backup SQLite ke `backups/` |
+| Database backup | 60 menit | Kompresi database SQLite ke ZIP, simpan lokal di `backups/`, dan upload ke provider cloud aktif (Discord, WebDAV, GDrive, NAS) dengan cleanup FIFO (maksimal 5 berkas terbaru) |
 | Admin mode reset | 5 menit | Reset `is_admin_mode` jika PC heartbeats mati |
 
 ---
@@ -416,8 +427,11 @@ cd WarnetAgent/TMBilling_Monitor && cargo build --release
 | `docs/TECHNICAL_DOCS.md` | API reference — all endpoints with request/response |
 | `docs/walkthrough.md` | Hex-XOR implementation, watchdog alignment, offline uninstall |
 | `docs/agent.md` | Agent task tracker — bypass offline, API key rotation |
+| `docs/CLOUD_BACKUP_DESIGN.md` | Rencana Desain: Sistem Backup Multi-Provider TMBilling |
+| `docs/NEW_FEATURES_GUIDE.md` | Panduan Fitur Baru: Tauri Single-Instance, Portal Member, Turnamen, & Shift Handover |
+| `docs/UPGRADE_RUPIAH_AND_POS.md` | Dokumentasi Pembaruan UI/UX: Format Rupiah, POS F&B Menu & Layout Mobile |
 
 ---
 
 *TMBilling v1.0 — Codebase Documentation*
-*Updated: 2026-06-12*
+*Updated: 2026-06-16*

@@ -1,0 +1,24 @@
+<!--
+  _head.html — Shared head component (dipakai via Jinja2 include)
+  Variabel yang dibutuhkan dari halaman pemanggil:
+    - page_title  : string — Isi tag <title>
+    - warnet_title: string — Nama warnet (diinject otomatis oleh context_processor)
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ page_title }}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: {
+                    sans: ['Space Grotesk', 'sans-serif'],
+                    mono: ['JetBrains Mono', 'monospace']
+                }
+            }
+        }
+    }
+</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/member.css') }}">

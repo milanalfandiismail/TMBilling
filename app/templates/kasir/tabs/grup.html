@@ -7,11 +7,13 @@
                 <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide">Grup PC / Zona</h3>
                 <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Buat kelompok zona PC — setiap grup memiliki paket billing dan tarif tersendiri</p>
             </div>
+            {% if session.get('kasir_role') == 'admin' %}
             <button onclick="Grup.showAddModal()"
                 class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Tambah Grup
             </button>
+            {% endif %}
         </div>
     </div>
 

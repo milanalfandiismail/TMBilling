@@ -12,7 +12,7 @@ import os
 import shutil
 from datetime import datetime
 from flask import current_app
-from app.services.sesi_service import SesiService
+from app.services import SesiService
 from app.utils.logger import write_log  # pakai logger kamu
 
 
@@ -73,14 +73,17 @@ def format_duration(menit):
 
 def format_rupiah(nominal):
     """Memformat angka nominal ke format Rupiah Indonesia.
-    
+
     Args:
         nominal (int): Nominal dalam satuan Rupiah.
-        
+
     Returns:
-        str: String dengan format 'Rp{nominal:,}' (contoh: 'Rp15,000').
+        str: String dengan format 'Rp10.000' (standar EYD/PUEBI tanpa spasi).
     """
-    return f"Rp{nominal:,}"
+    if nominal is None:
+        nominal = 0
+    formatted = f"{int(nominal):,}".replace(",", ".")
+    return f"Rp{formatted}"
 
 
 def run_cleanup_expired(app):
@@ -121,7 +124,7 @@ def run_database_backup(app):
         backup_dir = os.path.abspath(os.path.join(app.instance_path, '..', 'backups'))
         
         try:
-            from app.services.backup_service import BackupService
+            from app.services import BackupService
             backup_manager = BackupService(db_path=db_path, backup_dir=backup_dir)
             if os.path.exists(db_path):
                 backup_manager.create_backup()

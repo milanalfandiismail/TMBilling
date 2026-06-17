@@ -25,6 +25,18 @@ const Settings = {
                 if (titleInput && res.settings.warnet_title !== undefined) {
                     titleInput.value = res.settings.warnet_title;
                 }
+                const addressInput = document.getElementById('warnet-address-input');
+                if (addressInput && res.settings.warnet_address !== undefined) {
+                    addressInput.value = res.settings.warnet_address;
+                }
+                const phoneInput = document.getElementById('warnet-phone-input');
+                if (phoneInput && res.settings.warnet_phone !== undefined) {
+                    phoneInput.value = res.settings.warnet_phone;
+                }
+                const footerInput = document.getElementById('warnet-footer-input');
+                if (footerInput && res.settings.warnet_footer !== undefined) {
+                    footerInput.value = res.settings.warnet_footer;
+                }
                 const announcementInput = document.getElementById('warnet-announcement-input');
                 if (announcementInput && res.settings.warnet_announcement !== undefined) {
                     announcementInput.value = res.settings.warnet_announcement;
@@ -278,9 +290,12 @@ const Settings = {
 
     async saveKioskSettings() {
         const title = document.getElementById('warnet-title-input').value;
+        const address = document.getElementById('warnet-address-input').value;
+        const phone = document.getElementById('warnet-phone-input').value;
+        const footer = document.getElementById('warnet-footer-input').value;
         const announcement = document.getElementById('warnet-announcement-input').value;
         const qrisFileInput = document.getElementById('qris-file-input');
-        
+
         Toast.success('Menyimpan pengaturan Kiosk...');
         try {
             // 1. Simpan judul
@@ -288,8 +303,26 @@ const Settings = {
                 method: 'PUT',
                 body: JSON.stringify({ value: title })
             });
-            
-            // 2. Simpan pengumuman
+
+            // 2. Simpan alamat warnet
+            await API.request('/api/settings/warnet_address', {
+                method: 'PUT',
+                body: JSON.stringify({ value: address })
+            });
+
+            // 3. Simpan nomor telepon
+            await API.request('/api/settings/warnet_phone', {
+                method: 'PUT',
+                body: JSON.stringify({ value: phone })
+            });
+
+            // 4. Simpan pesan kaki struk
+            await API.request('/api/settings/warnet_footer', {
+                method: 'PUT',
+                body: JSON.stringify({ value: footer })
+            });
+
+            // 5. Simpan pengumuman
             await API.request('/api/settings/warnet_announcement', {
                 method: 'PUT',
                 body: JSON.stringify({ value: announcement })

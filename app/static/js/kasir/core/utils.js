@@ -1,6 +1,25 @@
 const Utils = {
     formatRupiah(angka) {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
+        if (angka === undefined || angka === null) angka = 0;
+        const formatted = Math.round(angka).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return `Rp${formatted}`;
+    },
+    formatRawRupiah(angka) {
+        if (angka === undefined || angka === null) angka = 0;
+        return Math.round(angka).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    },
+    formatInputRupiah(input) {
+        let raw = input.value.replace(/\./g, '').replace(/[^\d]/g, '');
+        if (raw === '') {
+            input.value = '';
+            return;
+        }
+        const formatted = raw.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        const cursorPos = input.selectionStart;
+        const oldLen = input.value.length;
+        input.value = formatted;
+        const diff = input.value.length - oldLen;
+        input.setSelectionRange(cursorPos + diff, cursorPos + diff);
     },
     formatMenit(menit) {
         if (menit === undefined || menit === null) return '0m';

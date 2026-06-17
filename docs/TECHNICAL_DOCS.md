@@ -341,6 +341,248 @@ Prefix: `/api/settings` — Auth: `@login_required`
 | POST | `/settings/qris` | Unggah berkas gambar QRIS baru untuk pembayaran di Kiosk |
 | GET | `/settings/uninstall-token/client` | *(Bypass Auth — API Key)* Mengembalikan `uninstall_token` & `emergency_token` untuk sinkronisasi offline klien |
 
+## Cloud Backup
+
+Prefix: `/api/backup` — Auth: `@login_required + @admin_required`
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| POST | `/trigger` | Memicu manual backup database SQLite (ZIP) dan mengunggahnya ke cloud provider aktif |
+| POST | `/test-connection` | Menguji koneksi cloud provider tertentu menggunakan kredensial sementara |
+| GET | `/list` | Mengembalikan daftar berkas ZIP backup lokal beserta ukuran dan waktu pembuatan |
+| GET | `/download/{filename}` | Mengunduh file backup ZIP lokal tertentu (dilengkapi proteksi directory traversal) |
+| DELETE | `/delete/{filename}` | Menghapus file backup ZIP lokal tertentu |
+
+### Contoh Request & Response
+
+**1. Test Connection (POST `/api/backup/test-connection`)**
+
+**Request (JSON - Discord Webhook):**
+```json
+{
+  "provider": "discord",
+  "url": "https://discord.com/api/webhooks/1234567890/abcde"
+}
+```
+
+**Request (JSON - WebDAV / Nextcloud):**
+```json
+{
+  "provider": "webdav",
+  "url": "https://nextcloud.example.com/remote.php/dav/files/user/backups/",
+  "username": "user",
+  "password": "secretpassword"
+}
+```
+
+**Request (JSON - Google Drive):**
+```json
+{
+  "provider": "gdrive",
+  "client_id": "gdrive-client-id",
+  "client_secret": "gdrive-client-secret",
+  "refresh_token": "gdrive-refresh-token",
+  "folder_id": "optional-folder-id"
+}
+```
+
+**Request (JSON - NAS / Shared Folder):**
+```json
+{
+  "provider": "nas",
+  "path": "\\\\192.168.1.100\\Backup"
+}
+```
+
+**Response (JSON - Berhasil):**
+```json
+{
+  "success": true,
+  "message": "Koneksi ke Discord Webhook Berhasil!"
+}
+```
+
+**2. Memicu Backup Manual (POST `/api/backup/trigger`)**
+
+**Response (JSON - Berhasil):**
+```json
+{
+  "success": true,
+  "message": "Backup manual dan upload cloud berhasil diproses!",
+  "filename": "warnet_backup_20260616_221500.zip"
+}
+```
+
+## Kantin / POS Makanan & Minuman (F&B)
+
+Prefix: `/api` — Auth: `@login_required`
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/menu` | Mengambil katalog semua makanan dan minuman |
+| POST | `/menu` | Membuat item menu baru beserta upload gambarnya |
+| PUT | `/menu/{menu_id}` | Mengupdate item menu beserta upload gambar baru (jika ada) |
+| DELETE | `/menu/{menu_id}` | Menghapus (arsip/soft-delete) item menu dari katalog |
+| DELETE | `/menu/{menu_id}/permanent` | Menghapus menu secara permanen beserta seluruh transaksi terkait |
+| POST | `/menu/checkout` | Memproses transaksi checkout pesanan makanan/minuman |
+| GET | `/menu/transaksi` | Mendapatkan riwayat seluruh transaksi penjualan menu |
+
+### Contoh Request & Response
+
+**1. Membuat Menu Baru (POST `/api/menu`)**
+
+Menggunakan request body tipe `multipart/form-data` dengan field:
+- `nama`: `Indomie Goreng`
+- `harga`: `10000` (atau input terformat titik dari UI)
+- `stok`: `50` (atau `-1` untuk Stok Unlimited)
+- `gambar`: (berkas gambar opsional)
+
+**Response (JSON):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 5,
+    "nama": "Indomie Goreng",
+    "harga": 10000,
+    "stok": 50,
+    "gambar_path": "/static/uploads/menu/indomie_goreng_827f31.png",
+    "is_active": true
+  },
+  "message": "Menu 'Indomie Goreng' berhasil dibuat!"
+}
+```
+
+**2. Memproses Transaksi Belanja (POST `/api/menu/checkout`)**
+
+**Request (JSON):**
+```json
+{
+  "cart_items": [
+    { "menu_id": 5, "jumlah": 2 }
+  ],
+  "pc_kode": "PC-01",
+  "tunai": 25000,
+  "kembalian": 5000
+}
+```
+
+**Response (JSON):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 12,
+      "no_nota": "FNB-20260616-003",
+      "menu_id": 5,
+      "menu_nama": "Indomie Goreng",
+      "menu_harga": 10000,
+      "jumlah": 2,
+      "total_harga": 20000,
+      "pc_kode": "PC-01",
+      "tanggal": "2026-06-16 22:15:00",
+      "kasir_id": 1,
+      "kasir_nama": "admin",
+      "tunai": 25000,
+      "kembalian": 5000
+    }
+  ],
+  "message": "Transaksi F&B berhasil diproses!"
+}
+```
+
+## Shift Handover (Sesi Kerja Kasir)
+
+Prefix: `/api` — Auth: `@login_required`
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| POST | `/shift/start` | Membuka shift baru untuk kasir yang sedang login |
+| GET | `/shift/active` | Memeriksa status shift aktif kasir saat ini |
+| GET | `/shift/summary` | Ringkasan pendapatan internal shift aktif (untuk admin preview) |
+| POST | `/shift/end` | Menutup shift aktif dengan memasukkan uang fisik (hitung buta / blind count) |
+| GET | `/shift/history` | Riwayat shift kasir yang sudah selesai (untuk admin) |
+
+### Contoh Request & Response
+
+**1. Buka Shift Kasir (POST `/api/shift/start`):**
+
+**Request (JSON):**
+```json
+{ "modal_awal": 50000 }
+```
+
+**Response (JSON):**
+```json
+{
+  "success": true,
+  "shift": {
+    "id": 1,
+    "kasir_nama": "kasir1",
+    "waktu_mulai": "2026-06-16 08:00:00",
+    "waktu_selesai": null,
+    "modal_awal": 50000,
+    "uang_fisik": 0,
+    "selisih": 0,
+    "status": "aktif"
+  }
+}
+```
+
+---
+
+## Turnamen Bracket Maker
+
+Prefix: `/api` — Auth: `@login_required`
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/tournament` | Mengambil seluruh daftar turnamen |
+| GET | `/tournament/{t_id}` | Mengambil detail lengkap turnamen beserta tim, ronde, match, dan klasemen Swiss |
+| POST | `/tournament` | Membuat turnamen baru, mendaftarkan tim, dan menginisialisasi bagan |
+| POST | `/tournament/match/{match_id}/skor` | Mengupdate skor pertandingan dan meloloskan pemenang ke babak berikutnya |
+| POST | `/tournament/{t_id}/swiss/next` | Membuka ronde Swiss berikutnya dan melakukan matchmaking otomatis |
+| POST | `/tournament/stage/{stage_id}/finish` | Menyelesaikan tahap saat ini dan meloloskan tim terpilih ke Playoffs |
+| DELETE | `/tournament/{t_id}` | Menghapus turnamen beserta seluruh datanya secara permanen |
+
+### Contoh Request & Response
+
+**1. Membuat Turnamen Baru (POST `/api/tournament`):**
+
+**Request (JSON):**
+```json
+{
+  "nama": "TMBilling Valorant Cup",
+  "deskripsi": "Turnamen 5v5 di zona reguler",
+  "tipe_jalur": "playoff",
+  "teams": ["Tim A", "Tim B", "Tim C", "Tim D"],
+  "bo_format": 1
+}
+```
+
+**Response (JSON):**
+```json
+{
+  "success": true,
+  "message": "Turnamen 'TMBilling Valorant Cup' berhasil dibuat",
+  "tournament_id": 3
+}
+```
+
+---
+
+## Portal Web Member & Publik
+
+Auth: Mix (`member_login_required` untuk halaman dashboard)
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/member/login` | None | Halaman login portal member |
+| POST | `/member/login` | None | Proses login akun member (username & password) |
+| POST | `/member/logout` | Member | Keluar dari session portal member |
+| GET | `/member/` | Member | Halaman dashboard dashboard member (sisa waktu, status PC) |
+| GET | `/api/public/pc-status` | None | Mengambil peta status PC real-time secara publik |
+
 ---
 *TMBilling v1.0 — API Documentation*
-

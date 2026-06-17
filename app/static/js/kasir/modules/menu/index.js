@@ -67,12 +67,16 @@ const Menu = {
                 <div class="bg-[#0c0c0c] border border-[#1c1c1c] hover:border-[#2a2a2a] transition-all rounded-xl p-3 flex flex-col justify-between group relative">
                     <!-- CRUD Quick Actions -->
                     <div class="absolute top-2.5 right-2.5 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        ${(window.App && App.user && App.user.role === 'kasir') ? '' : `
                         <button onclick="Menu.showEditModal(${m.id})" class="p-1 rounded bg-black/60 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-[#2a2a2a] transition-colors" title="Edit Menu">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                         </button>
                         <button onclick="Menu.deleteItem(${m.id}, '${m.nama}')" class="p-1 rounded bg-black/60 hover:bg-red-950 text-neutral-400 hover:text-red-400 border border-[#2a2a2a] hover:border-red-900 transition-colors" title="Hapus Menu">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
+                        <button onclick="Menu.hardDeleteItem(${m.id}, '${m.nama}')" class="p-1 rounded bg-black/60 hover:bg-red-700 text-neutral-400 hover:text-white border border-[#2a2a2a] hover:border-red-600 transition-colors" title="Hapus Permanen (beserta semua transaksi)">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"></path></svg>
+                        </button>`}
                     </div>
 
                     <div class="space-y-2.5">
@@ -80,7 +84,7 @@ const Menu = {
                         <div>
                             <h4 class="text-xs lg:text-base font-bold text-neutral-100 truncate">${m.nama}</h4>
                             <div class="flex items-center justify-between mt-1">
-                                <span class="text-xs lg:text-base text-neutral-300 font-bold font-mono">Rp ${m.harga.toLocaleString('id-ID')}</span>
+                                <span class="text-xs lg:text-base text-neutral-300 font-bold font-mono">${Utils.formatRupiah(m.harga)}</span>
                                 <span class="text-[9px] lg:text-base ${stokColor} font-mono">${stokText}</span>
                             </div>
                         </div>
@@ -151,7 +155,7 @@ const Menu = {
 
         if (this.cart.length === 0) {
             container.innerHTML = `<div class="text-center py-10 text-neutral-600 text-xs lg:text-base">Keranjang masih kosong</div>`;
-            totalEl.textContent = "Rp 0";
+            totalEl.textContent = "Rp0";
             return;
         }
 
@@ -164,7 +168,7 @@ const Menu = {
                 <div class="flex items-center justify-between gap-3 bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-2.5">
                     <div class="min-w-0 flex-1">
                         <h5 class="text-xs lg:text-base font-bold text-neutral-200 truncate">${c.menu.nama}</h5>
-                        <span class="text-[10px] lg:text-base text-neutral-500 font-mono">Rp ${c.menu.harga.toLocaleString('id-ID')}</span>
+                        <span class="text-[10px] lg:text-base text-neutral-500 font-mono">${Utils.formatRupiah(c.menu.harga)}</span>
                     </div>
                     
                     <div class="flex items-center gap-1 shrink-0">
@@ -178,13 +182,13 @@ const Menu = {
                     </div>
 
                     <div class="text-right shrink-0">
-                        <div class="text-xs lg:text-base font-mono font-bold text-neutral-200">Rp ${itemTotal.toLocaleString('id-ID')}</div>
+                        <div class="text-xs lg:text-base font-mono font-bold text-neutral-200">${Utils.formatRupiah(itemTotal)}</div>
                         <button onclick="Menu.removeFromCart(${c.menu.id})" class="text-[9px] lg:text-base text-red-500 hover:text-red-400 font-semibold mt-0.5">Hapus</button>
                     </div>
                 </div>`;
         }).join('');
 
-        totalEl.textContent = `Rp ${total.toLocaleString('id-ID')}`;
+        totalEl.textContent = Utils.formatRupiah(total);
     },
 
     async checkout() {
@@ -196,75 +200,173 @@ const Menu = {
         const pcSelect = document.getElementById("menu-order-pc-select");
         const pcKode = pcSelect?.value || null;
 
-        const cartItems = this.cart.map(c => ({
-            menu_id: c.menu.id,
-            jumlah: c.jumlah
-        }));
-
-        // Generate dynamic items list for confirmation dialog
         let total = 0;
-        const itemsListHtml = this.cart.map(c => {
-            const subtotal = c.menu.harga * c.jumlah;
-            total += subtotal;
-            const formattedPrice = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(subtotal);
-            return `<li>${c.menu.nama} x${c.jumlah} (${formattedPrice})</li>`;
-        }).join('');
-
+        this.cart.forEach(c => { total += c.menu.harga * c.jumlah; });
+        const formattedTotal = Utils.formatRupiah(total);
         const targetDest = pcKode === 'Tempat' ? 'Makan di Tempat' : 'Take Away (Bawa Pulang)';
-        const formattedTotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(total);
 
-        const msg = `
-            Apakah Anda yakin ingin memproses transaksi F&B berikut?
-            <ul class="list-disc list-inside mt-2 text-neutral-300 font-mono text-[11px] space-y-1">
-                ${itemsListHtml}
-            </ul>
-            <div class="mt-3 text-neutral-300 text-xs lg:text-base border-t border-[#222] pt-2">
-                Tujuan: <strong>${targetDest}</strong><br>
-                Total: <strong class="text-emerald-400">${formattedTotal}</strong>
+        this._checkoutTotal = total;
+        this._checkoutPcKode = pcKode;
+
+        const modalHtml = `
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in">
+                <div class="px-6 py-5 border-b border-[#2a2a2a]">
+                    <h3 class="text-base font-bold text-neutral-100">Pembayaran POS</h3>
+                    <p class="text-xs text-neutral-500 mt-1">${targetDest}</p>
+                </div>
+                <div class="px-6 py-5 space-y-4">
+                    <!-- Total -->
+                    <div class="bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-4 text-center">
+                        <span class="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Total Belanja</span>
+                        <div class="text-2xl font-black text-neutral-100 font-mono mt-1">${formattedTotal}</div>
+                    </div>
+
+                    <!-- Input Tunai -->
+                    <div>
+                        <label class="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">Uang Tunai</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-sm">Rp</span>
+                            <input type="number" id="payment-tunai-input" min="0" value="0"
+                                class="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm font-mono text-right focus:border-neutral-500 transition-colors"
+                                placeholder="0" oninput="Menu.hitungKembalian()" autofocus />
+                        </div>
+                    </div>
+
+                    <!-- Shortcut Pecahan -->
+                    <div>
+                        <label class="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">Shortcut</label>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${[1000, 2000, 5000, 10000, 20000, 50000, 100000].map(n =>
+                                `<button onclick="Menu.setTunai(${n})" class="px-3 py-1.5 bg-[#0a0a0a] border border-[#1c1c1c] hover:bg-[#1a1a1a] text-neutral-300 text-xs font-mono font-bold rounded transition-colors">Rp${(n/1000).toFixed(0)}K</button>`
+                            ).join('')}
+                            <button onclick="Menu.setTunaiPas()" class="px-3 py-1.5 bg-[#0a0a0a] border border-[#1c1c1c] hover:bg-[#1a1a1a] text-neutral-300 text-xs font-mono font-bold rounded transition-colors">Pas</button>
+                        </div>
+                    </div>
+
+                    <!-- Kembalian -->
+                    <div class="bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-neutral-500 uppercase font-bold tracking-wider">Kembalian</span>
+                            <span id="payment-kembalian-display" class="text-lg font-black text-neutral-600 font-mono">Rp0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-[#2a2a2a] flex justify-end gap-2">
+                    <button onclick="Modal.closeModal()" 
+                        class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs font-bold rounded-lg transition-colors">Batal</button>
+                    <button id="payment-submit-btn" onclick="Menu.submitPembayaran()" disabled
+                        class="px-6 py-2.5 bg-neutral-600 text-neutral-700 text-xs font-bold rounded-lg cursor-not-allowed transition-colors">Bayar</button>
+                </div>
             </div>
         `;
+        Modal.show(modalHtml);
+        setTimeout(() => {
+            const input = document.getElementById('payment-tunai-input');
+            if (input) input.focus();
+        }, 200);
+    },
 
-        Modal.confirm(msg, async () => {
-            try {
-                const res = await window.API.menu.checkout(cartItems, pcKode);
-                if (res.success) {
-                    Toast.success("Penjualan F&B berhasil diproses!");
-                    this.cart = [];
-                    this.renderCart();
-                    await this.loadCatalog(); // Reload catalog to update stock numbers
+    _checkoutTotal: 0,
+    _checkoutPcKode: null,
 
-                    // Prompt to print receipt
-                    if (res.data && res.data.length > 0) {
-                        Modal.confirm("Transaksi F&B berhasil diproses. Apakah Anda ingin mencetak struk?", () => {
-                            res.data.forEach(tm => {
-                                const strukData = {
-                                    no_nota: tm.no_nota,
-                                    tanggal: tm.tanggal,
-                                    pc_kode: tm.pc_kode || "-",
-                                    tipe: "kantin",
-                                    nama_pelanggan: "Pelanggan POS",
-                                    rincian: [{ keterangan: tm.menu_nama, durasi: tm.jumlah, harga: tm.total_harga }],
-                                    total_durasi: tm.jumlah,
-                                    total_harga: tm.total_harga,
-                                    kasir: tm.kasir_nama
-                                };
-                                StrukPreview.currentData = strukData;
-                                StrukPreview.printPreview();
-                            });
+    hitungKembalian() {
+        const tunaiInput = document.getElementById('payment-tunai-input');
+        const kembalianDisplay = document.getElementById('payment-kembalian-display');
+        const submitBtn = document.getElementById('payment-submit-btn');
+        if (!tunaiInput || !kembalianDisplay || !submitBtn) return;
+
+        const total = this._checkoutTotal;
+        const tunai = parseInt(tunaiInput.value) || 0;
+        const kembalian = tunai - total;
+
+        if (tunai >= total && total > 0) {
+            kembalianDisplay.textContent = Utils.formatRupiah(kembalian);
+            kembalianDisplay.className = 'text-lg font-black text-emerald-400 font-mono';
+            submitBtn.disabled = false;
+            submitBtn.className = 'px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors';
+        } else {
+            kembalianDisplay.textContent = 'Rp0';
+            kembalianDisplay.className = 'text-lg font-black text-neutral-600 font-mono';
+            submitBtn.disabled = true;
+            submitBtn.className = 'px-6 py-2.5 bg-neutral-600 text-neutral-700 text-xs font-bold rounded-lg cursor-not-allowed transition-colors';
+        }
+    },
+
+    setTunai(nominal) {
+        const input = document.getElementById('payment-tunai-input');
+        if (input) { input.value = nominal; this.hitungKembalian(); }
+    },
+
+    setTunaiPas() {
+        this.setTunai(this._checkoutTotal);
+    },
+
+    async submitPembayaran() {
+        const tunaiInput = document.getElementById('payment-tunai-input');
+        const tunai = parseInt(tunaiInput?.value) || 0;
+        const total = this._checkoutTotal;
+        const kembalian = tunai - total;
+        if (tunai < total || total <= 0) return;
+
+        Modal.closeModal();
+
+        const cartItems = this.cart.map(c => ({ menu_id: c.menu.id, jumlah: c.jumlah }));
+        const pcKode = this._checkoutPcKode;
+
+        try {
+            const res = await window.API.menu.checkout(cartItems, pcKode, tunai, kembalian);
+            if (res.success) {
+                Toast.success(`Pembayaran berhasil! Kembalian: Rp ${kembalian.toLocaleString('id-ID')}`);
+                this.cart = [];
+                this.renderCart();
+                await this.loadCatalog();
+
+                if (res.data && res.data.length > 0) {
+                    Modal.confirm("Transaksi berhasil. Cetak struk?", () => {
+                        res.data.forEach(tm => {
+                            StrukPreview.currentData = {
+                                no_nota: tm.no_nota,
+                                tanggal: tm.tanggal,
+                                pc_kode: tm.pc_kode || "-",
+                                tipe: "kantin",
+                                nama_pelanggan: "Pelanggan POS",
+                                rincian: [{ keterangan: tm.menu_nama, durasi: tm.jumlah, harga: tm.total_harga }],
+                                total_durasi: tm.jumlah,
+                                total_harga: tm.total_harga,
+                                kasir: tm.kasir_nama,
+                                tunai: tunai,
+                                kembalian: kembalian
+                            };
+                            StrukPreview.printPreview();
                         });
-                    }
-                } else {
-                    Toast.error(res.error || "Gagal memproses checkout");
+                    });
                 }
-            } catch (error) {
-                Toast.error("Gagal checkout: error koneksi");
+            } else {
+                Toast.error(res.error || "Gagal memproses checkout");
             }
-        });
+        } catch (error) {
+            Toast.error("Gagal checkout: error koneksi");
+        }
     },
 
     // =========================================================================
     // CRUD MODAL & FORM METHODS
     // =========================================================================
+
+    toggleStokUnlimited(checked) {
+        const stokInput = document.getElementById("menu-stok-input");
+        if (!stokInput) return;
+        if (checked) {
+            stokInput.value = "";
+            stokInput.disabled = true;
+            stokInput.required = false;
+            stokInput.placeholder = "Unlimited (\u221E)";
+        } else {
+            stokInput.disabled = false;
+            stokInput.required = true;
+            stokInput.placeholder = "Contoh: 50";
+        }
+    },
 
     showAddModal() {
         const modal = document.getElementById("menu-modal");
@@ -276,11 +378,20 @@ const Menu = {
         document.getElementById("menu-id-input").value = "";
         document.getElementById("menu-file-name").textContent = "Belum ada gambar terpilih";
         title.textContent = "Tambah Item Baru";
+        // Reset checkbox unlimited
+        const cb = document.getElementById("menu-stok-unlimited");
+        if (cb) cb.checked = false;
+        const stokInput = document.getElementById("menu-stok-input");
+        if (stokInput) {
+            stokInput.disabled = false;
+            stokInput.required = true;
+            stokInput.placeholder = "Contoh: 50";
+        }
         modal.classList.remove("hidden");
     },
 
     showEditModal(menuId) {
-        event.stopPropagation(); // Mencegah klik di card
+        event.stopPropagation();
         const menu = this.items.find(m => m.id === menuId);
         if (!menu) return;
 
@@ -290,11 +401,30 @@ const Menu = {
 
         document.getElementById("menu-id-input").value = menu.id;
         document.getElementById("menu-nama-input").value = menu.nama;
-        document.getElementById("menu-harga-input").value = menu.harga;
-        document.getElementById("menu-stok-input").value = menu.stok;
-        document.getElementById("menu-file-name").textContent = menu.gambar_path 
+        document.getElementById("menu-harga-input").value = Utils.formatRawRupiah(menu.harga);
+        document.getElementById("menu-file-name").textContent = menu.gambar_path
             ? menu.gambar_path.split("/").pop()
             : "Belum ada gambar terpilih";
+
+        const cb = document.getElementById("menu-stok-unlimited");
+        const stokInput = document.getElementById("menu-stok-input");
+        if (menu.stok < 0) {
+            if (cb) cb.checked = true;
+            if (stokInput) {
+                stokInput.value = "";
+                stokInput.disabled = true;
+                stokInput.required = false;
+                stokInput.placeholder = "Unlimited (\u221E)";
+            }
+        } else {
+            if (cb) cb.checked = false;
+            if (stokInput) {
+                stokInput.value = menu.stok;
+                stokInput.disabled = false;
+                stokInput.required = true;
+                stokInput.placeholder = "Contoh: 50";
+            }
+        }
 
         title.textContent = "Edit Item Menu";
         modal.classList.remove("hidden");
@@ -315,13 +445,17 @@ const Menu = {
 
     async submitForm(event) {
         event.preventDefault();
-        
+
         const menuId = document.getElementById("menu-id-input").value;
         const nama = document.getElementById("menu-nama-input").value.trim();
-        const harga = document.getElementById("menu-harga-input").value;
-        const stok = document.getElementById("menu-stok-input").value;
+        const hargaRaw = document.getElementById("menu-harga-input").value;
+        const harga = hargaRaw.replace(/\./g, '');
         const gambarInput = document.getElementById("menu-gambar-input");
         const file = gambarInput?.files[0];
+
+        // Checkbox unlimited
+        const cb = document.getElementById("menu-stok-unlimited");
+        const stok = (cb && cb.checked) ? "-1" : (document.getElementById("menu-stok-input").value || "0");
 
         const formData = new FormData();
         formData.append("nama", nama);
@@ -353,7 +487,7 @@ const Menu = {
 
     async deleteItem(menuId, nama) {
         event.stopPropagation(); // Mencegah klik di card
-        if (!confirm(`Apakah Anda yakin ingin menghapus menu '${nama}' dari katalog?`)) {
+        if (!confirm(`Apakah Anda yakin ingin menghapus menu '${nama}' dari katalog?\n\n(Menu yang sudah pernah terjual akan diarsipkan agar struk lama tetap valid. Gunakan 'Hapus Permanen' jika ingin menghapus menu beserta seluruh transaksinya.)`)) {
             return;
         }
 
@@ -369,6 +503,31 @@ const Menu = {
             }
         } catch (error) {
             Toast.error("Gagal menghapus menu: error koneksi");
+        }
+    },
+
+    async hardDeleteItem(menuId, nama) {
+        event.stopPropagation();
+        const warning = `PERINGATAN KERAS!\n\nAnda akan menghapus menu '${nama}' BESERTA SELURUH transaksi penjualan terkait secara permanen.\n\nData F&B historis untuk menu ini akan HILANG TOTAL dan tidak dapat dipulihkan. Lanjutkan?`;
+        if (!confirm(warning)) {
+            return;
+        }
+        // Konfirmasi kedua agar tidak terjadi kecelakaan klik
+        if (!confirm("Konfirmasi terakhir: hapus permanen menu + semua transaksinya?")) {
+            return;
+        }
+
+        try {
+            const res = await window.API.menu.deletePermanent(menuId);
+            if (res.success) {
+                Toast.success(res.message || "Menu dihapus permanen");
+                await this.loadCatalog();
+                this.removeFromCart(menuId);
+            } else {
+                Toast.error(res.error || "Gagal menghapus permanen");
+            }
+        } catch (error) {
+            Toast.error("Gagal menghapus permanen: error koneksi");
         }
     }
 };

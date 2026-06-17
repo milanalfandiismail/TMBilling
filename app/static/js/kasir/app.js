@@ -10,6 +10,8 @@ const App = {
 
         await this.loadTab('dash');
         await Grup.load();
+        // Shift Handover — under maintenance
+        // if (typeof Shift !== 'undefined') Shift.load();
         this.updatePageTitle('dash');
 
         console.log('[TMBilling] Application initialized.');
@@ -53,7 +55,7 @@ const App = {
     },
  
     setupNavigation() {
-        document.querySelectorAll('.nav-item').forEach(btn => {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const tab = btn.dataset.tab;
                 if (tab) this.switchTab(tab);
@@ -62,11 +64,31 @@ const App = {
     },
  
     switchTab(tab) {
-        document.querySelectorAll('.nav-item').forEach(btn => {
-            const onclick = btn.getAttribute('onclick') || '';
+        let mainTab = tab;
+        let subTab = null;
+
+        if (tab.startsWith('settings_')) {
+            mainTab = 'settings';
+            subTab = tab.replace('settings_', '');
+        }
+
+        // RBAC: Kasir tidak boleh membuka tab admin-only
+        const kasirOnlyRestricted = ['user', 'log', 'settings_general', 'settings_backup'];
+        if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
+            Toast.error('Akses Ditolak: Hanya untuk Admin!');
+            tab = 'dash';
+            mainTab = 'dash';
+            subTab = null;
+        }
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            const onClick = btn.getAttribute('onclick') || '';
             const dataTab = btn.getAttribute('data-tab') || '';
             
-            if (dataTab === tab || onclick.includes(`'${tab}'`)) {
+            // Only match if data-tab exactly equals tab
+            const matchData = dataTab === tab;
+            
+            if (matchData) {
                 btn.classList.add('bg-neutral-100', 'text-[#050505]', 'font-bold');
                 btn.classList.remove('text-neutral-400', 'hover:text-neutral-100', 'hover:bg-[#121212]');
             } else {
@@ -76,19 +98,32 @@ const App = {
         });
 
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-        const target = document.getElementById(`tab-${tab}`);
+        const target = document.getElementById(`tab-${mainTab}`);
         if (target) target.classList.remove('hidden');
 
-        // Auto-collapse settings submenu when switching to other tabs, and auto-expand when entering settings tab
-        const settingsSubmenu = document.getElementById('settings-submenu');
-        const settingsArrow = document.getElementById('settings-arrow');
-        if (tab !== 'settings') {
-            if (settingsSubmenu) settingsSubmenu.classList.add('hidden');
-            if (settingsArrow) settingsArrow.classList.remove('rotate-180');
-        } else {
-            if (settingsSubmenu) settingsSubmenu.classList.remove('hidden');
-            if (settingsArrow) settingsArrow.classList.add('rotate-180');
-        }
+        // Auto-expand/collapse submenus based on the active tab
+        const tabToSubmenu = {
+            menu: 'operasional', tournament: 'operasional',
+            member: 'master', paket: 'master', pc: 'master', grup: 'master',
+            user: 'staff',
+            laporan: 'laporan', laporan_menu: 'laporan', struk: 'laporan',
+            log: 'sistemlog',
+            monitor: 'system', blackout: 'system',
+            settings_general: 'settings',
+            settings_backup: 'settings'
+        };
+
+        const activeSubmenu = tabToSubmenu[tab];
+        
+        const submenus = ['operasional', 'master', 'staff', 'laporan', 'sistemlog', 'system', 'settings'];
+        submenus.forEach(sub => {
+            const submenuEl = document.getElementById(`${sub}-submenu`);
+            const arrowEl = document.getElementById(`${sub}-arrow`);
+            if (sub === activeSubmenu) {
+                if (submenuEl) submenuEl.classList.remove('hidden');
+                if (arrowEl) arrowEl.classList.add('rotate-180');
+            }
+        });
 
         this.currentTab = tab;
         this.updatePageTitle(tab);
@@ -110,10 +145,12 @@ const App = {
     updatePageTitle(tab) {
         const titles = {
             dash: 'Dashboard', pc: 'Unit PC', paket: 'Paket', member: 'Member',
-            grup: 'Grup', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Sistem',
+            grup: 'Grup', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Aktivitas Sistem',
             monitor: 'Hardware Monitor', blackout: 'Blackout',
             user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat',
-            menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen'
+            menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen',
+            settings_general: 'Pengaturan Umum & Kiosk',
+            settings_backup: 'Pengaturan Database & Backup'
         };
  
         const titleEl = document.getElementById('page-title');
@@ -121,6 +158,14 @@ const App = {
     },
  
     async loadTab(tab) {
+        if (tab.startsWith('settings_')) {
+            const sub = tab.replace('settings_', '');
+            if (typeof Settings !== 'undefined') {
+                await Settings.load();
+                Settings.switchSubTab(sub);
+            }
+            return;
+        }
         switch (tab) {
             case 'dash': await Dashboard.load(); break;
             case 'pc': await PC.load(); break;
@@ -156,7 +201,17 @@ const App = {
  
 document.addEventListener('DOMContentLoaded', () => App.init());
  
+const Sidebar = {
+    toggleDropdown(id) {
+        const submenu = document.getElementById(`${id}-submenu`);
+        const arrow = document.getElementById(`${id}-arrow`);
+        if (submenu) submenu.classList.toggle('hidden');
+        if (arrow) arrow.classList.toggle('rotate-180');
+    }
+};
+
 window.App = App;
+window.Sidebar = Sidebar;
 window.Dashboard = Dashboard;
 window.PC = PC;
 window.Paket = Paket;

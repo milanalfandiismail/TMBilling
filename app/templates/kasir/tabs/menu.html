@@ -7,11 +7,13 @@
                 <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide">Kantin / POS Makanan & Minuman</h3>
                 <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Kelola menu makanan/minuman dan catat transaksi penjualan kantin warnet</p>
             </div>
+            {% if session.get('kasir_role') == 'admin' %}
             <button onclick="Menu.showAddModal()"
                 class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Tambah Menu
             </button>
+            {% endif %}
         </div>
     </div>
 
@@ -59,15 +61,15 @@
                     <div class="space-y-1.5">
                         <label class="text-[10px] lg:text-base font-bold text-neutral-500 uppercase">Tipe Pemesanan</label>
                         <select id="menu-order-pc-select" class="w-full text-xs lg:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
-                            <option value="Take Away">Take Away (Bawa Pulang)</option>
                             <option value="Tempat">Makan di Tempat</option>
+                            <option value="Take Away">Take Away (Bawa Pulang)</option>
                         </select>
                     </div>
 
                     <!-- Total Summary -->
                     <div class="flex items-center justify-between py-2 border-b border-[#1c1c1c]">
                         <span class="text-xs lg:text-base text-neutral-400">Total Pembayaran</span>
-                        <span id="menu-cart-total" class="text-base lg:text-xl font-bold text-neutral-100 font-mono">Rp 0</span>
+                        <span id="menu-cart-total" class="text-base lg:text-xl font-bold text-neutral-100 font-mono">Rp0</span>
                     </div>
 
                     <button onclick="Menu.checkout()"
@@ -99,12 +101,17 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-1">
                         <label class="text-[10px] lg:text-base font-bold uppercase text-neutral-500">Harga (Rp)</label>
-                        <input type="number" id="menu-harga-input" required min="0" placeholder="Contoh: 10000" class="w-full text-xs lg:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg font-mono">
+                        <input type="text" id="menu-harga-input" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)" placeholder="Contoh: 10.000" class="w-full text-xs lg:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg font-mono">
                     </div>
                     <div class="space-y-1">
                         <label class="text-[10px] lg:text-base font-bold uppercase text-neutral-500">Stok Awal</label>
-                        <input type="number" id="menu-stok-input" required min="-1" placeholder="Contoh: 50, -1 = unlimited" class="w-full text-xs lg:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg font-mono">
+                        <input type="number" id="menu-stok-input" required min="0" placeholder="Contoh: 50" class="w-full text-xs lg:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg font-mono">
                     </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="menu-stok-unlimited" onchange="Menu.toggleStokUnlimited(this.checked)" class="w-4 h-4 rounded border-[#2a2a2a] bg-[#0a0a0a] text-neutral-100 focus:ring-neutral-500">
+                    <label for="menu-stok-unlimited" class="text-[10px] lg:text-base font-bold text-neutral-400 cursor-pointer select-none">Stok Unlimited (∞) — tidak terbatas</label>
                 </div>
 
                 <div class="space-y-1">

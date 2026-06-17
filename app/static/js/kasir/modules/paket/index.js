@@ -67,7 +67,7 @@ const Paket = {
             nama: (get('modal-paket-nama', 'inp-paket-nama') || {}).value?.trim() || '',
             grup: (get('modal-paket-grup', 'inp-paket-grup') || {}).value || '',
             durasi_menit: parseInt((get('modal-paket-durasi', 'inp-paket-durasi') || {}).value || '0'),
-            harga: parseInt((get('modal-paket-harga', 'inp-paket-harga') || {}).value || '0'),
+            harga: parseInt(((get('modal-paket-harga', 'inp-paket-harga') || {}).value || '0').replace(/\./g, '')),
             kadaluarsa_hari: parseInt((get('modal-paket-kadaluarsa', 'inp-paket-kadaluarsa') || {}).value || '30')
         };
         if (!data.nama) return Toast.error('Nama paket wajib diisi');
@@ -104,7 +104,7 @@ const Paket = {
         const data = {
             nama: document.getElementById('edit-paket-nama').value.trim(),
             durasi_menit: parseInt(document.getElementById('edit-paket-durasi').value),
-            harga: parseInt(document.getElementById('edit-paket-harga').value),
+            harga: parseInt((document.getElementById('edit-paket-harga').value || '0').replace(/\./g, '')),
             kadaluarsa_hari: parseInt(document.getElementById('edit-paket-kadaluarsa').value)
         };
         if (!data.nama || isNaN(data.durasi_menit) || isNaN(data.harga)) return Toast.error('Lengkapi data');

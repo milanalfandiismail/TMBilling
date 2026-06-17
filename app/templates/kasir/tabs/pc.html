@@ -7,6 +7,7 @@
                 <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide">Unit PC</h3>
                 <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Kelola stasiun warnet — tambah satu per satu atau secara massal</p>
             </div>
+            {% if session.get('kasir_role') == 'admin' %}
             <div class="flex items-center gap-2">
                 <button onclick="PC.showAddModal()"
                     class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
@@ -19,6 +20,7 @@
                     Batch Import
                 </button>
             </div>
+            {% endif %}
         </div>
     </div>
 

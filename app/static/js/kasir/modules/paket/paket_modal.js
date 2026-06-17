@@ -37,7 +37,7 @@ const PaketModal = {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                             <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Harga (Rp) <span class="text-red-400">*</span></label>
-                            <input type="number" id="modal-paket-harga" placeholder="Contoh: 12000" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors font-mono">
+                            <input type="text" id="modal-paket-harga" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)" placeholder="Contoh: 12.000" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors font-mono">
                         </div>
                         <div>
                             <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Masa Aktif (hari)</label>
@@ -95,7 +95,7 @@ const PaketModal = {
                         </div>
                         <div>
                             <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Harga (Rp)</label>
-                            <input type="number" id="edit-paket-harga" value="${paket.harga}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors font-mono font-bold">
+                            <input type="text" id="edit-paket-harga" value="${Utils.formatRawRupiah(paket.harga)}" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors font-mono font-bold">
                         </div>
                     </div>
                     <div>

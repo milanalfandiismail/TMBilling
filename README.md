@@ -1,12 +1,4 @@
 <!-- markdownlint-disable MD033 MD041 -->
-
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="" />
-    <img alt="TMBilling" src="" width="80" height="80" style="border-radius: 16px;" />
-  </picture>
-</p>
-
 <h1 align="center">🖥️ TMBilling</h1>
 
 <p align="center">
@@ -72,7 +64,7 @@ Sistem dirancang untuk:
         <li>Grid PC dengan status warna (kosong/terpakai/admin/offline)</li>
         <li>Group tabs per zona (reguler, vip, vvip)</li>
         <li>Auto-refresh tiap 5 detik</li>
-        <li>Buka sesi guest/member dalam 2 klik</li>
+        <li>Buka sesi guest/member dalam 2 clicks</li>
       </ul>
     </td>
     <td width="50%">
@@ -84,6 +76,7 @@ Sistem dirancang untuk:
         <li>Auto-login pas restart (guest & member)</li>
         <li>Shutdown timer otomatis</li>
         <li>Audio warning sisa 5 menit</li>
+        <li>Native single-instance protection untuk mencegah multi-running window</li>
       </ul>
     </td>
   </tr>
@@ -141,6 +134,44 @@ Sistem dirancang untuk:
         <li>Update API Key dari dashboard kasir</li>
         <li>Update instan ke .env + Flask config</li>
         <li>Tanpa restart server</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h4>☁️ Multi-Provider Cloud Backup</h4>
+      <ul>
+        <li>Kompresi database SQLite ke ZIP secara otomatis</li>
+        <li>Upload simultan ke Discord, WebDAV, GDrive, dan NAS</li>
+        <li>Auto-cleanup FIFO (menyimpan 5 file lokal & cloud)</li>
+        <li>Test connection langsung dari dashboard kasir</li>
+      </ul>
+    </td>
+    <td>
+      <h4>🏆 Tournament Bracket Maker</h4>
+      <ul>
+        <li>Sistem kompetisi warnet terintegrasi</li>
+        <li>Matchmaking otomatis Playoffs (Single Elimination)</li>
+        <li>Sistem pairing Swiss Stage dengan scoring real-time</li>
+        <li>Kemudahan update bracket & bagan pertandingan</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h4>💼 Shift Handover Kasir</h4>
+      <ul>
+        <li>Audit keuangan kasir dengan Blind Count (hitung buta)</li>
+        <li>Auto-calculate deviasi pendapatan (Surplus/Defisit)</li>
+        <li>Cetak struk pertanggungjawaban shift via printer thermal</li>
+      </ul>
+    </td>
+    <td>
+      <h4>🌐 Portal Web Member</h4>
+      <ul>
+        <li>Portal login mandiri pelanggan prepaid di <code>/member</code></li>
+        <li>Informasi sisa saldo waktu & PC aktif secara real-time</li>
+        <li>Riwayat login bermain & detail transaksi top-up</li>
       </ul>
     </td>
   </tr>
@@ -216,6 +247,13 @@ graph TB
         Backups[backups/]
     end
 
+    subgraph "Cloud / External Storage"
+        Discord[Discord Webhook]
+        WebDAV[WebDAV / Nextcloud]
+        GDrive[Google Drive]
+        NAS[NAS / Shared Folder]
+    end
+
     subgraph "Kasir"
         Browser[Browser<br/>Dashboard Kasir]
     end
@@ -237,6 +275,11 @@ graph TB
     Browser -->|HTTP| Flask
     Flask --> DB
     Flask --> Backups
+
+    Flask -->|ZIP Upload| Discord
+    Flask -->|ZIP Upload| WebDAV
+    Flask -->|ZIP Upload| GDrive
+    Flask -->|ZIP Upload| NAS
 
     MGCTM1 -->|spawn| Tauri1
     MGCTM1 -->|spawn| TMMonitor1
@@ -332,6 +375,8 @@ TMBilling/
 │   ├── FRONTEND_GUIDE.md                   # Panduan frontend & design system
 │   ├── TECHNICAL_DOCS.md                   # API endpoint reference
 │   ├── walkthrough.md                      # Implementasi Hex-XOR & watchdog
+│   ├── UPGRADE_RUPIAH_AND_POS.md           # Dokumentasi format Rupiah & POS F&B
+│   ├── NEW_FEATURES_GUIDE.md               # Panduan fitur baru (Turnamen, Member Portal, Shift)
 │   └── agent.md                            # Agent task tracker
 │
 ├── run.py                                  # 🔌 Entry point aplikasi server
@@ -1072,7 +1117,7 @@ Atau untuk development: cukup restart server — `db.create_all()` otomatis biki
 | Task | Interval | Description |
 |------|----------|-------------|
 | `cleanup_expired` | 1 menit | Tutup sesi yang waktu habis |
-| `database_backup` | 60 menit | Backup SQLite ke `backups/` |
+| `database_backup` | 60 menit | Kompresi database SQLite ke ZIP, simpan lokal di `backups/`, dan upload otomatis ke cloud provider aktif (Discord, WebDAV, GDrive, NAS) dengan cleanup FIFO (maksimal 5 berkas terbaru) |
 
 ---
 
@@ -1086,6 +1131,9 @@ Atau untuk development: cukup restart server — `db.create_all()` otomatis biki
 | [docs/FRONTEND_GUIDE.md](docs/FRONTEND_GUIDE.md) | 🎨 JS modular, design tokens, UI components |
 | [docs/TECHNICAL_DOCS.md](docs/TECHNICAL_DOCS.md) | 🌐 API endpoint reference (lengkap req/res) |
 | [docs/walkthrough.md](docs/walkthrough.md) | 🛡️ Walkthrough Hex-XOR, watchdog, offline uninstall |
+| [docs/CLOUD_BACKUP_DESIGN.md](docs/CLOUD_BACKUP_DESIGN.md) | ☁️ Rencana Desain: Sistem Backup Multi-Provider TMBilling |
+| [docs/NEW_FEATURES_GUIDE.md](docs/NEW_FEATURES_GUIDE.md) | 🚀 Panduan fitur baru (Tauri Single-Instance, Portal Member, Turnamen, & Shift) |
+| [docs/UPGRADE_RUPIAH_AND_POS.md](docs/UPGRADE_RUPIAH_AND_POS.md) | 🪙 Pembaruan format Rupiah, layout mobile & POS F&B |
 | [docs/agent.md](docs/agent.md) | 📋 Agent task tracker |
 
 ---
