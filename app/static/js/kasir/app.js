@@ -67,9 +67,14 @@ const App = {
         let mainTab = tab;
         let subTab = null;
 
-        if (tab.startsWith('settings_')) {
-            mainTab = 'settings';
-            subTab = tab.replace('settings_', '');
+        if (tab.startsWith('settings_') || tab === 'whitelist_ip') {
+            if (tab === 'whitelist_ip') {
+                mainTab = 'settings';
+                subTab = 'whitelist_ip';
+            } else {
+                mainTab = 'settings';
+                subTab = tab.replace('settings_', '');
+            }
         }
 
         // RBAC: Kasir tidak boleh membuka tab admin-only
@@ -110,6 +115,7 @@ const App = {
             log: 'sistemlog',
             monitor: 'system', blackout: 'system',
             settings_general: 'settings',
+            whitelist_ip: 'settings',
             settings_backup: 'settings'
         };
 
@@ -150,6 +156,7 @@ const App = {
             user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat',
             menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen',
             settings_general: 'Pengaturan Umum & Kiosk',
+            whitelist_ip: 'Pengaturan Whitelist IP',
             settings_backup: 'Pengaturan Database & Backup'
         };
  
@@ -158,8 +165,8 @@ const App = {
     },
  
     async loadTab(tab) {
-        if (tab.startsWith('settings_')) {
-            const sub = tab.replace('settings_', '');
+        if (tab.startsWith('settings_') || tab === 'whitelist_ip') {
+            const sub = tab === 'whitelist_ip' ? 'whitelist_ip' : tab.replace('settings_', '');
             if (typeof Settings !== 'undefined') {
                 await Settings.load();
                 Settings.switchSubTab(sub);

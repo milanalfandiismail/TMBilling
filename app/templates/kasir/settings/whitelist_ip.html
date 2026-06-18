@@ -1,0 +1,196 @@
+{% extends "kasir/base.html" %}
+{% block title %}{{ warnet_title }} - Whitelist IP{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-2 py-4 lg:py-6">
+    <!-- Header -->
+    <div class="flex items-center gap-3 mb-6">
+        <a href="/kasir/settings" class="text-neutral-500 hover:text-neutral-300 transition-colors text-lg">&larr;</a>
+        <h2 class="text-lg lg:text-xl font-bold text-neutral-100">🛡️ Pengaturan Whitelist IP</h2>
+    </div>
+
+    {% if add_ip_from %}
+    <!-- Trust Once Banner -->
+    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 lg:p-5 mb-5">
+        <div class="flex items-start gap-3">
+            <span class="text-2xl shrink-0">⚠️</span>
+            <div class="flex-1 min-w-0">
+                <p class="font-bold text-yellow-400 text-sm lg:text-base">IP Baru Terdeteksi</p>
+                <p class="text-xs lg:text-sm text-neutral-300 mt-1">
+                    IP <code class="font-mono bg-[#050505] px-1.5 py-0.5 rounded text-neutral-200">{{ add_ip_from }}</code>
+                    tidak ada di whitelist. IP ini adalah IP kamu saat ini.
+                </p>
+                <p class="text-xs text-neutral-500 mt-1">Tambahkan untuk mengakses dashboard?</p>
+                <div class="flex flex-wrap gap-2 mt-3">
+                    <button onclick="WhitelistIP.trustOnce('{{ add_ip_from }}')"
+                        class="px-4 py-2 bg-yellow-500 text-black rounded-lg font-bold text-sm hover:bg-yellow-400 transition-colors">
+                        ✅ Tambahkan & Lanjut
+                    </button>
+                    <a href="/kasir/settings/whitelist-ip"
+                        class="px-4 py-2 text-neutral-400 text-sm hover:text-neutral-200 transition-colors">
+                        Nanti saja
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Status Toggle Card -->
+    <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5 mb-5">
+        <div class="flex items-center justify-between gap-4">
+            <div>
+                <p class="font-bold text-neutral-200 text-sm lg:text-base">Status Whitelist IP</p>
+                <p class="text-[10px] lg:text-xs text-neutral-500 mt-0.5">
+                    Lindungi dashboard dari akses IP tidak dikenal
+                </p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer shrink-0" id="toggleContainer">
+                <input type="checkbox" id="whitelistToggle" class="sr-only peer" onchange="WhitelistIP.toggle(this.checked)">
+                <div class="w-10 h-5 lg:w-11 lg:h-6 bg-neutral-700 peer-checked:bg-emerald-600 rounded-full 
+                            peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 
+                            after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 lg:after:h-5 lg:after:w-5 
+                            after:transition-all"></div>
+            </label>
+        </div>
+    </div>
+
+    <!-- Remote Access Card -->
+    <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5 mb-5">
+        <h3 class="font-bold text-neutral-200 text-sm lg:text-base mb-3">🔗 Akses dari HP / Remote (via Tunnel)</h3>
+
+        <!-- Domain Publik -->
+        <div class="mb-4">
+            <label class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold block mb-1">Domain Publik (contoh: https://tmbilling.example.com)</label>
+            <div class="flex gap-2">
+                <input type="text" id="publicUrlInput" placeholder="https://tmbilling.example.com"
+                    class="flex-1 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 
+                           placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 transition-colors">
+                <button onclick="WhitelistIP.savePublicUrl()"
+                    class="px-4 py-2 bg-neutral-800 border border-[#1c1c1c] rounded text-sm text-neutral-300 
+                           hover:bg-neutral-700 transition-colors font-semibold">
+                    Simpan
+                </button>
+            </div>
+        </div>
+
+        <!-- URL Token + QR -->
+        <div class="bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg overflow-hidden">
+            <div class="flex flex-col lg:flex-row">
+                <!-- QR Code -->
+                <div class="p-4 flex items-center justify-center border-b lg:border-b-0 lg:border-r border-[#1c1c1c] bg-white">
+                    <div id="qrcode" class="w-[140px] h-[140px] lg:w-[180px] lg:h-[180px]"></div>
+                </div>
+                <!-- URL Info -->
+                <div class="p-4 flex-1 flex flex-col justify-center gap-3">
+                    <div>
+                        <p class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold mb-1">URL Token (scan QR atau copy)</p>
+                        <div class="flex items-center gap-2">
+                            <code id="tokenUrlDisplay" class="flex-1 bg-[#050505] border border-[#1c1c1c] rounded px-3 py-2 text-xs lg:text-sm text-neutral-300 font-mono break-all">-</code>
+                            <button onclick="WhitelistIP.copyToClipboard('tokenUrlDisplay')"
+                                class="shrink-0 px-3 py-2 bg-neutral-800 border border-[#1c1c1c] rounded text-sm text-neutral-300 
+                                       hover:bg-neutral-700 transition-colors font-mono" title="Copy URL">
+                                📋
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-[9px] lg:text-xs text-neutral-500">
+                        Token: <code id="tokenMaskedDisplay" class="font-mono text-neutral-400">-</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Regenerate Button -->
+        <button onclick="WhitelistIP.regenerate()"
+            class="mt-4 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded text-sm text-red-400 
+                   hover:bg-red-500/20 transition-colors font-bold">
+            🔄 Regenerate Token
+        </button>
+        <p class="text-[9px] lg:text-xs text-neutral-600 mt-1">
+            ⚠️ Token lama jadi invalid. Semua sesi HP yang sedang aktif akan logout otomatis.
+        </p>
+    </div>
+
+    <!-- Daftar IP Card -->
+    <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5 mb-5">
+        <h3 class="font-bold text-neutral-200 text-sm lg:text-base mb-3">
+            📋 Daftar IP yang Diizinkan (<span id="ipCount">0</span>)
+        </h3>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs lg:text-sm">
+                <thead class="text-[9px] lg:text-xs text-neutral-500 uppercase border-b border-[#1c1c1c]">
+                    <tr>
+                        <th class="pb-2 font-bold">IP Address</th>
+                        <th class="pb-2 font-bold hidden sm:table-cell">Label</th>
+                        <th class="pb-2 font-bold hidden md:table-cell">Ditambahkan</th>
+                        <th class="pb-2 font-bold text-right"></th>
+                    </tr>
+                </thead>
+                <tbody id="ipTableBody">
+                    <!-- JS rendered -->
+                </tbody>
+            </table>
+        </div>
+
+        <div id="ipTableEmpty" class="text-center py-8 text-neutral-500 text-sm hidden">
+            Belum ada IP yang di-whitelist.
+        </div>
+    </div>
+
+    <!-- Tambah IP Card -->
+    <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5">
+        <h3 class="font-bold text-neutral-200 text-sm lg:text-base mb-3">➕ Tambah IP Baru</h3>
+        <div class="flex flex-col sm:flex-row gap-2">
+            <input type="text" id="newIpInput" placeholder="192.168.1.30"
+                class="flex-1 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 
+                       placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 transition-colors font-mono">
+            <input type="text" id="newLabelInput" placeholder="Label (opsional)"
+                class="sm:w-48 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 
+                       placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 transition-colors">
+            <button onclick="WhitelistIP.add()"
+                class="px-5 py-2 bg-neutral-800 border border-[#1c1c1c] rounded text-sm text-neutral-200 
+                       hover:bg-neutral-700 transition-colors font-bold shrink-0">
+                Tambah
+            </button>
+        </div>
+    </div>
+
+    <!-- Current IP Info -->
+    <p class="text-[9px] lg:text-xs text-neutral-600 text-center mt-6">
+        💡 IP kamu saat ini: <code id="currentIpDisplay" class="font-mono text-neutral-400">-</code>
+            <span id="currentIpStatus" class="ml-1"></span>
+    </p>
+</div>
+
+<!-- Regenerate Modal -->
+<div id="regenerateModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[#0c0c0c] border border-red-500/30 rounded-xl max-w-md w-full p-6">
+        <h3 class="text-lg font-bold text-red-400 mb-2">⚠️ Token Baru Di-generate</h3>
+        <p class="text-sm text-neutral-400 mb-3">Token lama sudah tidak valid. Simpan token baru ini:</p>
+        <div class="bg-[#050505] border border-[#1c1c1c] rounded p-3 mb-3">
+            <code id="newTokenDisplay" class="text-sm text-neutral-200 font-mono break-all">-</code>
+        </div>
+        <div class="bg-yellow-500/10 border border-yellow-500/30 rounded p-3 mb-4">
+            <p class="text-xs text-yellow-400">⚠️ Semua sesi HP yang sedang aktif akan logout otomatis.</p>
+        </div>
+        <div class="flex gap-2 justify-end">
+            <button onclick="WhitelistIP.copyNewToken()"
+                class="px-4 py-2 bg-neutral-700 text-neutral-200 rounded text-sm font-bold hover:bg-neutral-600 transition-colors">
+                📋 Copy Token
+            </button>
+            <button onclick="WhitelistIP.closeRegenerateModal()"
+                class="px-4 py-2 bg-neutral-800 border border-[#1c1c1c] rounded text-sm text-neutral-300">
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="{{ url_for('static', filename='js/kasir/modules/settings/whitelist_ip.js') }}"></script>
+{% endblock %}

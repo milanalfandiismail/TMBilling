@@ -45,6 +45,7 @@ from app.services.paket.paket_service import PaketService
 from app.services.pc.pc_service import PCService
 from app.services.report.report_service import ReportService
 from app.services.sesi.sesi_service import SesiService
+from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
 
 __all__ = [
     "ShiftService",
@@ -62,6 +63,7 @@ __all__ = [
     "PCService",
     "ReportService",
     "SesiService",
+    "IpWhitelistService",
     "SettingsService",
     "TransaksiService",
     "UserService"

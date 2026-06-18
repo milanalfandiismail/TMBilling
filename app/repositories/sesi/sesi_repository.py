@@ -12,7 +12,7 @@ from app.models import db, now_local
 from app.models import Sesi
 from app.models import Transaksi
 from app.utils.logger import write_log
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, select
 
 
 class SesiRepository:
@@ -198,14 +198,13 @@ class SesiRepository:
             int: Jumlah sesi yang sesuai.
         """
         sesi_subq = (
-            db.session.query(Transaksi.sesi_id)
-            .filter(
+            select(Transaksi.sesi_id)
+            .where(
                 Transaksi.user_id == kasir_id,
                 Transaksi.sesi_id.isnot(None),
                 func.date(Transaksi.dibuat_pada) == tanggal,
             )
             .distinct()
-            .subquery()
         )
         query = Sesi.query.filter(Sesi.id.in_(sesi_subq))
         if tipe:
