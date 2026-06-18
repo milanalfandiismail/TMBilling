@@ -34,6 +34,8 @@ dist/
 
 # Design document (internal documentation, not source code)
 DESIGN.md
+implementation_plan.md
+brainstorming_fitur_tmbilling.md
 
 # Flask-specific
 instance/
@@ -564,6 +566,11 @@ $RECYCLE.BIN/
 agent.md
 walkthrough.md
 CODEBASE_CONTEXT.md
+
+# Agent folder
+.agents/
+.agent/
+.rtk/
 
 
 

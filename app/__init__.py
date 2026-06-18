@@ -12,7 +12,7 @@ Exports:
     create_app: Factory function untuk membuat instance Flask app.
 """
 
-from flask import Flask, redirect, render_template
+from flask import Flask, redirect, render_template, request
 from flask_cors import CORS
 import os
 
@@ -45,6 +45,10 @@ def create_app():
     db.init_app(app)
     csrf.init_app(app)
     migrate.init_app(app, db)
+
+    # IP Whitelist middleware — proteksi dashboard /kasir dan /api/kasir/*
+    from app.middleware import check_ip_whitelist
+    app.before_request(check_ip_whitelist)
 
     os.makedirs("logs", exist_ok=True)
 
@@ -156,6 +160,13 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        
+        # Seed IP whitelist defaults (idempotent)
+        try:
+            from app.services.ip_whitelist import IpWhitelistService
+            IpWhitelistService.seed_defaults(app)
+        except Exception as e:
+            app.logger.warning(f"Gagal seed IP whitelist defaults: {e}")
         
         # Otomatis buat user admin default jika database kosong
         try:

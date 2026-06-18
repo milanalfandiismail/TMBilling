@@ -9,6 +9,7 @@ serta menyediakan decorator untuk proteksi endpoint.
 from flask import Blueprint, request, jsonify, session, redirect
 from app.services import AuthKasirService
 from functools import wraps
+from app.utils.logger import write_log
 
 auth_kasir_bp = Blueprint("auth_kasir", __name__)
 
@@ -86,6 +87,33 @@ def login():
 
     try:
         result = AuthKasirService.login(username, password)
+
+        role = result["user"]["role"]
+
+        # Cek IP whitelist untuk non-admin (kasir/staff harus dari IP whitelisted)
+        # KECUALI: session sudah authenticated via bypass token
+        if role != "admin":
+            try:
+                from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+                if IpWhitelistService.is_enabled() and not IpWhitelistService.is_session_authenticated():
+                    client_ip = IpWhitelistService.get_client_ip()
+                    if not IpWhitelistService.is_ip_whitelisted(client_ip):
+                        return jsonify({
+                            "error": "Akses Anda dibatasi.",
+                            "detail": f"IP {client_ip} tidak diizinkan mengakses dashboard kasir. Hubungi admin untuk mendaftarkan IP Anda."
+                        }), 403
+            except Exception:
+                pass
+
+        # Admin login dari IP baru → auto-add ke whitelist
+        if role == "admin":
+            try:
+                from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+                client_ip = IpWhitelistService.get_client_ip()
+                if IpWhitelistService.is_enabled() and not IpWhitelistService.is_ip_whitelisted(client_ip):
+                    IpWhitelistService.add(client_ip, 'Auto (login)')
+            except Exception:
+                pass
 
         # Inisialisasi Session Flask
         session["kasir_id"] = result["user"]["id"]
