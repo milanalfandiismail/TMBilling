@@ -7,8 +7,9 @@ dan API data PC untuk grid monitoring.
 """
 
 from flask import Blueprint, request, jsonify, render_template, redirect, session, url_for
-from app.routes.auth.auth_kasir_routes import login_required, login_required_html
+from app.routes.auth.auth_kasir_routes import login_required, login_required_html, admin_required
 from app.services import DashboardService
+from app.services.owner.analytics_service import OwnerAnalyticsService
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -58,3 +59,17 @@ def list_pc_api():
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@dashboard_bp.route("/api/analytics", methods=["GET"])
+@login_required
+@admin_required
+def analytics_data():
+    """Endpoint API untuk data analytics owner."""
+    try:
+        start = request.args.get('start')
+        end = request.args.get('end')
+        data = OwnerAnalyticsService.get_all_analytics(start, end)
+        return jsonify({"success": True, "data": data})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
