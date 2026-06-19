@@ -46,6 +46,7 @@ from app.services.pc.pc_service import PCService
 from app.services.report.report_service import ReportService
 from app.services.sesi.sesi_service import SesiService
 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+from app.services.owner.analytics_service import OwnerAnalyticsService
 
 __all__ = [
     "ShiftService",
@@ -59,6 +60,7 @@ __all__ = [
     "HardwareService",
     "MemberService",
     "MenuService",
+    "OwnerAnalyticsService",
     "PaketService",
     "PCService",
     "ReportService",

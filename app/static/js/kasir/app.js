@@ -78,7 +78,7 @@ const App = {
         }
 
         // RBAC: Kasir tidak boleh membuka tab admin-only
-        const kasirOnlyRestricted = ['user', 'log', 'settings_general', 'settings_backup'];
+        const kasirOnlyRestricted = ['user', 'log', 'settings_general', 'settings_backup', 'analytics'];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');
             tab = 'dash';
@@ -116,7 +116,8 @@ const App = {
             monitor: 'system', blackout: 'system',
             settings_general: 'settings',
             whitelist_ip: 'settings',
-            settings_backup: 'settings'
+            settings_backup: 'settings',
+            analytics: 'analytics'
         };
 
         const activeSubmenu = tabToSubmenu[tab];
@@ -157,7 +158,8 @@ const App = {
             menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen',
             settings_general: 'Pengaturan Umum & Kiosk',
             whitelist_ip: 'Pengaturan Whitelist IP',
-            settings_backup: 'Pengaturan Database & Backup'
+            settings_backup: 'Pengaturan Database & Backup',
+            analytics: 'Analytics Owner'
         };
  
         const titleEl = document.getElementById('page-title');
@@ -189,6 +191,7 @@ const App = {
             case 'settings': if (typeof Settings !== 'undefined') await Settings.load(); break;
             case 'menu': if (typeof Menu !== 'undefined') await Menu.load(); break;
             case 'tournament': if (typeof Tournament !== 'undefined') await Tournament.load(); break;
+            case 'analytics': if (typeof OwnerAnalytics !== 'undefined') await OwnerAnalytics.load(); break;
         }
     },
  
@@ -235,3 +238,4 @@ window.Toast = Toast;
 window.User = User;
 window.Menu = Menu;
 window.Tournament = Tournament;
+window.OwnerAnalytics = OwnerAnalytics;

@@ -131,7 +131,11 @@
     <script src="{{ url_for('static', filename='js/kasir/modules/menu/index.js') }}?v=9"></script>
     <script src="{{ url_for('static', filename='js/kasir/modules/tournament/index.js') }}?v=9"></script>
     
+    <!-- Owner Analytics -->
+    <script src="{{ url_for('static', filename='js/kasir/modules/owner/analytics.js') }}"></script>
+    
     <script src="{{ url_for('static', filename='js/kasir/app.js') }}?v=9"></script>
+    {% block scripts %}{% endblock %}
 </body>
 
 </html>
