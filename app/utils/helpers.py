@@ -10,10 +10,18 @@ tugas-tugas terjadwal (scheduler).
 import re
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import current_app
 from app.services import SesiService
 from app.utils.logger import write_log  # pakai logger kamu
+
+UNIT_MULTIPLIER = {
+    "detik": 1,
+    "menit": 60,
+    "jam": 3600,
+    "hari": 86400,
+    "minggu": 604800,
+}
 
 
 def validate_ip(ip):
@@ -133,3 +141,52 @@ def run_database_backup(app):
                 write_log("BACKUP_ERROR", f"File {db_path} tidak ditemukan!", user="SYSTEM")
         except Exception as e:
             write_log("BACKUP_ERROR", f"Error backup: {str(e)}", user="SYSTEM")
+
+
+def run_cleanup_logs(app):
+    """Wrapper untuk cleanup log file yang dijalankan oleh scheduler.
+    
+    Membaca file logs/warnet.log, hapus baris yang lebih lama dari
+    periode yang ditentukan di settings (auto_cleanup_value + auto_cleanup_unit).
+    
+    Args:
+        app (Flask): Instance aplikasi Flask untuk membaca settings.
+    """
+    with app.app_context():
+        from app.utils.logger import LOG_FILE
+        from app.services import SettingsService
+        
+        try:
+            value = int(SettingsService.get("auto_cleanup_value", 30))
+            unit = SettingsService.get("auto_cleanup_unit", "hari")
+            seconds = value * UNIT_MULTIPLIER.get(unit, 86400)
+            cutoff = datetime.now() - timedelta(seconds=seconds)
+            
+            if not os.path.exists(LOG_FILE):
+                return
+            
+            kept_lines = []
+            removed = 0
+            
+            with open(LOG_FILE, "r", encoding="utf-8") as f:
+                for line in f:
+                    line_stripped = line.strip()
+                    if not line_stripped:
+                        continue
+                    # Format: [YYYY-MM-DD HH:MM:SS] [user] AKSI - detail
+                    match = re.match(r'\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]', line_stripped)
+                    if match:
+                        log_time = datetime.strptime(match.group(1), "%Y-%m-%d %H:%M:%S")
+                        if log_time >= cutoff:
+                            kept_lines.append(line)
+                        else:
+                            removed += 1
+                    else:
+                        kept_lines.append(line)
+            
+            if removed > 0:
+                with open(LOG_FILE, "w", encoding="utf-8") as f:
+                    f.writelines(kept_lines)
+                write_log("SCHEDULER", f"Cleanup log: {removed} baris lama dihapus (>{value} {unit})", user="SYSTEM")
+        except Exception as e:
+            write_log("SCHEDULER_ERROR", f"Error cleanup log: {str(e)}", user="SYSTEM")

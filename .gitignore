@@ -571,7 +571,8 @@ CODEBASE_CONTEXT.md
 .agents/
 .agent/
 .rtk/
-
+.claude/
+claude.md
 
 
 # Screenshot uploads

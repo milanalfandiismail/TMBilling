@@ -74,6 +74,23 @@ const Settings = {
                     }
                 });
 
+                // Load Auto Scheduler values
+                const bVal = document.getElementById('scheduler-backup-value');
+                const bUnit = document.getElementById('scheduler-backup-unit');
+                const cVal = document.getElementById('scheduler-cleanup-value');
+                const cUnit = document.getElementById('scheduler-cleanup-unit');
+                if (bVal && res.settings.auto_backup_value !== undefined) bVal.value = res.settings.auto_backup_value;
+                if (bUnit && res.settings.auto_backup_unit !== undefined) bUnit.value = res.settings.auto_backup_unit;
+                if (cVal && res.settings.auto_cleanup_value !== undefined) cVal.value = res.settings.auto_cleanup_value;
+                if (cUnit && res.settings.auto_cleanup_unit !== undefined) cUnit.value = res.settings.auto_cleanup_unit;
+                this._updateSchedulerPreview();
+
+                // Bind live preview update
+                ['scheduler-backup-value','scheduler-backup-unit','scheduler-cleanup-value','scheduler-cleanup-unit'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.addEventListener('change', () => this._updateSchedulerPreview());
+                });
+
                 // Fetch local backup files table
                 this.loadBackupFiles();
             }
@@ -286,6 +303,72 @@ const Settings = {
                 </div>
             </div>`;
         Modal.show(modalHtml);
+    },
+
+    // ------------------------------------------------------------------
+    // AUTO SCHEDULER SUB-TAB
+    // ------------------------------------------------------------------
+
+    _updateSchedulerPreview() {
+        const bVal = document.getElementById('scheduler-backup-value')?.value || '60';
+        const bUnit = document.getElementById('scheduler-backup-unit')?.value || 'menit';
+        const cVal = document.getElementById('scheduler-cleanup-value')?.value || '30';
+        const cUnit = document.getElementById('scheduler-cleanup-unit')?.value || 'hari';
+        document.getElementById('scheduler-backup-preview').innerHTML = `Backup otomatis setiap <strong class="text-neutral-300">${bVal} ${bUnit}</strong>`;
+        document.getElementById('scheduler-cleanup-preview').innerHTML = `Hapus log lebih dari <strong class="text-neutral-300">${cVal} ${cUnit}</strong>`;
+    },
+
+    async saveSchedulerConfig() {
+        const backupValue = document.getElementById('scheduler-backup-value')?.value;
+        const backupUnit = document.getElementById('scheduler-backup-unit')?.value;
+        const cleanupValue = document.getElementById('scheduler-cleanup-value')?.value;
+        const cleanupUnit = document.getElementById('scheduler-cleanup-unit')?.value;
+
+        if (!backupValue || !cleanupValue) {
+            Toast.error('Semua field wajib diisi');
+            return;
+        }
+
+        Toast.success('Menyimpan konfigurasi scheduler...');
+        try {
+            const res = await API.request('/api/settings/scheduler', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    backup_value: parseInt(backupValue),
+                    backup_unit: backupUnit,
+                    cleanup_value: parseInt(cleanupValue),
+                    cleanup_unit: cleanupUnit
+                })
+            });
+
+            if (res.success) {
+                Toast.success('Konfigurasi disimpan! Merestart aplikasi...');
+
+                // Tampilkan overlay loading
+                const overlay = document.createElement('div');
+                overlay.id = 'scheduler-restart-overlay';
+                overlay.className = 'fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center';
+                overlay.innerHTML = `<div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-8 text-center max-w-sm">
+                    <div class="text-4xl mb-4 animate-pulse">🔄</div>
+                    <h3 class="text-lg font-bold text-neutral-200 mb-2">Menerapkan Perubahan</h3>
+                    <p class="text-sm text-neutral-400">Server restart, halaman akan dimuat ulang...</p>
+                </div>`;
+                document.body.appendChild(overlay);
+
+                // Trigger restart endpoint — error koneksi diharapkan karena server mati
+                try {
+                    await API.request('/api/settings/scheduler/restart', { method: 'POST' });
+                } catch (_) {
+                    // Expected — server restart memutus koneksi
+                }
+
+                // Reload page setelah jeda biar server baru sempat start
+                setTimeout(() => window.location.reload(), 3000);
+                return;
+            }
+        } catch (err) {
+            Toast.error('Gagal menyimpan scheduler: ' + err.message);
+        }
     },
 
     async saveKioskSettings() {

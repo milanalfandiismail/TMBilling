@@ -199,6 +199,64 @@
             <!-- Rendered dynamically by Settings._renderWhitelistIP() -->
         </div>
 
+        <!-- ==================== SUB-TAB: AUTO SCHEDULER ==================== -->
+        <div id="subtab-scheduler" class="subtab-content hidden space-y-6">
+            <!-- Card: Auto Backup -->
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">⏱ Auto Backup</h3>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Interval Backup Database</p>
+                        <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Backup otomatis database per interval waktu yang ditentukan</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="scheduler-backup-value"
+                            class="w-24 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 text-center focus:outline-none focus:border-neutral-500"
+                            value="60" step="1" min="1">
+                        <select id="scheduler-backup-unit"
+                            class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                            <option value="detik">Detik</option>
+                            <option value="menit" selected>Menit</option>
+                            <option value="jam">Jam</option>
+                            <option value="hari">Hari</option>
+                        </select>
+                    </div>
+                </div>
+                <p id="scheduler-backup-preview" class="text-[10px] lg:text-sm text-neutral-500 mt-2 italic">Backup otomatis setiap <strong class="text-neutral-300">60 Menit</strong></p>
+            </div>
+
+            <!-- Card: Auto Cleanup Log -->
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">🗑 Auto Cleanup Log</h3>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Interval & Umur Log</p>
+                        <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Hapus otomatis log aktivitas yang lebih lama dari periode tertentu</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="scheduler-cleanup-value"
+                            class="w-24 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 text-center focus:outline-none focus:border-neutral-500"
+                            value="30" step="1" min="1">
+                        <select id="scheduler-cleanup-unit"
+                            class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                            <option value="jam">Jam</option>
+                            <option value="hari" selected>Hari</option>
+                            <option value="minggu">Minggu</option>
+                        </select>
+                    </div>
+                </div>
+                <p id="scheduler-cleanup-preview" class="text-[10px] lg:text-sm text-neutral-500 mt-2 italic">Hapus log lebih dari <strong class="text-neutral-300">30 Hari</strong></p>
+            </div>
+
+            <!-- Tombol Simpan -->
+            <div class="flex justify-end">
+                <button onclick="Settings.saveSchedulerConfig()"
+                    class="px-6 py-3 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    💾 Simpan & Restart Scheduler
+                </button>
+            </div>
+        </div>
+
         <!-- ==================== SUB-TAB: BACKUP ==================== -->
         <div id="subtab-backup" class="subtab-content hidden space-y-6">
             <!-- Card: Database & Cloud Backup Settings -->
