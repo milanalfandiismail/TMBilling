@@ -22,5 +22,8 @@
   "homepage": "https://github.com/milanalfandiismail/TMBilling#readme",
   "devDependencies": {
     "tailwindcss": "^3.4.19"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.1"
   }
 }
