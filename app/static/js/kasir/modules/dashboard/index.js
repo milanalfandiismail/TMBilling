@@ -26,7 +26,12 @@ const Dashboard = {
             if (groups.length === 0) throw new Error('Tidak ada grup PC tersedia');
             this.lastData = data;
             this.renderTabs(data);
-            this.render(data);
+            this._updateToggleButtons();
+            if (this.viewMode === 'map') {
+                this._renderMap(data);
+            } else {
+                this._renderGrid(data);
+            }
             this.updateStats();
             this.updateTime();
         } catch (err) {
@@ -41,7 +46,11 @@ const Dashboard = {
         this.activeGrup = grupKey;
         if (this.lastData) {
             this.renderTabs(this.lastData);
-            this.render(this.lastData);
+            if (this.viewMode === 'map') {
+                this._renderMap(this.lastData);
+            } else {
+                this._renderGrid(this.lastData);
+            }
         }
     },
 
@@ -711,7 +720,73 @@ const Dashboard = {
         } catch (err) {
             Toast.error(err.message);
         }
+    },
+
+    // =========================================================
+    // MAP VIEW
+    // =========================================================
+
+    viewMode: localStorage.getItem('dashboardViewMode') || 'grid',
+
+    toggleView(mode) {
+        if (mode === this.viewMode) return;
+        this.viewMode = mode;
+        localStorage.setItem('dashboardViewMode', mode);
+        if (this.lastData) {
+            if (mode === 'map') this._renderMap(this.lastData);
+            else {
+                this._renderGrid(this.lastData);
+            }
+        }
+        this._updateToggleButtons();
+    },
+
+    _updateToggleButtons() {
+        const btnMap = document.getElementById('btn-map-view');
+        const btnGrid = document.getElementById('btn-grid-view');
+        if (!btnMap || !btnGrid) return;
+        if (this.viewMode === 'map') {
+            btnMap.classList.add('hidden');
+            btnGrid.classList.remove('hidden');
+        } else {
+            btnGrid.classList.add('hidden');
+            btnMap.classList.remove('hidden');
+        }
+    },
+
+    _renderMap(data) {
+        const grid = document.getElementById('pc-area');
+        const map = document.getElementById('map-view-container');
+        if (!grid || !map) return;
+        grid.classList.add('hidden');
+        map.classList.remove('hidden');
+        this._renderMapInner(data);
+    },
+
+    _renderMapInner(data) {
+        let groups = data.by_grup;
+        if (this.activeGrup !== 'semua' && groups[this.activeGrup]) {
+            groups = { [this.activeGrup]: groups[this.activeGrup] };
+        }
+        MapView.render(groups, data.grup_meta);
+        this.renderTabs(data);
+        this.updateStats();
+    },
+
+    _renderGrid(data) {
+        const map = document.getElementById('map-view-container');
+        const grid = document.getElementById('pc-area');
+        if (map) map.classList.add('hidden');
+        if (grid) grid.classList.remove('hidden');
+        DashboardCards.render(data);
+        this.renderTabs(data);
+        this.updateStats();
+    },
+
+    openPcModal(pcId, kode) {
+        this.showDetail(pcId);
     }
+
 };
 
 Object.assign(Dashboard, DashboardCards);

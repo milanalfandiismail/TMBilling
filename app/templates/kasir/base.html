@@ -6,23 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ warnet_title }} - Kasir{% endblock %}</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
         rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Space Grotesk', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace']
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         [x-cloak] {
             display: none !important;
@@ -92,7 +80,7 @@
     {% block head %}{% endblock %}
 </head>
 
-<body class="bg-[#050505] text-neutral-200 font-sans antialiased flex h-screen w-screen overflow-hidden">
+<body class="bg-[#050505] text-neutral-200 font-space-grotesk antialiased flex h-screen w-screen overflow-hidden" data-kasir-role="{{ session.get('kasir_role', '') }}">
 
     {% block content %}{% endblock %}
 
@@ -109,7 +97,8 @@
     <!-- Modules / Subfolders -->
     <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/sidebar.js') }}?v=9"></script>
     <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_cards.js') }}?v=9"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/index.js') }}?v=9"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/map_view.js') }}?v=10"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/index.js') }}?v=10"></script>
     
     <script src="{{ url_for('static', filename='js/kasir/modules/grup/index.js') }}?v=9"></script>
     
