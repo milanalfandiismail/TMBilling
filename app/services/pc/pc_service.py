@@ -202,6 +202,15 @@ class PCService:
         write_log("HAPUS_PC", f"PC:{pc.kode} dihapus permanen", user=operator)
         return {"success": True, "message": f"PC {pc.kode} berhasil dihapus"}
 
+    @staticmethod
+    def update_position(pc_id, pos_x, pos_y):
+        """Update posisi PC di floor plan."""
+        pc = PCRepository.get_by_id(pc_id)
+        pc.pos_x = pos_x
+        pc.pos_y = pos_y
+        db.session.commit()
+        return pc
+
 
     # =========================================================================
     # 3. OTOMASI & MASS OPERATION (BATCH)

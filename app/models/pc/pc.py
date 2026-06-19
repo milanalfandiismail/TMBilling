@@ -51,6 +51,8 @@ class PC(db.Model):
     last_activity = db.Column(db.DateTime, nullable=True)
     aktif = db.Column(db.Boolean, default=True)
     is_admin_mode = db.Column(db.Boolean, default=False)
+    pos_x = db.Column(db.Integer, default=-1)
+    pos_y = db.Column(db.Integer, default=-1)
 
     @property
     def zona_nama(self):
@@ -106,5 +108,7 @@ class PC(db.Model):
             "sesi_id": s.id if s else None,
             "is_admin_mode": self.is_admin_mode,
             "screenshot_url": f"/static/uploads/screenshots/{self.kode}.png" if has_screenshot else None,
-            "screenshot_time": screenshot_time
+            "screenshot_time": screenshot_time,
+            "pos_x": self.pos_x if self.pos_x is not None else -1,
+            "pos_y": self.pos_y if self.pos_y is not None else -1
         }

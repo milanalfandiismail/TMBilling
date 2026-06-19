@@ -144,6 +144,24 @@ def reset_admin(pc_id):
         return jsonify({"error": str(e)}), 500
 
 
+@pc_bp.route("/pc/<int:pc_id>/position", methods=["PUT"])
+@login_required
+@admin_required
+def update_pc_position(pc_id):
+    """Update posisi PC di floor plan (pos_x, pos_y)."""
+    try:
+        data = request.get_json() or {}
+        pos_x = int(data.get("pos_x", 0))
+        pos_y = int(data.get("pos_y", 0))
+        from app.services import PCService
+        pc = PCService.update_position(pc_id, pos_x, pos_y)
+        return jsonify({"success": True, "pc": pc.to_dict()}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # =========================================================================
 # 3. WAKE-ON-LAN (WoL)
 # =========================================================================
