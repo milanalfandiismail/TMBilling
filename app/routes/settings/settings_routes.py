@@ -6,6 +6,8 @@ Blueprint ini menyediakan endpoint untuk konfigurasi global aplikasi,
 seperti timer auto-shutdown dan parameter sistem lainnya.
 """
 import os
+import subprocess
+import sys
 from flask import Blueprint, request, jsonify, session, current_app, send_file, redirect, render_template
 from datetime import datetime
 from functools import wraps
@@ -14,6 +16,7 @@ from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.services import SettingsService
 from app.utils.logger import write_log
 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+from app.utils.helpers import UNIT_MULTIPLIER
 
 settings_bp = Blueprint("settings", __name__)
 
@@ -230,6 +233,86 @@ def upload_qris():
         write_log("SETTINGS_QRIS_CHANGE", f"User memperbarui gambar QRIS Kiosk", user=operator)
         
         return jsonify({"success": True, "qris_url": qris_url, "message": "QRIS berhasil diperbarui"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# =========================================================================
+# 5. AUTO SCHEDULER
+# =========================================================================
+
+@settings_bp.route("/settings/scheduler", methods=["PUT"])
+@login_required
+@admin_required
+def update_scheduler_config():
+    """Simpan konfigurasi Auto Scheduler (backup + cleanup log)."""
+    try:
+        data = request.get_json() or {}
+        backup_value = data.get("backup_value")
+        backup_unit = data.get("backup_unit")
+        cleanup_value = data.get("cleanup_value")
+        cleanup_unit = data.get("cleanup_unit")
+
+        # Validasi
+        if backup_value is None or backup_unit is None:
+            return jsonify({"error": "backup_value dan backup_unit wajib diisi"}), 400
+        if cleanup_value is None or cleanup_unit is None:
+            return jsonify({"error": "cleanup_value dan cleanup_unit wajib diisi"}), 400
+
+        try:
+            backup_value = int(backup_value)
+            cleanup_value = int(cleanup_value)
+        except ValueError:
+            return jsonify({"error": "Nilai interval harus berupa angka"}), 400
+
+        if backup_value < 1 or cleanup_value < 1:
+            return jsonify({"error": "Nilai interval minimal 1"}), 400
+
+        valid_units = set(UNIT_MULTIPLIER.keys())
+        if backup_unit not in valid_units or cleanup_unit not in valid_units:
+            return jsonify({"error": f"Unit tidak valid. Gunakan: {', '.join(valid_units)}"}), 400
+
+        # Simpan ke DB
+        SettingsService.set("auto_backup_value", str(backup_value))
+        SettingsService.set("auto_backup_unit", backup_unit)
+        SettingsService.set("auto_cleanup_value", str(cleanup_value))
+        SettingsService.set("auto_cleanup_unit", cleanup_unit)
+
+        operator = session.get("kasir_username", "admin")
+        write_log("SCHEDULER_CONFIG", f"Backup: {backup_value} {backup_unit}, Cleanup: {cleanup_value} {cleanup_unit}", user=operator)
+
+        return jsonify({"success": True, "message": "Konfigurasi scheduler disimpan"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@settings_bp.route("/settings/scheduler/restart", methods=["POST"])
+@login_required
+@admin_required
+def restart_scheduler():
+    """Restart aplikasi agar scheduler menggunakan interval baru."""
+    try:
+        operator = session.get("kasir_username", "admin")
+        write_log("SCHEDULER_RESTART", "Restart aplikasi untuk menerapkan interval baru", user=operator)
+
+        # Kirim response dulu sebelum matiin server
+        resp = jsonify({"success": True, "message": "Server akan restart dalam 1 detik..."})
+
+        # Schedule restart setelah response terkirim
+        import threading
+        def _do_restart():
+            import time
+            time.sleep(1.5)
+            # Hapus env var werkzeug (WERKZEUG_SERVER_FD) agar tidak diwariskan
+            # ke process baru, karena FD tersebut sudah invalid setelah parent exit
+            env = os.environ.copy()
+            env.pop('WERKZEUG_SERVER_FD', None)
+            env.pop('WERKZEUG_RUN_MAIN', None)
+            subprocess.Popen([sys.executable] + sys.argv, env=env)
+            os._exit(0)
+
+        threading.Thread(target=_do_restart, daemon=True).start()
+        return resp
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

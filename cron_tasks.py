@@ -9,7 +9,7 @@ Script ini dirancang untuk dieksekusi secara periodik menggunakan menu
 """
 
 from app import create_app
-from app.utils.helpers import run_cleanup_expired, run_database_backup
+from app.utils.helpers import run_cleanup_expired, run_database_backup, run_cleanup_logs
 
 def main():
     print("⏳ Memulai eksekusi scheduled tasks...")
@@ -22,6 +22,10 @@ def main():
     # 2. Jalankan backup database
     print("💾 Menjalankan backup database otomatis...")
     run_database_backup(app)
+
+    # 3. Jalankan cleanup log
+    print("🗑 Menjalankan cleanup log...")
+    run_cleanup_logs(app)
     
     print("✅ Semua tugas berhasil diselesaikan!")
 
