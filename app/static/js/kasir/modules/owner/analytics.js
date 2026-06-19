@@ -1,4 +1,4 @@
-// Owner Analytics Dashboard — 8 Card Text KPI
+// Owner Analytics Dashboard — 7 Card Text KPI
 
 const OwnerAnalytics = {
     async load() {
@@ -34,17 +34,7 @@ const OwnerAnalytics = {
                 pd.labels.map((l,i) => [l, 'Rp' + pd.kantin[i].toLocaleString('id-ID')]));
             setScroll('kpi-tabel-kantin', pd.labels.length, 10);
 
-            // 3. Pendapatan PC
-            const rp = d.revenue_per_pc;
-            document.getElementById('kpi-pc').innerHTML = rp.labels.slice(0,5).map((l,i) =>
-                `<div class="flex justify-between py-1.5 ${i>0?'border-t border-[#2a2a2a]':''}">
-                    <span class="text-neutral-400">${l}</span>
-                    <span class="text-white font-semibold">Rp${rp.data[i].toLocaleString('id-ID')}</span>
-                </div>`
-            ).join('') || '<div class="text-neutral-500 py-2">Belum ada data</div>';
-            setScroll('kpi-pc', rp.labels.length, 10);
-
-            // 4. Paket Terlaris
+            // 3. Paket Terlaris
             const tp = d.top_paket;
             document.getElementById('kpi-paket').innerHTML = tp.labels.map((l,i) =>
                 `<div class="flex justify-between py-1.5 ${i>0?'border-t border-[#2a2a2a]':''}">

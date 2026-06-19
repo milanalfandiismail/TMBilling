@@ -5,7 +5,6 @@ from app.models import db, now_local
 from app.models.transaksi.transaksi import Transaksi
 from app.models.sesi.sesi import Sesi
 from app.models.member.member import Member
-from app.models.pc.pc import PC
 from app.models.paket.paket import Paket
 from app.models.menu.menu import TransaksiMenu
 from app.models.user.user import User
@@ -73,14 +72,6 @@ class OwnerAnalyticsService:
         return {'labels': labels, 'data': data}
 
     @staticmethod
-    def get_revenue_per_pc(start, end):
-        r = db.session.query(PC.nama, func.coalesce(func.sum(Sesi.total_bayar), 0).label('total')
-        ).join(Sesi, Sesi.pc_id == PC.id, isouter=True
-        ).filter(Sesi.selesai_pada >= start, Sesi.selesai_pada <= end, Sesi.status == 'selesai'
-        ).group_by(PC.id, PC.nama).order_by(func.sum(Sesi.total_bayar).desc()).limit(20).all()
-        return {'labels': [x.nama for x in r], 'data': [x.total for x in r]}
-
-    @staticmethod
     def get_member_trend(start, end):
         baru = db.session.query(func.date(Member.dibuat_pada).label('tgl'), func.count(Member.id).label('total')
         ).filter(Member.dibuat_pada >= start, Member.dibuat_pada <= end
@@ -137,7 +128,6 @@ class OwnerAnalyticsService:
         return {
             'pendapatan_harian': OwnerAnalyticsService.get_pendapatan_harian(start, end),
             'heatmap_jam_sibuk': OwnerAnalyticsService.get_heatmap_jam_sibuk(start, end),
-            'revenue_per_pc': OwnerAnalyticsService.get_revenue_per_pc(start, end),
             'member_trend': OwnerAnalyticsService.get_member_trend(start, end),
             'top_paket': OwnerAnalyticsService.get_top_paket(start, end),
             'pendapatan_per_kasir': OwnerAnalyticsService.get_pendapatan_per_kasir(start, end),
