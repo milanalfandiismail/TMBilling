@@ -501,6 +501,13 @@ const Settings = {
             this._renderWhitelistIP();
             this._loadWhitelistStatus();
         }
+
+        // Migrasi & Update — init module
+        if (subTab === 'migration') {
+            if (typeof MigrationModule !== 'undefined') {
+                MigrationModule.init();
+            }
+        }
     },
 
     toggleSubmenu() {

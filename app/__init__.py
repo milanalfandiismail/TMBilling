@@ -12,7 +12,7 @@ Exports:
     create_app: Factory function untuk membuat instance Flask app.
 """
 
-from flask import Flask, redirect, render_template, request
+from flask import Flask, current_app, redirect, render_template, request
 from flask_cors import CORS
 import os
 
@@ -56,6 +56,7 @@ def create_app():
     from app.routes import (
         auth_bp,
         auth_kasir_bp,
+        migration_bp,
         blackout_bp,
         client_bp,
         dashboard_bp,
@@ -72,7 +73,8 @@ def create_app():
         backup_bp,
         tournament_bp,
         member_portal_bp,
-        shift_bp
+        shift_bp,
+        migration_bp
     )
 
     app.register_blueprint(dashboard_bp, url_prefix="/kasir")
@@ -103,6 +105,7 @@ def create_app():
     app.register_blueprint(menu_bp, url_prefix="/api")
     app.register_blueprint(tournament_bp, url_prefix="/api")
     app.register_blueprint(shift_bp, url_prefix="/api")
+    app.register_blueprint(migration_bp)
 
     @app.route("/")
     def index():
@@ -165,7 +168,8 @@ def create_app():
         except Exception:
             plugin_menus = []
             
-        return dict(warnet_title=title, plugin_menus=plugin_menus)
+        version = current_app.config.get("VERSION", "v1.0")
+        return dict(warnet_title=title, plugin_menus=plugin_menus, version=version)
 
     with app.app_context():
         db.create_all()

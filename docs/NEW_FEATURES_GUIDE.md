@@ -51,6 +51,35 @@ Modul ini memfasilitasi kasir/admin untuk menyelenggarakan turnamen game di warn
 
 ## 💼 4. Shift Handover Kasir (Pertanggungjawaban Keuangan)
 
+---
+
+## 🔧 5. Database Migration Manager & Update System
+
+Fitur ini memungkinkan update aplikasi (backend + frontend) dan migrasi database otomatis dalam satu langkah — cukup upload file ZIP.
+
+### Fitur Utama:
+- **Upload Update via Dashboard**: Unggah file `TMBilling_Server_v*.zip` langsung dari UI Settings
+- **Auto-Detect Migrations**: Jika ZIP berisi folder `migrations/` → backup + replace + upgrade database
+- **Tanpa Migrasi**: Jika ZIP hanya berisi `run.py` + `app/` → update aplikasi biasa
+- **Auto-Restart**: Server restart otomatis setelah update selesai
+- **Riwayat Migrasi**: Lihat semua revisi migrasi dengan status (HEAD / Aktif)
+
+### Alur Upload:
+1. User upload `TMBilling_Server_v1.1.zip`
+2. Backend validasi struktur (cek `run.py` + `app/`)
+3. Extract ke root project
+4. Auto-detect `migrations/` → backup dulu → `flask_migrate upgrade`
+5. Install dependencies (pip install -r requirements.txt)
+6. Server restart
+7. Frontend auto-reload setelah 5 detik
+
+### Detail Teknis:
+- **Backend**: Endpoint `POST /api/settings/migration/upload`
+- **Frontend**: Module `migration.js` — drag-drop upload + progress + overlay restart
+- **Database**: Flask-Migrate + Alembic (`migrations/versions/`)
+- **CLI Alternative**: `python run.py --release` (untuk update via terminal)
+- **Status Endpoint**: `GET /api/settings/migration/status` — ngecek HEAD vs Current revision
+
 Fitur handover shift kasir menyediakan audit keuangan yang aman melalui metode **Hitung Buta (Blind Count)** saat kasir bergantian jaga.
 
 ### Model Data (`shift_record.py`):

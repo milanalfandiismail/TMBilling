@@ -25,7 +25,8 @@ static/js/kasir/
 │   ├── blackout.js   — Blackout detection & recovery
 │   ├── user.js       — Staff management (admin only)
 │   ├── settings.js   — Auto-shutdown, database backup, timezone, scheduler
-│   └── plugins.js    — Plugin Manager
+│   ├── plugins.js    — Plugin Manager
+│   └── migration.js  — DB Migration & Update System (upload ZIP, auto-migrate, status)
 └── app.js            — Router, auth check, tab management, plugin iframe injector
 ```
 
