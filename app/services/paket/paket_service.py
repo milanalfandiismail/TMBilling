@@ -99,6 +99,8 @@ class PaketService:
     def update(paket_id, data, operator="system"):
         """Update detail paket (harga, durasi, status aktif, dll)."""
         paket = PaketRepository.get_by_id(paket_id)
+        
+        perubahan = {}
 
         # Update Nama (dengan pengecekan duplikasi selain ID ini sendiri)
         if "nama" in data:
@@ -106,6 +108,7 @@ class PaketService:
             if nama_baru != paket.nama:
                 if PaketRepository.find_by_nama_exclude(nama_baru, paket_id):
                     raise ValueError(f"Nama paket '{nama_baru}' sudah dipakai paket lain")
+                perubahan["nama"] = {"lama": paket.nama, "baru": nama_baru}
                 paket.nama = nama_baru
 
         # Update Grup
@@ -113,20 +116,34 @@ class PaketService:
             grup_obj = GrupRepository.find_by_nama(data["grup"])
             if not grup_obj:
                 raise ValueError("Grup yang dipilih tidak valid")
-            paket.grup_id = grup_obj.id
+            if paket.grup_id != grup_obj.id:
+                perubahan["grup"] = {"lama": paket.grup.nama if paket.grup else "", "baru": grup_obj.nama}
+                paket.grup_id = grup_obj.id
 
         # Update Field Lainnya
         if "durasi_menit" in data:
-            paket.durasi_menit = int(data["durasi_menit"])
+            val = int(data["durasi_menit"])
+            if val != paket.durasi_menit:
+                perubahan["durasi_menit"] = {"lama": paket.durasi_menit, "baru": val}
+                paket.durasi_menit = val
         if "harga" in data:
-            paket.harga = int(data["harga"])
+            val = int(data["harga"])
+            if val != paket.harga:
+                perubahan["harga"] = {"lama": paket.harga, "baru": val}
+                paket.harga = val
         if "kadaluarsa_hari" in data:
-            paket.kadaluarsa_hari = int(data["kadaluarsa_hari"])
+            val = int(data["kadaluarsa_hari"])
+            if val != paket.kadaluarsa_hari:
+                perubahan["kadaluarsa_hari"] = {"lama": paket.kadaluarsa_hari, "baru": val}
+                paket.kadaluarsa_hari = val
         if "aktif" in data:
-            paket.aktif = bool(data["aktif"])
+            val = bool(data["aktif"])
+            if val != paket.aktif:
+                perubahan["aktif"] = {"lama": paket.aktif, "baru": val}
+                paket.aktif = val
         
         db.session.commit()
-        write_log("EDIT_PAKET", f"Data paket {paket.nama} diperbarui", user=operator)
+        write_log("EDIT_PAKET", f"Data paket {paket.nama} diperbarui", user=operator, detail_json=perubahan if perubahan else None)
         return paket
 
     @staticmethod

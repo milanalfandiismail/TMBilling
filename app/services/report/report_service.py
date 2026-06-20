@@ -272,37 +272,60 @@ class ReportService:
         raw_logs = read_logs(5000, filter_text if filter_text else None)
         
         import re
+        import json
         pattern = re.compile(r"^\[(.*?)\] \[(.*?)\] (.*?) - (.*)$")
         
         parsed_logs = []
         for line in raw_logs:
-            match = pattern.match(line)
-            if match:
-                timestamp, user, action, detail = match.groups()
+            if line.startswith("{") and line.endswith("}"):
+                try:
+                    data = json.loads(line)
+                    timestamp = data.get("timestamp", "")
+                    user = data.get("user", "")
+                    action = data.get("action", "")
+                    detail = data.get("detail", "")
+                    ip_address = data.get("ip_address", "-")
+                    browser_agent = data.get("browser_agent", "-")
+                    detail_json = data.get("detail_json", None)
+                except Exception:
+                    timestamp, user, action, detail = "", "", "", line
+                    ip_address, browser_agent, detail_json = "-", "-", None
+            else:
+                match = pattern.match(line)
+                if match:
+                    timestamp, user, action, detail = match.groups()
+                    ip_address, browser_agent, detail_json = "-", "-", None
+                else:
+                    timestamp, user, action, detail = "", "", "", line
+                    ip_address, browser_agent, detail_json = "-", "-", None
                 
-                # Pengelompokan Kategori Berdasarkan Aksi
-                category = "sistem"
-                action_upper = action.upper()
+            # Pengelompokan Kategori Berdasarkan Aksi
+            category = "sistem"
+            action_upper = action.upper()
+            
+            if any(k in action_upper for k in ["TRANSAKSI", "STRUK", "REFUND", "CLEAR_TANGGAL"]):
+                category = "transaksi"
+            elif any(k in action_upper for k in ["SESI", "TAMBAH_WAKTU", "PINDAH_PC", "BUKA_GUEST", "BUKA_MEMBER"]):
+                category = "sesi"
+            elif "BLACKOUT" in action_upper:
+                category = "blackout"
                 
-                if any(k in action_upper for k in ["TRANSAKSI", "STRUK", "REFUND", "CLEAR_TANGGAL"]):
-                    category = "transaksi"
-                elif any(k in action_upper for k in ["SESI", "TAMBAH_WAKTU", "PINDAH_PC", "BUKA_GUEST", "BUKA_MEMBER"]):
-                    category = "sesi"
-                elif "BLACKOUT" in action_upper:
-                    category = "blackout"
+            # Jika filter kategori aktif, skip yang tidak cocok
+            if kategori and kategori != "Semua":
+                kategori_lower = kategori.lower() # "sistem", "transaksi", "sesi", "blackout"
+                if kategori_lower != category:
+                    continue
                     
-                # Jika filter kategori aktif, skip yang tidak cocok
-                if kategori and kategori != "Semua":
-                    kategori_lower = kategori.lower() # "sistem", "transaksi", "sesi", "blackout"
-                    if kategori_lower != category:
-                        continue
-                        
+            if timestamp:
                 parsed_logs.append({
                     "timestamp": timestamp,
                     "user": user,
                     "action": action,
                     "detail": detail,
                     "category": category,
+                    "ip_address": ip_address,
+                    "browser_agent": browser_agent,
+                    "detail_json": detail_json,
                     "raw": line
                 })
             else:
@@ -313,7 +336,10 @@ class ReportService:
                         "timestamp": "",
                         "user": "",
                         "action": "",
-                        "detail": ""
+                        "detail": "",
+                        "ip_address": "-",
+                        "browser_agent": "-",
+                        "detail_json": None
                     })
             
             if len(parsed_logs) >= limit:
@@ -351,9 +377,18 @@ class ReportService:
                 return False
             
             nota = t.no_nota or f"ID:{t_id}"
+            
+            t_detail = {
+                "no_nota": t.no_nota,
+                "total": t.jumlah if hasattr(t, 'jumlah') else 0,
+                "tipe_pembayaran": t.tipe_pembayaran if hasattr(t, 'tipe_pembayaran') else "-",
+                "jenis": t.jenis if hasattr(t, 'jenis') else "-",
+                "pelanggan": t.member.username if t.member else (t.sesi.nama_guest if hasattr(t, 'sesi') and t.sesi else "Guest")
+            }
+            
             if TransaksiRepository.delete_by_id(t_id):
                 db.session.commit()
-                write_log("DELETE_STRUK", f"Struk {nota} dihapus permanen", user=operator)
+                write_log("DELETE_STRUK", f"Struk {nota} dihapus permanen", user=operator, detail_json=t_detail)
                 return True
             return False
         except Exception as e:
@@ -380,6 +415,8 @@ class ReportService:
         content = "\n".join(logs)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         return content, timestamp
+
+
 
 
     # =========================================================================
@@ -1179,12 +1216,33 @@ class ReportService:
         table_data = [headers]
         
         for log in logs:
+            import json
+            detail_str = log.get("detail", "")
+            
+            ip = log.get("ip_address", "-")
+            if ip and ip != "-":
+                detail_str += f"<br/><b>IP:</b> {ip}"
+                
+            agent = log.get("browser_agent", "-")
+            if agent and agent != "-":
+                agent_short = agent[:50] + ("..." if len(agent) > 50 else "")
+                detail_str += f"<br/><b>Agent:</b> {agent_short}"
+                
+            det_json = log.get("detail_json")
+            if det_json:
+                try:
+                    json_str = json.dumps(det_json, indent=2) if not isinstance(det_json, str) else det_json
+                    json_html = str(json_str).replace('<', '&lt;').replace('>', '&gt;').replace('\n', '<br/>').replace(' ', '&nbsp;')
+                    detail_str += f"<br/><b>Data:</b><br/>{json_html}"
+                except Exception:
+                    detail_str += f"<br/><b>Data:</b> {str(det_json)}"
+
             row = [
                 Paragraph(log.get("timestamp", ""), style_table_cell_center),
                 Paragraph(log.get("user", ""), style_table_cell_center),
                 Paragraph(log.get("category", ""), style_table_cell_center),
                 Paragraph(log.get("action", ""), style_table_cell_center),
-                Paragraph(log.get("detail", ""), style_table_cell)
+                Paragraph(detail_str, style_table_cell)
             ]
             table_data.append(row)
 

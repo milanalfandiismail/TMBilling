@@ -15,7 +15,9 @@ Constants:
 """
 
 import os
+import json
 from datetime import datetime
+from flask import has_request_context, request
 
 LOG_DIR = "logs"
 LOG_FILE = os.path.join(LOG_DIR, "warnet.log")
@@ -24,25 +26,50 @@ LOG_FILE = os.path.join(LOG_DIR, "warnet.log")
 os.makedirs(LOG_DIR, exist_ok=True)
 
 
-def write_log(aksi, detail, user="kasir"):
+def write_log(aksi, detail, user="kasir", detail_json=None):
     """Menulis satu baris log ke file warnet.log.
     
     Args:
         aksi (str): Kode aksi yang dilakukan (contoh: 'LOGIN', 'BUKA_GUEST', 'BLACKOUT_DETECT').
         detail (str): Deskripsi detail dari aksi tersebut.
         user (str, optional): Identitas pelaku aksi. Defaults to 'kasir'.
+        detail_json (dict, optional): Detail payload tambahan dalam bentuk JSON. Defaults to None.
         
     Example:
         >>> write_log("LOGIN", "Kasir admin login", user="admin")
-        # Output: [2026-04-12 18:30:00] [admin] LOGIN - Kasir admin login
+        # Output: {"timestamp": "2026-04-12 18:30:00", "user": "admin", ...}
     """
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_line = f"[{now}] [{user}] {aksi} - {detail}\n"
+    
+    ip_address = "-"
+    browser_agent = "-"
+    
+    if has_request_context():
+        x_forwarded = request.headers.get("X-Forwarded-For")
+        if x_forwarded:
+            ip_address = x_forwarded.split(",")[0].strip()
+        else:
+            ip_address = request.remote_addr or "-"
+        browser_agent = request.user_agent.string or "-"
+    elif user == "SYSTEM":
+        browser_agent = "SYSTEM"
+
+    log_entry = {
+        "timestamp": now,
+        "user": user,
+        "action": aksi,
+        "detail": detail,
+        "ip_address": ip_address,
+        "browser_agent": browser_agent,
+        "detail_json": detail_json
+    }
+    
+    log_line = json.dumps(log_entry) + "\n"
     
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(log_line)
     
-    print(f"[LOG] {log_line.strip()}")
+    print(f"[LOG] {now} [{user}] {aksi} - {detail}")
 
 
 def read_logs(limit=500, filter_text=None):
@@ -65,9 +92,12 @@ def read_logs(limit=500, filter_text=None):
     
     # Balik urutan (yang terbaru di atas)
     for line in reversed(lines):
-        if filter_text and filter_text.lower() not in line.lower():
+        line_str = line.strip()
+        if not line_str:
             continue
-        logs.append(line.strip())
+        if filter_text and filter_text.lower() not in line_str.lower():
+            continue
+        logs.append(line_str)
         if len(logs) >= limit:
             break
     
