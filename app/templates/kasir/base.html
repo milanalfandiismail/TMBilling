@@ -80,7 +80,7 @@
     {% block head %}{% endblock %}
 </head>
 
-<body class="bg-[#050505] text-neutral-200 font-space-grotesk antialiased flex h-screen w-screen overflow-hidden" data-kasir-role="{{ session.get('kasir_role', '') }}">
+<body class="bg-[#050505] text-neutral-200 font-space-grotesk antialiased flex h-[100dvh] lg:h-screen w-screen overflow-hidden" data-kasir-role="{{ session.get('kasir_role', '') }}">
 
     {% block content %}{% endblock %}
 
