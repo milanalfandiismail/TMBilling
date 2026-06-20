@@ -226,8 +226,18 @@ class MemberService:
         db.session.add(transaksi_refund)
         db.session.commit()
 
-        write_log("REFUND_PAKET", f"Member:{member.username} | Saldo: {sebelum}m -> {waktu_baru}m", user=operator)
-        write_log("TRANSAKSI", f"REFUND | Nota:{transaksi_refund.no_nota} | Rp {transaksi_refund.jumlah}", user=operator)
+        refund_details = {
+            "username": member.username,
+            "no_nota_refund": transaksi_refund.no_nota,
+            "no_nota_original": transaksi.no_nota,
+            "jumlah_refund": transaksi_refund.jumlah,
+            "saldo_sebelum": sebelum,
+            "saldo_sesudah": waktu_baru,
+            "durasi_dikurangi": sebelum - waktu_baru
+        }
+
+        write_log("REFUND_PAKET", f"Member:{member.username} | Saldo: {sebelum}m -> {waktu_baru}m", user=operator, detail_json=refund_details)
+        write_log("TRANSAKSI", f"REFUND | Nota:{transaksi_refund.no_nota} | Rp {transaksi_refund.jumlah}", user=operator, detail_json=refund_details)
         
         return {
             "username": member.username,
