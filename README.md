@@ -211,6 +211,26 @@ Sistem dirancang untuk:
       </ul>
     </td>
   </tr>
+  <tr>
+    <td>
+      <h4>📦 DB Migration & Update System</h4>
+      <ul>
+        <li>Update aplikasi via upload ZIP langsung dari dashboard</li>
+        <li>Auto-detect migrations — backup + migrate otomatis kalau ada perubahan skema</li>
+        <li>Tanpa migrasi — update BE/FE biasa kalau ZIP tanpa folder migrations/</li>
+        <li>Auto-restart server + reload frontend</li>
+        <li>CLI alternative: <code>python run.py --release</code></li>
+      </ul>
+    </td>
+    <td>
+      <h4>📜 Riwayat Migrasi Database</h4>
+      <ul>
+        <li>Lihat semua revisi migrasi dengan status (HEAD / Aktif)</li>
+        <li>Deteksi otomatis apakah skema perlu upgrade</li>
+        <li>Terintegrasi dengan Flask-Migrate + Alembic</li>
+      </ul>
+    </td>
+  </tr>
 </table>
 
 ---
@@ -441,6 +461,37 @@ Script `seed.py` akan membuat:
 ### 6. Run Server
 
 #### Production Mode (Waitress WSGI — Recommended)
+
+```bash
+python run.py
+```
+
+Output:
+```
+🚀 [PRODUCTION] Menjalankan server TMBilling menggunakan WSGI Waitress...
+🔗 [PRODUCTION] Alamat: http://0.0.0.0:7015
+🧵 [PRODUCTION] Threads (Workers): 8
+```
+
+#### Release Mode (Update Aplikasi + Auto Migrasi)
+
+Upload file `TMBilling_Server_v*.zip` ke **Settings → Migrasi & Update**, atau via CLI:
+
+```bash
+# Auto-detect ZIP terbaru di app/update/
+python run.py --release
+
+# Dengan path ZIP custom
+python run.py --release TMBilling_Server_v1.1.zip
+```
+
+Release mode akan:
+1. Extract ZIP ke root project
+2. Auto-detect `migrations/` → backup database + upgrade skema
+3. Install dependencies
+4. (User restart server manual setelah selesai)
+
+#### Development Mode (Flask Dev Server)
 
 ```bash
 python run.py
@@ -853,6 +904,12 @@ loop {
 | GET | `/api/owner/analytics-data` | Admin | KPI Dashboard Owner |
 | GET | `/member/` | Member | Web Portal Member (Login terpisah) |
 
+### DB Migration & Update
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/settings/migration/status` | Admin | Status migrasi (HEAD, Current, history) |
+| POST | `/api/settings/migration/upload` | Admin | Upload ZIP update + auto-extract + auto-migrate + restart |
+
 *(Untuk melihat payload request dan response secara mendetail, kunjungi `docs/TECHNICAL_DOCS.md`)*
 
 ---
@@ -896,7 +953,8 @@ app/static/js/kasir/
     ├── monitor.js    // Hardware monitoring
     ├── blackout.js   // Blackout recovery
     ├── user.js       // Staff management
-    └── settings.js   // App settings
+    ├── settings.js   // App settings
+    └── migration.js  // DB Migration & Update System
 ```
 
 ---
@@ -1057,7 +1115,7 @@ Atau untuk development: cukup restart server — `db.create_all()` otomatis biki
 | [docs/TECHNICAL_DOCS.md](docs/TECHNICAL_DOCS.md) | 🌐 API endpoint reference (lengkap req/res) |
 | [docs/walkthrough.md](docs/walkthrough.md) | 🛡️ Walkthrough Hex-XOR, watchdog, offline uninstall |
 | [docs/CLOUD_BACKUP_DESIGN.md](docs/CLOUD_BACKUP_DESIGN.md) | ☁️ Rencana Desain: Sistem Backup Multi-Provider TMBilling |
-| [docs/NEW_FEATURES_GUIDE.md](docs/NEW_FEATURES_GUIDE.md) | 🚀 Panduan fitur baru (Tauri Single-Instance, Portal Member, Turnamen, & Shift) |
+| [docs/NEW_FEATURES_GUIDE.md](docs/NEW_FEATURES_GUIDE.md) | 🚀 Panduan fitur baru (Tauri Single-Instance, Portal Member, Turnamen, Shift, & DB Migration Manager) |
 | [docs/UPGRADE_RUPIAH_AND_POS.md](docs/UPGRADE_RUPIAH_AND_POS.md) | 🪙 Pembaruan format Rupiah, layout mobile & POS F&B |
 | [docs/agent.md](docs/agent.md) | 📋 Agent task tracker |
 

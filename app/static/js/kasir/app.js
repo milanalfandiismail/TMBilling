@@ -78,7 +78,7 @@ const App = {
         }
 
         // RBAC: Kasir tidak boleh membuka tab admin-only
-        const kasirOnlyRestricted = ['user', 'log', 'settings_general', 'settings_backup', 'settings_scheduler', 'analytics'];
+        const kasirOnlyRestricted = ['user', 'log', 'settings_general', 'settings_backup', 'settings_scheduler', 'settings_migration', 'analytics'];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');
             tab = 'dash';
@@ -118,6 +118,7 @@ const App = {
             whitelist_ip: 'settings',
             settings_backup: 'settings',
             settings_scheduler: 'settings',
+            settings_migration: 'settings',
             analytics: 'analytics',
             plugins: 'plugins',
             'plugin-spa': 'plugins'
@@ -163,6 +164,7 @@ const App = {
             whitelist_ip: 'Pengaturan Whitelist IP',
             settings_backup: 'Pengaturan Database & Backup',
             settings_scheduler: 'Auto Scheduler',
+            settings_migration: 'Migrasi & Update',
             analytics: 'Analytics Owner',
             plugins: 'Plugins & Ekstensi'
         };

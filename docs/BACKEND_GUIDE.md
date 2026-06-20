@@ -325,7 +325,54 @@ flask db upgrade
 flask db downgrade  # rollback
 ```
 
-Atau untuk development, cukup matikan migration dan biarkan `db.create_all()`:
+### Migration Manager & Update System (Dashboard)
+
+Selain CLI, ada fitur **Migrasi & Update** di Settings Dashboard:
+
+**Upload ZIP Update (`POST /api/settings/migration/upload`):**
+1. Upload file `TMBilling_Server_v*.zip`
+2. Backend validasi struktur (cek `run.py` + `app/`)
+3. Extract ke root project
+4. Auto-detect `migrations/` → backup database (via `BackupService`) → `flask_migrate upgrade`
+5. Install dependencies di background
+6. Server restart otomatis
+
+**Status (`GET /api/settings/migration/status`):**
+- Membandingkan `HEAD` (dari file di `migrations/versions/`) dengan `Current` (dari tabel `alembic_version`)
+- Menampilkan riwayat semua revisi migrasi
+
+**Struktur file migrasi:**
+
+```python
+# migrations/versions/1234_deskripsi.py
+"""deskripsi perubahan
+
+Revision ID: 1234...
+Revises: 5678...
+Create Date: ...
+"""
+from alembic import op
+import sqlalchemy as sa
+
+revision = '1234...'
+down_revision = '5678...'
+
+def upgrade():
+    op.add_column('user', sa.Column('role', sa.String(20)))
+
+def downgrade():
+    op.drop_column('user', 'role')
+```
+
+**CLI alternative:**
+```bash
+python run.py --release                    # auto-detect ZIP terbaru
+python run.py --release path/to/file.zip   # custom ZIP path
+```
+
+### Development Mode
+
+Untuk development, cukup matikan migration dan biarkan `db.create_all()`:
 
 ```python
 # app/__init__.py

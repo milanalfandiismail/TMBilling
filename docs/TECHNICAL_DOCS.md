@@ -608,4 +608,34 @@ Auth: Mix (`member_login_required` untuk halaman dashboard)
 | GET | `/api/public/pc-status` | None | Mengambil peta status PC real-time secara publik |
 
 ---
+
+## Database Migration Manager & Update System
+
+Auth: `admin_required`
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/api/settings/migration/status` | Status migrasi (HEAD, Current, history, app_version) |
+| POST | `/api/settings/migration/upload` | Upload ZIP update + auto-extract + auto-migrate + restart |
+
+**Status Response:**
+```json
+{
+  "success": true,
+  "current": "f2002fac",
+  "head": "f2002fac",
+  "needs_upgrade": false,
+  "app_version": "v1.0",
+  "history": [
+    { "revision": "f2002fac", "down_revision": "37852408", "description": "add pos_x pos_y to pc", "is_current": true, "is_head": true }
+  ]
+}
+```
+
+**Upload Response:**
+```json
+{ "success": true, "message": "Update berhasil! Server akan restart..." }
+```
+
+---
 *TMBilling v1.0 — API Documentation*

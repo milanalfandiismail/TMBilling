@@ -90,6 +90,7 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 | `tournament/tournament_routes.py` | `/api/` | Session | API turnamen, matchmaking Swiss, update skor, playoffs |
 | `member/member_portal_routes.py` | `/member/` | Member | Web portal member (login, logout, dashboard sisa waktu, riwayat) |
 | `shift/shift_routes.py` | `/api/` | Session | API shift handover (start, active, summary, end, history) |
+| `settings/migration_routes.py` | `/api/settings/migration/` | Admin | DB Migration Manager — status, upload ZIP update, auto-migrate |
 
 ### 1.5 Frontend Dashboard (`app/static/js/kasir/`)
 

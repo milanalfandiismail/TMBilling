@@ -5,7 +5,7 @@ Dokumen ini mendokumentasikan spesifikasi teknis dan rencana desain untuk memper
 ---
 
 ## 📋 1. Rangkuman Pemahaman (Understanding Summary)
-* **Tujuan**: Mencegah kehilangan data transaksi kasir dan billing warnet dengan mencadangkan database SQLite (`tmbilling.db`) secara otomatis ke berbagai platform cloud/penyimpanan eksternal.
+* **Tujuan**: Mencegah kehilangan data transaksi kasir dan billing warnet dengan mencadangkan database SQLite (`warnet.db`) secara otomatis ke berbagai platform cloud/penyimpanan eksternal.
 * **Fitur Utama**:
   * **Kompresi ZIP Otomatis**: Semua backup dikompresi ke format `.zip` sebelum dikirim guna menghemat ruang dan memenuhi limit pengiriman berkas.
   * **Multi-Provider**: Mendukung pengunggahan simultan ke Discord Webhook, WebDAV (Nextcloud), Google Drive, dan folder jaringan lokal/NAS.

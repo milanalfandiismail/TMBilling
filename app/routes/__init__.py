@@ -41,11 +41,12 @@ from app.routes.backup.backup_routes import backup_bp
 from app.routes.tournament.tournament_routes import tournament_bp
 from app.routes.member.member_portal_routes import member_portal_bp
 from app.routes.shift.shift_routes import shift_bp
+from app.routes.settings.migration_routes import migration_bp
 
 __all__ = [
     'auth_bp', 'auth_kasir_bp', 'client_bp', 'dashboard_bp',
     'member_bp', 'paket_bp', 'pc_bp', 'report_bp', 'sesi_bp',
     'grup_bp', 'blackout_bp', 'settings_bp', 'monitor_bp', 'user_bp',
     'menu_bp', 'backup_bp', 'tournament_bp', 'member_portal_bp',
-    'shift_bp'
+    'shift_bp', 'migration_bp'
 ]
