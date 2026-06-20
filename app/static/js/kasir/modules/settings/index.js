@@ -46,6 +46,9 @@ const Settings = {
                     qrisPreview.src = res.settings.qris_image_url;
                 }
 
+                // Load Timezone
+                this._populateTimezoneSelect(res.settings.timezone);
+
                 // Load Backup Settings toggles
                 const providers = ['discord', 'webdav', 'gdrive', 'nas'];
                 providers.forEach(p => {
@@ -303,6 +306,44 @@ const Settings = {
                 </div>
             </div>`;
         Modal.show(modalHtml);
+    },
+
+    _populateTimezoneSelect(selected) {
+        const select = document.getElementById('timezone-select');
+        if (!select) return;
+
+        const zones = [
+            {value: 'Asia/Jakarta', label: 'WIB (UTC+7) — Jakarta, Sumatra, Jawa'},
+            {value: 'Asia/Makassar', label: 'WITA (UTC+8) — Makassar, Bali, Sulawesi'},
+            {value: 'Asia/Jayapura', label: 'WIT (UTC+9) — Jayapura, Maluku, Papua'},
+            {value: 'Asia/Kuala_Lumpur', label: 'MYT (UTC+8) — Malaysia'},
+            {value: 'Asia/Singapore', label: 'SGT (UTC+8) — Singapore'},
+            {value: 'Asia/Ho_Chi_Minh', label: 'ICT (UTC+7) — Vietnam'},
+            {value: 'Asia/Bangkok', label: 'ICT (UTC+7) — Thailand'},
+            {value: 'Asia/Manila', label: 'PHT (UTC+8) — Philippines'},
+            {value: 'Europe/London', label: 'GMT/BST (UTC+0/1) — UK'},
+            {value: 'Europe/Berlin', label: 'CET/CEST (UTC+1/2) — Germany'},
+            {value: 'America/New_York', label: 'EST/EDT (UTC-5/4) — New York'},
+            {value: 'Asia/Tokyo', label: 'JST (UTC+9) — Japan'},
+            {value: 'Australia/Sydney', label: 'AEST/AEDT (UTC+10/11) — Sydney'},
+        ];
+
+        select.innerHTML = zones.map(z =>
+            `<option value="${z.value}" ${z.value === (selected || 'Asia/Makassar') ? 'selected' : ''}>${z.label}</option>`
+        ).join('');
+    },
+
+    async saveTimezone() {
+        const val = document.getElementById('timezone-select').value;
+        try {
+            await API.request('/api/settings/timezone', {
+                method: 'PUT',
+                body: JSON.stringify({ value: val })
+            });
+            Toast.success('Timezone berhasil diperbarui');
+        } catch (err) {
+            Toast.error('Gagal menyimpan timezone: ' + err.message);
+        }
     },
 
     // ------------------------------------------------------------------

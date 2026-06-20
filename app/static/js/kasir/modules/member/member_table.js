@@ -54,7 +54,7 @@ const MemberTable = {
                                     </td>
                                     <td class="px-4 py-2 text-center font-mono flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Berlaku Sampai</span>
-                                        <span class="text-neutral-400 font-bold">${m.kadaluarsa_pada ? Utils.formatTanggal(m.kadaluarsa_pada) : '-'}</span>
+                                        <span class="text-neutral-400 font-bold">${m.kadaluarsa_pada_display || '-'}</span>
                                     </td>
                                     <td class="px-4 py-2 text-center flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Status</span>

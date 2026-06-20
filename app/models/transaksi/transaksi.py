@@ -8,6 +8,7 @@ dan penutupan sesi untuk keperluan laporan keuangan dan audit.
 """
 
 from app.models import db, now_local
+from app.utils.timezone_utils import format_display
 
 
 class Transaksi(db.Model):
@@ -82,7 +83,7 @@ class Transaksi(db.Model):
             "menit": self.menit,
             "menit_display": f"{self.menit} menit" if self.menit > 0 else "-",
             "keterangan": self.keterangan,
-            "dibuat_pada": self.dibuat_pada.strftime("%Y-%m-%d %H:%M:%S") if self.dibuat_pada else None,
+            "dibuat_pada": format_display(self.dibuat_pada) if self.dibuat_pada else None,
         }
     
     def _get_jenis_display(self):

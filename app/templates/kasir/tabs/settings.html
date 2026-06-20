@@ -78,6 +78,26 @@
                 </div>
             </div>
 
+            <!-- Card: Timezone -->
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">🌐 Zona Waktu (Timezone)</h3>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Timezone Display</p>
+                        <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Semua waktu di dashboard & laporan akan ditampilkan dalam zona waktu ini</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select id="timezone-select"
+                            class="w-80 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button onclick="Settings.saveTimezone()"
+                        class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">Simpan</button>
+                </div>
+            </div>
+
             <!-- Card: Konfigurasi Kiosk Screen -->
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
                 <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Konfigurasi Info

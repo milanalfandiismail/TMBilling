@@ -528,12 +528,17 @@ const Dashboard = {
     },
 
     updateTime() {
+        const container = document.querySelector('[data-timezone]');
+        const tz = container?.dataset?.timezone || 'Asia/Makassar';
+        const tzLabel = container?.dataset?.timezoneLabel || 'WITA';
+        const opts = { hour: '2-digit', minute: '2-digit', timeZone: tz };
+        const dateOpts = { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: tz };
         const now = new Date();
-        const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-        const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('id-ID', opts);
+        const dateStr = now.toLocaleDateString('id-ID', dateOpts);
         const timeEl = document.getElementById('current-time');
         const dateEl = document.getElementById('current-date');
-        if (timeEl) timeEl.innerText = timeStr;
+        if (timeEl) timeEl.innerText = `${timeStr} ${tzLabel}`;
         if (dateEl) dateEl.innerText = dateStr;
     },
 

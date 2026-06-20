@@ -118,7 +118,9 @@ const App = {
             whitelist_ip: 'settings',
             settings_backup: 'settings',
             settings_scheduler: 'settings',
-            analytics: 'analytics'
+            analytics: 'analytics',
+            plugins: 'plugins',
+            'plugin-spa': 'plugins'
         };
 
         const activeSubmenu = tabToSubmenu[tab];
@@ -161,7 +163,8 @@ const App = {
             whitelist_ip: 'Pengaturan Whitelist IP',
             settings_backup: 'Pengaturan Database & Backup',
             settings_scheduler: 'Auto Scheduler',
-            analytics: 'Analytics Owner'
+            analytics: 'Analytics Owner',
+            plugins: 'Plugins & Ekstensi'
         };
  
         const titleEl = document.getElementById('page-title');
@@ -194,10 +197,25 @@ const App = {
             case 'menu': if (typeof Menu !== 'undefined') await Menu.load(); break;
             case 'tournament': if (typeof Tournament !== 'undefined') await Tournament.load(); break;
             case 'analytics': if (typeof OwnerAnalytics !== 'undefined') await OwnerAnalytics.load(); break;
+            case 'plugins': if (typeof PluginsModule !== 'undefined') PluginsModule.init(); break;
         }
     },
  
     showTab(tab) { this.switchTab(tab); },
+
+    openPluginSPA(url, title) {
+        console.log('[TMBilling Plugin] openPluginSPA called:', { url, title });
+        this.switchTab('plugin-spa');
+        const iframe = document.getElementById('plugin-spa-iframe');
+        if (iframe) {
+            console.log('[TMBilling Plugin] Setting iframe.src to:', url);
+            iframe.src = url;
+        } else {
+            console.error('[TMBilling Plugin] Element #plugin-spa-iframe not found!');
+        }
+        const titleEl = document.getElementById('page-title');
+        if (titleEl) titleEl.innerText = title;
+    },
  
     async logout() {
         Modal.confirm('Yakin ingin logout?', async () => {

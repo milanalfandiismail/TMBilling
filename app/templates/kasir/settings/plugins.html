@@ -1,0 +1,105 @@
+<!-- ===== TAB: PLUGINS ===== -->
+<div id="tab-plugins" class="tab-content hidden space-y-6">
+    <div class="w-full space-y-6">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">🧩 MANAJEMEN
+                        PLUGINS</h3>
+                    <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Kelola dan upload ekstensi pihak ketiga
+                        untuk menambahkan fitur baru ke TMBilling.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="PluginsModule.restartServer()"
+                        class="flex items-center gap-2 px-4 py-2 bg-[#1c1c1c] hover:bg-[#262626] border border-[#333] text-neutral-300 rounded font-medium text-xs lg:text-sm transition-colors shadow-lg">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                            </path>
+                        </svg>
+                        Restart Server
+                    </button>
+                    <button onclick="PluginsModule.openUploadModal()"
+                        class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium text-xs lg:text-sm transition-colors shadow-lg shadow-blue-500/20">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                        </svg>
+                        Upload Plugin
+                    </button>
+                </div>
+            </div>
+
+            <!-- Alert Restart Required -->
+            <div id="plugin-restart-alert"
+                class="hidden bg-yellow-500/10 border border-yellow-500/20 rounded p-4 flex items-start gap-3">
+                <svg class="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                    </path>
+                </svg>
+                <div>
+                    <h3 class="text-sm font-semibold text-yellow-500">Restart Server Diperlukan</h3>
+                    <p class="text-xs text-yellow-400/80 mt-1">Anda telah mengubah status plugin atau mengupload plugin
+                        baru. Perubahan ini memerlukan restart aplikasi TMBilling untuk diterapkan sepenuhnya.</p>
+                </div>
+            </div>
+
+            <!-- Plugins Grid -->
+            <div id="plugins-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- RENDERED VIA JS -->
+                <div class="col-span-full py-12 flex flex-col items-center justify-center text-center">
+                    <div class="w-12 h-12 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4">
+                    </div>
+                    <p class="text-sm text-neutral-500">Memuat plugins...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="upload-plugin-modal"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center">
+    <div class="bg-[#121212] border border-[#262626] rounded-xl w-full max-w-md overflow-hidden shadow-2xl transform transition-all scale-95 opacity-0"
+        id="upload-modal-content">
+        <div class="p-4 border-b border-[#262626] flex items-center justify-between">
+            <h3 class="text-lg font-bold text-white">Upload Plugin (.zip)</h3>
+            <button onclick="PluginsModule.closeUploadModal()"
+                class="text-neutral-400 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+        <div class="p-6">
+            <p class="text-sm text-neutral-400 mb-4">Pilih file <span
+                    class="font-mono text-xs bg-neutral-800 px-1 rounded text-neutral-300">.zip</span> plugin TMBilling.
+                Pastikan plugin berasal dari sumber terpercaya untuk keamanan server Anda.</p>
+
+            <form id="plugin-upload-form" class="space-y-4" onsubmit="PluginsModule.submitUpload(event)">
+                <div
+                    class="border-2 border-dashed border-[#262626] rounded-lg p-6 text-center hover:border-blue-500/50 transition-colors bg-[#0a0a0a] relative group">
+                    <input type="file" id="plugin-file" accept=".zip"
+                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        onchange="PluginsModule.handleFileSelect(event)">
+                    <svg class="w-10 h-10 mx-auto text-neutral-500 group-hover:text-blue-500 transition-colors mb-3"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                        </path>
+                    </svg>
+                    <p class="text-sm font-medium text-neutral-300" id="file-name-display">Klik atau Drop file .zip ke
+                        sini</p>
+                </div>
+
+                <button type="submit" id="btn-upload"
+                    class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded transition-colors flex justify-center items-center gap-2">
+                    <span>Upload & Ekstrak</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

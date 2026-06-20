@@ -8,6 +8,7 @@ suhu CPU/GPU, penggunaan CPU, spesifikasi RAM, dan info motherboard.
 """
 
 from app.models import db, now_local
+from app.utils.timezone_utils import format_display
 
 class HardwareMonitor(db.Model):
     """Model untuk menyimpan metrik hardware PC dari C# Monitor Agent.
@@ -77,7 +78,7 @@ class HardwareMonitor(db.Model):
             "cpu_name": self.cpu_name,
             "gpu_name": self.gpu_name,
             "active_window": self.active_window,
-            "last_update": self.last_update.strftime("%Y-%m-%d %H:%M:%S") if self.last_update else None
+            "last_update": format_display(self.last_update) if self.last_update else None
         }
 
 class PCProcess(db.Model):
@@ -112,5 +113,5 @@ class PCProcess(db.Model):
         return {
             "name": self.name,
             "title": self.title,
-            "last_update": self.last_update.strftime("%H:%M:%S") if self.last_update else None
+            "last_update": format_display(self.last_update, fmt="%H:%M") if self.last_update else None
         }

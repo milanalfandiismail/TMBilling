@@ -9,7 +9,9 @@ dan API data PC untuk grid monitoring.
 from flask import Blueprint, request, jsonify, render_template, redirect, session, url_for
 from app.routes.auth.auth_kasir_routes import login_required, login_required_html, admin_required
 from app.services import DashboardService
+from app.services import SettingsService
 from app.services.owner.analytics_service import OwnerAnalyticsService
+from app.utils.timezone_utils import get_tz_short_name
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -23,7 +25,9 @@ dashboard_bp = Blueprint("dashboard", __name__)
 @login_required_html
 def dashboard():
     """Halaman utama dashboard monitoring PC kasir."""
-    return render_template("kasir/index.html")
+    timezone = SettingsService.get("timezone", "Asia/Makassar")
+    tz_label = get_tz_short_name(timezone)
+    return render_template("kasir/index.html", user_timezone=timezone, user_timezone_label=tz_label)
 
 @dashboard_bp.route("/login", methods=["GET"])
 def login_page():

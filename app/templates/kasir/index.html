@@ -27,10 +27,15 @@
             {% include 'kasir/tabs/blackout.html' %}
             {% include 'kasir/tabs/user.html' %}
             {% include 'kasir/tabs/settings.html' %}
+            {% include 'kasir/settings/plugins.html' %}
             {% include 'kasir/tabs/struk.html' %}
             {% include 'kasir/tabs/menu.html' %}
             {% include 'kasir/tabs/tournament.html' %}
             {% include 'kasir/tabs/analytics.html' %}
+            
+            <div id="tab-plugin-spa" class="tab-content hidden w-full" style="height: calc(100vh - 140px);">
+                <iframe id="plugin-spa-iframe" class="w-full h-full rounded-xl bg-[#0d0d0d]" src="about:blank"></iframe>
+            </div>
             
             <!-- ===== MODALS ===== -->
             {% include 'kasir/components/modals.html' %}

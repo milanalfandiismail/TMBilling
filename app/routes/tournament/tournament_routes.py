@@ -13,6 +13,7 @@ from flask import Blueprint, request, jsonify, session
 from app.models import db, now_local
 from app.models import Turnamen, TurnamenTahap, TurnamenTim, TurnamenMatch
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
+from app.utils.timezone_utils import format_display
 import math
 import random
 
@@ -263,7 +264,7 @@ def list_tournament():
                 "nama": t.nama,
                 "deskripsi": t.deskripsi,
                 "status": t.status,
-                "dibuat_pada": t.dibuat_pada.strftime("%Y-%m-%d %H:%M:%S") if t.dibuat_pada else None,
+                "dibuat_pada": format_display(t.dibuat_pada) if t.dibuat_pada else None,
                 "stages": stages_list,
                 "teams_count": teams_count
             })

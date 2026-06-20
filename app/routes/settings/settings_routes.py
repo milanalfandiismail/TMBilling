@@ -144,6 +144,35 @@ def update_client_api_key():
 # 3. DATABASE BACKUP (MANUAL TRIGGER)
 # =========================================================================
 
+@settings_bp.route("/settings/timezone", methods=["PUT"])
+@login_required
+@admin_required
+def update_timezone():
+    """Update timezone setting."""
+    try:
+        data = request.get_json() or {}
+        tz_name = data.get("value", "").strip()
+
+        if not tz_name:
+            return jsonify({"error": "Timezone wajib diisi"}), 400
+
+        # Validasi timezone
+        from zoneinfo import ZoneInfo
+        try:
+            ZoneInfo(tz_name)
+        except (KeyError, TypeError):
+            return jsonify({"error": f"Timezone '{tz_name}' tidak valid"}), 400
+
+        SettingsService.set("timezone", tz_name)
+
+        operator = session.get("kasir_username", "admin")
+        write_log("SETTINGS_TIMEZONE", f"Timezone diubah ke {tz_name}", user=operator)
+
+        return jsonify({"success": True, "message": f"Timezone diubah ke {tz_name}"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @settings_bp.route("/settings/backup/manual", methods=["POST"])
 @login_required
 @admin_required

@@ -1,0 +1,8 @@
+{
+    "id": "hello_world",
+    "name": "Hello World Plugin",
+    "version": "1.0.0",
+    "author": "TMBilling Core Team",
+    "description": "Plugin contoh untuk mengetes sistem plugin. Menyediakan endpoint API sederhana.",
+    "icon": "👋"
+}
