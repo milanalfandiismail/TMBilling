@@ -97,6 +97,19 @@ Tauri Client (PC)       Flask Server            Database
      │<── status ────────────│                     │
 ```
 
+### 4. Plugin System Flow
+
+```
+User Click          Frontend (Iframe)     Flask Server
+   │                  │                       │
+   ├─ BUKA PLUGIN ───>│                       │
+   │                  ├─ load iframe src      │
+   │                  │  /api/plugin/xyz ────>│
+   │                  │                       ├─ plugin_bp
+   │                  │<── HTML UI/API ───────│
+   │<── Render UI ────│                       │
+```
+
 ## Frontend Architecture
 
 ```
@@ -121,8 +134,9 @@ index.html (SPA)
 │   ├── monitor.js    — Hardware monitor table
 │   ├── blackout.js   — Blackout recovery
 │   ├── user.js       — CRUD staff
-│   └── settings.js   — Auto-shutdown, backup
-└── app.js            — Router, auth check, init
+│   ├── settings.js   — Auto-shutdown, backup, timezone, scheduler
+│   └── plugins.js    — Plugin Manager settings
+└── app.js            — Router, auth check, init, plugin iframe injector
 ```
 
 ### Pola Module
@@ -217,6 +231,7 @@ def api():
 
 ## Security
 
+- **IP Whitelist**: Endpoint dashboard kasir `/kasir` dilindungi secara ketat, hanya IP yang terdaftar (atau Bypass Token darurat) yang dapat mengakses.
 - **CSRF**: Flask-WTF activated globally, exempt only for Tauri Client & Agent
 - **Session**: Cookie-based, signed with SECRET_KEY
 - **Role**: `admin` (full access) vs `kasir` (terbatas)
@@ -238,5 +253,10 @@ def api():
 | **Emergency User** | Username bypass offline dari Registry (diatur saat instalasi, default `TMBilling`) |
 | **Emergency Token** | Password bypass offline & uninstaller fallback (diatur saat instalasi, default `TM123qaz!@#`) |
 
+## Standar Multi-Timezone
+
+- **Penyimpanan:** Semua waktu di-commit ke database dalam format **UTC (Timezone Aware)**.
+- **Konversi:** Disajikan di frontend melalui fungsi utilitas `format_display()` berdasarkan default timezone yang dikonfigurasi di Settings (misal `Asia/Makassar`).
+
 ---
-*Last Updated: 2026-06-12 | TMBilling Core Team*
+*Last Updated: 2026-06-20 | TMBilling Core Team*

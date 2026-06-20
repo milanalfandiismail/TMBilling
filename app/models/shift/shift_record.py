@@ -6,6 +6,7 @@ dan selisih untuk audit keuangan.
 """
 
 from app.models import db, now_local
+from app.utils.timezone_utils import format_display
 
 
 class ShiftRecord(db.Model):
@@ -48,8 +49,8 @@ class ShiftRecord(db.Model):
             "id": self.id,
             "kasir_id": self.kasir_id,
             "kasir_nama": self.kasir.nama_lengkap or self.kasir.username if self.kasir else "System",
-            "waktu_mulai": self.waktu_mulai.strftime("%Y-%m-%d %H:%M:%S") if self.waktu_mulai else None,
-            "waktu_selesai": self.waktu_selesai.strftime("%Y-%m-%d %H:%M:%S") if self.waktu_selesai else None,
+            "waktu_mulai": format_display(self.waktu_mulai) if self.waktu_mulai else None,
+            "waktu_selesai": format_display(self.waktu_selesai) if self.waktu_selesai else None,
             "modal_awal": self.modal_awal,
             "total_billing": self.total_billing,
             "total_kantin": self.total_kantin,

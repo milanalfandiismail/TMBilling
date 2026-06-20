@@ -8,6 +8,7 @@ Menyimpan data waktu, pembayaran, dan status blackout recovery.
 """
 
 from app.models import db, now_local
+from app.utils.timezone_utils import format_display, display_in_tz
 
 
 class Sesi(db.Model):
@@ -188,15 +189,15 @@ class Sesi(db.Model):
             "pc_kode": self.pc.kode if self.pc else None,
             "grup": self.pc.grup.nama if self.pc and self.pc.grup else "reguler",
             "paket": self.paket.to_dict() if self.paket else None,
-            "mulai_pada": self.mulai_pada.strftime("%Y-%m-%d %H:%M:%S") if self.mulai_pada else None,
-            "selesai_pada": self.selesai_pada.strftime("%Y-%m-%d %H:%M:%S") if self.selesai_pada else None,
+            "mulai_pada": format_display(self.mulai_pada) if self.mulai_pada else None,
+            "selesai_pada": format_display(self.selesai_pada) if self.selesai_pada else None,
             "sisa_menit": self.sisa_menit(),
             "status": self.status,
-            "waktu_mulai_sesi": self.waktu_mulai_sesi.strftime("%Y-%m-%d %H:%M:%S") if self.waktu_mulai_sesi else None,
+            "waktu_mulai_sesi": format_display(self.waktu_mulai_sesi) if self.waktu_mulai_sesi else None,
             "waktu_tersimpan_awal": self.waktu_tersimpan_awal,
             "menit_pause_total": self.menit_pause_total,
             "is_admin": self.is_admin,
-            "last_sync": self.last_sync.strftime("%Y-%m-%d %H:%M:%S") if self.last_sync else None,
+            "last_sync": format_display(self.last_sync) if self.last_sync else None,
         }
     
     def to_dict_audit(self):
@@ -214,7 +215,7 @@ class Sesi(db.Model):
             "username": self.member.username if self.member else self.nama_guest or "Guest",
             "tipe": self.tipe,
             "grup": self.pc.grup.nama if self.pc and self.pc.grup else "reguler",
-            "jam_mati": self.last_sync.strftime("%H:%M:%S") if self.last_sync else self.mulai_pada.strftime("%H:%M:%S"),
+            "jam_mati": display_in_tz(self.last_sync).strftime("%H:%M:%S") if self.last_sync else display_in_tz(self.mulai_pada).strftime("%H:%M:%S"),
             "sisa_waktu_mati": self.sisa_menit_saat_mati or 0,
             "is_blackout_resolved": self.is_blackout_resolved
         }

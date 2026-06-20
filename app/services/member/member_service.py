@@ -9,6 +9,7 @@ dan riwayat pembelian member.
 
 from datetime import timedelta
 from app.models import Member
+from app.utils.timezone_utils import format_display
 from app.models import Transaksi
 from app.repositories import MemberRepository
 from app.repositories import SesiRepository
@@ -276,7 +277,7 @@ class MemberService:
                 "base_durasi_menit": base_durasi,
                 "qty": qty,
                 "harga": t.jumlah,
-                "dibuat_pada": t.dibuat_pada.strftime("%Y-%m-%d %H:%M") if t.dibuat_pada else "-",
+                "dibuat_pada": format_display(t.dibuat_pada),
                 "jenis": t.jenis,
             })
             

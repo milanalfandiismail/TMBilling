@@ -7,6 +7,7 @@ serta TransaksiMenu untuk mencatat transaksi penjualan F&B secara terpisah dari 
 """
 
 from app.models import db, now_local
+from app.utils.timezone_utils import format_display
 
 class MenuItem(db.Model):
     """Model untuk menyimpan daftar makanan/minuman di katalog POS."""
@@ -67,7 +68,7 @@ class TransaksiMenu(db.Model):
             "jumlah": self.jumlah,
             "total_harga": self.total_harga,
             "pc_kode": self.pc_kode,
-            "tanggal": self.tanggal.strftime("%Y-%m-%d %H:%M:%S") if self.tanggal else None,
+            "tanggal": format_display(self.tanggal) if self.tanggal else None,
             "kasir_id": self.kasir_id,
             "kasir_nama": self.kasir.username if self.kasir else "System",
             "tunai": self.tunai,

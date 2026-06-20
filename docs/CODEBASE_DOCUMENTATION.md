@@ -93,7 +93,7 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 
 ### 1.5 Frontend Dashboard (`app/static/js/kasir/`)
 
-**Architecture**: Modular Vanilla JS, Tailwind CSS CDN, SPA
+**Architecture**: Modular Vanilla JS, Tailwind CSS (Local npm), SPA
 
 | Module | File | Fungsi |
 |--------|------|--------|

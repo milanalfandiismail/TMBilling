@@ -96,6 +96,8 @@ def create_app():
     app.register_blueprint(grup_bp, url_prefix="/api/grup")
     app.register_blueprint(blackout_bp, url_prefix="/api/blackout")
     app.register_blueprint(settings_bp, url_prefix="/api")
+    from app.routes.settings.plugin_routes import plugin_bp
+    app.register_blueprint(plugin_bp)
     app.register_blueprint(monitor_bp, url_prefix="/api")
     app.register_blueprint(user_bp, url_prefix="/api/user")
     app.register_blueprint(menu_bp, url_prefix="/api")
@@ -156,14 +158,33 @@ def create_app():
             title = SettingsService.get("warnet_title", "TMBilling")
         except Exception:
             title = "TMBilling"
-        return dict(warnet_title=title)
+            
+        try:
+            from app.services.plugins.plugin_manager import PluginManager
+            plugin_menus = PluginManager.get_instance().get_active_menus()
+        except Exception:
+            plugin_menus = []
+            
+        return dict(warnet_title=title, plugin_menus=plugin_menus)
 
     with app.app_context():
         db.create_all()
         
+        # Load Plugins and their models/blueprints
+        try:
+            from app.services.plugins.plugin_manager import PluginManager
+            pm = PluginManager.get_instance()
+            pm.init_app(app)
+            # Second pass to create tables for plugin models
+            db.create_all()
+            # Register plugin blueprints
+            pm.register_blueprints()
+        except Exception as e:
+            app.logger.error(f"Gagal memuat PluginManager: {e}")
+        
         # Seed IP whitelist defaults (idempotent)
         try:
-            from app.services.ip_whitelist import IpWhitelistService
+            from app.services import IpWhitelistService
             IpWhitelistService.seed_defaults(app)
         except Exception as e:
             app.logger.warning(f"Gagal seed IP whitelist defaults: {e}")

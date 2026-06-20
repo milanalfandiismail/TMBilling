@@ -11,6 +11,7 @@ from app.repositories import TransaksiRepository
 from app.repositories import SesiRepository
 from app.repositories import SettingsRepository
 from app.utils.logger import read_logs, write_log, clear_logs
+from app.utils.timezone_utils import format_display
 from datetime import datetime
 
 
@@ -78,7 +79,7 @@ class ReportService:
                     "jumlah": tm.jumlah,
                     "total_harga": tm.total_harga,
                     "pc_kode": tm.pc_kode or "-",
-                    "waktu": tm.tanggal.strftime('%d/%m/%Y %H:%M'),
+                    "waktu": format_display(tm.tanggal) if tm.tanggal else "-",
                     "kasir_nama": tm.kasir.username if tm.kasir else "System",
                     "tunai": tm.tunai,
                     "kembalian": tm.kembalian,
@@ -188,7 +189,7 @@ class ReportService:
 
         return {
             "no_nota": no_nota_final,
-            "tanggal": t.dibuat_pada.strftime("%d/%m/%Y %H:%M:%S"),
+            "tanggal": format_display(t.dibuat_pada),
             "pc_kode": pc_display,
             "tipe": t.sesi.tipe if t.sesi else "topup",
             "nama_pelanggan": nama_p,
@@ -225,7 +226,7 @@ class ReportService:
 
         return {
             "no_nota": tm.no_nota,
-            "tanggal": tm.tanggal.strftime("%d/%m/%Y %H:%M:%S") if tm.tanggal else "",
+            "tanggal": format_display(tm.tanggal) if tm.tanggal else "",
             "pc_kode": tm.pc_kode or "-",
             "tipe": "kantin",
             "nama_pelanggan": "Pelanggan POS",
@@ -423,7 +424,7 @@ class ReportService:
                 "no_nota": t.no_nota or f"TRX-{t.id}",
                 "nama_pelanggan": nama,
                 "jumlah": t.jumlah,
-                "waktu": t.dibuat_pada.strftime('%d/%m/%Y %H:%M'),
+                "waktu": format_display(t.dibuat_pada),
                 "keterangan": t.keterangan,
                 "jenis": t.jenis or ""
             })

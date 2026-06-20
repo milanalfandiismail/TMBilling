@@ -9,6 +9,7 @@ dan relasi ke grup serta sesi bermain.
 
 from app.models import db, now_local
 from datetime import timedelta
+from app.utils.timezone_utils import format_display
 
 
 class Member(db.Model):
@@ -147,6 +148,8 @@ class Member(db.Model):
             "grup_warna": self.grup.warna if self.grup else "#888888",
             "waktu_tersimpan": waktu_tampil,
             "kadaluarsa_pada": self.kadaluarsa_pada.strftime("%Y-%m-%d %H:%M:%S") if self.kadaluarsa_pada else None,
+            "kadaluarsa_pada_display": format_display(self.kadaluarsa_pada) if self.kadaluarsa_pada else None,
             "aktif": self.aktif,
             "dibuat_pada": self.dibuat_pada.strftime("%Y-%m-%d %H:%M:%S") if self.dibuat_pada else None,
+            "dibuat_pada_display": format_display(self.dibuat_pada) if self.dibuat_pada else None,
         }

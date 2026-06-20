@@ -8,6 +8,7 @@ secara relasional di SQLite.
 """
 
 from app.models import db, now_local
+from app.utils.timezone_utils import format_display
 
 class Turnamen(db.Model):
     """Model untuk menyimpan informasi utama turnamen."""
@@ -32,7 +33,7 @@ class Turnamen(db.Model):
             "nama": self.nama,
             "deskripsi": self.deskripsi,
             "status": self.status,
-            "dibuat_pada": self.dibuat_pada.strftime("%Y-%m-%d %H:%M:%S") if self.dibuat_pada else None
+            "dibuat_pada": format_display(self.dibuat_pada) if self.dibuat_pada else None
         }
 
 
@@ -61,7 +62,7 @@ class TurnamenTahap(db.Model):
             "tipe_format": self.tipe_format,
             "urutan": self.urutan,
             "status": self.status,
-            "dibuat_pada": self.dibuat_pada.strftime("%Y-%m-%d %H:%M:%S") if self.dibuat_pada else None
+            "dibuat_pada": format_display(self.dibuat_pada) if self.dibuat_pada else None
         }
 
 

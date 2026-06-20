@@ -24,6 +24,7 @@ Services:
     SettingsService: Konfigurasi sistem key-value (auto-shutdown, dll).
     TransaksiService: Penomoran nota dan pencatatan transaksi.
     UserService: CRUD akun staff kasir/admin.
+    PluginManager: Manajemen siklus hidup plugins eksternal.
 """
 
 from app.services.settings.settings_service import SettingsService
@@ -47,6 +48,8 @@ from app.services.report.report_service import ReportService
 from app.services.sesi.sesi_service import SesiService
 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
 from app.services.owner.analytics_service import OwnerAnalyticsService
+from app.services.plugins.plugin_manager import PluginManager
+from app.services.plugins.base_plugin import BasePlugin
 
 __all__ = [
     "ShiftService",
@@ -63,6 +66,8 @@ __all__ = [
     "OwnerAnalyticsService",
     "PaketService",
     "PCService",
+    "PluginManager",
+    "BasePlugin",
     "ReportService",
     "SesiService",
     "IpWhitelistService",

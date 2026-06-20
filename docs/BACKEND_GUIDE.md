@@ -59,10 +59,12 @@ app/
 │   ├── blackout_routes.py
 │   ├── monitor_routes.py
 │   ├── settings_routes.py
+│   ├── plugin_routes.py
 │   └── user_routes.py
 ├── templates/kasir/     # Jinja2 templates
 ├── static/              # JS, CSS
-└── utils/               # Logger, helpers
+├── utils/               # Logger, helpers
+└── plugins/             # 🧩 Direktori Plugin (Ekstensi Kustom)
 ```
 
 ## 3-Layer Architecture Rules
@@ -409,9 +411,10 @@ Output tersimpan di `logs/warnet.log` dengan format:
 [2026-05-15 08:30:00] KATEGORI | admin | Deskripsi kejadian
 ```
 
-## CSRF Protection
+## Security
 
-Flask-WTF aktif global. Endpoint POST/PUT/DELETE wajib kirim header:
+- **IP Whitelist**: Middleware global `check_ip_whitelist()` melindungi `/kasir` dan `/api/kasir` (Kecuali token bypass).
+- **CSRF**: Flask-WTF aktif global. Endpoint POST/PUT/DELETE wajib kirim header:
 
 ```
 X-CSRFToken: <token>

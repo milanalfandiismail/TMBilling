@@ -178,6 +178,31 @@
             <span>Analytics Owner</span>
         </button>
         {% endif %}
+
+        <!-- 9. Ekstensi & Plugins (Dynamic) -->
+        <div class="space-y-1">
+            <button onclick="Sidebar.toggleDropdown('plugins')"
+                class="w-full flex items-center justify-between px-3 py-2 rounded text-[13px] font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                <div class="flex items-center gap-3">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                    <span>Plugins & Ekstensi</span>
+                </div>
+                <svg id="plugins-arrow" class="w-3 h-3 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="plugins-submenu" class="hidden pl-8 space-y-1">
+                {% if session.get('kasir_role') == 'admin' %}
+                <button onclick="App.switchTab('plugins')" data-tab="plugins" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🧩 Manajemen Plugins</button>
+                {% endif %}
+                
+                {% for menu in plugin_menus %}
+                <button onclick="App.openPluginSPA('{{ menu.url }}', '{{ menu.title }}')" data-tab="plugin-spa" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    {{ menu.icon }} {{ menu.title }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
     </nav>
 
     <div class="border-t border-[#171717] p-4 shrink-0 bg-[#080808]">

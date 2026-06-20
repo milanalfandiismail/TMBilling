@@ -340,6 +340,17 @@ Prefix: `/api/settings` — Auth: `@login_required`
 | GET | `/settings/backup/download` | Download database |
 | POST | `/settings/qris` | Unggah berkas gambar QRIS baru untuk pembayaran di Kiosk |
 | GET | `/settings/uninstall-token/client` | *(Bypass Auth — API Key)* Mengembalikan `uninstall_token` & `emergency_token` untuk sinkronisasi offline klien |
+| GET | `/settings/ip-whitelist` | Daftar IPv4 yang masuk dalam daftar putih |
+| POST | `/settings/ip-whitelist` | Mendaftarkan alamat IPv4 baru ke daftar putih |
+| DELETE | `/settings/ip-whitelist/{ip}` | Menghapus alamat IP dari daftar putih |
+| POST | `/settings/ip-whitelist/toggle` | Mengaktifkan atau mematikan fitur perlindungan IP Whitelist |
+| POST | `/settings/ip-whitelist/regenerate-token` | Membuat Token Bypass Darurat baru untuk remote access dinamis |
+| GET | `/settings/ip-whitelist/status` | Mengembalikan status aktif whitelist dan URL Bypass lengkap |
+| GET | `/settings/plugins` | Mengambil daftar plugin ekstensi terdeteksi beserta status aktifnya |
+| POST | `/settings/plugins/toggle` | Mengaktifkan (enable) atau mematikan (disable) sebuah modul plugin |
+| POST | `/settings/plugins/upload` | Mengunggah file ZIP plugin baru dan mengekstraknya otomatis |
+| PUT | `/settings/scheduler` | Memperbarui interval waktu untuk Auto Scheduler (Backup & Cleanup Logs) |
+| POST | `/settings/scheduler/restart` | Me-restart backend Flask agar interval Auto Scheduler yang baru diterapkan |
 
 ## Cloud Backup
 
@@ -569,6 +580,18 @@ Prefix: `/api` — Auth: `@login_required`
   "tournament_id": 3
 }
 ```
+
+---
+
+## Owner Analytics
+
+Prefix: `/api/owner` — Auth: `@login_required + @admin_required`
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/analytics-data` | Mengambil agregasi data JSON untuk 7 KPI Owner (Pendapatan, Heatmap, Revenue PC, dll) dalam rentang waktu 7 hari terakhir |
+
+*(Catatan: Halaman dashboard utamanya diakses via `GET /owner/analytics`)*
 
 ---
 

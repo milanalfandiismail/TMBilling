@@ -107,9 +107,8 @@ const MemberModal = {
                                         Berlaku Sampai
                                     </div>
                                     <div class="font-mono font-bold text-neutral-200 text-xs lg:text-base">
-                                        ${member.kadaluarsa_pada ? Utils.formatTanggal(member.kadaluarsa_pada) : '-'}
+                                        ${member.kadaluarsa_pada_display || '-'}
                                     </div>
-                                    ${member.kadaluarsa_pada ? `<div class="text-[9px] lg:text-base text-neutral-500 mt-1 font-mono">${member.kadaluarsa_pada.split(' ')[1] || ''} WITA</div>` : ''}
                                 </div>
                                 <div class="bg-[#050505] border border-[#1c1c1c] rounded p-4">
                                     <div class="text-[9px] lg:text-base text-neutral-500 uppercase mb-1.5 flex items-center gap-1 font-bold">
@@ -117,9 +116,8 @@ const MemberModal = {
                                         Dibuat Pada
                                     </div>
                                     <div class="font-mono font-bold text-neutral-200 text-xs lg:text-base">
-                                        ${member.dibuat_pada ? Utils.formatTanggal(member.dibuat_pada) : '-'}
+                                        ${member.dibuat_pada_display || '-'}
                                     </div>
-                                    ${member.dibuat_pada ? `<div class="text-[9px] lg:text-base text-neutral-500 mt-1 font-mono">${member.dibuat_pada.split(' ')[1] || ''} WITA</div>` : ''}
                                 </div>
                             </div>
                         </div>

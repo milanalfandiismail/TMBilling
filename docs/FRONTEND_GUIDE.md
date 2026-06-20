@@ -24,8 +24,9 @@ static/js/kasir/
 │   ├── monitor.js    — Hardware monitoring table
 │   ├── blackout.js   — Blackout detection & recovery
 │   ├── user.js       — Staff management (admin only)
-│   └── settings.js   — Auto-shutdown, database backup
-└── app.js            — Router, auth check, tab management
+│   ├── settings.js   — Auto-shutdown, database backup, timezone, scheduler
+│   └── plugins.js    — Plugin Manager
+└── app.js            — Router, auth check, tab management, plugin iframe injector
 ```
 
 ## Pola Module Standar
@@ -124,6 +125,10 @@ const Module = {
 │         │                                        │
 │         └────────────────────────────────────────┘
 └─────────┴────────────────────────────────────────┘
+
+### Tab Khusus: Plugin SPA
+
+Jika plugin memiliki UI, kasir akan merender konten plugin di dalam sebuah `<iframe id="plugin-spa-iframe">` yang mengambil alih area konten. Iframe menjamin CSS/JS plugin tidak bertabrakan dengan CSS Tailwind utama.
 ```
 
 ## State PC Card

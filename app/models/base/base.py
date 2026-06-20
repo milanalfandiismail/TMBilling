@@ -11,7 +11,7 @@ Exports:
 """
 
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import event
 import sqlite3
 
@@ -29,13 +29,19 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 
 
 def now_local():
-    """Mendapatkan waktu lokal saat ini.
+    """Mendapatkan waktu UTC saat ini (naive).
+    
+    Semua timestamp di DB disimpan dalam UTC (tanpa tzinfo).
+    Konversi ke timezone display dilakukan di frontend/endpoint.
+    SQLite tidak support timezone — simpan naive UTC.
     
     Returns:
-        datetime: Objek datetime yang merepresentasikan waktu sekarang.
+        datetime: Naive datetime dalam UTC.
         
     Note:
         Fungsi ini digunakan sebagai default value untuk timestamp
         di seluruh model aplikasi.
+        Data existing (sebelum fitur ini) diasumsikan WIB.
+        Migration script akan konversi WIB → UTC.
     """
-    return datetime.now()
+    return datetime.now(timezone.utc).replace(tzinfo=None)

@@ -175,6 +175,42 @@ Sistem dirancang untuk:
       </ul>
     </td>
   </tr>
+  <tr>
+    <td>
+      <h4>🧩 Plugin Manager (Extensibility)</h4>
+      <ul>
+        <li>Deteksi modul plugin otomatis dari folder <code>plugins/</code></li>
+        <li>Isolasi UI frontend menggunakan Iframe SPA mandiri</li>
+        <li>Custom API & logic tanpa mengubah core backend</li>
+      </ul>
+    </td>
+    <td>
+      <h4>🌍 Multi-Timezone Support</h4>
+      <ul>
+        <li>Konfigurasi terpusat untuk berbagai zona waktu (WIB, WITA, WIT)</li>
+        <li>Tampilan jam dashboard dan sinkronisasi client yang akurat</li>
+        <li>Format otomatis pada laporan dan riwayat shift kasir</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h4>🛡️ IP Whitelist Kasir</h4>
+      <ul>
+        <li>Batasi akses dashboard <code>/kasir</code> hanya dari alamat IP yang dikenali</li>
+        <li>Mode Bypass Token (Darurat) untuk remote access dinamis</li>
+        <li>Perlindungan akses internal ganda</li>
+      </ul>
+    </td>
+    <td>
+      <h4>⚙️ Auto Scheduler</h4>
+      <ul>
+        <li>Manajemen job otomatis di background (APScheduler)</li>
+        <li>Konfigurasi ON/OFF langsung dari Settings Kasir</li>
+        <li>Auto-cleanup log dan task maintenance lainnya</li>
+      </ul>
+    </td>
+  </tr>
 </table>
 
 ---
@@ -197,101 +233,11 @@ Sistem dirancang untuk:
 
 ### End-to-End Data Flow
 
-```mermaid
-sequenceDiagram
-    participant Browser as Browser (Kasir)
-    participant Flask as Flask Server
-    participant DB as Database
-    participant Tauri as Tauri Client (PC)
-
-    Note over Browser,Tauri: === DASHBOARD FLOW ===
-    Browser->>Flask: GET /kasir/api/pc
-    Flask->>DB: PCService.get_all()
-    DB-->>Flask: pc_list
-    Flask-->>Browser: JSON {by_grup, pc_list}
-    
-    Note over Browser,Tauri: === BUKA SESI FLOW ===
-    Browser->>Flask: POST /api/sesi/buka-guest {pc_kode, paket_id}
-    Flask->>DB: validate PC + paket
-    Flask->>DB: create Sesi + Transaksi
-    Flask->>DB: commit()
-    Flask-->>Browser: {sesi_id, token, sisa_menit}
-
-    Note over Browser,Tauri: === CLIENT POLLING (5s) ===
-    loop Every 5 seconds
-        Tauri->>Flask: POST /client/status {ip, mac}
-        Flask->>DB: update last_activity
-        Flask->>DB: cek sesi aktif
-        DB-->>Flask: sesi or null
-        alt sesi ada
-            Flask-->>Tauri: {status: "aktif", sisa_waktu: 45}
-        else kosong
-            Flask-->>Tauri: {status: "kosong", shutdown_timer: 180}
-        end
-    end
-
-    Note over Browser,Tauri: === UNINSTALL FLOW ===
-    Tauri->>Flask: POST /api/settings/uninstall-token/client
-    Flask-->>Tauri: {uninstall_token, emergency_token}
-    Tauri->>Tauri: execute_uninstall()
-    Tauri->>Flask: kill processes, delete Registry, delete files
-```
+👉 *[Lihat Diagram Lengkap di sini](docs/DIAGRAMS.md)*
 
 ### System Topology
 
-```mermaid
-graph TB
-    subgraph "Server Room"
-        Flask[Flask Server<br/>Waitress WSGI :7015]
-        DB[(SQLite / PostgreSQL)]
-        Backups[backups/]
-    end
-
-    subgraph "Cloud / External Storage"
-        Discord[Discord Webhook]
-        WebDAV[WebDAV / Nextcloud]
-        GDrive[Google Drive]
-        NAS[NAS / Shared Folder]
-    end
-
-    subgraph "Kasir"
-        Browser[Browser<br/>Dashboard Kasir]
-    end
-
-    subgraph "PC Client #1"
-        MGCTM1[MGCTM.exe<br/>Guardian 5s]
-        mtm1[mtm.exe<br/>Scout 5s]
-        Tauri1[TMBilling.exe<br/>Lockscreen UI]
-        TMMonitor1[TMMonitor.exe<br/>Telemetry 60s]
-    end
-
-    subgraph "PC Client #2"
-        MGCTM2[MGCTM.exe]
-        mtm2[mtm.exe]
-        Tauri2[TMBilling.exe]
-        TMMonitor2[TMMonitor.exe]
-    end
-
-    Browser -->|HTTP| Flask
-    Flask --> DB
-    Flask --> Backups
-
-    Flask -->|ZIP Upload| Discord
-    Flask -->|ZIP Upload| WebDAV
-    Flask -->|ZIP Upload| GDrive
-    Flask -->|ZIP Upload| NAS
-
-    MGCTM1 -->|spawn| Tauri1
-    MGCTM1 -->|spawn| TMMonitor1
-    MGCTM1 -->|spawn| mtm1
-    mtm1 -->|monitor| MGCTM1
-
-    MGCTM1 -->|POST /client/*| Flask
-    TMMonitor1 -->|POST /api/monitor| Flask
-
-    MGCTM2 -->|POST /client/*| Flask
-    TMMonitor2 -->|POST /api/monitor| Flask
-```
+👉 *[Lihat Diagram Lengkap di sini](docs/DIAGRAMS.md)*
 
 ---
 
@@ -324,6 +270,9 @@ TMBilling/
 │   │   ├── components/                     # Modal buka/tambah sesi
 │   │   └── modules/                        # Per-tab modules (12 modules)
 │   └── utils/                              # Logger, helpers
+│
+├── plugins/                                # 🧩 Custom Extensions (API & UI)
+│   └── hello_world/                        # Contoh plugin boilerlate
 │
 ├── WarnetClient/                           # 💻 Client PC Warnet
 │   ├── TMBillingTauri/                     # Main lockscreen (Tauri + Rust + HTML/JS/CSS)
@@ -393,7 +342,7 @@ TMBilling/
 | Layer | Teknologi | Versi |
 |-------|-----------|-------|
 | **Backend** | Python + Flask + SQLAlchemy | 3.8+ / 3.0+ |
-| **Frontend (Kasir)** | Vanilla JS (ES6 Modules) + Tailwind CSS CDN | - |
+| **Frontend (Kasir)** | Vanilla JS (ES6 Modules) + Local Tailwind CSS | - |
 | **Database** | SQLite (development) / PostgreSQL / MySQL | - |
 | **Client Lockscreen** | Tauri v1 + Rust + HTML/JS/CSS | 1.6+ / 1.75+ |
 | **Agent (Guardian)** | Rust + WinAPI + winreg | 1.75+ |
@@ -425,6 +374,7 @@ Jika Anda ingin mendistribusikan atau memasang server kasir TMBilling secara cep
 
 ### Prerequisites (Manual Setup)
 
+- **OS** — Windows 10 / Windows 11 (64-bit)
 - **Python 3.8+** — [Download](https://www.python.org/downloads/)
 - **Git** — [Download](https://git-scm.com/downloads)
 
@@ -570,39 +520,7 @@ Langkah:
 
 ### Polling Loop (5 detik)
 
-```mermaid
-sequenceDiagram
-    participant Client as TMBilling.exe (Client)
-    participant Server as Flask Server
-    participant DB as Database
-
-    Note over Client: Startup
-    Client->>Server: POST /client/identify {ip, mac}
-    Server->>DB: cek IP & MAC binding
-    DB-->>Server: PC ditemukan / auto-register MAC
-    Server-->>Client: {valid: true, pc_kode, grup}
-
-    Note over Client: Loop setiap 5 detik
-    loop Every 5 seconds
-        Client->>Server: POST /client/status {ip, mac, role}
-        Server->>DB: update last_activity
-        Server->>DB: cek sesi aktif
-        
-        alt Ada sesi aktif
-            DB-->>Server: sesi + sisa_waktu
-            Server-->>Client: {status: "aktif", sisa_waktu: 45, nama: "Guest"}
-            Client->>Client: Tampilkan overlay billing
-        else Tidak ada sesi + admin mode
-            DB-->>Server: null
-            Server-->>Client: {status: "kosong", shutdown_timer: 180}
-            Client->>Client: Tampilkan login screen + timer shutdown
-        else Admin mode aktif
-            DB-->>Server: is_admin_mode = True
-            Server-->>Client: {status: "admin", sisa_waktu: 999999}
-            Client->>Client: Tampilkan overlay admin
-        end
-    end
-```
+👉 *[Lihat Diagram Lengkap di sini](docs/DIAGRAMS.md)*
 
 ### Auto-Login Behavior
 
@@ -648,6 +566,13 @@ sequenceDiagram
 ---
 
 ## 🔐 Security System
+
+### 0. IP Whitelist (Dashboard Access)
+
+Akses ke `/kasir` dilindungi oleh middleware IP Whitelist.
+- **Whitelist Strict**: Hanya IPv4 yang terdaftar di database yang bisa membuka Dashboard.
+- **Bypass Token**: Admin bisa mengenerate token darurat (misal `?token=ABC`) untuk masuk via HP atau jaringan Cloudflare tanpa mendaftarkan IP.
+- Pengaturan whitelist bisa langsung dikelola dari dalam dashboard jika login sudah sah.
 
 ### 1. Hex-XOR Obfuscation
 
@@ -791,31 +716,7 @@ loop {
 
 ### Uninstaller Flow
 
-```mermaid
-graph TD
-    A[Jalankan Uninstaller.exe] --> B[Win32 GUI — Input Password]
-    B --> C{Online?}
-    
-    C -->|Ya| D[Fetch token dari Flask API]
-    D --> E{Token valid?}
-    E -->|Ya| F[Execute Uninstall]
-    E -->|Tidak| F
-    
-    C -->|Tidak| G[Deobfuscate EmergencyToken<br/>dari Registry]
-    G --> H{Input == EmergencyToken?}
-    H -->|Ya| F
-    H -->|Tidak| I[MessageBox — Akses Ditolak]
-    I --> B
-
-    F --> J[tulis stop.token → sleep 2.5s]
-    J --> K[taskkill MGCTM, TMMonitor, TMBilling, mtm → sleep 1.5s]
-    K --> L[reg.exe delete HKLM\Software\TMBilling]
-    L --> M[Hapus semua file billing]
-    M --> N[Hapus MGCTM.lnk dari startup]
-    N --> O[Hapus mtm.exe dari AppData]
-    O --> P[MessageBox — Sukses]
-    P --> Q[Delayed self-delete + deep purge via cmd.exe]
-```
+👉 *[Lihat Diagram Lengkap di sini](docs/DIAGRAMS.md)*
 
 ---
 
@@ -823,21 +724,7 @@ graph TD
 
 ### Entity Relationship
 
-```mermaid
-erDiagram
-    GRUP ||--o{ PC : memiliki
-    GRUP ||--o{ MEMBER : memiliki
-    GRUP ||--o{ PAKET : memiliki
-    PC ||--o| HARDWARE_MONITOR : "di-monitor"
-    PC ||--o{ PC_PROCESS : menjalankan
-    PC ||--o{ SESI : digunakan
-    MEMBER ||--o{ SESI : memiliki
-    MEMBER ||--o{ TRANSAKSI : melakukan
-    SESI ||--o{ TRANSAKSI : mencatat
-    SESI ||--o| PAKET : menggunakan
-    TRANSAKSI ||--o| USER : "di-input"
-    TRANSAKSI ||--o| PAKET : membeli
-```
+👉 *[Lihat Diagram Lengkap di sini](docs/DIAGRAMS.md)*
 
 ### Key Tables
 
@@ -951,8 +838,22 @@ erDiagram
 | GET | `/api/settings/settings` | Session | All settings |
 | PUT | `/api/settings/auto-shutdown` | Session | Update shutdown timer |
 | PUT | `/api/settings/apikey` | Admin | Rotate API Key |
-| POST | `/api/settings/backup/manual` | Admin | Trigger manual backup |
 | GET/POST | `/api/user/` | Admin | CRUD staff |
+| GET | `/api/settings/ip-whitelist` | Session | List IP Whitelist |
+| POST | `/api/settings/plugins/upload` | Admin | Upload plugin ZIP |
+| PUT | `/api/settings/scheduler` | Admin | Update scheduler interval |
+
+### Extra Features (F&B, Tournament, dll)
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/menu` | Session | Katalog F&B |
+| POST | `/api/menu/checkout` | Session | Checkout menu kantin |
+| GET | `/api/tournament` | Session | List/Detail Turnamen |
+| POST | `/api/backup/trigger` | Admin | Manual cloud backup |
+| GET | `/api/owner/analytics-data` | Admin | KPI Dashboard Owner |
+| GET | `/member/` | Member | Web Portal Member (Login terpisah) |
+
+*(Untuk melihat payload request dan response secara mendetail, kunjungi `docs/TECHNICAL_DOCS.md`)*
 
 ---
 
@@ -1027,6 +928,30 @@ python seed.py
 # Run dev mode (set DEBUG_MODE=True in .env)
 python run.py
 ```
+
+### Frontend Styling Development (Tailwind CSS)
+
+TMBilling menggunakan **Tailwind CSS lokal** (via npm CLI) untuk mengkompilasi CSS UI Kasir, bukan melalui CDN. Hal ini mempercepat waktu muat dan mendukung offline mode.
+
+Jika Anda memodifikasi file template `.html` atau file `.js` yang membutuhkan kelas Tailwind baru, kompilasi ulang CSS-nya:
+
+```bash
+# Instal dependensi dev (tailwindcss)
+npm install
+
+# Build CSS mode development (Watch Mode)
+npm run dev:css
+
+# Build CSS mode production (Minified)
+npm run build:css
+```
+
+**Alur Kerja Production (Deployment):**
+Jika Anda telah selesai mengedit file HTML/JS dan siap untuk melakukan rilis ke server produksi, ikuti alur ini agar CSS terbaru ikut terbawa secara optimal:
+1. Pastikan Anda sudah menjalankan `npm run build:css` di komputer lokal Anda. Ini akan mengkompres file `app/static/css/tailwind.css` menjadi sekecil mungkin.
+2. Lakukan Git Commit untuk menyimpan perubahan HTML, JS, dan file `tailwind.css` hasil kompilasi.
+3. Lakukan Git Push ke remote repository (GitHub).
+4. Di Server Production (Warnet), Anda cukup melakukan `git pull`. Anda **TIDAK PERLU** menjalankan `npm install` atau mem-build ulang CSS di server production. Server cukup menggunakan file `tailwind.css` yang sudah "matang" dari git.
 
 ### Tauri Client Development
 

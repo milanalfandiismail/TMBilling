@@ -6,6 +6,7 @@ tutup shift dengan hitung buta, dan cetak struk handover.
 
 from app.models import db, now_local
 from app.models import ShiftRecord, Transaksi, TransaksiMenu, User
+from app.utils.timezone_utils import format_display
 
 
 class ShiftService:
@@ -45,7 +46,7 @@ class ShiftService:
             kasir_id=kasir.id, status="AKTIF"
         ).first()
         if aktif:
-            raise ValueError(f"Kasir '{kasir_username}' sudah punya shift aktif sejak {aktif.waktu_mulai.strftime('%H:%M')}")
+            raise ValueError(f"Kasir '{kasir_username}' sudah punya shift aktif sejak {format_display(aktif.waktu_mulai)}")
 
         if modal_awal < 0:
             raise ValueError("Modal awal tidak boleh negatif")
@@ -129,7 +130,7 @@ class ShiftService:
         return {
             "shift_id": shift.id,
             "kasir_nama": shift.kasir.nama_lengkap or shift.kasir.username,
-            "waktu_mulai": shift.waktu_mulai.strftime("%Y-%m-%d %H:%M:%S"),
+            "waktu_mulai": format_display(shift.waktu_mulai),
             "modal_awal": shift.modal_awal,
             "total_billing": shift.total_billing,
             "total_refund": total_refund,
@@ -197,8 +198,8 @@ class ShiftService:
         return {
             "id": shift.id,
             "kasir_nama": shift.kasir.nama_lengkap or shift.kasir.username,
-            "waktu_mulai": shift.waktu_mulai.strftime("%Y-%m-%d %H:%M:%S"),
-            "waktu_selesai": shift.waktu_selesai.strftime("%Y-%m-%d %H:%M:%S"),
+            "waktu_mulai": format_display(shift.waktu_mulai),
+            "waktu_selesai": format_display(shift.waktu_selesai),
             "modal_awal": shift.modal_awal,
             "total_billing": shift.total_billing,
             "total_kantin": shift.total_kantin,
