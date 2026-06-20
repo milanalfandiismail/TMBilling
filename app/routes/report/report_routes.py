@@ -253,3 +253,81 @@ def blackout_log():
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@report_bp.route("/export/billing", methods=["GET"])
+@login_required
+def export_billing():
+    """Download daily billing report in PDF format."""
+    try:
+        tanggal = request.args.get("tanggal")
+        kasir_id = request.args.get("kasir_id")
+        
+        # RULE: Kasir hanya boleh lihat/ekspor laporan diri sendiri
+        if session.get("kasir_role") == "kasir":
+            kasir_id = session.get("kasir_id")
+
+        pdf_bytes, filename = ReportService.export_billing_pdf(tanggal, kasir_id)
+        
+        return Response(
+            pdf_bytes,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f"attachment;filename={filename}"}
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@report_bp.route("/export/kantin", methods=["GET"])
+@login_required
+def export_kantin():
+    """Download daily/monthly canteen report in PDF format."""
+    try:
+        tanggal = request.args.get("tanggal")
+        kasir_id = request.args.get("kasir_id")
+        
+        # RULE: Kasir hanya boleh lihat/ekspor laporan diri sendiri
+        if session.get("kasir_role") == "kasir":
+            kasir_id = session.get("kasir_id")
+
+        pdf_bytes, filename = ReportService.export_kantin_pdf(tanggal, kasir_id)
+        
+        return Response(
+            pdf_bytes,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f"attachment;filename={filename}"}
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@report_bp.route("/export/pnl", methods=["GET"])
+@login_required
+@admin_required
+def export_pnl():
+    """Download Profit & Loss (P&L) report in PDF format."""
+    try:
+        tanggal = request.args.get("tanggal")
+        
+        pdf_bytes, filename = ReportService.export_pnl_pdf(tanggal)
+        
+        return Response(
+            pdf_bytes,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f"attachment;filename={filename}"}
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@report_bp.route("/export/audit-pdf", methods=["GET"])
+@login_required
+def export_audit_pdf():
+    """Download audit logs in PDF format."""
+    try:
+        filter_text = request.args.get("filter", "")
+        pdf_bytes, filename = ReportService.export_audit_pdf(filter_text)
+        
+        return Response(
+            pdf_bytes,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f"attachment;filename={filename}"}
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

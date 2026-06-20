@@ -14,6 +14,12 @@
                 </select>
                 <button onclick="Laporan.filter()"
                     class="w-full sm:w-auto px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">Tampilkan</button>
+                <button onclick="Laporan.exportPDF()"
+                    class="w-full sm:w-auto px-4 py-2 bg-rose-700 hover:bg-rose-600 text-white text-xs lg:text-base font-bold rounded transition-colors">Export PDF</button>
+                {% if session.get('kasir_role') == 'admin' %}
+                <button onclick="Laporan.exportPnLPDF()"
+                    class="w-full sm:w-auto px-4 py-2 bg-rose-800 hover:bg-rose-700 text-white text-xs lg:text-base font-bold rounded transition-colors">Export P&L (PDF)</button>
+                {% endif %}
             </div>
         </div>
         <div id="laporan-area">
