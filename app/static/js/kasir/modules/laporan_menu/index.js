@@ -195,6 +195,16 @@ const LaporanMenu = {
         } catch (err) {
             Toast.error("Gagal memuat struk: error koneksi");
         }
+    },
+
+    exportPDF() {
+        const tanggal = document.getElementById('laporan-menu-tanggal-select').value;
+        const kasirId = document.getElementById('laporan-menu-kasir-select').value;
+        if (!tanggal) {
+            Toast.error("Pilih tanggal terlebih dahulu");
+            return;
+        }
+        window.location.href = `/api/report/export/kantin?tanggal=${tanggal}&kasir_id=${kasirId}`;
     }
 };
 

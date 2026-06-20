@@ -200,5 +200,24 @@ const Laporan = {
         } catch (err) {
             Toast.error("Gagal memuat struk: error koneksi");
         }
+    },
+
+    exportPDF() {
+        const tanggal = document.getElementById('laporan-tanggal-select').value;
+        const kasirId = document.getElementById('laporan-kasir-select').value;
+        if (!tanggal) {
+            Toast.error("Pilih tanggal terlebih dahulu");
+            return;
+        }
+        window.location.href = `/api/report/export/billing?tanggal=${tanggal}&kasir_id=${kasirId}`;
+    },
+
+    exportPnLPDF() {
+        const tanggal = document.getElementById('laporan-tanggal-select').value;
+        if (!tanggal) {
+            Toast.error("Pilih tanggal terlebih dahulu");
+            return;
+        }
+        window.location.href = `/api/report/export/pnl?tanggal=${tanggal}`;
     }
 };

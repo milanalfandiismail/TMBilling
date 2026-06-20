@@ -87,6 +87,13 @@ const Log = {
     exportLogs() {
         const filter = document.getElementById('filter-log').value.trim();
         window.open(API.report.exportLogsUrl(filter), '_blank');
+    },
+
+    exportPDF() {
+        const filter = document.getElementById('filter-log').value.trim();
+        let url = '/api/report/export/audit-pdf';
+        if (filter) url += `?filter=${encodeURIComponent(filter)}`;
+        window.open(url, '_blank');
     }
 };
 
