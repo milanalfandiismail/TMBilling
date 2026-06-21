@@ -223,19 +223,19 @@ def block_request(reason):
 
 ## 5. API Endpoints
 
-**Route prefix:** `/api/settings/ip-whitelist/*`
+**Route prefix:** `/api/v1/kasir/settings/ip-whitelist`
 
 Semua endpoint pakai chain: `@admin_required` (existing) + `@ip_whitelist_admin_required` (decorator baru).
 
 | # | Method | Endpoint | Fungsi |
 |---|---|---|---|
-| 1 | GET | `/api/settings/ip-whitelist` | List semua IP entries |
-| 2 | POST | `/api/settings/ip-whitelist` | Tambah IP baru |
-| 3 | DELETE | `/api/settings/ip-whitelist/<ip>` | Hapus IP |
-| 4 | POST | `/api/settings/ip-whitelist/toggle` | Enable/disable whitelist |
-| 5 | POST | `/api/settings/ip-whitelist/regenerate-token` | Generate token baru |
-| 6 | GET | `/api/settings/ip-whitelist/status` | Status ringkas + URL token lengkap |
-| 7 | POST | `/api/settings/app-public-url` | Simpan domain publik tunnel |
+| 1 | GET | `/api/v1/kasir/settings/ip-whitelist` | List semua IP entries |
+| 2 | POST | `/api/v1/kasir/settings/ip-whitelist` | Tambah IP baru |
+| 3 | DELETE | `/api/v1/kasir/settings/ip-whitelist/<ip>` | Hapus IP |
+| 4 | POST | `/api/v1/kasir/settings/ip-whitelist/toggle` | Enable/disable whitelist |
+| 5 | POST | `/api/v1/kasir/settings/ip-whitelist/regenerate-token` | Generate token baru |
+| 6 | GET | `/api/v1/kasir/settings/ip-whitelist/status` | Status ringkas + URL token lengkap |
+| 7 | POST | `/api/v1/kasir/settings/app-public-url` | Simpan domain publik tunnel |
 
 **Plus 1 page route:**
 | # | Method | Endpoint | Fungsi |
