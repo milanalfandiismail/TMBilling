@@ -583,3 +583,7 @@ zip.md
 
 # Tailwind source (output CSS tetap di-track)
 app/static/src/
+
+# Release archives
+*.zip
+
