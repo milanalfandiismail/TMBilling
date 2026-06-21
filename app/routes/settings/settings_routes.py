@@ -18,7 +18,7 @@ from app.utils.logger import write_log
 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
 from app.utils.helpers import UNIT_MULTIPLIER
 
-settings_bp = Blueprint("settings", __name__)
+settings_api_bp = Blueprint("settings", __name__)
 
 
 # =========================================================================
@@ -26,7 +26,7 @@ settings_bp = Blueprint("settings", __name__)
 # =========================================================================
 # Fokus: Mengambil seluruh data pengaturan untuk ditampilkan di dashboard.
 
-@settings_bp.route("/settings", methods=["GET"])
+@settings_api_bp.route("/", methods=["GET"])
 @login_required
 def get_all_settings():
     """Ambil semua daftar pengaturan sistem dalam format Key-Value."""
@@ -43,7 +43,7 @@ def get_all_settings():
 # =========================================================================
 # Fokus: Mengubah nilai konfigurasi dengan validasi spesifik maupun generik.
 
-@settings_bp.route("/settings/auto-shutdown", methods=["PUT"])
+@settings_api_bp.route("/auto-shutdown", methods=["PUT"])
 @login_required
 @admin_required
 def update_auto_shutdown():
@@ -75,7 +75,7 @@ def update_auto_shutdown():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@settings_bp.route("/settings/<key>", methods=["PUT"])
+@settings_api_bp.route("/<key>", methods=["PUT"])
 @login_required
 @admin_required
 def update_setting(key):
@@ -92,7 +92,7 @@ def update_setting(key):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@settings_bp.route("/settings/apikey", methods=["PUT"])
+@settings_api_bp.route("/apikey", methods=["PUT"])
 @login_required
 @admin_required
 def update_client_api_key():
@@ -144,7 +144,7 @@ def update_client_api_key():
 # 3. DATABASE BACKUP (MANUAL TRIGGER)
 # =========================================================================
 
-@settings_bp.route("/settings/timezone", methods=["PUT"])
+@settings_api_bp.route("/timezone", methods=["PUT"])
 @login_required
 @admin_required
 def update_timezone():
@@ -173,7 +173,7 @@ def update_timezone():
         return jsonify({"error": str(e)}), 500
 
 
-@settings_bp.route("/settings/backup/manual", methods=["POST"])
+@settings_api_bp.route("/backup/manual", methods=["POST"])
 @login_required
 @admin_required
 def trigger_manual_backup():
@@ -199,7 +199,7 @@ def trigger_manual_backup():
     except Exception as e:
         return jsonify({"error": f"Gagal melakukan backup: {str(e)}"}), 500
     
-@settings_bp.route("/settings/backup/download", methods=["GET"])
+@settings_api_bp.route("/backup/download", methods=["GET"])
 @login_required
 @admin_required
 def download_db():
@@ -220,7 +220,7 @@ def download_db():
         return str(e), 500
 
 
-@settings_bp.route("/settings/qris", methods=["POST"])
+@settings_api_bp.route("/qris", methods=["POST"])
 @login_required
 @admin_required
 def upload_qris():
@@ -270,7 +270,7 @@ def upload_qris():
 # 5. AUTO SCHEDULER
 # =========================================================================
 
-@settings_bp.route("/settings/scheduler", methods=["PUT"])
+@settings_api_bp.route("/scheduler", methods=["PUT"])
 @login_required
 @admin_required
 def update_scheduler_config():
@@ -315,7 +315,7 @@ def update_scheduler_config():
         return jsonify({"error": str(e)}), 500
 
 
-@settings_bp.route("/settings/scheduler/restart", methods=["POST"])
+@settings_api_bp.route("/scheduler/restart", methods=["POST"])
 @login_required
 @admin_required
 def restart_scheduler():
@@ -350,7 +350,7 @@ def restart_scheduler():
 # 4. CLIENT ACCESS ENDPOINT (MGCTM SECURE SINKRONISASI)
 # =========================================================================
 
-@settings_bp.route("/settings/uninstall-token/client", methods=["GET"])
+@settings_api_bp.route("/uninstall-token/client", methods=["GET"])
 def get_uninstall_token_for_client():
     """Endpoint aman bagi client (MGCTM) untuk mengambil token uninstall aktif saat ini."""
     from app.routes.client.client_routes import api_key_required
@@ -400,7 +400,7 @@ def ip_whitelist_admin_required(f):
     return decorated
 
 
-@settings_bp.route("/settings/ip-whitelist", methods=["GET"])
+@settings_api_bp.route("/ip-whitelist", methods=["GET"])
 @login_required
 @admin_required
 def list_ip_whitelist():
@@ -412,7 +412,7 @@ def list_ip_whitelist():
         return jsonify({'error': str(e)}), 500
 
 
-@settings_bp.route("/settings/ip-whitelist", methods=["POST"])
+@settings_api_bp.route("/ip-whitelist", methods=["POST"])
 @login_required
 @admin_required
 def add_whitelist_ip():
@@ -433,7 +433,7 @@ def add_whitelist_ip():
         return jsonify({'error': str(e)}), 500
 
 
-@settings_bp.route("/settings/ip-whitelist/<ip>", methods=["DELETE"])
+@settings_api_bp.route("/ip-whitelist/<ip>", methods=["DELETE"])
 @login_required
 @admin_required
 @ip_whitelist_admin_required
@@ -448,7 +448,7 @@ def remove_whitelist_ip(ip):
         return jsonify({'error': str(e)}), 500
 
 
-@settings_bp.route("/settings/ip-whitelist/toggle", methods=["POST"])
+@settings_api_bp.route("/ip-whitelist/toggle", methods=["POST"])
 @login_required
 @admin_required
 @ip_whitelist_admin_required
@@ -469,7 +469,7 @@ def toggle_whitelist():
         return jsonify({'error': str(e)}), 500
 
 
-@settings_bp.route("/settings/ip-whitelist/regenerate-token", methods=["POST"])
+@settings_api_bp.route("/ip-whitelist/regenerate-token", methods=["POST"])
 @login_required
 @admin_required
 @ip_whitelist_admin_required
@@ -482,7 +482,7 @@ def regenerate_whitelist_token():
         return jsonify({'error': str(e)}), 500
 
 
-@settings_bp.route("/settings/ip-whitelist/status", methods=["GET"])
+@settings_api_bp.route("/ip-whitelist/status", methods=["GET"])
 @login_required
 @admin_required
 def status_whitelist():
@@ -514,7 +514,7 @@ def status_whitelist():
         return jsonify({'error': str(e)}), 500
 
 
-@settings_bp.route("/settings/app-public-url", methods=["POST"])
+@settings_api_bp.route("/app-public-url", methods=["POST"])
 @login_required
 @admin_required
 @ip_whitelist_admin_required

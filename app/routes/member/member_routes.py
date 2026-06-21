@@ -11,7 +11,7 @@ from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.services import MemberService
 from app.services import PaketService
 
-member_bp = Blueprint("member", __name__)
+member_api_bp = Blueprint("member", __name__)
 
 
 # =========================================================================
@@ -19,7 +19,7 @@ member_bp = Blueprint("member", __name__)
 # =========================================================================
 # Fokus: Pengelolaan data profil member (List, Detail, Tambah, Edit, Hapus).
 
-@member_bp.route("/member", methods=["GET"])
+@member_api_bp.route("/", methods=["GET"])
 @login_required
 def list_member():
     """Ambil daftar member dengan fitur search & pagination."""
@@ -44,7 +44,7 @@ def list_member():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@member_bp.route("/member/<int:member_id>", methods=["GET"])
+@member_api_bp.route("/<int:member_id>", methods=["GET"])
 @login_required
 def get_member_detail(member_id):
     """Ambil data lengkap satu member berdasarkan ID (untuk form edit)."""
@@ -56,7 +56,7 @@ def get_member_detail(member_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@member_bp.route("/member", methods=["POST"])
+@member_api_bp.route("/", methods=["POST"])
 @login_required
 def tambah_member():
     """Registrasi member baru ke database."""
@@ -73,7 +73,7 @@ def tambah_member():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@member_bp.route("/member/<int:member_id>", methods=["PUT"])
+@member_api_bp.route("/<int:member_id>", methods=["PUT"])
 @login_required
 def edit_member(member_id):
     """Perbarui informasi profil member (Nama, Email, No HP, Grup)."""
@@ -91,7 +91,7 @@ def edit_member(member_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@member_bp.route("/member/<int:member_id>", methods=["DELETE"])
+@member_api_bp.route("/<int:member_id>", methods=["DELETE"])
 @login_required
 @admin_required
 def delete_member(member_id):
@@ -111,7 +111,7 @@ def delete_member(member_id):
 # =========================================================================
 # Fokus: Proses transaksi penambahan waktu/saldo ke akun member.
 
-@member_bp.route("/tambah-waktu", methods=["POST"])
+@member_api_bp.route("/tambah-waktu", methods=["POST"])
 @login_required
 def tambah_waktu():
     """Proses pembelian paket untuk menambah saldo waktu member (mendukung multiple paket)."""
@@ -149,7 +149,7 @@ def tambah_waktu():
 # =========================================================================
 # Fokus: Melihat histori pembelian dan melakukan pembatalan transaksi (Refund).
 
-@member_bp.route("/member/<int:member_id>/paket", methods=["GET"])
+@member_api_bp.route("/<int:member_id>/paket", methods=["GET"])
 @login_required
 def get_riwayat_paket(member_id):
     """Ambil histori pembelian paket member untuk keperluan audit/refund kasir."""
@@ -159,7 +159,7 @@ def get_riwayat_paket(member_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@member_bp.route("/member/refund-paket", methods=["POST"])
+@member_api_bp.route("/refund-paket", methods=["POST"])
 @login_required
 def refund_paket():
     """Batalkan transaksi paket: Potong saldo waktu dan tandai transaksi direfund."""

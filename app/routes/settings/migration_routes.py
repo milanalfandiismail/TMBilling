@@ -1,6 +1,6 @@
 """Routes untuk Database Migration Manager & Dashboard Update.
 
-Blueprint: migration_bp
+Blueprint: migration_api_bp
 Subtab Settings: "Migrasi & Update"
 
 Fitur:
@@ -21,14 +21,14 @@ from flask import Blueprint, request, jsonify, session, current_app
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.utils.logger import write_log
 
-migration_bp = Blueprint("migration", __name__)
+migration_api_bp = Blueprint("migration", __name__)
 
 
 # =========================================================================
 # 1. STATUS MIGRASI
 # =========================================================================
 
-@migration_bp.route("/api/settings/migration/status", methods=["GET"])
+@migration_api_bp.route("/status", methods=["GET"])
 @login_required
 @admin_required
 def get_migration_status():
@@ -104,7 +104,7 @@ def _get_current_revision():
 # 2. UPLOAD UPDATE APLIKASI (ZIP RILIS)
 # =========================================================================
 
-@migration_bp.route("/api/settings/migration/upload", methods=["POST"])
+@migration_api_bp.route("/upload", methods=["POST"])
 @login_required
 @admin_required
 def upload_update():

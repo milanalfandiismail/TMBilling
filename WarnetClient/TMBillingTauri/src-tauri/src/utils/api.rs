@@ -98,7 +98,7 @@ impl ApiService {
 
         Self {
             client,
-            server_url: format!("{}/client", url),
+            server_url: format!("{}/api/v1/public/client", url),
             api_key,
             emergency_user: em_user,
             emergency_token: em_token,
@@ -265,8 +265,8 @@ impl ApiService {
             "password": pass
         });
 
-        let base_url = self.server_url.replace("/client", "");
-        let url = format!("{}/api/auth/login", base_url);
+        let base_url = self.server_url.replace("/api/v1/public/client", "");
+        let url = format!("{}/api/v1/public/auth/login", base_url);
 
         let res = self.client.post(&url)
             .json(&body)
@@ -418,8 +418,8 @@ impl ApiService {
     }
 
     pub async fn upload_screenshot(&self, ip: &str, img_bytes: Vec<u8>) -> Result<(), String> {
-        let base_url = self.server_url.replace("/client", "");
-        let url = format!("{}/api/monitor/screenshot/upload", base_url);
+        let base_url = self.server_url.replace("/api/v1/public/client", "");
+        let url = format!("{}/api/v1/public/monitor/screenshot/upload", base_url);
 
         let res = self.client.post(&url)
             .header("X-Client-Key", &self.api_key)
@@ -440,8 +440,8 @@ impl ApiService {
     }
 
     pub async fn get_warnet_config(&self) -> Result<WarnetConfig, String> {
-        let base_url = self.server_url.replace("/client", "");
-        let url = format!("{}/client/warnet", base_url);
+        let base_url = self.server_url.replace("/api/v1/public/client", "");
+        let url = format!("{}/api/v1/public/client/warnet", base_url);
 
         let res = self.client.get(&url)
             .header("X-Client-Key", &self.api_key)

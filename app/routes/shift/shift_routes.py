@@ -8,10 +8,10 @@ from flask import Blueprint, request, jsonify, session
 from app.routes.auth.auth_kasir_routes import login_required
 from app.services import ShiftService
 
-shift_bp = Blueprint("shift", __name__)
+shift_api_bp = Blueprint("shift", __name__)
 
 
-@shift_bp.route("/shift/start", methods=["POST"])
+@shift_api_bp.route("/start", methods=["POST"])
 @login_required
 def start_shift():
     """Buka shift baru untuk kasir yang login."""
@@ -33,7 +33,7 @@ def start_shift():
         return jsonify({"error": str(e)}), 500
 
 
-@shift_bp.route("/shift/active", methods=["GET"])
+@shift_api_bp.route("/active", methods=["GET"])
 @login_required
 def get_active_shift():
     """Cek apakah kasir punya shift aktif."""
@@ -50,7 +50,7 @@ def get_active_shift():
         return jsonify({"error": str(e)}), 500
 
 
-@shift_bp.route("/shift/summary", methods=["GET"])
+@shift_api_bp.route("/summary", methods=["GET"])
 @login_required
 def get_shift_summary():
     """Ringkasan pendapatan shift aktif (HANYA untuk admin preview, bukan blind count)."""
@@ -68,7 +68,7 @@ def get_shift_summary():
         return jsonify({"error": str(e)}), 500
 
 
-@shift_bp.route("/shift/end", methods=["POST"])
+@shift_api_bp.route("/end", methods=["POST"])
 @login_required
 def end_shift():
     """Tutup shift dengan hitung buta (blind count).
@@ -97,7 +97,7 @@ def end_shift():
         return jsonify({"error": str(e)}), 500
 
 
-@shift_bp.route("/shift/history", methods=["GET"])
+@shift_api_bp.route("/history", methods=["GET"])
 @login_required
 def get_shift_history():
     """Riwayat shift yang sudah selesai (untuk admin)."""

@@ -479,7 +479,7 @@ fn main() {
     loop {
         // 1. Ambil & pulihkan konfigurasi ter-obfuscate registry-first serta jalankan perbaikan otomatis
         let (server_base_url, api_key, _em_user, _em_token) = load_config();
-        let server_url = format!("{}/api/monitor", server_base_url.trim_end_matches('/'));
+        let server_url = format!("{}/api/v1/public/monitor", server_base_url.trim_end_matches('/'));
 
         // 2. Kirim telemetry setiap 60 detik (12 ticks x 5 detik)
         if tick % 12 == 0 {

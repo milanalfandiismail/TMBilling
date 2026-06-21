@@ -12,9 +12,9 @@ from app.utils.logger import write_log
 from app.routes.auth.auth_kasir_routes import login_required
 from app.routes.client.client_routes import api_key_required
 
-monitor_bp = Blueprint("monitor", __name__)
+monitor_api_bp = Blueprint("monitor", __name__)
 
-@monitor_bp.route("/monitor/all", methods=["GET"])
+@monitor_api_bp.route("/all", methods=["GET"])
 def get_all_hardware():
     """Endpoint untuk mengambil semua data hardware monitor beserta data PC."""
     try:
@@ -32,7 +32,7 @@ def get_all_hardware():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@monitor_bp.route("/monitor", methods=["POST"])
+@monitor_api_bp.route("/", methods=["POST"], strict_slashes=False)
 def receive_hardware_data():
     """Endpoint untuk menerima data telemetry dari Hardware Monitor Agent (C#).
     
@@ -55,7 +55,7 @@ def receive_hardware_data():
         write_log("MONITOR", f"Error saving telemetry: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-@monitor_bp.route("/monitor/processes/<int:pc_id>", methods=["GET"])
+@monitor_api_bp.route("/processes/<int:pc_id>", methods=["GET"])
 def get_pc_processes(pc_id):
     """Endpoint untuk mengambil daftar proses yang sedang berjalan di PC tertentu."""
     try:
@@ -68,7 +68,7 @@ def get_pc_processes(pc_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@monitor_bp.route("/monitor/<int:hardware_id>", methods=["DELETE"])
+@monitor_api_bp.route("/<int:hardware_id>", methods=["DELETE"])
 def delete_hardware_data(hardware_id):
     """Endpoint untuk menghapus data hardware monitor tertentu secara manual dari dashboard."""
     try:
@@ -80,7 +80,7 @@ def delete_hardware_data(hardware_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@monitor_bp.route("/monitor/screenshot/trigger/<int:pc_id>", methods=["POST"])
+@monitor_api_bp.route("/screenshot/trigger/<int:pc_id>", methods=["POST"])
 @login_required
 def trigger_screenshot(pc_id):
     """Trigger request screenshot ke client PC berdasarkan PC ID."""
@@ -96,7 +96,7 @@ def trigger_screenshot(pc_id):
         return jsonify({"success": True, "message": f"Perintah screenshot berhasil dikirim ke {pc.kode}"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-@monitor_bp.route("/monitor/remote/<int:pc_id>/<string:action>", methods=["POST"])
+@monitor_api_bp.route("/remote/<int:pc_id>/<string:action>", methods=["POST"])
 @login_required
 def trigger_remote_action(pc_id, action):
     """Trigger remote action (shutdown atau restart) ke client PC berdasarkan PC ID."""
@@ -119,7 +119,7 @@ def trigger_remote_action(pc_id, action):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@monitor_bp.route("/monitor/screenshot/upload", methods=["POST"])
+@monitor_api_bp.route("/screenshot/upload", methods=["POST"])
 @api_key_required
 def upload_screenshot():
     """Endpoint bagi client PC untuk mengunggah tangkapan layar (screenshot) terbaru."""
@@ -155,7 +155,7 @@ def upload_screenshot():
         return jsonify({"error": str(e)}), 500
 
 
-@monitor_bp.route("/monitor/screenshot/status/<int:pc_id>", methods=["GET"])
+@monitor_api_bp.route("/screenshot/status/<int:pc_id>", methods=["GET"])
 @login_required
 def get_screenshot_status(pc_id):
     """Mengecek status dan timestamp screenshot terakhir untuk PC tertentu."""

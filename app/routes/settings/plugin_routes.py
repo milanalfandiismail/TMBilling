@@ -9,16 +9,16 @@ from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.services.plugins.plugin_manager import PluginManager
 
 logger = logging.getLogger(__name__)
-plugin_bp = Blueprint("plugins", __name__)
+plugin_api_bp = Blueprint("plugins", __name__)
 
-@plugin_bp.route("/kasir/settings/plugins", methods=["GET"])
+@plugin_api_bp.route("/page", methods=["GET"])
 @login_required
 @admin_required
 def plugins_page():
     """Render the plugins management page."""
     return render_template("kasir/settings/plugins.html")
 
-@plugin_bp.route("/api/settings/plugins", methods=["GET"])
+@plugin_api_bp.route("/", methods=["GET"])
 @login_required
 @admin_required
 def get_plugins():
@@ -27,7 +27,7 @@ def get_plugins():
     plugins_info = manager.get_all_plugins_info()
     return jsonify({"success": True, "plugins": plugins_info})
 
-@plugin_bp.route("/api/settings/plugins/toggle", methods=["POST"])
+@plugin_api_bp.route("/toggle", methods=["POST"])
 @login_required
 @admin_required
 def toggle_plugin():
@@ -47,7 +47,7 @@ def toggle_plugin():
         
     return jsonify({"success": True, "message": "Plugin status updated. Restart backend to apply fully."})
 
-@plugin_bp.route("/api/settings/plugins/upload", methods=["POST"])
+@plugin_api_bp.route("/upload", methods=["POST"])
 @login_required
 @admin_required
 def upload_plugin():

@@ -10,7 +10,7 @@ from flask import Blueprint, request, jsonify, session
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.services import PCService
 
-pc_bp = Blueprint("pc", __name__)
+pc_api_bp = Blueprint("pc", __name__)
 
 
 # =========================================================================
@@ -18,7 +18,7 @@ pc_bp = Blueprint("pc", __name__)
 # =========================================================================
 # Fokus: Menampilkan daftar PC baik secara flat maupun grouping per zona.
 
-@pc_bp.route("/pc", methods=["GET"])
+@pc_api_bp.route("/", methods=["GET"])
 @login_required
 def list_pc():
     """Ambil daftar lengkap PC beserta pengelompokan per grup dengan filter & paginasi."""
@@ -54,7 +54,7 @@ def list_pc():
 # =========================================================================
 # Fokus: Operasi pengelolaan unit PC secara individu maupun massal.
 
-@pc_bp.route("/pc", methods=["POST"])
+@pc_api_bp.route("/", methods=["POST"])
 @login_required
 @admin_required
 def tambah_pc():
@@ -74,7 +74,7 @@ def tambah_pc():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@pc_bp.route("/pc/batch", methods=["POST"])
+@pc_api_bp.route("/batch", methods=["POST"])
 @login_required
 @admin_required
 def tambah_batch():
@@ -95,7 +95,7 @@ def tambah_batch():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@pc_bp.route("/pc/<int:pc_id>", methods=["PUT"])
+@pc_api_bp.route("/<int:pc_id>", methods=["PUT"])
 @login_required
 @admin_required
 def edit_pc(pc_id):
@@ -115,7 +115,7 @@ def edit_pc(pc_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@pc_bp.route("/pc/<int:pc_id>", methods=["DELETE"])
+@pc_api_bp.route("/<int:pc_id>", methods=["DELETE"])
 @login_required
 @admin_required
 def hapus_pc(pc_id):
@@ -129,7 +129,7 @@ def hapus_pc(pc_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@pc_bp.route("/pc/reset-admin/<int:pc_id>", methods=["POST"])
+@pc_api_bp.route("/reset-admin/<int:pc_id>", methods=["POST"])
 @login_required
 def reset_admin(pc_id):
     """Matiin mode admin secara paksa di PC."""
@@ -144,7 +144,7 @@ def reset_admin(pc_id):
         return jsonify({"error": str(e)}), 500
 
 
-@pc_bp.route("/pc/<int:pc_id>/position", methods=["PUT"])
+@pc_api_bp.route("/<int:pc_id>/position", methods=["PUT"])
 @login_required
 @admin_required
 def update_pc_position(pc_id):
@@ -167,7 +167,7 @@ def update_pc_position(pc_id):
 # =========================================================================
 # Fokus: Mengirim Magic Packet UDP ke satu atau beberapa PC agar menyala.
 
-@pc_bp.route("/pc/wol", methods=["POST"])
+@pc_api_bp.route("/wol", methods=["POST"])
 @login_required
 def wol_pc():
     """Kirim Magic Packet WoL ke satu atau beberapa PC berdasarkan ID atau MAC Address."""

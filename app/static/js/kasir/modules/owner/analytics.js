@@ -16,7 +16,7 @@ const OwnerAnalytics = {
 
         try {
             const p = new URLSearchParams({start: s.value, end: e.value});
-            const res = await API.request('/kasir/api/analytics?' + p);
+            const res = await API.request('/api/v1/kasir/dashboard/analytics?' + p);
             if (!res.success) throw new Error(res.error);
             const d = res.data, pd = d.pendapatan_harian;
 

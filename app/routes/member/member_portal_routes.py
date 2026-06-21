@@ -95,7 +95,7 @@ def logout_action():
     return jsonify({"success": True, "redirect": url_for("member_portal.login_page")}), 200
 
 
-@member_portal_bp.route("/api/public/pc-status", methods=["GET"])
+@member_portal_bp.route("/pc-status", methods=["GET"])
 def public_pc_status():
     """Mengambil status PC secara publik (untuk peta PC di landing page)."""
     try:

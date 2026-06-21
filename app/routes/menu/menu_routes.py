@@ -12,7 +12,7 @@ from werkzeug.utils import secure_filename
 from app.services import MenuService
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 
-menu_bp = Blueprint("menu", __name__)
+menu_api_bp = Blueprint("menu", __name__)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
@@ -44,7 +44,7 @@ def handle_image_upload(file):
     return f"/static/uploads/menu/{unique_filename}"
 
 
-@menu_bp.route("/menu", methods=["GET"])
+@menu_api_bp.route("/", methods=["GET"])
 @login_required
 def get_menu_list():
     """Mengambil katalog semua makanan dan minuman."""
@@ -55,7 +55,7 @@ def get_menu_list():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@menu_bp.route("/menu", methods=["POST"])
+@menu_api_bp.route("/", methods=["POST"])
 @login_required
 @admin_required
 def create_menu_item():
@@ -93,7 +93,7 @@ def create_menu_item():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@menu_bp.route("/menu/<int:menu_id>", methods=["PUT"])
+@menu_api_bp.route("/<int:menu_id>", methods=["PUT"])
 @login_required
 @admin_required
 def update_menu_item(menu_id):
@@ -121,7 +121,7 @@ def update_menu_item(menu_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@menu_bp.route("/menu/<int:menu_id>", methods=["DELETE"])
+@menu_api_bp.route("/<int:menu_id>", methods=["DELETE"])
 @login_required
 @admin_required
 def delete_menu_item(menu_id):
@@ -144,7 +144,7 @@ def delete_menu_item(menu_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@menu_bp.route("/menu/<int:menu_id>/permanent", methods=["DELETE"])
+@menu_api_bp.route("/<int:menu_id>/permanent", methods=["DELETE"])
 @login_required
 @admin_required
 def hard_delete_menu_item(menu_id):
@@ -169,7 +169,7 @@ def hard_delete_menu_item(menu_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@menu_bp.route("/menu/checkout", methods=["POST"])
+@menu_api_bp.route("/checkout", methods=["POST"])
 @login_required
 def checkout_order():
     """Checkout pesanan makanan/minuman."""
@@ -198,7 +198,7 @@ def checkout_order():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@menu_bp.route("/menu/transaksi", methods=["GET"])
+@menu_api_bp.route("/transaksi", methods=["GET"])
 @login_required
 def get_all_transactions():
     """Mendapatkan riwayat seluruh transaksi menu."""

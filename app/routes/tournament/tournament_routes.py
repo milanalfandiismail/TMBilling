@@ -17,7 +17,7 @@ from app.utils.timezone_utils import format_display
 import math
 import random
 
-tournament_bp = Blueprint("tournament", __name__)
+tournament_api_bp = Blueprint("tournament", __name__)
 
 
 # =========================================================================
@@ -249,7 +249,7 @@ def pair_swiss_round(stage_id, round_number, default_bo):
 # API ENDPOINTS
 # =========================================================================
 
-@tournament_bp.route("/tournament", methods=["GET"])
+@tournament_api_bp.route("/", methods=["GET"])
 @login_required
 def list_tournament():
     """Mengambil semua daftar turnamen."""
@@ -273,7 +273,7 @@ def list_tournament():
         return jsonify({"error": str(e)}), 500
 
 
-@tournament_bp.route("/tournament/<int:t_id>", methods=["GET"])
+@tournament_api_bp.route("/<int:t_id>", methods=["GET"])
 @login_required
 def get_tournament(t_id):
     """Mengambil detail lengkap turnamen beserta stage, tim, match, dan klasemen."""
@@ -317,7 +317,7 @@ def get_tournament(t_id):
         return jsonify({"error": str(e)}), 500
 
 
-@tournament_bp.route("/tournament", methods=["POST"])
+@tournament_api_bp.route("/", methods=["POST"])
 @login_required
 @admin_required
 def create_tournament():
@@ -482,7 +482,7 @@ def create_tournament():
         return jsonify({"error": str(e)}), 500
 
 
-@tournament_bp.route("/tournament/match/<int:match_id>/skor", methods=["POST"])
+@tournament_api_bp.route("/match/<int:match_id>/skor", methods=["POST"])
 @login_required
 @admin_required
 def update_match_skor(match_id):
@@ -541,7 +541,7 @@ def update_match_skor(match_id):
         return jsonify({"error": str(e)}), 500
 
 
-@tournament_bp.route("/tournament/<int:t_id>/swiss/next", methods=["POST"])
+@tournament_api_bp.route("/<int:t_id>/swiss/next", methods=["POST"])
 @login_required
 @admin_required
 def next_swiss_round(t_id):
@@ -574,7 +574,7 @@ def next_swiss_round(t_id):
         return jsonify({"error": str(e)}), 500
 
 
-@tournament_bp.route("/tournament/stage/<int:stage_id>/finish", methods=["POST"])
+@tournament_api_bp.route("/stage/<int:stage_id>/finish", methods=["POST"])
 @login_required
 @admin_required
 def finish_stage(stage_id):
@@ -621,7 +621,7 @@ def finish_stage(stage_id):
         return jsonify({"error": str(e)}), 500
 
 
-@tournament_bp.route("/tournament/<int:t_id>", methods=["DELETE"])
+@tournament_api_bp.route("/<int:t_id>", methods=["DELETE"])
 @login_required
 @admin_required
 def delete_tournament(t_id):

@@ -49,7 +49,7 @@
             </form>
         </div>
 
-        <p class="text-center text-neutral-600 text-[10px] mt-6 font-mono tracking-wider">TMBilling v1.0</p>
+        <p class="text-center text-neutral-600 text-[10px] mt-6 font-mono tracking-wider">TMBilling {{ version }}</p>
     </div>
 
     <script>
@@ -72,7 +72,7 @@
             errorBox.classList.add('hidden');
 
             try {
-                const res = await fetch('/api/kasir/login', {
+                const res = await fetch('/api/v1/kasir/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify({ username, password })

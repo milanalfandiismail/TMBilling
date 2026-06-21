@@ -11,7 +11,7 @@ from app.routes.auth.auth_kasir_routes import login_required
 from app.services import SesiService
 from app.services import PaketService
 
-sesi_bp = Blueprint("sesi", __name__)
+sesi_api_bp = Blueprint("sesi", __name__)
 
 
 # =========================================================================
@@ -19,7 +19,7 @@ sesi_bp = Blueprint("sesi", __name__)
 # =========================================================================
 # Fokus: Melayani pendaftaran sesi baru baik untuk Guest maupun Member.
 
-@sesi_bp.route("/buka-guest", methods=["POST"])
+@sesi_api_bp.route("/buka-guest", methods=["POST"])
 @login_required
 def buka_guest():
     """Buka sesi baru untuk guest di PC tertentu."""
@@ -43,7 +43,7 @@ def buka_guest():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@sesi_bp.route("/buka-member", methods=["POST"])
+@sesi_api_bp.route("/buka-member", methods=["POST"])
 @login_required
 def buka_member():
     """Buka sesi baru untuk member menggunakan saldo waktu tersimpan."""
@@ -73,7 +73,7 @@ def buka_member():
 # =========================================================================
 # Fokus: Perubahan pada sesi yang sedang aktif (Pindah PC & Tambah Waktu).
 
-@sesi_bp.route("/tambah-waktu-sesi/<int:sesi_id>", methods=["POST"])
+@sesi_api_bp.route("/tambah-waktu-sesi/<int:sesi_id>", methods=["POST"])
 @login_required
 def tambah_waktu_sesi(sesi_id):
     """Tambah durasi pada sesi yang sedang aktif bermain (mendukung multiple paket)."""
@@ -112,7 +112,7 @@ def tambah_waktu_sesi(sesi_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@sesi_bp.route("/pindah-pc/<int:sesi_id>", methods=["POST"])
+@sesi_api_bp.route("/pindah-pc/<int:sesi_id>", methods=["POST"])
 @login_required
 def pindah_pc(sesi_id):
     """Pindahkan sesi bermain ke unit PC lain dalam zona yang sama."""
@@ -137,7 +137,7 @@ def pindah_pc(sesi_id):
 # =========================================================================
 # Fokus: Mengakhiri sesi dan mengambil data detail sesi.
 
-@sesi_bp.route("/tutup/<int:sesi_id>", methods=["POST"])
+@sesi_api_bp.route("/tutup/<int:sesi_id>", methods=["POST"])
 @login_required
 def tutup_sesi(sesi_id):
     """Mengakhiri sesi bermain secara manual dari dashboard kasir."""
@@ -150,7 +150,7 @@ def tutup_sesi(sesi_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@sesi_bp.route("/sesi/<int:sesi_id>", methods=["GET"])
+@sesi_api_bp.route("/<int:sesi_id>", methods=["GET"])
 @login_required
 def get_sesi(sesi_id):
     """Ambil data detail sesi aktif/selesai berdasarkan ID."""

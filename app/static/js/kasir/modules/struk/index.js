@@ -149,7 +149,7 @@ const Struk = {
             if (this.currentSubTab === 'kantin') {
                 data = await API.report.strukMenu(sesiId);
             } else {
-                data = await API.request(`/api/report/struk/${sesiId}`);
+                data = await API.request(`/api/v1/kasir/report/struk/${sesiId}`);
             }
 
             this.currentData = data;
@@ -166,7 +166,7 @@ const Struk = {
         const noStruk = document.getElementById('struk-no').value.trim();
         if (!noStruk) { Toast.error("Masukkan nomor struk"); return; }
         try {
-            const data = await API.request('/api/report/struk/by-no', {
+            const data = await API.request('/api/v1/kasir/report/struk/by-no', {
                 method: 'POST',
                 body: JSON.stringify({ no_struk: noStruk })
             });

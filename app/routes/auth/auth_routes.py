@@ -10,7 +10,7 @@ from flask import Blueprint, request, jsonify
 from app.services import AuthService
 from app.utils.logger import write_log
 
-auth_bp = Blueprint("auth", __name__)
+auth_api_bp = Blueprint("auth", __name__)
 
 
 # =========================================================================
@@ -18,7 +18,7 @@ auth_bp = Blueprint("auth", __name__)
 # =========================================================================
 # Fokus: Menangani alur masuk dan keluar member di PC client.
 
-@auth_bp.route("/login", methods=["POST"])
+@auth_api_bp.route("/login", methods=["POST"])
 def login():
     """Login member dari PC client dengan validasi IP & MAC."""
     data = request.get_json() or {}
@@ -36,7 +36,7 @@ def login():
         return jsonify({"error": f"Server Error: {str(e)}"}), 500
 
 
-@auth_bp.route("/logout", methods=["POST"])
+@auth_api_bp.route("/logout", methods=["POST"])
 def logout():
     """Logout member dan membersihkan sesi di database."""
     data = request.get_json() or {}
@@ -60,7 +60,7 @@ def logout():
 # =========================================================================
 # Fokus: Memberikan info ke aplikasi client mengenai kondisi PC saat ini.
 
-@auth_bp.route("/status", methods=["POST"])
+@auth_api_bp.route("/status", methods=["POST"])
 def status():
     """Cek status PC (kosong/terpakai) berdasarkan identitas hardware."""
     data = request.get_json() or {}

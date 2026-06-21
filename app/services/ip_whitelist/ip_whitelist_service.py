@@ -26,7 +26,7 @@ class IpWhitelistService:
     TOKEN_VERSION_KEY = "ip_whitelist_token_version"
     PUBLIC_URL_KEY = "app_public_url"
 
-    SCOPED_PREFIXES = ('/kasir/', '/api/kasir/')
+    SCOPED_PREFIXES = ('/kasir/', '/api/v1/kasir/')
 
     # ------------------------------------------------------------------
     # 1. STATUS & CONFIG

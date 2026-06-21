@@ -10,7 +10,7 @@ from flask import Blueprint, request, jsonify, Response, session
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.services import ReportService
 
-report_bp = Blueprint("report", __name__)
+report_api_bp = Blueprint("report", __name__)
 
 
 # =========================================================================
@@ -18,7 +18,7 @@ report_bp = Blueprint("report", __name__)
 # =========================================================================
 # Fokus: Menyajikan data pendapatan harian dan statistik operasional.
 
-@report_bp.route("/laporan", methods=["GET"])
+@report_api_bp.route("/laporan/billing", methods=["GET"])
 @login_required
 def get_laporan():
     """Ambil laporan detail berdasarkan parameter tanggal (YYYY-MM-DD)."""
@@ -37,7 +37,26 @@ def get_laporan():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_bp.route("/laporan-harian", methods=["GET"])
+@report_api_bp.route("/laporan/kantin", methods=["GET"])
+@login_required
+def get_laporan_kantin():
+    """Ambil laporan khusus kantin berdasarkan parameter tanggal dengan pagination."""
+    try:
+        tanggal = request.args.get("tanggal")
+        kasir_id = request.args.get("kasir_id")
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 12, type=int)
+        
+        # RULE: Kasir hanya boleh lihat laporan diri sendiri
+        if session.get("kasir_role") == "kasir":
+            kasir_id = session.get("kasir_id")
+            
+        laporan = ReportService.get_laporan_kantin_by_tanggal(tanggal, kasir_id, page, per_page)
+        return jsonify(laporan), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@report_api_bp.route("/laporan-harian", methods=["GET"])
 @login_required
 def laporan_harian():
     """Ringkasan cepat pendapatan, total sesi, dan sesi aktif hari ini."""
@@ -47,7 +66,7 @@ def laporan_harian():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_bp.route("/tanggal", methods=["GET"])
+@report_api_bp.route("/tanggal", methods=["GET"])
 @login_required
 def get_tanggal_list():
     """Ambil daftar tanggal unik yang memiliki catatan transaksi (untuk filter)."""
@@ -57,7 +76,7 @@ def get_tanggal_list():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_bp.route("/kasir-list", methods=["GET"])
+@report_api_bp.route("/kasir-list", methods=["GET"])
 @login_required
 def get_kasir_list():
     """Ambil daftar semua kasir untuk filter laporan."""
@@ -77,7 +96,7 @@ def get_kasir_list():
 # =========================================================================
 # Fokus: Pencarian nota dan penyajian data untuk kebutuhan cetak struk.
 
-@report_bp.route("/struk/<identifier>", methods=["GET"])
+@report_api_bp.route("/struk/<identifier>", methods=["GET"])
 @login_required
 def get_struk(identifier):
     """Ambil data struk lengkap untuk preview/cetak berdasarkan ID atau No. Nota."""
@@ -110,7 +129,7 @@ def get_struk(identifier):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_bp.route("/struk/by-no", methods=["POST"])
+@report_api_bp.route("/struk/by-no", methods=["POST"])
 @login_required
 def get_struk_by_no():
     """Cari nota berdasarkan nomor struk (Mendukung TM- baru & TRX- lama)."""
@@ -142,7 +161,7 @@ def get_struk_by_no():
     return get_struk(f"T{t.id}")
 
 
-@report_bp.route("/struk/menu/<int:t_menu_id>", methods=["GET"])
+@report_api_bp.route("/struk/menu/<int:t_menu_id>", methods=["GET"])
 @login_required
 def get_struk_menu(t_menu_id):
     """Ambil data struk lengkap untuk transaksi menu/F&B."""
@@ -161,7 +180,7 @@ def get_struk_menu(t_menu_id):
 # =========================================================================
 # Fokus: Monitoring aktivitas sistem, blackout, dan fitur export log.
 
-@report_bp.route("/log", methods=["GET"])
+@report_api_bp.route("/log", methods=["GET"])
 @login_required
 def get_logs():
     """Ambil daftar log sistem dengan filter teks dan kategori."""
@@ -174,7 +193,7 @@ def get_logs():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_bp.route("/log/clear", methods=["POST"])
+@report_api_bp.route("/log/clear", methods=["POST"])
 @login_required
 def clear_logs_endpoint():
     """Bersihkan file log sistem."""
@@ -186,7 +205,7 @@ def clear_logs_endpoint():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_bp.route("/transaksi/clear", methods=["POST"])
+@report_api_bp.route("/transaksi/clear", methods=["POST"])
 @login_required
 @admin_required
 def clear_transactions_endpoint():
@@ -199,7 +218,7 @@ def clear_transactions_endpoint():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_bp.route("/transaksi/<int:t_id>", methods=["DELETE"])
+@report_api_bp.route("/transaksi/<int:t_id>", methods=["DELETE"])
 @login_required
 @admin_required
 def delete_transaction_endpoint(t_id):
@@ -212,7 +231,7 @@ def delete_transaction_endpoint(t_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_bp.route("/transaksi/by-date/<string:tanggal>", methods=["DELETE"])
+@report_api_bp.route("/transaksi/by-date/<string:tanggal>", methods=["DELETE"])
 @login_required
 @admin_required
 def clear_date_transactions_endpoint(tanggal):
@@ -225,7 +244,7 @@ def clear_date_transactions_endpoint(tanggal):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_bp.route("/log/export", methods=["GET"])
+@report_api_bp.route("/log/export", methods=["GET"])
 @login_required
 def export_logs():
     """Download system logs dalam format .txt."""
@@ -240,7 +259,7 @@ def export_logs():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_bp.route("/blackout-log", methods=["GET"])
+@report_api_bp.route("/blackout-log", methods=["GET"])
 @login_required
 def blackout_log():
     """Log khusus terkait kejadian mati lampu (Blackout) & Server Restart."""
@@ -254,7 +273,7 @@ def blackout_log():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_bp.route("/export/billing", methods=["GET"])
+@report_api_bp.route("/export/billing", methods=["GET"])
 @login_required
 def export_billing():
     """Download daily billing report in PDF format."""
@@ -276,7 +295,7 @@ def export_billing():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_bp.route("/export/kantin", methods=["GET"])
+@report_api_bp.route("/export/kantin", methods=["GET"])
 @login_required
 def export_kantin():
     """Download daily/monthly canteen report in PDF format."""
@@ -298,7 +317,7 @@ def export_kantin():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_bp.route("/export/pnl", methods=["GET"])
+@report_api_bp.route("/export/pnl", methods=["GET"])
 @login_required
 @admin_required
 def export_pnl():
@@ -316,7 +335,7 @@ def export_pnl():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_bp.route("/export/audit-pdf", methods=["GET"])
+@report_api_bp.route("/export/audit-pdf", methods=["GET"])
 @login_required
 def export_audit_pdf():
     """Download audit logs in PDF format."""
