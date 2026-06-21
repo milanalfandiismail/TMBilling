@@ -19,6 +19,18 @@ class AuthKasirService:
     # Fokus: Menangani proses masuk dan keluar user serta pencatatan log audit.
 
     @staticmethod
+    def validate_credentials_only(username, password):
+        """Validasi kredensial tanpa log — return user dict atau None."""
+        if not username or not password:
+            return None
+        
+        user = UserRepository.get_by_username(username)
+        if not user or not user.check_password(password):
+            return None
+        
+        return user
+
+    @staticmethod
     def login(username, password):
         """Autentikasi kasir/admin dengan validasi kredensial."""
         if not username or not password:
