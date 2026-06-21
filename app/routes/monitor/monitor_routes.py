@@ -68,6 +68,29 @@ def get_pc_processes(pc_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@monitor_api_bp.route("/processes/<int:pc_id>/kill", methods=["POST"])
+@login_required
+def kill_pc_process(pc_id):
+    """Trigger request taskkill process ke client PC berdasarkan PC ID."""
+    try:
+        data = request.get_json() or {}
+        process_name = data.get("process_name")
+        if not process_name:
+            return jsonify({"success": False, "error": "Nama proses harus diisi"}), 400
+
+        from app.repositories import PCRepository
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+
+        from app.services.client.client_service import ClientService
+        ClientService.queue_command(pc.id, f"kill:{process_name}")
+
+        write_log("REMOTE_KILL", f"Perintah Kill Process '{process_name}' dikirim ke PC {pc.kode}")
+        return jsonify({"success": True, "message": f"Perintah mengakhiri proses {process_name} berhasil dikirim ke {pc.kode}"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @monitor_api_bp.route("/<int:hardware_id>", methods=["DELETE"])
 def delete_hardware_data(hardware_id):
     """Endpoint untuk menghapus data hardware monitor tertentu secara manual dari dashboard."""

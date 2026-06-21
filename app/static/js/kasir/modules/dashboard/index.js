@@ -227,10 +227,11 @@ const Dashboard = {
                                     <tr class="border-b border-[#1c1c1c] text-[10px] lg:text-base text-neutral-500 uppercase tracking-wider">
                                         <th class="px-6 py-3 text-left">Nama</th>
                                         <th class="px-6 py-3 text-left">Judul</th>
+                                        <th class="px-6 py-3 text-right">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody id="modal-process-list" class="divide-y divide-[#1c1c1c]">
-                                    <tr><td colspan="2" class="px-6 py-10 text-center text-neutral-500 text-xs lg:text-base font-mono">Memuat...</td></tr>
+                                    <tr><td colspan="3" class="px-6 py-10 text-center text-neutral-500 text-xs lg:text-base font-mono">Memuat...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -385,7 +386,7 @@ const Dashboard = {
     async loadProcesses(pcId) {
         const container = document.getElementById('modal-process-list');
         const countEl = document.getElementById('modal-pc-count');
-        container.innerHTML = '<tr><td colspan="2" class="px-6 py-10 text-center text-neutral-500 text-xs lg:text-base font-mono">Memuat...</td></tr>';
+        container.innerHTML = '<tr><td colspan="3" class="px-6 py-10 text-center text-neutral-500 text-xs lg:text-base font-mono">Memuat...</td></tr>';
 
         try {
             const res = await fetch(`/api/v1/public/monitor/processes/${pcId}`);
@@ -397,7 +398,7 @@ const Dashboard = {
             countEl.innerText = `${data.length} PROSES`;
 
             if (data.length === 0) {
-                container.innerHTML = '<tr><td colspan="2" class="px-6 py-10 text-center text-neutral-500 text-xs lg:text-base font-mono">Tidak ada proses</td></tr>';
+                container.innerHTML = '<tr><td colspan="3" class="px-6 py-10 text-center text-neutral-500 text-xs lg:text-base font-mono">Tidak ada proses</td></tr>';
                 return;
             }
 
@@ -405,12 +406,32 @@ const Dashboard = {
                 <tr class="hover:bg-[#121212] transition-colors">
                     <td class="px-6 py-3 text-xs lg:text-base text-neutral-200 font-mono">${p.name}</td>
                     <td class="px-6 py-3 text-xs lg:text-base text-neutral-500 font-mono">${p.title || '-'}</td>
+                    <td class="px-6 py-3 text-right">
+                        <button onclick="Dashboard.killProcess(${pcId}, '${p.name}')" class="px-3 py-1 bg-red-950/40 hover:bg-red-900 border border-red-800/40 hover:border-red-700 text-red-400 hover:text-red-200 text-xs font-bold rounded-lg transition-all font-mono uppercase tracking-wider">
+                            Akhiri
+                        </button>
+                    </td>
                 </tr>
             `).join('');
 
         } catch (err) {
-            container.innerHTML = `<tr><td colspan="2" class="px-6 py-10 text-center text-red-400 text-xs lg:text-base font-mono">Gagal: ${err.message}</td></tr>`;
+            container.innerHTML = `<tr><td colspan="3" class="px-6 py-10 text-center text-red-400 text-xs lg:text-base font-mono">Gagal: ${err.message}</td></tr>`;
         }
+    },
+
+    async killProcess(pcId, name) {
+        Modal.confirm(`<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Akhiri Proses?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Apakah Anda yakin ingin menghentikan paksa proses <strong class="text-white">${name}</strong> di PC client?</p></div>`, async () => {
+            try {
+                const json = await API.monitor.processesKill(pcId, name);
+                if (!json.success) throw new Error(json.error);
+                Toast.success(`Perintah mengakhiri '${name}' berhasil dikirim!`);
+                // Segarkan proses otomatis jika modal masih terbuka
+                this.loadProcesses(pcId);
+            } catch (err) {
+                console.error('[Dashboard] Kill process error:', err);
+                Toast.error(err.message || 'Gagal mengirim perintah kill process');
+            }
+        });
     },
 
     async tutupSesi(sesiId) {
