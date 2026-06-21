@@ -19,6 +19,8 @@ const App = {
             if (this.currentTab === 'dash') Dashboard.load();
             if (this.currentTab === 'monitor' && typeof Monitor !== 'undefined') Monitor.load();
         }, 5000);
+
+        // Session polling sudah di api.js (startSessionCheck)
     },
 
     async checkAuth() {

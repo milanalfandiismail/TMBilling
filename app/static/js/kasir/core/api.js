@@ -28,7 +28,14 @@ const API = {
             const txt = await res.text();
             let data;
             try { data = JSON.parse(txt); } catch (e) { data = { error: txt }; }
-            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            if (!res.ok) {
+                // Session expired atau IP block — redirect ke login (kecuali endpoint auth)
+                if ((res.status === 401 || res.status === 403) && !url.includes('/api/kasir/login') && !url.includes('/api/kasir/check')) {
+                    window.location.href = '/kasir/login';
+                    return;
+                }
+                throw new Error(data.error || `HTTP ${res.status}`);
+            }
             return data;
         } catch (err) {
             console.error(`API Error [${url}]:`, err);
@@ -223,6 +230,31 @@ const API = {
     }
 
 };
+
+// Session polling — jalan langsung, gak perlu nunggu DOM
+(function() {
+    var sessionInterval = setInterval(function() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/api/kasir/check', true);
+        xhr.withCredentials = true;
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (!data.logged_in) {
+                        window.location.href = '/kasir/login';
+                    }
+                } catch(e) {
+                    window.location.href = '/kasir/login';
+                }
+            }
+        };
+        xhr.onerror = function() {
+            window.location.href = '/kasir/login';
+        };
+        xhr.send();
+    }, 5000);
+})();
 
 // Pastikan object API bisa diakses secara global oleh file JS lainnya
 window.API = API;

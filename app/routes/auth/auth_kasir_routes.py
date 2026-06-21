@@ -85,25 +85,32 @@ def login():
     username = data.get("username", "").strip()
     password = data.get("password", "")
 
+    # Validasi kredensial dulu (tanpa log) untuk dapatkan role
+    pre_user = AuthKasirService.validate_credentials_only(username, password)
+    if not pre_user:
+        return jsonify({"error": "Username atau password salah"}), 401
+
+    # Non-admin harus login dari IP whitelisted (kecuali bypass token)
+    if pre_user.role != "admin":
+        try:
+            from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+            if IpWhitelistService.is_enabled() and not IpWhitelistService.is_session_authenticated():
+                client_ip = IpWhitelistService.get_client_ip()
+                if not IpWhitelistService.is_ip_whitelisted(client_ip):
+                    write_log("LOGIN_GAGAL",
+                              f"Username:{username} - IP {client_ip} tidak di whitelist")
+                    return jsonify({
+                        "error": "Akses Anda dibatasi.",
+                        "detail": f"IP {client_ip} tidak diizinkan mengakses dashboard kasir. "
+                                   f"Hubungi admin untuk mendaftarkan IP Anda."
+                    }), 403
+        except Exception:
+            pass
+
     try:
         result = AuthKasirService.login(username, password)
 
         role = result["user"]["role"]
-
-        # Cek IP whitelist untuk non-admin (kasir/staff harus dari IP whitelisted)
-        # KECUALI: session sudah authenticated via bypass token
-        if role != "admin":
-            try:
-                from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
-                if IpWhitelistService.is_enabled() and not IpWhitelistService.is_session_authenticated():
-                    client_ip = IpWhitelistService.get_client_ip()
-                    if not IpWhitelistService.is_ip_whitelisted(client_ip):
-                        return jsonify({
-                            "error": "Akses Anda dibatasi.",
-                            "detail": f"IP {client_ip} tidak diizinkan mengakses dashboard kasir. Hubungi admin untuk mendaftarkan IP Anda."
-                        }), 403
-            except Exception:
-                pass
 
         # Admin login dari IP baru → auto-add ke whitelist
         if role == "admin":
@@ -159,6 +166,18 @@ def check_session():
     """Cek status login untuk kebutuhan UI Frontend."""
     kasir_id = session.get("kasir_id")
     result = AuthKasirService.check_session(user_id=kasir_id)
+
+    # Jika session valid, cek juga IP whitelist
+    if result.get("logged_in"):
+        try:
+            from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+            if IpWhitelistService.is_enabled() and not IpWhitelistService.is_session_authenticated():
+                client_ip = IpWhitelistService.get_client_ip()
+                if not IpWhitelistService.is_ip_whitelisted(client_ip):
+                    result = {"logged_in": False, "reason": "ip_not_whitelisted"}
+        except Exception:
+            pass
+
     if not result.get("logged_in"):
         # Bersihkan session jika tidak valid
         session.pop("kasir_id", None)

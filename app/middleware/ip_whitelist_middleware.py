@@ -40,7 +40,7 @@ def check_ip_whitelist():
     # =========================================================================
     # STEP 1: Auth exemption — login page, login endpoint, check, logout
     # =========================================================================
-    if request.path in ('/kasir/', '/kasir', '/kasir/login') \
+    if request.path in ('/kasir/login',) \
        or request.path.startswith('/api/kasir/login') \
        or request.path.startswith('/api/kasir/check') \
        or request.path.startswith('/api/kasir/logout'):
@@ -66,16 +66,39 @@ def check_ip_whitelist():
         return None
 
     # =========================================================================
-    # STEP 5: BLOCK
+    # STEP 5: BLOCK — dengan session destroy jika user sudah login
     # =========================================================================
+    username = flask_session.get('kasir_username',
+                                  flask_session.get('kasir_nama', 'anonymous'))
+    user_role = flask_session.get('kasir_role', '')
+
+    # Jika user belum login (no session), redirect atau 403 untuk API
+    if 'kasir_id' not in flask_session:
+        if request.accept_mimetypes.best == 'application/json' \
+           or request.path.startswith('/api/') \
+           or request.path.startswith('/kasir/api/'):
+            return jsonify({'error': 'forbidden', 'ip': client_ip}), 403
+        return redirect('/kasir/login')
+
+    # Jika user memiliki session aktif, hancurkan sebelum block
+    write_log(
+        aksi='IP_WHITELIST_SESSION_DESTROY',
+        detail=f"Session user {username} ({user_role}) dari IP {client_ip} "
+               f"dihancurkan karena IP dihapus dari whitelist",
+        user=username
+    )
+    flask_session.clear()
+    flask_session.modified = True
+
     write_log(
         aksi='IP_WHITELIST_BLOCK',
         detail=f"IP {client_ip} diblokir mengakses {request.path} (method: {request.method})",
-        user=flask_session.get('kasir_username',
-                               flask_session.get('kasir_nama', 'anonymous'))
+        user='anonymous'
     )
 
-    if request.accept_mimetypes.best == 'application/json' or request.path.startswith('/api/'):
+    if request.accept_mimetypes.best == 'application/json' \
+       or request.path.startswith('/api/') \
+       or request.path.startswith('/kasir/api/'):
         return jsonify({'error': 'forbidden', 'ip': client_ip}), 403
 
-    return render_template('public/access_denied.html', ip=client_ip), 403
+    return redirect('/kasir/login')
