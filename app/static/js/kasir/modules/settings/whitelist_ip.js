@@ -36,7 +36,7 @@ const WhitelistIP = {
     // ------------------------------------------------------------------
 
     async refresh() {
-        const data = await this._fetch('GET', '/api/settings/ip-whitelist');
+        const data = await this._fetch('GET', '/api/v1/kasir/settings/ip-whitelist');
         const entries = data.entries || [];
         this._renderTable(entries);
     },
@@ -91,7 +91,7 @@ const WhitelistIP = {
         const label = (labelInput ? labelInput.value.trim() : '');
 
         try {
-            await this._fetch('POST', '/api/settings/ip-whitelist', { ip, label });
+            await this._fetch('POST', '/api/v1/kasir/settings/ip-whitelist', { ip, label });
             ipInput.value = '';
             if (labelInput) labelInput.value = '';
             await this.refresh();
@@ -107,7 +107,7 @@ const WhitelistIP = {
     async remove(ip) {
         if (!confirm(`Hapus ${ip} dari whitelist?`)) return;
         try {
-            await this._fetch('DELETE', `/api/settings/ip-whitelist/${ip}`);
+            await this._fetch('DELETE', `/api/v1/kasir/settings/ip-whitelist/${ip}`);
             await this.refresh();
         } catch (e) {
             // error already alerted
@@ -120,7 +120,7 @@ const WhitelistIP = {
 
     async toggle(enabled) {
         try {
-            await this._fetch('POST', '/api/settings/ip-whitelist/toggle', { enabled });
+            await this._fetch('POST', '/api/v1/kasir/settings/ip-whitelist/toggle', { enabled });
         } catch (e) {
             // revert toggle visual
             const toggle = document.getElementById('whitelistToggle');
@@ -135,7 +135,7 @@ const WhitelistIP = {
     async regenerate() {
         if (!confirm('Regenerate token?\n\nToken lama akan invalidate semua sesi yang sedang aktif. Lanjut?')) return;
         try {
-            const data = await this._fetch('POST', '/api/settings/ip-whitelist/regenerate-token');
+            const data = await this._fetch('POST', '/api/v1/kasir/settings/ip-whitelist/regenerate-token');
             this._newToken = data.token || '';
             document.getElementById('newTokenDisplay').textContent = this._newToken;
             document.getElementById('regenerateModal').classList.remove('hidden');
@@ -166,7 +166,7 @@ const WhitelistIP = {
 
     async loadStatus() {
         try {
-            const data = await this._fetch('GET', '/api/settings/ip-whitelist/status');
+            const data = await this._fetch('GET', '/api/v1/kasir/settings/ip-whitelist/status');
 
             // Toggle
             const toggle = document.getElementById('whitelistToggle');
@@ -231,7 +231,7 @@ const WhitelistIP = {
         if (!input) return;
         const url = input.value.trim();
         try {
-            await this._fetch('POST', '/api/settings/app-public-url', { url });
+            await this._fetch('POST', '/api/v1/kasir/settings/app-public-url', { url });
             await this.loadStatus();
         } catch (e) {
             // error already alerted
@@ -245,7 +245,7 @@ const WhitelistIP = {
     async trustOnce(ip) {
         if (!ip) return;
         try {
-            await this._fetch('POST', '/api/settings/ip-whitelist', { ip, label: 'Auto (Trust Once)' });
+            await this._fetch('POST', '/api/v1/kasir/settings/ip-whitelist', { ip, label: 'Auto (Trust Once)' });
             window.location.href = '/kasir';
         } catch (e) {
             // error already alerted

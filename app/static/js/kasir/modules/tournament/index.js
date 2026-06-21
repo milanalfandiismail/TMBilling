@@ -8,13 +8,13 @@
 
 // Ekstensi API global
 API.tournament = {
-    list: () => API.request('/api/tournament'),
-    get: (id) => API.request(`/api/tournament/${id}`),
-    create: (data) => API.request('/api/tournament', { method: 'POST', body: JSON.stringify(data) }),
-    saveSkor: (matchId, data) => API.request(`/api/tournament/match/${matchId}/skor`, { method: 'POST', body: JSON.stringify(data) }),
-    nextSwiss: (id) => API.request(`/api/tournament/${id}/swiss/next`, { method: 'POST' }),
-    finishStage: (stageId, data) => API.request(`/api/tournament/stage/${stageId}/finish`, { method: 'POST', body: JSON.stringify(data) }),
-    delete: (id) => API.request(`/api/tournament/${id}`, { method: 'DELETE' })
+    list: () => API.request('/api/v1/kasir/tournament/'),
+    get: (id) => API.request(`/api/v1/kasir/tournament/${id}`),
+    create: (data) => API.request('/api/v1/kasir/tournament/', { method: 'POST', body: JSON.stringify(data) }),
+    saveSkor: (matchId, data) => API.request(`/api/v1/kasir/tournament/match/${matchId}/skor`, { method: 'POST', body: JSON.stringify(data) }),
+    nextSwiss: (id) => API.request(`/api/v1/kasir/tournament/${id}/swiss/next`, { method: 'POST' }),
+    finishStage: (stageId, data) => API.request(`/api/v1/kasir/tournament/stage/${stageId}/finish`, { method: 'POST', body: JSON.stringify(data) }),
+    delete: (id) => API.request(`/api/v1/kasir/tournament/${id}`, { method: 'DELETE' })
 };
 
 const Tournament = {

@@ -96,6 +96,14 @@ class MenuRepository:
         return query.order_by(TransaksiMenu.tanggal.desc()).all()
 
     @staticmethod
+    def get_transactions_by_date_paginated(date_obj, page, per_page, kasir_id=None):
+        """Mendapatkan daftar transaksi F&B dengan pagination pada tanggal tertentu."""
+        query = TransaksiMenu.query.filter(db.func.date(TransaksiMenu.tanggal) == date_obj)
+        if kasir_id:
+            query = query.filter(TransaksiMenu.kasir_id == kasir_id)
+        return query.order_by(TransaksiMenu.tanggal.desc()).paginate(page=page, per_page=per_page, error_out=False)
+
+    @staticmethod
     def get_by_no_nota(no_nota):
         """Mencari transaksi menu berdasarkan nomor nota."""
         return TransaksiMenu.query.filter_by(no_nota=no_nota).first()

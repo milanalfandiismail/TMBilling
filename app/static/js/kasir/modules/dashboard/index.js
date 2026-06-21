@@ -260,7 +260,7 @@ const Dashboard = {
         text.innerText = 'MEMINTA...';
 
         try {
-            const response = await fetch(`/api/monitor/screenshot/trigger/${pcId}`, {
+            const response = await fetch(`/api/v1/public/monitor/screenshot/trigger/${pcId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -280,7 +280,7 @@ const Dashboard = {
             const interval = setInterval(async () => {
                 attempts++;
                 try {
-                    const statusRes = await fetch(`/api/monitor/screenshot/status/${pcId}`);
+                    const statusRes = await fetch(`/api/v1/public/monitor/screenshot/status/${pcId}`);
                     const statusData = await statusRes.json();
                     if (statusData.success && statusData.screenshot_url) {
                         const timeSpan = document.getElementById('screenshot-time');
@@ -339,7 +339,7 @@ const Dashboard = {
             </div>
         `, async () => {
             try {
-                const response = await fetch(`/api/monitor/remote/${pcId}/${action}`, {
+                const response = await fetch(`/api/v1/public/monitor/remote/${pcId}/${action}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -388,7 +388,7 @@ const Dashboard = {
         container.innerHTML = '<tr><td colspan="2" class="px-6 py-10 text-center text-neutral-500 text-xs lg:text-base font-mono">Memuat...</td></tr>';
 
         try {
-            const res = await fetch(`/api/monitor/processes/${pcId}`);
+            const res = await fetch(`/api/v1/public/monitor/processes/${pcId}`);
             const json = await res.json();
 
             if (!json.success) throw new Error(json.error);
@@ -549,7 +549,7 @@ const Dashboard = {
                     await API.sesi.tutup(sesiId);
                 } else {
                     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-                    const res = await fetch(`/api/pc/reset-admin/${pcId}`, {
+                    const res = await fetch(`/api/v1/kasir/pc/reset-admin/${pcId}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

@@ -6,7 +6,7 @@ const API = {
         try {
             const method = (options.method || 'GET').toUpperCase();
             const headers = { ...options.headers };
-            
+
             if (!(options.body instanceof FormData)) {
                 headers['Content-Type'] = 'application/json';
             }
@@ -30,7 +30,7 @@ const API = {
             try { data = JSON.parse(txt); } catch (e) { data = { error: txt }; }
             if (!res.ok) {
                 // Session expired atau IP block — redirect ke login (kecuali endpoint auth)
-                if ((res.status === 401 || res.status === 403) && !url.includes('/api/kasir/login') && !url.includes('/api/kasir/check')) {
+                if ((res.status === 401 || res.status === 403) && !url.includes('/api/v1/kasir/auth/login') && !url.includes('/api/v1/kasir/auth/check')) {
                     window.location.href = '/kasir/login';
                     return;
                 }
@@ -45,31 +45,31 @@ const API = {
 
     // 🔗 AUTH KASIR
     auth: {
-        login: (u, p) => API.request('/api/kasir/login', { method: 'POST', body: JSON.stringify({ username: u, password: p }) }),
-        logout: () => API.request('/api/kasir/logout', { method: 'POST' }),
-        check: () => API.request('/api/kasir/check')
+        login: (u, p) => API.request('/api/v1/kasir/auth/login', { method: 'POST', body: JSON.stringify({ username: u, password: p }) }),
+        logout: () => API.request('/api/v1/kasir/auth/logout', { method: 'POST' }),
+        check: () => API.request('/api/v1/kasir/auth/check')
     },
 
     // 🔗 DASHBOARD
     dashboard: {
         // Mengambil data PC yang sudah dikelompokkan berdasarkan grup
-        pcList: () => API.request('/kasir/api/pc')
+        pcList: () => API.request('/api/v1/kasir/dashboard/pc')
     },
 
     // 🟢 KELOLA GRUP (Baru ditambahkan agar FE dinamis)
     grup: {
-        list: () => API.request('/api/grup/'),
-        create: (data) => API.request('/api/grup/', { method: 'POST', body: JSON.stringify(data) }),
-        delete: (id) => API.request(`/api/grup/${id}`, { method: 'DELETE' })
+        list: () => API.request('/api/v1/kasir/grup/'),
+        create: (data) => API.request('/api/v1/kasir/grup/', { method: 'POST', body: JSON.stringify(data) }),
+        delete: (id) => API.request(`/api/v1/kasir/grup/${id}`, { method: 'DELETE' })
     },
 
     // 🔗 KELOLA USER (Admin/Kasir)
     user: {
-        list: () => API.request('/api/user/'),
-        get: (id) => API.request(`/api/user/${id}`),
-        create: (data) => API.request('/api/user/', { method: 'POST', body: JSON.stringify(data) }),
-        update: (id, data) => API.request(`/api/user/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: (id) => API.request(`/api/user/${id}`, { method: 'DELETE' })
+        list: () => API.request('/api/v1/kasir/user/'),
+        get: (id) => API.request(`/api/v1/kasir/user/${id}`),
+        create: (data) => API.request('/api/v1/kasir/user/', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id, data) => API.request(`/api/v1/kasir/user/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        delete: (id) => API.request(`/api/v1/kasir/user/${id}`, { method: 'DELETE' })
     },
 
     // 🔗 KELOLA MEMBER
@@ -80,21 +80,21 @@ const API = {
             if (params.grup_id) q.append('grup_id', params.grup_id);
             if (params.page) q.append('page', params.page);
             if (params.per_page) q.append('per_page', params.per_page);
-            const url = '/api/member' + (q.toString() ? `?${q}` : '');
+            const url = '/api/v1/kasir/member/' + (q.toString() ? `?${q}` : '');
             return API.request(url);
         },
-        get: id => API.request(`/api/member/${id}`),
-        getPaket: (memberId) => API.request(`/api/member/${memberId}/paket`),
-        create: data => API.request('/api/member', { method: 'POST', body: JSON.stringify(data) }),
-        update: (id, data) => API.request(`/api/member/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: id => API.request(`/api/member/${id}`, { method: 'DELETE' }),
+        get: id => API.request(`/api/v1/kasir/member/${id}`),
+        getPaket: (memberId) => API.request(`/api/v1/kasir/member/${memberId}/paket`),
+        create: data => API.request('/api/v1/kasir/member/', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id, data) => API.request(`/api/v1/kasir/member/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        delete: id => API.request(`/api/v1/kasir/member/${id}`, { method: 'DELETE' }),
         tambahWaktu: (memberId, paketIdOrPayload, qty = 1) => {
             if (paketIdOrPayload && typeof paketIdOrPayload === 'object') {
-                return API.request('/api/tambah-waktu', { method: 'POST', body: JSON.stringify(paketIdOrPayload) });
+                return API.request('/api/v1/kasir/member/tambah-waktu', { method: 'POST', body: JSON.stringify(paketIdOrPayload) });
             }
-            return API.request('/api/tambah-waktu', { method: 'POST', body: JSON.stringify({ member_id: memberId, paket_id: paketIdOrPayload, qty }) });
+            return API.request('/api/v1/kasir/member/tambah-waktu', { method: 'POST', body: JSON.stringify({ member_id: memberId, paket_id: paketIdOrPayload, qty }) });
         },
-        refundPaket: (memberId, transaksiId) => API.request('/api/member/refund-paket', {
+        refundPaket: (memberId, transaksiId) => API.request('/api/v1/kasir/member/refund-paket', {
             method: 'POST',
             body: JSON.stringify({ member_id: memberId, transaksi_id: transaksiId })
         }),
@@ -112,12 +112,12 @@ const API = {
             if (params.per_page) q.append('per_page', params.per_page);
 
             const queryString = q.toString();
-            const url = '/api/paket/' + (queryString ? `?${queryString}` : '');
+            const url = '/api/v1/kasir/paket/' + (queryString ? `?${queryString}` : '');
             return API.request(url);
         },
-        create: data => API.request('/api/paket/', { method: 'POST', body: JSON.stringify(data) }),
-        update: (id, data) => API.request(`/api/paket/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: id => API.request(`/api/paket/${id}`, { method: 'DELETE' })
+        create: data => API.request('/api/v1/kasir/paket/', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id, data) => API.request(`/api/v1/kasir/paket/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        delete: id => API.request(`/api/v1/kasir/paket/${id}`, { method: 'DELETE' })
     },
 
     // 🔗 KELOLA PC
@@ -130,56 +130,61 @@ const API = {
             if (params.per_page) q.append('per_page', params.per_page);
 
             const queryString = q.toString();
-            const url = '/api/pc' + (queryString ? `?${queryString}` : '');
+            const url = '/api/v1/kasir/pc/' + (queryString ? `?${queryString}` : '');
             return API.request(url);
         },
-        create: data => API.request('/api/pc', { method: 'POST', body: JSON.stringify(data) }),
-        update: (id, data) => API.request(`/api/pc/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: id => API.request(`/api/pc/${id}`, { method: 'DELETE' }),
-        batch: data => API.request('/api/pc/batch', { method: 'POST', body: JSON.stringify(data) }),
-        wol: (pcIds) => API.request('/api/pc/wol', { method: 'POST', body: JSON.stringify({ pc_ids: pcIds }) }),
-        wolMac: (macAddresses) => API.request('/api/pc/wol', { method: 'POST', body: JSON.stringify({ mac_addresses: macAddresses }) })
+        create: data => API.request('/api/v1/kasir/pc/', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id, data) => API.request(`/api/v1/kasir/pc/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        delete: id => API.request(`/api/v1/kasir/pc/${id}`, { method: 'DELETE' }),
+        batch: data => API.request('/api/v1/kasir/pc/batch', { method: 'POST', body: JSON.stringify(data) }),
+        wol: (pcIds) => API.request('/api/v1/kasir/pc/wol', { method: 'POST', body: JSON.stringify({ pc_ids: pcIds }) }),
+        wolMac: (macAddresses) => API.request('/api/v1/kasir/pc/wol', { method: 'POST', body: JSON.stringify({ mac_addresses: macAddresses }) })
     },
 
     // 🔗 LOGIKA SESI (GUEST & MEMBER)
     sesi: {
-        bukaGuest: (pcKode, paketId, namaGuest) => API.request('/api/sesi/buka-guest', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, paket_id: paketId, nama_guest: namaGuest }) }),
-        bukaMember: (pcKode, username) => API.request('/api/sesi/buka-member', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, username }) }),
+        bukaGuest: (pcKode, paketId, namaGuest) => API.request('/api/v1/kasir/sesi/buka-guest', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, paket_id: paketId, nama_guest: namaGuest }) }),
+        bukaMember: (pcKode, username) => API.request('/api/v1/kasir/sesi/buka-member', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, username }) }),
         tambahWaktu: (sesiId, paketIdOrPayload, qty = 1) => {
             if (paketIdOrPayload && typeof paketIdOrPayload === 'object') {
-                return API.request(`/api/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify(paketIdOrPayload) });
+                return API.request(`/api/v1/kasir/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify(paketIdOrPayload) });
             }
-            return API.request(`/api/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify({ paket_id: paketIdOrPayload, qty }) });
+            return API.request(`/api/v1/kasir/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify({ paket_id: paketIdOrPayload, qty }) });
         },
-        tutup: sesiId => API.request(`/api/sesi/tutup/${sesiId}`, { method: 'POST' }),
-        pindahPC: (sesiId, pcKodeBaru) => API.request(`/api/sesi/pindah-pc/${sesiId}`, { method: 'POST', body: JSON.stringify({ pc_kode_baru: pcKodeBaru }) }),
-        detail: sesiId => API.request(`/api/sesi/sesi/${sesiId}`)
+        tutup: sesiId => API.request(`/api/v1/kasir/sesi/tutup/${sesiId}`, { method: 'POST' }),
+        pindahPC: (sesiId, pcKodeBaru) => API.request(`/api/v1/kasir/sesi/pindah-pc/${sesiId}`, { method: 'POST', body: JSON.stringify({ pc_kode_baru: pcKodeBaru }) }),
+        detail: sesiId => API.request(`/api/v1/kasir/sesi/sesi/${sesiId}`)
     },
 
     // 🔗 LAPORAN & LOG
     report: {
-        harian: () => API.request('/api/report/laporan-harian'),
+        harian: () => API.request('/api/v1/kasir/report/'),
         byTanggal: (tanggal, kasirId = '', page = 1, perPage = 10) => {
-            let url = `/api/report/laporan?tanggal=${tanggal}&page=${page}&per_page=${perPage}`;
+            let url = `/api/v1/kasir/report/laporan/billing?tanggal=${tanggal}&page=${page}&per_page=${perPage}`;
             if (kasirId) url += `&kasir_id=${kasirId}`;
             return API.request(url);
         },
-        tanggalList: () => API.request('/api/report/tanggal'),
-        kasirList: () => API.request('/api/report/kasir-list'),
-        strukMenu: (tMenuId) => API.request(`/api/report/struk/menu/${tMenuId}`),
+        kantinByTanggal: (tanggal, kasirId = '', page = 1, perPage = 12) => {
+            let url = `/api/v1/kasir/report/laporan/kantin?tanggal=${tanggal}&page=${page}&per_page=${perPage}`;
+            if (kasirId) url += `&kasir_id=${kasirId}`;
+            return API.request(url);
+        },
+        tanggalList: () => API.request('/api/v1/kasir/report/tanggal'),
+        kasirList: () => API.request('/api/v1/kasir/report/kasir-list'),
+        strukMenu: (tMenuId) => API.request(`/api/v1/kasir/report/struk/menu/${tMenuId}`),
         logs: (filter = '', limit = 500, kategori = '') => {
             const q = new URLSearchParams();
             if (filter) q.append('filter', filter);
             if (limit) q.append('limit', limit);
             if (kategori) q.append('kategori', kategori);
-            return API.request(`/api/report/log?${q}`);
+            return API.request(`/api/v1/kasir/report/log?${q}`);
         },
-        clearLogs: () => API.request('/api/report/log/clear', { method: 'POST' }),
-        clearTransactions: () => API.request('/api/report/transaksi/clear', { method: 'POST' }),
-        deleteTransaction: (id) => API.request(`/api/report/transaksi/${id}`, { method: 'DELETE' }),
-        deleteByDate: (tanggal) => API.request(`/api/report/transaksi/by-date/${tanggal}`, { method: 'DELETE' }),
+        clearLogs: () => API.request('/api/v1/kasir/report/log/clear', { method: 'POST' }),
+        clearTransactions: () => API.request('/api/v1/kasir/report/transaksi/clear', { method: 'POST' }),
+        deleteTransaction: (id) => API.request(`/api/v1/kasir/report/transaksi/${id}`, { method: 'DELETE' }),
+        deleteByDate: (tanggal) => API.request(`/api/v1/kasir/report/transaksi/by-date/${tanggal}`, { method: 'DELETE' }),
         exportLogsUrl: (filter = '') => {
-            let url = '/api/report/log/export';
+            let url = '/api/v1/kasir/report/log/export';
             if (filter) url += `?filter=${encodeURIComponent(filter)}`;
             return url;
         }
@@ -187,69 +192,69 @@ const API = {
 
     // 🖥️ HARDWARE MONITOR
     monitor: {
-        all: () => API.request('/api/monitor/all'),
-        delete: (id) => API.request(`/api/monitor/${id}`, { method: 'DELETE' })
+        all: () => API.request('/api/v1/public/monitor/all'),
+        delete: (id) => API.request(`/api/v1/public/monitor/${id}`, { method: 'DELETE' })
     },
 
     // ⚡ BLACKOUT (MANUAL)
     blackout: {
-        deteksi: (threshold) => API.request('/api/blackout/deteksi', { method: 'POST', body: JSON.stringify({ threshold_menit: threshold }) }),
-        list: (date) => API.request(`/api/blackout/list${date ? '?date=' + date : ''}`),
-        dates: () => API.request('/api/blackout/dates'),
-        resolveMember: (sesiId) => API.request(`/api/blackout/resolve/member/${sesiId}`, { method: 'POST' }),
-        resolveGuestLanjut: (sesiId, pcBaru) => API.request(`/api/blackout/resolve/guest/lanjut/${sesiId}`, { method: 'POST', body: JSON.stringify({ pc_baru_id: pcBaru }) }),
-        resolveGuestTutup: (sesiId) => API.request(`/api/blackout/resolve/guest/tutup/${sesiId}`, { method: 'POST' }),
-        resolveGuestSama: (sesiId) => API.request(`/api/blackout/resolve/guest/sama/${sesiId}`, { method: 'POST' }),
-        clearResolved: (date) => API.request('/api/blackout/clear', { method: 'POST', body: JSON.stringify({ date }) }),
-        forceAllAndDetect: () => API.request('/api/blackout/force-all-and-detect', { method: 'POST' }),
+        deteksi: (threshold) => API.request('/api/v1/kasir/blackout/deteksi', { method: 'POST', body: JSON.stringify({ threshold_menit: threshold }) }),
+        list: (date) => API.request(`/api/v1/kasir/blackout/list${date ? '?date=' + date : ''}`),
+        dates: () => API.request('/api/v1/kasir/blackout/dates'),
+        resolveMember: (sesiId) => API.request(`/api/v1/kasir/blackout/resolve/member/${sesiId}`, { method: 'POST' }),
+        resolveGuestLanjut: (sesiId, pcBaru) => API.request(`/api/v1/kasir/blackout/resolve/guest/lanjut/${sesiId}`, { method: 'POST', body: JSON.stringify({ pc_baru_id: pcBaru }) }),
+        resolveGuestTutup: (sesiId) => API.request(`/api/v1/kasir/blackout/resolve/guest/tutup/${sesiId}`, { method: 'POST' }),
+        resolveGuestSama: (sesiId) => API.request(`/api/v1/kasir/blackout/resolve/guest/sama/${sesiId}`, { method: 'POST' }),
+        clearResolved: (date) => API.request('/api/v1/kasir/blackout/clear', { method: 'POST', body: JSON.stringify({ date }) }),
+        forceAllAndDetect: () => API.request('/api/v1/kasir/blackout/force-all-and-detect', { method: 'POST' }),
     },
 
     settings: {
-        getAll: () => API.request('/api/settings'),
-        updateAutoShutdown: (timerSeconds) => API.request('/api/settings/auto-shutdown', {
+        getAll: () => API.request('/api/v1/kasir/settings/'),
+        updateAutoShutdown: (timerSeconds) => API.request('/api/v1/kasir/settings/auto-shutdown', {
             method: 'PUT',
             body: JSON.stringify({ timer_seconds: timerSeconds })
         }),
-        manualBackup: () => API.request('/api/settings/backup/manual', {
+        manualBackup: () => API.request('/api/v1/kasir/settings/backup/manual', {
             method: 'POST'
         }),
     },
 
     // 🔗 KANTIN / POS F&B
     menu: {
-        list: () => API.request('/api/menu'),
-        create: (formData) => API.request('/api/menu', { method: 'POST', body: formData }),
-        update: (id, formData) => API.request(`/api/menu/${id}`, { method: 'PUT', body: formData }),
-        delete: (id) => API.request(`/api/menu/${id}`, { method: 'DELETE' }),
-        deletePermanent: (id) => API.request(`/api/menu/${id}/permanent`, { method: 'DELETE' }),
-        checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0) => API.request('/api/menu/checkout', {
+        list: () => API.request('/api/v1/kasir/menu/'),
+        create: (formData) => API.request('/api/v1/kasir/menu/', { method: 'POST', body: formData }),
+        update: (id, formData) => API.request(`/api/v1/kasir/menu/${id}`, { method: 'PUT', body: formData }),
+        delete: (id) => API.request(`/api/v1/kasir/menu/${id}`, { method: 'DELETE' }),
+        deletePermanent: (id) => API.request(`/api/v1/kasir/menu/${id}/permanent`, { method: 'DELETE' }),
+        checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0) => API.request('/api/v1/kasir/menu/checkout', {
             method: 'POST',
             body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode, tunai, kembalian })
         }),
-        transaksi: () => API.request('/api/menu/transaksi')
+        transaksi: () => API.request('/api/v1/kasir/menu/transaksi')
     }
 
 };
 
 // Session polling — jalan langsung, gak perlu nunggu DOM
-(function() {
-    var sessionInterval = setInterval(function() {
+(function () {
+    var sessionInterval = setInterval(function () {
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', '/api/kasir/check', true);
+        xhr.open('GET', '/api/v1/kasir/auth/check', true);
         xhr.withCredentials = true;
-        xhr.onload = function() {
+        xhr.onload = function () {
             if (xhr.status === 200) {
                 try {
                     var data = JSON.parse(xhr.responseText);
                     if (!data.logged_in) {
                         window.location.href = '/kasir/login';
                     }
-                } catch(e) {
+                } catch (e) {
                     window.location.href = '/kasir/login';
                 }
             }
         };
-        xhr.onerror = function() {
+        xhr.onerror = function () {
             window.location.href = '/kasir/login';
         };
         xhr.send();

@@ -7,9 +7,9 @@ from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.services import BackupService
 from app.utils.logger import write_log
 
-backup_bp = Blueprint("backup", __name__)
+backup_api_bp = Blueprint("backup", __name__)
 
-@backup_bp.route("/api/backup/trigger", methods=["POST"])
+@backup_api_bp.route("/trigger", methods=["POST"])
 @login_required
 @admin_required
 def trigger_backup():
@@ -35,7 +35,7 @@ def trigger_backup():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@backup_bp.route("/api/backup/test-connection", methods=["POST"])
+@backup_api_bp.route("/test-connection", methods=["POST"])
 @login_required
 @admin_required
 def test_connection():
@@ -94,7 +94,7 @@ def test_connection():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@backup_bp.route("/api/backup/list", methods=["GET"])
+@backup_api_bp.route("/list", methods=["GET"])
 @login_required
 @admin_required
 def list_backups():
@@ -122,7 +122,7 @@ def list_backups():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@backup_bp.route("/api/backup/download/<filename>", methods=["GET"])
+@backup_api_bp.route("/download/<filename>", methods=["GET"])
 @login_required
 @admin_required
 def download_backup(filename):
@@ -150,7 +150,7 @@ def download_backup(filename):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@backup_bp.route("/api/backup/delete/<filename>", methods=["DELETE"])
+@backup_api_bp.route("/delete/<filename>", methods=["DELETE"])
 @login_required
 @admin_required
 def delete_backup(filename):

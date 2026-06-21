@@ -9,7 +9,7 @@ const PluginsModule = {
 
     fetchPlugins: async function() {
         try {
-            const data = await API.request('/api/settings/plugins');
+            const data = await API.request('/api/v1/kasir/settings/plugins/');
             
             if (data.success) {
                 this.renderPlugins(data.plugins);
@@ -88,7 +88,7 @@ const PluginsModule = {
 
     togglePlugin: async function(pluginId, enabled) {
         try {
-            const data = await API.request('/api/settings/plugins/toggle', {
+            const data = await API.request('/api/v1/kasir/settings/plugins/toggle', {
                 method: 'POST',
                 body: JSON.stringify({ plugin_id: pluginId, enabled: enabled })
             });
@@ -175,7 +175,7 @@ const PluginsModule = {
         formData.append('file', file);
         
         try {
-            const data = await API.request('/api/settings/plugins/upload', {
+            const data = await API.request('/api/v1/kasir/settings/plugins/upload', {
                 method: 'POST',
                 body: formData
             });
@@ -201,7 +201,7 @@ const PluginsModule = {
         if (!confirm('Peringatan: Tindakan ini akan merestart backend TMBilling. Apakah Anda yakin?')) return;
         
         try {
-            const data = await API.request('/api/settings/scheduler/restart', {
+            const data = await API.request('/api/v1/kasir/settings/scheduler/restart', {
                 method: 'POST'
             });
             

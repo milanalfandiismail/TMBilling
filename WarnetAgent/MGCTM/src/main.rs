@@ -261,7 +261,7 @@ fn load_config() -> (String, String, String, String) {
 // Sinkronisasi token dinamis dari server Flask ke Folder Temp lokal
 fn sync_uninstall_token() {
     let (server_url, api_key, current_em_user, current_em_token) = load_config();
-    let target_endpoint = format!("{}/api/settings/uninstall-token/client", server_url.trim_end_matches('/'));
+    let target_endpoint = format!("{}/api/v1/kasir/settings/uninstall-token/client", server_url.trim_end_matches('/'));
 
     let resp = ureq::get(&target_endpoint)
         .set("X-Client-Key", &api_key)

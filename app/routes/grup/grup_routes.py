@@ -10,7 +10,7 @@ from flask import Blueprint, request, jsonify, session
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.services import GrupService
 
-grup_bp = Blueprint("grup", __name__)
+grup_api_bp = Blueprint("grup", __name__)
 
 
 # =========================================================================
@@ -18,7 +18,7 @@ grup_bp = Blueprint("grup", __name__)
 # =========================================================================
 # Fokus: Menampilkan daftar grup untuk kebutuhan dropdown atau tabel manajemen.
 
-@grup_bp.route("/", methods=["GET"])
+@grup_api_bp.route("/", methods=["GET"])
 @login_required
 def list_grup():
     """Ambil semua daftar grup yang tersedia di sistem."""
@@ -43,7 +43,7 @@ def list_grup():
 # =========================================================================
 # Fokus: Membuat grup baru dan menghapus grup dengan validasi integritas.
 
-@grup_bp.route("/", methods=["POST"])
+@grup_api_bp.route("/", methods=["POST"])
 @login_required
 @admin_required
 def tambah_grup():
@@ -61,7 +61,7 @@ def tambah_grup():
         return jsonify({"error": str(e)}), 500
 
 
-@grup_bp.route("/<int:grup_id>", methods=["DELETE"])
+@grup_api_bp.route("/<int:grup_id>", methods=["DELETE"])
 @login_required
 @admin_required
 def hapus_grup(grup_id):

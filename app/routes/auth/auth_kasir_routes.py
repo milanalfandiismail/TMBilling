@@ -11,7 +11,7 @@ from app.services import AuthKasirService
 from functools import wraps
 from app.utils.logger import write_log
 
-auth_kasir_bp = Blueprint("auth_kasir", __name__)
+auth_kasir_api_bp = Blueprint("auth_kasir", __name__)
 
 
 # =========================================================================
@@ -78,7 +78,7 @@ def login_required_html(f):
 # =========================================================================
 # Fokus: Menangani alur masuk/keluar user dan pengelolaan session Flask.
 
-@auth_kasir_bp.route("/login", methods=["POST"])
+@auth_kasir_api_bp.route("/login", methods=["POST"])
 def login():
     """Login kasir/admin dan inisialisasi session."""
     data = request.get_json() or {}
@@ -135,7 +135,7 @@ def login():
     except Exception as e:
         return jsonify({"error": f"Terjadi kesalahan: {str(e)}"}), 500
 
-@auth_kasir_bp.route("/logout", methods=["POST"])
+@auth_kasir_api_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
     """Logout kasir dan membersihkan session."""
@@ -161,7 +161,7 @@ def logout():
 # =========================================================================
 # Fokus: Mengecek status session aktif dan validasi admin khusus (Client side).
 
-@auth_kasir_bp.route("/check", methods=["GET"])
+@auth_kasir_api_bp.route("/check", methods=["GET"])
 def check_session():
     """Cek status login untuk kebutuhan UI Frontend."""
     kasir_id = session.get("kasir_id")
@@ -186,7 +186,7 @@ def check_session():
         session.pop("kasir_nama", None)
     return jsonify(result), 200
 
-@auth_kasir_bp.route("/admin-check", methods=["POST"])
+@auth_kasir_api_bp.route("/admin-check", methods=["POST"])
 def admin_check():
     """Endpoint khusus validasi admin (Ctrl+Q Bypass di client PC)."""
     data = request.get_json() or {}

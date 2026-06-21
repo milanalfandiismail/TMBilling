@@ -192,7 +192,7 @@ fn load_config() -> (String, String, String, String) {
 // Mengambil token uninstall aktif langsung dari Flask API secara real-time
 fn fetch_uninstall_token_from_api() -> Result<String, String> {
     let (server_url, api_key, _em_user, _em_token) = load_config();
-    let target_endpoint = format!("{}/api/settings/uninstall-token/client", server_url.trim_end_matches('/'));
+    let target_endpoint = format!("{}/api/v1/kasir/settings/uninstall-token/client", server_url.trim_end_matches('/'));
 
     let resp = ureq::get(&target_endpoint)
         .set("X-Client-Key", &api_key)

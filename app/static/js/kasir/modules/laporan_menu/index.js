@@ -1,6 +1,9 @@
 const LaporanMenu = {
     currentDate: null,
     currentKasirId: '',
+    currentPage: 1,
+    itemsPerPage: 12,
+    allData: null,
 
     async load() {
         await this.loadKasirList();
@@ -69,24 +72,31 @@ const LaporanMenu = {
         if (!tanggal) return;
         this.currentDate = tanggal;
         this.currentKasirId = kasirId;
+        this.currentPage = 1;
         
+        await this.fetchData();
+    },
+
+    async fetchData() {
         const area = document.getElementById('laporan-menu-area');
         if (!area) return;
 
         area.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
         try {
-            const data = await API.report.byTanggal(tanggal, kasirId, 1, 100);
-            this.render(data);
+            const data = await API.report.kantinByTanggal(this.currentDate, this.currentKasirId, this.currentPage, this.itemsPerPage);
+            this.allData = data;
+            this.render();
         } catch (err) {
             area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:text-base">Gagal memuat data laporan menu</div>';
         }
     },
 
-    render(data) {
+    render() {
         const area = document.getElementById('laporan-menu-area');
         if (!area) return;
 
+        const data = this.allData;
         if (!data || data.error) {
             area.innerHTML = '<div class="text-center py-10 text-neutral-500 text-xs lg:text-base">Tidak ada data</div>';
             return;
@@ -105,6 +115,8 @@ const LaporanMenu = {
 
         // Table transaksi Kantin / POS F&B
         const menuList = data.history_menu || [];
+        const totalPages = data.pages || 1;
+
         if (menuList.length > 0) {
             html += `
                 <div class="overflow-x-hidden w-full">
@@ -170,11 +182,25 @@ const LaporanMenu = {
                         </tbody>
                     </table>
                 </div>`;
+
+            if (totalPages > 1) {
+                html += `
+                    <div class="flex items-center justify-center gap-2 mt-4 mb-6">
+                        <button onclick="LaporanMenu.setPage(${this.currentPage - 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs lg:text-base font-bold rounded transition-colors ${this.currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage <= 1 ? 'disabled' : ''}>&larr;</button>
+                        <span class="px-4 py-1.5 text-xs lg:text-base text-neutral-200 font-mono">${this.currentPage} / ${totalPages}</span>
+                        <button onclick="LaporanMenu.setPage(${this.currentPage + 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs lg:text-base font-bold rounded transition-colors ${this.currentPage >= totalPages ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage >= totalPages ? 'disabled' : ''}>&rarr;</button>
+                    </div>`;
+            }
         } else {
             html += '<div class="text-center py-10 text-neutral-500 text-xs lg:text-base">Tidak ada transaksi F&B pada tanggal ini</div>';
         }
 
         area.innerHTML = html;
+    },
+
+    setPage(page) {
+        this.currentPage = page;
+        this.fetchData();
     },
 
     filter() {
@@ -204,7 +230,7 @@ const LaporanMenu = {
             Toast.error("Pilih tanggal terlebih dahulu");
             return;
         }
-        window.location.href = `/api/report/export/kantin?tanggal=${tanggal}&kasir_id=${kasirId}`;
+        window.location.href = `/api/v1/kasir/report/export/kantin?tanggal=${tanggal}&kasir_id=${kasirId}`;
     }
 };
 

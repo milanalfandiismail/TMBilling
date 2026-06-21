@@ -11,7 +11,7 @@ const MigrationModule = {
 
     async load() {
         try {
-            const data = await API.request('/api/settings/migration/status');
+            const data = await API.request('/api/v1/kasir/settings/migration/status');
             if (data.success) {
                 this._status = data;
                 this.renderStatus(data);
@@ -137,7 +137,7 @@ const MigrationModule = {
             const formData = new FormData();
             formData.append('update_file', this._selectedFile);
 
-            const resp = await fetch('/api/settings/migration/upload', {
+            const resp = await fetch('/api/v1/kasir/settings/migration/upload', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''

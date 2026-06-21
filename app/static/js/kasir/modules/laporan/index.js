@@ -190,7 +190,7 @@ const Laporan = {
 
     async printStruk(tId) {
         try {
-            const res = await API.request(`/api/report/struk/${tId}`);
+            const res = await API.request(`/api/v1/kasir/report/struk/${tId}`);
             if (res) {
                 StrukPreview.currentData = res;
                 StrukPreview.printPreview();
@@ -209,7 +209,7 @@ const Laporan = {
             Toast.error("Pilih tanggal terlebih dahulu");
             return;
         }
-        window.location.href = `/api/report/export/billing?tanggal=${tanggal}&kasir_id=${kasirId}`;
+        window.location.href = `/api/v1/kasir/report/export/billing?tanggal=${tanggal}&kasir_id=${kasirId}`;
     },
 
     exportPnLPDF() {
@@ -218,6 +218,6 @@ const Laporan = {
             Toast.error("Pilih tanggal terlebih dahulu");
             return;
         }
-        window.location.href = `/api/report/export/pnl?tanggal=${tanggal}`;
+        window.location.href = `/api/v1/kasir/report/export/pnl?tanggal=${tanggal}`;
     }
 };

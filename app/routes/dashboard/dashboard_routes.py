@@ -14,6 +14,7 @@ from app.services.owner.analytics_service import OwnerAnalyticsService
 from app.utils.timezone_utils import get_tz_short_name
 
 dashboard_bp = Blueprint("dashboard", __name__)
+dashboard_api_bp = Blueprint("dashboard_api", __name__)
 
 
 # =========================================================================
@@ -53,7 +54,7 @@ def login_page():
 # =========================================================================
 # Fokus: Menyediakan data real-time untuk diolah oleh JavaScript di frontend.
 
-@dashboard_bp.route("/api/pc", methods=["GET"])
+@dashboard_api_bp.route("/pc", methods=["GET"])
 @login_required
 def list_pc_api():
     """Endpoint API untuk mengambil status semua PC (Online, Sesi, Grup)."""
@@ -65,7 +66,7 @@ def list_pc_api():
         return jsonify({"error": str(e)}), 500
 
 
-@dashboard_bp.route("/api/analytics", methods=["GET"])
+@dashboard_api_bp.route("/analytics", methods=["GET"])
 @login_required
 @admin_required
 def analytics_data():

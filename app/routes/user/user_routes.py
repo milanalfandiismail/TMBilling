@@ -10,10 +10,10 @@ from flask import Blueprint, request, jsonify, session
 from app.services import UserService
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 
-user_bp = Blueprint("user", __name__)
+user_api_bp = Blueprint("user", __name__)
 
 
-@user_bp.route("/", methods=["GET"])
+@user_api_bp.route("/", methods=["GET"])
 @login_required
 @admin_required
 def get_all_users():
@@ -25,7 +25,7 @@ def get_all_users():
         return jsonify({"error": str(e)}), 500
 
 
-@user_bp.route("/<int:user_id>", methods=["GET"])
+@user_api_bp.route("/<int:user_id>", methods=["GET"])
 @login_required
 @admin_required
 def get_user(user_id):
@@ -39,7 +39,7 @@ def get_user(user_id):
         return jsonify({"error": str(e)}), 500
 
 
-@user_bp.route("/", methods=["POST"])
+@user_api_bp.route("/", methods=["POST"])
 @login_required
 @admin_required
 def create_user():
@@ -55,7 +55,7 @@ def create_user():
         return jsonify({"error": f"Internal Error: {str(e)}"}), 500
 
 
-@user_bp.route("/<int:user_id>", methods=["PUT"])
+@user_api_bp.route("/<int:user_id>", methods=["PUT"])
 @login_required
 @admin_required
 def update_user(user_id):
@@ -71,7 +71,7 @@ def update_user(user_id):
         return jsonify({"error": f"Internal Error: {str(e)}"}), 500
 
 
-@user_bp.route("/<int:user_id>", methods=["DELETE"])
+@user_api_bp.route("/<int:user_id>", methods=["DELETE"])
 @login_required
 @admin_required
 def delete_user(user_id):

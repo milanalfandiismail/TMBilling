@@ -41,9 +41,10 @@ def check_ip_whitelist():
     # STEP 1: Auth exemption — login page, login endpoint, check, logout
     # =========================================================================
     if request.path in ('/kasir/login',) \
-       or request.path.startswith('/api/kasir/login') \
-       or request.path.startswith('/api/kasir/check') \
-       or request.path.startswith('/api/kasir/logout'):
+       or request.path.startswith('/api/v1/kasir/auth/login') \
+       or request.path.startswith('/api/v1/kasir/auth/check') \
+       or request.path.startswith('/api/v1/kasir/auth/logout') \
+       or request.path == '/api/v1/kasir/settings/uninstall-token/client':
         return None
 
     # =========================================================================

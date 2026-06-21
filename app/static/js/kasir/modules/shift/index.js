@@ -6,7 +6,7 @@ const Shift = {
 
     async load() {
         try {
-            const res = await fetch('/api/shift/active', { credentials: 'include' });
+            const res = await fetch('/api/v1/kasir/shift/active', { credentials: 'include' });
             const data = await res.json();
             if (data.success && data.shift) {
                 this.activeShift = data.shift;
@@ -98,7 +98,7 @@ const Shift = {
         }
 
         try {
-            const res = await fetch('/api/shift/start', {
+            const res = await fetch('/api/v1/kasir/shift/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -221,7 +221,7 @@ const Shift = {
         }
 
         try {
-            const res = await fetch('/api/shift/end', {
+            const res = await fetch('/api/v1/kasir/shift/end', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',

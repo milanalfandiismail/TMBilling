@@ -10,7 +10,7 @@ from flask import Blueprint, jsonify, request, session
 from app.routes.auth.auth_kasir_routes import login_required
 from app.services import BlackoutService
 
-blackout_bp = Blueprint("blackout", __name__)
+blackout_api_bp = Blueprint("blackout", __name__)
 
 
 # =========================================================================
@@ -18,7 +18,7 @@ blackout_bp = Blueprint("blackout", __name__)
 # =========================================================================
 # Fokus: Mencari sesi yang 'tewas' dan melihat daftar audit blackout.
 
-@blackout_bp.route("/deteksi", methods=["POST"])
+@blackout_api_bp.route("/deteksi", methods=["POST"])
 @login_required
 def deteksi():
     """Deteksi sesi aktif yang macet (last_sync > threshold)."""
@@ -34,7 +34,7 @@ def deteksi():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@blackout_bp.route("/list", methods=["GET"])
+@blackout_api_bp.route("/list", methods=["GET"])
 @login_required
 def list_audit():
     """Daftar sesi suspect blackout berdasarkan tanggal."""
@@ -48,7 +48,7 @@ def list_audit():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@blackout_bp.route("/dates", methods=["GET"])
+@blackout_api_bp.route("/dates", methods=["GET"])
 @login_required
 def get_dates():
     """Daftar tanggal unik yang memiliki catatan audit blackout."""
@@ -64,7 +64,7 @@ def get_dates():
 # =========================================================================
 # Fokus: Menyelesaikan status blackout baik untuk Member maupun Guest.
 
-@blackout_bp.route("/resolve/member/<int:sesi_id>", methods=["POST"])
+@blackout_api_bp.route("/resolve/member/<int:sesi_id>", methods=["POST"])
 @login_required
 def resolve_member(sesi_id):
     """Resolve member: Kembalikan saldo menit ke akun."""
@@ -80,7 +80,7 @@ def resolve_member(sesi_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@blackout_bp.route("/resolve/guest/sama/<int:sesi_id>", methods=["POST"])
+@blackout_api_bp.route("/resolve/guest/sama/<int:sesi_id>", methods=["POST"])
 @login_required
 def resolve_guest_sama(sesi_id):
     """Resolve guest: Lanjutkan di PC yang sama."""
@@ -96,7 +96,7 @@ def resolve_guest_sama(sesi_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@blackout_bp.route("/resolve/guest/lanjut/<int:sesi_id>", methods=["POST"])
+@blackout_api_bp.route("/resolve/guest/lanjut/<int:sesi_id>", methods=["POST"])
 @login_required
 def resolve_guest_lanjut(sesi_id):
     """Resolve guest: Pindahkan ke PC lain yang satu grup zona."""
@@ -117,7 +117,7 @@ def resolve_guest_lanjut(sesi_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@blackout_bp.route("/resolve/guest/tutup/<int:sesi_id>", methods=["POST"])
+@blackout_api_bp.route("/resolve/guest/tutup/<int:sesi_id>", methods=["POST"])
 @login_required
 def resolve_guest_tutup(sesi_id):
     """Resolve guest/member: Tutup sesi tanpa kompensasi."""
@@ -139,7 +139,7 @@ def resolve_guest_tutup(sesi_id):
 # =========================================================================
 # Fokus: Pembersihan data audit dan penutupan massal saat server mati.
 
-@blackout_bp.route("/force-all-and-detect", methods=["POST"])
+@blackout_api_bp.route("/force-all-and-detect", methods=["POST"])
 @login_required
 def force_all_and_detect():
     """Tutup paksa semua sesi aktif dan masukkan ke daftar blackout."""
@@ -153,7 +153,7 @@ def force_all_and_detect():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@blackout_bp.route("/clear", methods=["POST"])
+@blackout_api_bp.route("/clear", methods=["POST"])
 @login_required
 def clear_audit():
     """Hapus history audit blackout yang sudah diselesaikan (Resolved)."""

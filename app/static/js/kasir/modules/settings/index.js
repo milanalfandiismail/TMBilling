@@ -115,7 +115,7 @@ const Settings = {
     async saveUninstallToken() {
         const val = document.getElementById('uninstall-token-input').value;
         try {
-            await API.request('/api/settings/uninstall_token', {
+            await API.request('/api/v1/kasir/settings/uninstall_token', {
                 method: 'PUT',
                 body: JSON.stringify({ value: val })
             });
@@ -132,7 +132,7 @@ const Settings = {
             return;
         }
         try {
-            await API.request('/api/settings/apikey', {
+            await API.request('/api/v1/kasir/settings/apikey', {
                 method: 'PUT',
                 body: JSON.stringify({ value: val })
             });
@@ -145,7 +145,7 @@ const Settings = {
     async saveBackupToggle(key, el) {
         try {
             const val = el.checked ? 'true' : 'false';
-            await API.request(`/api/settings/${key}`, {
+            await API.request(`/api/v1/kasir/settings/${key}`, {
                 method: 'PUT',
                 body: JSON.stringify({ value: val })
             });
@@ -176,7 +176,7 @@ const Settings = {
         Toast.success('Menyimpan konfigurasi...');
         try {
             for (const key of Object.keys(configs)) {
-                await API.request(`/api/settings/${key}`, {
+                await API.request(`/api/v1/kasir/settings/${key}`, {
                     method: 'PUT',
                     body: JSON.stringify({ value: configs[key] })
                 });
@@ -206,7 +206,7 @@ const Settings = {
 
         Toast.success(`Menguji koneksi ${provider.toUpperCase()}...`);
         try {
-            const res = await API.request('/api/backup/test-connection', {
+            const res = await API.request('/api/v1/kasir/backup/test-connection', {
                 method: 'POST',
                 body: JSON.stringify({ provider, ...payload })
             });
@@ -223,7 +223,7 @@ const Settings = {
     async triggerBackupNow() {
         Toast.success('Mengeksekusi backup cloud & lokal...');
         try {
-            const res = await API.request('/api/backup/trigger', { method: 'POST' });
+            const res = await API.request('/api/v1/kasir/backup/trigger', { method: 'POST' });
             if (res.success) {
                 Toast.success('Backup berhasil diselesaikan!');
                 this.loadBackupFiles();
@@ -238,7 +238,7 @@ const Settings = {
         if (!tbody) return;
 
         try {
-            const res = await API.request('/api/backup/list');
+            const res = await API.request('/api/v1/kasir/backup/list');
             if (res.success) {
                 if (res.backups.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-neutral-500">Tidak ada berkas backup di server.</td></tr>`;
@@ -263,7 +263,7 @@ const Settings = {
     },
 
     downloadBackup(filename) {
-        window.location.href = `/api/backup/download/${filename}`;
+        window.location.href = `/api/v1/kasir/backup/download/${filename}`;
     },
 
     async deleteBackup(filename) {
@@ -271,7 +271,7 @@ const Settings = {
             return;
         }
         try {
-            const res = await API.request(`/api/backup/delete/${filename}`, { method: 'DELETE' });
+            const res = await API.request(`/api/v1/kasir/backup/delete/${filename}`, { method: 'DELETE' });
             if (res.success) {
                 Toast.success(res.message);
                 this.loadBackupFiles();
@@ -336,7 +336,7 @@ const Settings = {
     async saveTimezone() {
         const val = document.getElementById('timezone-select').value;
         try {
-            await API.request('/api/settings/timezone', {
+            await API.request('/api/v1/kasir/settings/timezone', {
                 method: 'PUT',
                 body: JSON.stringify({ value: val })
             });
@@ -372,7 +372,7 @@ const Settings = {
 
         Toast.success('Menyimpan konfigurasi scheduler...');
         try {
-            const res = await API.request('/api/settings/scheduler', {
+            const res = await API.request('/api/v1/kasir/settings/scheduler', {
                 method: 'PUT',
                 body: JSON.stringify({
                     backup_value: parseInt(backupValue),
@@ -398,7 +398,7 @@ const Settings = {
 
                 // Trigger restart endpoint — error koneksi diharapkan karena server mati
                 try {
-                    await API.request('/api/settings/scheduler/restart', { method: 'POST' });
+                    await API.request('/api/v1/kasir/settings/scheduler/restart', { method: 'POST' });
                 } catch (_) {
                     // Expected — server restart memutus koneksi
                 }
@@ -423,31 +423,31 @@ const Settings = {
         Toast.success('Menyimpan pengaturan Kiosk...');
         try {
             // 1. Simpan judul
-            await API.request('/api/settings/warnet_title', {
+            await API.request('/api/v1/kasir/settings/warnet_title', {
                 method: 'PUT',
                 body: JSON.stringify({ value: title })
             });
 
             // 2. Simpan alamat warnet
-            await API.request('/api/settings/warnet_address', {
+            await API.request('/api/v1/kasir/settings/warnet_address', {
                 method: 'PUT',
                 body: JSON.stringify({ value: address })
             });
 
             // 3. Simpan nomor telepon
-            await API.request('/api/settings/warnet_phone', {
+            await API.request('/api/v1/kasir/settings/warnet_phone', {
                 method: 'PUT',
                 body: JSON.stringify({ value: phone })
             });
 
             // 4. Simpan pesan kaki struk
-            await API.request('/api/settings/warnet_footer', {
+            await API.request('/api/v1/kasir/settings/warnet_footer', {
                 method: 'PUT',
                 body: JSON.stringify({ value: footer })
             });
 
             // 5. Simpan pengumuman
-            await API.request('/api/settings/warnet_announcement', {
+            await API.request('/api/v1/kasir/settings/warnet_announcement', {
                 method: 'PUT',
                 body: JSON.stringify({ value: announcement })
             });
@@ -457,7 +457,7 @@ const Settings = {
                 const formData = new FormData();
                 formData.append('qris_image', qrisFileInput.files[0]);
                 
-                const uploadRes = await API.request('/api/settings/qris', {
+                const uploadRes = await API.request('/api/v1/kasir/settings/qris', {
                     method: 'POST',
                     body: formData
                 });
@@ -628,7 +628,7 @@ const Settings = {
 
     async _loadWhitelistStatus() {
         try {
-            const data = await this._wlFetch('GET', '/api/settings/ip-whitelist/status');
+            const data = await this._wlFetch('GET', '/api/v1/kasir/settings/ip-whitelist/status');
             const toggle = document.getElementById('wlToggle');
             if (toggle) toggle.checked = data.enabled;
             document.getElementById('wlUrlDisplay').textContent = data.full_url || '-';
@@ -652,7 +652,7 @@ const Settings = {
 
     async _wlRefreshList() {
         try {
-            const data = await this._wlFetch('GET', '/api/settings/ip-whitelist');
+            const data = await this._wlFetch('GET', '/api/v1/kasir/settings/ip-whitelist');
             const entries = data.entries || [];
             document.getElementById('wlCount').textContent = entries.length;
             const tbody = document.getElementById('wlTableBody');
@@ -676,7 +676,7 @@ const Settings = {
         if (!ip) { alert('Masukkan IP address.'); return; }
         const label = document.getElementById('wlNewLabel').value.trim();
         try {
-            await this._wlFetch('POST', '/api/settings/ip-whitelist', { ip, label });
+            await this._wlFetch('POST', '/api/v1/kasir/settings/ip-whitelist', { ip, label });
             document.getElementById('wlNewIp').value = '';
             document.getElementById('wlNewLabel').value = '';
             await this._wlRefreshList();
@@ -685,17 +685,17 @@ const Settings = {
 
     async _wlRemove(ip) {
         if (!confirm(`Hapus ${ip}?`)) return;
-        try { await this._wlFetch('DELETE', `/api/settings/ip-whitelist/${ip}`); await this._wlRefreshList(); } catch (e) {}
+        try { await this._wlFetch('DELETE', `/api/v1/kasir/settings/ip-whitelist/${ip}`); await this._wlRefreshList(); } catch (e) {}
     },
 
     async _wlToggle(enabled) {
-        try { await this._wlFetch('POST', '/api/settings/ip-whitelist/toggle', { enabled }); } catch (e) { document.getElementById('wlToggle').checked = !enabled; }
+        try { await this._wlFetch('POST', '/api/v1/kasir/settings/ip-whitelist/toggle', { enabled }); } catch (e) { document.getElementById('wlToggle').checked = !enabled; }
     },
 
     async _wlRegenerate() {
         if (!confirm('Regenerate token? Token lama akan invalidate semua sesi yang sedang aktif.')) return;
         try {
-            const data = await this._wlFetch('POST', '/api/settings/ip-whitelist/regenerate-token');
+            const data = await this._wlFetch('POST', '/api/v1/kasir/settings/ip-whitelist/regenerate-token');
             alert('Token baru: ' + data.token);
             await this._loadWhitelistStatus();
         } catch (e) {}
@@ -703,7 +703,7 @@ const Settings = {
 
     async _wlSavePublicUrl() {
         const url = document.getElementById('wlPublicUrl').value.trim();
-        try { await this._wlFetch('POST', '/api/settings/app-public-url', { url }); await this._loadWhitelistStatus(); } catch (e) {}
+        try { await this._wlFetch('POST', '/api/v1/kasir/settings/app-public-url', { url }); await this._loadWhitelistStatus(); } catch (e) {}
     },
 
     _wlCopyUrl() {

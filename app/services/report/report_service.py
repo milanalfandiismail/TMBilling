@@ -69,8 +69,52 @@ class ReportService:
             pagination = TransaksiRepository.get_history_nota_paginated(tanggal, page, per_page, kasir_id)
             history_struk = pagination.items
 
-            # Ambil seluruh history transaksi menu/F&B pada hari tersebut
-            history_menu_raw = MenuRepository.get_transactions_by_date(tanggal, kasir_id)
+            return {
+                "status": "success",
+                "tanggal": tanggal.isoformat(),
+                # Pagination Info
+                "page": pagination.page,
+                "pages": pagination.pages,
+                "total": pagination.total,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+                # Data Card Atas
+                "total_pendapatan": total_pendapatan_gabungan,
+                "total_pendapatan_billing": total_pendapatan_billing,
+                "total_pendapatan_menu": total_pendapatan_menu,
+                "total_refund": total_refund,
+                "total_sesi": total_guest + total_member, # Global sesi count
+                # Statistik Per Tipe
+                "total_guest": total_guest,
+                "total_member": total_member,
+                # Pendapatan Per Tipe (Logic Mapping Baru)
+                "pendapatan_guest": ReportService.get_pendapatan_kategori(tanggal, 'guest', kasir_id),
+                "pendapatan_member": ReportService.get_pendapatan_kategori(tanggal, 'member', kasir_id),
+                # Footer & Histori
+                "sesi_aktif": len(SesiRepository.get_all_aktif()),
+                "history_struk": ReportService._format_history_struk(history_struk)
+            }
+        except Exception as e:
+            raise Exception(f"Gagal hitung laporan: {str(e)}")
+
+    @staticmethod
+    def get_laporan_kantin_by_tanggal(tanggal_str=None, kasir_id=None, page=1, per_page=12):
+        """Laporan khusus kantin berdasarkan filter tanggal dengan pagination."""
+        try:
+            if tanggal_str:
+                tanggal = datetime.strptime(tanggal_str, "%Y-%m-%d").date()
+            else:
+                tanggal = now_local().date()
+
+            from app.repositories import MenuRepository
+            
+            # Ambil total pendapatan F&B untuk tanggal tersebut
+            total_pendapatan_menu = MenuRepository.get_total_pemasukan_by_date(tanggal, kasir_id)
+
+            # History transaksi kantin dengan pagination
+            pagination = MenuRepository.get_transactions_by_date_paginated(tanggal, page, per_page, kasir_id)
+            history_menu_raw = pagination.items
+
             history_menu = [
                 {
                     "id": tm.id,
@@ -95,25 +139,12 @@ class ReportService:
                 "total": pagination.total,
                 "has_next": pagination.has_next,
                 "has_prev": pagination.has_prev,
-                # Data Card Atas
-                "total_pendapatan": total_pendapatan_gabungan,
-                "total_pendapatan_billing": total_pendapatan_billing,
+                # Data Kantin
                 "total_pendapatan_menu": total_pendapatan_menu,
-                "total_refund": total_refund,
-                "total_sesi": total_guest + total_member, # Global sesi count
-                # Statistik Per Tipe
-                "total_guest": total_guest,
-                "total_member": total_member,
-                # Pendapatan Per Tipe (Logic Mapping Baru)
-                "pendapatan_guest": ReportService.get_pendapatan_kategori(tanggal, 'guest', kasir_id),
-                "pendapatan_member": ReportService.get_pendapatan_kategori(tanggal, 'member', kasir_id),
-                # Footer & Histori
-                "sesi_aktif": len(SesiRepository.get_all_aktif()),
-                "history_struk": ReportService._format_history_struk(history_struk),
                 "history_menu": history_menu
             }
         except Exception as e:
-            raise Exception(f"Gagal hitung laporan: {str(e)}")
+            raise Exception(f"Gagal hitung laporan kantin: {str(e)}")
 
     @staticmethod
     def get_tanggal_list():

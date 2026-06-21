@@ -260,7 +260,7 @@ const MapView = {
             // Update lastData cache supaya re-render instan
             var pc = (window.Dashboard.lastData&&window.Dashboard.lastData.pc_list||[]).find(function(p){return p.id===pcId;});
             if (pc) { pc.pos_x = gx; pc.pos_y = gy; }
-            ps.push(API.request('/api/pc/'+pcId+'/position',{method:'PUT',body:JSON.stringify({pos_x:gx,pos_y:gy})}));
+            ps.push(API.request('/api/v1/kasir/pc/'+pcId+'/position',{method:'PUT',body:JSON.stringify({pos_x:gx,pos_y:gy})}));
         });
 
         // Re-render langsung — gak nunggu API response

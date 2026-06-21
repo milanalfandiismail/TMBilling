@@ -104,7 +104,7 @@ const Log = {
 
     exportPDF() {
         const filter = document.getElementById('filter-log').value.trim();
-        let url = '/api/report/export/audit-pdf';
+        let url = '/api/v1/kasir/report/export/audit-pdf';
         if (filter) url += `?filter=${encodeURIComponent(filter)}`;
         window.open(url, '_blank');
     }

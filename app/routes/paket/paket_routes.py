@@ -10,7 +10,7 @@ from flask import Blueprint, request, jsonify, session
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.services import PaketService
 
-paket_bp = Blueprint("paket", __name__)
+paket_api_bp = Blueprint("paket", __name__)
 
 
 # =========================================================================
@@ -18,7 +18,7 @@ paket_bp = Blueprint("paket", __name__)
 # =========================================================================
 # Fokus: Mengambil daftar paket dengan dukungan filter status dan grup.
 
-@paket_bp.route("/", methods=["GET"])
+@paket_api_bp.route("/", methods=["GET"])
 @login_required
 def list_paket():
     """Ambil semua paket dengan filter opsional dan dukungan paginasi."""
@@ -55,7 +55,7 @@ def list_paket():
 # =========================================================================
 # Fokus: Mengelola siklus hidup paket harga dalam sistem.
 
-@paket_bp.route("/", methods=["POST"])
+@paket_api_bp.route("/", methods=["POST"])
 @login_required
 @admin_required
 def tambah_paket():
@@ -74,7 +74,7 @@ def tambah_paket():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@paket_bp.route("/<int:paket_id>", methods=["PUT"])
+@paket_api_bp.route("/<int:paket_id>", methods=["PUT"])
 @login_required
 @admin_required
 def edit_paket(paket_id):
@@ -94,7 +94,7 @@ def edit_paket(paket_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@paket_bp.route("/<int:paket_id>", methods=["DELETE"])
+@paket_api_bp.route("/<int:paket_id>", methods=["DELETE"])
 @login_required
 @admin_required
 def hapus_paket(paket_id):

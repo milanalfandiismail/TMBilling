@@ -46,7 +46,7 @@ def create_app():
     csrf.init_app(app)
     migrate.init_app(app, db)
 
-    # IP Whitelist middleware — proteksi dashboard /kasir dan /api/kasir/*
+    # IP Whitelist middleware — proteksi dashboard /kasir dan /api/v1/kasir/*
     from app.middleware import check_ip_whitelist
     app.before_request(check_ip_whitelist)
 
@@ -54,58 +54,72 @@ def create_app():
 
     # Import dan registrasi blueprints
     from app.routes import (
-        auth_bp,
-        auth_kasir_bp,
-        migration_bp,
-        blackout_bp,
-        client_bp,
+        auth_api_bp,
+        auth_kasir_api_bp,
+        migration_api_bp,
+        blackout_api_bp,
+        client_api_bp,
         dashboard_bp,
-        member_bp,
-        paket_bp,
-        pc_bp,
-        report_bp,
-        sesi_bp,
-        grup_bp,
-        settings_bp,
-        monitor_bp,
-        user_bp,
-        menu_bp,
-        backup_bp,
-        tournament_bp,
+        dashboard_api_bp,
+        member_api_bp,
+        paket_api_bp,
+        pc_api_bp,
+        report_api_bp,
+        sesi_api_bp,
+        grup_api_bp,
+        settings_api_bp,
+        monitor_api_bp,
+        user_api_bp,
+        menu_api_bp,
+        backup_api_bp,
+        tournament_api_bp,
         member_portal_bp,
-        shift_bp,
-        migration_bp
+        shift_api_bp,
+        migration_api_bp
     )
 
+    # ==========================================
+    # 1. FRONTEND / WEB VIEWS
+    # ==========================================
     app.register_blueprint(dashboard_bp, url_prefix="/kasir")
-    app.register_blueprint(backup_bp)
-    app.register_blueprint(auth_bp, url_prefix="/api/auth")
-    app.register_blueprint(auth_kasir_bp, url_prefix="/api/kasir")
-    app.register_blueprint(client_bp, url_prefix="/client")
     app.register_blueprint(member_portal_bp)
     
-    # Kecualikan komunikasi Client dari proteksi CSRF (Pakai API Key / Token)
-    csrf.exempt(client_bp)
-    csrf.exempt(auth_bp)
-    csrf.exempt(monitor_bp)
-    csrf.exempt(shift_bp)
+    # ==========================================
+    # 2. KASIR APIs (/api/v1/kasir/...)
+    # ==========================================
+    app.register_blueprint(auth_kasir_api_bp, url_prefix="/api/v1/kasir/auth")
+    app.register_blueprint(dashboard_api_bp, url_prefix="/api/v1/kasir/dashboard")
+    app.register_blueprint(member_api_bp, url_prefix="/api/v1/kasir/member")
+    app.register_blueprint(paket_api_bp, url_prefix="/api/v1/kasir/paket")
+    app.register_blueprint(pc_api_bp, url_prefix="/api/v1/kasir/pc")
+    app.register_blueprint(sesi_api_bp, url_prefix="/api/v1/kasir/sesi")
+    app.register_blueprint(grup_api_bp, url_prefix="/api/v1/kasir/grup")
+    app.register_blueprint(user_api_bp, url_prefix="/api/v1/kasir/user")
+    app.register_blueprint(menu_api_bp, url_prefix="/api/v1/kasir/menu")
+    app.register_blueprint(report_api_bp, url_prefix="/api/v1/kasir/report")
+    app.register_blueprint(shift_api_bp, url_prefix="/api/v1/kasir/shift")
+    app.register_blueprint(backup_api_bp, url_prefix="/api/v1/kasir/backup")
+    app.register_blueprint(blackout_api_bp, url_prefix="/api/v1/kasir/blackout")
+    app.register_blueprint(tournament_api_bp, url_prefix="/api/v1/kasir/tournament")
+    app.register_blueprint(settings_api_bp, url_prefix="/api/v1/kasir/settings")
+    app.register_blueprint(migration_api_bp, url_prefix="/api/v1/kasir/settings/migration")
+    from app.routes.settings.plugin_routes import plugin_api_bp
+    app.register_blueprint(plugin_api_bp, url_prefix="/api/v1/kasir/settings/plugins")
+
+    # ==========================================
+    # 3. PUBLIC APIs (/api/v1/public/...)
+    # ==========================================
+    app.register_blueprint(auth_api_bp, url_prefix="/api/v1/public/auth")
+    app.register_blueprint(client_api_bp, url_prefix="/api/v1/public/client")
+    app.register_blueprint(monitor_api_bp, url_prefix="/api/v1/public/monitor")
     
-    app.register_blueprint(member_bp, url_prefix="/api")
-    app.register_blueprint(paket_bp, url_prefix="/api/paket")
-    app.register_blueprint(pc_bp, url_prefix="/api")
-    app.register_blueprint(report_bp, url_prefix="/api/report")
-    app.register_blueprint(sesi_bp, url_prefix="/api/sesi")
-    app.register_blueprint(grup_bp, url_prefix="/api/grup")
-    app.register_blueprint(blackout_bp, url_prefix="/api/blackout")
-    app.register_blueprint(settings_bp, url_prefix="/api")
-    from app.routes.settings.plugin_routes import plugin_bp
-    app.register_blueprint(plugin_bp)
-    app.register_blueprint(monitor_bp, url_prefix="/api")
-    app.register_blueprint(user_bp, url_prefix="/api/user")
-    app.register_blueprint(menu_bp, url_prefix="/api")
-    app.register_blueprint(tournament_bp, url_prefix="/api")
-    app.register_blueprint(shift_bp, url_prefix="/api")
-    app.register_blueprint(migration_bp)
+    # ==========================================
+    # 4. CSRF EXEMPTIONS (APIs using Tokens/Keys)
+    # ==========================================
+    csrf.exempt(client_api_bp)
+    csrf.exempt(auth_api_bp)
+    csrf.exempt(monitor_api_bp)
+    csrf.exempt(shift_api_bp)
 
     @app.route("/")
     def index():
