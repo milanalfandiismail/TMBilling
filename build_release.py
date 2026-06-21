@@ -18,7 +18,8 @@ def main():
         "README.md"
     ]
     include_dirs = [
-        "app"
+        "app",
+        "install_scripts"
     ]
     
     print(f"Memulai pemaketan {zip_filename}...")
