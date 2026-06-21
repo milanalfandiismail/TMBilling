@@ -158,7 +158,7 @@ const API = {
 
     // 🔗 LAPORAN & LOG
     report: {
-        harian: () => API.request('/api/v1/kasir/report/'),
+        harian: () => API.request('/api/v1/kasir/report/laporan-harian'),
         byTanggal: (tanggal, kasirId = '', page = 1, perPage = 10) => {
             let url = `/api/v1/kasir/report/laporan/billing?tanggal=${tanggal}&page=${page}&per_page=${perPage}`;
             if (kasirId) url += `&kasir_id=${kasirId}`;
