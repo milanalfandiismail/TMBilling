@@ -2,16 +2,16 @@
 
 ## Autentikasi
 
-Menggunakan **Flask session cookie**. Login via `/api/kasir/login`.
+Menggunakan **Flask session cookie**. Login via `/api/v1/kasir/auth/login`.
 
 ### Session Endpoints
 
 | Method | Endpoint | Auth | Deskripsi |
 |--------|----------|------|-----------|
-| POST | `/api/kasir/login` | - | Login, set session cookie |
-| POST | `/api/kasir/logout` | login | Logout, clear session |
-| GET | `/api/kasir/check` | - | Cek session status (`logged_in`) |
-| POST | `/api/kasir/admin-check` | - | Validasi kredensial admin (untuk client C# bypass) |
+| POST | `/api/v1/kasir/auth/login` | - | Login, set session cookie |
+| POST | `/api/v1/kasir/auth/logout` | login | Logout, clear session |
+| GET | `/api/v1/kasir/auth/check` | - | Cek session status (`logged_in`) |
+| POST | `/api/v1/kasir/auth/admin-check` | - | Validasi kredensial admin |
 
 **Login Request:**
 ```json
@@ -28,9 +28,9 @@ Menggunakan **Flask session cookie**. Login via `/api/kasir/login`.
 { "logged_in": true, "username": "admin", "role": "admin", "nama_lengkap": "Administrator" }
 ```
 
-## Session (Sesi Bermain)
+## Sesi (Sesi Bermain)
 
-Prefix: `/api/sesi` — Auth: `@login_required`
+Prefix: `/api/v1/kasir/sesi` — Auth: `@login_required`
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
@@ -39,7 +39,7 @@ Prefix: `/api/sesi` — Auth: `@login_required`
 | POST | `/tutup/{sesi_id}` | Tutup sesi bermain |
 | POST | `/pindah-pc/{sesi_id}` | Pindah PC dalam grup yang sama |
 | POST | `/tambah-waktu-sesi/{sesi_id}` | Tambah durasi sesi |
-| GET | `/sesi/{sesi_id}` | Detail sesi |
+| GET | `/{sesi_id}` | Detail sesi |
 
 **Buka Guest:**
 ```json
@@ -59,9 +59,9 @@ Prefix: `/api/sesi` — Auth: `@login_required`
 { "success": true, "sesi_id": 43, "token_sesi": "c3d4...", "waktu_tersimpan": 120 }
 ```
 
-## Client API (Tauri & C# Helper)
+## Client API (Tauri & Watchdog)
 
-Prefix: `/client` — Auth: `X-Client-Key` header
+Prefix: `/api/v1/public/client` — Auth: `X-Client-Key` header
 
 ---
 
@@ -74,8 +74,8 @@ Untuk mengatasi situasi darurat di mana server kasir mati total, terputus dari j
 
 | Entitas | Online Path | Offline Path |
 |---------|------------|-------------|
-| **Admin Login (Client)** | `POST /client/admin-login` → Flask API | Cek Emergency User + Emergency Token dari Registry langsung |
-| **Uninstaller** | `GET /api/settings/uninstall-token/client` → dapet Uninstall Token | Deobfuscate EmergencyToken dari Registry |
+| **Admin Login (Client)** | `POST /api/v1/public/client/admin-login` → Flask API | Cek Emergency User + Emergency Token dari Registry langsung |
+| **Uninstaller** | `GET /api/v1/kasir/settings/uninstall-token/client` → dapet Uninstall Token | Deobfuscate EmergencyToken dari Registry |
 
 1. **Tauri Lockscreen Offline Mode**: Jika PC client kehilangan koneksi ke server, login dengan kredensial Emergency (dari Registry, diatur saat install) akan langsung sukses secara instan di memori (offline) tanpa validasi API. Default: `TMBilling` / `TM123qaz!@#`.
 2. **Tauri Lockscreen Online Mode**: Jika server sedang aktif dan ada pihak luar mencoba menebak/menggunakan kredensial bypass ini di client, login lokal tetap akan sukses awalnya, tetapi **thread polling client (yang berjalan tiap 5 detik) akan langsung mendeteksi ketiadaan sesi aktif di server Flask** dan otomatis mengunci kembali layar client dalam beberapa detik. Hal ini menjamin keamanan mutlak PC dari upaya bermain gratis!
@@ -116,16 +116,16 @@ Untuk mengatasi situasi darurat di mana server kasir mati total, terputus dari j
 }
 ```
 
-## Dashboard
+## Dashboard Kasir
 
 | Method | Endpoint | Auth | Deskripsi |
 |--------|----------|------|-----------|
-| GET | `/` | - | Redirect otomatis ke halaman login kasir `/kasir/login` |
-| GET | `/kasir/api/pc` | login | Data PC grouped by grup |
-| GET | `/kasir/login` | - | Halaman login |
-| GET | `/kasir/` | login | Halaman dashboard utama |
+| GET | `/kasir/` | login | Halaman dashboard utama HTML |
+| GET | `/kasir/login` | - | Halaman login HTML |
+| GET | `/api/v1/kasir/dashboard/pc` | login | Data PC grouped by grup untuk grid monitoring |
+| GET | `/api/v1/kasir/dashboard/analytics` | login+admin | Data analytics owner |
 
-**PC List Response:**
+**PC List Response (GET `/api/v1/kasir/dashboard/pc`):**
 ```json
 {
     "pc_list": [
@@ -147,18 +147,18 @@ Untuk mengatasi situasi darurat di mana server kasir mati total, terputus dari j
 
 ## Member
 
-Prefix: `/api/member` — Auth: `@login_required`
+Prefix: `/api/v1/kasir/member` — Auth: `@login_required`
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
-| GET | `/member` | List member (search, pagination) |
-| POST | `/member` | Tambah member |
-| GET | `/member/{id}` | Detail member |
-| PUT | `/member/{id}` | Update member |
-| DELETE | `/member/{id}` | Hapus member |
+| GET | `/` | List member (search, pagination) |
+| POST | `/` | Tambah member |
+| GET | `/{id}` | Detail member |
+| PUT | `/{id}` | Update member |
+| DELETE | `/{id}` | Hapus member |
 | POST | `/tambah-waktu` | Top-up saldo member via paket |
-| POST | `/member/refund-paket` | Refund transaksi paket |
-| GET | `/member/{id}/paket` | Riwayat pembelian paket |
+| POST | `/refund-paket` | Refund transaksi paket |
+| GET | `/{id}/paket` | Riwayat pembelian paket |
 
 **Query Parameters (list):**
 - `q` — search username/nama
@@ -172,15 +172,18 @@ Prefix: `/api/member` — Auth: `@login_required`
 
 ## PC Management
 
-Prefix: `/api/pc` — Auth: `@login_required`
+Prefix: `/api/v1/kasir/pc` — Auth: `@login_required`
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
-| GET | `/pc` | List semua PC (grouped by grup) |
-| POST | `/pc` | Tambah PC |
-| POST | `/pc/batch` | Registrasi massal |
-| PUT | `/pc/{id}` | Edit PC |
-| DELETE | `/pc/{id}` | Hapus PC |
+| GET | `/` | List semua PC (grouped by grup) |
+| POST | `/` | Tambah PC |
+| POST | `/batch` | Registrasi massal |
+| PUT | `/{id}` | Edit PC |
+| DELETE | `/{id}` | Hapus PC |
+| POST | `/reset-admin/{id}` | Reset status admin mode |
+| PUT | `/{id}/position` | Update koordinat PC di floor plan |
+| POST | `/wol` | Kirim perintah Wake-on-LAN ke PC client |
 
 **Batch Request:**
 ```json
@@ -195,7 +198,7 @@ Prefix: `/api/pc` — Auth: `@login_required`
 
 ## Paket
 
-Prefix: `/api/paket/` — Auth: `@login_required`
+Prefix: `/api/v1/kasir/paket` — Auth: `@login_required`
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
@@ -206,7 +209,7 @@ Prefix: `/api/paket/` — Auth: `@login_required`
 
 ## Grup
 
-Prefix: `/api/grup/` — Auth: `@login_required`
+Prefix: `/api/v1/kasir/grup` — Auth: `@login_required`
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
@@ -221,16 +224,18 @@ Prefix: `/api/grup/` — Auth: `@login_required`
 
 ## Laporan
 
-Prefix: `/api/report` — Auth: `@login_required`
+Prefix: `/api/v1/kasir/report` — Auth: `@login_required`
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
-| GET | `/laporan` | Laporan detail per tanggal |
+| GET | `/laporan/billing` | Laporan detail billing per tanggal |
+| GET | `/laporan/kantin` | Laporan detail penjualan kantin |
 | GET | `/laporan-harian` | Ringkasan hari ini |
 | GET | `/tanggal` | Daftar tanggal unik |
 | GET | `/kasir-list` | Daftar kasir untuk filter |
 | GET | `/struk/{id}` | Data struk by ID/no_nota |
 | POST | `/struk/by-no` | Cari struk by nomor |
+| GET | `/struk/menu/{t_menu_id}` | Data struk transaksi menu |
 | GET | `/log` | System logs |
 | GET | `/log/export` | Download log (.txt) |
 | POST | `/log/clear` | Clear logs (admin) |
@@ -238,6 +243,10 @@ Prefix: `/api/report` — Auth: `@login_required`
 | DELETE | `/transaksi/{id}` | Hapus 1 transaksi (admin) |
 | DELETE | `/transaksi/by-date/{tgl}` | Hapus per tanggal (admin) |
 | GET | `/blackout-log` | Log khusus blackout |
+| GET | `/export/billing` | Ekspor laporan billing kasir |
+| GET | `/export/kantin` | Ekspor laporan kantin |
+| GET | `/export/pnl` | Ekspor laporan profit and loss |
+| GET | `/export/audit-pdf` | Ekspor PDF ringkasan audit shift |
 
 **Laporan Response:**
 ```json
@@ -271,16 +280,19 @@ Prefix: `/api/report` — Auth: `@login_required`
 
 ## Hardware Monitor
 
-Prefix: `/api/monitor`
+Prefix: `/api/v1/public/monitor`
 
 | Method | Endpoint | Auth | Deskripsi |
 |--------|----------|------|-----------|
 | GET | `/all` | login | Semua data hardware + PC |
-| POST | `/` | - | Terima telemetry dari Rust agent (`TMMonitor.exe`) |
-| GET | `/processes/{pc_id}` | login | Daftar proses PC |
+| POST | `/` | API Key | Terima telemetry dari Rust agent (`TMMonitor.exe`) |
+| GET | `/processes/{pc_id}` | login | Daftar proses PC (memori >= 10MB) |
+| POST | `/processes/{pc_id}/kill` | login | Kirim perintah mengakhiri proses (taskkill) |
 | POST | `/remote/{pc_id}/{action}` | login | Trigger remote action (`shutdown` atau `restart`) pada PC client |
 | POST | `/screenshot/trigger/{pc_id}` | login | Kirim perintah ke antrean client untuk mengambil screenshot layar |
 | POST | `/screenshot/upload` | API Key | Endpoint bagi client PC untuk mengunggah tangkapan layar (screenshot) terbaru |
+| GET | `/screenshot/status/{pc_id}`| login | Mengecek status dan timestamp screenshot terakhir |
+| DELETE | `/{hardware_id}` | - | Bersihkan data hardware monitor secara manual |
 
 **Telemetry Data (POST):**
 
@@ -300,7 +312,7 @@ Prefix: `/api/monitor`
 
 ## Blackout
 
-Prefix: `/api/blackout` — Auth: `@login_required`
+Prefix: `/api/v1/kasir/blackout` — Auth: `@login_required`
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
@@ -316,7 +328,7 @@ Prefix: `/api/blackout` — Auth: `@login_required`
 
 ## User Management
 
-Prefix: `/api/user/` — Auth: `@login_required + @admin_required`
+Prefix: `/api/v1/kasir/user` — Auth: `@login_required + @admin_required`
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
@@ -328,33 +340,32 @@ Prefix: `/api/user/` — Auth: `@login_required + @admin_required`
 
 ## Settings
 
-Prefix: `/api/settings` — Auth: `@login_required`
+Prefix: `/api/v1/kasir/settings` — Auth: `@login_required`
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
-| GET | `/settings` | Semua konfigurasi |
-| PUT | `/settings/auto-shutdown` | Update timer shutdown |
-| PUT | `/settings/apikey` | Update global `CLIENT_API_KEY` di memori dan berkas `.env` |
-| PUT | `/settings/{key}` | Update setting generic |
-| POST | `/settings/backup/manual` | Trigger backup manual |
-| GET | `/settings/backup/download` | Download database |
-| POST | `/settings/qris` | Unggah berkas gambar QRIS baru untuk pembayaran di Kiosk |
-| GET | `/settings/uninstall-token/client` | *(Bypass Auth — API Key)* Mengembalikan `uninstall_token` & `emergency_token` untuk sinkronisasi offline klien |
-| GET | `/settings/ip-whitelist` | Daftar IPv4 yang masuk dalam daftar putih |
-| POST | `/settings/ip-whitelist` | Mendaftarkan alamat IPv4 baru ke daftar putih |
-| DELETE | `/settings/ip-whitelist/{ip}` | Menghapus alamat IP dari daftar putih |
-| POST | `/settings/ip-whitelist/toggle` | Mengaktifkan atau mematikan fitur perlindungan IP Whitelist |
-| POST | `/settings/ip-whitelist/regenerate-token` | Membuat Token Bypass Darurat baru untuk remote access dinamis |
-| GET | `/settings/ip-whitelist/status` | Mengembalikan status aktif whitelist dan URL Bypass lengkap |
-| GET | `/settings/plugins` | Mengambil daftar plugin ekstensi terdeteksi beserta status aktifnya |
-| POST | `/settings/plugins/toggle` | Mengaktifkan (enable) atau mematikan (disable) sebuah modul plugin |
-| POST | `/settings/plugins/upload` | Mengunggah file ZIP plugin baru dan mengekstraknya otomatis |
-| PUT | `/settings/scheduler` | Memperbarui interval waktu untuk Auto Scheduler (Backup & Cleanup Logs) |
-| POST | `/settings/scheduler/restart` | Me-restart backend Flask agar interval Auto Scheduler yang baru diterapkan |
+| GET | `/` | Semua konfigurasi |
+| PUT | `/auto-shutdown` | Update timer shutdown |
+| PUT | `/apikey` | Update global `CLIENT_API_KEY` di memori dan berkas `.env` (Admin) |
+| PUT | `/timezone` | Ubah default timezone warnet |
+| PUT | `/{key}` | Update setting generic |
+| POST | `/backup/manual` | Trigger backup manual |
+| GET | `/backup/download` | Download database |
+| POST | `/qris` | Unggah berkas gambar QRIS baru untuk pembayaran di Kiosk |
+| GET | `/uninstall-token/client` | *(Bypass Auth — API Key)* Mengembalikan `uninstall_token` & `emergency_token` untuk sinkronisasi offline klien |
+| GET | `/ip-whitelist` | Daftar IPv4 yang masuk dalam daftar putih |
+| POST | `/ip-whitelist` | Mendaftarkan alamat IPv4 baru ke daftar putih |
+| DELETE | `/ip-whitelist/{ip}` | Menghapus alamat IP dari daftar putih |
+| POST | `/ip-whitelist/toggle` | Mengaktifkan atau mematikan fitur perlindungan IP Whitelist |
+| POST | `/ip-whitelist/regenerate-token` | Membuat Token Bypass Darurat baru untuk remote access dinamis |
+| GET | `/ip-whitelist/status` | Mengembalikan status aktif whitelist dan URL Bypass lengkap |
+| POST | `/app-public-url` | Simpan url tunnel publik aplikasi (Cloudflare/Ngrok) |
+| PUT | `/scheduler` | Memperbarui interval waktu untuk Auto Scheduler (Backup & Cleanup Logs) |
+| POST | `/scheduler/restart` | Me-restart backend Flask agar interval Auto Scheduler yang baru diterapkan |
 
 ## Cloud Backup
 
-Prefix: `/api/backup` — Auth: `@login_required + @admin_required`
+Prefix: `/api/v1/kasir/backup` — Auth: `@login_required + @admin_required`
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
@@ -366,7 +377,7 @@ Prefix: `/api/backup` — Auth: `@login_required + @admin_required`
 
 ### Contoh Request & Response
 
-**1. Test Connection (POST `/api/backup/test-connection`)**
+**1. Test Connection (POST `/api/v1/kasir/backup/test-connection`)**
 
 **Request (JSON - Discord Webhook):**
 ```json
@@ -413,34 +424,30 @@ Prefix: `/api/backup` — Auth: `@login_required + @admin_required`
 }
 ```
 
-**2. Memicu Backup Manual (POST `/api/backup/trigger`)**
+**2. Memicu Backup Manual (POST `/api/v1/kasir/backup/trigger`)**
 
 **Response (JSON - Berhasil):**
 ```json
 {
   "success": true,
   "message": "Backup manual dan upload cloud berhasil diproses!",
-  "filename": "warnet_backup_20260616_221500.zip"
-}
-```
+  "filename": "warnet_b## Kantin / POS Makanan & Minuman (F&B)
 
-## Kantin / POS Makanan & Minuman (F&B)
-
-Prefix: `/api` — Auth: `@login_required`
+Prefix: `/api/v1/kasir/menu` — Auth: `@login_required`
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
-| GET | `/menu` | Mengambil katalog semua makanan dan minuman |
-| POST | `/menu` | Membuat item menu baru beserta upload gambarnya |
-| PUT | `/menu/{menu_id}` | Mengupdate item menu beserta upload gambar baru (jika ada) |
-| DELETE | `/menu/{menu_id}` | Menghapus (arsip/soft-delete) item menu dari katalog |
-| DELETE | `/menu/{menu_id}/permanent` | Menghapus menu secara permanen beserta seluruh transaksi terkait |
-| POST | `/menu/checkout` | Memproses transaksi checkout pesanan makanan/minuman |
-| GET | `/menu/transaksi` | Mendapatkan riwayat seluruh transaksi penjualan menu |
+| GET | `/` | Mengambil katalog semua makanan dan minuman yang aktif |
+| POST | `/` | Membuat item menu baru beserta upload gambarnya |
+| PUT | `/{menu_id}` | Mengupdate item menu beserta upload gambar baru (jika ada) |
+| DELETE | `/{menu_id}` | Menghapus (arsip/soft-delete) item menu dari katalog |
+| DELETE | `/{menu_id}/permanent` | Menghapus menu secara permanen beserta seluruh transaksi terkait |
+| POST | `/checkout` | Memproses transaksi checkout pesanan makanan/minuman |
+| GET | `/transaksi` | Mendapatkan riwayat seluruh transaksi penjualan menu |
 
 ### Contoh Request & Response
 
-**1. Membuat Menu Baru (POST `/api/menu`)**
+**1. Membuat Menu Baru (POST `/api/v1/kasir/menu`)**
 
 Menggunakan request body tipe `multipart/form-data` dengan field:
 - `nama`: `Indomie Goreng`
@@ -464,7 +471,7 @@ Menggunakan request body tipe `multipart/form-data` dengan field:
 }
 ```
 
-**2. Memproses Transaksi Belanja (POST `/api/menu/checkout`)**
+**2. Memproses Transaksi Belanja (POST `/api/v1/kasir/menu/checkout`)**
 
 **Request (JSON):**
 ```json
@@ -505,19 +512,19 @@ Menggunakan request body tipe `multipart/form-data` dengan field:
 
 ## Shift Handover (Sesi Kerja Kasir)
 
-Prefix: `/api` — Auth: `@login_required`
+Prefix: `/api/v1/kasir/shift` — Auth: `@login_required`
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
-| POST | `/shift/start` | Membuka shift baru untuk kasir yang sedang login |
-| GET | `/shift/active` | Memeriksa status shift aktif kasir saat ini |
-| GET | `/shift/summary` | Ringkasan pendapatan internal shift aktif (untuk admin preview) |
-| POST | `/shift/end` | Menutup shift aktif dengan memasukkan uang fisik (hitung buta / blind count) |
-| GET | `/shift/history` | Riwayat shift kasir yang sudah selesai (untuk admin) |
+| POST | `/start` | Membuka shift baru untuk kasir yang sedang login |
+| GET | `/active` | Memeriksa status shift aktif kasir saat ini |
+| GET | `/summary` | Ringkasan pendapatan internal shift aktif (untuk admin preview) |
+| POST | `/end` | Menutup shift aktif dengan memasukkan uang fisik (hitung buta / blind count) |
+| GET | `/history` | Riwayat shift kasir yang sudah selesai (untuk admin) |
 
 ### Contoh Request & Response
 
-**1. Buka Shift Kasir (POST `/api/shift/start`):**
+**1. Buka Shift Kasir (POST `/api/v1/kasir/shift/start`):**
 
 **Request (JSON):**
 ```json
@@ -545,21 +552,21 @@ Prefix: `/api` — Auth: `@login_required`
 
 ## Turnamen Bracket Maker
 
-Prefix: `/api` — Auth: `@login_required`
+Prefix: `/api/v1/kasir/tournament` — Auth: `@login_required`
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
-| GET | `/tournament` | Mengambil seluruh daftar turnamen |
-| GET | `/tournament/{t_id}` | Mengambil detail lengkap turnamen beserta tim, ronde, match, dan klasemen Swiss |
-| POST | `/tournament` | Membuat turnamen baru, mendaftarkan tim, dan menginisialisasi bagan |
-| POST | `/tournament/match/{match_id}/skor` | Mengupdate skor pertandingan dan meloloskan pemenang ke babak berikutnya |
-| POST | `/tournament/{t_id}/swiss/next` | Membuka ronde Swiss berikutnya dan melakukan matchmaking otomatis |
-| POST | `/tournament/stage/{stage_id}/finish` | Menyelesaikan tahap saat ini dan meloloskan tim terpilih ke Playoffs |
-| DELETE | `/tournament/{t_id}` | Menghapus turnamen beserta seluruh datanya secara permanen |
+| GET | `/` | Mengambil seluruh daftar turnamen |
+| GET | `/{t_id}` | Mengambil detail lengkap turnamen beserta tim, ronde, match, dan klasemen Swiss |
+| POST | `/` | Membuat turnamen baru, mendaftarkan tim, dan menginisialisasi bagan |
+| POST | `/match/{match_id}/skor` | Mengupdate skor pertandingan dan meloloskan pemenang ke babak berikutnya |
+| POST | `/{t_id}/swiss/next` | Membuka ronde Swiss berikutnya dan melakukan matchmaking otomatis |
+| POST | `/stage/{stage_id}/finish` | Menyelesaikan tahap saat ini dan meloloskan tim terpilih ke Playoffs |
+| DELETE | `/{t_id}` | Menghapus turnamen beserta seluruh datanya secara permanen |
 
 ### Contoh Request & Response
 
-**1. Membuat Turnamen Baru (POST `/api/tournament`):**
+**1. Membuat Turnamen Baru (POST `/api/v1/kasir/tournament/`):**
 
 **Request (JSON):**
 ```json
@@ -585,11 +592,11 @@ Prefix: `/api` — Auth: `@login_required`
 
 ## Owner Analytics
 
-Prefix: `/api/owner` — Auth: `@login_required + @admin_required`
+Prefix: `/api/v1/kasir/dashboard` — Auth: `@login_required + @admin_required`
 
 | Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| GET | `/analytics-data` | Mengambil agregasi data JSON untuk 7 KPI Owner (Pendapatan, Heatmap, Revenue PC, dll) dalam rentang waktu 7 hari terakhir |
+|--------|----------|------|
+| GET | `/analytics` | Mengambil agregasi data JSON untuk 7 KPI Owner (Pendapatan, Heatmap, Revenue PC, dll) dalam rentang waktu 7 hari terakhir |
 
 *(Catatan: Halaman dashboard utamanya diakses via `GET /owner/analytics`)*
 
@@ -601,24 +608,24 @@ Auth: Mix (`member_login_required` untuk halaman dashboard)
 
 | Method | Endpoint | Auth | Deskripsi |
 |--------|----------|------|-----------|
-| GET | `/member/login` | None | Halaman login portal member |
+| GET | `/member/login` | None | Halaman login portal member HTML |
 | POST | `/member/login` | None | Proses login akun member (username & password) |
 | POST | `/member/logout` | Member | Keluar dari session portal member |
-| GET | `/member/` | Member | Halaman dashboard dashboard member (sisa waktu, status PC) |
-| GET | `/api/public/pc-status` | None | Mengambil peta status PC real-time secara publik |
+| GET | `/member/` | Member | Halaman dashboard member (sisa waktu, status PC) |
+| GET | `/pc-status` | None | Mengambil peta status PC real-time secara publik |
 
 ---
 
-## Database Migration Manager & Update System
+## Database Migration & Update
 
-Auth: `admin_required`
+Prefix: `/api/v1/kasir/settings/migration` — Auth: `admin_required`
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
-| GET | `/api/settings/migration/status` | Status migrasi (HEAD, Current, history, app_version) |
-| POST | `/api/settings/migration/upload` | Upload ZIP update + auto-extract + auto-migrate + restart |
+| GET | `/status` | Status migrasi (HEAD, Current, history, app_version) |
+| POST | `/upload` | Upload ZIP update + auto-extract + auto-migrate + restart |
 
-**Status Response:**
+**Status Response (GET `/api/v1/kasir/settings/migration/status`):**
 ```json
 {
   "success": true,
@@ -632,7 +639,7 @@ Auth: `admin_required`
 }
 ```
 
-**Upload Response:**
+**Upload Response (POST `/api/v1/kasir/settings/migration/upload`):**
 ```json
 { "success": true, "message": "Update berhasil! Server akan restart..." }
 ```

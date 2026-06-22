@@ -231,8 +231,8 @@ def list_menu():
 
 ```python
 # app/__init__.py
-from app.routes.kantin_routes import kantin_bp
-app.register_blueprint(kantin_bp, url_prefix="/api/kantin")
+from app.routes.menu.menu_routes import menu_api_bp
+app.register_blueprint(menu_api_bp, url_prefix="/api/v1/kasir/menu")
 ```
 
 ## Error Handling
@@ -329,7 +329,7 @@ flask db downgrade  # rollback
 
 Selain CLI, ada fitur **Migrasi & Update** di Settings Dashboard:
 
-**Upload ZIP Update (`POST /api/settings/migration/upload`):**
+**Upload ZIP Update (`POST /api/v1/kasir/settings/migration/upload`):**
 1. Upload file `TMBilling_Server_v*.zip`
 2. Backend validasi struktur (cek `run.py` + `app/`)
 3. Extract ke root project
@@ -337,7 +337,7 @@ Selain CLI, ada fitur **Migrasi & Update** di Settings Dashboard:
 5. Install dependencies di background
 6. Server restart otomatis
 
-**Status (`GET /api/settings/migration/status`):**
+**Status (`GET /api/v1/kasir/settings/migration/status`):**
 - Membandingkan `HEAD` (dari file di `migrations/versions/`) dengan `Current` (dari tabel `alembic_version`)
 - Menampilkan riwayat semua revisi migrasi
 

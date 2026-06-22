@@ -65,7 +65,7 @@ Fitur ini memungkinkan update aplikasi (backend + frontend) dan migrasi database
 - **Riwayat Migrasi**: Lihat semua revisi migrasi dengan status (HEAD / Aktif)
 
 ### Alur Upload:
-1. User upload `TMBilling_Server_v1.1.zip`
+1. User upload `TMBilling_Server_v1.1.1.zip`
 2. Backend validasi struktur (cek `run.py` + `app/`)
 3. Extract ke root project
 4. Auto-detect `migrations/` → backup dulu → `flask_migrate upgrade`
@@ -74,11 +74,11 @@ Fitur ini memungkinkan update aplikasi (backend + frontend) dan migrasi database
 7. Frontend auto-reload setelah 5 detik
 
 ### Detail Teknis:
-- **Backend**: Endpoint `POST /api/settings/migration/upload`
+- **Backend**: Endpoint `POST /api/v1/kasir/settings/migration/upload`
 - **Frontend**: Module `migration.js` — drag-drop upload + progress + overlay restart
 - **Database**: Flask-Migrate + Alembic (`migrations/versions/`)
 - **CLI Alternative**: `python run.py --release` (untuk update via terminal)
-- **Status Endpoint**: `GET /api/settings/migration/status` — ngecek HEAD vs Current revision
+- **Status Endpoint**: `GET /api/v1/kasir/settings/migration/status` — ngecek HEAD vs Current revision
 
 Fitur handover shift kasir menyediakan audit keuangan yang aman melalui metode **Hitung Buta (Blind Count)** saat kasir bergantian jaga.
 
@@ -86,9 +86,9 @@ Fitur handover shift kasir menyediakan audit keuangan yang aman melalui metode *
 *   Mencatat `kasir_id`, `waktu_mulai`, `waktu_selesai`, `modal_awal`, `uang_fisik` di laci, dan status shift (`aktif`/`selesai`).
 
 ### Alur Kerja & Logika:
-1.  **Buka Shift (`/api/shift/start`)**: Kasir yang bertugas memasukkan modal awal uang kembalian di laci kasir (misal: `50.000`).
+1.  **Buka Shift (`/api/v1/kasir/shift/start`)**: Kasir yang bertugas memasukkan modal awal uang kembalian di laci kasir (misal: `50.000`).
 2.  **Sesi Kerja**: Selama shift aktif, sistem terus mencatat pendapatan billing PC dan penjualan POS F&B secara real-time.
-3.  **Tutup Shift (`/api/shift/end`)**:
+3.  **Tutup Shift (`/api/v1/kasir/shift/end`)**:
     *   **Hitung Buta (Blind Count)**: Kasir wajib menghitung uang tunai fisik di laci secara manual dan menginputkan nominalnya tanpa mengetahui catatan pendapatan versi sistem.
     *   Sistem kemudian mencocokkan `uang_fisik` inputan kasir dengan rumus:
         `Pendapatan Seharusnya = Modal Awal + Total Pendapatan Billing + Total Pendapatan Kantin (F&B)`

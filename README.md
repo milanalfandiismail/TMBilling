@@ -482,7 +482,7 @@ Upload file `TMBilling_Server_v*.zip` ke **Settings → Migrasi & Update**, atau
 python run.py --release
 
 # Dengan path ZIP custom
-python run.py --release TMBilling_Server_v1.1.zip
+python run.py --release TMBilling_Server_v1.1.1.zip
 ```
 
 Release mode akan:
@@ -820,97 +820,185 @@ loop {
 
 ## 🌐 API Endpoints
 
-### Kasir Auth
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/kasir/login` | None | Login kasir/admin |
-| POST | `/api/kasir/logout` | Session | Logout |
-| GET | `/api/kasir/check` | None | Check session |
+Seluruh endpoint API pada server Flask dikelompokkan berdasarkan otorisasi dan fungsionalitasnya dengan versi rute `/api/v1/`.
 
-### Client (Tauri/Agent)
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/client/identify` | API Key + IP/MAC | Registrasi PC |
-| POST | `/client/status` | API Key + IP/MAC | Polling status (5s) |
-| POST | `/client/selesai` | API Key + IP/MAC | Logout dari client |
-| POST | `/client/admin-login` | API Key + IP/MAC | Admin bypass from client |
-| POST | `/client/emergency-login` | API Key + IP/MAC | Emergency login |
-| GET | `/api/settings/uninstall-token/client` | API Key | Uninstall token |
+### 1. Kasir Auth (Prefix: `/api/v1/kasir/auth`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| POST | `/login` | None | Login kasir/admin web, membuat session |
+| POST | `/logout` | Session | Logout kasir/admin web, menghapus session |
+| GET | `/check` | None | Cek status session aktif kasir/admin |
+| POST | `/admin-check` | None | Validasi password admin untuk bypass Kiosk client |
 
-### Session
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/sesi/buka-guest` | Session | Buka sesi guest |
-| POST | `/api/sesi/buka-member` | Session | Buka sesi member |
-| POST | `/api/sesi/tutup/{id}` | Session | Tutup sesi |
-| POST | `/api/sesi/pindah-pc/{id}` | Session | Pindah PC |
-| POST | `/api/sesi/tambah-waktu-sesi/{id}` | Session | Tambah durasi |
-| GET | `/api/sesi/sesi/{id}` | Session | Detail sesi |
+### 2. Dashboard Kasir (Prefix: `/api/v1/kasir/dashboard`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| GET | `/pc` | Session | Ambil list semua PC, grup, status, dan detail sesi aktif |
+| GET | `/analytics` | Admin | Ambil agregasi data KPI Owner (7 matriks) |
 
-### Master Data
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET/POST | `/api/pc` | Session | List/tambah PC |
-| PUT/DELETE | `/api/pc/{id}` | Session | Edit/hapus PC |
-| POST | `/api/pc/batch` | Session | Batch registration |
-| GET/POST | `/api/member` | Session | List/tambah member |
-| PUT/DELETE | `/api/member/{id}` | Session | Edit/hapus member |
-| GET/POST | `/api/paket/` | Session | List/tambah paket |
-| PUT/DELETE | `/api/paket/{id}` | Session | Edit/hapus paket |
-| GET/POST | `/api/grup/` | Session | List/tambah grup |
+### 3. Sesi Bermain (Prefix: `/api/v1/kasir/sesi`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| POST | `/buka-guest` | Session | Buka sesi guest (membutuhkan pc_kode & paket_id) |
+| POST | `/buka-member` | Session | Buka sesi member (membutuhkan pc_kode & username member) |
+| POST | `/tambah-waktu-sesi/{id}` | Session | Tambah durasi sesi aktif |
+| POST | `/pindah-pc/{id}` | Session | Pindah PC bermain dalam grup/zona yang sama |
+| POST | `/tutup/{id}` | Session | Tutup sesi bermain secara paksa/normal |
+| GET | `/{id}` | Session | Dapatkan rincian detail sesi bermain tertentu |
 
-### Report
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/report/laporan-harian` | Session | Summary hari ini |
-| GET | `/api/report/laporan?tanggal=` | Session | Detail per tanggal |
-| GET | `/api/report/struk/{id}` | Session | Data struk |
-| GET | `/api/report/log` | Session | System logs |
-| GET | `/api/report/log/export` | Session | Download log (.txt) |
+### 4. Master Data (PC, Member, Paket, Grup)
+| Blueprint | Method | Prefix Endpoint | Auth | Deskripsi |
+|---|---|---|---|---|
+| **PC** | GET/POST | `/api/v1/kasir/pc/` | Session | List / tambah PC unit |
+| | PUT/DELETE | `/api/v1/kasir/pc/{id}` | Session | Edit / hapus PC unit |
+| | POST | `/api/v1/kasir/pc/batch` | Session | Registrasi PC massal otomatis |
+| | POST | `/api/v1/kasir/pc/reset-admin/{id}`| Session | Reset paksa flag `is_admin_mode` |
+| | PUT | `/api/v1/kasir/pc/{id}/position` | Session | Perbarui posisi koordinat PC di floor plan |
+| | POST | `/api/v1/kasir/pc/wol` | Session | Kirim perintah Wake-on-LAN ke PC client |
+| **Member** | GET/POST | `/api/v1/kasir/member/` | Session | List / tambah member prepaid |
+| | GET/PUT/DEL | `/api/v1/kasir/member/{id}` | Session | Detail / update / hapus member |
+| | POST | `/api/v1/kasir/member/tambah-waktu`| Session | Top-up saldo menit bermain member |
+| | GET | `/api/v1/kasir/member/{id}/paket` | Session | Riwayat pembelian paket billing member |
+| | POST | `/api/v1/kasir/member/refund-paket` | Session | Refund transaksi paket billing member |
+| **Paket** | GET/POST | `/api/v1/kasir/paket/` | Session | List / buat paket billing baru |
+| | PUT/DELETE | `/api/v1/kasir/paket/{id}` | Session | Edit / hapus paket billing |
+| **Grup** | GET/POST | `/api/v1/kasir/grup/` | Session | List / tambah grup zona baru |
+| | DELETE | `/api/v1/kasir/grup/{id}` | Session | Hapus grup zona |
 
-### Hardware Monitor
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/monitor/all` | Session | Semua data hardware |
-| POST | `/api/monitor` | API Key | Telemetry from client |
-| GET | `/api/monitor/processes/{pc_id}` | Session | Proses PC |
+### 5. Laporan & Sistem Log (Prefix: `/api/v1/kasir/report`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| GET | `/laporan/billing` | Session | Mengambil data laporan pendapatan billing per rentang tanggal |
+| GET | `/laporan/kantin` | Session | Mengambil data laporan penjualan F&B kantin |
+| GET | `/laporan-harian` | Session | Summary ringkas pendapatan shift hari ini |
+| GET | `/tanggal` | Session | Daftar tanggal transaksi unik di DB |
+| GET | `/kasir-list` | Session | Daftar staff/kasir yang terdaftar untuk filter laporan |
+| GET | `/struk/{id_atau_nota}` | Session | Data detail struk cetak berdasarkan ID/nomor nota |
+| POST | `/struk/by-no` | Session | Cari data struk berdasarkan nomor nota |
+| GET | `/struk/menu/{t_menu_id}` | Session | Data detail struk untuk transaksi POS F&B |
+| GET | `/log` | Session | Membaca riwayat system log warnet |
+| POST | `/log/clear` | Admin | Hapus semua log system |
+| POST | `/transaksi/clear` | Admin | Purge/hapus total semua data transaksi (berbahaya) |
+| DELETE | `/transaksi/{id}` | Admin | Hapus satu data transaksi tertentu |
+| DELETE | `/transaksi/by-date/{tgl}` | Admin | Hapus semua transaksi pada tanggal tertentu |
+| GET | `/log/export` | Session | Ekspor logs sistem ke berkas text (.txt) |
+| GET | `/blackout-log` | Session | Membaca log audit sistem pemulihan blackout |
+| GET | `/export/billing` | Session | Ekspor laporan billing kasir ke Excel/CSV |
+| GET | `/export/kantin` | Session | Ekspor laporan kantin ke Excel/CSV |
+| GET | `/export/pnl` | Session | Ekspor laporan Profit & Loss (P&L) ke Excel/CSV |
+| GET | `/export/audit-pdf` | Session | Ekspor PDF ringkasan audit lengkap (laporan pertanggungjawaban) |
 
-### Blackout
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/blackout/deteksi` | Session | Detect blackout sessions |
-| GET | `/api/blackout/list` | Session | List blackout |
-| POST | `/api/blackout/resolve/member/{id}` | Session | Refund member |
-| POST | `/api/blackout/resolve/guest/lanjut/{id}` | Session | Guest pindah PC |
+### 6. Blackout Recovery (Prefix: `/api/v1/kasir/blackout`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| POST | `/deteksi` | Session | Jalankan proses deteksi otomatis PC terputus akibat mati lampu |
+| GET | `/list` | Session | Ambil daftar sesi yang dicurigai suspect blackout |
+| GET | `/dates` | Session | Ambil daftar tanggal terjadinya pemadaman listrik di log |
+| POST | `/resolve/member/{id}` | Session | Selesaikan blackout: Refund saldo menit member |
+| POST | `/resolve/guest/sama/{id}` | Session | Selesaikan blackout: Guest lanjut bermain di PC yang sama |
+| POST | `/resolve/guest/lanjut/{id}` | Session | Selesaikan blackout: Guest dipindahkan ke PC lain yang kosong |
+| POST | `/resolve/guest/tutup/{id}` | Session | Selesaikan blackout: Tutup sesi guest dan bayar seadanya |
+| POST | `/force-all-and-detect`| Session | Tutup paksa seluruh sesi aktif dan langsung picu deteksi blackout |
+| POST | `/clear` | Session | Bersihkan database riwayat penanganan blackout |
 
-### Settings & User
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/settings/settings` | Session | All settings |
-| PUT | `/api/settings/auto-shutdown` | Session | Update shutdown timer |
-| PUT | `/api/settings/apikey` | Admin | Rotate API Key |
-| GET/POST | `/api/user/` | Admin | CRUD staff |
-| GET | `/api/settings/ip-whitelist` | Session | List IP Whitelist |
-| POST | `/api/settings/plugins/upload` | Admin | Upload plugin ZIP |
-| PUT | `/api/settings/scheduler` | Admin | Update scheduler interval |
+### 7. Pengaturan & Whitelist (Prefix: `/api/v1/kasir/settings`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| GET | `/` | Session | Ambil seluruh daftar konfigurasi sistem yang tersimpan |
+| PUT | `/auto-shutdown` | Session | Ubah batas waktu mati otomatis PC kosong setelah logout |
+| PUT | `/{key}` | Session | Perbarui konfigurasi generic key-value |
+| PUT | `/apikey` | Admin | Regenerasi/rotasi `CLIENT_API_KEY` global secara dinamis |
+| PUT | `/timezone` | Session | Ubah default zona waktu warnet (WIB/WITA/WIT) |
+| POST | `/backup/manual` | Admin | Pemicu manual backup database SQLite dan upload cloud |
+| GET | `/backup/download` | Admin | Unduh file database SQLite yang aktif secara langsung |
+| POST | `/qris` | Session | Unggah gambar kode QRIS baru untuk pembayaran di Kiosk |
+| PUT | `/scheduler` | Admin | Atur ulang interval Background Scheduler |
+| POST | `/scheduler/restart` | Admin | Restart Background Scheduler (APScheduler) |
+| GET | `/uninstall-token/client`| API Key | Sinkronisasi rilis `uninstall_token` & `emergency_token` klien |
+| GET | `/ip-whitelist` | Session | List IP address yang masuk daftar putih akses dashboard |
+| POST | `/ip-whitelist` | Session | Daftarkan IP address baru ke whitelist |
+| DELETE | `/ip-whitelist/{ip}` | Session | Hapus IP address dari whitelist |
+| POST | `/ip-whitelist/toggle` | Session | Aktifkan/matikan fitur proteksi IP Whitelist |
+| POST | `/ip-whitelist/regenerate-token`| Session| Regenerasi Token Bypass Whitelist Darurat baru |
+| GET | `/ip-whitelist/status` | Session | Cek status whitelist dan dapatkan URL bypass lengkap |
+| POST | `/app-public-url` | Session | Simpan url tunnel publik aplikasi (Cloudflare/Ngrok) |
 
-### Extra Features (F&B, Tournament, dll)
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/menu` | Session | Katalog F&B |
-| POST | `/api/menu/checkout` | Session | Checkout menu kantin |
-| GET | `/api/tournament` | Session | List/Detail Turnamen |
-| POST | `/api/backup/trigger` | Admin | Manual cloud backup |
-| GET | `/api/owner/analytics-data` | Admin | KPI Dashboard Owner |
-| GET | `/member/` | Member | Web Portal Member (Login terpisah) |
+### 8. DB Migration & Update (Prefix: `/api/v1/kasir/settings/migration`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| GET | `/status` | Admin | Cek status upgrade database (HEAD vs Current revision) |
+| POST | `/upload` | Admin | Unggah ZIP rilis update + auto-extract + auto-migrate + auto-restart |
 
-### DB Migration & Update
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/settings/migration/status` | Admin | Status migrasi (HEAD, Current, history) |
-| POST | `/api/settings/migration/upload` | Admin | Upload ZIP update + auto-extract + auto-migrate + restart |
+### 9. Plugin Manager (Prefix: `/api/v1/kasir/settings/plugins`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| GET | `/page` | Session | Render halaman UI utama Plugin Manager |
+| GET | `/` | Session | Ambil list plugin terdeteksi beserta status aktifnya |
+| POST | `/toggle` | Session | Aktifkan (enable) atau matikan (disable) modul plugin |
+| POST | `/upload` | Session | Unggah berkas ZIP plugin baru untuk diekstrak otomatis |
 
-*(Untuk melihat payload request dan response secara mendetail, kunjungi `docs/TECHNICAL_DOCS.md`)*
+### 10. Kantin POS / F&B Menu (Prefix: `/api/v1/kasir/menu`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| GET | `/` | Session | Ambil katalog seluruh makanan & minuman yang aktif |
+| POST | `/` | Session | Tambah menu baru beserta unggah gambar menu |
+| PUT | `/{menu_id}` | Session | Edit detail data menu / stok / ganti gambar |
+| DELETE | `/{menu_id}` | Session | Soft-delete item menu (diarsipkan dari kasir) |
+| DELETE | `/{menu_id}/permanent`| Session | Hapus permanen menu beserta seluruh riwayat penjualan terkait |
+| POST | `/checkout` | Session | Proses transaksi belanja makanan/minuman kasir |
+| GET | `/transaksi` | Session | Ambil riwayat semua transaksi F&B kantin |
+
+### 11. Shift Handover Kasir (Prefix: `/api/v1/kasir/shift`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| POST | `/start` | Session | Mulai shift kerja kasir baru dengan memasukkan modal awal |
+| GET | `/active` | Session | Cek data dan status keaktifan shift kasir saat ini |
+| GET | `/summary` | Session | Ringkasan detail pendapatan real-time shift aktif (untuk preview) |
+| POST | `/end` | Session | Tutup shift aktif dengan Blind Count (hitung buta) uang fisik |
+| GET | `/history` | Session | Riwayat penutupan shift kasir sebelumnya |
+
+### 12. Turnamen Bracket Maker (Prefix: `/api/v1/kasir/tournament`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| GET | `/` | Session | Ambil seluruh daftar turnamen warnet |
+| GET | `/{id}` | Session | Rincian bagan bracket, match, dan klasemen Swiss turnamen |
+| POST | `/` | Session | Buat turnamen baru dan inisialisasi tim & babak pertama |
+| POST | `/match/{match_id}/skor`| Session| Update skor tanding & loloskan pemenang tanding secara otomatis |
+| POST | `/{id}/swiss/next` | Session | Buat ronde Swiss stage baru dan generate pairing tanding |
+| POST | `/stage/{stage_id}/finish`| Session| Selesaikan tahapan saat ini (Swiss/Playoffs) dan loloskan tim |
+| DELETE | `/{id}` | Session | Hapus turnamen beserta datanya secara permanen |
+
+### 13. Public Client Auth (Prefix: `/api/v1/public/auth`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| POST | `/login` | API Key | Login prepaid member warnet dari PC client |
+| POST | `/logout` | API Key | Logout prepaid member warnet dari PC client |
+| POST | `/status` | API Key | Polling status sesi member tauri di client |
+
+### 14. Public Client PC (Prefix: `/api/v1/public/client`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| POST | `/identify` | API Key | Mengidentifikasi unit PC klien saat booting berdasarkan IP & MAC |
+| POST | `/status` | API Key | Polling status kiosk PC klien (setiap 5 detik) |
+| POST | `/selesai` | API Key | Kirim signal bahwa user mengakhiri sesi (logout) dari client |
+| POST | `/admin-login` | API Key | Login admin online dari PC client |
+| POST | `/emergency-login`| API Key | Login bypass darurat dari PC client |
+| GET | `/warnet` | API Key | Ambil data setup Kiosk (Judul, Aturan, QRIS, & Paket) |
+
+### 15. Public Hardware Monitor (Prefix: `/api/v1/public/monitor`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| GET | `/all` | Session | Ambil status telemetry & spesifikasi hardware seluruh PC |
+| POST | `/` | API Key | Menerima pengunggahan telemetry hardware dari Rust agent |
+| GET | `/processes/{pc_id}` | Session | Ambil daftar proses yang sedang berjalan di PC (memori >= 10MB) |
+| POST | `/processes/{pc_id}/kill`| Session| Kirim perintah akhiri proses (taskkill) jarak jauh ke PC client |
+| POST | `/remote/{pc_id}/{action}`| Session| Kirim perintah remote restart atau shutdown ke PC client |
+| POST | `/screenshot/trigger/{pc_id}`| Session| Kirim perintah tangkap screenshot layar ke PC client |
+| POST | `/screenshot/upload` | API Key | Menerima pengunggahan file biner screenshot dari PC client |
+| GET | `/screenshot/status/{pc_id}`| Session | Dapatkan timestamp & url berkas screenshot PC client terakhir |
+| DELETE | `/{hardware_id}` | Session | Bersihkan paksa data monitor hardware PC |
+
+*(Untuk melihat payload request dan response secara mendetail, kunjungi [TECHNICAL_DOCS.md](docs/TECHNICAL_DOCS.md))*
 
 ---
 

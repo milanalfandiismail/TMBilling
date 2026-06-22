@@ -12,13 +12,13 @@ sequenceDiagram
     participant Tauri as Tauri Client (PC)
 
     Note over Browser,Tauri: === DASHBOARD FLOW ===
-    Browser->>Flask: GET /kasir/api/pc
+    Browser->>Flask: GET /api/v1/kasir/dashboard/pc
     Flask->>DB: PCService.get_all()
     DB-->>Flask: pc_list
     Flask-->>Browser: JSON {by_grup, pc_list}
     
     Note over Browser,Tauri: === BUKA SESI FLOW ===
-    Browser->>Flask: POST /api/sesi/buka-guest {pc_kode, paket_id}
+    Browser->>Flask: POST /api/v1/kasir/sesi/buka-guest {pc_kode, paket_id}
     Flask->>DB: validate PC + paket
     Flask->>DB: create Sesi + Transaksi
     Flask->>DB: commit()
@@ -26,7 +26,7 @@ sequenceDiagram
 
     Note over Browser,Tauri: === CLIENT POLLING (5s) ===
     loop Every 5 seconds
-        Tauri->>Flask: POST /client/status {ip, mac}
+        Tauri->>Flask: POST /api/v1/public/client/status {ip, mac}
         Flask->>DB: update last_activity
         Flask->>DB: cek sesi aktif
         DB-->>Flask: sesi or null
@@ -38,7 +38,7 @@ sequenceDiagram
     end
 
     Note over Browser,Tauri: === UNINSTALL FLOW ===
-    Tauri->>Flask: POST /api/settings/uninstall-token/client
+    Tauri->>Flask: GET /api/v1/kasir/settings/uninstall-token/client
     Flask-->>Tauri: {uninstall_token, emergency_token}
     Tauri->>Tauri: execute_uninstall()
     Tauri->>Flask: kill processes, delete Registry, delete files
@@ -93,11 +93,11 @@ graph TB
     MGCTM1 -->|spawn| mtm1
     mtm1 -->|monitor| MGCTM1
 
-    MGCTM1 -->|POST /client/*| Flask
-    TMMonitor1 -->|POST /api/monitor| Flask
+    MGCTM1 -->|POST /api/v1/public/client/*| Flask
+    TMMonitor1 -->|POST /api/v1/public/monitor| Flask
 
-    MGCTM2 -->|POST /client/*| Flask
-    TMMonitor2 -->|POST /api/monitor| Flask
+    MGCTM2 -->|POST /api/v1/public/client/*| Flask
+    TMMonitor2 -->|POST /api/v1/public/monitor| Flask
 ```
 
 ## 3. Client Polling Loop (5 Detik)
@@ -109,18 +109,18 @@ sequenceDiagram
     participant DB as Database
 
     Note over Client: Startup
-    Client->>Server: POST /client/identify {ip, mac}
+    Client->>Server: POST /api/v1/public/client/identify {ip, mac}
     Server->>DB: cek IP & MAC binding
     DB-->>Server: PC ditemukan / auto-register MAC
     Server-->>Client: {valid: true, pc_kode, grup}
 
     Note over Client: Loop setiap 5 detik
     loop Every 5 seconds
-        Client->>Server: POST /client/status {ip, mac, role}
+        Client->>Server: POST /api/v1/public/client/status {ip, mac, role}
         Server->>DB: update last_activity
         Server->>DB: cek sesi aktif
         
-        alt Ada sesi aktif
+        alt Sesi aktif
             DB-->>Server: sesi + sisa_waktu
             Server-->>Client: {status: "aktif", sisa_waktu: 45, nama: "Guest"}
             Client->>Client: Tampilkan overlay billing
@@ -143,7 +143,7 @@ graph TD
     A[Jalankan Uninstaller.exe] --> B[Win32 GUI — Input Password]
     B --> C{Online?}
     
-    C -->|Ya| D[Fetch token dari Flask API]
+    C -->|Ya| D["Fetch token dari Flask API (/api/v1/kasir/settings/uninstall-token/client)"]
     D --> E{Token valid?}
     E -->|Ya| F[Execute Uninstall]
     E -->|Tidak| F
@@ -153,7 +153,7 @@ graph TD
     H -->|Ya| F
     H -->|Tidak| I[MessageBox — Akses Ditolak]
     I --> B
-
+ 
     F --> J[tulis stop.token → sleep 2.5s]
     J --> K[taskkill MGCTM, TMMonitor, TMBilling, mtm → sleep 1.5s]
     K --> L[reg.exe delete HKLM\Software\TMBilling]

@@ -29,7 +29,8 @@ Aplikasi memisahkan kode menjadi 3 layer dengan aliran satu arah:
 ```
 Browser                          Flask Server                    Database
    │                                │                              │
-   ├── GET /kasir/api/pc ──────────>│                              │
+   ├── GET /api/v1/kasir/dashboard/ │                              │
+   │   pc ─────────────────────────>│                              │
    │                                ├── cleanup_expired()          │
    │                                ├── cleanup_admin_sessions()   │
    │                                ├── PCService.get_all() ──────>│
@@ -40,8 +41,8 @@ Browser                          Flask Server                    Database
    ├── renderTabs()                 │                              │
    ├── render() → PC cards          │                              │
    ├── updateStats()                │                              │
-   │    └── GET /api/report/        │                              │
-   │        laporan-harian ────────>│                              │
+   │    └── GET /api/v1/kasir/      │                              │
+   │        report/laporan-harian ─>│                              │
    │<─── {total_pendapatan, ...} ───│                              │
 ```
 
@@ -54,13 +55,14 @@ User Click          Frontend              Flask Server              DB
    │                  ├─ BukaModal.open()      │                    │
    │                  │  → Modal dengan        │                    │
    │                  │    pilihan paket       │                    │
-   │                  ├─ GET /api/paket/ ──────>│                    │
+   │                  ├─ GET /api/v1/kasir/    │                    │
+   │                  │  paket/ ──────────────>│                    │
    │                  │<─── paket_list ────────│                    │
    │                  │                       │                    │
    │  Pilih paket +   │                       │                    │
    │  klik Mulai ────>│                       │                    │
-   │                  ├─ POST /api/sesi/       │                    │
-   │                  │   buka-guest ─────────>│                    │
+   │                  ├─ POST /api/v1/kasir/   │                    │
+   │                  │   sesi/buka-guest ────>│                    │
    │                  │                       ├─ validate PC       │
    │                  │                       ├─ validate paket    │
    │                  │                       ├─ create Sesi ──────>│
@@ -71,27 +73,29 @@ User Click          Frontend              Flask Server              DB
    │<── Toast + Grid ─│                       │                    │
 ```
 
-### 3. Client Tauri Polling
+### 3. PC Client Polling
 
 ```
 Tauri Client (PC)       Flask Server            Database
      │                      │                     │
-     ├─ POST /client/ ──────>│                     │
-     │   identify            ├─ cek IP di DB ─────>│
-     │                       │<── PC ditemukan ────│
-     │<── {valid: true} ─────│                     │
-     │                       │                     │
-     │  (setiap 5 detik)     │                     │
-     ├─ POST /client/ ──────>│                     │
-     │   status              ├─ update last_activity│
-     │                       ├─ cek sesi aktif ───>│
-     │                       │<── sesi atau null ──│
-     │                       │                     │
-     │  ┌── jika ada sesi: ──│                     │
-     │  │  {status: "aktif", │                     │
-     │  │   sisa_waktu: 45}  │                     │
-     │  │                    │                     │
-     │  └── jika kosong: ────│                     │
+     ├─ POST /api/v1/public/│                     │
+     │  client/identify ───>│                     │
+     │                      ├─ cek IP di DB ─────>│
+     │                      │<── PC ditemukan ────│
+     │<── {valid: true} ────│                     │
+     │                      │                     │
+     │  (setiap 5 detik)    │                     │
+     ├─ POST /api/v1/public/│                     │
+     │  client/status ─────>│                     │
+     │                      ├─ update last_activity│
+     │                      ├─ cek sesi aktif ───>│
+     │                      │<── sesi atau null ──│
+     │                      │                     │
+     │  ┌── jika ada sesi: ─│                     │
+     │  │  {status: "aktif",│                     │
+     │  │   sisa_waktu: 45} │                     │
+     │  │                   │                     │
+     │  └── jika kosong: ───│                     │
      │     {status: "kosong",│                     │
      │      shutdown: 180}   │                     │
      │<── status ────────────│                     │
@@ -104,7 +108,8 @@ User Click          Frontend (Iframe)     Flask Server
    │                  │                       │
    ├─ BUKA PLUGIN ───>│                       │
    │                  ├─ load iframe src      │
-   │                  │  /api/plugin/xyz ────>│
+   │                  │  /api/v1/kasir/settings/
+   │                  │  plugins/page ───────>│
    │                  │                       ├─ plugin_bp
    │                  │<── HTML UI/API ───────│
    │<── Render UI ────│                       │
@@ -157,20 +162,20 @@ Komunikasi API melalui `window.API` yang handle CSRF, credential, dan error seca
 ## Client Tauri & Agent Flow
 
 ```
-┌──────────────┐    POST /client/identify    ┌──────────────┐
-│ Tauri Client │ ──────────────────────────>  │ Flask Server │
-│ (PC Warnet)  │                              │              │
-│              │ <── {valid, pc_kode, grup} ──│              │
-│              │                              │              │
-│   Setiap 5s  │    POST /client/status       │              │
-│   (Polling)  │ ──────────────────────────>  │              │
-│              │                              │   cek sesi   │
-│              │ <── {status, sisa_waktu} ────│              │
-│              │                              │              │
-│   jika sisa  │    POST /client/selesai      │              │
-│   = 0: auto  │ ──────────────────────────>  │              │
-│   shutdown   │                              │  tutup sesi  │
-└──────────────┘                              └──────────────┘
+┌──────────────┐    POST /api/v1/public/client/identify    ┌──────────────┐
+│ Tauri Client │ ────────────────────────────────────────>  │ Flask Server │
+│ (PC Warnet)  │                                            │              │
+│              │ <── {valid, pc_kode, grup} ────────────────│              │
+│              │                                            │              │
+│   Setiap 5s  │    POST /api/v1/public/client/status       │              │
+│   (Polling)  │ ────────────────────────────────────────>  │              │
+│              │                                            │   cek sesi   │
+│              │ <── {status, sisa_waktu} ──────────────────│              │
+│              │                                            │              │
+│   jika sisa  │    POST /api/v1/public/client/selesai      │              │
+│   = 0: auto  │ ────────────────────────────────────────>  │              │
+│   shutdown   │                                            │  tutup sesi  │
+└──────────────┘                                            └──────────────┘
 
 Client & Agent Components:
 ├── WarnetClient/TMBillingTauri/   — Main lockscreen & timer UI (Tauri + Rust + HTML/JS/CSS)
