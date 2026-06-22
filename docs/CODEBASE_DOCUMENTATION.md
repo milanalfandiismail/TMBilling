@@ -72,25 +72,25 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 
 | Route | Prefix | Auth | Deskripsi |
 |-------|--------|------|-----------|
-| `client_routes.py` | `/client/` | API Key | Identifikasi, polling, logout, admin/emergency login |
-| `sesi_routes.py` | `/api/sesi/` | Session | Buka/tutup/tambah waktu/pindah sesi |
-| `dashboard_routes.py` | `/` | Session | Redirect, login page, SPA dashboard |
-| `member_routes.py` | `/api/member/` | Session | CRUD member, top-up, refund |
-| `pc_routes.py` | `/api/pc/` | Session | CRUD PC, batch registration |
-| `paket_routes.py` | `/api/paket/` | Session | CRUD paket billing |
-| `grup_routes.py` | `/api/grup/` | Session | CRUD grup/zona |
-| `report_routes.py` | `/api/report/` | Session | Laporan, log, struk |
-| `monitor_routes.py` | `/api/monitor/` | Mixed | Hardware telemetry |
-| `blackout_routes.py` | `/api/blackout/` | Session | Blackout detection & recovery |
-| `settings_routes.py` | `/api/settings/` | Mixed | Settings, API key rotation, backup, uninstall token |
-| `user_routes.py` | `/api/user/` | Admin | CRUD staff |
-| `auth_kasir_routes.py` | `/api/kasir/` | None | Login, logout, session check |
-| `menu/menu_routes.py` | `/api/` | Session | API katalog F&B menu, checkout POS, riwayat transaksi |
-| `backup/backup_routes.py` | `/api/backup/` | Admin | API backup manual, test connection, list/download/delete backup |
-| `tournament/tournament_routes.py` | `/api/` | Session | API turnamen, matchmaking Swiss, update skor, playoffs |
-| `member/member_portal_routes.py` | `/member/` | Member | Web portal member (login, logout, dashboard sisa waktu, riwayat) |
-| `shift/shift_routes.py` | `/api/` | Session | API shift handover (start, active, summary, end, history) |
-| `settings/migration_routes.py` | `/api/settings/migration/` | Admin | DB Migration Manager — status, upload ZIP update, auto-migrate |
+| `client_routes.py` | `/api/v1/public/client` | API Key | Identifikasi, polling, logout, admin/emergency login |
+| `sesi_routes.py` | `/api/v1/kasir/sesi` | Session | Buka/tutup/tambah waktu/pindah sesi |
+| `dashboard_routes.py` | `/kasir` | Session | Redirect, login page, SPA dashboard |
+| `member_routes.py` | `/api/v1/kasir/member` | Session | CRUD member, top-up, refund |
+| `pc_routes.py` | `/api/v1/kasir/pc` | Session | CRUD PC, batch registration |
+| `paket_routes.py` | `/api/v1/kasir/paket` | Session | CRUD paket billing |
+| `grup_routes.py` | `/api/v1/kasir/grup` | Session | CRUD grup/zona |
+| `report_routes.py` | `/api/v1/kasir/report` | Session | Laporan, log, struk |
+| `monitor_routes.py` | `/api/v1/public/monitor` | Mixed | Hardware telemetry |
+| `blackout_routes.py` | `/api/v1/kasir/blackout` | Session | Blackout detection & recovery |
+| `settings_routes.py` | `/api/v1/kasir/settings` | Mixed | Settings, API key rotation, backup, uninstall token |
+| `user_routes.py` | `/api/v1/kasir/user` | Admin | CRUD staff |
+| `auth_kasir_routes.py` | `/api/v1/kasir/auth` | None | Login, logout, session check |
+| `menu/menu_routes.py` | `/api/v1/kasir/menu` | Session | API katalog F&B menu, checkout POS, riwayat transaksi |
+| `backup/backup_routes.py` | `/api/v1/kasir/backup` | Admin | API backup manual, test connection, list/download/delete backup |
+| `tournament/tournament_routes.py` | `/api/v1/kasir/tournament` | Session | API turnamen, matchmaking Swiss, update skor, playoffs |
+| `member/member_portal_routes.py` | `/member` | Member | Web portal member (login, logout, dashboard sisa waktu, riwayat) |
+| `shift/shift_routes.py` | `/api/v1/kasir/shift` | Session | API shift handover (start, active, summary, end, history) |
+| `settings/migration_routes.py` | `/api/v1/kasir/settings/migration` | Admin | DB Migration Manager — status, upload ZIP update, auto-migrate |
 
 ### 1.5 Frontend Dashboard (`app/static/js/kasir/`)
 
@@ -277,14 +277,14 @@ Mencegah rename/delete binary saat running.
 
 ### 4.4 API Key Rotation
 
-Dashboard → `PUT /api/settings/apikey` → update `.env` + Flask config in-memory (no restart).
+Dashboard → `PUT /api/v1/kasir/settings/apikey` → update `.env` + Flask config in-memory (no restart).
 
 ### 4.5 Authentication
 
 - **Kasir dashboard**: Flask session cookie
 - **Client → Server**: `X-Client-Key` header + IP/MAC binding
-- **Admin from client**: Dua jalur — **(1)** Emergency User + Emergency Token lokal dulu (offline), **(2)** jika bukan emergency → POST /client/admin-login ke Flask API
-- **Uninstaller**: Dua jalur — **(1)** Uninstall Token dari server (online), **(2)** Emergency Token dari Registry via Hex-XOR deobfuscate (offline fallback)
+- **Admin from client**: Dua jalur — **(1)** Emergency User + Emergency Token lokal dulu (offline), **(2)** jika bukan emergency → POST /api/v1/public/client/admin-login ke Flask API
+- **Uninstaller**: Dua jalur — **(1)** Uninstall Token dari server (online via GET /api/v1/kasir/settings/uninstall-token/client), **(2)** Emergency Token dari Registry via Hex-XOR deobfuscate (offline fallback)
 - **Emergency credentials**: Diatur saat instalasi oleh `install.bat` (default `TMBilling`/`TM123qaz!@#`), disimpan di Registry Hex-XOR
 
 ---
@@ -292,10 +292,10 @@ Dashboard → `PUT /api/settings/apikey` → update `.env` + Flask config in-mem
 ## 🔄 5. Client Polling Flow
 
 ```
-Client startup → POST /client/identify → {valid, pc_kode, grup}
+Client startup → POST /api/v1/public/client/identify → {valid, pc_kode, grup}
 
 Loop (5s):
-  → POST /client/status {ip, mac, role}
+  → POST /api/v1/public/client/status {ip, mac, role}
   → Server validate IP+MAC, cek sesi, hitung sisa_waktu
   ← Response:
      - "aktif" (with sisa_waktu) → overlay billing

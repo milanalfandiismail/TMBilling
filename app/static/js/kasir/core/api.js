@@ -193,7 +193,11 @@ const API = {
     // 🖥️ HARDWARE MONITOR
     monitor: {
         all: () => API.request('/api/v1/public/monitor/all'),
-        delete: (id) => API.request(`/api/v1/public/monitor/${id}`, { method: 'DELETE' })
+        delete: (id) => API.request(`/api/v1/public/monitor/${id}`, { method: 'DELETE' }),
+        processesKill: (pcId, processName) => API.request(`/api/v1/public/monitor/processes/${pcId}/kill`, {
+            method: 'POST',
+            body: JSON.stringify({ process_name: processName })
+        })
     },
 
     // ⚡ BLACKOUT (MANUAL)

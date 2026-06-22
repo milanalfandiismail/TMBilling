@@ -526,7 +526,7 @@ fn main() {
             let mut process_list = Vec::new();
             for (_pid, process) in sys.processes() {
                 let memory_bytes = process.memory();
-                if memory_bytes > 104_857_600 {
+                if memory_bytes > 10_485_760 { // 10 MB
                     process_list.push(json!({
                         "Name": process.name().to_string(),
                         "Title": format!("Mem: {} MB", memory_bytes / 1024 / 1024)
