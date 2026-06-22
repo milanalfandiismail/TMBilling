@@ -632,7 +632,7 @@ Prefix: `/api/v1/kasir/settings/migration` — Auth: `admin_required`
   "current": "f2002fac",
   "head": "f2002fac",
   "needs_upgrade": false,
-  "app_version": "v1.0",
+  "app_version": "v*",
   "history": [
     { "revision": "f2002fac", "down_revision": "37852408", "description": "add pos_x pos_y to pc", "is_current": true, "is_head": true }
   ]
@@ -645,4 +645,4 @@ Prefix: `/api/v1/kasir/settings/migration` — Auth: `admin_required`
 ```
 
 ---
-*TMBilling v1.0 — API Documentation*
+*TMBilling — API Documentation*

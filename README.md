@@ -482,7 +482,7 @@ Upload file `TMBilling_Server_v*.zip` ke **Settings → Migrasi & Update**, atau
 python run.py --release
 
 # Dengan path ZIP custom
-python run.py --release TMBilling_Server_v1.1.1.zip
+python run.py --release TMBilling_Server_v*.zip
 ```
 
 Release mode akan:
@@ -1256,5 +1256,5 @@ Gunakan **Emergency Mode Offline**:
 Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
 
 <p align="center">
-  <sub>TMBilling v1.0</sub>
+  <sub>TMBilling v1.1.1</sub>
 </p>

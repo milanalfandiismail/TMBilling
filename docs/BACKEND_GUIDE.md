@@ -484,4 +484,4 @@ Client Tauri dikecualikan: `csrf.exempt(client_bp)`.
 | **Shutdown Timer** | Hitungan mundur sebelum PC shutdown otomatis |
 
 ---
-*TMBilling v1.0 — Backend Guide*
+*TMBilling — Backend Guide*

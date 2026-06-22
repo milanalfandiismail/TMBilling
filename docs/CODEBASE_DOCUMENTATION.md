@@ -434,5 +434,5 @@ cd WarnetAgent/TMBilling_Monitor && cargo build --release
 
 ---
 
-*TMBilling v1.0 — Codebase Documentation*
+*TMBilling — Codebase Documentation*
 *Updated: 2026-06-16*

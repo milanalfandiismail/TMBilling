@@ -65,7 +65,7 @@ Fitur ini memungkinkan update aplikasi (backend + frontend) dan migrasi database
 - **Riwayat Migrasi**: Lihat semua revisi migrasi dengan status (HEAD / Aktif)
 
 ### Alur Upload:
-1. User upload `TMBilling_Server_v1.1.1.zip`
+1. User upload `TMBilling_Server_v*.zip`
 2. Backend validasi struktur (cek `run.py` + `app/`)
 3. Extract ke root project
 4. Auto-detect `migrations/` → backup dulu → `flask_migrate upgrade`
