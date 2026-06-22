@@ -212,4 +212,4 @@ Untuk meminimalkan gangguan pada pemain (mencegah game kehilangan fokus layar pe
   * Menghindari penggunaan pemutar audio bawaan sistem operasi pihak ketiga (seperti `powershell` atau API Windows native yang memblokir keyboard/mouse hook secara sinkron).
 
 ---
-*TMBilling v1.0 — Frontend Guide*
+*TMBilling — Frontend Guide*
