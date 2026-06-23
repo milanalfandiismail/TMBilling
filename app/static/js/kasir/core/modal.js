@@ -25,7 +25,7 @@ const Modal = {
      * @param {string} html - The inner HTML content.
      * @param {Function} [onClose] - Callback when modal closes.
      * @param {Object} [options] - Options object.
-     * @param {boolean} [options.disableBackdropClose=false] - If true, clicking the backdrop will NOT close the modal.
+     * @param {boolean} [options.disableBackdropClose=true] - If true (default), backdrop click & ESC will NOT close.
      */
     show(html, onClose, options = {}) {
         if (this.activeModal) this.closeModal();
@@ -38,15 +38,12 @@ const Modal = {
         document.body.style.overflow = 'hidden';
         this.activeModal = modalDiv;
 
-        // Backdrop click: only close if disableBackdropClose is not set
-        if (!options.disableBackdropClose) {
+        // Default: backdrop click & ESC are disabled (close only via X button)
+        const closeOnBackdrop = options.disableBackdropClose === false;
+        if (closeOnBackdrop) {
             modalDiv.addEventListener('click', (e) => {
                 if (e.target === modalDiv) this.closeModal(onClose);
             });
-        }
-
-        // ESC key: only attach if not disabled
-        if (!options.disableBackdropClose) {
             this.escHandler = (e) => {
                 if (e.key === 'Escape') this.closeModal(onClose);
             };

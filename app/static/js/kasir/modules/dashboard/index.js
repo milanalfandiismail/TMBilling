@@ -916,7 +916,7 @@ const Dashboard = {
         this._searchPage = 1;
         this._selectedGrup = '';
 
-        const grupOptions = groups.map(g => `<option value="${g.id}">${g.nama.toUpperCase()}</option>`).join('');
+        const grupOptions = groups.map(g => `<option value="${g.nama.toLowerCase()}">${g.nama.toUpperCase()}</option>`).join('');
 
         const html = `
             <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-4 md:p-6 max-w-lg w-[calc(100%-2rem)] mx-auto md:w-full max-h-[85vh] overflow-y-auto scrollbar-thin my-auto shadow-2xl">
@@ -974,8 +974,9 @@ const Dashboard = {
         // Filter grup
         if (this._selectedGrup) {
             filtered = filtered.filter(m => {
-                const mg = (typeof m.grup === 'object' ? m.grup.id : m.grup_id);
-                return String(mg) === String(this._selectedGrup);
+                const grupName = (typeof m.grup === 'object' ? (m.grup.nama || '').toLowerCase() : (m.grup || '').toLowerCase());
+                const selected = (this._selectedGrup || '').toLowerCase();
+                return grupName === selected;
             });
         }
 
