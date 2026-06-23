@@ -895,9 +895,15 @@ const Dashboard = {
     // =========================================================
 
     async tambahWaktuMember() {
+        // Fetch all members + groups
+        let groups = [];
         try {
-            const data = await API.member.list({ limit: 9999 });
-            this._searchMembers = data.members || [];
+            const [memberData, grupData] = await Promise.all([
+                API.member.list({ per_page: 9999 }),
+                API.grup.list()
+            ]);
+            this._searchMembers = memberData.members || [];
+            groups = grupData.grup || grupData || [];
         } catch (_) {
             this._searchMembers = [];
         }
@@ -908,6 +914,9 @@ const Dashboard = {
 
         this._searchFiltered = [...this._searchMembers];
         this._searchPage = 1;
+        this._selectedGrup = '';
+
+        const grupOptions = groups.map(g => `<option value="${g.id}">${g.nama.toUpperCase()}</option>`).join('');
 
         const html = `
             <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-4 md:p-6 max-w-lg w-[calc(100%-2rem)] mx-auto md:w-full max-h-[85vh] overflow-y-auto scrollbar-thin my-auto shadow-2xl">
@@ -924,10 +933,15 @@ const Dashboard = {
                     <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
                 </div>
 
-                <div class="mb-4">
+                <div class="mb-4 space-y-2">
                     <input type="text" id="member-search-input-dash" placeholder="Cari nama atau username..."
                         class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors"
                         oninput="Dashboard._handleMemberSearchInput()">
+                    <select id="member-search-grup-dash" onchange="Dashboard._handleGrupFilterChange()"
+                        class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <option value="">Semua Grup</option>
+                        ${grupOptions}
+                    </select>
                 </div>
 
                 <div id="member-search-results" class="space-y-2 min-h-[200px]">
@@ -948,17 +962,42 @@ const Dashboard = {
         this._renderMemberSearch();
     },
 
-    _handleMemberSearchInput() {
-        clearTimeout(this._searchDebounceTimer);
-        this._searchDebounceTimer = setTimeout(() => {
-            const query = document.getElementById('member-search-input-dash')?.value?.toLowerCase().trim() || '';
-            this._searchFiltered = this._searchMembers.filter(m => {
+    _handleGrupFilterChange() {
+        const select = document.getElementById('member-search-grup-dash');
+        this._selectedGrup = select ? select.value : '';
+        this._applyFilters();
+    },
+
+    _applyFilters() {
+        let filtered = [...this._searchMembers];
+
+        // Filter grup
+        if (this._selectedGrup) {
+            filtered = filtered.filter(m => {
+                const mg = (typeof m.grup === 'object' ? m.grup.id : m.grup_id);
+                return String(mg) === String(this._selectedGrup);
+            });
+        }
+
+        // Filter search
+        const query = document.getElementById('member-search-input-dash')?.value?.toLowerCase().trim() || '';
+        if (query) {
+            filtered = filtered.filter(m => {
                 const username = (m.username || '').toLowerCase();
                 const nama = (m.nama_lengkap || '').toLowerCase();
                 return username.includes(query) || nama.includes(query);
             });
-            this._searchPage = 1;
-            this._renderMemberSearch();
+        }
+
+        this._searchFiltered = filtered;
+        this._searchPage = 1;
+        this._renderMemberSearch();
+    },
+
+    _handleMemberSearchInput() {
+        clearTimeout(this._searchDebounceTimer);
+        this._searchDebounceTimer = setTimeout(() => {
+            this._applyFilters();
         }, 500);
     },
 

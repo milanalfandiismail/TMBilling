@@ -14,14 +14,7 @@ import sys
 import random
 from datetime import timedelta
 from app import create_app
-from app.models.base import db, now_local
-from app.models.grup import Grup
-from app.models.pc import PC
-from app.models.paket import Paket
-from app.models.member import Member
-from app.models.user import User
-from app.models.sesi import Sesi
-from app.models.transaksi import Transaksi
+from app.models import db, now_local, Grup, PC, Paket, Member, User, Sesi, Transaksi
 
 # Buat instance aplikasi Flask agar kita bisa akses database
 app = create_app()
@@ -113,113 +106,78 @@ def run_seed():
         db.session.commit()
         print(f"[OK] Selesai seeding {len(pcs)} unit PC!")
 
-        # 5. Seeding Paket (Minimal 30 Paket)
-        print("[ADD] Menambahkan 30 Variasi Paket Billing...")
+        # 5. Seeding Paket (20 Paket: 6 Reguler + 8 VIP + 6 VVIP)
+        print('[ADD] Menambahkan 20 Variasi Paket Billing...')
         pakets = []
 
-        # 12 Paket Reguler
-        pakets.append(Paket(nama="Reguler - 1 Jam", grup_id=grup_reg_id, durasi_menit=60, harga=5000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="Reguler - 2 Jam", grup_id=grup_reg_id, durasi_menit=120, harga=9000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="Reguler - 3 Jam", grup_id=grup_reg_id, durasi_menit=180, harga=13000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="Reguler - 4 Jam", grup_id=grup_reg_id, durasi_menit=240, harga=17000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="Reguler - 5 Jam", grup_id=grup_reg_id, durasi_menit=300, harga=20000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="Reguler - 6 Jam", grup_id=grup_reg_id, durasi_menit=360, harga=24000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="Reguler - 8 Jam", grup_id=grup_reg_id, durasi_menit=480, harga=30000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="Reguler - 10 Jam", grup_id=grup_reg_id, durasi_menit=600, harga=36000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="Reguler - 12 Jam", grup_id=grup_reg_id, durasi_menit=720, harga=40000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="Reguler Begadang (Malam)", grup_id=grup_reg_id, durasi_menit=480, harga=15000, kadaluarsa_hari=1))
-        pakets.append(Paket(nama="Reguler Puas (24 Jam)", grup_id=grup_reg_id, durasi_menit=1440, harga=75000, kadaluarsa_hari=7))
-        pakets.append(Paket(nama="Reguler Hemat Mingguan", grup_id=grup_reg_id, durasi_menit=3000, harga=140000, kadaluarsa_hari=7))
+        # 6 Paket Reguler
+        pakets.append(Paket(nama='Reguler - 1 Jam', grup_id=grup_reg_id, durasi_menit=60, harga=5000, kadaluarsa_hari=30))
+        pakets.append(Paket(nama='Reguler - 2 Jam', grup_id=grup_reg_id, durasi_menit=120, harga=9000, kadaluarsa_hari=30))
+        pakets.append(Paket(nama='Reguler - 3 Jam', grup_id=grup_reg_id, durasi_menit=180, harga=13000, kadaluarsa_hari=30))
+        pakets.append(Paket(nama='Reguler - 5 Jam', grup_id=grup_reg_id, durasi_menit=300, harga=20000, kadaluarsa_hari=30))
+        pakets.append(Paket(nama='Reguler - 10 Jam', grup_id=grup_reg_id, durasi_menit=600, harga=36000, kadaluarsa_hari=30))
+        pakets.append(Paket(nama='Reguler Begadang', grup_id=grup_reg_id, durasi_menit=480, harga=15000, kadaluarsa_hari=1))
 
-        # 10 Paket VIP
-        pakets.append(Paket(nama="VIP - 1 Jam", grup_id=grup_vip_id, durasi_menit=60, harga=8000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="VIP - 2 Jam", grup_id=grup_vip_id, durasi_menit=120, harga=15000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="VIP - 3 Jam", grup_id=grup_vip_id, durasi_menit=180, harga=21000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="VIP - 5 Jam", grup_id=grup_vip_id, durasi_menit=300, harga=32000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="VIP - 8 Jam", grup_id=grup_vip_id, durasi_menit=480, harga=50000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="VIP - 10 Jam", grup_id=grup_vip_id, durasi_menit=600, harga=60000, kadaluarsa_hari=30))
-        pakets.append(Paket(nama="VIP Begadang (Malam)", grup_id=grup_vip_id, durasi_menit=600, harga=35000, kadaluarsa_hari=1))
-        pakets.append(Paket(nama="VIP Sore Santai", grup_id=grup_vip_id, durasi_menit=240, harga=20000, kadaluarsa_hari=1))
-        pakets.append(Paket(nama="VIP Sultan Muda", grup_id=grup_vip_id, durasi_menit=1200, harga=100000, kadaluarsa_hari=14))
-        pakets.append(Paket(nama="VIP Happy Hour (Pagi)", grup_id=grup_vip_id, durasi_menit=180, harga=10000, kadaluarsa_hari=1))
+        # 8 Paket VIP
+        pakets.append(Paket(nama='VIP - 1 Jam', grup_id=grup_vip_id, durasi_menit=60, harga=8000, kadaluarsa_hari=30))
+        pakets.append(Paket(nama='VIP - 2 Jam', grup_id=grup_vip_id, durasi_menit=120, harga=15000, kadaluarsa_hari=30))
+        pakets.append(Paket(nama='VIP - 3 Jam', grup_id=grup_vip_id, durasi_menit=180, harga=21000, kadaluarsa_hari=30))
+        pakets.append(Paket(nama='VIP - 5 Jam', grup_id=grup_vip_id, durasi_menit=300, harga=32000, kadaluarsa_hari=30))
+        pakets.append(Paket(nama='VIP - 8 Jam', grup_id=grup_vip_id, durasi_menit=480, harga=50000, kadaluarsa_hari=30))
+        pakets.append(Paket(nama='VIP - 10 Jam', grup_id=grup_vip_id, durasi_menit=600, harga=60000, kadaluarsa_hari=30))
+        pakets.append(Paket(nama='VIP Begadang', grup_id=grup_vip_id, durasi_menit=600, harga=35000, kadaluarsa_hari=1))
+        pakets.append(Paket(nama='VIP Happy Hour', grup_id=grup_vip_id, durasi_menit=180, harga=10000, kadaluarsa_hari=1))
 
-        # 8 Paket VVIP
-        pakets.append(Paket(nama="VVIP Sultan - 1 Jam", grup_id=grup_vvip_id, durasi_menit=60, harga=15000, kadaluarsa_hari=15))
-        pakets.append(Paket(nama="VVIP Sultan - 3 Jam", grup_id=grup_vvip_id, durasi_menit=180, harga=40000, kadaluarsa_hari=15))
-        pakets.append(Paket(nama="VVIP Sultan - 5 Jam", grup_id=grup_vvip_id, durasi_menit=300, harga=60000, kadaluarsa_hari=15))
-        pakets.append(Paket(nama="VVIP Sultan - 10 Jam", grup_id=grup_vvip_id, durasi_menit=600, harga=110000, kadaluarsa_hari=15))
-        pakets.append(Paket(nama="VVIP Begadang Mewah", grup_id=grup_vvip_id, durasi_menit=600, harga=75000, kadaluarsa_hari=1))
-        pakets.append(Paket(nama="VVIP Full Day Streaming", grup_id=grup_vvip_id, durasi_menit=1440, harga=200000, kadaluarsa_hari=5))
-        pakets.append(Paket(nama="VVIP Custom Event", grup_id=grup_vvip_id, durasi_menit=720, harga=150000, kadaluarsa_hari=3))
-        pakets.append(Paket(nama="VVIP Sultan Party (3 Hari)", grup_id=grup_vvip_id, durasi_menit=4320, harga=500000, kadaluarsa_hari=3))
+        # 6 Paket VVIP
+        pakets.append(Paket(nama='VVIP - 1 Jam', grup_id=grup_vvip_id, durasi_menit=60, harga=15000, kadaluarsa_hari=15))
+        pakets.append(Paket(nama='VVIP - 3 Jam', grup_id=grup_vvip_id, durasi_menit=180, harga=40000, kadaluarsa_hari=15))
+        pakets.append(Paket(nama='VVIP - 5 Jam', grup_id=grup_vvip_id, durasi_menit=300, harga=60000, kadaluarsa_hari=15))
+        pakets.append(Paket(nama='VVIP - 10 Jam', grup_id=grup_vvip_id, durasi_menit=600, harga=110000, kadaluarsa_hari=15))
+        pakets.append(Paket(nama='VVIP Full Day', grup_id=grup_vvip_id, durasi_menit=1440, harga=200000, kadaluarsa_hari=5))
+        pakets.append(Paket(nama='VVIP Sultan Party', grup_id=grup_vvip_id, durasi_menit=4320, harga=500000, kadaluarsa_hari=3))
 
         db.session.add_all(pakets)
         db.session.commit()
         print(f"[OK] Selesai seeding {len(pakets)} variasi Paket!")
 
-        # 6. Seeding Member (Minimal 35 Member untuk Paginasi & Stress Test)
-        print("[ADD] Menambahkan 35 Member dengan karakter Dota/Gaming...")
-        member_names = [
-            # (username, nama_lengkap, grup_id, waktu_menit, status_aktif, days_to_expiry_offset)
-            ("gaming_sultan", "Raffi Ahmad Gaming", grup_vvip_id, 4320, True, 15),
-            ("warnet_legend", "Legenda Sempurna", grup_reg_id, 1200, True, 30),
-            ("bocah_ep_ep", "Alok Free Fire", grup_reg_id, 30, True, 3),
-            ("tante_gaming", "Mbak Indah Streaming", grup_vip_id, 800, True, 10),
-            ("mbak_admin", "Admin Cantik Warnet", grup_vip_id, 2400, True, None),
-            ("casual_player_1", "Budi Santoso", grup_reg_id, 120, True, 7),
-            ("phantom_assassin", "Mortred Critical", grup_vip_id, 450, True, 14),
-            ("shadow_fiend", "Nevermore Mid", grup_reg_id, 0, True, None),
-            ("invoker_pro", "Kael Sunstrike", grup_vvip_id, 650, True, 12),
-            ("techies_toxic", "Tukang Ranjau", grup_reg_id, 100, False, 2), # Locked account
-            ("windrunner", "Lyralei Shackle", grup_vip_id, 320, True, 6),
-            ("mirana_gaming", "Arrow Nyasar", grup_reg_id, 0, True, -2), # Expired 2 days ago
-            ("pudge_mid", "Tukang Hook Miss", grup_reg_id, 50, True, -5), # Expired 5 days ago
-            ("crystal_maiden", "Rylai Support", grup_vip_id, 180, True, 5),
-            ("rubick_steal", "Grand Magus", grup_vvip_id, 1200, True, 20),
-            ("juggernaut_carry", "Yurnero Omnislash", grup_vip_id, 900, True, 25),
-            ("sniper_keker", "Kardel Assassinate", grup_reg_id, 45, True, 1),
-            ("zeus_petir", "Dewa Listrik", grup_vip_id, 0, True, None),
-            ("spectre_bayang", "Mercurial Haunt", grup_vvip_id, 3000, True, 30),
-            ("anti_mage", "Magina Blink", grup_reg_id, 60, True, 4),
-            ("faceless_void", "Darkterror Chrono", grup_vip_id, 150, True, 8),
-            ("riki_ngilang", "Stealth Backstab", grup_reg_id, 200, False, 10), # Locked
-            ("viper_racun", "Netherdrake Poison", grup_reg_id, 0, True, -1), # Expired 1 day ago
-            ("doom_bringer", "Lucifer Silenced", grup_vvip_id, 800, True, 14),
-            ("clinkz_panah", "Skeleton Archer", grup_reg_id, 120, True, 3),
-            ("slark_loncat", "Piranha Leap", grup_vip_id, 360, True, 9),
-            ("ursa_cakar", "Fuzzy Wuzzy", grup_reg_id, 500, True, 15),
-            ("axe_muter", "Mogul Khan Call", grup_reg_id, 0, True, None),
-            ("centaur_seruduk", "Bradwardine Stampede", grup_vip_id, 240, True, 5),
-            ("tide_gurita", "Leviathan Ravage", grup_reg_id, 150, False, 1), # Locked
-            ("magnus_dorong", "Reverse Polarity", grup_vvip_id, 1300, True, 18),
-            ("kunkka_kapal", "Admiral Torrent", grup_vip_id, 400, True, 11),
-            ("sven_tebas", "Rogue Knight God Strength", grup_reg_id, 75, True, 6),
-            ("slardar_ketok", "Deep One Crush", grup_reg_id, 0, True, -10), # Expired 10 days ago
-            ("luna_bulan", "Nova Eclipse", grup_vvip_id, 5000, True, 30)
-        ]
+        # 6. Seeding Member (100 Member untuk Paginasi)
+        print('[ADD] Menambahkan 100 Member...')
+
+        # Generate 100 member names
+        nama_depan = ['Alok', 'Budi', 'Citra', 'Dimas', 'Eka', 'Fajar', 'Gita', 'Hendra', 'Intan', 'Joko',
+                      'Kevin', 'Lina', 'Mega', 'Nando', 'Olivia', 'Putra', 'Rina', 'Sandi', 'Tari', 'Ujang',
+                      'Vina', 'Wawan', 'Xena', 'Yoga', 'Zara', 'Adit', 'Bayu', 'Cici', 'Doni', 'Elsa',
+                      'Fani', 'Gilang', 'Hana', 'Irfan', 'Jenny', 'Krisna', 'Laura', 'Mahesa', 'Nia', 'Omar',
+                      'Priya', 'Rama', 'Siska', 'Toni', 'Ulfah', 'Vicky', 'Winda', 'Yanti', 'Zaki', 'Agung',
+                      'Bella', 'Candra', 'Dewi', 'Evan', 'Fitri', 'Galih', 'Hesti', 'Ipul', 'Jasmine', 'Kiki',
+                      'Luki', 'Mira', 'Novi', 'Ojan', 'Pandu', 'Riska', 'Sidiq', 'Tiara', 'Umar', 'Vero',
+                      'Wahyu', 'Yuda', 'Zulfan', 'Akbar', 'Bunga', 'Cipto', 'Dinda', 'Erwin', 'Fina', 'Guntur',
+                      'Hilda', 'Iqbal', 'Jihan', 'Karina', 'Leo', 'Maya', 'Natan', 'Opik', 'Paula', 'Rizky',
+                      'Sinta', 'Taufik', 'Ucok', 'Valent', 'Wati', 'Yunus', 'Zidan', 'Ayu', 'Dodi', 'Fahmi']
 
         members = []
         now = now_local()
+        grup_ids = [grup_reg_id, grup_vip_id, grup_vvip_id]
 
-        for idx, item in enumerate(member_names):
-            uname, full_name, g_id, minutes, is_active, exp_offset = item
-            
-            # Setup Expiration Date
-            exp_date = None
-            if exp_offset is not None:
-                exp_date = now + timedelta(days=exp_offset)
+        for idx, nama in enumerate(nama_depan):
+            uname = nama.lower() + str(random.randint(10, 999))
+            gid = random.choice(grup_ids)
+            minutes = random.choice([0, 30, 60, 120, 180, 300, 480, 600, 1200, 2400, 4320, 5000])
+            aktif = random.random() > 0.15  # 85% aktif
+            exp_offset = random.choice([None, 1, 3, 5, 7, 14, 30, -1, -5, -10])
+            exp_date = None if exp_offset is None else now + timedelta(days=exp_offset)
 
             mem = Member(
                 username=uname,
-                nama_lengkap=full_name,
-                email=f"{uname}@tmbilling.id",
-                no_hp=f"081234567{idx:02d}",
-                grup_id=g_id,
-                aktif=is_active,
+                nama_lengkap=nama + ' ' + random.choice(['Warnet', 'Gaming', 'Player', 'Stream', 'ID']),
+                email=f'{uname}@tmbilling.id',
+                no_hp=f'0812{random.randint(10000000, 99999999)}',
+                grup_id=gid,
+                aktif=aktif,
                 waktu_tersimpan=minutes,
                 kadaluarsa_pada=exp_date
             )
-            mem.set_password("123456") # Password testing default
+            mem.set_password('123456')
             members.append(mem)
 
         db.session.add_all(members)
