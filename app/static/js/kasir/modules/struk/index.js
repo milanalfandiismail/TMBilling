@@ -80,7 +80,8 @@ const Struk = {
 
             container.innerHTML = '<div class="flex justify-center py-12"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
-            const res = await window.API.report.byTanggal(targetDate, '', page, 5);
+            const apiFn = this.currentSubTab === 'kantin' ? window.API.report.kantinByTanggal : window.API.report.byTanggal;
+            const res = await apiFn(targetDate, '', page, 5);
             let listData = [];
             if (this.currentSubTab === 'billing') {
                 listData = res.history_struk || [];

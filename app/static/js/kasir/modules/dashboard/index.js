@@ -6,6 +6,11 @@ const Dashboard = {
     activeGrup: 'semua',
     lastData: null,
     _currentPcId: null,
+    _searchMembers: [],
+    _searchFiltered: [],
+    _searchPage: 1,
+    _searchPerPage: 5,
+    _searchDebounceTimer: null,
 
     grupStyles: {
         'vvip': { text: 'text-rose-400', border: 'border-rose-800', bg: 'bg-rose-500/10', dot: 'bg-rose-500' },
@@ -797,7 +802,6 @@ const Dashboard = {
     closeContextMenu() {
         const el = document.getElementById('pc-context-menu');
         if (el) el.remove();
-        // Bersihkan listener agar tidak menumpuk
         if (this._ctxOutsideHandler) {
             document.removeEventListener('click', this._ctxOutsideHandler);
             this._ctxOutsideHandler = null;
@@ -884,6 +888,190 @@ const Dashboard = {
 
     openPcModal(pcId, kode) {
         this.showDetail(pcId);
+    },
+
+    // =========================================================
+    // TAMBAH WAKTU MEMBER (MODAL SEARCH)
+    // =========================================================
+
+    async tambahWaktuMember() {
+        // Fetch all members + groups
+        let groups = [];
+        try {
+            const [memberData, grupData] = await Promise.all([
+                API.member.list({ per_page: 9999 }),
+                API.grup.list()
+            ]);
+            this._searchMembers = memberData.members || [];
+            groups = grupData.grup || grupData || [];
+        } catch (_) {
+            this._searchMembers = [];
+        }
+
+        if (this._searchMembers.length === 0) {
+            return Toast.error('Tidak ada member terdaftar');
+        }
+
+        this._searchFiltered = [...this._searchMembers];
+        this._searchPage = 1;
+        this._selectedGrup = '';
+
+        const grupOptions = groups.map(g => `<option value="${g.nama.toLowerCase()}">${g.nama.toUpperCase()}</option>`).join('');
+
+        const html = `
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-4 md:p-6 max-w-lg w-[calc(100%-2rem)] mx-auto md:w-full max-h-[85vh] overflow-y-auto scrollbar-thin my-auto shadow-2xl">
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#2a2a2a]">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
+                            <svg class="w-4 h-4 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-neutral-100 tracking-wide">Tambah Waktu Member</h3>
+                            <p class="text-[10px] text-neutral-500 mt-0.5">Cari member, lalu pilih paket</p>
+                        </div>
+                    </div>
+                    <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
+                </div>
+
+                <div class="mb-4 space-y-2">
+                    <input type="text" id="member-search-input-dash" placeholder="Cari nama atau username..."
+                        class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors"
+                        oninput="Dashboard._handleMemberSearchInput()">
+                    <select id="member-search-grup-dash" onchange="Dashboard._handleGrupFilterChange()"
+                        class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <option value="">Semua Grup</option>
+                        ${grupOptions}
+                    </select>
+                </div>
+
+                <div id="member-search-results" class="space-y-2 min-h-[200px]">
+                    <div class="flex justify-center py-10">
+                        <div class="w-5 h-5 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div>
+                    </div>
+                </div>
+
+                <div id="member-search-pagination" class="flex items-center justify-between mt-4 pt-3 border-t border-[#2a2a2a]">
+                </div>
+
+                <div class="flex justify-end mt-3">
+                    <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs font-bold rounded-lg transition-colors">Batal</button>
+                </div>
+            </div>`;
+
+        Modal.show(html);
+        this._renderMemberSearch();
+    },
+
+    _handleGrupFilterChange() {
+        const select = document.getElementById('member-search-grup-dash');
+        this._selectedGrup = select ? select.value : '';
+        this._applyFilters();
+    },
+
+    _applyFilters() {
+        let filtered = [...this._searchMembers];
+
+        // Filter grup
+        if (this._selectedGrup) {
+            filtered = filtered.filter(m => {
+                const grupName = (typeof m.grup === 'object' ? (m.grup.nama || '').toLowerCase() : (m.grup || '').toLowerCase());
+                const selected = (this._selectedGrup || '').toLowerCase();
+                return grupName === selected;
+            });
+        }
+
+        // Filter search
+        const query = document.getElementById('member-search-input-dash')?.value?.toLowerCase().trim() || '';
+        if (query) {
+            filtered = filtered.filter(m => {
+                const username = (m.username || '').toLowerCase();
+                const nama = (m.nama_lengkap || '').toLowerCase();
+                return username.includes(query) || nama.includes(query);
+            });
+        }
+
+        this._searchFiltered = filtered;
+        this._searchPage = 1;
+        this._renderMemberSearch();
+    },
+
+    _handleMemberSearchInput() {
+        clearTimeout(this._searchDebounceTimer);
+        this._searchDebounceTimer = setTimeout(() => {
+            this._applyFilters();
+        }, 500);
+    },
+
+    _renderMemberSearch() {
+        const container = document.getElementById('member-search-results');
+        if (!container) return;
+
+        const total = this._searchFiltered.length;
+        const totalPages = Math.max(1, Math.ceil(total / this._searchPerPage));
+        const start = (this._searchPage - 1) * this._searchPerPage;
+        const pageData = this._searchFiltered.slice(start, start + this._searchPerPage);
+
+        if (total === 0) {
+            container.innerHTML = '<div class="flex justify-center py-10 text-neutral-500 text-xs font-bold">Member tidak ditemukan</div>';
+            this._renderMemberPagination(1, 0);
+            return;
+        }
+
+        container.innerHTML = pageData.map(m => {
+            const sisa = Utils.formatDurasiFriendly(m.waktu_saved || m.waktu_tersimpan);
+            return `
+                <div onclick="Dashboard._pilihMember(${m.id})"
+                    class="flex items-center justify-between p-3 bg-[#141414] border border-[#2a2a2a] rounded-xl hover:border-neutral-500 hover:bg-[#1a1a1a] cursor-pointer transition-all">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <div class="w-8 h-8 rounded-lg bg-[#0a0a0a] border border-[#2a2a2a] flex items-center justify-center text-neutral-300 font-bold text-xs shrink-0">${(m.username || '?').charAt(0).toUpperCase()}</div>
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-xs text-neutral-200 truncate">${m.username}</div>
+                            <div class="text-[10px] text-neutral-500 truncate">${m.nama_lengkap || '-'}</div>
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0 ml-2">
+                        <div class="text-[10px] text-neutral-500 font-mono">Sisa</div>
+                        <div class="text-xs font-bold text-neutral-100 font-mono">${sisa}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        this._renderMemberPagination(this._searchPage, totalPages);
+    },
+
+    _renderMemberPagination(currentPage, totalPages) {
+        const container = document.getElementById('member-search-pagination');
+        if (!container) return;
+
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = `
+            <span class="text-[10px] text-neutral-500 font-mono">Halaman ${currentPage} dari ${totalPages}</span>
+            <div class="flex gap-2">
+                <button onclick="Dashboard._searchPage = ${Math.max(1, currentPage - 1)}; Dashboard._renderMemberSearch()"
+                    class="px-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded-lg transition-colors ${currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}"
+                    ${currentPage <= 1 ? 'disabled' : ''}>
+                    &larr; Sebelum
+                </button>
+                <button onclick="Dashboard._searchPage = ${Math.min(totalPages, currentPage + 1)}; Dashboard._renderMemberSearch()"
+                    class="px-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded-lg transition-colors ${currentPage >= totalPages ? 'opacity-30 cursor-not-allowed' : ''}"
+                    ${currentPage >= totalPages ? 'disabled' : ''}>
+                    Selanjutnya &rarr;
+                </button>
+            </div>`;
+    },
+
+    _pilihMember(memberId) {
+        Modal.closeModal();
+        if (typeof MemberRefill !== 'undefined' && MemberRefill.tambahWaktu) {
+            MemberRefill.tambahWaktu(memberId);
+        } else {
+            Toast.error('Gagal: modul refill belum siap');
+            }
     }
 
 };
