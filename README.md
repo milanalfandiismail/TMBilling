@@ -1256,5 +1256,6 @@ Gunakan **Emergency Mode Offline**:
 Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
 
 <p align="center">
+  <sub>Free code signing provided by <a href="https://signpath.org">
   <sub>TMBilling v1.1.1</sub>
 </p>
