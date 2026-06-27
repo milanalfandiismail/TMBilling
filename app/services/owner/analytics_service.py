@@ -1,13 +1,14 @@
 """Service untuk Owner Analytics Dashboard."""
 
 from datetime import datetime, timedelta
-from app.models import db, now_local
+from app.models import db
 from app.models.transaksi.transaksi import Transaksi
 from app.models.sesi.sesi import Sesi
 from app.models.member.member import Member
 from app.models.paket.paket import Paket
 from app.models.menu.menu import TransaksiMenu
 from app.models.user.user import User
+from app.utils.timezone_utils import now_utc, get_display_tz, display_in_tz, UTC
 from sqlalchemy import func
 
 
@@ -15,15 +16,28 @@ class OwnerAnalyticsService:
 
     @staticmethod
     def parse_dates(start_str=None, end_str=None):
-        end = now_local()
+        tz = get_display_tz()
+        now_aware = now_utc().astimezone(tz)
+        
         if end_str:
-            try: end = datetime.strptime(end_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
-            except: pass
-        start = end - timedelta(days=6)
+            try: 
+                end_dt = datetime.strptime(end_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, tzinfo=tz)
+            except: 
+                end_dt = now_aware
+        else:
+            end_dt = now_aware
+            
         if start_str:
-            try: start = datetime.strptime(start_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0)
-            except: pass
-        return start, end
+            try: 
+                start_dt = datetime.strptime(start_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, tzinfo=tz)
+            except: 
+                start_dt = (end_dt - timedelta(days=6)).replace(hour=0, minute=0, second=0)
+        else:
+            start_dt = (end_dt - timedelta(days=6)).replace(hour=0, minute=0, second=0)
+            
+        start_utc = start_dt.astimezone(UTC).replace(tzinfo=None)
+        end_utc = end_dt.astimezone(UTC).replace(tzinfo=None)
+        return start_utc, end_utc
 
     @staticmethod
     def _daily_labels(start, end):
@@ -35,27 +49,38 @@ class OwnerAnalyticsService:
 
     @staticmethod
     def get_pendapatan_harian(start, end):
-        billing = db.session.query(
-            func.date(Transaksi.dibuat_pada).label('tgl'),
-            func.coalesce(func.sum(Transaksi.jumlah), 0).label('total')
-        ).filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end, Transaksi.jumlah > 0
-        ).group_by(func.date(Transaksi.dibuat_pada)).all()
+        billing = db.session.query(Transaksi.dibuat_pada, Transaksi.jumlah)\
+            .filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end, Transaksi.jumlah > 0).all()
 
-        kantin = db.session.query(
-            func.date(TransaksiMenu.tanggal).label('tgl'),
-            func.coalesce(func.sum(TransaksiMenu.total_harga), 0).label('total')
-        ).filter(TransaksiMenu.tanggal >= start, TransaksiMenu.tanggal <= end
-        ).group_by(func.date(TransaksiMenu.tanggal)).all()
+        kantin = db.session.query(TransaksiMenu.tanggal, TransaksiMenu.total_harga)\
+            .filter(TransaksiMenu.tanggal >= start, TransaksiMenu.tanggal <= end).all()
 
-        b_map = {r.tgl: r.total for r in billing}
-        k_map = {r.tgl: r.total for r in kantin}
+        b_map, k_map = {}, {}
+        
+        for b in billing:
+            if b.dibuat_pada:
+                local_dt = display_in_tz(b.dibuat_pada)
+                dt_iso = local_dt.date().isoformat()
+                b_map[dt_iso] = b_map.get(dt_iso, 0) + b.jumlah
+            
+        for k in kantin:
+            if k.tanggal:
+                local_dt = display_in_tz(k.tanggal)
+                dt_iso = local_dt.date().isoformat()
+                k_map[dt_iso] = k_map.get(dt_iso, 0) + k.total_harga
 
         labels, bd, kd = [], [], []
-        for i in range((end - start).days + 1):
-            d = (start + timedelta(days=i)).date().isoformat()
-            labels.append((start + timedelta(days=i)).strftime('%d/%m/%Y'))
-            bd.append(b_map.get(d, 0))
-            kd.append(k_map.get(d, 0))
+        start_local = display_in_tz(start).date()
+        end_local = display_in_tz(end).date()
+        
+        total_days = (end_local - start_local).days + 1
+        for i in range(total_days):
+            d = start_local + timedelta(days=i)
+            dt_iso = d.isoformat()
+            labels.append(d.strftime('%d/%m/%Y'))
+            bd.append(b_map.get(dt_iso, 0))
+            kd.append(k_map.get(dt_iso, 0))
+            
         return {'labels': labels, 'billing': bd, 'kantin': kd}
 
     @staticmethod
@@ -63,7 +88,9 @@ class OwnerAnalyticsService:
         sessions = Sesi.query.filter(Sesi.mulai_pada >= start, Sesi.mulai_pada <= end).all()
         jam_counts = {}
         for s in sessions:
-            jam_counts[s.mulai_pada.hour] = jam_counts.get(s.mulai_pada.hour, 0) + 1
+            if s.mulai_pada:
+                local_dt = display_in_tz(s.mulai_pada)
+                jam_counts[local_dt.hour] = jam_counts.get(local_dt.hour, 0) + 1
         mx = max(jam_counts.values()) if jam_counts else 1
         labels, data = [], []
         for j in range(24):
@@ -73,20 +100,34 @@ class OwnerAnalyticsService:
 
     @staticmethod
     def get_member_trend(start, end):
-        baru = db.session.query(func.date(Member.dibuat_pada).label('tgl'), func.count(Member.id).label('total')
-        ).filter(Member.dibuat_pada >= start, Member.dibuat_pada <= end
-        ).group_by(func.date(Member.dibuat_pada)).all()
-        kadaluarsa = db.session.query(func.date(Member.kadaluarsa_pada).label('tgl'), func.count(Member.id).label('total')
-        ).filter(Member.kadaluarsa_pada >= start, Member.kadaluarsa_pada <= end
-        ).group_by(func.date(Member.kadaluarsa_pada)).all()
-        b_map = {r.tgl: r.total for r in baru}
-        k_map = {r.tgl: r.total for r in kadaluarsa}
+        members = Member.query.filter(
+            (Member.dibuat_pada >= start) | (Member.kadaluarsa_pada >= start)
+        ).all()
+        
+        b_map, k_map = {}, {}
+        for m in members:
+            if m.dibuat_pada and start <= m.dibuat_pada <= end:
+                local_dt = display_in_tz(m.dibuat_pada)
+                dt_iso = local_dt.date().isoformat()
+                b_map[dt_iso] = b_map.get(dt_iso, 0) + 1
+                
+            if m.kadaluarsa_pada and start <= m.kadaluarsa_pada <= end:
+                local_dt = display_in_tz(m.kadaluarsa_pada)
+                dt_iso = local_dt.date().isoformat()
+                k_map[dt_iso] = k_map.get(dt_iso, 0) + 1
+
         labels, bd, kd = [], [], []
-        for i in range((end - start).days + 1):
-            d = (start + timedelta(days=i)).date().isoformat()
-            labels.append((start + timedelta(days=i)).strftime('%d/%m/%Y'))
-            bd.append(b_map.get(d, 0))
-            kd.append(k_map.get(d, 0))
+        start_local = display_in_tz(start).date()
+        end_local = display_in_tz(end).date()
+        
+        total_days = (end_local - start_local).days + 1
+        for i in range(total_days):
+            d = start_local + timedelta(days=i)
+            dt_iso = d.isoformat()
+            labels.append(d.strftime('%d/%m/%Y'))
+            bd.append(b_map.get(dt_iso, 0))
+            kd.append(k_map.get(dt_iso, 0))
+            
         return {'labels': labels, 'baru': bd, 'kadaluarsa': kd}
 
     @staticmethod
