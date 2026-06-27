@@ -321,6 +321,9 @@ class PCService:
             ValueError: Jika MAC Address tidak valid atau kosong.
         """
         import socket
+        import psutil
+        import ipaddress
+
         if not mac_address:
             raise ValueError("MAC Address tidak boleh kosong")
 
@@ -336,6 +339,25 @@ class PCService:
         # Bangun Magic Packet: 6x 0xFF + MAC address diulang 16 kali
         magic_packet = b'\xff' * 6 + mac_bytes * 16
 
+        # Kumpulkan semua alamat broadcast aktif
+        broadcasts = set()
+        broadcasts.add('255.255.255.255')
+        
+        try:
+            for interface_name, interface_addresses in psutil.net_if_addrs().items():
+                for address in interface_addresses:
+                    if address.family == socket.AF_INET:
+                        ip = address.address
+                        netmask = address.netmask
+                        if ip and netmask and ip != '127.0.0.1':
+                            try:
+                                network = ipaddress.IPv4Network(f"{ip}/{netmask}", strict=False)
+                                broadcasts.add(str(network.broadcast_address))
+                            except Exception:
+                                pass
+        except Exception:
+            pass # Fallback ke 255.255.255.255 jika psutil gagal
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         # Windows: must bind before broadcast sendto
@@ -343,16 +365,19 @@ class PCService:
             sock.bind(('0.0.0.0', 0))
         except OSError:
             pass
-        try:
-            # Try global broadcast first, fallback to subnet-directed
-            sock.sendto(magic_packet, ('255.255.255.255', 9))
-        except OSError:
+
+        sent_any = False
+        for bcast in broadcasts:
             try:
-                sock.sendto(magic_packet, ('192.168.1.255', 9))
+                sock.sendto(magic_packet, (bcast, 9))
+                sent_any = True
             except OSError:
-                raise
-        finally:
-            sock.close()
+                pass
+                
+        sock.close()
+        
+        if not sent_any:
+            raise OSError("Gagal mengirim WOL packet ke semua interface")
         
         return True
 
