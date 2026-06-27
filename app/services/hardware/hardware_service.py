@@ -31,7 +31,15 @@ class HardwareService:
         Returns:
             list: List objek HardwareMonitor dengan relasi PC.
         """
-        return HardwareRepository.get_all_with_pc()
+        monitors = HardwareRepository.get_all_with_pc()
+        
+        def natural_sort_key(monitor):
+            if not monitor.pc or not monitor.pc.kode:
+                return []
+            return [int(text) if text.isdigit() else text.lower()
+                    for text in re.split(r'(\d+)', monitor.pc.kode)]
+            
+        return sorted(monitors, key=natural_sort_key)
 
     @staticmethod
     def process_hardware_metric(client_ip, data):
