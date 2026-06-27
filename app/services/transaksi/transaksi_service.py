@@ -14,7 +14,7 @@ class TransaksiService:
 
     @staticmethod
     def get_user_id(operator):
-        if operator and operator not in ("system", "kasir"):
+        if operator and operator != "system":
             user = UserRepository.get_by_username(operator)
             if user:
                 return user.id
