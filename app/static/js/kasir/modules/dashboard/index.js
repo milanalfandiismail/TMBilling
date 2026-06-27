@@ -734,6 +734,16 @@ const Dashboard = {
                 <span>Tutup Sesi</span>
             </button>` : ''}
 
+            <!-- Pindah PC (jika ada sesi aktif non-admin) -->
+            ${hasSesi ? `
+            <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
+                    onclick="Dashboard.closeContextMenu(); Dashboard.pindahSesi(${pc.sesi_detail.id}, '${pc.sesi_detail.tipe}', '${pc.grup}')">
+                <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                </svg>
+                <span>Pindah PC</span>
+            </button>` : ''}
+
             <div class="border-t border-[#222] my-1"></div>
 
             <!-- Wake-on-LAN -->
