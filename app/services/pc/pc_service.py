@@ -321,8 +321,6 @@ class PCService:
             ValueError: Jika MAC Address tidak valid atau kosong.
         """
         import socket
-        import psutil
-        import ipaddress
 
         if not mac_address:
             raise ValueError("MAC Address tidak boleh kosong")
@@ -339,42 +337,53 @@ class PCService:
         # Bangun Magic Packet: 6x 0xFF + MAC address diulang 16 kali
         magic_packet = b'\xff' * 6 + mac_bytes * 16
 
-        # Kumpulkan semua alamat broadcast aktif
-        broadcasts = set()
-        broadcasts.add('255.255.255.255')
-        
+        # Cari semua IP lokal dari server (tanpa library tambahan psutil)
+        hostname = socket.gethostname()
         try:
-            for interface_name, interface_addresses in psutil.net_if_addrs().items():
-                for address in interface_addresses:
-                    if address.family == socket.AF_INET:
-                        ip = address.address
-                        netmask = address.netmask
-                        if ip and netmask and ip != '127.0.0.1':
-                            try:
-                                network = ipaddress.IPv4Network(f"{ip}/{netmask}", strict=False)
-                                broadcasts.add(str(network.broadcast_address))
-                            except Exception:
-                                pass
+            _, _, ip_addresses = socket.gethostbyname_ex(hostname)
         except Exception:
-            pass # Fallback ke 255.255.255.255 jika psutil gagal
+            ip_addresses = []
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        # Windows: must bind before broadcast sendto
-        try:
-            sock.bind(('0.0.0.0', 0))
-        except OSError:
-            pass
+        if not ip_addresses:
+            ip_addresses = ['0.0.0.0']
 
         sent_any = False
-        for bcast in broadcasts:
+        
+        # Broadcast via setiap NIC (Network Interface)
+        for ip in ip_addresses:
+            # Skip loopback
+            if ip.startswith("127."):
+                continue
+                
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            
             try:
-                sock.sendto(magic_packet, (bcast, 9))
+                # Bind ke IP spesifik dari NIC ini agar OS me-routing broadcast lewat NIC yang tepat
+                sock.bind((ip, 0))
+                sock.sendto(magic_packet, ('255.255.255.255', 9))
                 sent_any = True
             except OSError:
                 pass
-                
-        sock.close()
+            finally:
+                sock.close()
+        
+        # Fallback jika gethostbyname gagal atau loopback semua
+        if not sent_any:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            try:
+                sock.bind(('0.0.0.0', 0))
+            except OSError:
+                pass
+            
+            try:
+                sock.sendto(magic_packet, ('255.255.255.255', 9))
+                sent_any = True
+            except OSError:
+                pass
+            finally:
+                sock.close()
         
         if not sent_any:
             raise OSError("Gagal mengirim WOL packet ke semua interface")
