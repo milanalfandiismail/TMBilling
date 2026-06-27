@@ -2,7 +2,6 @@ const App = {
     currentTab: 'dash',
 
     async init() {
-        console.log('[TMBilling] Initializing application...');
         const loggedIn = await this.checkAuth();
         if (!loggedIn) {
             return;
@@ -14,7 +13,6 @@ const App = {
         // if (typeof Shift !== 'undefined') Shift.load();
         this.updatePageTitle('dash');
 
-        console.log('[TMBilling] Application initialized.');
         setInterval(() => {
             if (this.currentTab === 'dash') Dashboard.load();
             if (this.currentTab === 'monitor' && typeof Monitor !== 'undefined') Monitor.load();
@@ -168,7 +166,8 @@ const App = {
             settings_scheduler: 'Auto Scheduler',
             settings_migration: 'Migrasi & Update',
             analytics: 'Analytics Owner',
-            plugins: 'Plugins & Ekstensi'
+            plugins: 'Plugins & Ekstensi',
+            mikrotik: 'MikroTik Hotspot'
         };
  
         const titleEl = document.getElementById('page-title');
@@ -202,17 +201,16 @@ const App = {
             case 'tournament': if (typeof Tournament !== 'undefined') await Tournament.load(); break;
             case 'analytics': if (typeof OwnerAnalytics !== 'undefined') await OwnerAnalytics.load(); break;
             case 'plugins': if (typeof PluginsModule !== 'undefined') PluginsModule.init(); break;
+            case 'mikrotik': if (typeof SettingsMikrotik !== 'undefined') SettingsMikrotik.init(); break;
         }
     },
  
     showTab(tab) { this.switchTab(tab); },
 
     openPluginSPA(url, title) {
-        console.log('[TMBilling Plugin] openPluginSPA called:', { url, title });
         this.switchTab('plugin-spa');
         const iframe = document.getElementById('plugin-spa-iframe');
         if (iframe) {
-            console.log('[TMBilling Plugin] Setting iframe.src to:', url);
             iframe.src = url;
         } else {
             console.error('[TMBilling Plugin] Element #plugin-spa-iframe not found!');

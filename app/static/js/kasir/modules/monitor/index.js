@@ -119,9 +119,9 @@ const Monitor = {
 
             const cardBg = hasWarning ? 'bg-red-500/5 border-red-500/25' : 'bg-[#050505] border-[#1c1c1c]';
 
-            // === CARD LAYOUT (1024-1399px - lg only, hidden at xl) ===
+            // === CARD LAYOUT (<1400px - Mobile to LG, hidden at xl) ===
             cardHtml += `
-                <div class="lg:block xl:hidden border rounded ${cardBg} p-3">
+                <div class="block xl:hidden border rounded ${cardBg} p-3">
                     <!-- Row 1: PC name + Aksi -->
                     <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center gap-2 min-w-0">
@@ -220,8 +220,8 @@ const Monitor = {
         });
 
         container.innerHTML = `
-            <!-- LG Card Layout (1024-1399px) -->
-            <div class="hidden lg:grid xl:hidden grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Card Layout (Mobile to LG: <1400px) -->
+            <div class="xl:hidden grid grid-cols-1 sm:grid-cols-2 gap-3">
                 ${cardHtml}
             </div>
             <!-- XL Table Layout (≥1400px) -->
@@ -244,16 +244,6 @@ const Monitor = {
                         ${tableRows}
                     </tbody>
                 </table>
-            </div>
-            <!-- Mobile Layout (<1024px) -->
-            <div class="lg:hidden">
-                <div class="overflow-x-hidden w-full border border-[#1c1c1c] rounded">
-                    <table class="w-full text-sm block">
-                        <tbody class="divide-y divide-[#2a2a2a] bg-[#050505] block">
-                            ${tableRows.replace(/xl:table-cell/g, 'table-cell').replace(/xl:table-row/g, 'table-row').replace(/xl:table-header-group/g, 'table-header-group').replace(/xl:hidden/g, 'hidden')}
-                        </tbody>
-                    </table>
-                </div>
             </div>`;
     }
 };

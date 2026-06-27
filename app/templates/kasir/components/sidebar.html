@@ -170,6 +170,17 @@
         {% endif %}
 
         {% if session.get('kasir_role') == 'admin' %}
+        <!-- 8. MikroTik Hotspot -->
+        <button onclick="App.switchTab('mikrotik')" data-tab="mikrotik"
+            class="tab-btn w-full flex items-center gap-3 px-3 py-2 rounded text-[13px] font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+            </svg>
+            <span>MikroTik Hotspot</span>
+        </button>
+        {% endif %}
+
+        {% if session.get('kasir_role') == 'admin' %}
         <!-- 8. Owner Analytics -->
         <button onclick="App.switchTab('analytics')" data-tab="analytics"
             class="tab-btn w-full flex items-center gap-3 px-3 py-2 rounded text-[13px] font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">

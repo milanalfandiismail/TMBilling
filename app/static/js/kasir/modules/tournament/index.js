@@ -27,7 +27,6 @@ const Tournament = {
     },
 
     async load() {
-        console.log('[Tournament] Loading list...');
         this.showListView();
         await this.renderList();
     },

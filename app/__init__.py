@@ -75,7 +75,8 @@ def create_app():
         tournament_api_bp,
         member_portal_bp,
         shift_api_bp,
-        migration_api_bp
+        migration_api_bp,
+        mikrotik_api_bp
     )
 
     # ==========================================
@@ -103,6 +104,7 @@ def create_app():
     app.register_blueprint(tournament_api_bp, url_prefix="/api/v1/kasir/tournament")
     app.register_blueprint(settings_api_bp, url_prefix="/api/v1/kasir/settings")
     app.register_blueprint(migration_api_bp, url_prefix="/api/v1/kasir/settings/migration")
+    app.register_blueprint(mikrotik_api_bp, url_prefix="/api/v1/kasir/mikrotik")
     from app.routes.settings.plugin_routes import plugin_api_bp
     app.register_blueprint(plugin_api_bp, url_prefix="/api/v1/kasir/settings/plugins")
 
