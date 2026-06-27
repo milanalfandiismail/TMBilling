@@ -321,6 +321,7 @@ class PCService:
             ValueError: Jika MAC Address tidak valid atau kosong.
         """
         import socket
+
         if not mac_address:
             raise ValueError("MAC Address tidak boleh kosong")
 
@@ -336,23 +337,56 @@ class PCService:
         # Bangun Magic Packet: 6x 0xFF + MAC address diulang 16 kali
         magic_packet = b'\xff' * 6 + mac_bytes * 16
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        # Windows: must bind before broadcast sendto
+        # Cari semua IP lokal dari server (tanpa library tambahan psutil)
+        hostname = socket.gethostname()
         try:
-            sock.bind(('0.0.0.0', 0))
-        except OSError:
-            pass
-        try:
-            # Try global broadcast first, fallback to subnet-directed
-            sock.sendto(magic_packet, ('255.255.255.255', 9))
-        except OSError:
+            _, _, ip_addresses = socket.gethostbyname_ex(hostname)
+        except Exception:
+            ip_addresses = []
+
+        if not ip_addresses:
+            ip_addresses = ['0.0.0.0']
+
+        sent_any = False
+        
+        # Broadcast via setiap NIC (Network Interface)
+        for ip in ip_addresses:
+            # Skip loopback
+            if ip.startswith("127."):
+                continue
+                
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            
             try:
-                sock.sendto(magic_packet, ('192.168.1.255', 9))
+                # Bind ke IP spesifik dari NIC ini agar OS me-routing broadcast lewat NIC yang tepat
+                sock.bind((ip, 0))
+                sock.sendto(magic_packet, ('255.255.255.255', 9))
+                sent_any = True
             except OSError:
-                raise
-        finally:
-            sock.close()
+                pass
+            finally:
+                sock.close()
+        
+        # Fallback jika gethostbyname gagal atau loopback semua
+        if not sent_any:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            try:
+                sock.bind(('0.0.0.0', 0))
+            except OSError:
+                pass
+            
+            try:
+                sock.sendto(magic_packet, ('255.255.255.255', 9))
+                sent_any = True
+            except OSError:
+                pass
+            finally:
+                sock.close()
+        
+        if not sent_any:
+            raise OSError("Gagal mengirim WOL packet ke semua interface")
         
         return True
 
