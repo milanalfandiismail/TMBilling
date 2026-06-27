@@ -7,6 +7,7 @@ metrik real-time dari C# Hardware Monitor Agent, termasuk
 suhu CPU/GPU, penggunaan CPU, spesifikasi RAM, dan info motherboard.
 """
 
+from datetime import timezone
 from app.models import db, now_local
 from app.utils.timezone_utils import format_display
 
@@ -78,7 +79,8 @@ class HardwareMonitor(db.Model):
             "cpu_name": self.cpu_name,
             "gpu_name": self.gpu_name,
             "active_window": self.active_window,
-            "last_update": format_display(self.last_update) if self.last_update else None
+            "last_update": format_display(self.last_update) if self.last_update else None,
+            "last_update_ts": self.last_update.replace(tzinfo=timezone.utc).timestamp() * 1000 if self.last_update else None
         }
 
 class PCProcess(db.Model):

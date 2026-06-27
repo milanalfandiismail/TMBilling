@@ -104,20 +104,12 @@ const Monitor = {
             let updateClass = 'text-neutral-600';
 
             if (m.last_update) {
-                try {
-                    const d = new Date(String(m.last_update).replace(/-/g, '/'));
-                    if (!isNaN(d.getTime())) {
-                        formattedDate = d.toLocaleString('id-ID', {
-                            day: 'numeric', month: 'short', year: 'numeric',
-                            hour: '2-digit', minute: '2-digit'
-                        });
-                        const diffSecs = Math.abs((Date.now() - d.getTime()) / 1000);
-                        if (diffSecs < 15) updateClass = 'text-neutral-200 font-bold';
-                        else if (diffSecs < 60) updateClass = 'text-neutral-400 font-medium';
-                        else updateClass = 'text-neutral-600';
-                    }
-                } catch (e) {
-                    formattedDate = m.last_update;
+                formattedDate = m.last_update;
+                if (m.last_update_ts) {
+                    const diffSecs = Math.abs((Date.now() - m.last_update_ts) / 1000);
+                    if (diffSecs < 15) updateClass = 'text-neutral-200 font-bold';
+                    else if (diffSecs < 60) updateClass = 'text-neutral-400 font-medium';
+                    else updateClass = 'text-neutral-600';
                 }
             }
 
