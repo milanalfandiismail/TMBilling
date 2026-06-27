@@ -323,23 +323,34 @@ class PCService:
         import socket
         if not mac_address:
             raise ValueError("MAC Address tidak boleh kosong")
-        
+
         clean_mac = mac_address.replace(":", "").replace("-", "").upper()
         if len(clean_mac) != 12:
             raise ValueError(f"Format MAC Address tidak valid: {mac_address}")
-        
+
         try:
             mac_bytes = bytes.fromhex(clean_mac)
         except ValueError:
             raise ValueError(f"MAC Address mengandung karakter tidak valid: {mac_address}")
-        
+
         # Bangun Magic Packet: 6x 0xFF + MAC address diulang 16 kali
         magic_packet = b'\xff' * 6 + mac_bytes * 16
-        
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        # Windows: must bind before broadcast sendto
         try:
+            sock.bind(('0.0.0.0', 0))
+        except OSError:
+            pass
+        try:
+            # Try global broadcast first, fallback to subnet-directed
             sock.sendto(magic_packet, ('255.255.255.255', 9))
+        except OSError:
+            try:
+                sock.sendto(magic_packet, ('192.168.1.255', 9))
+            except OSError:
+                raise
         finally:
             sock.close()
         

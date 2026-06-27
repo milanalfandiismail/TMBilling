@@ -28,6 +28,7 @@ windows = { version = "0.52", features = [
     "Win32_System_LibraryLoader"
 ] }
 screenshots = "0.8.10"
+base64 = "0.22"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
