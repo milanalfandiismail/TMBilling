@@ -182,8 +182,6 @@ class MemberService:
     def refund_paket(member_id, transaksi_id, operator="system"):
         """Batalkan pembelian paket & potong saldo waktu member."""
         member = MemberRepository.get_by_id(member_id)
-        if SesiRepository.get_aktif_by_member(member.id):
-            raise ValueError("Member sedang bermain. Tutup sesi dulu.")
 
         transaksi = TransaksiRepository.get_by_id(transaksi_id)
         if not transaksi or transaksi.member_id != member.id or transaksi.is_refunded:
@@ -201,6 +199,11 @@ class MemberService:
 
         member.waktu_tersimpan = waktu_baru
         transaksi.is_refunded = True
+
+        # Sync dengan sesi aktif jika ada agar sisa waktu di PC langsung berkurang
+        sesi = SesiRepository.get_aktif_by_member(member.id)
+        if sesi:
+            sesi.waktu_tersimpan_awal = waktu_baru
 
         # Re-kalkulasi Kadaluarsa
         qty = 1
