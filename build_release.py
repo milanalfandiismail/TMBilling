@@ -4,7 +4,7 @@ import zipfile
 
 def main():
     project_dir = os.path.dirname(os.path.abspath(__file__))
-    zip_filename = "TMBilling-Server.zip"
+    zip_filename = "TMBilling_Server_v.zip"
     zip_filepath = os.path.join(project_dir, zip_filename)
     
     # Files and folders to include
@@ -19,7 +19,8 @@ def main():
     ]
     include_dirs = [
         "app",
-        "install_scripts"
+        "install_scripts",
+        "migrations"
     ]
     
     print(f"Memulai pemaketan {zip_filename}...")

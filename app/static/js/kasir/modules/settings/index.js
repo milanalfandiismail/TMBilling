@@ -1,13 +1,10 @@
 const Settings = {
     async load() {
-        console.log("[Settings] load() called");
         // Tampilkan sub-tab default (Umum & Kiosk) segera agar halaman tidak kosong
         this.switchSubTab('general');
 
         try {
-            console.log("[Settings] Fetching settings...");
             const res = await API.settings.getAll();
-            console.log("[Settings] API settings response:", res);
             if (res && res.success && res.settings) {
                 const timerInput = document.getElementById('shutdown-timer');
                 if (timerInput && res.settings.auto_shutdown_timer_seconds !== undefined) {
@@ -476,7 +473,6 @@ const Settings = {
     },
 
     switchSubTab(subTab) {
-        console.log("[Settings] switchSubTab called for:", subTab);
         document.querySelectorAll('.subnav-item').forEach(btn => {
             const onclick = btn.getAttribute('onclick') || '';
             if (onclick.includes(`'${subTab}'`)) {
@@ -490,10 +486,8 @@ const Settings = {
 
         document.querySelectorAll('.subtab-content').forEach(el => el.classList.add('hidden'));
         const target = document.getElementById(`subtab-${subTab}`);
-        console.log("[Settings] switchSubTab target element:", target);
         if (target) {
             target.classList.remove('hidden');
-            console.log("[Settings] switchSubTab target visible now, classes:", target.className);
         }
 
         // Whitelist IP — render & load data
@@ -738,4 +732,3 @@ const Settings = {
 };
 
 window.Settings = Settings;
-console.log("[Settings] index.js loaded");

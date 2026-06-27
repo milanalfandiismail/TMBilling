@@ -18,6 +18,9 @@ from app.repositories import TransaksiRepository
 from app.services.transaksi.transaksi_service import TransaksiService
 from app.utils.logger import write_log
 from app.models import db, now_local
+from app.models.mikrotik.mikrotik import MikroTikConfig
+from app.utils.mikrotik_api import MikroTikAPIClient
+import threading
 
 class MemberService:
     """Service untuk business logic member/pelanggan warnet.
@@ -30,6 +33,41 @@ class MemberService:
     # 1. MANAJEMEN DATA DASAR (CRUD)
     # =========================================================================
     # Fokus: Pengambilan data, pembuatan akun baru, edit profil, dan hapus akun.
+
+    @staticmethod
+    def _sync_mikrotik(action, member, password=None):
+        """Helper untuk sinkronisasi data member ke MikroTik di background."""
+        config = MikroTikConfig.get_instance()
+        if not config.enabled:
+            return
+
+        host = config.host
+        port = config.port
+        username = config.username
+        mikrotik_password = config.password
+        profile = config.hotspot_profile
+
+        if not host or not username:
+            return
+
+        def task():
+            try:
+                client = MikroTikAPIClient(host, username, mikrotik_password, port)
+                if client.login():
+                    if action == "add":
+                        client.add_user(member.username, password or member.username, profile)
+                    elif action == "update" and password:
+                        user = client.get_user(member.username)
+                        if user and '.id' in user:
+                            client.set_user_password(user['.id'], password)
+                    elif action == "delete":
+                        user = client.get_user(member.username)
+                        if user and '.id' in user:
+                            client.remove_user(user['.id'])
+            except Exception as e:
+                write_log("MIKROTIK_ERROR", f"Gagal {action} user {member.username}: {str(e)}")
+
+        threading.Thread(target=task, daemon=True).start()
 
     @staticmethod
     def get_all():
@@ -100,6 +138,10 @@ class MemberService:
         db.session.add(member)
         db.session.commit()
         write_log("TAMBAH_MEMBER", f"Member {username} ({grup_nama}) dibuat", user=operator)
+        
+        # Sinkronisasi ke MikroTik
+        MemberService._sync_mikrotik("add", member, data.get("password", "123456"))
+        
         return member
 
     @staticmethod
@@ -118,6 +160,8 @@ class MemberService:
         # Update password jika disediakan
         if "password" in data and data["password"]:
             member.set_password(data["password"])
+            # Sinkronisasi ke MikroTik hanya jika password berubah
+            MemberService._sync_mikrotik("update", member, data["password"])
         
         db.session.commit()
         write_log("EDIT_MEMBER", f"Data member {member.username} diperbarui", user=operator)
@@ -133,6 +177,10 @@ class MemberService:
         db.session.delete(member)
         db.session.commit()
         write_log("DELETE_MEMBER", f"Member:{member.username} dihapus", user=operator)
+        
+        # Sinkronisasi ke MikroTik
+        MemberService._sync_mikrotik("delete", member)
+        
         return member
 
 

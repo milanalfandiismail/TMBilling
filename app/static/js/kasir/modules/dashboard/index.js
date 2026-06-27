@@ -1088,4 +1088,4 @@ const Dashboard = {
 
 Object.assign(Dashboard, DashboardCards);
 window.Dashboard = Dashboard;
-console.log('[Dashboard] Module initialized.');
+// Document ready initialization (only for layout handlers)
