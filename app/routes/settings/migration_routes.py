@@ -110,6 +110,7 @@ def _get_current_revision():
 def upload_update():
     """Menerima berkas ZIP rilis penuh, validasi, ekstrak, lalu restart server."""
     try:
+        operator = session.get("kasir_username", "admin")
         file = request.files.get("update_file")
         if not file or file.filename == "":
             return jsonify({"error": "File update wajib dipilih"}), 400
@@ -164,7 +165,6 @@ def upload_update():
             try:
                 from flask_migrate import upgrade
                 upgrade(directory=migrations_dir)
-                operator = session.get("kasir_username", "admin")
                 write_log("DATABASE_MIGRATION_UPGRADE", "Skema database auto-upgrade ke HEAD setelah update", user=operator)
             except Exception as e:
                 write_log("DATABASE_MIGRATION_ERROR", f"Auto-upgrade gagal: {str(e)}", user=operator)
@@ -186,7 +186,6 @@ def upload_update():
             except Exception:
                 pass
 
-        operator = session.get("kasir_username", "admin")
         write_log("APPLICATION_UPDATE", f"Aplikasi berhasil diperbarui melalui dashboard", user=operator)
 
         threading.Thread(target=_install_deps, daemon=True).start()
