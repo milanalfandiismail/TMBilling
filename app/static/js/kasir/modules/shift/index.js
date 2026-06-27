@@ -400,4 +400,4 @@ const Shift = {
 };
 
 window.Shift = Shift;
-console.log('[Shift] Module initialized.');
+
