@@ -4,6 +4,7 @@ use crate::state::{REMAINING_SECONDS, SESSION_ACTIVE};
 use configparser::ini::Ini;
 use winreg::enums::*;
 use winreg::RegKey;
+use base64::Engine;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StatusResponse {
@@ -464,10 +465,42 @@ impl ApiService {
         let mut config: WarnetConfig = serde_json::from_str(&body_text)
             .map_err(|_| format!("Gagal urai data warnet dari server."))?;
 
-        // Prepend base_url to qris_url if relative path
-        if let Some(ref path) = config.qris_url {
-            if path.starts_with('/') {
-                config.qris_url = Some(format!("{}{}", base_url, path));
+        // Fetch QRIS image bytes & base64 encode → bypass mixed-content blocking
+        if let Some(ref path) = config.qris_url.clone() {
+            let img_url = if path.starts_with('/') {
+                format!("{}{}", base_url, path)
+            } else {
+                path.clone()
+            };
+
+            match self.client.get(&img_url)
+                .timeout(std::time::Duration::from_secs(5))
+                .send()
+                .await
+            {
+                Ok(resp) if resp.status().is_success() => {
+                    let bytes = resp.bytes().await.unwrap_or_default();
+                    if !bytes.is_empty() {
+                        // detect mime from extension
+                        let mime = if img_url.ends_with(".png") {
+                            "image/png"
+                        } else if img_url.ends_with(".jpg") || img_url.ends_with(".jpeg") {
+                            "image/jpeg"
+                        } else if img_url.ends_with(".gif") {
+                            "image/gif"
+                        } else if img_url.ends_with(".webp") {
+                            "image/webp"
+                        } else {
+                            "image/png"
+                        };
+                        let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+                        config.qris_url = Some(format!("data:{};base64,{}", mime, b64));
+                    }
+                }
+                _ => {
+                    // fallback: keep original URL (may show broken img, but graceful)
+                    eprintln!("Failed to fetch QRIS image from: {}", img_url);
+                }
             }
         }
 
