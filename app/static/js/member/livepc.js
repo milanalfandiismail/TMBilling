@@ -122,6 +122,9 @@ function renderPCs() {
                     ? 'bg-pink-950/60 text-pink-400 border-pink-800/30'
                     : 'bg-blue-950/60 text-blue-400 border-blue-800/30');
 
+            // Remove 'Unit' or 'unit' from PC name if it exists, to keep it clean
+            const cleanPcName = (pc.nama || pc.kode).replace(/unit/i, '').trim();
+
             const pcCard = document.createElement('div');
             pcCard.className = `p-4 border rounded-xl flex flex-col justify-between h-28 transition-all hover:scale-[1.02] duration-200 ${cardClass}`;
             pcCard.innerHTML = `
@@ -131,7 +134,7 @@ function renderPCs() {
                 </div>
                 
                 <div class="mt-2">
-                    <p class="font-bold text-neutral-100 text-sm truncate leading-none">${pc.nama}</p>
+                    <p class="font-bold text-neutral-100 text-sm truncate leading-none capitalize">${cleanPcName}</p>
                     <div class="flex items-center gap-1.5 mt-2">
                         <span class="w-1.5 h-1.5 rounded-full ${dotClass}"></span>
                         <span class="text-[9px] font-mono tracking-wider font-bold">${textStatus}</span>
@@ -157,13 +160,12 @@ function filterPCs(group) {
     currentFilter = group;
 
     // Toggle active styling on tabs
-    ['all', 'reguler', 'vip', 'vvip'].forEach(g => {
-        const btn = document.getElementById(`filter-btn-${g}`);
-        if (!btn) return;
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        const g = btn.id.replace('filter-btn-', '');
         if (g === group) {
-            btn.className = "px-3 py-1.5 rounded-md font-bold transition-all bg-neutral-800 text-neutral-100";
+            btn.className = "px-3 py-1.5 rounded-md font-bold transition-all bg-neutral-800 text-neutral-100 filter-btn uppercase tracking-wider";
         } else {
-            btn.className = "px-3 py-1.5 rounded-md font-bold transition-all text-neutral-400 hover:text-neutral-200";
+            btn.className = "px-3 py-1.5 rounded-md font-bold transition-all text-neutral-400 hover:text-neutral-200 filter-btn uppercase tracking-wider";
         }
     });
 

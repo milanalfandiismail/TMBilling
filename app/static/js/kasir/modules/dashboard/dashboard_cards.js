@@ -13,7 +13,7 @@ const DashboardCards = {
                 class="px-3.5 py-1.5 rounded text-xs font-bold transition-all border
                 ${Dashboard.activeGrup === 'semua'
                 ? 'bg-neutral-100 text-black border-neutral-100 font-extrabold'
-                : 'bg-[#0c0c0c] border-[#1c1c1c] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212]' }">
+                : 'bg-[#0c0c0c] border-[#1c1c1c] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212]'}">
                 SEMUA ZONA
             </button>
         `;
@@ -27,7 +27,7 @@ const DashboardCards = {
                     class="px-3.5 py-1.5 rounded text-xs font-bold transition-all border flex items-center gap-1.5
                     ${isActive
                     ? 'bg-neutral-100 text-black border-neutral-100 font-extrabold'
-                    : 'bg-[#0c0c0c] border-[#1c1c1c] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212]' }">
+                    : 'bg-[#0c0c0c] border-[#1c1c1c] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212]'}">
                     <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${customColor}"></span>
                     ${g.toUpperCase()}
                 </button>
@@ -100,7 +100,7 @@ const DashboardCards = {
             cardBorderClass = 'border-[#ef4444] border-dashed';
             statusIndicator = '[!]';
             indicatorColorClass = 'text-red-500 animate-pulse';
-            
+
             cardContent = `
                 <div class="text-center py-2">
                     <div class="text-lg font-black text-red-500 font-mono tracking-tight">${sesi ? Utils.formatMenit(sesi.sisa_menit) : '--:--'}</div>
@@ -124,7 +124,7 @@ const DashboardCards = {
             cardBgClass = 'bg-[#0a140f] hover:bg-[#0f2017]';
             cardBorderClass = 'border-emerald-500/20';
             textColorClass = 'text-neutral-200';
-            
+
             if (sesi.tipe === 'admin') {
                 indicatorColorClass = 'text-amber-500';
                 cardBgClass = 'bg-[#18120a] hover:bg-[#241b0f]';
@@ -144,10 +144,10 @@ const DashboardCards = {
             } else {
                 let timeStr = 'Unlimited';
                 let progressBarHtml = '';
-                
+
                 if (sesi.sisa_menit !== null && sesi.sisa_menit !== undefined) {
                     timeStr = Utils.formatMenit(sesi.sisa_menit);
-                    
+
                     if (sesi.durasi_beli_menit > 0) {
                         const pct = Math.max(0, Math.min(100, (sesi.sisa_menit / sesi.durasi_beli_menit) * 100));
                         const isCritical = sesi.sisa_menit <= 5;
@@ -159,7 +159,7 @@ const DashboardCards = {
                         `;
                     }
                 }
-                
+
                 cardContent = `
                     <div class="text-center py-2 ${textColorClass}">
                         <div class="text-lg font-black font-mono tracking-tight">${timeStr}</div>
@@ -167,7 +167,7 @@ const DashboardCards = {
                         ${progressBarHtml}
                     </div>
                 `;
-                
+
                 buttons = `
                     <div class="flex gap-1 mt-3 pt-2 border-t border-white/5">
                         <button onclick="event.stopPropagation(); Dashboard.tutupSesi(${sesi.id})" 
@@ -185,11 +185,10 @@ const DashboardCards = {
             cardBgClass = 'bg-[#18120a] hover:bg-[#241b0f]';
             cardBorderClass = 'border-amber-500/20';
             textColorClass = 'text-neutral-200';
-            
+
             cardContent = `
                 <div class="text-center py-2 ${textColorClass}">
                     <div class="text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1 py-0.5 rounded inline-block">ADMIN BYPASS</div>
-                    ${pc.active_window ? `<div class="text-[10px] font-medium truncate block mt-1 opacity-70" title="${pc.active_window}">${pc.active_window}</div>` : ''}
                 </div>
             `;
             buttons = `
@@ -203,10 +202,10 @@ const DashboardCards = {
         else if (pc.status_koneksi === 'online') {
             statusIndicator = '○';
             indicatorColorClass = 'text-neutral-400';
-            
+
             cardBgClass = 'bg-[#1a1a1a] hover:bg-[#222]';
             cardBorderClass = 'border-[#2e2e2e]';
-            
+
             cardContent = `
                 <div class="text-center py-3">
                     <div class="text-[9px] text-neutral-500 font-bold tracking-widest uppercase">KOSONG</div>
@@ -226,7 +225,7 @@ const DashboardCards = {
             cardBorderClass = 'border-[#222] border-dashed';
             statusIndicator = '[!]';
             indicatorColorClass = 'text-neutral-600';
-            
+
             cardContent = `
                 <div class="text-center py-3">
                     <div class="text-[9px] text-neutral-600 font-bold tracking-widest uppercase">OFFLINE</div>
@@ -256,13 +255,19 @@ const DashboardCards = {
                         <span class="text-xs font-bold font-mono leading-none ${indicatorColorClass}">${statusIndicator}</span>
                     </div>
                 </div>
-                <!-- Row 2: Grup badge -->
-                <div class="mb-0.5">
-                    ${labelHtml}
-                </div>
-                <!-- Row 3: IP -->
+                <!-- Row 2: IP -->
                 <div class="mb-0.5">
                     <span class="text-[9px] text-neutral-600 font-mono">${pc.ip_address || '-'}</span>
+                </div>
+                <!-- Row 3: Active Window -->
+                ${(isActive || pc.is_admin_mode) && pc.active_window && pc.active_window !== 'Idle / None' ? `
+                <div class="mb-0.5 truncate text-[9px] text-neutral-500 font-medium italic" title="${pc.active_window}">
+                    ${pc.active_window}
+                </div>
+                ` : ''}
+                <!-- Row 4: Grup badge -->
+                <div class="mb-0.5">
+                    ${labelHtml}
                 </div>
                 ${cardContent}
                 ${buttons}

@@ -56,6 +56,9 @@
                 <span id="error-text" class="text-xs lg:text-sm text-red-400 leading-tight"></span>
             </div>
 
+            <!-- Toast Container -->
+            <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; pointer-events: none;"></div>
+
             <!-- Login Form -->
             <form onsubmit="submitLogin(event)" class="space-y-5">
                 <div class="space-y-1.5">
@@ -98,24 +101,23 @@
         </div>
     </div>
 
+    <script src="{{ url_for('static', filename='js/member/toast.js') }}?v=3"></script>
     <script>
         async function submitLogin(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-login');
             const btnText = document.getElementById('btn-text');
-            const errorBox = document.getElementById('error-box');
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
             if (!username || !password) {
-                showError('Username dan password wajib diisi.');
+                Toast.error('Username dan password wajib diisi.');
                 return;
             }
 
             btn.disabled = true;
             btnText.innerText = 'Memverifikasi...';
-            errorBox.classList.add('hidden');
 
             try {
                 const res = await fetch('/member/login', {
@@ -127,27 +129,18 @@
                 const data = await res.json();
 
                 if (res.ok && data.success) {
-                    btnText.innerText = 'Berhasil';
-                    btn.classList.replace('bg-neutral-100', 'bg-emerald-600');
-                    btn.classList.replace('text-black', 'text-white');
-                    setTimeout(() => { window.location.href = data.redirect; }, 500);
+                    Toast.success('Login berhasil! Mengalihkan...');
+                    setTimeout(() => { window.location.href = data.redirect; }, 1000);
                 } else {
-                    showError(data.error || 'Username atau password salah');
+                    Toast.error(data.error || 'Username atau password salah');
                     btnText.innerText = 'Masuk';
                     btn.disabled = false;
                 }
             } catch (err) {
-                showError('Gagal terhubung ke server TMBilling.');
+                Toast.error('Gagal terhubung ke server TMBilling.');
                 btnText.innerText = 'Masuk';
                 btn.disabled = false;
             }
-        }
-
-        function showError(msg) {
-            const errorBox = document.getElementById('error-box');
-            const errorText = document.getElementById('error-text');
-            errorText.innerText = msg;
-            errorBox.classList.remove('hidden');
         }
     </script>
 </body>

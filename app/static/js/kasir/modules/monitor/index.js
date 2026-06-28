@@ -164,6 +164,12 @@ const Monitor = {
                             <span class="text-[9px] text-neutral-500 uppercase font-bold">NET:</span>
                             ${netHtml.replace('text-xs lg:text-base', 'text-xs')}
                         </div>
+                        ${m.active_window && m.active_window !== 'Idle / None' ? `
+                        <div class="flex items-center gap-1 w-full mt-0.5 pt-1 border-t border-[#1c1c1c]">
+                            <span class="text-[9px] text-neutral-500 uppercase font-bold shrink-0">WND:</span>
+                            <span class="text-[10px] text-neutral-400 font-medium italic truncate" title="${m.active_window}">${m.active_window}</span>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>`;
 
@@ -181,6 +187,10 @@ const Monitor = {
                         <div class="text-xs lg:text-base text-neutral-200 font-semibold" title="Processor">${m.cpu_name || '--'}</div>
                         <div class="text-xs text-neutral-500 mt-1" title="VGA / GPU">${m.gpu_name || '--'}</div>
                         <div class="text-[10px] text-neutral-600 mt-0.5" title="Motherboard">${m.motherboard || ''}</div>
+                    </td>
+                    <td class="px-2 xl:px-4 py-4 block xl:table-cell text-left max-w-[150px]">
+                        <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider xl:hidden">Active Window</span>
+                        <div class="text-xs text-neutral-400 font-medium italic truncate w-full" title="${m.active_window || '--'}">${m.active_window && m.active_window !== 'Idle / None' ? m.active_window : '--'}</div>
                     </td>
                     <td class="px-2 xl:px-4 py-4 text-center block xl:table-cell">
                         <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider xl:hidden">CPU Usage</span>
@@ -231,6 +241,7 @@ const Monitor = {
                         <tr class="text-[10px] text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c] bg-[#0c0c0c]">
                             <th class="px-2 xl:px-4 py-3 text-left font-bold whitespace-nowrap">PC</th>
                             <th class="px-2 xl:px-4 py-3 text-left font-bold whitespace-nowrap">Spesifikasi</th>
+                            <th class="px-2 xl:px-4 py-3 text-left font-bold whitespace-nowrap">Active Window</th>
                             <th class="px-2 xl:px-4 py-3 text-center font-bold whitespace-nowrap">CPU Usage</th>
                             <th class="px-2 xl:px-4 py-3 text-center font-bold whitespace-nowrap">CPU Temp</th>
                             <th class="px-2 xl:px-4 py-3 text-center font-bold whitespace-nowrap">GPU Temp</th>

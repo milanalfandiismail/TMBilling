@@ -12,6 +12,7 @@ from app.models import db, now_local
 from app.models import Member
 from app.models import Sesi
 from app.models import Transaksi
+from app.services.member.member_service import MemberService
 from functools import wraps
 
 member_portal_bp = Blueprint("member_portal", __name__)
@@ -110,22 +111,37 @@ def public_pc_status():
             
             sisa_menit = s.sisa_menit() if s else None
             sisa_waktu_display = None
+            
+            # Tentukan nama tampilan (User login / status)
+            nama_tampil = pc.nama or pc.kode
+            
             if not pc.aktif:
                 sisa_waktu_display = "OFFLINE"
+                nama_tampil = "Offline / Maintenance"
             elif pc.is_admin_mode:
                 sisa_waktu_display = "ADMIN"
-            elif sisa_menit is not None:
+                nama_tampil = "Admin / Teknisi"
+            elif s:
+                # Sesi aktif, tampilkan nama user
+                if s.member:
+                    nama_tampil = s.member.nama_lengkap or s.member.username
+                else:
+                    nama_tampil = "Guest"
+                    
                 h = sisa_menit // 60
                 m = sisa_menit % 60
                 if h > 0:
                     sisa_waktu_display = f"{h}j {m}m"
                 else:
                     sisa_waktu_display = f"{m}m"
+            else:
+                # Kosong
+                nama_tampil = "Tersedia"
                     
             result.append({
                 "id": pc.id,
                 "kode": pc.kode,
-                "nama": pc.nama or pc.kode,
+                "nama": nama_tampil,
                 "grup": pc.grup.nama if pc.grup else "reguler",
                 "status": status_visual,
                 "aktif": pc.aktif,
@@ -173,3 +189,25 @@ def dashboard_page():
         transaksi_history=transaksi_history,
         tx_pagination=tx_pagination
     )
+
+
+@member_portal_bp.route("/member/profile/update", methods=["POST"])
+@member_login_required
+def update_profile_action():
+    """Proses update profil oleh member sendiri (tanpa ganti password)."""
+    member_id = session.get("member_id")
+    member = Member.query.get(member_id)
+    data = request.get_json() or {}
+    
+    update_data = {
+        "nama_lengkap": data.get("nama_lengkap", member.nama_lengkap),
+        "email": data.get("email", member.email),
+        "no_hp": data.get("no_hp", member.no_hp)
+    }
+        
+    try:
+        member_before = member.to_dict()
+        updated_member = MemberService.update(member.id, update_data, operator=f"Member:{member.username}")
+        return jsonify({"success": True, "message": "Profil berhasil diperbarui", "member": updated_member.to_dict()}), 200
+    except Exception as e:
+        return jsonify({"error": f"Gagal memperbarui profil: {str(e)}"}), 500

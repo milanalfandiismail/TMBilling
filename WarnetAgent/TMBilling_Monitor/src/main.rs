@@ -389,6 +389,33 @@ fn acquire_self_lock(lock_path: &str) -> Option<std::fs::File> {
     }
 }
 
+fn get_active_window_title() -> String {
+    use winapi::um::winuser::{GetForegroundWindow, GetWindowTextW, GetWindowTextLengthW};
+    use std::os::windows::ffi::OsStringExt;
+    use std::ffi::OsString;
+
+    unsafe {
+        let hwnd = GetForegroundWindow();
+        if hwnd.is_null() {
+            return "Idle / None".to_string();
+        }
+
+        let length = GetWindowTextLengthW(hwnd);
+        if length == 0 {
+            return "Idle / None".to_string();
+        }
+
+        let mut buffer: Vec<u16> = vec![0; (length + 1) as usize];
+        let copied = GetWindowTextW(hwnd, buffer.as_mut_ptr(), buffer.len() as i32);
+
+        if copied > 0 {
+            let os_string = OsString::from_wide(&buffer[..copied as usize]);
+            return os_string.to_string_lossy().into_owned();
+        }
+    }
+    "Idle / None".to_string()
+}
+
 // =========================================================================
 // 6. MAIN RUN ENGINE
 // =========================================================================
@@ -545,7 +572,7 @@ fn main() {
                 "Motherboard": motherboard,
                 "CpuName": cpu_name,
                 "GpuName": gpu_name,
-                "ActiveWindow": "Kiosk Active",
+                "ActiveWindow": get_active_window_title(),
                 "ProcessList": process_list
             });
 
