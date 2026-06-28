@@ -126,7 +126,7 @@ class SesiService:
         if sesi.tipe == "member" and sesi.member:
             for _ in range(qty):
                 sesi.member.tambah_waktu(paket.durasi_menit, paket.kadaluarsa_hari)
-            sesi.waktu_tersimpan_awal = sesi.member.waktu_tersimpan
+            sesi.waktu_tersimpan_awal += (paket.durasi_menit * qty)
             
             transaksi = Transaksi(
                 member_id=sesi.member.id, paket_id=paket.id, sesi_id=sesi.id,
@@ -275,7 +275,12 @@ class SesiService:
         """Auto-cleanup: Tutup sesi yang waktunya habis (Tanpa proteksi blackout otomatis)."""
         sesi_aktif = SesiRepository.get_all_aktif()
         count = 0
+        now = now_local()
         for sesi in sesi_aktif:
+            # Lewati sesi jika PC terdeteksi offline (tidak sync > 120 detik) agar tidak ditutup normal
+            if sesi.last_sync and (now - sesi.last_sync).total_seconds() > 120:
+                continue
+                
             if sesi.sisa_menit() <= 0:
                 sesi.status = "selesai"
                 sesi.selesai_pada = now_local()

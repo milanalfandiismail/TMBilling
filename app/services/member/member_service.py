@@ -156,6 +156,7 @@ class MemberService:
 
         member.nama_lengkap = data.get("nama_lengkap", member.nama_lengkap)
         member.email = data.get("email", member.email)
+        member.no_hp = data.get("no_hp", member.no_hp)
         
         # Update password jika disediakan
         if "password" in data and data["password"]:
@@ -251,7 +252,7 @@ class MemberService:
         # Sync dengan sesi aktif jika ada agar sisa waktu di PC langsung berkurang
         sesi = SesiRepository.get_aktif_by_member(member.id)
         if sesi:
-            sesi.waktu_tersimpan_awal = waktu_baru
+            sesi.waktu_tersimpan_awal -= (sebelum - waktu_baru)
 
         # Re-kalkulasi Kadaluarsa
         qty = 1
