@@ -60,7 +60,7 @@
 
                 <!-- Group Grid (2 Columns on Desktop, 1 Column on Mobile) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                    {% for pc in g.pc_list|sort(attribute='kode') %}
+                    {% for pc in g.sorted_pc_list %}
                     {% set h = pc.hardware %}
                     {% set warna_grup = g.warna %}
                     <div class="bg-[#0a0a0a] border rounded-2xl p-5 md:p-6 flex flex-col justify-between space-y-5 relative overflow-hidden pc-spec-card shadow-xl shadow-black/35 hover:border-neutral-800 transition-all duration-300"

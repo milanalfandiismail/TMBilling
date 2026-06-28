@@ -167,7 +167,7 @@ const Monitor = {
                         ${m.active_window && m.active_window !== 'Idle / None' ? `
                         <div class="flex items-center gap-1 w-full mt-0.5 pt-1 border-t border-[#1c1c1c]">
                             <span class="text-[9px] text-neutral-500 uppercase font-bold shrink-0">WND:</span>
-                            <span class="text-[10px] text-neutral-400 font-medium italic truncate" title="${m.active_window}">${m.active_window}</span>
+                            <span class="text-lg text-neutral-400 font-medium truncate" title="${m.active_window}">${m.active_window}</span>
                         </div>
                         ` : ''}
                     </div>
@@ -190,7 +190,7 @@ const Monitor = {
                     </td>
                     <td class="px-2 xl:px-4 py-4 block xl:table-cell text-left max-w-[150px]">
                         <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider xl:hidden">Active Window</span>
-                        <div class="text-xs text-neutral-400 font-medium italic truncate w-full" title="${m.active_window || '--'}">${m.active_window && m.active_window !== 'Idle / None' ? m.active_window : '--'}</div>
+                        <div class="text-lg text-neutral-400 font-medium truncate w-full" title="${m.active_window || '--'}">${m.active_window && m.active_window !== 'Idle / None' ? m.active_window : '--'}</div>
                     </td>
                     <td class="px-2 xl:px-4 py-4 text-center block xl:table-cell">
                         <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider xl:hidden">CPU Usage</span>

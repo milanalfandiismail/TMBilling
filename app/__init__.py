@@ -166,10 +166,21 @@ def create_app():
     @app.route("/spesifikasi")
     def public_specs():
         """Render halaman grid spesifikasi hardware PC dinamis terkelompok per grup."""
+        import re
         from app.models import Grup
         groups = Grup.query.all()
-        # Ambil grup yang memiliki PC terdaftar
-        groups_with_pcs = [g for g in groups if len(g.pc_list) > 0]
+        
+        def extract_number(pc):
+            match = re.search(r'\d+', pc.kode)
+            return int(match.group()) if match else 0
+            
+        # Ambil grup yang memiliki PC terdaftar dan urutkan secara natural (TM-1, TM-2, ..., TM-10)
+        groups_with_pcs = []
+        for g in groups:
+            if len(g.pc_list) > 0:
+                g.sorted_pc_list = sorted(g.pc_list, key=extract_number)
+                groups_with_pcs.append(g)
+                
         return render_template("public/specs/index.html", groups=groups_with_pcs)
 
     @app.context_processor

@@ -83,7 +83,7 @@ const DashboardCards = {
         const isLostConnection = isActive && (pc.status_koneksi === 'no_heartbeat' || pc.status_koneksi === 'offline');
 
         const customColor = Dashboard.lastData?.grup_meta?.[pc.grup]?.warna || '#737373';
-        const labelHtml = `<span class="px-1 py-0.5 rounded-[3px] text-[8px] lg:text-[10px] font-bold border leading-none tracking-wide" style="color: ${customColor}; border-color: ${customColor}30; background-color: ${customColor}10">${pc.grup.toUpperCase()}</span>`;
+        const labelHtml = `<span class="px-1 py-0.5 rounded-[3px] text-[10px] lg:text-xs font-bold border leading-none tracking-wide" style="color: ${customColor}; border-color: ${customColor}30; background-color: ${customColor}10">${pc.grup.toUpperCase()}</span>`;
 
         let cardContent = '';
         let buttons = '';
@@ -104,8 +104,8 @@ const DashboardCards = {
             cardContent = `
                 <div class="text-center py-2">
                     <div class="text-lg font-black text-red-500 font-mono tracking-tight">${sesi ? Utils.formatMenit(sesi.sisa_menit) : '--:--'}</div>
-                    <div class="text-[10px] text-[#f43f5e] font-black tracking-widest animate-pulse mt-1">⚠️ TERPUTUS</div>
-                    <div class="text-[10px] text-neutral-400 font-medium truncate block mt-1" title="${sesi ? (sesi.nama_guest || sesi.member_nama || 'Guest') : ''}">${sesi ? (sesi.nama_guest || sesi.member_nama || 'Guest') : ''}</div>
+                    <div class="text-xs text-[#f43f5e] font-black tracking-widest animate-pulse mt-1">⚠️ TERPUTUS</div>
+                    <div class="text-lg text-neutral-400 font-medium truncate block mt-1" title="${sesi ? (sesi.nama_guest || sesi.member_nama || 'Guest') : ''}">${sesi ? (sesi.nama_guest || sesi.member_nama || 'Guest') : ''}</div>
                 </div>
             `;
             buttons = `
@@ -131,8 +131,8 @@ const DashboardCards = {
                 cardBorderClass = 'border-amber-500/20';
                 cardContent = `
                     <div class="text-center py-2 ${textColorClass}">
-                        <div class="text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1 py-0.5 rounded inline-block">ADMIN MODE</div>
-                        <div class="text-xs font-bold truncate block mt-1.5">${sesi.member_nama || 'ADMIN'}</div>
+                        <div class="text-xs font-bold uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded inline-block">ADMIN MODE</div>
+                        <div class="text-lg font-bold truncate block mt-1.5">${sesi.member_nama || 'ADMIN'}</div>
                     </div>
                 `;
                 buttons = `
@@ -163,7 +163,7 @@ const DashboardCards = {
                 cardContent = `
                     <div class="text-center py-2 ${textColorClass}">
                         <div class="text-lg font-black font-mono tracking-tight">${timeStr}</div>
-                        <div class="text-[10px] font-bold truncate block opacity-80" title="${sesi.nama_guest || sesi.member_nama || 'Guest'}">${sesi.nama_guest || sesi.member_nama || 'Guest'}</div>
+                        <div class="text-lg font-bold truncate block opacity-80" title="${sesi.nama_guest || sesi.member_nama || 'Guest'}">${sesi.nama_guest || sesi.member_nama || 'Guest'}</div>
                         ${progressBarHtml}
                     </div>
                 `;
@@ -188,7 +188,7 @@ const DashboardCards = {
 
             cardContent = `
                 <div class="text-center py-2 ${textColorClass}">
-                    <div class="text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1 py-0.5 rounded inline-block">ADMIN BYPASS</div>
+                    <div class="text-xs font-bold uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded inline-block">ADMIN BYPASS</div>
                 </div>
             `;
             buttons = `
@@ -208,7 +208,7 @@ const DashboardCards = {
 
             cardContent = `
                 <div class="text-center py-3">
-                    <div class="text-[9px] text-neutral-500 font-bold tracking-widest uppercase">KOSONG</div>
+                    <div class="text-xs text-neutral-500 font-bold tracking-widest uppercase">KOSONG</div>
                 </div>
             `;
             buttons = `
@@ -228,7 +228,7 @@ const DashboardCards = {
 
             cardContent = `
                 <div class="text-center py-3">
-                    <div class="text-[9px] text-neutral-600 font-bold tracking-widest uppercase">OFFLINE</div>
+                    <div class="text-xs text-neutral-600 font-bold tracking-widest uppercase">OFFLINE</div>
                 </div>
             `;
             buttons = `
@@ -257,11 +257,11 @@ const DashboardCards = {
                 </div>
                 <!-- Row 2: IP -->
                 <div class="mb-0.5">
-                    <span class="text-[9px] text-neutral-600 font-mono">${pc.ip_address || '-'}</span>
+                    <span class="text-[11px] text-neutral-600 font-mono">${pc.ip_address || '-'}</span>
                 </div>
                 <!-- Row 3: Active Window -->
                 ${(isActive || pc.is_admin_mode) && pc.active_window && pc.active_window !== 'Idle / None' ? `
-                <div class="mb-0.5 truncate text-[9px] text-neutral-500 font-medium italic" title="${pc.active_window}">
+                <div class="mb-0.5 truncate text-lg text-neutral-500 font-medium" title="${pc.active_window}">
                     ${pc.active_window}
                 </div>
                 ` : ''}
