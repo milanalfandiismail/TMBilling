@@ -135,13 +135,15 @@ def create_app():
             "4. Laporkan setiap kendala hardware/software langsung ke petugas kasir.\n"
             "5. Harap log out akun member sebelum meninggalkan komputer Anda."
         )
-        warnet_rules = SettingsService.get("warnet_rules", default_rules)
+        warnet_rules = SettingsService.get("warnet_announcement", default_rules)
         return render_template("public/landing/index.html", warnet_rules=warnet_rules)
 
     @app.route("/livepc")
     def public_pc_map():
         """Render halaman khusus peta PC live."""
-        return render_template("public/livepc/index.html")
+        from app.models import Grup
+        groups = Grup.query.all()
+        return render_template("public/livepc/index.html", groups=groups)
 
     @app.route("/paket")
     def public_packages():

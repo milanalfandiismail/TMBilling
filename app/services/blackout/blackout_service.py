@@ -33,7 +33,7 @@ class BlackoutService:
     @staticmethod
     def deteksi(menit_threshold=None):
         """Scan sesi aktif yang macet, tandai sebagai 'suspect' blackout."""
-        threshold = menit_threshold or Config.BLACKOUT_THRESHOLD_MINUTES
+        threshold = menit_threshold if menit_threshold is not None else Config.BLACKOUT_THRESHOLD_MINUTES
         batas_waktu = now_local() - timedelta(minutes=threshold)
 
         sesi_list = SesiRepository.get_aktif_belum_suspect_lama_sync(batas_waktu)

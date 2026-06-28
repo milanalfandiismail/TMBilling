@@ -13,14 +13,15 @@
     <main class="flex-1 w-full max-w-7xl mx-auto px-6 md:px-10 py-8 space-y-8">
         
         <!-- Header Section -->
-        <section class="space-y-2 max-w-3xl">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-800 bg-[#0c0c0c] text-xs font-mono text-neutral-400">
+        <section class="space-y-4 max-w-3xl relative">
+            <div class="absolute -inset-4 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 blur-xl opacity-30 pointer-events-none rounded-full"></div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-800 bg-[#0c0c0c]/80 backdrop-blur-md text-xs font-mono text-neutral-400">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Status Billing Client
             </div>
-            <h2 class="text-3xl font-black text-neutral-100 tracking-tight">
+            <h2 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-500 tracking-tight leading-tight">
                 Peta Ketersediaan PC
             </h2>
-            <p class="text-neutral-400 text-xs md:text-sm">
+            <p class="text-neutral-400 text-xs md:text-sm leading-relaxed">
                 Lihat dan pantau status komputer yang kosong atau terpakai secara real-time sebelum Anda memesan atau menuju warnet.
             </p>
         </section>
@@ -38,10 +39,11 @@
                 <div class="flex flex-wrap items-center gap-3">
                     <!-- Filters -->
                     <div class="inline-flex rounded-lg bg-[#111] p-1 border border-neutral-800 text-xs">
-                        <button onclick="filterPCs('all')" id="filter-btn-all" class="px-3 py-1.5 rounded-md font-bold transition-all bg-neutral-800 text-neutral-100">Semua</button>
-                        <button onclick="filterPCs('reguler')" id="filter-btn-reguler" class="px-3 py-1.5 rounded-md font-bold transition-all text-neutral-400 hover:text-neutral-200">Reguler</button>
-                        <button onclick="filterPCs('vip')" id="filter-btn-vip" class="px-3 py-1.5 rounded-md font-bold transition-all text-neutral-400 hover:text-neutral-200">VIP</button>
-                        <button onclick="filterPCs('vvip')" id="filter-btn-vvip" class="px-3 py-1.5 rounded-md font-bold transition-all text-neutral-400 hover:text-neutral-200">VVIP</button>
+                        <button onclick="filterPCs('all')" id="filter-btn-all" class="px-3 py-1.5 rounded-md font-bold transition-all bg-neutral-800 text-neutral-100 filter-btn uppercase tracking-wider">Semua</button>
+                        {% for g in groups %}
+                        {% set g_name = g.nama.lower().strip() %}
+                        <button onclick="filterPCs('{{ g_name }}')" id="filter-btn-{{ g_name }}" class="px-3 py-1.5 rounded-md font-bold transition-all text-neutral-400 hover:text-neutral-200 filter-btn uppercase tracking-wider">{{ g.nama }}</button>
+                        {% endfor %}
                     </div>
 
                     <!-- Live Counter Badge -->
@@ -54,7 +56,7 @@
                     <button onclick="fetchPCStatus()" id="btn-refresh" 
                         class="p-2 bg-[#111] border border-neutral-800 hover:border-neutral-500 text-neutral-400 hover:text-neutral-200 rounded-lg transition-colors flex items-center justify-center gap-1 text-xs font-bold">
                         <svg id="refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3 3L22 4"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89"></path>
                         </svg>
                         Segarkan
                     </button>

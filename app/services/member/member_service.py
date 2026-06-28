@@ -156,6 +156,7 @@ class MemberService:
 
         member.nama_lengkap = data.get("nama_lengkap", member.nama_lengkap)
         member.email = data.get("email", member.email)
+        member.no_hp = data.get("no_hp", member.no_hp)
         
         # Update password jika disediakan
         if "password" in data and data["password"]:
