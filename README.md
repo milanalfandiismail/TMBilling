@@ -1216,6 +1216,15 @@ Atau untuk development: cukup restart server — `db.create_all()` otomatis biki
 python seed.py  # Re-init database
 ```
 
+### Update Aplikasi / Migrasi Database Gagal
+Jika proses *update aplikasi* tidak bisa berjalan semestinya, atau terjadi error migrasi database (seperti *table already exists* / skema tidak terbaca), **maka coba lakukan hal ini terlebih dahulu:**
+
+Paksa sistem agar mencatat database ke versi paling terbaru (HEAD) tanpa menjalankan ulang kueri SQL. Buka terminal di server dan jalankan:
+```bash
+flask db stamp head
+```
+Setelah command sukses, *restart* server aplikasi Anda, dan coba *upload update* kembali.
+
 ### Client Cannot Connect to Server
 - Verifikasi IP Server di `C:\TMBILLING\config.ini`
 - Cek firewall — port 7015 harus terbuka
