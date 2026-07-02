@@ -80,9 +80,26 @@ class ClientService:
         """Polling rutin dari client: Validasi IP & MAC jika sudah terikat."""
         try:
             pc = PCRepository.get_by_ip(ip_address)
+
+            # ❌ IP tidak ditemukan → coba fallback ke MAC (lebih stabil, tidak berubah)
             if not pc:
-                raise ValueError("IP PC tidak terdaftar")
-            
+                pc = PCRepository.find_by_mac(mac_address)
+
+                if pc:
+                    # ✅ Ketemu via MAC! IP client berubah (DHCP renew).
+                    # ⚠️ IP di DB TETAP — jangan diupdate otomatis. Security dulu.
+                    write_log("CLIENT_STATUS_MAC_FALLBACK",
+                              f"PC {pc.kode} IP={ip_address} via MAC fallback (DB IP={pc.ip_address})")
+                else:
+                    # ❌ MAC juga ga ketemu → PC beneran ga terdaftar
+                    write_log("CLIENT_STATUS_UNKNOWN",
+                              f"PC tidak dikenal: IP={ip_address} MAC={mac_address}")
+                    return {
+                        "status": "kosong",
+                        "message": "PC tidak dikenal",
+                        "shutdown_timer": 180
+                    }
+
             # Kondisi A: MAC di DB masih kosong -> Langsung isi otomatis (Auto-register pasif)
             if not pc.mac_address:
                 formatted_mac = ClientService._format_mac(mac_address)
