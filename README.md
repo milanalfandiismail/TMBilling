@@ -1270,3 +1270,22 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more informa
 <p align="center">
   <sub>TMBilling v1.1.1</sub>
 </p>
+
+---
+
+### ⚠️ Catatan Penting untuk Client Windows
+
+> **Gunakan IP Statis!**
+>
+> Pada setiap PC client Windows, **WAJIB** menggunakan **IP Address statis** dan **jangan gunakan DHCP**.
+> Windows DHCP Renew menyebabkan PC kehilangan IP sesaat (fallback ke `127.0.0.1`) sehingga koneksi ke server terputus
+> dan dapat memicu **force logout otomatis**.
+>
+> **Langkah-langkah:**
+> 1. Set **IP Address statis** di masing-masing PC client (Start → Settings → Network & Internet → Change adapter options → IPv4 → Use the following IP address)
+> 2. **Nonaktifkan service DHCP** di Windows agar tidak terjadi renew otomatis:
+>    - Buka `services.msc` → cari **DHCP Client** → klik kanan → **Properties** → Startup type: **Disabled** → Stop
+> 3. Pastikan tidak ada DHCP server lain dalam satu jaringan (iSCSI, Router, dll) yang memberikan IP ke PC client
+>
+> Dengan menggunakan IP statis, PC client akan selalu polling ke server dengan IP yang konsisten dan tidak akan mengalami
+> force logout akibat perubahan IP.
