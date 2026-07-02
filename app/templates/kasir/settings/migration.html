@@ -1,18 +1,18 @@
 <!-- ==================== SUB-TAB: MIGRASI & UPDATE ==================== -->
 <div id="subtab-migration" class="subtab-content hidden space-y-6">
     <!-- Card: Status Versi -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-        <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">📊 Status Sistem</h3>
+    <div class="bg-[#0c0c0c] border border-neutral-800 rounded p-6">
+        <h3 class="text-sm font-semibold text-neutral-100 mb-4">📊 Status Sistem</h3>
         <div id="migration-status-content" class="space-y-4">
-            <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-3">
+            <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
                 <span class="text-xs lg:text-base text-neutral-400 uppercase font-bold">Status Skema</span>
                 <span id="migration-status-badge" class="px-3 py-1 rounded text-[10px] lg:text-xs font-bold font-mono bg-neutral-800 text-neutral-400">Memuat...</span>
             </div>
-            <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-3">
+            <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
                 <span class="text-xs lg:text-base text-neutral-400 uppercase font-bold">Versi Aplikasi</span>
                 <span id="migration-app-version" class="text-xs lg:text-sm text-neutral-200 font-mono font-bold">-</span>
             </div>
-            <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-3">
+            <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
                 <span class="text-xs lg:text-base text-neutral-400 uppercase font-bold">Skema Aktif</span>
                 <span id="migration-current-revision" class="text-xs lg:text-sm text-neutral-200 font-mono">-</span>
             </div>
@@ -24,15 +24,15 @@
     </div>
 
     <!-- Card: Upload Update Aplikasi -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-        <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">📦 Upload Update Aplikasi</h3>
+    <div class="bg-[#0c0c0c] border border-neutral-800 rounded p-6">
+        <h3 class="text-sm font-semibold text-neutral-100 mb-4">📦 Upload Update Aplikasi</h3>
         <p class="text-[9px] lg:text-base text-neutral-500 mb-4">Unggah berkas <strong class="text-neutral-300">TMBilling_Server_v*.zip</strong> untuk memperbarui kode aplikasi secara otomatis.</p>
-        <div class="border-2 border-dashed border-[#262626] rounded-xl p-8 text-center hover:border-neutral-500 transition-colors cursor-pointer" id="migration-dropzone" onclick="document.getElementById('migration-file-input').click()">
+        <div class="border-2 border-dashed border-neutral-700 rounded-xl p-8 text-center hover:border-neutral-500 transition-colors cursor-pointer" id="migration-dropzone" onclick="document.getElementById('migration-file-input').click()">
             <div class="text-3xl mb-2">📁</div>
             <p class="text-xs lg:text-sm text-neutral-400 font-semibold">Klik untuk pilih file ZIP</p>
             <p class="text-[9px] lg:text-xs text-neutral-600 mt-1">Hanya file .zip</p>
             <input type="file" id="migration-file-input" accept=".zip" class="hidden" onchange="MigrationModule.previewFile(this)">
-            <div id="migration-file-preview" class="hidden mt-4 text-left bg-[#050505] border border-[#1c1c1c] rounded p-3">
+            <div id="migration-file-preview" class="hidden mt-4 text-left bg-[#050505] border border-neutral-800 rounded p-3">
                 <p id="migration-file-name" class="text-xs text-neutral-200 font-mono"></p>
             </div>
         </div>
@@ -43,12 +43,12 @@
     </div>
 
     <!-- Card: Riwayat Migrasi -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-        <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">📜 Riwayat Migrasi</h3>
+    <div class="bg-[#0c0c0c] border border-neutral-800 rounded p-6">
+        <h3 class="text-sm font-semibold text-neutral-100 mb-4">📜 Riwayat Migrasi</h3>
         <div class="overflow-x-auto w-full">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] lg:text-xs uppercase font-bold">
+                    <tr class="border-b border-neutral-800 text-neutral-500 text-[10px] lg:text-xs uppercase font-bold">
                         <th class="pb-2">Revisi</th>
                         <th class="pb-2">Induk</th>
                         <th class="pb-2">Deskripsi</th>

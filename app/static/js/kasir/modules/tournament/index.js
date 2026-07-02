@@ -55,7 +55,7 @@ const Tournament = {
             const res = await API.tournament.list();
             if (!res.tournaments || res.tournaments.length === 0) {
                 grid.innerHTML = `
-                    <div class="col-span-full py-16 border border-dashed border-[#2a2a2a] rounded-xl flex flex-col items-center justify-center text-center">
+                    <div class="col-span-full py-16 border border-dashed border-neutral-700 rounded-xl flex flex-col items-center justify-center text-center">
                         <p class="text-xs lg:text-base text-neutral-500">Belum ada turnamen yang dibuat.</p>
                         ${this.isKasir() ? '' : `
                         <button onclick="Tournament.openCreateModal()" class="mt-4 px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-all">
@@ -73,7 +73,7 @@ const Tournament = {
                     : 'bg-emerald-950/40 text-emerald-400 border border-emerald-800/30';
                 
                 return `
-                    <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5 hover:border-neutral-500 transition-all flex flex-col justify-between h-[180px]">
+                    <div class="bg-[#0c0c0c] border border-neutral-700 rounded-xl p-5 hover:border-neutral-500 transition-all flex flex-col justify-between h-[180px]">
                         <div>
                             <div class="flex items-start justify-between gap-3">
                                 <h3 class="text-xs lg:text-base font-bold text-neutral-100 truncate flex-1">${t.nama}</h3>
@@ -83,7 +83,7 @@ const Tournament = {
                             </div>
                             <p class="text-[10px] lg:text-sm text-neutral-500 mt-2 line-clamp-2">${t.deskripsi || 'Tidak ada deskripsi.'}</p>
                         </div>
-                        <div class="flex items-center justify-between mt-4 border-t border-[#171717]/80 pt-3">
+                        <div class="flex items-center justify-between mt-4 border-t border-neutral-800/80 pt-3">
                             <span class="text-[10px] lg:text-xs text-neutral-500 font-mono">${t.teams_count} Tim Terdaftar</span>
                             <div class="flex gap-2">
                                 ${this.isKasir() ? '' : `
@@ -92,7 +92,7 @@ const Tournament = {
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
                                 </button>`}
-                                <button onclick="Tournament.showDetailView(${t.id})" class="px-3.5 py-2 bg-[#0f0f0f] border border-[#2a2a2a] hover:bg-[#151515] text-neutral-200 text-xs lg:text-sm font-bold rounded-lg transition-colors">
+                                <button onclick="Tournament.showDetailView(${t.id})" class="px-3.5 py-2 bg-[#0f0f0f] border border-neutral-700 hover:bg-[#151515] text-neutral-200 text-xs lg:text-sm font-bold rounded-lg transition-colors">
                                     Buka Turnamen
                                 </button>
                             </div>
@@ -138,7 +138,7 @@ const Tournament = {
                     const isActive = s.id === this.activeStageId;
                     const tabClass = isActive 
                         ? 'bg-neutral-800 text-neutral-100 font-bold' 
-                        : 'text-neutral-400 hover:text-neutral-200 hover:bg-[#121212]';
+                        : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800';
                     return `
                         <button onclick="Tournament.switchStage(${s.id})" class="px-3.5 py-2 rounded-md text-xs lg:text-sm transition-colors ${tabClass}">
                             ${s.nama} (${s.status})
@@ -165,7 +165,7 @@ const Tournament = {
             const isActive = s.id === this.activeStageId;
             const tabClass = isActive 
                 ? 'bg-neutral-800 text-neutral-100 font-bold' 
-                : 'text-neutral-400 hover:text-neutral-200 hover:bg-[#121212]';
+                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800';
             return `
                 <button onclick="Tournament.switchStage(${s.id})" class="px-3.5 py-2 rounded-md text-xs lg:text-sm transition-colors ${tabClass}">
                     ${s.nama} (${s.status})
@@ -195,7 +195,7 @@ const Tournament = {
         
         if (matches.length === 0) {
             container.innerHTML = `
-                <div class="py-16 text-center text-neutral-500 text-xs lg:text-base border border-dashed border-[#2a2a2a] rounded-xl">
+                <div class="py-16 text-center text-neutral-500 text-xs lg:text-base border border-dashed border-neutral-700 rounded-xl">
                     <p>Bagan belum dibuat untuk tahapan ini.</p>
                 </div>
             `;
@@ -225,7 +225,7 @@ const Tournament = {
 
             html += `
                 <div class="flex flex-col justify-around gap-6 min-w-[240px] select-none">
-                    <div class="text-center text-[10px] lg:text-xs font-extrabold uppercase tracking-widest text-neutral-500 border-b border-[#2a2a2a] pb-2 mb-4">
+                    <div class="text-center text-[10px] lg:text-xs font-extrabold uppercase tracking-widest text-neutral-500 border-b border-neutral-700 pb-2 mb-4">
                         ${roundName}
                     </div>
                     <div class="flex-1 flex flex-col justify-around gap-6">
@@ -241,18 +241,18 @@ const Tournament = {
                 const isT1Winner = hasWinner && m.pemenang_id === m.tim1_id;
                 const isT2Winner = hasWinner && m.pemenang_id === m.tim2_id;
 
-                const cardBorder = hasWinner ? 'border-[#262626]' : 'border-[#2a2a2a] hover:border-neutral-500';
+                const cardBorder = hasWinner ? 'border-neutral-700' : 'border-neutral-700 hover:border-neutral-500';
 
                 // Render bulatan kecil indikator BO
                 let boIndicators = '';
                 if (m.bo_format > 1 && m.tim1_id && m.tim2_id) {
-                    boIndicators = `<span class="text-[9px] lg:text-[10px] text-neutral-600 bg-neutral-900 border border-[#2a2a2a] px-1.5 py-0.5 rounded font-bold">BO${m.bo_format}</span>`;
+                    boIndicators = `<span class="text-[9px] lg:text-[10px] text-neutral-500 bg-neutral-900 border border-neutral-700 px-1.5 py-0.5 rounded font-bold">BO${m.bo_format}</span>`;
                 }
 
                 html += `
                     <div ${this.isKasir() ? '' : `onclick="Tournament.openSkorModal(${m.id}, '${t1}', '${t2}', ${m.tim1_id || 0}, ${m.tim2_id || 0}, ${m.skor1}, ${m.skor2})"`}
-                        class="bg-[#0a0a0a] border ${cardBorder} rounded-xl p-4 ${this.isKasir() ? '' : 'cursor-pointer hover:bg-[#0c0c0c]'} transition-all space-y-2.5">
-                        <div class="flex items-center justify-between text-[10px] lg:text-xs text-neutral-600 font-mono">
+                        class="bg-[#0c0c0c] border ${cardBorder} rounded-xl p-4 ${this.isKasir() ? '' : 'cursor-pointer hover:bg-[#0c0c0c]'} transition-all space-y-2.5">
+                        <div class="flex items-center justify-between text-[10px] lg:text-xs text-neutral-500 font-mono">
                             <span>Match #${m.match_number}</span>
                             ${boIndicators}
                         </div>
@@ -293,7 +293,7 @@ const Tournament = {
 
         let standingsRows = standings.map((s, idx) => {
             return `
-                <tr class="border-b border-[#171717]/80 text-xs lg:text-base">
+                <tr class="border-b border-neutral-800/80 text-xs lg:text-base">
                     <td class="py-3 px-4 font-mono font-bold text-neutral-500 text-center text-xs lg:text-base">${idx + 1}</td>
                     <td class="py-3 px-4 font-bold text-neutral-200">${s.nama_tim}</td>
                     <td class="py-3 px-4 text-center font-mono font-bold text-emerald-400 text-xs lg:text-base">${s.wins}</td>
@@ -304,7 +304,7 @@ const Tournament = {
         }).join('');
 
         if (standings.length === 0) {
-            standingsRows = '<tr><td colspan="5" class="py-8 text-center text-neutral-600 text-xs lg:text-base">Belum ada tim terdaftar.</td></tr>';
+            standingsRows = '<tr><td colspan="5" class="py-8 text-center text-neutral-500 text-xs lg:text-base">Belum ada tim terdaftar.</td></tr>';
         }
 
         // Kelompokkan match ronde aktif
@@ -330,9 +330,9 @@ const Tournament = {
                 : '';
 
             return `
-                <div ${cardClickAction} class="bg-[#0a0a0a] border border-[#2a2a2a] ${m.tim2_id ? 'hover:border-neutral-500 cursor-pointer' : ''} rounded-xl p-4 flex items-center justify-between gap-4 transition-all">
+                <div ${cardClickAction} class="bg-[#0c0c0c] border border-neutral-700 ${m.tim2_id ? 'hover:border-neutral-500 cursor-pointer' : ''} rounded-xl p-4 flex items-center justify-between gap-4 transition-all">
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 text-[10px] lg:text-xs text-neutral-600 font-mono mb-2">
+                        <div class="flex items-center gap-2 text-[10px] lg:text-xs text-neutral-500 font-mono mb-2">
                             <span>Match #${m.match_number}</span>
                             ${m.bo_format > 1 ? `<span class="text-neutral-500">BO${m.bo_format}</span>` : ''}
                         </div>
@@ -349,7 +349,7 @@ const Tournament = {
         }).join('');
 
         if (activeRoundMatches.length === 0) {
-            matchCards = '<div class="py-12 text-center text-neutral-600 text-xs lg:text-base border border-dashed border-[#2a2a2a] rounded-xl">Belum ada pertandingan dibuat.</div>';
+            matchCards = '<div class="py-12 text-center text-neutral-500 text-xs lg:text-base border border-dashed border-neutral-700 rounded-xl">Belum ada pertandingan dibuat.</div>';
         }
 
         // Tampilkan tombol Lanjut Ronde atau Loloskan
@@ -367,7 +367,7 @@ const Tournament = {
             } else {
                 actionButtons = isKasir ? '' : `
                     <div class="grid grid-cols-2 gap-3">
-                        <button onclick="Tournament.triggerNextSwiss(${t_id=stage.turnamen_id})" class="py-2.5 px-4 bg-[#0f0f0f] border border-[#2a2a2a] hover:bg-[#151515] text-neutral-200 text-xs lg:text-base font-bold rounded-lg transition-colors">
+                        <button onclick="Tournament.triggerNextSwiss(${t_id=stage.turnamen_id})" class="py-2.5 px-4 bg-[#0f0f0f] border border-neutral-700 hover:bg-[#151515] text-neutral-200 text-xs lg:text-base font-bold rounded-lg transition-colors">
                             Buat Ronde Swiss #${maxRound + 1}
                         </button>
                         <button onclick="Tournament.openQualifyModal(${stage.id})" class="py-2.5 px-4 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">
@@ -378,7 +378,7 @@ const Tournament = {
             }
         } else {
             actionButtons = `
-                <div class="p-3 bg-neutral-900/40 border border-[#2a2a2a] text-neutral-500 text-center text-[10px] lg:text-xs font-bold uppercase tracking-wider rounded-lg">
+                <div class="p-3 bg-neutral-900/40 border border-neutral-700 text-neutral-500 text-center text-[10px] lg:text-xs font-bold uppercase tracking-wider rounded-lg">
                     Ronde ${maxRound} Masih Berlangsung
                 </div>
             `;
@@ -389,10 +389,10 @@ const Tournament = {
                 <!-- Left: Standings -->
                 <div class="col-span-1 lg:col-span-2 space-y-4">
                     <h3 class="text-xs lg:text-sm font-bold text-neutral-400 uppercase tracking-wider">Klasemen Sementara Swiss</h3>
-                    <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl overflow-hidden">
+                    <div class="bg-[#0c0c0c] border border-neutral-700 rounded-xl overflow-hidden">
                         <table class="w-full text-left border-collapse">
                             <thead>
-                                <tr class="bg-neutral-900/60 border-b border-[#2a2a2a] text-[10px] lg:text-sm font-bold uppercase tracking-wider text-neutral-500">
+                                <tr class="bg-neutral-900/60 border-b border-neutral-700 text-[10px] lg:text-sm font-bold uppercase tracking-wider text-neutral-500">
                                     <th class="py-3 px-4 w-12 text-center">Rank</th>
                                     <th class="py-3 px-4">Nama Tim</th>
                                     <th class="py-3 px-4 w-16 text-center">Menang</th>
@@ -415,7 +415,7 @@ const Tournament = {
                     <div class="space-y-3 max-h-[360px] overflow-y-auto pr-1 scrollbar-thin">
                         ${matchCards}
                     </div>
-                    <div class="pt-4 border-t border-[#2a2a2a] space-y-3">
+                    <div class="pt-4 border-t border-neutral-700 space-y-3">
                         ${actionButtons}
                     </div>
                 </div>
@@ -551,7 +551,7 @@ const Tournament = {
             const shouldTick = idx < 4 || idx < 8; // Disarankan loloskan 4 atau 8 tim
             
             return `
-                <label class="flex items-center justify-between p-2.5 rounded-lg bg-[#0a0a0a] border border-[#2a2a2a] hover:border-neutral-700 cursor-pointer select-none">
+                <label class="flex items-center justify-between p-2.5 rounded-lg bg-[#0c0c0c] border border-neutral-700 hover:border-neutral-700 cursor-pointer select-none">
                     <div class="flex items-center gap-3">
                         <span class="text-[10px] lg:text-xs font-mono font-bold text-neutral-500">#${idx + 1}</span>
                         <span class="text-xs lg:text-base font-bold text-neutral-200">${s.nama_tim}</span>
@@ -559,7 +559,7 @@ const Tournament = {
                     <div class="flex items-center gap-2">
                         <span class="text-[10px] lg:text-xs font-mono font-bold text-emerald-400">${s.wins}W - ${s.losses}L</span>
                         <input type="checkbox" name="qualifier-team" value="${s.id}" ${shouldTick ? 'checked' : ''}
-                            class="w-4 h-4 rounded bg-[#0a0a0a] border border-[#2a2a2a] text-neutral-100 focus:ring-0">
+                            class="w-4 h-4 rounded bg-[#0c0c0c] border border-neutral-700 text-neutral-100 focus:ring-0">
                     </div>
                 </label>
             `;

@@ -47,7 +47,7 @@ const LaporanMenu = {
             if (tanggalList.length === 0) {
                 select.innerHTML = '<option value="">-- Pilih Tanggal --</option>';
                 area.innerHTML = `
-                    <div class="flex flex-col items-center justify-center py-16 text-neutral-500 bg-[#0c0c0c] border border-dashed border-[#1c1c1c] rounded">
+                    <div class="flex flex-col items-center justify-center py-16 text-neutral-500 bg-[#0c0c0c] border border-dashed border-neutral-800 rounded">
                         <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
                         <p class="text-xs lg:text-base font-bold uppercase tracking-wider text-neutral-300">Belum Ada Laporan</p>
                         <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Belum ada transaksi hari ini</p>
@@ -81,7 +81,7 @@ const LaporanMenu = {
         const area = document.getElementById('laporan-menu-area');
         if (!area) return;
 
-        area.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
+        area.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-neutral-800 border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
         try {
             const data = await API.report.kantinByTanggal(this.currentDate, this.currentKasirId, this.currentPage, this.itemsPerPage);
@@ -107,9 +107,9 @@ const LaporanMenu = {
         // Ringkasan card khusus Kantin
         html += `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 flex flex-col justify-between min-h-24">
+                <div class="bg-[#0c0c0c] border border-neutral-800 rounded p-4 flex flex-col justify-between min-h-24">
                     <span class="text-[10px] lg:text-base text-neutral-500 uppercase font-bold tracking-wider">Total Pendapatan Kantin & F&B</span>
-                    <span class="text-2xl font-bold text-green-400 font-mono mt-2">${Utils.formatRupiah(data.total_pendapatan_menu || 0)}</span>
+                    <span class="text-2xl font-bold text-emerald-400 font-mono mt-2">${Utils.formatRupiah(data.total_pendapatan_menu || 0)}</span>
                 </div>
             </div>`;
 
@@ -122,7 +122,7 @@ const LaporanMenu = {
                 <div class="overflow-x-hidden w-full">
                     <table class="w-full text-xs lg:text-base block lg:table">
                         <thead class="hidden lg:table-header-group">
-                            <tr class="text-[10px] lg:text-base text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
+                            <tr class="text-[10px] lg:text-base text-neutral-500 uppercase tracking-wider border-b border-neutral-800">
                                 <th class="px-4 py-3 text-left">Waktu</th>
                                 <th class="px-4 py-3 text-left">Nota</th>
                                 <th class="px-4 py-3 text-left">Item Menu</th>
@@ -137,12 +137,12 @@ const LaporanMenu = {
                         </thead>
                         <tbody class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] block lg:table-row-group">
                             ${menuList.map(tm => `
-                                <tr class="hover:bg-[#121212] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#2a2a2a] last:border-b-0 lg:border-b-0">
+                                <tr class="hover:bg-neutral-800 transition-colors block lg:table-row py-3 lg:py-0 border-b border-neutral-700 last:border-b-0 lg:border-b-0">
                                     <td class="px-4 py-3 text-neutral-400 font-mono flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Waktu</span>
                                         <span>${tm.waktu || '-'}</span>
                                     </td>
-                                    <td class="px-4 py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                    <td class="px-4 py-3 flex lg:table-cell justify-between items-center border-t border-neutral-700/50 lg:border-t-0">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota</span>
                                         <span class="font-mono text-neutral-300">${tm.no_nota || '-'}</span>
                                     </td>
@@ -176,7 +176,7 @@ const LaporanMenu = {
                                     </td>
                                     <td class="px-4 py-3 text-center flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
-                                        <button onclick="LaporanMenu.printStruk(${tm.id})" class="px-2.5 py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] lg:text-base font-bold rounded transition-colors">Cetak</button>
+                                        <button onclick="LaporanMenu.printStruk(${tm.id})" class="px-2.5 py-1 bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 text-neutral-300 text-[10px] lg:text-base font-bold rounded transition-colors">Cetak</button>
                                     </td>
                                 </tr>`).join('')}
                         </tbody>
@@ -186,9 +186,9 @@ const LaporanMenu = {
             if (totalPages > 1) {
                 html += `
                     <div class="flex items-center justify-center gap-2 mt-4 mb-6">
-                        <button onclick="LaporanMenu.setPage(${this.currentPage - 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs lg:text-base font-bold rounded transition-colors ${this.currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage <= 1 ? 'disabled' : ''}>&larr;</button>
+                        <button onclick="LaporanMenu.setPage(${this.currentPage - 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-neutral-800 hover:bg-neutral-800 text-neutral-400 text-xs lg:text-base font-bold rounded transition-colors ${this.currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage <= 1 ? 'disabled' : ''}>&larr;</button>
                         <span class="px-4 py-1.5 text-xs lg:text-base text-neutral-200 font-mono">${this.currentPage} / ${totalPages}</span>
-                        <button onclick="LaporanMenu.setPage(${this.currentPage + 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs lg:text-base font-bold rounded transition-colors ${this.currentPage >= totalPages ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage >= totalPages ? 'disabled' : ''}>&rarr;</button>
+                        <button onclick="LaporanMenu.setPage(${this.currentPage + 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-neutral-800 hover:bg-neutral-800 text-neutral-400 text-xs lg:text-base font-bold rounded transition-colors ${this.currentPage >= totalPages ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage >= totalPages ? 'disabled' : ''}>&rarr;</button>
                     </div>`;
             }
         } else {

@@ -1,55 +1,65 @@
-<!-- ===== MODAL: STRUK ===== -->
-<div id="modalStruk" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-sm overflow-hidden animate-in">
-        <div id="printArea" class="p-6 text-neutral-200 text-xs">
-            <div class="text-center border-b border-dashed border-[#1c1c1c] pb-4 mb-4">
+<!-- ============================================================
+     Modals — Mintlify Dark
+     ============================================================ -->
+
+<!-- MODAL: STRUK -->
+<div id="modalStruk" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl w-full max-w-sm overflow-hidden shadow-xl animate-in">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
+            <h3 class="text-sm font-semibold text-neutral-100">Cetak Struk</h3>
+            <button onclick="closeStruk()" class="w-7 h-7 rounded-lg bg-neutral-800 border border-neutral-700 text-neutral-400 hover:text-neutral-100 transition-colors flex items-center justify-center">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div id="printArea" class="p-5">
+            <div class="text-center border-b border-dashed border-neutral-700 pb-4 mb-4">
                 <h2 class="text-sm font-bold text-neutral-100 uppercase tracking-wider">MILAN NET</h2>
-                <p class="text-[9px] text-neutral-500 mt-1">Software Engineering Lab</p>
+                <p class="text-xs text-neutral-500 mt-1">Software Engineering Lab</p>
             </div>
             <div id="isiStruk" class="space-y-2"></div>
-            <div
-                class="mt-6 pt-4 border-t border-dashed border-[#1c1c1c] text-center text-[10px] text-neutral-500">
-                Terima kasih</div>
+            <div class="mt-6 pt-4 border-t border-dashed border-neutral-700 text-center text-xs text-neutral-500">Terima kasih</div>
         </div>
-        <div class="flex border-t border-[#1c1c1c] p-4 gap-3">
+        <div class="flex gap-2 px-5 py-4 border-t border-neutral-800 bg-[#080808]">
             <button onclick="closeStruk()"
-                class="flex-1 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-400 text-xs font-bold rounded transition-colors">Tutup</button>
+                class="flex-1 py-2 text-sm font-medium text-neutral-400 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 rounded-lg transition-colors">Tutup</button>
             <button onclick="printStrukNow()"
-                class="flex-1 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors">Cetak</button>
+                class="flex-1 py-2 text-sm font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors">Cetak</button>
         </div>
     </div>
 </div>
 
-<!-- ===== MODAL: BACKUP ===== -->
-<div id="modal-backup" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 max-w-md w-full animate-in">
-        <div class="flex items-center justify-between mb-4 pb-4 border-b border-[#1c1c1c]">
-            <h3 class="text-xs font-bold text-neutral-200 uppercase tracking-wider">Pilih Metode Backup</h3>
+<!-- MODAL: BACKUP -->
+<div id="modal-backup" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5 max-w-md w-full shadow-xl">
+        <div class="flex items-center justify-between mb-4 pb-4 border-b border-neutral-800">
+            <h3 class="text-sm font-semibold text-neutral-100">Pilih Metode Backup</h3>
             <button onclick="Settings.closeBackupModal()"
-                class="text-neutral-500 hover:text-slate-300 text-xl leading-none">&times;</button>
+                class="w-7 h-7 rounded-lg bg-neutral-800 border border-neutral-700 text-neutral-400 hover:text-neutral-100 transition-colors flex items-center justify-center">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
         <div class="space-y-3">
             <button onclick="Settings.runServerBackup()"
-                class="w-full p-4 bg-[#050505] hover:bg-[#121212] border border-[#1c1c1c] rounded text-left transition-colors">
+                class="w-full p-4 bg-[#080808] hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 rounded-xl text-left transition-all group">
                 <div class="flex items-center gap-3">
-                    <div
-                        class="w-10 h-10 bg-[#171717] border border-[#262626] text-neutral-300 rounded flex items-center justify-center font-mono font-bold">
-                        SV</div>
+                    <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    </div>
                     <div>
-                        <div class="text-xs font-bold text-neutral-200 uppercase">Backup ke Server</div>
-                        <div class="text-[10px] text-neutral-500 mt-0.5">Simpan di folder server</div>
+                        <div class="text-sm font-medium text-neutral-200">Backup ke Server</div>
+                        <div class="text-xs text-neutral-500 mt-0.5">Simpan di folder server</div>
                     </div>
                 </div>
             </button>
             <button onclick="Settings.runLocalBackup()"
-                class="w-full p-4 bg-[#050505] hover:bg-[#121212] border border-[#1c1c1c] rounded text-left transition-colors">
+                class="w-full p-4 bg-[#080808] hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 rounded-xl text-left transition-all group">
                 <div class="flex items-center gap-3">
-                    <div
-                        class="w-10 h-10 bg-[#171717] border border-[#262626] text-neutral-300 rounded flex items-center justify-center font-mono font-bold">
-                        DL</div>
+                    <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
                     <div>
-                        <div class="text-xs font-bold text-neutral-200 uppercase">Unduh Database</div>
-                        <div class="text-[10px] text-neutral-500 mt-0.5">Download file database</div>
+                        <div class="text-sm font-medium text-neutral-200">Unduh Database</div>
+                        <div class="text-xs text-neutral-500 mt-0.5">Download file database</div>
                     </div>
                 </div>
             </button>

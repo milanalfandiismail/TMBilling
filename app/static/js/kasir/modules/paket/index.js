@@ -7,7 +7,7 @@ const Paket = {
 
     async load() {
         const area = document.getElementById('paket-table');
-        if (area) area.innerHTML = '<div class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
+        if (area) area.innerHTML = '<div class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-neutral-800 border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
         try {
             const filterSelect = document.getElementById('paket-grup-filter-select');

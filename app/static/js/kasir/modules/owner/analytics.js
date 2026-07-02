@@ -37,8 +37,8 @@ const OwnerAnalytics = {
             // 3. Paket Terlaris
             const tp = d.top_paket;
             document.getElementById('kpi-paket').innerHTML = tp.labels.map((l,i) =>
-                `<div class="flex justify-between py-1.5 ${i>0?'border-t border-[#2a2a2a]':''}">
-                    <span><span class="text-neutral-600">${i+1}.</span> <span class="text-neutral-300">${l}</span></span>
+                `<div class="flex justify-between py-1.5 ${i>0?'border-t border-neutral-700':''}">
+                    <span><span class="text-neutral-500">${i+1}.</span> <span class="text-neutral-300">${l}</span></span>
                     <span class="text-white font-semibold">${tp.data[i]}x</span>
                 </div>`
             ).join('') || '<div class="text-neutral-500 py-2">Belum ada data</div>';
@@ -47,7 +47,7 @@ const OwnerAnalytics = {
             // 5. Per Kasir
             const pk = d.pendapatan_per_kasir;
             document.getElementById('kpi-kasir').innerHTML = pk.labels.map((l,i) =>
-                `<div class="flex justify-between py-1.5 ${i>0?'border-t border-[#2a2a2a]':''}">
+                `<div class="flex justify-between py-1.5 ${i>0?'border-t border-neutral-700':''}">
                     <span class="text-neutral-400">${l}</span>
                     <span class="text-white font-semibold">Rp${pk.data[i].toLocaleString('id-ID')}</span>
                 </div>`
@@ -61,14 +61,14 @@ const OwnerAnalytics = {
             const bersih = baru - keluar;
             document.getElementById('kpi-member').innerHTML = `
                 <div class="flex justify-between py-1.5">
-                    <span class="text-green-400 text-sm font-bold">+${baru}</span>
+                    <span class="text-emerald-400 text-sm font-bold">+${baru}</span>
                     <span class="text-neutral-500">Anggota Baru</span>
                 </div>
-                <div class="flex justify-between py-1.5 border-t border-[#2a2a2a]">
+                <div class="flex justify-between py-1.5 border-t border-neutral-700">
                     <span class="text-red-400 text-sm font-bold">-${keluar}</span>
                     <span class="text-neutral-500">Anggota Keluar</span>
                 </div>
-                <div class="flex justify-between py-1.5 border-t border-[#2a2a2a]">
+                <div class="flex justify-between py-1.5 border-t border-neutral-700">
                     <span class="text-white font-bold text-sm">${bersih >= 0 ? '+' : ''}${bersih}</span>
                     <span class="text-neutral-500">Bersih</span>
                 </div>
@@ -78,7 +78,7 @@ const OwnerAnalytics = {
             const hm = d.heatmap_jam_sibuk;
             const sorted = hm.data.map((v,i) => ({label: hm.labels[i], val: v})).sort((a,b) => b.val - a.val);
             document.getElementById('kpi-heatmap').innerHTML = sorted.slice(0,3).map((item, i) =>
-                `<div class="flex justify-between py-1.5 ${i>0?'border-t border-[#2a2a2a]':''}">
+                `<div class="flex justify-between py-1.5 ${i>0?'border-t border-neutral-700':''}">
                     <span class="text-neutral-400">${i+1}. ${item.label}</span>
                     <span class="text-yellow-400 font-semibold">${item.val}%</span>
                 </div>`
@@ -90,8 +90,8 @@ const OwnerAnalytics = {
             document.getElementById('kpi-refund').innerHTML = `
                 <div class="text-sm lg:text-2xl font-bold text-yellow-400 mb-3">${rf.refund_rate}%</div>
                 <div class="flex justify-between py-1.5"><span class="text-neutral-500">Total Transaksi</span><span class="text-white font-semibold">${rf.total}</span></div>
-                <div class="flex justify-between py-1.5 border-t border-[#2a2a2a]"><span class="text-green-400">Berhasil</span><span class="text-white font-semibold">${sukses}</span></div>
-                <div class="flex justify-between py-1.5 border-t border-[#2a2a2a]"><span class="text-red-400">Refund</span><span class="text-white font-semibold">${rf.refund}</span></div>
+                <div class="flex justify-between py-1.5 border-t border-neutral-700"><span class="text-emerald-400">Berhasil</span><span class="text-white font-semibold">${sukses}</span></div>
+                <div class="flex justify-between py-1.5 border-t border-neutral-700"><span class="text-red-400">Refund</span><span class="text-white font-semibold">${rf.refund}</span></div>
             `;
 
             document.getElementById('analytics-loading').classList.add('hidden');
@@ -116,13 +116,13 @@ function setScroll(id, count, thresh) {
 
 // Helper: render tabel 2 kolom dengan border grid
 function gridTable(headers, rows) {
-    return `<div class="border border-[#2a2a2a] rounded-lg overflow-hidden">
-        <div class="flex bg-[#080808] border-b border-[#2a2a2a]">
-            <div class="flex-1 px-3 py-2 text-neutral-500 text-xs lg:text-base border-r border-[#2a2a2a]">${headers[0]}</div>
+    return `<div class="border border-neutral-700 rounded-lg overflow-hidden">
+        <div class="flex bg-[#080808] border-b border-neutral-700">
+            <div class="flex-1 px-3 py-2 text-neutral-500 text-xs lg:text-base border-r border-neutral-700">${headers[0]}</div>
             <div class="flex-1 px-3 py-2 text-right text-neutral-500 text-xs lg:text-base">${headers[1]}</div>
         </div>
-        ${rows.map((r, i) => `<div class="flex ${i < rows.length-1 ? 'border-b border-[#2a2a2a]' : ''}">
-            <div class="flex-1 px-3 py-2 text-neutral-400 text-xs lg:text-base border-r border-[#2a2a2a]">${r[0]}</div>
+        ${rows.map((r, i) => `<div class="flex ${i < rows.length-1 ? 'border-b border-neutral-700' : ''}">
+            <div class="flex-1 px-3 py-2 text-neutral-400 text-xs lg:text-base border-r border-neutral-700">${r[0]}</div>
             <div class="flex-1 px-3 py-2 text-right text-white text-xs lg:text-base">${r[1]}</div>
         </div>`).join('')}
     </div>`;

@@ -2,6 +2,7 @@ const App = {
     currentTab: 'dash',
 
     async init() {
+        Delegate.init();
         const loggedIn = await this.checkAuth();
         if (!loggedIn) {
             return;
@@ -252,7 +253,7 @@ window.Laporan = Laporan;
 window.LaporanMenu = LaporanMenu;
 window.Log = Log;
 window.BukaModal = BukaModal;
-window.Blackout = Blackout;
+// window.Blackout = Blackout; // assigned di module blackout/index.js
 window.Monitor = Monitor;
 window.TambahModal = TambahModal;
 window.Modal = Modal;

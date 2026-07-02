@@ -20,8 +20,8 @@ const StrukPreview = {
         const tglTime = tglParts.slice(1).join(' ') || '';
 
         container.innerHTML = `
-            <div class="thermal-paper w-[300px] mx-auto p-6 font-mono bg-[#161616] border border-[#2a2a2a] text-neutral-200 rounded-lg shadow-2xl select-none">
-                <div class="text-center mb-4 pb-3 border-b border-dashed border-[#2a2a2a]">
+            <div class="thermal-paper w-[300px] mx-auto p-6 font-mono bg-[#161616] border border-neutral-700 text-neutral-200 rounded-lg shadow-2xl select-none">
+                <div class="text-center mb-4 pb-3 border-b border-dashed border-neutral-700">
                     <h2 class="text-base font-extrabold tracking-tight">${escape(warnetTitle)}</h2>
                     <p class="text-[10px] lg:text-base text-neutral-500 font-bold">${escape(warnetAddress)}</p>
                     ${warnetPhone ? `<p class="text-[10px] lg:text-base text-neutral-500 font-bold">${escape(warnetPhone)}</p>` : ''}
@@ -49,12 +49,12 @@ const StrukPreview = {
                         <span class="font-bold text-neutral-100">${escape(data.nama_pelanggan)}</span>
                     </div>
 
-                    <div class="border-t border-dashed border-[#2a2a2a] my-3"></div>
+                    <div class="border-t border-dashed border-neutral-700 my-3"></div>
 
                     <div class="font-bold text-[10px] lg:text-base uppercase mb-1 text-neutral-400 font-bold">Rincian:</div>
                     <div class="space-y-2">
                         ${(data.rincian || []).map(r => `
-                            <div class="border-b border-dashed border-[#2a2a2a]/50 pb-1.5 last:border-0 last:pb-0">
+                            <div class="border-b border-dashed border-neutral-700/50 pb-1.5 last:border-0 last:pb-0">
                                 <div class="font-bold text-neutral-100">${escape(r.keterangan)}</div>
                                 <div class="text-[10px] lg:text-base text-neutral-400 font-bold">${data.tipe === 'kantin' ? 'Jumlah: ' + r.durasi : r.durasi + ' menit'}</div>
                                 <div class="text-xs lg:text-base font-bold text-right mt-0.5 text-neutral-200">${Utils.formatRupiah(r.harga)}</div>
@@ -62,7 +62,7 @@ const StrukPreview = {
                         `).join('')}
                     </div>
 
-                    <div class="border-t border-dashed border-[#2a2a2a] my-3"></div>
+                    <div class="border-t border-dashed border-neutral-700 my-3"></div>
 
                     <div class="flex justify-between items-end">
                         <div>
@@ -76,7 +76,7 @@ const StrukPreview = {
                     </div>
 
                     ${data.tunai !== null && data.tunai !== undefined ? `
-                    <div class="border-t border-dashed border-[#2a2a2a] my-3"></div>
+                    <div class="border-t border-dashed border-neutral-700 my-3"></div>
                     <div class="flex justify-between text-[10px] lg:text-base">
                         <span class="text-neutral-400">Tunai</span>
                         <span class="text-neutral-200 font-bold">${Utils.formatRupiah(data.tunai)}</span>
@@ -87,13 +87,13 @@ const StrukPreview = {
                     </div>
                     ` : ''}
 
-                    <div class="border-t border-dashed border-[#2a2a2a] my-3"></div>
+                    <div class="border-t border-dashed border-neutral-700 my-3"></div>
 
                     <div class="flex justify-between text-[10px] lg:text-base">
                         <span class="text-neutral-400">Kasir</span>
                         <span class="text-neutral-200 font-bold">${escape(data.kasir)}</span>
                     </div>
-                    <div class="text-center text-[10px] lg:text-base text-neutral-500 font-bold pt-3 border-t border-dashed border-[#2a2a2a] mt-2">
+                    <div class="text-center text-[10px] lg:text-base text-neutral-500 font-bold pt-3 border-t border-dashed border-neutral-700 mt-2">
                         ${escape(warnetFooter)}
                     </div>
                 </div>

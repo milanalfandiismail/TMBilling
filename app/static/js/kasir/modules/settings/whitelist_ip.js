@@ -25,7 +25,7 @@ const WhitelistIP = {
         const res = await fetch(path, opts);
         if (!res.ok) {
             const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-            alert('Gagal: ' + (err.error || 'Unknown error'));
+            Toast.error('Gagal: ' + (err.error || 'Unknown error'));
             throw new Error(err.error || 'Request failed');
         }
         return res.json();
@@ -59,7 +59,7 @@ const WhitelistIP = {
         tbody.innerHTML = entries.map(e => {
             const date = e.added_at ? e.added_at.substring(0, 10) : '-';
             return `
-                <tr class="border-b border-[#1c1c1c]/40">
+                <tr class="border-b border-neutral-800/40">
                     <td class="py-2.5 font-mono text-neutral-200 text-xs lg:text-sm">${this._esc(e.ip)}</td>
                     <td class="py-2.5 text-neutral-400 text-xs lg:text-sm hidden sm:table-cell">${this._esc(e.label || '-')}</td>
                     <td class="py-2.5 text-neutral-500 text-xs hidden md:table-cell">${date}</td>
@@ -83,7 +83,7 @@ const WhitelistIP = {
 
         const ip = ipInput.value.trim();
         if (!ip) {
-            alert('Masukkan IP address.');
+            Toast.error('Masukkan IP address.');
             ipInput.focus();
             return;
         }
@@ -105,13 +105,12 @@ const WhitelistIP = {
     // ------------------------------------------------------------------
 
     async remove(ip) {
-        if (!confirm(`Hapus ${ip} dari whitelist?`)) return;
-        try {
-            await this._fetch('DELETE', `/api/v1/kasir/settings/ip-whitelist/${ip}`);
-            await this.refresh();
-        } catch (e) {
-            // error already alerted
-        }
+        Modal.confirm(`Hapus ${ip} dari whitelist?`, async () => {
+            try {
+                await this._fetch('DELETE', `/api/v1/kasir/settings/ip-whitelist/${ip}`);
+                await this.refresh();
+            } catch (e) {}
+        });
     },
 
     // ------------------------------------------------------------------
@@ -133,16 +132,15 @@ const WhitelistIP = {
     // ------------------------------------------------------------------
 
     async regenerate() {
-        if (!confirm('Regenerate token?\n\nToken lama akan invalidate semua sesi yang sedang aktif. Lanjut?')) return;
-        try {
-            const data = await this._fetch('POST', '/api/v1/kasir/settings/ip-whitelist/regenerate-token');
-            this._newToken = data.token || '';
-            document.getElementById('newTokenDisplay').textContent = this._newToken;
-            document.getElementById('regenerateModal').classList.remove('hidden');
-            await this.loadStatus();
-        } catch (e) {
-            // error already alerted
-        }
+        Modal.confirm('Regenerate token? Token lama akan invalidate SEMUA sesi yang sedang aktif.', async () => {
+            try {
+                const data = await this._fetch('POST', '/api/v1/kasir/settings/ip-whitelist/regenerate-token');
+                this._newToken = data.token || '';
+                document.getElementById('newTokenDisplay').textContent = this._newToken;
+                document.getElementById('regenerateModal').classList.remove('hidden');
+                await this.loadStatus();
+            } catch (e) {}
+        });
     },
 
     closeRegenerateModal() {
@@ -153,7 +151,7 @@ const WhitelistIP = {
     copyNewToken() {
         if (this._newToken) {
             navigator.clipboard.writeText(this._newToken).then(() => {
-                alert('Token disalin!');
+                Toast.success('Token disalin!');
             }).catch(() => {
                 prompt('Copy token:', this._newToken);
             });
@@ -261,9 +259,9 @@ const WhitelistIP = {
         if (!el) return;
         const text = el.textContent || el.value || '';
         navigator.clipboard.writeText(text).then(() => {
-            alert('URL disalin!');
+            Toast.success('URL disalin!');
         }).catch(() => {
-            prompt('Copy URL:', text);
+            Toast.error('Gagal menyalin, salin manual');
         });
     },
 

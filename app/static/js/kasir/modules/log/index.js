@@ -37,33 +37,33 @@ const Log = {
         }
         
         container.innerHTML = logs.map((log, idx) => {
-            let catColor = 'text-neutral-400 bg-[#0c0c0c] border-[#1c1c1c]';
-            if (log.category === 'transaksi') catColor = 'text-neutral-200 bg-[#171717] border-neutral-700';
+            let catColor = 'text-neutral-400 bg-[#0c0c0c] border-neutral-800';
+            if (log.category === 'transaksi') catColor = 'text-neutral-200 bg-neutral-800 border-neutral-700';
             else if (log.category === 'sesi') catColor = 'text-neutral-300 bg-[#0f0f0f] border-neutral-800';
             else if (log.category === 'blackout') catColor = 'text-red-400 bg-[#2d1215] border-red-900/30';
             else if (log.category === 'sistem') catColor = 'text-neutral-400 bg-[#111111] border-neutral-800';
 
             if (log.category === "unknown") {
-                return `<div class="border-b border-[#1c1c1c] py-3 px-4 text-xs lg:text-base text-neutral-500 font-mono">${Utils.escapeHtml(log.raw)}</div>`;
+                return `<div class="border-b border-neutral-800 py-3 px-4 text-xs lg:text-base text-neutral-500 font-mono">${Utils.escapeHtml(log.raw)}</div>`;
             }
 
             let detailJsonHtml = '';
             if (log.detail_json) {
                 try {
                     const jsonStr = typeof log.detail_json === 'string' ? log.detail_json : JSON.stringify(log.detail_json, null, 2);
-                    detailJsonHtml = `<div class="mt-2 p-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-[10px] lg:text-sm text-neutral-400 font-mono whitespace-pre overflow-x-auto">${Utils.escapeHtml(jsonStr)}</div>`;
+                    detailJsonHtml = `<div class="mt-2 p-2 bg-[#0c0c0c] border border-neutral-800 rounded text-[10px] lg:text-sm text-neutral-400 font-mono whitespace-pre overflow-x-auto">${Utils.escapeHtml(jsonStr)}</div>`;
                 } catch (e) {
                     // Ignore
                 }
             }
 
             return `
-                <div class="border-b border-[#1c1c1c]/50 py-3 px-4 hover:bg-[#121212] transition-colors ${idx % 2 === 0 ? 'bg-[#0a0a0a]' : ''}">
+                <div class="border-b border-neutral-800/50 py-3 px-4 hover:bg-neutral-800 transition-colors ${idx % 2 === 0 ? 'bg-[#0c0c0c]' : ''}">
                     <div class="flex items-center justify-between text-[10px] lg:text-base mb-1">
                         <div class="flex items-center gap-2 flex-wrap">
-                            <span class="text-neutral-600 font-mono">#${String(idx + 1).padStart(3, '0')}</span>
+                            <span class="text-neutral-500 font-mono">#${String(idx + 1).padStart(3, '0')}</span>
                             <span class="text-neutral-500 font-mono">${log.timestamp}</span>
-                            <span class="px-2 py-0.5 rounded text-[10px] lg:text-base font-mono text-neutral-300 bg-[#171717] border border-[#262626]" title="Operator">${Utils.escapeHtml(log.user)}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] lg:text-base font-mono text-neutral-300 bg-neutral-800 border border-neutral-700" title="Operator">${Utils.escapeHtml(log.user)}</span>
                             ${log.ip_address && log.ip_address !== '-' ? `<span class="px-2 py-0.5 rounded text-[10px] lg:text-base font-mono text-sky-400 bg-[#0c2a3b] border-transparent" title="IP Address">${Utils.escapeHtml(log.ip_address)}</span>` : ''}
                         </div>
                         <span class="px-2 py-0.5 rounded text-[10px] lg:text-base font-medium border ${catColor}">${log.category}</span>
@@ -72,7 +72,7 @@ const Log = {
                         <span class="font-bold text-neutral-200">${Utils.escapeHtml(log.action)}</span>
                         <span class="text-neutral-500 ml-2 font-mono">${Utils.escapeHtml(log.detail)}</span>
                     </div>
-                    ${log.browser_agent && log.browser_agent !== '-' ? `<div class="text-[10px] lg:text-xs text-neutral-600 truncate" title="${Utils.escapeHtml(log.browser_agent)}">${Utils.escapeHtml(log.browser_agent)}</div>` : ''}
+                    ${log.browser_agent && log.browser_agent !== '-' ? `<div class="text-[10px] lg:text-xs text-neutral-500 truncate" title="${Utils.escapeHtml(log.browser_agent)}">${Utils.escapeHtml(log.browser_agent)}</div>` : ''}
                     ${detailJsonHtml}
                 </div>`;
         }).join('');

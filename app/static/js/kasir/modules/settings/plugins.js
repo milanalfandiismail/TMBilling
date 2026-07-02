@@ -37,8 +37,8 @@ const PluginsModule = {
         
         if (!plugins || plugins.length === 0) {
             grid.innerHTML = `
-                <div class="col-span-full py-12 flex flex-col items-center justify-center text-center border-2 border-dashed border-[#262626] rounded-xl bg-[#0a0a0a]">
-                    <svg class="w-12 h-12 text-neutral-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <div class="col-span-full py-12 flex flex-col items-center justify-center text-center border-2 border-dashed border-neutral-700 rounded-xl bg-[#0c0c0c]">
+                    <svg class="w-12 h-12 text-neutral-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     <h3 class="text-base font-semibold text-neutral-300">Belum Ada Plugin</h3>
                     <p class="text-sm text-neutral-500 mt-1">Upload file .zip plugin untuk menambahkan fitur ke TMBilling.</p>
                 </div>
@@ -48,14 +48,14 @@ const PluginsModule = {
 
         let html = '';
         plugins.forEach(p => {
-            const statusClass = p.enabled ? 'bg-green-500' : 'bg-neutral-500';
+            const statusClass = p.enabled ? 'bg-emerald-500' : 'bg-neutral-500';
             const statusText = p.enabled ? 'Aktif' : 'Nonaktif';
             
             html += `
-                <div class="bg-[#121212] border border-[#262626] rounded-xl p-5 hover:border-[#333] transition-colors flex flex-col h-full">
+                <div class="bg-neutral-800 border border-neutral-700 rounded-xl p-5 hover:border-neutral-600 transition-colors flex flex-col h-full">
                     <div class="flex items-start justify-between mb-3">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded bg-[#1a1a1a] border border-[#333] flex items-center justify-center text-xl shrink-0">
+                            <div class="w-10 h-10 rounded bg-neutral-800 border border-neutral-600 flex items-center justify-center text-xl shrink-0">
                                 ${p.icon || '🧩'}
                             </div>
                             <div>
@@ -71,7 +71,7 @@ const PluginsModule = {
                     
                     <p class="text-sm text-neutral-400 mb-4 flex-1 line-clamp-3">${p.description || 'Tidak ada deskripsi'}</p>
                     
-                    <div class="flex items-center justify-between pt-3 border-t border-[#262626] mt-auto">
+                    <div class="flex items-center justify-between pt-3 border-t border-neutral-700 mt-auto">
                         <div class="text-xs text-neutral-500">By <span class="text-neutral-300">${p.author || 'TMBilling Team'}</span></div>
                         <div class="flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full ${statusClass}"></span>
@@ -198,24 +198,24 @@ const PluginsModule = {
     },
 
     restartServer: async function() {
-        if (!confirm('Peringatan: Tindakan ini akan merestart backend TMBilling. Apakah Anda yakin?')) return;
-        
-        try {
-            const data = await API.request('/api/v1/kasir/settings/scheduler/restart', {
-                method: 'POST'
-            });
-            
-            if (data.success) {
-                Toast.success('Server sedang di-restart...');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 3000);
-            } else {
-                Toast.error('Gagal merestart: ' + data.error);
+        Modal.confirm('Restart backend TMBilling? Ini akan memutus koneksi semua client untuk beberapa saat.', async () => {
+            try {
+                const data = await API.request('/api/v1/kasir/settings/scheduler/restart', {
+                    method: 'POST'
+                });
+
+                if (data.success) {
+                    Toast.success('Server sedang di-restart...');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3000);
+                } else {
+                    Toast.error('Gagal merestart: ' + data.error);
+                }
+            } catch (e) {
+                Toast.error('Terjadi kesalahan saat memanggil restart');
+                console.error(e);
             }
-        } catch (e) {
-            Toast.error('Terjadi kesalahan saat memanggil restart');
-            console.error(e);
-        }
+        });
     }
 };

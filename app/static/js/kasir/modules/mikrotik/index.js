@@ -156,25 +156,23 @@ const MikrotikModule = {
     },
 
     syncAllMembers: function () {
-        if (!confirm('Apakah Anda yakin ingin menyelaraskan semua member TMBilling ke MikroTik Hotspot secara massal? Ini mungkin membutuhkan waktu beberapa saat di latar belakang.')) {
-            return;
-        }
+        Modal.confirm('Selaraskan SEMUA member TMBilling ke MikroTik Hotspot secara massal? Proses akan berjalan di latar belakang.', function () {
+            Toast.show('Memicu sinkronisasi massal...', 'info');
 
-        Toast.show('Memicu sinkronisasi massal...', 'info');
-
-        API.request('/api/v1/kasir/mikrotik/sync_all', {
-            method: 'POST'
-        })
-            .then(res => {
-                if (res.success) {
-                    Toast.show(res.message || 'Sinkronisasi massal berjalan', 'success');
-                } else {
-                    Toast.show(res.error || 'Gagal memicu sinkronisasi', 'error');
-                }
+            API.request('/api/v1/kasir/mikrotik/sync_all', {
+                method: 'POST'
             })
-            .catch(err => {
-                Toast.show('Terjadi kesalahan jaringan', 'error');
-            });
+                .then(res => {
+                    if (res.success) {
+                        Toast.show(res.message || 'Sinkronisasi massal berjalan', 'success');
+                    } else {
+                        Toast.show(res.error || 'Gagal memicu sinkronisasi', 'error');
+                    }
+                })
+                .catch(err => {
+                    Toast.show('Terjadi kesalahan jaringan', 'error');
+                });
+        });
     }
 };
 

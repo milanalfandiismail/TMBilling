@@ -78,7 +78,7 @@ const Struk = {
             this.currentDate = targetDate;
             this.currentPage = page;
 
-            container.innerHTML = '<div class="flex justify-center py-12"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
+            container.innerHTML = '<div class="flex justify-center py-12"><div class="w-6 h-6 border-2 border-neutral-800 border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
             const apiFn = this.currentSubTab === 'kantin' ? window.API.report.kantinByTanggal : window.API.report.byTanggal;
             const res = await apiFn(targetDate, '', page, 5);
@@ -91,7 +91,7 @@ const Struk = {
 
             if (!listData || listData.length === 0) {
                 container.innerHTML = `
-                    <div class="py-12 px-6 text-center bg-[#0c0c0c] border border-dashed border-[#1c1c1c] rounded">
+                    <div class="py-12 px-6 text-center bg-[#0c0c0c] border border-dashed border-neutral-800 rounded">
                         <p class="text-sm text-neutral-500">Tidak ada transaksi</p>
                     </div>`;
                 return;
@@ -105,7 +105,7 @@ const Struk = {
                 const clickId = Struk.currentSubTab === 'kantin' ? item.id : noNota;
 
                 return `
-                    <div onclick="Struk.cetak('${clickId}')" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3.5 cursor-pointer hover:border-neutral-400 transition-colors mb-2 hover-card-trigger">
+                    <div onclick="Struk.cetak('${clickId}')" class="bg-[#0c0c0c] border border-neutral-800 rounded p-3.5 cursor-pointer hover:border-neutral-400 transition-colors mb-2 hover-card-trigger">
                         <div class="flex items-center justify-between">
                             <div class="min-w-0 flex-1">
                                 <div class="text-sm font-bold text-neutral-200 lg:truncate break-words whitespace-normal">${nama}</div>
@@ -113,7 +113,7 @@ const Struk = {
                             </div>
                             <div class="text-right ml-3 font-mono">
                                 <div class="text-sm font-black text-neutral-100">${window.Utils ? window.Utils.formatRupiah(totalBayar) : totalBayar}</div>
-                                <div class="text-[9px] lg:text-base text-neutral-600 mt-0.5">${noNota}</div>
+                                <div class="text-[9px] lg:text-base text-neutral-500 mt-0.5">${noNota}</div>
                             </div>
                         </div>
                     </div>`;
@@ -125,10 +125,10 @@ const Struk = {
             if (pagContainer) {
                 if (res.pages > 1) {
                     pagContainer.innerHTML = `
-                        <div class="flex items-center justify-between py-2 px-3 bg-[#0c0c0c] border border-[#1c1c1c] rounded mt-3">
-                            <button onclick="Struk.changePage(${res.page - 1})" class="px-2.5 py-1 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors ${!res.has_prev ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_prev ? 'disabled' : ''}>&larr;</button>
+                        <div class="flex items-center justify-between py-2 px-3 bg-[#0c0c0c] border border-neutral-800 rounded mt-3">
+                            <button onclick="Struk.changePage(${res.page - 1})" class="px-2.5 py-1 bg-neutral-800 border border-neutral-700 hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors ${!res.has_prev ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_prev ? 'disabled' : ''}>&larr;</button>
                             <span class="text-xs lg:text-base font-bold text-neutral-400 font-mono">${res.page} / ${res.pages}</span>
-                            <button onclick="Struk.changePage(${res.page + 1})" class="px-2.5 py-1 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors ${!res.has_next ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_next ? 'disabled' : ''}>&rarr;</button>
+                            <button onclick="Struk.changePage(${res.page + 1})" class="px-2.5 py-1 bg-neutral-800 border border-neutral-700 hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors ${!res.has_next ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_next ? 'disabled' : ''}>&rarr;</button>
                         </div>`;
                 } else {
                     pagContainer.innerHTML = '';
@@ -144,7 +144,7 @@ const Struk = {
     async cetak(sesiId) {
         if (!sesiId) { Toast.error("ID sesi tidak valid"); return; }
         try {
-            document.getElementById('struk-preview').innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
+            document.getElementById('struk-preview').innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-neutral-800 border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
             let data;
             if (this.currentSubTab === 'kantin') {

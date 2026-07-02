@@ -7,53 +7,53 @@
     </style>
 
     <!-- Header Card -->
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
-        <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Analytics Owner</h3>
+    <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-neutral-100 mb-4">Analytics Owner</h3>
         <div class="flex flex-wrap items-center gap-2">
-            <input type="date" id="filter-start" class="flex-1 sm:flex-initial w-34 text-xs lg:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200">
+            <input type="date" id="filter-start" class="flex-1 sm:flex-initial w-34 text-xs lg:text-base px-3 py-2 bg-[#0c0c0c] border border-neutral-800 rounded-lg text-neutral-200">
             <span class="text-xs text-neutral-500">s/d</span>
-            <input type="date" id="filter-end" class="flex-1 sm:flex-initial w-34 text-xs lg:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200">
-            <button onclick="OwnerAnalytics.load()" class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Tampilkan</button>
+            <input type="date" id="filter-end" class="flex-1 sm:flex-initial w-34 text-xs lg:text-base px-3 py-2 bg-[#0c0c0c] border border-neutral-800 rounded-lg text-neutral-200">
+            <button onclick="OwnerAnalytics.load()" class="px-4 py-2 text-sm font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors">Tampilkan</button>
         </div>
     </div>
 
     <!-- Loading -->
     <div id="analytics-loading" class="flex justify-center py-10">
-        <div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div>
+        <div class="w-6 h-6 border-2 border-neutral-800 border-t-neutral-100 rounded-full animate-spin"></div>
     </div>
 
     <!-- Grid 7 Cards -->
     <div id="analytics-cards" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5">
-            <div class="text-[10px] lg:text-xs text-neutral-500 mb-1">Total Pendapatan Billing</div>
-            <div id="kpi-total-billing" class="text-sm lg:text-xl font-bold text-white mb-3">—</div>
-            <h4 class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Per Hari</h4>
+        <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5">
+            <div class="text-xs font-medium text-neutral-400 mb-1">Total Pendapatan Billing</div>
+            <div id="kpi-total-billing" class="text-base font-bold text-neutral-100 mb-3">—</div>
+            <h4 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Per Hari</h4>
             <div id="kpi-tabel-billing" class="text-xs lg:text-base"></div>
         </div>
-        <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5">
-            <div class="text-[10px] lg:text-xs text-neutral-500 mb-1">Total Pendapatan Kantin</div>
-            <div id="kpi-total-kantin" class="text-sm lg:text-xl font-bold text-white mb-3">—</div>
-            <h4 class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Per Hari</h4>
+        <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5">
+            <div class="text-xs font-medium text-neutral-400 mb-1">Total Pendapatan Kantin</div>
+            <div id="kpi-total-kantin" class="text-base font-bold text-neutral-100 mb-3">—</div>
+            <h4 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Per Hari</h4>
             <div id="kpi-tabel-kantin" class="text-xs lg:text-base"></div>
         </div>
-        <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5">
-            <h4 class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Paket Terlaris</h4>
+        <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5">
+            <h4 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">Paket Terlaris</h4>
             <div id="kpi-paket" class="text-xs lg:text-base"></div>
         </div>
-        <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5">
-            <h4 class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Pendapatan per Kasir</h4>
+        <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5">
+            <h4 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">Pendapatan per Kasir</h4>
             <div id="kpi-kasir" class="text-xs lg:text-base"></div>
         </div>
-        <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5">
-            <h4 class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Member</h4>
+        <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5">
+            <h4 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">Member</h4>
             <div id="kpi-member" class="text-xs lg:text-base"></div>
         </div>
-        <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5">
-            <h4 class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Jam Sibuk</h4>
+        <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5">
+            <h4 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">Jam Sibuk</h4>
             <div id="kpi-heatmap" class="text-xs lg:text-base"></div>
         </div>
-        <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5">
-            <h4 class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Refund</h4>
+        <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5">
+            <h4 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">Refund</h4>
             <div id="kpi-refund" class="text-xs lg:text-base"></div>
         </div>
     </div>

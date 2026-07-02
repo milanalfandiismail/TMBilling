@@ -1,9 +1,9 @@
 <!-- ===== TAB: LOG ===== -->
 <div id="tab-log" class="tab-content hidden">
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+    <div class="bg-[#0c0c0c] border border-neutral-800 rounded p-6">
         <div class="flex flex-wrap gap-3 mb-4">
             <!-- Kategori tab bar -->
-            <div class="flex gap-1 bg-[#050505] border border-[#1c1c1c] rounded-lg p-1 w-full overflow-x-auto scrollbar-thin">
+            <div class="flex gap-1 bg-[#050505] border border-neutral-800 rounded-lg p-1 w-full overflow-x-auto scrollbar-thin">
                 <button id="log-cat-Semua" onclick="Log.switchCategory('Semua', this)"
                     class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-neutral-100 text-black">Semua</button>
                 <button id="log-cat-sistem" onclick="Log.switchCategory('sistem', this)"
@@ -18,20 +18,20 @@
         </div>
         <div class="flex flex-wrap gap-3 mb-4">
             <input type="text" id="filter-log" placeholder="Cari log..."
-                class="flex-1 min-w-[150px] px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500">
+                class="flex-1 min-w-[150px] px-3 py-2 bg-[#050505] border border-neutral-700 rounded-lg text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500">
             <button onclick="Log.filter()"
-                class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">Cari</button>
+                class="px-4 py-2 text-sm font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors">Cari</button>
             <button onclick="Log.clear()"
                 class="px-4 py-2 bg-[#1a0a0c] border border-[#ef4444]/30 hover:bg-red-600 hover:text-white text-red-400 text-xs lg:text-base font-bold rounded transition-colors">Bersihkan</button>
             <button onclick="Log.exportLogs()"
-                class="px-4 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors">Export (.txt)</button>
+                class="px-4 py-2 bg-[#171717] border border-neutral-700 hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors">Export (.txt)</button>
             <button onclick="Log.exportPDF()"
                 class="px-4 py-2 bg-[#2d1215] border border-[#ef4444]/30 hover:bg-[#ef4444] hover:text-white text-red-400 text-xs lg:text-base font-bold rounded transition-colors">Export (.pdf)</button>
         </div>
         <div id="log-content"
-            class="bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base max-h-[600px] overflow-auto scrollbar-mono p-4">
+            class="bg-[#050505] border border-neutral-800 rounded text-xs lg:text-base max-h-[600px] overflow-auto scrollbar-mono p-4">
             <div class="flex justify-center py-10">
-                <div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div>
+                <div class="w-6 h-6 border-2 border-neutral-800 border-t-neutral-100 rounded-full animate-spin"></div>
             </div>
         </div>
     </div>

@@ -1,0 +1,97 @@
+/* ============================================================
+   TMBilling Design Tokens — JS Constants (Mintlify Dark)
+   ============================================================ */
+
+const Tokens = {
+  surface: {
+    canvas: '#0a0a0a',
+    card: '#1c1c1e',
+    cardAlt: '#0c0c0c',
+    hover: '#2a2a2a',
+    deepest: '#050505',
+    overlay: 'rgba(0, 0, 0, 0.6)',
+  },
+  text: {
+    heading: '#ffffff',
+    body: '#e5e5e5',
+    secondary: '#a3a3a3',
+    muted: '#737373',
+    disabled: '#525252',
+    onDark: '#ffffff',
+    onDarkMuted: '#b3b3b3',
+  },
+  border: {
+    default: '#1c1c1c',
+    soft: '#2a2a2a',
+    hover: '#3a3a3a',
+    focus: '#00d4a4',
+    dark: '#1f1f1f',
+  },
+  accent: {
+    primary: '#00d4a4',
+    primaryHover: '#00b48a',
+    primarySoft: '#7cebcb',
+    primaryBg: 'rgba(0, 212, 164, 0.1)',
+    danger: '#d45656',
+    dangerBg: 'rgba(212, 86, 86, 0.1)',
+    warning: '#c37d0d',
+    warningBg: 'rgba(195, 125, 13, 0.1)',
+    info: '#3772cf',
+    infoBg: 'rgba(55, 114, 207, 0.1)',
+  },
+  radius: {
+    sm: '4px',
+    md: '8px',
+    lg: '12px',
+    xl: '16px',
+    full: '9999px',
+  },
+  font: {
+    sans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    mono: "'Geist Mono', 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace",
+  },
+  shadow: {
+    card: 'rgba(0, 0, 0, 0.2) 0px 1px 2px 0px',
+    elevated: 'rgba(0, 0, 0, 0.3) 0px 4px 12px 0px',
+    modal: 'rgba(0, 0, 0, 0.4) 0px 8px 24px -4px',
+  },
+  transition: {
+    fast: '150ms ease',
+    normal: '200ms ease',
+  },
+};
+
+// Tailwind class mappings — untuk HTML templates
+Tokens.tw = {
+  bgCard: 'bg-[#1c1c1e]',
+  bgCardAlt: 'bg-[#0c0c0c]',
+  bgHover: 'hover:bg-[#2a2a2a]',
+  bgDeepest: 'bg-[#050505]',
+  border: 'border-[#1c1c1c]',
+  borderSoft: 'border-[#2a2a2a]',
+  borderHover: 'hover:border-[#3a3a3a]',
+  textHeading: 'text-white',
+  textBody: 'text-neutral-200',
+  textSecondary: 'text-neutral-400',
+  textMuted: 'text-neutral-500',
+  textDisabled: 'text-neutral-600',
+  accentGreen: 'text-emerald-500',
+  accentGreenBg: 'bg-emerald-500/10',
+  accentGreenBorder: 'border-emerald-500',
+  accentRed: 'text-red-400',
+  accentRedBg: 'bg-red-500/10',
+  accentRedBorder: 'border-red-400',
+  accentAmber: 'text-amber-400',
+  accentAmberBg: 'bg-amber-500/10',
+  accentAmberBorder: 'border-amber-400',
+  accentBlue: 'text-blue-400',
+  accentBlueBg: 'bg-blue-500/10',
+  radiusCard: 'rounded-xl',
+  radiusMd: 'rounded-lg',
+  radiusSm: 'rounded-md',
+  radiusFull: 'rounded-full',
+  shadowCard: 'shadow-sm',
+  shadowElevated: 'shadow-md',
+  shadowModal: 'shadow-xl',
+  fontMono: 'font-mono',
+};

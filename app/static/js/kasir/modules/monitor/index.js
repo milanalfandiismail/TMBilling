@@ -15,24 +15,23 @@ const Monitor = {
     },
 
     async deleteData(hardwareId, pcKode) {
-        if (!confirm(`Apakah Anda yakin ingin membersihkan data sensor hardware untuk PC ${pcKode}? (Tindakan ini hanya menghapus data sensor lama di dashboard, tidak menghapus unit PC)`)) {
-            return;
-        }
-        try {
-            const result = await window.API.monitor.delete(hardwareId);
-            if (result.success) {
-                Toast.success(`Data sensor PC ${pcKode} berhasil dibersihkan`);
-                this.load(); // Refresh table
-            } else {
-                Toast.error(result.error || "Gagal menghapus data sensor");
+        Modal.confirm(`Bersihkan data sensor hardware untuk PC ${pcKode}? Data sensor lama akan dihapus dari dashboard (tidak memengaruhi unit PC).`, async () => {
+            try {
+                const result = await window.API.monitor.delete(hardwareId);
+                if (result.success) {
+                    Toast.success(`Data sensor PC ${pcKode} berhasil dibersihkan`);
+                    this.load();
+                } else {
+                    Toast.error(result.error || "Gagal menghapus data sensor");
+                }
+                } catch (error) {
+                Toast.error(error.message || "Gagal menghapus data sensor");
             }
-        } catch (error) {
-            Toast.error(error.message || "Gagal menghapus data sensor");
-        }
+        });
     },
 
     getTempBadge(temp) {
-        if (!temp || temp === 0) return `<span class="text-neutral-600 font-mono">-</span>`;
+        if (!temp || temp === 0) return `<span class="text-neutral-500 font-mono">-</span>`;
         if (temp >= 78) {
             return `<span class="px-1.5 py-0.5 rounded bg-red-900 border border-red-500 text-red-200 font-mono font-bold text-xs lg:text-base uppercase animate-pulse">🔥 ${temp}°C</span>`;
         }
@@ -50,7 +49,7 @@ const Monitor = {
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-20 text-neutral-500">
                     <p class="text-base font-bold">Belum Ada Data Monitor</p>
-                    <p class="text-xs lg:text-base text-neutral-600 mt-1">Pastikan C# Hardware Monitor Agent berjalan di client</p>
+                    <p class="text-xs lg:text-base text-neutral-500 mt-1">Pastikan C# Hardware Monitor Agent berjalan di client</p>
                 </div>`;
             return;
         }
@@ -91,17 +90,17 @@ const Monitor = {
             const cpuTempBadge = this.getTempBadge(m.cpu_temp);
             const gpuTempBadge = this.getTempBadge(m.gpu_temp);
 
-            let netHtml = '<span class="text-neutral-600 font-mono text-xs lg:text-base">--</span>';
+            let netHtml = '<span class="text-neutral-500 font-mono text-xs lg:text-base">--</span>';
             if (m.nic_speed) {
                 if (m.nic_speed.includes('Gbps')) {
-                    netHtml = `<span class="px-1.5 py-0.5 rounded border border-[#262626] text-neutral-300 text-xs lg:text-base font-bold font-mono">1 Gbps</span>`;
+                    netHtml = `<span class="px-1.5 py-0.5 rounded border border-neutral-700 text-neutral-300 text-xs lg:text-base font-bold font-mono">1 Gbps</span>`;
                 } else {
                     netHtml = `<span class="px-1.5 py-0.5 rounded border border-red-950 text-red-500 text-xs lg:text-base font-bold font-mono">${m.nic_speed}</span>`;
                 }
             }
 
             let formattedDate = 'OFFLINE';
-            let updateClass = 'text-neutral-600';
+            let updateClass = 'text-neutral-500';
 
             if (m.last_update) {
                 formattedDate = m.last_update;
@@ -109,15 +108,15 @@ const Monitor = {
                     const diffSecs = Math.abs((Date.now() - m.last_update_ts) / 1000);
                     if (diffSecs < 15) updateClass = 'text-neutral-200 font-bold';
                     else if (diffSecs < 60) updateClass = 'text-neutral-400 font-medium';
-                    else updateClass = 'text-neutral-600';
+                    else updateClass = 'text-neutral-500';
                 }
             }
 
             const rowClass = hasWarning
                 ? 'bg-red-500/5 hover:bg-red-500/10 border-b border-red-500/25 block xl:table-row py-3 xl:py-0 transition-colors'
-                : 'hover:bg-[#0c0c0c] border-b border-[#2a2a2a] block xl:table-row py-3 xl:py-0 transition-colors';
+                : 'hover:bg-[#0c0c0c] border-b border-neutral-700 block xl:table-row py-3 xl:py-0 transition-colors';
 
-            const cardBg = hasWarning ? 'bg-red-500/5 border-red-500/25' : 'bg-[#050505] border-[#1c1c1c]';
+            const cardBg = hasWarning ? 'bg-red-500/5 border-red-500/25' : 'bg-[#050505] border-neutral-800';
 
             // === CARD LAYOUT (<1400px - Mobile to LG, hidden at xl) ===
             cardHtml += `
@@ -131,7 +130,7 @@ const Monitor = {
                         <div class="flex items-center gap-2 shrink-0">
                             <span class="text-[10px] font-mono ${updateClass}">${formattedDate}</span>
                             <button onclick="window.Monitor.deleteData(${m.id}, '${m.pc_kode}')" 
-                                    class="p-1 rounded text-neutral-500 hover:text-red-400 hover:bg-[#121212] transition-all" 
+                                    class="p-1 rounded text-neutral-500 hover:text-red-400 hover:bg-neutral-800 transition-all" 
                                     title="Hapus Data Sensor PC ${m.pc_kode}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -165,7 +164,7 @@ const Monitor = {
                             ${netHtml.replace('text-xs lg:text-base', 'text-xs')}
                         </div>
                         ${m.active_window && m.active_window !== 'Idle / None' ? `
-                        <div class="flex items-center gap-1 w-full mt-0.5 pt-1 border-t border-[#1c1c1c]">
+                        <div class="flex items-center gap-1 w-full mt-0.5 pt-1 border-t border-neutral-800">
                             <span class="text-[9px] text-neutral-500 uppercase font-bold shrink-0">WND:</span>
                             <span class="text-lg text-neutral-400 font-medium truncate" title="${m.active_window}">${m.active_window}</span>
                         </div>
@@ -183,10 +182,10 @@ const Monitor = {
                         </div>
                         ${warningText}
                     </td>
-                    <td class="px-2 xl:px-4 py-4 block xl:table-cell border-t border-[#2a2a2a]/50 xl:border-t-0">
+                    <td class="px-2 xl:px-4 py-4 block xl:table-cell border-t border-neutral-700/50 xl:border-t-0">
                         <div class="text-xs lg:text-base text-neutral-200 font-semibold" title="Processor">${m.cpu_name || '--'}</div>
                         <div class="text-xs text-neutral-500 mt-1" title="VGA / GPU">${m.gpu_name || '--'}</div>
-                        <div class="text-[10px] text-neutral-600 mt-0.5" title="Motherboard">${m.motherboard || ''}</div>
+                        <div class="text-[10px] text-neutral-500 mt-0.5" title="Motherboard">${m.motherboard || ''}</div>
                     </td>
                     <td class="px-2 xl:px-4 py-4 block xl:table-cell text-left max-w-[150px]">
                         <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider xl:hidden">Active Window</span>
@@ -219,7 +218,7 @@ const Monitor = {
                     <td class="px-2 xl:px-4 py-4 text-center block xl:table-cell">
                         <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider xl:hidden">Aksi</span>
                         <button onclick="window.Monitor.deleteData(${m.id}, '${m.pc_kode}')" 
-                                class="p-1.5 rounded text-neutral-500 hover:text-red-400 hover:bg-[#121212] transition-all" 
+                                class="p-1.5 rounded text-neutral-500 hover:text-red-400 hover:bg-neutral-800 transition-all" 
                                 title="Hapus Data Sensor PC ${m.pc_kode}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -235,10 +234,10 @@ const Monitor = {
                 ${cardHtml}
             </div>
             <!-- XL Table Layout (≥1400px) -->
-            <div class="hidden xl:block overflow-x-hidden w-full border border-[#1c1c1c] rounded">
+            <div class="hidden xl:block overflow-x-hidden w-full border border-neutral-800 rounded">
                 <table class="w-full text-sm">
                     <thead class="hidden xl:table-header-group">
-                        <tr class="text-[10px] text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c] bg-[#0c0c0c]">
+                        <tr class="text-[10px] text-neutral-500 uppercase tracking-wider border-b border-neutral-800 bg-[#0c0c0c]">
                             <th class="px-2 xl:px-4 py-3 text-left font-bold whitespace-nowrap">PC</th>
                             <th class="px-2 xl:px-4 py-3 text-left font-bold whitespace-nowrap">Spesifikasi</th>
                             <th class="px-2 xl:px-4 py-3 text-left font-bold whitespace-nowrap">Active Window</th>

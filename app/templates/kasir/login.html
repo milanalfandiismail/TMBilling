@@ -6,41 +6,48 @@
     <title>Login | {{ warnet_title }}</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
+    </style>
 </head>
-<body class="bg-[#050505] text-neutral-200 min-h-screen flex items-center justify-center p-4 font-space-grotesk">
+<body class="bg-[#050505] text-neutral-300 min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-sm">
+        <!-- Brand -->
         <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-neutral-100 mb-4">
-                <span class="text-[#050505] font-black text-sm">TM</span>
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500 mb-4 shadow-lg shadow-emerald-500/20">
+                <span class="text-black font-bold text-sm">TM</span>
             </div>
-            <h1 class="text-2xl font-extrabold text-neutral-100">{{ warnet_title }}</h1>
-            <p class="text-[10px] text-neutral-500 leading-tight mt-0.5">Management Studio</p>
+            <h1 class="text-xl font-bold text-white">{{ warnet_title }}</h1>
+            <p class="text-xs text-neutral-500 leading-tight mt-1">Management Studio</p>
         </div>
 
-        <div class="bg-[#0a0a0a] border border-[#171717] rounded-xl p-6">
-            <h2 class="text-base font-semibold text-neutral-200 mb-6 text-center">Masuk ke akun Anda</h2>
+        <!-- Login Card -->
+        <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-6 shadow-xl">
+            <h2 class="text-sm font-semibold text-neutral-100 mb-6 text-center">Masuk ke akun Anda</h2>
 
-            <div id="error-box" class="hidden mb-5 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-2">
+            <!-- Error -->
+            <div id="error-box" class="hidden mb-5 p-3 bg-red-500/10 border border-red-800/40 rounded-lg flex items-start gap-2">
                 <svg class="w-4 h-4 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
                 <span id="error-text" class="text-xs text-red-400"></span>
             </div>
 
+            <!-- Form -->
             <form onsubmit="doLogin(event)" class="space-y-4">
                 <div>
-                    <label class="text-xs font-semibold text-neutral-400 mb-1.5 block">Username</label>
-                    <input type="text" id="username" placeholder="Masukkan username" required
-                        class="w-full px-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-[#555] transition-colors">
+                    <label class="text-xs font-medium text-neutral-400 mb-1.5 block">Username</label>
+                    <input type="text" id="username" placeholder="Masukkan username" required autocomplete="username"
+                        class="w-full h-11 px-4 bg-[#050505] border border-neutral-700 rounded-lg text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all">
                 </div>
                 <div>
-                    <label class="text-xs font-semibold text-neutral-400 mb-1.5 block">Password</label>
-                    <input type="password" id="password" placeholder="Masukkan password" required
-                        class="w-full px-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-[#555] transition-colors">
+                    <label class="text-xs font-medium text-neutral-400 mb-1.5 block">Password</label>
+                    <input type="password" id="password" placeholder="Masukkan password" required autocomplete="current-password"
+                        class="w-full h-11 px-4 bg-[#050505] border border-neutral-700 rounded-lg text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all">
                 </div>
                 <button type="submit" id="btn-login"
-                    class="w-full py-3 bg-[#121212] hover:bg-[#171717] border border-[#262626] text-white rounded-lg font-semibold text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:border-neutral-400">
+                    class="w-full h-11 bg-emerald-500 hover:bg-emerald-400 text-black rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                     <span id="btn-text">Masuk</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
@@ -82,9 +89,8 @@
 
                 if (res.ok && data.success) {
                     btnText.innerText = 'Berhasil';
-                    btn.classList.replace('hover:bg-[#171717]', 'hover:bg-emerald-600/20');
-                    btn.classList.replace('border-[#262626]', 'border-emerald-500/30');
-                    btn.classList.replace('hover:border-neutral-400', 'hover:border-emerald-500');
+                    btn.classList.remove('bg-emerald-500', 'hover:bg-emerald-400');
+                    btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
                     setTimeout(() => { window.location.href = '/kasir/'; }, 500);
                 } else {
                     showError(data.error || 'Username atau password salah');
@@ -99,10 +105,8 @@
         }
 
         function showError(msg) {
-            const errorBox = document.getElementById('error-box');
-            const errorText = document.getElementById('error-text');
-            errorText.innerText = msg;
-            errorBox.classList.remove('hidden');
+            document.getElementById('error-text').innerText = msg;
+            document.getElementById('error-box').classList.remove('hidden');
         }
     </script>
 </body>

@@ -65,11 +65,11 @@ const MigrationModule = {
             } else if (h.is_current) {
                 statusBadge = '<span class="text-blue-400 font-bold text-[10px] lg:text-xs">◉ Aktif</span>';
             } else {
-                statusBadge = '<span class="text-neutral-600 text-[10px] lg:text-xs">—</span>';
+                statusBadge = '<span class="text-neutral-500 text-[10px] lg:text-xs">—</span>';
             }
 
             return `
-                <tr class="border-b border-[#1c1c1c] hover:bg-[#0a0a0a] transition-colors">
+                <tr class="border-b border-neutral-800 hover:bg-[#0c0c0c] transition-colors">
                     <td class="py-2.5 text-[10px] lg:text-xs font-mono text-neutral-200">${h.revision || '-'}</td>
                     <td class="py-2.5 text-[10px] lg:text-xs font-mono text-neutral-500">${h.down_revision || '-'}</td>
                     <td class="py-2.5 text-[10px] lg:text-xs text-neutral-300">${h.description}</td>

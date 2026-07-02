@@ -243,12 +243,12 @@ const Settings = {
                 }
                 
                 tbody.innerHTML = res.backups.map(b => `
-                    <tr class="border-b border-[#1c1c1c] hover:bg-[#070707] transition-colors">
+                    <tr class="border-b border-neutral-800 hover:bg-[#070707] transition-colors">
                         <td class="py-3 pr-2 text-neutral-200 text-xs lg:text-base font-bold">${b.filename}</td>
                         <td class="py-3 pr-2 text-neutral-400 text-[10px] lg:text-sm">${b.created_at}</td>
                         <td class="py-3 pr-2 text-neutral-400 text-xs lg:text-base">${b.size_mb} MB</td>
                         <td class="py-3 text-right space-x-2">
-                            <button onclick="Settings.downloadBackup('${b.filename}')" class="px-2.5 py-1 bg-neutral-200 hover:bg-neutral-300 text-black text-[10px] lg:text-xs font-bold rounded transition-colors">Unduh</button>
+                            <button onclick="Settings.downloadBackup('${b.filename}')" class="px-2.5 py-1 text-xs font-medium text-neutral-400 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 rounded-lg transition-colors">Unduh</button>
                             <button onclick="Settings.deleteBackup('${b.filename}')" class="px-2.5 py-1 bg-red-950/40 hover:bg-red-900/40 border border-red-900/50 text-red-400 text-[10px] lg:text-xs font-bold rounded transition-colors">Hapus</button>
                         </td>
                     </tr>
@@ -264,18 +264,17 @@ const Settings = {
     },
 
     async deleteBackup(filename) {
-        if (!confirm(`Apakah Anda yakin ingin menghapus berkas backup "${filename}" secara permanen dari server?`)) {
-            return;
-        }
-        try {
-            const res = await API.request(`/api/v1/kasir/backup/delete/${filename}`, { method: 'DELETE' });
-            if (res.success) {
-                Toast.success(res.message);
-                this.loadBackupFiles();
+        Modal.confirm(`Hapus berkas backup "${filename}" permanen dari server?`, async () => {
+            try {
+                const res = await API.request(`/api/v1/kasir/backup/delete/${filename}`, { method: 'DELETE' });
+                if (res.success) {
+                    Toast.success(res.message);
+                    this.loadBackupFiles();
+                }
+            } catch (err) {
+                Toast.error('Gagal menghapus berkas: ' + err.message);
             }
-        } catch (err) {
-            Toast.error('Gagal menghapus berkas: ' + err.message);
-        }
+        });
     },
 
     previewQRIS(input) {
@@ -292,16 +291,11 @@ const Settings = {
     viewQRIS() {
         const preview = document.getElementById('settings-qris-preview');
         if (!preview || !preview.src) return;
-        const modalHtml = `
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 max-w-lg w-full">
-                <div class="flex items-center justify-between mb-4 pb-4 border-b border-[#1c1c1c]">
-                    <h3 class="text-sm font-bold text-neutral-200 uppercase tracking-wider">Preview QRIS</h3>
-                    <button onclick="Modal.closeModal()" class="text-neutral-500 hover:text-neutral-300 text-xl leading-none">&times;</button>
-                </div>
-                <div class="flex items-center justify-center">
-                    <img src="${preview.src}" class="max-w-full max-h-[70vh] object-contain rounded" alt="QRIS Full Preview">
-                </div>
-            </div>`;
+        const modalHtml = UI.modalWrapper({
+            title: 'Preview QRIS',
+            body: `<div class="flex items-center justify-center"><img src="${preview.src}" class="max-w-full max-h-[70vh] object-contain rounded" alt="QRIS Full Preview"></div>`,
+            width: 'max-w-lg',
+        });
         Modal.show(modalHtml);
     },
 
@@ -386,7 +380,7 @@ const Settings = {
                 const overlay = document.createElement('div');
                 overlay.id = 'scheduler-restart-overlay';
                 overlay.className = 'fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center';
-                overlay.innerHTML = `<div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-8 text-center max-w-sm">
+                overlay.innerHTML = `<div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-8 text-center max-w-sm">
                     <div class="text-4xl mb-4 animate-pulse">🔄</div>
                     <h3 class="text-lg font-bold text-neutral-200 mb-2">Menerapkan Perubahan</h3>
                     <p class="text-sm text-neutral-400">Server restart, halaman akan dimuat ulang...</p>
@@ -477,10 +471,10 @@ const Settings = {
             const onclick = btn.getAttribute('onclick') || '';
             if (onclick.includes(`'${subTab}'`)) {
                 btn.classList.add('bg-neutral-800', 'text-neutral-100', 'font-bold');
-                btn.classList.remove('text-neutral-400', 'hover:text-neutral-100', 'hover:bg-[#121212]');
+                btn.classList.remove('text-neutral-400', 'hover:text-neutral-100', 'hover:bg-neutral-800');
             } else {
                 btn.classList.remove('bg-neutral-800', 'text-neutral-100', 'font-bold');
-                btn.classList.add('text-neutral-400', 'hover:text-neutral-100', 'hover:bg-[#121212]');
+                btn.classList.add('text-neutral-400', 'hover:text-neutral-100', 'hover:bg-neutral-800');
             }
         });
 
@@ -532,7 +526,7 @@ const Settings = {
         target.innerHTML = `
         <div class="space-y-5">
             <!-- Status Toggle Card -->
-            <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5">
+            <div class="bg-[#050505] border border-neutral-800 rounded-xl p-4 lg:p-5">
                 <div class="flex items-center justify-between gap-4">
                     <div>
                         <p class="font-bold text-neutral-200 text-sm lg:text-base">Status Whitelist IP</p>
@@ -546,28 +540,28 @@ const Settings = {
             </div>
 
             <!-- Remote Access Card -->
-            <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5">
+            <div class="bg-[#050505] border border-neutral-800 rounded-xl p-4 lg:p-5">
                 <h3 class="font-bold text-neutral-200 text-sm lg:text-base mb-3">🔗 Akses dari HP / Remote (via Tunnel)</h3>
                 <div class="mb-4">
                     <label class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold block mb-1">Domain Publik</label>
                     <div class="flex gap-2">
                         <input type="text" id="wlPublicUrl" placeholder="https://tmbilling.example.com"
-                            class="flex-1 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 transition-colors">
+                            class="flex-1 bg-[#0c0c0c] border border-neutral-800 rounded px-3 py-2 text-sm text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 transition-colors">
                         <button onclick="Settings._wlSavePublicUrl()"
-                            class="px-4 py-2 bg-neutral-800 border border-[#1c1c1c] rounded text-sm text-neutral-300 hover:bg-neutral-700 transition-colors font-semibold">Simpan</button>
+                            class="px-4 py-2 bg-neutral-800 border border-neutral-800 rounded text-sm text-neutral-300 hover:bg-neutral-700 transition-colors font-semibold">Simpan</button>
                     </div>
                 </div>
-                <div class="bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg overflow-hidden">
+                <div class="bg-[#0c0c0c] border border-neutral-800 rounded-lg overflow-hidden">
                     <div class="flex flex-col lg:flex-row">
-                        <div class="p-4 flex items-center justify-center border-b lg:border-b-0 lg:border-r border-[#1c1c1c] bg-white">
+                        <div class="p-4 flex items-center justify-center border-b lg:border-b-0 lg:border-r border-neutral-800 bg-white">
                             <div id="wlQRCode" class="w-[140px] h-[140px] lg:w-[180px] lg:h-[180px]"></div>
                         </div>
                         <div class="p-4 flex-1 flex flex-col justify-center gap-3">
                             <div>
                                 <p class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold mb-1">URL Token</p>
                                 <div class="flex items-center gap-2">
-                                    <code id="wlUrlDisplay" class="flex-1 bg-[#050505] border border-[#1c1c1c] rounded px-3 py-2 text-xs lg:text-sm text-neutral-300 font-mono break-all">-</code>
-                                    <button onclick="Settings._wlCopyUrl()" class="shrink-0 px-3 py-2 bg-neutral-800 border border-[#1c1c1c] rounded text-sm text-neutral-300 hover:bg-neutral-700 transition-colors">📋</button>
+                                    <code id="wlUrlDisplay" class="flex-1 bg-[#050505] border border-neutral-800 rounded px-3 py-2 text-xs lg:text-sm text-neutral-300 font-mono break-all">-</code>
+                                    <button onclick="Settings._wlCopyUrl()" class="shrink-0 px-3 py-2 bg-neutral-800 border border-neutral-800 rounded text-sm text-neutral-300 hover:bg-neutral-700 transition-colors">📋</button>
                                 </div>
                             </div>
                             <div class="text-[9px] lg:text-xs text-neutral-500">Token: <code id="wlTokenMasked" class="font-mono text-neutral-400">-</code></div>
@@ -575,15 +569,15 @@ const Settings = {
                     </div>
                 </div>
                 <button onclick="Settings._wlRegenerate()" class="mt-4 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded text-sm text-red-400 hover:bg-red-500/20 transition-colors font-bold">🔄 Regenerate Token</button>
-                <p class="text-[9px] lg:text-xs text-neutral-600 mt-1">⚠️ Token lama jadi invalid. Semua sesi HP yang sedang aktif akan logout otomatis.</p>
+                <p class="text-[9px] lg:text-xs text-neutral-500 mt-1">⚠️ Token lama jadi invalid. Semua sesi HP yang sedang aktif akan logout otomatis.</p>
             </div>
 
             <!-- Daftar IP Card -->
-            <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5">
+            <div class="bg-[#050505] border border-neutral-800 rounded-xl p-4 lg:p-5">
                 <h3 class="font-bold text-neutral-200 text-sm lg:text-base mb-3">📋 Daftar IP (<span id="wlCount">0</span>)</h3>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs lg:text-sm">
-                        <thead class="text-[9px] lg:text-xs text-neutral-500 uppercase border-b border-[#1c1c1c]">
+                        <thead class="text-[9px] lg:text-xs text-neutral-500 uppercase border-b border-neutral-800">
                             <tr><th class="pb-2 font-bold">IP Address</th><th class="pb-2 font-bold hidden sm:table-cell">Label</th><th class="pb-2 font-bold hidden md:table-cell">Ditambahkan</th><th class="pb-2 font-bold text-right"></th></tr>
                         </thead>
                         <tbody id="wlTableBody"></tbody>
@@ -593,14 +587,14 @@ const Settings = {
             </div>
 
             <!-- Tambah IP -->
-            <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5">
+            <div class="bg-[#050505] border border-neutral-800 rounded-xl p-4 lg:p-5">
                 <h3 class="font-bold text-neutral-200 text-sm lg:text-base mb-3">➕ Tambah IP Baru</h3>
                 <div class="flex flex-col sm:flex-row gap-2">
                     <input type="text" id="wlNewIp" placeholder="192.168.1.30"
-                        class="flex-1 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 font-mono">
+                        class="flex-1 bg-[#0c0c0c] border border-neutral-800 rounded px-3 py-2 text-sm text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 font-mono">
                     <input type="text" id="wlNewLabel" placeholder="Label (opsional)"
-                        class="sm:w-48 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none">
-                    <button onclick="Settings._wlAddIp()" class="px-5 py-2 bg-neutral-800 border border-[#1c1c1c] rounded text-sm text-neutral-200 hover:bg-neutral-700 font-bold shrink-0">Tambah</button>
+                        class="sm:w-48 bg-[#0c0c0c] border border-neutral-800 rounded px-3 py-2 text-sm text-neutral-200 placeholder:text-neutral-500 focus:outline-none">
+                    <button onclick="Settings._wlAddIp()" class="px-5 py-2 bg-neutral-800 border border-neutral-800 rounded text-sm text-neutral-200 hover:bg-neutral-700 font-bold shrink-0">Tambah</button>
                 </div>
             </div>
         </div>`;
@@ -655,7 +649,7 @@ const Settings = {
             empty.classList.add('hidden');
             tbody.innerHTML = entries.map(e => {
                 const d = e.added_at ? e.added_at.substring(0, 10) : '-';
-                return `<tr class="border-b border-[#1c1c1c]/40">
+                return `<tr class="border-b border-neutral-800/40">
                     <td class="py-2.5 font-mono text-neutral-200">${this._esc(e.ip)}</td>
                     <td class="py-2.5 text-neutral-400 hidden sm:table-cell">${this._esc(e.label || '-')}</td>
                     <td class="py-2.5 text-neutral-500 text-xs hidden md:table-cell">${d}</td>
@@ -667,7 +661,7 @@ const Settings = {
 
     async _wlAddIp() {
         const ip = document.getElementById('wlNewIp').value.trim();
-        if (!ip) { alert('Masukkan IP address.'); return; }
+        if (!ip) { Toast.error('Masukkan IP address.'); return; }
         const label = document.getElementById('wlNewLabel').value.trim();
         try {
             await this._wlFetch('POST', '/api/v1/kasir/settings/ip-whitelist', { ip, label });
@@ -678,8 +672,9 @@ const Settings = {
     },
 
     async _wlRemove(ip) {
-        if (!confirm(`Hapus ${ip}?`)) return;
-        try { await this._wlFetch('DELETE', `/api/v1/kasir/settings/ip-whitelist/${ip}`); await this._wlRefreshList(); } catch (e) {}
+        Modal.confirm(`Hapus ${ip} dari whitelist?`, async () => {
+            try { await this._wlFetch('DELETE', `/api/v1/kasir/settings/ip-whitelist/${ip}`); await this._wlRefreshList(); } catch (e) {}
+        });
     },
 
     async _wlToggle(enabled) {
@@ -687,12 +682,13 @@ const Settings = {
     },
 
     async _wlRegenerate() {
-        if (!confirm('Regenerate token? Token lama akan invalidate semua sesi yang sedang aktif.')) return;
-        try {
-            const data = await this._wlFetch('POST', '/api/v1/kasir/settings/ip-whitelist/regenerate-token');
-            alert('Token baru: ' + data.token);
-            await this._loadWhitelistStatus();
-        } catch (e) {}
+        Modal.confirm('Regenerate token? Token lama akan invalidate SEMUA sesi yang sedang aktif.', async () => {
+            try {
+                const data = await this._wlFetch('POST', '/api/v1/kasir/settings/ip-whitelist/regenerate-token');
+                Toast.success('Token baru: ' + data.token);
+                await this._loadWhitelistStatus();
+            } catch (e) {}
+        });
     },
 
     async _wlSavePublicUrl() {
@@ -704,7 +700,7 @@ const Settings = {
         const el = document.getElementById('wlUrlDisplay');
         const text = el ? (el.textContent || '') : '';
         if (!text || text === '-') {
-            alert('URL token belum tersedia.');
+            Toast.error('URL token belum tersedia.');
             return;
         }
         try {
@@ -719,7 +715,7 @@ const Settings = {
             ta.select();
             document.execCommand('copy');
             document.body.removeChild(ta);
-            alert('URL token disalin!');
+            Toast.error('URL token disalin!');
         }
     },
 

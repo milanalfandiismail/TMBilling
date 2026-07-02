@@ -1,15 +1,15 @@
 <!-- ===== TAB: MENU / POS F&B ===== -->
 <div id="tab-menu" class="tab-content hidden space-y-6">
     <!-- POS Header -->
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+    <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide">Kantin / POS Makanan & Minuman</h3>
-                <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Kelola menu makanan/minuman dan catat transaksi penjualan kantin warnet</p>
+                <h3 class="text-sm font-semibold text-neutral-100">Kantin / POS Makanan & Minuman</h3>
+                <p class="text-xs text-neutral-500 mt-0.5">Kelola menu makanan/minuman dan catat transaksi penjualan kantin warnet</p>
             </div>
             {% if session.get('kasir_role') == 'admin' %}
             <button onclick="Menu.showAddModal()"
-                class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
+                class="px-4 py-2 text-sm font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors flex items-center gap-2">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Tambah Menu
             </button>
@@ -21,12 +21,12 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Column: Catalog -->
         <div class="lg:col-span-2 space-y-4">
-            <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+            <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5">
                 <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                    <h3 class="text-xs lg:text-[22px] font-bold text-neutral-400 uppercase tracking-wider">Katalog F&B</h3>
+                    <h3 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Katalog F&B</h3>
                     <div class="flex items-center gap-2">
                         <input type="text" id="menu-search-input" placeholder="Cari nama menu..."
-                            class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 w-48"
+                            class="px-3 py-2 bg-[#050505] border border-neutral-700 rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 w-48"
                             oninput="Menu.filterCatalog()">
                     </div>
                 </div>
@@ -35,7 +35,7 @@
                 <div id="menu-catalog-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 min-h-[300px]">
                     <!-- Spinner/Loading -->
                     <div class="col-span-full flex justify-center items-center py-20">
-                        <div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div>
+                        <div class="w-6 h-6 border-2 border-neutral-700 border-t-neutral-100 rounded-full animate-spin"></div>
                     </div>
                 </div>
             </div>
@@ -43,8 +43,8 @@
 
         <!-- Right Column: Cart (Keranjang Belanja) -->
         <div class="space-y-4">
-            <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5 sticky top-6">
-                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-400 uppercase tracking-wider mb-4 border-b border-[#1c1c1c] pb-3 flex items-center gap-2">
+            <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5 sticky top-6">
+                <h3 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4 border-b border-neutral-800 pb-3 flex items-center gap-2">
                     <svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                     </svg>
@@ -57,23 +57,23 @@
                 </div>
 
                 <!-- Transaction Details Form -->
-                <div class="space-y-4 pt-4 border-t border-[#1c1c1c]">
+                <div class="space-y-4 pt-4 border-t border-neutral-800">
                     <div class="space-y-1.5">
-                        <label class="text-[10px] lg:text-base font-bold text-neutral-500 uppercase">Tipe Pemesanan</label>
-                        <select id="menu-order-pc-select" class="w-full text-xs lg:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
+                        <label class="text-xs font-medium text-neutral-400">Tipe Pemesanan</label>
+                        <select id="menu-order-pc-select" class="w-full text-xs lg:text-base px-3 py-2 bg-[#050505] border border-neutral-700 rounded-lg">
                             <option value="Tempat">Makan di Tempat</option>
                             <option value="Take Away">Take Away (Bawa Pulang)</option>
                         </select>
                     </div>
 
                     <!-- Total Summary -->
-                    <div class="flex items-center justify-between py-2 border-b border-[#1c1c1c]">
+                    <div class="flex items-center justify-between py-2 border-b border-neutral-800">
                         <span class="text-xs lg:text-base text-neutral-400">Total Pembayaran</span>
                         <span id="menu-cart-total" class="text-base lg:text-xl font-bold text-neutral-100 font-mono">Rp0</span>
                     </div>
 
                     <button onclick="Menu.checkout()"
-                        class="w-full py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center justify-center gap-2">
+                        class="w-full py-2.5 text-sm font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors flex items-center justify-center gap-2">
                         Proses & Cetak Transaksi
                     </button>
                 </div>
@@ -83,8 +83,8 @@
 
     <!-- ===== MODAL: TAMBAH/EDIT MENU ===== -->
     <div id="menu-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 hidden">
-        <div class="bg-[#0c0c0c] border border-[#1f1f1f] rounded-xl w-full max-w-md overflow-hidden">
-            <div class="flex items-center justify-between px-5 py-4 border-b border-[#1c1c1c]">
+        <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl w-full max-w-md overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
                 <h3 id="menu-modal-title" class="text-xs lg:text-[22px] font-bold uppercase tracking-wider text-neutral-200">Tambah Item Baru</h3>
                 <button onclick="Menu.closeModal()" class="text-neutral-500 hover:text-neutral-300">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -95,22 +95,22 @@
 
                 <div class="space-y-1">
                     <label class="text-[10px] lg:text-base font-bold uppercase text-neutral-500">Nama Makanan/Minuman</label>
-                    <input type="text" id="menu-nama-input" required placeholder="Contoh: Indomie Goreng" class="w-full text-xs lg:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
+                    <input type="text" id="menu-nama-input" required placeholder="Contoh: Indomie Goreng" class="w-full text-xs lg:text-base px-3 py-2 bg-[#050505] border border-neutral-700 rounded-lg">
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-1">
                         <label class="text-[10px] lg:text-base font-bold uppercase text-neutral-500">Harga (Rp)</label>
-                        <input type="text" id="menu-harga-input" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)" placeholder="Contoh: 10.000" class="w-full text-xs lg:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg font-mono">
+                        <input type="text" id="menu-harga-input" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)" placeholder="Contoh: 10.000" class="w-full text-xs lg:text-base px-3 py-2 bg-[#050505] border border-neutral-700 rounded-lg font-mono">
                     </div>
                     <div class="space-y-1">
                         <label class="text-[10px] lg:text-base font-bold uppercase text-neutral-500">Stok Awal</label>
-                        <input type="number" id="menu-stok-input" required min="0" placeholder="Contoh: 50" class="w-full text-xs lg:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg font-mono">
+                        <input type="number" id="menu-stok-input" required min="0" placeholder="Contoh: 50" class="w-full text-xs lg:text-base px-3 py-2 bg-[#050505] border border-neutral-700 rounded-lg font-mono">
                     </div>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <input type="checkbox" id="menu-stok-unlimited" onchange="Menu.toggleStokUnlimited(this.checked)" class="w-4 h-4 rounded border-[#2a2a2a] bg-[#0a0a0a] text-neutral-100 focus:ring-neutral-500">
+                    <input type="checkbox" id="menu-stok-unlimited" onchange="Menu.toggleStokUnlimited(this.checked)" class="w-4 h-4 rounded border-neutral-700 bg-[#050505] text-neutral-100 focus:ring-neutral-500">
                     <label for="menu-stok-unlimited" class="text-[10px] lg:text-base font-bold text-neutral-400 cursor-pointer select-none">Stok Unlimited (∞) — tidak terbatas</label>
                 </div>
 
@@ -119,18 +119,18 @@
                     <div class="flex items-center gap-3">
                         <input type="file" id="menu-gambar-input" accept="image/*" class="hidden" onchange="Menu.handleFileSelect(event)">
                         <button type="button" onclick="document.getElementById('menu-gambar-input').click()"
-                            class="px-3 py-2 bg-[#1a1a1a] hover:bg-[#252525] border border-[#2a2a2a] text-xs lg:text-base font-semibold rounded-lg transition-colors text-neutral-300">
+                            class="px-3 py-2 text-sm font-medium text-neutral-400 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 rounded-lg transition-colors">
                             Pilih Gambar
                         </button>
                         <span id="menu-file-name" class="text-[10px] lg:text-base text-neutral-500 truncate max-w-[200px]">Belum ada gambar terpilih</span>
                     </div>
                 </div>
 
-                <div class="flex justify-end gap-2 pt-4 border-t border-[#1c1c1c]">
+                <div class="flex justify-end gap-2 pt-4 border-t border-neutral-800">
                     <button type="button" onclick="Menu.closeModal()"
-                        class="px-4 py-2 bg-[#1a1a1a] hover:bg-[#222] border border-[#2a2a2a] text-neutral-300 text-xs lg:text-base font-bold rounded-lg transition-colors">Batal</button>
+                        class="px-4 py-2 text-sm font-medium text-neutral-400 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 rounded-lg transition-colors">Batal</button>
                     <button type="submit"
-                        class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Simpan</button>
+                        class="px-4 py-2 text-sm font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors">Simpan</button>
                 </div>
             </form>
         </div>

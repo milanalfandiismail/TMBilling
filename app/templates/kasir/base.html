@@ -6,66 +6,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ warnet_title }} - Kasir{% endblock %}</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/kasir-design-tokens.css') }}?v=20">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
         rel="stylesheet">
     <style>
-        [x-cloak] {
-            display: none !important;
-        }
+        [x-cloak] { display: none !important; }
 
-        /* Sleek Chamber Noir Scrollbars */
+        /* Mintlify-style scrollbars — dark */
         .scrollbar-thin::-webkit-scrollbar,
-        .scrollbar-mono::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-        }
-
+        .scrollbar-mono::-webkit-scrollbar { width: 5px; height: 5px; }
         .scrollbar-thin::-webkit-scrollbar-track,
-        .scrollbar-mono::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
+        .scrollbar-mono::-webkit-scrollbar-track { background: transparent; }
         .scrollbar-thin::-webkit-scrollbar-thumb,
-        .scrollbar-mono::-webkit-scrollbar-thumb {
-            background: #2a2a2a;
-            border-radius: 2px;
-        }
-
+        .scrollbar-mono::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 2px; }
         .scrollbar-thin::-webkit-scrollbar-thumb:hover,
-        .scrollbar-mono::-webkit-scrollbar-thumb:hover {
-            background: #3a3a3a;
-        }
+        .scrollbar-mono::-webkit-scrollbar-thumb:hover { background: #525252; }
 
-        /* Refined Eye-Friendly Monochromatic Input Overrides */
+        /* Mintlify-style form inputs — dark mode */
         input[type="text"],
         input[type="number"],
         input[type="password"],
         input[type="email"],
         select {
-            background-color: #0a0a0a !important;
-            border-color: #2a2a2a !important;
+            background-color: #050505 !important;
+            border-color: #333333 !important;
             color: #e5e5e5 !important;
             border-width: 1px !important;
             border-style: solid !important;
-            border-radius: 6px !important;
-            transition: border-color 0.15s ease-in-out !important;
+            border-radius: 8px !important;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
         }
-
         input[type="text"]:focus,
         input[type="number"]:focus,
         input[type="password"]:focus,
         input[type="email"]:focus,
         select:focus {
-            border-color: #555 !important;
+            border-color: #00d4a4 !important;
+            box-shadow: 0 0 0 3px rgba(0, 212, 164, 0.15) !important;
             outline: none !important;
         }
 
         /* Card hover transitions */
         .hover-card-trigger {
-            transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
         }
 
         /* Modal open animation */
@@ -76,24 +63,50 @@
         .fixed.inset-0 > div {
             animation: modal-in 0.18s ease-out;
         }
+
+        /* Toast animation */
+        @keyframes toast-in {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes toast-out {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        .toast-enter { animation: toast-in 0.3s ease; }
+        .toast-exit { animation: toast-out 0.3s ease; }
+
+        /* Global font smoothing */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .font-mono, [class*="font-mono"] {
+            font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace !important;
+        }
     </style>
     {% block head %}{% endblock %}
 </head>
 
-<body class="bg-[#050505] text-neutral-200 font-space-grotesk antialiased flex h-[100dvh] lg:h-screen w-screen overflow-hidden" data-kasir-role="{{ session.get('kasir_role', '') }}">
+<body class="bg-[#050505] text-neutral-200 antialiased flex h-[100dvh] lg:h-screen w-screen overflow-hidden" data-kasir-role="{{ session.get('kasir_role', '') }}">
 
     {% block content %}{% endblock %}
 
     <!-- ===== SCRIPTS ===== -->
+    <!-- Core (load order: tokens → api → utils → toast → modal → ui → delegate) -->
+    <script src="{{ url_for('static', filename='js/kasir/core/tokens.js') }}?v=20"></script>
     <script src="{{ url_for('static', filename='js/kasir/core/api.js') }}?v=20"></script>
     <script src="{{ url_for('static', filename='js/kasir/core/utils.js') }}?v=20"></script>
     <script src="{{ url_for('static', filename='js/kasir/core/toast.js') }}?v=20"></script>
     <script src="{{ url_for('static', filename='js/kasir/core/modal.js') }}?v=20"></script>
-    
+    <script src="{{ url_for('static', filename='js/kasir/core/ui.js') }}?v=20"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/delegate.js') }}?v=20"></script>
+
     <!-- Components -->
     <script src="{{ url_for('static', filename='js/kasir/components/modal-buka.js') }}?v=20"></script>
     <script src="{{ url_for('static', filename='js/kasir/components/modal-tambah.js') }}?v=20"></script>
-    
+
     <!-- Modules / Subfolders -->
     <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/sidebar.js') }}?v=20"></script>
     <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_cards.js') }}?v=20"></script>

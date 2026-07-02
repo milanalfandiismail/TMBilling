@@ -152,6 +152,56 @@ const Member = {
 
         if (selections.length === 0) return Toast.error('Pilih minimal satu paket terlebih dahulu');
 
+        // Hitung total
+        let totalMenit = 0;
+        let totalHarga = 0;
+        selections.forEach(s => {
+            const paket = MemberRefill._currentPaketList?.find(p => p.id === s.paket_id);
+            if (paket) {
+                totalMenit += (paket.durasi_menit || 0) * s.qty;
+                totalHarga += (paket.harga || 0) * s.qty;
+            }
+        });
+
+        // Confirm modal
+        const confirmHtml = `
+            <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-6 max-w-sm w-full shadow-xl">
+                <div class="flex items-center justify-between pb-4 border-b border-neutral-800">
+                    <h3 class="text-sm font-semibold text-neutral-100">Konfirmasi Tambah Waktu</h3>
+                    <button onclick="Modal.closeModal()" class="w-7 h-7 rounded-lg bg-neutral-800 border border-neutral-700 text-neutral-400 hover:text-neutral-100 transition-colors flex items-center justify-center">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="py-5 space-y-3">
+                    <div class="bg-[#080808] border border-neutral-800 rounded-lg p-4 flex items-center justify-between">
+                        <span class="text-xs text-neutral-400 font-medium">Total Waktu</span>
+                        <span class="text-sm font-bold text-neutral-100 font-mono">${Utils.formatDurasiFriendly(totalMenit)}</span>
+                    </div>
+                    <div class="bg-[#080808] border border-neutral-800 rounded-lg p-4 flex items-center justify-between">
+                        <span class="text-xs text-neutral-400 font-medium">Total Biaya</span>
+                        <span class="text-sm font-bold text-emerald-400 font-mono">${Utils.formatRupiah(totalHarga)}</span>
+                    </div>
+                    <div class="bg-emerald-500/5 border border-emerald-800/20 rounded-lg p-3 text-xs text-neutral-400">
+                        Saldo akan langsung ditambahkan ke member setelah konfirmasi.
+                    </div>
+                </div>
+                <div class="flex gap-2 justify-end pt-4 border-t border-neutral-800">
+                    <button onclick="Modal.closeModal(); MemberRefill.tambahWaktu(${memberId})" class="px-4 py-2 text-sm font-medium text-neutral-400 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 rounded-lg transition-colors">Batal</button>
+                    <button onclick="Member._executeAddWaktu(${memberId})" class="px-4 py-2 text-sm font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors">Tambah Waktu</button>
+                </div>
+            </div>`;
+        Modal.show(confirmHtml);
+    },
+
+    async _executeAddWaktu(memberId) {
+        const selections = [];
+        document.querySelectorAll('input[type="checkbox"][id^="chk-paket-"]:checked').forEach(chk => {
+            const paketId = parseInt(chk.value);
+            const qtyInput = document.getElementById(`qty-paket-${paketId}`);
+            const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+            selections.push({ paket_id: paketId, qty: qty });
+        });
+
         try {
             await API.member.tambahWaktu(memberId, { member_id: memberId, selections: selections });
             Toast.success('Saldo ditambahkan');

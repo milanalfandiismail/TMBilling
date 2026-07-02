@@ -62,8 +62,8 @@ const Shift = {
         if (this.activeShift) return;
 
         const modalHtml = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in">
-                <div class="px-6 py-5 border-b border-[#2a2a2a]">
+            <div class="bg-[#111] border border-neutral-700 rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in">
+                <div class="px-6 py-5 border-b border-neutral-700">
                     <h3 class="text-base font-bold text-neutral-100">Buka Shift Kasir</h3>
                     <p class="text-xs text-neutral-500 mt-1">Masukkan modal awal (uang receh/kembalian) di laci</p>
                 </div>
@@ -73,15 +73,15 @@ const Shift = {
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-sm">Rp</span>
                             <input type="number" id="modal-awal-input" min="0" value="0"
-                                class="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm font-mono focus:border-neutral-500 transition-colors"
+                                class="w-full pl-10 pr-4 py-3 bg-[#0c0c0c] border border-neutral-700 rounded-lg text-neutral-200 text-sm font-mono focus:border-neutral-500 transition-colors"
                                 placeholder="0" />
                         </div>
                         <p class="text-[10px] text-neutral-500 mt-1.5">Jumlah uang receh/kembalian yang disiapkan di laci kasir</p>
                     </div>
                 </div>
-                <div class="px-6 py-4 border-t border-[#2a2a2a] flex justify-end gap-2">
+                <div class="px-6 py-4 border-t border-neutral-700 flex justify-end gap-2">
                     <button onclick="Shift.cancelBukaShift()" 
-                        class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs font-bold rounded-lg transition-colors">Tutup</button>
+                        class="px-4 py-2.5 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-400 text-xs font-bold rounded-lg transition-colors">Tutup</button>
                     <button onclick="Shift.submitBukaShift()" 
                         class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors">Mulai Shift</button>
                 </div>
@@ -135,8 +135,8 @@ const Shift = {
 
         // HITUNG BUTA — angka pendapatan seharusnya TIDAK ditampilkan
         const modalHtml = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in">
-                <div class="px-6 py-5 border-b border-[#2a2a2a]">
+            <div class="bg-[#111] border border-neutral-700 rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in">
+                <div class="px-6 py-5 border-b border-neutral-700">
                     <div class="flex items-center gap-3 mb-1">
                         <div class="w-8 h-8 rounded-lg bg-amber-900/30 border border-amber-800/40 flex items-center justify-center">
                             <span class="text-amber-400 text-sm font-bold">!</span>
@@ -160,7 +160,7 @@ const Shift = {
                     </div>
 
                     <!-- Shift Info (safe to show — waktu & modal awal saja) -->
-                    <div class="bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-3 text-xs space-y-1">
+                    <div class="bg-[#0c0c0c] border border-neutral-800 rounded-lg p-3 text-xs space-y-1">
                         <div class="flex justify-between">
                             <span class="text-neutral-500">Waktu Mulai</span>
                             <span class="text-neutral-300 font-mono">${this.formatTime(this.activeShift.waktu_mulai)}</span>
@@ -169,9 +169,9 @@ const Shift = {
                             <span class="text-neutral-500">Modal Awal</span>
                             <span class="text-neutral-300 font-mono">${Utils.formatRupiah(this.activeShift.modal_awal || 0)}</span>
                         </div>
-                        <div class="border-t border-[#1c1c1c] pt-1 mt-1 flex justify-between">
+                        <div class="border-t border-neutral-800 pt-1 mt-1 flex justify-between">
                             <span class="text-neutral-500">Pendapatan Seharusnya</span>
-                            <span class="text-neutral-600 font-mono italic">— (disembunyikan)</span>
+                            <span class="text-neutral-500 font-mono italic">— (disembunyikan)</span>
                         </div>
                     </div>
 
@@ -180,15 +180,15 @@ const Shift = {
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-sm">Rp</span>
                             <input type="number" id="uang-fisik-input" min="0" value="0"
-                                class="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm font-mono focus:border-neutral-500 transition-colors"
+                                class="w-full pl-10 pr-4 py-3 bg-[#0c0c0c] border border-neutral-700 rounded-lg text-neutral-200 text-sm font-mono focus:border-neutral-500 transition-colors"
                                 placeholder="0" autofocus />
                         </div>
                         <p class="text-[10px] text-neutral-500 mt-1.5">Jumlah uang yang kamu hitung secara fisik di laci</p>
                     </div>
                 </div>
-                <div class="px-6 py-4 border-t border-[#2a2a2a] flex justify-end gap-2">
+                <div class="px-6 py-4 border-t border-neutral-700 flex justify-end gap-2">
                     <button onclick="Modal.closeModal()" 
-                        class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs font-bold rounded-lg transition-colors">Batal</button>
+                        class="px-4 py-2.5 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-400 text-xs font-bold rounded-lg transition-colors">Batal</button>
                     <button onclick="Shift.submitTutupShift()" 
                         class="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-lg transition-colors">Selesaikan Shift</button>
                 </div>
@@ -253,13 +253,13 @@ const Shift = {
         const selisihLabel = result.selisih >= 0 ? 'SURPLUS' : 'DEFISIT';
 
         const modalHtml = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in">
-                <div class="px-6 py-5 border-b border-[#2a2a2a]">
+            <div class="bg-[#111] border border-neutral-700 rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in">
+                <div class="px-6 py-5 border-b border-neutral-700">
                     <h3 class="text-base font-bold text-neutral-100">Shift Selesai ✅</h3>
                     <p class="text-xs text-neutral-500 mt-1">Handover shift kasir berhasil dicatat</p>
                 </div>
                 <div class="px-6 py-5 space-y-3 text-xs">
-                    <div class="bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-4 space-y-2.5">
+                    <div class="bg-[#0c0c0c] border border-neutral-800 rounded-lg p-4 space-y-2.5">
                         <div class="flex justify-between">
                             <span class="text-neutral-500">Kasir</span>
                             <span class="text-neutral-200 font-bold">${result.kasir_nama}</span>
@@ -272,7 +272,7 @@ const Shift = {
                             <span class="text-neutral-500">Waktu Selesai</span>
                             <span class="text-neutral-300 font-mono">${result.waktu_selesai}</span>
                         </div>
-                        <div class="border-t border-[#1c1c1c] pt-2"></div>
+                        <div class="border-t border-neutral-800 pt-2"></div>
                         <div class="flex justify-between">
                             <span class="text-neutral-500">Modal Awal</span>
                             <span class="text-neutral-300 font-mono">${Utils.formatRupiah(result.modal_awal || 0)}</span>
@@ -289,7 +289,7 @@ const Shift = {
                             <span class="text-neutral-300">Total Pendapatan</span>
                             <span class="text-neutral-100 font-mono">${Utils.formatRupiah(result.total_pendapatan || 0)}</span>
                         </div>
-                        <div class="border-t border-[#1c1c1c] pt-2"></div>
+                        <div class="border-t border-neutral-800 pt-2"></div>
                         <div class="flex justify-between">
                             <span class="text-neutral-400">Uang Fisik</span>
                             <span class="text-neutral-100 font-mono font-bold">${Utils.formatRupiah(result.uang_fisik || 0)}</span>
@@ -303,9 +303,9 @@ const Shift = {
                         </div>
                     </div>
                 </div>
-                <div class="px-6 py-4 border-t border-[#2a2a2a] flex justify-between gap-2">
+                <div class="px-6 py-4 border-t border-neutral-700 flex justify-between gap-2">
                     <button onclick="Shift.printHandover(${JSON.stringify(result).replace(/"/g, "'")})" 
-                        class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded-lg transition-colors flex items-center gap-2">
+                        class="px-4 py-2.5 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-300 text-xs font-bold rounded-lg transition-colors flex items-center gap-2">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                         </svg>

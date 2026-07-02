@@ -16,7 +16,7 @@ const Toast = {
         const isError = type === 'error';
         const colors = isError 
             ? 'bg-[#0c0c0c] border border-red-950/40 text-red-200' 
-            : 'bg-[#0c0c0c] border border-[#1c1c1c] text-neutral-100';
+            : 'bg-[#0c0c0c] border border-neutral-800 text-neutral-100';
         const icon = isError
             ? '<svg class="w-4 h-4 shrink-0 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
             : '<svg class="w-4 h-4 shrink-0 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';

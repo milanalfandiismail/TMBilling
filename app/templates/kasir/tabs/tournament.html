@@ -4,15 +4,15 @@
     <!-- 1. TOURNAMENT LIST VIEW -->
     <div id="tournament-list-view" class="space-y-6">
         <!-- Tournament Action Header -->
-        <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+        <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide">Turnamen Warnet</h3>
-                    <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Kelola kompetisi game lokal, sistem Swiss, dan Playoff Bracket.</p>
+                    <h3 class="text-sm font-semibold text-neutral-100 tracking-wide">Turnamen Warnet</h3>
+                    <p class="text-xs text-neutral-500 mt-0.5">Kelola kompetisi game lokal, sistem Swiss, dan Playoff Bracket.</p>
                 </div>
                 {% if session.get('kasir_role') == 'admin' %}
                 <button onclick="Tournament.openCreateModal()"
-                    class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
+                    class="px-4 py-2 text-sm font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors flex items-center gap-2">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -23,8 +23,8 @@
         </div>
 
         <!-- Tournaments Grid Card -->
-        <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
-            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-400 uppercase tracking-wider mb-4">Daftar Turnamen</h3>
+        <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5">
+            <h3 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4">Daftar Turnamen</h3>
             <div id="tournaments-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Dynamic list will be rendered here -->
                 <div class="col-span-full py-12 text-center text-neutral-500 text-xs lg:text-base">
@@ -37,33 +37,33 @@
     <!-- 2. TOURNAMENT DETAIL VIEW -->
     <div id="tournament-detail-view" class="hidden space-y-6">
         <!-- Detail Header Card -->
-        <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+        <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
                     <button onclick="Tournament.showListView()"
-                        class="p-2.5 rounded bg-[#0a0a0a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-200 transition-colors">
+                        class="p-2.5 rounded bg-[#050505] border border-neutral-700 text-neutral-400 hover:text-neutral-200 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>
                     </button>
                     <div>
                         <div class="flex items-center gap-2.5">
-                            <h3 id="detail-tournament-name" class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide">Turnamen</h3>
-                            <span id="detail-tournament-status" class="px-2 py-0.5 rounded text-[8px] lg:text-[10px] font-bold uppercase tracking-wider">Status</span>
+                            <h3 id="detail-tournament-name" class="text-sm font-semibold text-neutral-100 tracking-wide">Turnamen</h3>
+                            <span id="detail-tournament-status" class="px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider">Status</span>
                         </div>
-                        <p id="detail-tournament-desc" class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Deskripsi</p>
+                        <p id="detail-tournament-desc" class="text-xs text-neutral-500 mt-0.5">Deskripsi</p>
                     </div>
                 </div>
 
                 <!-- Stage selector / navigation -->
-                <div id="detail-stage-tabs" class="flex items-center gap-2 bg-[#0a0a0a] border border-[#2a2a2a] p-1 rounded-lg">
+                <div id="detail-stage-tabs" class="flex items-center gap-2 bg-[#050505] border border-neutral-700 p-1 rounded-lg">
                     <!-- Tabs will be rendered here dynamically -->
                 </div>
             </div>
         </div>
 
         <!-- Stage View Container -->
-        <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+        <div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl p-5">
             <div id="stage-view-content" class="min-h-[400px]">
                 <!-- Rendered dynamically depending on active stage type -->
             </div>
@@ -74,9 +74,9 @@
 
 <!-- ===== MODAL: BUAT TURNAMEN BARU ===== -->
 <div id="modal-buat-turnamen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 hidden">
-    <div class="w-full max-w-lg bg-[#111] border border-[#1f1f1f] rounded-xl p-6 md:p-8 space-y-6">
+    <div class="w-full max-w-lg bg-[#0c0c0c] border border-neutral-800 rounded-xl p-6 md:p-8 space-y-6">
         <div class="flex items-center justify-between">
-            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-100">Buat Turnamen Baru</h3>
+            <h3 class="text-sm lg:text-lg font-bold text-neutral-100">Buat Turnamen Baru</h3>
             <button onclick="Tournament.closeCreateModal()" class="text-neutral-500 hover:text-neutral-300">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -86,29 +86,29 @@
 
         <form id="form-buat-turnamen" onsubmit="Tournament.handleCreate(event)" class="space-y-4">
             <div class="space-y-1.5">
-                <label class="text-xs lg:text-sm font-semibold text-neutral-400">Nama Turnamen</label>
+                <label class="text-xs font-medium text-neutral-400">Nama Turnamen</label>
                 <input type="text" id="create-t-name" placeholder="Contoh: TMBilling Valorant Cup" required
-                    class="w-full px-4 py-2.5 text-xs lg:text-base bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
+                    class="w-full px-4 py-2.5 text-sm bg-[#050505] border border-neutral-700 rounded-lg">
             </div>
 
             <div class="space-y-1.5">
-                <label class="text-xs lg:text-sm font-semibold text-neutral-400">Deskripsi / Aturan Singkat</label>
+                <label class="text-xs font-medium text-neutral-400">Deskripsi / Aturan Singkat</label>
                 <input type="text" id="create-t-desc" placeholder="Contoh: 5v5 Mode, Map Bind/Haven, BO3 Semifinal"
-                    class="w-full px-4 py-2.5 text-xs lg:text-base bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
+                    class="w-full px-4 py-2.5 text-sm bg-[#050505] border border-neutral-700 rounded-lg">
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1.5">
-                    <label class="text-xs lg:text-sm font-semibold text-neutral-400">Format Tahap</label>
-                    <select id="create-t-format" class="w-full px-4 py-2.5 text-xs lg:text-base bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
+                    <label class="text-xs font-medium text-neutral-400">Format Tahap</label>
+                    <select id="create-t-format" class="w-full px-4 py-2.5 text-sm bg-[#050505] border border-neutral-700 rounded-lg">
                         <option value="playoff">Langsung Playoff (Single Elimination)</option>
                         <option value="swiss">Hanya Swiss Stage (Liga)</option>
                         <option value="multi">Swiss Stage -> Lanjut Playoff</option>
                     </select>
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-xs lg:text-sm font-semibold text-neutral-400">Format Match Default</label>
-                    <select id="create-t-bo" class="w-full px-4 py-2.5 text-xs lg:text-base bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
+                    <label class="text-xs font-medium text-neutral-400">Format Match Default</label>
+                    <select id="create-t-bo" class="w-full px-4 py-2.5 text-sm bg-[#050505] border border-neutral-700 rounded-lg">
                         <option value="1">Best of 1 (BO1)</option>
                         <option value="3">Best of 3 (BO3)</option>
                         <option value="5">Best of 5 (BO5)</option>
@@ -118,22 +118,22 @@
             </div>
 
             <div class="space-y-1.5">
-                <label class="text-xs lg:text-sm font-semibold text-neutral-400 flex justify-between">
+                <label class="text-xs font-medium text-neutral-400 flex justify-between">
                     <span>Nama Tim Peserta (Satu nama tim per baris)</span>
                     <span id="tim-count" class="text-[10px] lg:text-xs text-neutral-500 font-mono">0 Tim terdeteksi</span>
                 </label>
                 <textarea id="create-t-teams" rows="5" oninput="Tournament.updateTimCount()"
                     placeholder="Masukkan minimal 2 tim, contoh:&#10;Tim Alpha&#10;Tim Beta&#10;Tim Charlie&#10;Tim Delta" required
-                    class="w-full px-4 py-2.5 text-xs lg:text-base bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg font-mono focus:outline-none focus:border-neutral-500 scrollbar-thin"></textarea>
+                    class="w-full px-4 py-2.5 text-sm bg-[#050505] border border-neutral-700 rounded-lg font-mono focus:outline-none focus:border-neutral-500 scrollbar-thin"></textarea>
             </div>
 
-            <div class="flex items-center justify-end gap-3 pt-4 border-t border-[#1f1f1f]">
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-neutral-800">
                 <button type="button" onclick="Tournament.closeCreateModal()"
-                    class="px-4 py-2 border border-[#2a2a2a] text-neutral-400 hover:text-neutral-200 text-xs lg:text-base font-bold rounded-lg transition-colors">
+                    class="px-4 py-2 text-sm font-medium text-neutral-400 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 rounded-lg transition-colors">
                     Batal
                 </button>
                 <button type="submit"
-                    class="px-5 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">
+                    class="px-5 py-2 text-sm font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors">
                     Simpan & Generate Bagan
                 </button>
             </div>
@@ -143,13 +143,11 @@
 
 <!-- ===== MODAL: INPUT SKOR MATCH ===== -->
 <div id="modal-input-skor" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 hidden">
-    <div class="w-full max-w-md bg-[#111] border border-[#1f1f1f] rounded-xl p-6 space-y-6">
+    <div class="w-full max-w-md bg-[#0c0c0c] border border-neutral-800 rounded-xl p-6 space-y-6">
         <div class="flex items-center justify-between">
-            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-100">Input Skor Pertandingan</h3>
-            <button onclick="Tournament.closeSkorModal()" class="text-neutral-500 hover:text-neutral-300">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
+            <h3 class="text-sm font-semibold text-neutral-100">Input Skor Pertandingan</h3>
+            <button onclick="Tournament.closeSkorModal()" class="w-7 h-7 rounded-lg bg-neutral-800 border border-neutral-700 text-neutral-400 hover:text-neutral-100 transition-colors flex items-center justify-center shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
 
@@ -157,12 +155,12 @@
             <input type="hidden" id="skor-match-id">
 
             <!-- Team vs Team Score Grid -->
-            <div class="grid grid-cols-5 items-center gap-3 bg-[#050505] p-4 rounded-xl border border-[#2a2a2a]">
+            <div class="grid grid-cols-5 items-center gap-3 bg-[#050505] p-4 rounded-xl border border-neutral-700">
                 <!-- Team 1 -->
                 <div class="col-span-2 text-center">
-                    <p id="skor-team1-name" class="text-xs lg:text-base font-bold text-neutral-200 truncate">Tim 1</p>
+                    <p id="skor-team1-name" class="text-sm font-medium text-neutral-200 truncate">Tim 1</p>
                     <input type="number" id="skor-team1-val" min="0" required
-                        class="w-20 text-center text-lg lg:text-xl font-black px-2 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg mt-2 focus:border-neutral-500">
+                        class="w-20 text-center text-lg lg:text-xl font-black px-2 py-2.5 bg-[#050505] border border-neutral-700 rounded-lg mt-2 focus:border-neutral-500">
                 </div>
 
                 <!-- VS Spacer -->
@@ -170,29 +168,29 @@
 
                 <!-- Team 2 -->
                 <div class="col-span-2 text-center">
-                    <p id="skor-team2-name" class="text-xs lg:text-base font-bold text-neutral-200 truncate">Tim 2</p>
+                    <p id="skor-team2-name" class="text-sm font-medium text-neutral-200 truncate">Tim 2</p>
                     <input type="number" id="skor-team2-val" min="0" required
-                        class="w-20 text-center text-lg lg:text-xl font-black px-2 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg mt-2 focus:border-neutral-500">
+                        class="w-20 text-center text-lg lg:text-xl font-black px-2 py-2.5 bg-[#050505] border border-neutral-700 rounded-lg mt-2 focus:border-neutral-500">
                 </div>
             </div>
 
             <!-- Dynamic Winner Selector -->
             <div class="space-y-1.5">
-                <label class="text-xs lg:text-sm font-semibold text-neutral-400">Tim Pemenang</label>
-                <select id="skor-winner-id" class="w-full px-4 py-2.5 text-xs lg:text-base bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
+                <label class="text-xs font-medium text-neutral-400">Tim Pemenang</label>
+                <select id="skor-winner-id" class="w-full px-4 py-2.5 text-sm bg-[#050505] border border-neutral-700 rounded-lg">
                     <option value="">Deteksi Otomatis (Skor Tertinggi)</option>
                     <option id="skor-opt-t1" value="">Tim A</option>
                     <option id="skor-opt-t2" value="">Tim B</option>
                 </select>
             </div>
 
-            <div class="flex items-center justify-end gap-3 pt-4 border-t border-[#1f1f1f]">
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-neutral-800">
                 <button type="button" onclick="Tournament.closeSkorModal()"
-                    class="px-4 py-2 border border-[#2a2a2a] text-neutral-400 hover:text-neutral-200 text-xs lg:text-base font-bold rounded-lg transition-colors">
+                    class="px-4 py-2 text-sm font-medium text-neutral-400 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 rounded-lg transition-colors">
                     Batal
                 </button>
                 <button type="submit"
-                    class="px-5 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">
+                    class="px-5 py-2 text-sm font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors">
                     Simpan Hasil & Loloskan
                 </button>
             </div>
@@ -202,9 +200,9 @@
 
 <!-- ===== MODAL: LOLOSKAN TIM SWISS KE PLAYOFF ===== -->
 <div id="modal-loloskan-playoff" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 hidden">
-    <div class="w-full max-w-md bg-[#111] border border-[#1f1f1f] rounded-xl p-6 space-y-6">
+    <div class="w-full max-w-md bg-[#0c0c0c] border border-neutral-800 rounded-xl p-6 space-y-6">
         <div class="flex items-center justify-between">
-            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-100">Loloskan Tim ke Playoffs</h3>
+            <h3 class="text-sm lg:text-lg font-bold text-neutral-100">Loloskan Tim ke Playoffs</h3>
             <button onclick="Tournament.closeQualifyModal()" class="text-neutral-500 hover:text-neutral-300">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -215,17 +213,17 @@
         <div class="space-y-4">
             <p class="text-[10px] lg:text-xs text-neutral-400">Pilih tim yang berhak lolos ke babak Playoffs. Disarankan memilih kelipatan 2 (misal: 2, 4, 8, atau 16 tim) untuk membentuk bagan bracket eliminasi tunggal yang seimbang.</p>
             
-            <div id="qualify-teams-list" class="max-h-60 overflow-y-auto space-y-2 border border-[#2a2a2a] rounded-lg p-3 bg-[#050505] scrollbar-thin">
+            <div id="qualify-teams-list" class="max-h-60 overflow-y-auto space-y-2 border border-neutral-700 rounded-lg p-3 bg-[#050505] scrollbar-thin">
                 <!-- Checkbox list will be generated here -->
             </div>
 
-            <div class="flex items-center justify-end gap-3 pt-4 border-t border-[#1f1f1f]">
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-neutral-800">
                 <button type="button" onclick="Tournament.closeQualifyModal()"
-                    class="px-4 py-2 border border-[#2a2a2a] text-neutral-400 hover:text-neutral-200 text-xs lg:text-base font-bold rounded-lg transition-colors">
+                    class="px-4 py-2 text-sm font-medium text-neutral-400 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 rounded-lg transition-colors">
                     Batal
                 </button>
                 <button onclick="Tournament.submitQualifiers()"
-                    class="px-5 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">
+                    class="px-5 py-2 text-sm font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors">
                     Konfirmasi & Generate Playoffs
                 </button>
             </div>

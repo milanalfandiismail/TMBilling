@@ -1,4 +1,5 @@
 // app/static/js/kasir/modules/paket/paket_modal.js
+// Mintlify Dark — modal style konsisten
 
 const PaketModal = {
     async showAddModal() {
@@ -9,51 +10,54 @@ const PaketModal = {
             grupOptions = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
         } catch (_) {}
 
-        const formHtml = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-6 max-w-lg w-[calc(100%-2rem)] mx-auto md:w-full shadow-2xl">
-                <div class="flex items-center justify-between mb-5 pb-4 border-b border-[#2a2a2a]">
-                    <div>
-                        <h3 class="text-sm font-bold text-neutral-100 tracking-wide">Tambah Paket Billing</h3>
-                        <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Buat paket waktu bermain baru untuk grup PC</p>
-                    </div>
-                    <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
+        const bodyHtml = `
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-medium text-neutral-400 block">Nama Paket <span class="text-red-400">*</span></label>
+                    <input type="text" id="modal-paket-nama" placeholder="REGULER - 3 Jam"
+                        class="w-full h-10 px-3 bg-[#050505] border border-neutral-700 rounded-lg text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all">
+                    <p class="text-xs text-neutral-500 mt-1">Nama akan terisi otomatis saat Grup & Durasi dipilih</p>
                 </div>
-                <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Paket <span class="text-red-400">*</span></label>
-                        <input type="text" id="modal-paket-nama" placeholder="Misal: REGULER - 3 Jam" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
-                        <p class="text-[9px] lg:text-base text-neutral-600 mt-1">Nama akan terisi otomatis saat Grup & Durasi dipilih</p>
+                        <label class="text-xs font-medium text-neutral-400 block">Grup PC <span class="text-red-400">*</span></label>
+                        <select id="modal-paket-grup" onchange="Paket.suggestNameModal()"
+                            class="w-full h-10 px-3 bg-[#050505] border border-neutral-700 rounded-lg text-sm text-neutral-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all">${grupOptions}</select>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Grup PC <span class="text-red-400">*</span></label>
-                            <select id="modal-paket-grup" onchange="Paket.suggestNameModal()" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">${grupOptions}</select>
-                        </div>
-                        <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Durasi (menit) <span class="text-red-400">*</span></label>
-                            <input type="number" id="modal-paket-durasi" oninput="Paket.suggestNameModal()" placeholder="Contoh: 180" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Harga (Rp) <span class="text-red-400">*</span></label>
-                            <input type="text" id="modal-paket-harga" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)" placeholder="Contoh: 12.000" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors font-mono">
-                        </div>
-                        <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Masa Aktif (hari)</label>
-                            <input type="number" id="modal-paket-kadaluarsa" value="30" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
-                        </div>
+                    <div>
+                        <label class="text-xs font-medium text-neutral-400 block">Durasi (menit) <span class="text-red-400">*</span></label>
+                        <input type="number" id="modal-paket-durasi" oninput="Paket.suggestNameModal()" placeholder="180"
+                            class="w-full h-10 px-3 bg-[#050505] border border-neutral-700 rounded-lg text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all">
                     </div>
                 </div>
-                <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#2a2a2a]">
-                    <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded-lg transition-colors">Batal</button>
-                    <button onclick="Paket.add()" class="px-5 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        Tambah Paket
-                    </button>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-medium text-neutral-400 block">Harga (Rp) <span class="text-red-400">*</span></label>
+                        <input type="text" id="modal-paket-harga" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)" placeholder="12.000"
+                            class="w-full h-10 px-3 bg-[#050505] border border-neutral-700 rounded-lg text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all font-mono">
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-neutral-400 block">Masa Aktif (hari)</label>
+                        <input type="number" id="modal-paket-kadaluarsa" value="30"
+                            class="w-full h-10 px-3 bg-[#050505] border border-neutral-700 rounded-lg text-sm text-neutral-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all">
+                    </div>
                 </div>
             </div>`;
-        Modal.show(formHtml, null, { disableBackdropClose: true });
+
+        const modalHtml = UI.modalWrapper({
+            icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>',
+            title: 'Tambah Paket Billing',
+            subtitle: 'Buat paket waktu bermain baru',
+            body: bodyHtml,
+            footer: `
+                <button onclick="Modal.closeModal()" class="px-4 py-2 text-sm font-medium text-neutral-400 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 rounded-lg transition-colors">Batal</button>
+                <button onclick="Paket.add()" class="px-4 py-2 text-sm font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Tambah Paket
+                </button>`,
+        });
+
+        Modal.show(modalHtml, null, { disableBackdropClose: true });
     },
 
     suggestNameModal() {
@@ -77,38 +81,44 @@ const PaketModal = {
 
     showEditModal(paket, groups) {
         const grupOptions = groups.map(g => `<option value="${g.nama}" ${paket.grup === g.nama ? 'selected' : ''}>${g.nama.toUpperCase()}</option>`).join('');
-        const formHtml = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-6 max-w-md w-[calc(100%-2rem)] mx-auto md:w-full shadow-2xl">
-                <div class="flex items-center justify-between mb-5 pb-4 border-b border-[#2a2a2a]">
-                    <div><h3 class="text-sm font-bold text-neutral-100 tracking-wide">Edit Paket</h3><p class="text-[10px] lg:text-base text-neutral-500 font-mono mt-0.5">${paket.nama.toUpperCase()}</p></div>
-                    <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
+
+        const bodyHtml = `
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-medium text-neutral-400 block">Nama Paket</label>
+                    <input type="text" id="edit-paket-nama" value="${Utils.escapeHtml(paket.nama)}"
+                        class="w-full h-10 px-3 bg-[#050505] border border-neutral-700 rounded-lg text-sm text-neutral-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all">
                 </div>
-                <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Paket</label>
-                        <input type="text" id="edit-paket-nama" value="${Utils.escapeHtml(paket.nama)}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Durasi (menit)</label>
-                            <input type="number" id="edit-paket-durasi" value="${paket.durasi_menit}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
-                        </div>
-                        <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Harga (Rp)</label>
-                            <input type="text" id="edit-paket-harga" value="${Utils.formatRawRupiah(paket.harga)}" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors font-mono font-bold">
-                        </div>
+                        <label class="text-xs font-medium text-neutral-400 block">Durasi (menit)</label>
+                        <input type="number" id="edit-paket-durasi" value="${paket.durasi_menit}"
+                            class="w-full h-10 px-3 bg-[#050505] border border-neutral-700 rounded-lg text-sm text-neutral-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all">
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Masa Aktif (hari)</label>
-                        <input type="number" id="edit-paket-kadaluarsa" value="${paket.kadaluarsa_hari || 30}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <label class="text-xs font-medium text-neutral-400 block">Harga (Rp)</label>
+                        <input type="text" id="edit-paket-harga" value="${Utils.formatRawRupiah(paket.harga)}" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)"
+                            class="w-full h-10 px-3 bg-[#050505] border border-neutral-700 rounded-lg text-sm text-neutral-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all font-mono font-medium">
                     </div>
                 </div>
-                <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#2a2a2a]">
-                    <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded-lg transition-colors">Batal</button>
-                    <button onclick="Paket.doEdit(${paket.id})" class="px-5 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Simpan</button>
+                <div>
+                    <label class="text-xs font-medium text-neutral-400 block">Masa Aktif (hari)</label>
+                    <input type="number" id="edit-paket-kadaluarsa" value="${paket.kadaluarsa_hari || 30}"
+                        class="w-full h-10 px-3 bg-[#050505] border border-neutral-700 rounded-lg text-sm text-neutral-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all">
                 </div>
             </div>`;
-        Modal.show(formHtml, null, { disableBackdropClose: true });
+
+        const modalHtml = UI.modalWrapper({
+            icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>',
+            title: 'Edit Paket',
+            subtitle: `${paket.nama.toUpperCase()}`,
+            body: bodyHtml,
+            footer: `
+                <button onclick="Modal.closeModal()" class="px-4 py-2 text-sm font-medium text-neutral-400 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 rounded-lg transition-colors">Batal</button>
+                <button onclick="Paket.doEdit(${paket.id})" class="px-4 py-2 text-sm font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors">Simpan</button>`,
+        });
+
+        Modal.show(modalHtml, null, { disableBackdropClose: true });
     }
 };
 

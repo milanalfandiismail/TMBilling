@@ -1,73 +1,48 @@
-<!-- ===== TAB: DASHBOARD ===== -->
-<div id="tab-dash" class="tab-content">
-    <!-- ===== ROW STATS (BRIGHTER) ===== -->
-    <div id="dashboard-stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <!-- Stat: Sesi Aktif -->
-        <div
-            class="bg-[#181818] border border-[#282828] rounded-xl p-4 lg:p-5 flex flex-col justify-between min-h-24 lg:min-h-28 border-l-2 border-l-neutral-400">
-            <span class="text-[10px] lg:text-sm text-neutral-400 uppercase font-bold tracking-wider">Sesi Aktif</span>
-            <div class="flex items-baseline justify-between">
-                <span id="stat-active" class="text-2xl lg:text-3xl font-black text-neutral-100 font-mono">0</span>
-                <span class="text-[10px] lg:text-xs text-neutral-500">unit aktif</span>
-            </div>
-        </div>
-        <!-- Stat: PC Tersedia -->
-        <div
-            class="bg-[#181818] border border-[#282828] rounded-xl p-4 lg:p-5 flex flex-col justify-between min-h-24 lg:min-h-28 border-l-2 border-l-neutral-500">
-            <span class="text-[10px] lg:text-sm text-neutral-400 uppercase font-bold tracking-wider">PC Tersedia</span>
-            <div class="flex items-baseline justify-between">
-                <span id="stat-available" class="text-2xl lg:text-3xl font-black text-neutral-100 font-mono">0</span>
-                <span class="text-[10px] lg:text-xs text-neutral-500">unit kosong</span>
-            </div>
-        </div>
-        <!-- Stat: PC Terputus / No Heartbeat -->
-        <div
-            class="bg-[#181818] border border-[#282828] rounded-xl p-4 lg:p-5 flex flex-col justify-between min-h-24 lg:min-h-28 border-l-2 border-l-red-700">
-            <span class="text-[10px] lg:text-sm text-neutral-400 uppercase font-bold tracking-wider">Koneksi
-                Terputus</span>
-            <div class="flex items-baseline justify-between">
-                <span id="stat-disconnected" class="text-2xl lg:text-3xl font-black text-neutral-100 font-mono">0</span>
-                <span class="text-[10px] lg:text-xs text-neutral-500">masalah</span>
-            </div>
-        </div>
-        <!-- Stat: Omzet Hari Ini -->
-        <div
-            class="bg-[#181818] border border-[#282828] rounded-xl p-4 lg:p-5 flex flex-col justify-between min-h-24 lg:min-h-28 border-l-2 border-l-neutral-300">
-            <span class="text-[10px] lg:text-sm text-neutral-400 uppercase font-bold tracking-wider">Omzet Hari
-                Ini</span>
-            <div class="flex items-baseline justify-between">
-                <span id="stat-income" class="text-lg lg:text-2xl font-black text-neutral-100 font-mono">Rp 0</span>
-                <span class="text-[10px] lg:text-xs text-neutral-500">tunai</span>
-            </div>
+<!-- ============================================================
+     Dashboard Tab — Mintlify Dark
+     ============================================================ -->
+<div id="tab-dash" class="tab-content space-y-4">
+
+    <!-- Stat Cards — diisi dinamis oleh JS -->
+    <div id="dashboard-stats" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+
+    <!-- Toolbar: Group Tabs + Actions -->
+    <div class="flex items-center justify-between gap-3">
+        <div id="group-tabs" class="flex items-center gap-1.5 flex-wrap"></div>
+        <div class="flex items-center gap-1.5">
+            <button onclick="Dashboard.toggleView('map')" id="btn-map-view"
+                class="px-3 py-1.5 text-xs font-medium text-neutral-400 bg-neutral-800 border border-neutral-700 hover:border-neutral-500 hover:text-neutral-100 rounded-lg transition-all flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                Peta
+            </button>
+            <button onclick="Dashboard.toggleView('grid')" id="btn-grid-view"
+                class="px-3 py-1.5 text-xs font-medium text-neutral-400 bg-neutral-800 border border-neutral-700 hover:border-neutral-500 hover:text-neutral-100 rounded-lg transition-all flex items-center gap-1.5 hidden">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                Grid
+            </button>
+            <button onclick="Dashboard.tambahWaktuMember()"
+                class="px-3 py-1.5 text-xs font-medium text-black bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-all flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                Tambah Waktu
+            </button>
+            <button onclick="Member.showAddModal()"
+                class="px-3 py-1.5 text-xs font-medium text-neutral-200 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 hover:border-neutral-500 rounded-lg transition-all flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                + Member
+            </button>
         </div>
     </div>
 
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div id="dashboard-tabs" class="flex flex-wrap gap-2"></div>
-        <div class="flex gap-2">
-            <button onclick="Dashboard.toggleView('map')" id="btn-map-view"
-                class="px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] hover:border-neutral-500 text-neutral-300 text-xs font-semibold rounded-lg transition-colors">
-                🗺️ Peta
-            </button>
-            <button onclick="Dashboard.toggleView('grid')" id="btn-grid-view"
-                class="px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] hover:border-neutral-500 text-neutral-300 text-xs font-semibold rounded-lg transition-colors hidden">
-                📋 Grid
-            </button>
-            <button onclick="Dashboard.tambahWaktuMember()"
-                class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded-lg transition-colors flex items-center gap-2">
-                + Tambah Waktu Member
-            </button>
-            <button onclick="Member.showAddModal()"
-                class="px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] hover:border-neutral-500 text-neutral-300 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Tambah Member
-            </button>
-        </div>
-    </div>
-    <div id="pc-area">
+    <!-- Member Search (hidden) -->
+    <div id="member-search-dash" class="hidden"></div>
+
+    <!-- PC Grid / Map Area -->
+    <div id="pc-area" class="min-h-[200px]">
         <div class="flex items-center justify-center py-20">
-            <div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div>
+            <div class="w-6 h-6 border-2 border-neutral-700 border-t-neutral-100 rounded-full animate-spin"></div>
         </div>
     </div>
+
+    <!-- Map View (hidden) -->
     <div id="map-view-container" class="hidden space-y-6"></div>
 </div>

@@ -37,7 +37,7 @@
     {% endif %}
 
     <!-- Status Toggle Card -->
-    <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5 mb-5">
+    <div class="bg-[#050505] border border-neutral-800 rounded-xl p-4 lg:p-5 mb-5">
         <div class="flex items-center justify-between gap-4">
             <div>
                 <p class="font-bold text-neutral-200 text-sm lg:text-base">Status Whitelist IP</p>
@@ -56,7 +56,7 @@
     </div>
 
     <!-- Remote Access Card -->
-    <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5 mb-5">
+    <div class="bg-[#050505] border border-neutral-800 rounded-xl p-4 lg:p-5 mb-5">
         <h3 class="font-bold text-neutral-200 text-sm lg:text-base mb-3">🔗 Akses dari HP / Remote (via Tunnel)</h3>
 
         <!-- Domain Publik -->
@@ -64,10 +64,10 @@
             <label class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold block mb-1">Domain Publik (contoh: https://tmbilling.example.com)</label>
             <div class="flex gap-2">
                 <input type="text" id="publicUrlInput" placeholder="https://tmbilling.example.com"
-                    class="flex-1 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 
+                    class="flex-1 bg-[#050505] border border-neutral-800 rounded px-3 py-2 text-sm text-neutral-200 
                            placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 transition-colors">
                 <button onclick="WhitelistIP.savePublicUrl()"
-                    class="px-4 py-2 bg-neutral-800 border border-[#1c1c1c] rounded text-sm text-neutral-300 
+                    class="px-4 py-2 bg-neutral-800 border border-neutral-800 rounded text-sm text-neutral-300 
                            hover:bg-neutral-700 transition-colors font-semibold">
                     Simpan
                 </button>
@@ -75,10 +75,10 @@
         </div>
 
         <!-- URL Token + QR -->
-        <div class="bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg overflow-hidden">
+        <div class="bg-[#050505] border border-neutral-800 rounded-lg overflow-hidden">
             <div class="flex flex-col lg:flex-row">
                 <!-- QR Code -->
-                <div class="p-4 flex items-center justify-center border-b lg:border-b-0 lg:border-r border-[#1c1c1c] bg-white">
+                <div class="p-4 flex items-center justify-center border-b lg:border-b-0 lg:border-r border-neutral-800 bg-white">
                     <div id="qrcode" class="w-[140px] h-[140px] lg:w-[180px] lg:h-[180px]"></div>
                 </div>
                 <!-- URL Info -->
@@ -86,9 +86,9 @@
                     <div>
                         <p class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold mb-1">URL Token (scan QR atau copy)</p>
                         <div class="flex items-center gap-2">
-                            <code id="tokenUrlDisplay" class="flex-1 bg-[#050505] border border-[#1c1c1c] rounded px-3 py-2 text-xs lg:text-sm text-neutral-300 font-mono break-all">-</code>
+                            <code id="tokenUrlDisplay" class="flex-1 bg-[#050505] border border-neutral-800 rounded px-3 py-2 text-xs lg:text-sm text-neutral-300 font-mono break-all">-</code>
                             <button onclick="WhitelistIP.copyToClipboard('tokenUrlDisplay')"
-                                class="shrink-0 px-3 py-2 bg-neutral-800 border border-[#1c1c1c] rounded text-sm text-neutral-300 
+                                class="shrink-0 px-3 py-2 bg-neutral-800 border border-neutral-800 rounded text-sm text-neutral-300 
                                        hover:bg-neutral-700 transition-colors font-mono" title="Copy URL">
                                 📋
                             </button>
@@ -113,7 +113,7 @@
     </div>
 
     <!-- Daftar IP Card -->
-    <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5 mb-5">
+    <div class="bg-[#050505] border border-neutral-800 rounded-xl p-4 lg:p-5 mb-5">
         <h3 class="font-bold text-neutral-200 text-sm lg:text-base mb-3">
             📋 Daftar IP yang Diizinkan (<span id="ipCount">0</span>)
         </h3>
@@ -121,7 +121,7 @@
         <!-- Table -->
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs lg:text-sm">
-                <thead class="text-[9px] lg:text-xs text-neutral-500 uppercase border-b border-[#1c1c1c]">
+                <thead class="text-[9px] lg:text-xs text-neutral-500 uppercase border-b border-neutral-800">
                     <tr>
                         <th class="pb-2 font-bold">IP Address</th>
                         <th class="pb-2 font-bold hidden sm:table-cell">Label</th>
@@ -141,17 +141,17 @@
     </div>
 
     <!-- Tambah IP Card -->
-    <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5">
+    <div class="bg-[#050505] border border-neutral-800 rounded-xl p-4 lg:p-5">
         <h3 class="font-bold text-neutral-200 text-sm lg:text-base mb-3">➕ Tambah IP Baru</h3>
         <div class="flex flex-col sm:flex-row gap-2">
             <input type="text" id="newIpInput" placeholder="192.168.1.30"
-                class="flex-1 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 
+                class="flex-1 bg-[#050505] border border-neutral-800 rounded px-3 py-2 text-sm text-neutral-200 
                        placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 transition-colors font-mono">
             <input type="text" id="newLabelInput" placeholder="Label (opsional)"
-                class="sm:w-48 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 
+                class="sm:w-48 bg-[#050505] border border-neutral-800 rounded px-3 py-2 text-sm text-neutral-200 
                        placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 transition-colors">
             <button onclick="WhitelistIP.add()"
-                class="px-5 py-2 bg-neutral-800 border border-[#1c1c1c] rounded text-sm text-neutral-200 
+                class="px-5 py-2 bg-neutral-800 border border-neutral-800 rounded text-sm text-neutral-200 
                        hover:bg-neutral-700 transition-colors font-bold shrink-0">
                 Tambah
             </button>
@@ -170,7 +170,7 @@
     <div class="bg-[#0c0c0c] border border-red-500/30 rounded-xl max-w-md w-full p-6">
         <h3 class="text-lg font-bold text-red-400 mb-2">⚠️ Token Baru Di-generate</h3>
         <p class="text-sm text-neutral-400 mb-3">Token lama sudah tidak valid. Simpan token baru ini:</p>
-        <div class="bg-[#050505] border border-[#1c1c1c] rounded p-3 mb-3">
+        <div class="bg-[#050505] border border-neutral-800 rounded p-3 mb-3">
             <code id="newTokenDisplay" class="text-sm text-neutral-200 font-mono break-all">-</code>
         </div>
         <div class="bg-yellow-500/10 border border-yellow-500/30 rounded p-3 mb-4">
@@ -182,7 +182,7 @@
                 📋 Copy Token
             </button>
             <button onclick="WhitelistIP.closeRegenerateModal()"
-                class="px-4 py-2 bg-neutral-800 border border-[#1c1c1c] rounded text-sm text-neutral-300">
+                class="px-4 py-2 bg-neutral-800 border border-neutral-800 rounded text-sm text-neutral-300">
                 Tutup
             </button>
         </div>

@@ -55,7 +55,7 @@ const MapView = {
             +'<span class="text-xs lg:text-base text-neutral-400">'+this._act(all)+' / '+all.length+' AKTIF &middot; '+cols+'×'+rows+'</span></div>'
             +(adm?'<button onclick="MapView.openEditor(\''+this._esc(grup)+'\')" class="px-3 py-1.5 bg-neutral-700 border border-neutral-600 hover:bg-neutral-600 hover:border-neutral-400 rounded text-xs lg:text-base text-neutral-200 font-semibold transition-colors shrink-0">✏️ Edit Denah</button>':'')
             +'</div>'
-            +'<div class="relative overflow-auto rounded-lg bg-[#0a0a0a] border border-[#222] p-3" style="height:'+Math.min(ch+24,520)+'px">'
+            +'<div class="relative overflow-auto rounded-lg bg-[#0c0c0c] border border-neutral-800 p-3" style="height:'+Math.min(ch+24,520)+'px">'
             +'<div style="width:'+cw+'px;height:'+ch+'px" class="relative">'
             +this._grid(cols,rows,cw,ch)
             +mapped.map(this._dot.bind(this)).join('')
@@ -65,8 +65,8 @@ const MapView = {
 
     _grid: function(cols,rows,w,h) {
         var l='';
-        for (var x=0;x<=w;x+=this.cellW) l+='<div class="absolute top-0 bottom-0 border-l border-[#151515]" style="left:'+x+'px"></div>';
-        for (var y=0;y<=h;y+=this.cellH) l+='<div class="absolute left-0 right-0 border-t border-[#151515]" style="top:'+y+'px"></div>';
+        for (var x=0;x<=w;x+=this.cellW) l+='<div class="absolute top-0 bottom-0 border-l border-neutral-800" style="left:'+x+'px"></div>';
+        for (var y=0;y<=h;y+=this.cellH) l+='<div class="absolute left-0 right-0 border-t border-neutral-800" style="top:'+y+'px"></div>';
         return '<div class="absolute inset-0 pointer-events-none">'+l+'</div>';
     },
 
@@ -85,7 +85,7 @@ const MapView = {
         return '<div class="mt-2 flex flex-wrap items-center gap-1.5"><span class="text-[10px] lg:text-sm text-neutral-500 uppercase font-bold">Belum Dipetakan:</span>'
             +unmapped.map(function(pc){
                 var s=MapView._state(pc);
-                return '<span class="inline-flex items-center gap-1 px-3 py-1.5 bg-[#111] border border-[#222] rounded-lg text-[10px] lg:text-sm font-bold text-neutral-300 cursor-pointer hover:border-neutral-400" onclick="Dashboard.showDetail('+pc.id+')" oncontextmenu="MapView._ctx(event,'+pc.id+')">'
+                return '<span class="inline-flex items-center gap-1 px-3 py-1.5 bg-[#0c0c0c] border border-neutral-800 rounded-lg text-[10px] lg:text-sm font-bold text-neutral-300 cursor-pointer hover:border-neutral-400" onclick="Dashboard.showDetail('+pc.id+')" oncontextmenu="MapView._ctx(event,'+pc.id+')">'
                     +'<span class="w-2 h-2 rounded-full '+s.dot+'"></span>'+MapView._esc(pc.kode)+' <span class="text-neutral-500">'+MapView._esc(s.label)+'</span></span>';
             }).join('')+'</div>';
     },
@@ -113,12 +113,12 @@ const MapView = {
         var sidebarHtml = pcs.map(function(pc){
             var s = self._state(pc);
             var onG = (pc.pos_x>=0)&&(pc.pos_y>=0);
-            return '<div class="flex items-center gap-2 px-3 py-2 rounded cursor-pointer hover:bg-[#1a1a1a] text-xs lg:text-base text-neutral-300 font-semibold transition-colors select-none sidebar-pc-item"'
+            return '<div class="flex items-center gap-2 px-3 py-2 rounded cursor-pointer hover:bg-neutral-800 text-xs lg:text-base text-neutral-300 font-semibold transition-colors select-none sidebar-pc-item"'
                 +' data-pc-id="'+pc.id+'" data-pc-kode="'+self._esc(pc.kode)+'"'
                 +' onclick="MapView._selectPc('+pc.id+',this)"'
                 +' oncontextmenu="MapView._editCtx(event,'+pc.id+',\''+self._esc(pc.kode)+'\')">'
                 +'<span class="w-2.5 h-2.5 rounded-full shrink-0 '+s.dot+'"></span>'+self._esc(pc.kode)
-                +(onG?' <span class="text-[8px] text-neutral-500 ml-auto">('+(pc.pos_x+1)+','+(pc.pos_y+1)+')</span>':' <span class="text-[8px] text-neutral-600 ml-auto">baru</span>')
+                +(onG?' <span class="text-[8px] text-neutral-500 ml-auto">('+(pc.pos_x+1)+','+(pc.pos_y+1)+')</span>':' <span class="text-[8px] text-neutral-500 ml-auto">baru</span>')
                 +'</div>';
         }).join('');
 
@@ -132,24 +132,24 @@ const MapView = {
                 +'<span class="text-[10px] lg:text-xs font-bold mt-1 text-neutral-300">'+self._esc(pc.kode)+'</span></div>';
         }).join('');
 
-        var html = '<div class="bg-[#0c0c0c] border border-[#222] rounded-xl w-[98vw] max-w-[1600px] max-h-[98vh] flex flex-col overflow-hidden shadow-2xl">'
-            +'<div class="px-6 py-4 border-b border-[#1c1c1c] flex items-center justify-between shrink-0">'
+        var html = '<div class="bg-[#0c0c0c] border border-neutral-800 rounded-xl w-[98vw] max-w-[1600px] max-h-[98vh] flex flex-col overflow-hidden shadow-2xl">'
+            +'<div class="px-6 py-4 border-b border-neutral-800 flex items-center justify-between shrink-0">'
             +'<div><h3 class="text-base lg:text-[22px] font-bold text-neutral-100 uppercase tracking-wider">✏️ Edit Denah — '+self._esc(grup)+'</h3>'
             +'<p class="text-xs lg:text-base text-neutral-400 mt-0.5" id="editor-hint">Pilih PC di sidebar → klik cell di grid untuk menempatkan.</p></div>'
-            +'<button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] flex items-center justify-center text-lg leading-none">&times;</button></div>'
+            +'<button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-neutral-800 border border-neutral-800 text-neutral-400 hover:text-neutral-100 hover:bg-neutral-700 flex items-center justify-center text-lg leading-none">&times;</button></div>'
 
             +'<div class="flex-1 flex overflow-hidden">'
-            +'<div class="w-48 lg:w-56 shrink-0 border-r border-[#1c1c1c] bg-[#080808] flex flex-col">'
-            +'<div class="p-3 pb-2 shrink-0"><p class="text-[10px] lg:text-sm text-neutral-500 uppercase font-bold">Pilih PC</p><p class="text-[8px] lg:text-xs text-neutral-600">Lalu klik cell grid →</p></div>'
+            +'<div class="w-48 lg:w-56 shrink-0 border-r border-neutral-800 bg-[#080808] flex flex-col">'
+            +'<div class="p-3 pb-2 shrink-0"><p class="text-[10px] lg:text-sm text-neutral-500 uppercase font-bold">Pilih PC</p><p class="text-[8px] lg:text-xs text-neutral-500">Lalu klik cell grid →</p></div>'
             +'<div class="flex-1 overflow-y-auto px-3 space-y-1">'+sidebarHtml+'</div>'
-            +'<div class="p-3 pt-2 border-t border-[#1c1c1c] shrink-0"><button onclick="MapView._removeSelected()" class="w-full px-3 py-2 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 rounded text-xs lg:text-sm text-red-400 font-semibold transition-colors">Keluarkan dari Denah</button></div></div>'
-            +'<div class="flex-1 overflow-auto bg-[#060606] p-3" id="editor-grid-wrapper">'
+            +'<div class="p-3 pt-2 border-t border-neutral-800 shrink-0"><button onclick="MapView._removeSelected()" class="w-full px-3 py-2 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 rounded text-xs lg:text-sm text-red-400 font-semibold transition-colors">Keluarkan dari Denah</button></div></div>'
+            +'<div class="flex-1 overflow-auto bg-[#050505] p-3" id="editor-grid-wrapper">'
             +'<div class="relative cursor-crosshair" style="width:'+cw+'px;height:'+ch+'px" id="editor-grid">'
             +self._editGrid(cols,rows)+placedDots+'</div></div></div>'
 
-            +'<div class="px-6 py-3 border-t border-[#1c1c1c] flex items-center justify-between shrink-0 bg-[#0a0a0a] flex-wrap gap-2">'
-            +'<div class="flex items-center gap-2 text-xs lg:text-base text-neutral-400">Kolom <input type="number" id="edit-cols" value="'+gs.cols+'" min="2" max="30" class="w-16 px-2 py-1 bg-[#0a0a0a] border border-[#222] rounded text-neutral-200 text-center text-xs lg:text-base"> Baris <input type="number" id="edit-rows" value="'+gs.rows+'" min="2" max="20" class="w-16 px-2 py-1 bg-[#0a0a0a] border border-[#222] rounded text-neutral-200 text-center text-xs lg:text-base"> <button onclick="MapView._applyGrid(\''+self._esc(grup)+'\')" class="px-3 py-1 bg-neutral-700 border border-neutral-600 hover:bg-neutral-500 rounded text-xs lg:text-base text-neutral-200 font-semibold transition-colors">Terapkan</button></div>'
-            +'<div class="flex gap-2"><button onclick="Modal.closeModal()" class="px-4 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded">Batal</button>'
+            +'<div class="px-6 py-3 border-t border-neutral-800 flex items-center justify-between shrink-0 bg-[#0c0c0c] flex-wrap gap-2">'
+            +'<div class="flex items-center gap-2 text-xs lg:text-base text-neutral-400">Kolom <input type="number" id="edit-cols" value="'+gs.cols+'" min="2" max="30" class="w-16 px-2 py-1 bg-[#0c0c0c] border border-neutral-800 rounded text-neutral-200 text-center text-xs lg:text-base"> Baris <input type="number" id="edit-rows" value="'+gs.rows+'" min="2" max="20" class="w-16 px-2 py-1 bg-[#0c0c0c] border border-neutral-800 rounded text-neutral-200 text-center text-xs lg:text-base"> <button onclick="MapView._applyGrid(\''+self._esc(grup)+'\')" class="px-3 py-1 bg-neutral-700 border border-neutral-600 hover:bg-neutral-500 rounded text-xs lg:text-base text-neutral-200 font-semibold transition-colors">Terapkan</button></div>'
+            +'<div class="flex gap-2"><button onclick="Modal.closeModal()" class="px-4 py-2 bg-neutral-800 border border-neutral-800 hover:bg-neutral-700 text-neutral-400 text-xs lg:text-base font-bold rounded">Batal</button>'
             +'<button onclick="MapView._save()" class="px-5 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded">Simpan Denah</button></div></div></div>';
 
         Modal.show(html);
@@ -217,7 +217,7 @@ const MapView = {
         var old = grid.querySelector('[data-editor-pc="'+this._selectedPcId+'"]');
         if (old) old.remove();
         var sbi = document.querySelector('.sidebar-pc-item[data-pc-id="'+this._selectedPcId+'"]');
-        if (sbi) { sbi.classList.remove('bg-neutral-700','ring-1','ring-neutral-500'); var sp=sbi.querySelector('span:last-child'); if(sp){sp.textContent='baru';sp.className='text-[8px] text-neutral-600 ml-auto';} }
+        if (sbi) { sbi.classList.remove('bg-neutral-700','ring-1','ring-neutral-500'); var sp=sbi.querySelector('span:last-child'); if(sp){sp.textContent='baru';sp.className='text-[8px] text-neutral-500 ml-auto';} }
         this._selectedPcId = null;
         var hint = document.getElementById('editor-hint');
         hint.textContent = 'Pilih PC di sidebar → klik cell di grid.';
@@ -235,8 +235,8 @@ const MapView = {
 
     _editGrid: function(cols,rows) {
         var w=cols*this.editorCellW,h=rows*this.editorCellH,l='';
-        for (var x=0;x<=w;x+=this.editorCellW)l+='<div class="absolute top-0 bottom-0 border-l border-[#181818]" style="left:'+x+'px"></div>';
-        for (var y=0;y<=h;y+=this.editorCellH)l+='<div class="absolute left-0 right-0 border-t border-[#181818]" style="top:'+y+'px"></div>';
+        for (var x=0;x<=w;x+=this.editorCellW)l+='<div class="absolute top-0 bottom-0 border-l border-neutral-800" style="left:'+x+'px"></div>';
+        for (var y=0;y<=h;y+=this.editorCellH)l+='<div class="absolute left-0 right-0 border-t border-neutral-800" style="top:'+y+'px"></div>';
         return '<div class="absolute inset-0 pointer-events-none">'+l+'</div>';
     },
 
