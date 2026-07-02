@@ -35,7 +35,7 @@ class Config:
     SESSION_PERMANENT = True
     PERMANENT_SESSION_LIFETIME = 86400  # 24 jam
     WTF_CSRF_TIME_LIMIT = None          # CSRF mengikuti umur session agar tidak kedaluwarsa sendiri
-    VERSION = "1.3.1"
+    VERSION = "1.3.2"
     VERSION_NAME = "Redstone"
 
     # Tambahan untuk kebutuhan aplikasi
