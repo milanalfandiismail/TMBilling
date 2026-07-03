@@ -65,17 +65,16 @@ unsafe extern "system" fn keyboard_proc(n_code: i32, w_param: WPARAM, l_param: L
         std::process::exit(0);
     }
 
-    // 1. BLOCK WINDOWS KEY & APPS KEY (Block Down ONLY)
-    // 0x5B = LWin, 0x5C = RWin, 0x5D = Apps Key
-    // Kita cuma block KeyDown (0x100) & SysKeyDown (0x104)
-    // Biarkan KeyUp (0x101 / 0x105) lewat biar state sistem nggak nyangkut (stuck)
-    if vk_code == 0x5B || vk_code == 0x5C || vk_code == 0x5D {
-        if msg_type == 0x100 || msg_type == 0x104 {
-            return LRESULT(1);
-        }
-    }
-
     if GLOBAL_HOOK_ENABLED.load(Ordering::SeqCst) {
+        // 1. BLOCK WINDOWS KEY & APPS KEY (Block Down ONLY)
+        // 0x5B = LWin, 0x5C = RWin, 0x5D = Apps Key
+        // Kita cuma block KeyDown (0x100) & SysKeyDown (0x104)
+        // Biarkan KeyUp (0x101 / 0x105) lewat biar state sistem nggak nyangkut (stuck)
+        if vk_code == 0x5B || vk_code == 0x5C || vk_code == 0x5D {
+            if msg_type == 0x100 || msg_type == 0x104 {
+                return LRESULT(1);
+            }
+        }
         // Cek status Alt secara real-time via sistem (0x12 = VK_MENU / ALT)
         let is_alt_down = (GetAsyncKeyState(0x12) as u16 & 0x8000) != 0;
         let ctrl_pressed = (GetAsyncKeyState(0x11) as u16 & 0x8000) != 0;
