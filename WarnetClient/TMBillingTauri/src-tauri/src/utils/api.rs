@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::Ordering;
 use crate::state::{REMAINING_SECONDS, SESSION_ACTIVE};
-use configparser::ini::Ini;
+
 use winreg::enums::*;
 use winreg::RegKey;
 use base64::Engine;
