@@ -94,23 +94,4 @@ pub fn set_kiosk_lock(window: Window, enabled: bool) {
     }
 }
 
-#[tauri::command]
-pub fn set_window_fullscreen(window: Window, fullscreen: bool) {
-    if fullscreen {
-        let _ = window.set_fullscreen(true);
-        let _ = window.set_always_on_top(true);
-    } else {
-        let _ = window.set_fullscreen(false);
-        let _ = window.set_size(LogicalSize::new(320.0, 400.0));
-        
-        // Kembalikan ke pojok kanan atas
-        if let Ok(Some(monitor)) = window.current_monitor() {
-            let screen_size = monitor.size();
-            let scale_factor = monitor.scale_factor();
-            let logical_screen = screen_size.to_logical::<f64>(scale_factor);
-            let x = logical_screen.width - 330.0;
-            let y = 10.0;
-            let _ = window.set_position(Position::Logical(LogicalPosition { x, y }));
-        }
-    }
-}
+
