@@ -21,6 +21,18 @@ const App = {
     async init() {
         console.log("TMBilling Client Started");
 
+        // Load overlay HTML dynamically
+        try {
+            const response = await fetch('overlay.html');
+            const overlayHtml = await response.text();
+            const container = document.getElementById('overlay-container');
+            if (container) {
+                container.innerHTML = overlayHtml;
+            }
+        } catch (err) {
+            console.error("Gagal load overlay.html:", err);
+        }
+
         // Initialize modules
         Kiosk.init();
         Overlay.init();

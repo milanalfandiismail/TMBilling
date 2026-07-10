@@ -1,0 +1,74 @@
+<!-- 2. BILLING OVERLAY (MODE MELAYANG) -->
+<div id="billing-overlay" class="hidden w-full h-full p-0 flex flex-col bg-transparent overflow-hidden">
+    <div class="w-full h-full bg-card border border-[#2a2a2a] rounded-none p-6 flex flex-col shadow-none">
+        <div class="flex justify-between items-start mb-6">
+            <div class="flex items-center gap-2">
+                <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
+                <span class="text-[10px] font-bold text-accent uppercase tracking-wider">Sesi Aktif</span>
+            </div>
+            <button id="minimize-btn"
+                class="p-1.5 hover:bg-white/10 rounded-lg text-white/20 hover:text-white transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="flex-1 space-y-4">
+            <div class="flex items-center">
+                <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider w-20">Nama PC</span>
+                <span class="text-[13px] font-bold pc-name-display" id="overlay-pc-name">PC-01</span>
+            </div>
+            <div class="flex items-center">
+                <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider w-20">Grup</span>
+                <span class="text-[13px] font-bold text-accent" id="overlay-group">: TM</span>
+            </div>
+            <div class="flex items-center">
+                <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider w-20">Member</span>
+                <span class="text-[13px] font-bold truncate" id="overlay-member-name">: -</span>
+            </div>
+            <div class="w-full h-px bg-[#2a2a2a] my-3"></div>
+            <div class="space-y-1">
+                <span class="text-[9px] font-bold text-accent/70 uppercase tracking-wider">Sisa Waktu</span>
+                <p class="text-2xl font-bold tracking-tight text-white whitespace-nowrap" id="overlay-time">00:00
+                </p>
+            </div>
+        </div>
+
+        <button id="logout-btn"
+            class="w-full bg-[#1a1a1a] hover:bg-red-650/10 border border-[#2a2a2a] hover:border-red-500/30 py-3 rounded-xl flex items-center justify-center gap-2 transition-all text-neutral-400 hover:text-red-400 mt-4">
+            <span class="text-[10px] font-bold uppercase tracking-wider">Akhiri Sesi</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
+                    clip-rule="evenodd" />
+            </svg>
+        </button>
+    </div>
+</div>
+
+<!-- 4. MODAL KONFIRMASI LOGOUT -->
+<div id="logout-confirm-modal"
+    class="hidden fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+    <div class="w-[280px] bg-card border border-[#2a2a2a] rounded-2xl p-6 shadow-2xl space-y-5 text-center">
+        <header class="flex flex-col items-center">
+            <div class="w-10 h-10 bg-red-500/10 rounded-full flex items-center justify-center mb-3 text-red-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+            </div>
+            <h2 class="text-lg font-bold">Akhiri Sesi?</h2>
+            <p class="text-[10px] text-neutral-500 mt-1 uppercase tracking-wider font-bold">Yakin ingin keluar?</p>
+        </header>
+
+        <div class="flex gap-2 pt-2">
+            <button id="logout-cancel-btn"
+                class="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider text-neutral-400 transition-all">Tidak</button>
+            <button id="logout-confirm-btn"
+                class="flex-1 bg-red-650/10 hover:bg-red-600 border border-red-500/20 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider text-red-400 hover:text-white transition-all">Ya</button>
+        </div>
+    </div>
+</div>
