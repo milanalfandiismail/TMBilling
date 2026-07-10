@@ -315,5 +315,11 @@ class SesiService:
         sesi = SesiRepository.get_by_id(sesi_id)
         return {
             "id": sesi.id, "tipe": sesi.tipe,
-            "grup": sesi.pc.grup.nama if sesi.pc and sesi.pc.grup else "reguler"
+            "grup": sesi.pc.grup.nama if sesi.pc and sesi.pc.grup else "reguler",
+            "pc_kode": sesi.pc.kode if sesi.pc else None,
+            "member_id": sesi.member_id,
+            "member_nama": sesi.member.nama_lengkap if sesi.member else None,
+            "username": sesi.member.username if sesi.member else None,
+            "guest_nama": sesi.nama_guest,
+            "sisa_waktu": sesi.sisa_menit() if hasattr(sesi, 'sisa_menit') else 0
         }
