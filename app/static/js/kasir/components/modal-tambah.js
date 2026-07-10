@@ -34,8 +34,8 @@ const TambahModal = {
                         <div class="flex items-center gap-3 min-w-0 flex-1">
                             <input type="checkbox" id="chk-paket-${p.id}" value="${p.id}" onchange="TambahModal.togglePaketSelection(${p.id})" class="w-4 h-4 rounded text-neutral-100 border-[#2a2a2a] focus:ring-neutral-500 bg-[#050505] focus:ring-2 cursor-pointer shrink-0">
                             <label for="chk-paket-${p.id}" class="cursor-pointer min-w-0 flex-1 select-none flex flex-col justify-center py-0.5">
-                                <span class="font-bold text-xs text-neutral-200 break-words whitespace-normal" title="${p.nama}">${p.nama}</span>
-                                <span class="font-mono text-[10px] text-neutral-400 flex items-center gap-1.5 mt-0.5">
+                                <span class="font-bold text-xs lg:text-base text-neutral-200 break-words whitespace-normal" title="${p.nama}">${p.nama}</span>
+                                <span class="font-mono text-[10px] lg:text-base text-neutral-400 flex items-center gap-1.5 mt-0.5">
                                     <span>${Utils.formatDurasiFriendly(durasi)}</span>
                                     <span class="text-neutral-600">&bull;</span>
                                     <span class="text-emerald-400 font-bold">${Utils.formatRupiah(p.harga)}</span>
@@ -44,20 +44,25 @@ const TambahModal = {
                         </div>
                         <!-- Qty input for this package -->
                         <div class="flex items-center bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg overflow-hidden h-8 opacity-45 pointer-events-none transition-all shrink-0" id="qty-container-${p.id}">
-                            <button onclick="TambahModal.adjustPaketQty(${p.id}, -1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs transition-colors flex items-center justify-center select-none">-</button>
-                            <input type="number" id="qty-paket-${p.id}" value="1" min="1" max="100" class="w-10 h-full text-center bg-transparent border-none text-xs font-mono font-bold focus:ring-0 focus:outline-none p-0 !border-0" style="background-color: transparent !important; border: 0 !important;">
-                            <button onclick="TambahModal.adjustPaketQty(${p.id}, 1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs transition-colors flex items-center justify-center select-none">+</button>
+                            <button onclick="TambahModal.adjustPaketQty(${p.id}, -1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs lg:text-base transition-colors flex items-center justify-center select-none">-</button>
+                            <input type="number" id="qty-paket-${p.id}" value="1" min="1" max="100" class="w-10 h-full text-center bg-transparent border-none text-xs lg:text-base font-mono font-bold focus:ring-0 focus:outline-none p-0 !border-0" style="background-color: transparent !important; border: 0 !important;">
+                            <button onclick="TambahModal.adjustPaketQty(${p.id}, 1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs lg:text-base transition-colors flex items-center justify-center select-none">+</button>
                         </div>
                     </div>
                 `;
             }).join('');
 
             const html = `
-                <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-4 md:p-6 max-w-4xl w-[calc(100%-2rem)] mx-auto md:w-full shadow-2xl">
+                <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-4 md:p-6 max-w-4xl w-[calc(100%-2rem)] mx-auto md:w-full max-h-[85vh] overflow-y-auto scrollbar-thin my-auto shadow-2xl">
                     <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-[#2a2a2a]">
-                        <div>
-                            <h3 class="text-xs font-bold text-neutral-200 uppercase tracking-wider">Tambah Waktu</h3>
-                            <p class="text-[9px] text-neutral-500 mt-1">Menambah durasi sesi aktif (Multiple Paket)</p>
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
+                                <svg class="w-4 h-4 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xs lg:text-base font-bold text-neutral-100 uppercase tracking-wider">Tambah Waktu</h3>
+                                <p class="text-[9px] lg:text-base text-neutral-500 mt-0.5">Menambah durasi sesi aktif (Multiple Paket)</p>
+                            </div>
                         </div>
                         <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
                     </div>
@@ -66,28 +71,28 @@ const TambahModal = {
                         <!-- Left Column: Sesi Info and Total Preview -->
                         <div class="md:col-span-1 space-y-4">
                             <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
-                                <div class="text-[9px] text-neutral-500 uppercase font-bold">Zona PC</div>
-                                <div class="font-bold text-xs text-neutral-200 mt-0.5 font-mono">${pcGrup ? pcGrup.toUpperCase() : 'STANDAR'}</div>
+                                <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold">Zona PC</div>
+                                <div class="font-bold text-xs lg:text-base text-neutral-200 mt-0.5 font-mono">${pcGrup ? pcGrup.toUpperCase() : 'STANDAR'}</div>
                             </div>
                             
                             <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
-                                <div class="text-[9px] text-neutral-500 uppercase font-bold">Total Tambahan</div>
+                                <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold">Total Tambahan</div>
                                 <div class="text-sm font-black text-neutral-200 mt-1" id="tambah-paket-total-preview">Pilih paket terlebih dahulu</div>
                             </div>
                         </div>
                         
                         <!-- Right Column: Package List (Spans 3 columns) -->
                         <div class="md:col-span-3 space-y-2">
-                            <label class="text-[9px] text-neutral-400 uppercase font-bold tracking-wider font-mono block">Pilih Paket & Tentukan Kuantitas</label>
+                            <label class="text-[9px] lg:text-base text-neutral-400 uppercase font-bold tracking-wider font-mono block">Pilih Paket & Tentukan Kuantitas</label>
                             <div class="space-y-2 max-h-[160px] md:max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
                                 ${options}
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#2a2a2a]">
-                        <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs font-bold rounded-lg transition-colors">Batal</button>
-                        <button onclick="TambahModal.submit()" class="px-5 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded-lg transition-colors font-bold">Proses Tambah</button>
+                    <div class="flex gap-3 justify-end mt-5 pt-4 border-t border-[#2a2a2a]">
+                        <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded-lg transition-colors">Batal</button>
+                        <button onclick="TambahModal.submit()" class="px-5 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Tambah Waktu</button>
                     </div>
                 </div>
             `;
@@ -164,7 +169,7 @@ const TambahModal = {
         });
         
         if (checkedCount > 0) {
-            previewEl.innerHTML = `<div class="text-sm font-black text-neutral-100 font-mono">${Utils.formatDurasiFriendly(totalMenit)}</div><div class="text-xs font-bold text-emerald-400 font-mono mt-0.5">${Utils.formatRupiah(totalHarga)}</div>`;
+            previewEl.innerHTML = `<div class="text-sm font-black text-neutral-100 font-mono">${Utils.formatDurasiFriendly(totalMenit)}</div><div class="text-xs lg:text-base font-bold text-emerald-400 font-mono mt-0.5">${Utils.formatRupiah(totalHarga)}</div>`;
         } else {
             previewEl.innerText = 'Pilih paket terlebih dahulu';
         }
@@ -172,22 +177,88 @@ const TambahModal = {
 
     async submit() {
         const selections = [];
+        let totalMenit = 0;
+        let totalHarga = 0;
+        
         document.querySelectorAll('input[type="checkbox"][id^="chk-paket-"]:checked').forEach(chk => {
             const paketId = parseInt(chk.value);
             const qtyInput = document.getElementById(`qty-paket-${paketId}`);
             const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
             selections.push({ paket_id: paketId, qty: qty });
+            
+            const paket = (this._currentPaketList || []).find(p => p.id === paketId);
+            if (paket) {
+                totalMenit += (paket.durasi || paket.durasi_menit || 0) * qty;
+                totalHarga += (paket.harga || 0) * qty;
+            }
         });
 
         if (selections.length === 0) return Toast.error('Pilih minimal satu paket terlebih dahulu');
 
         try {
-            await API.sesi.tambahWaktu(this.sesiId, { selections: selections });
-            Toast.success('Waktu berhasil ditambahkan');
-            Modal.closeModal();
-            if (typeof Dashboard !== 'undefined') Dashboard.load();
+            // Fetch session detail for confirmation
+            const sesiInfo = await API.sesi.detail(this.sesiId);
+            const sesi = sesiInfo.sesi || sesiInfo;
+            
+            let sisaSekarang = sesi.sisa_waktu || 0;
+            let totalSetelah = sisaSekarang + totalMenit;
+
+            let targetName = sesi.member_id ? `Member: ${sesi.member_nama || sesi.username || '-'}` : `Guest: ${sesi.guest_nama || 'Guest'}`;
+            let pcName = sesi.pc_kode ? `PC: ${sesi.pc_kode}` : '-';
+
+            const dataLines = [
+                { label: 'Target', value: `${pcName} (${targetName})` },
+                { separator: true },
+                { label: 'Paket Terpilih', value: '' }
+            ];
+
+            selections.forEach(sel => {
+                const paket = (this._currentPaketList || []).find(p => p.id === sel.paket_id);
+                if (paket) {
+                    dataLines.push({
+                        label: `- ${paket.nama} ${sel.qty > 1 ? 'x' + sel.qty : ''}`,
+                        value: Utils.formatRupiah((paket.harga || 0) * sel.qty)
+                    });
+                }
+            });
+
+            // Jika Member, baru tampilkan sisa waktu dan total setelah
+            if (sesi.member_id) {
+                dataLines.push(
+                    { separator: true },
+                    { label: 'Sisa Waktu Saat Ini', value: Utils.formatDurasiFriendly(sisaSekarang) },
+                    { label: 'Total Tambahan Waktu', value: Utils.formatDurasiFriendly(totalMenit) },
+                    { label: 'Total Setelah', value: Utils.formatDurasiFriendly(totalSetelah), highlight: true }
+                );
+            } else {
+                // Jika Guest, cukup tampilkan tambahan waktu saja
+                dataLines.push(
+                    { separator: true },
+                    { label: 'Total Tambahan Waktu', value: Utils.formatDurasiFriendly(totalMenit), highlight: true }
+                );
+            }
+
+            dataLines.push(
+                { separator: true },
+                { label: 'Total Harga', value: Utils.formatRupiah(totalHarga), highlight: true }
+            );
+
+            ModalConfirmTambah.open({
+                title: "Konfirmasi Tambah Waktu Sesi",
+                dataLines: dataLines,
+                onConfirm: async () => {
+                    try {
+                        await API.sesi.tambahWaktu(this.sesiId, { selections: selections });
+                        Toast.success('Waktu berhasil ditambahkan');
+                        Modal.closeModal();
+                        if (typeof Dashboard !== 'undefined') Dashboard.load();
+                    } catch (err) {
+                        Toast.error(err.message);
+                    }
+                }
+            });
         } catch (err) {
-            Toast.error(err.message);
+            Toast.error('Gagal memuat info sesi: ' + err.message);
         }
     }
 };

@@ -143,22 +143,76 @@ const Member = {
 
     async doAddWaktu(memberId) {
         const selections = [];
-        document.querySelectorAll('input[type="checkbox"][id^="chk-paket-"]:checked').forEach(chk => {
+        let totalMenit = 0;
+        let totalHarga = 0;
+        
+        document.querySelectorAll('input[type="checkbox"][id^="mem-chk-paket-"]:checked').forEach(chk => {
             const paketId = parseInt(chk.value);
-            const qtyInput = document.getElementById(`qty-paket-${paketId}`);
+            const qtyInput = document.getElementById(`mem-qty-paket-${paketId}`);
             const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
             selections.push({ paket_id: paketId, qty: qty });
+            
+            // MemberRefill has _currentPaketList
+            if (typeof MemberRefill !== 'undefined' && MemberRefill._currentPaketList) {
+                const paket = MemberRefill._currentPaketList.find(p => p.id === paketId);
+                if (paket) {
+                    totalMenit += (paket.durasi_menit || 0) * qty;
+                    totalHarga += (paket.harga || 0) * qty;
+                }
+            }
         });
 
         if (selections.length === 0) return Toast.error('Pilih minimal satu paket terlebih dahulu');
 
         try {
-            await API.member.tambahWaktu(memberId, { member_id: memberId, selections: selections });
-            Toast.success('Saldo ditambahkan');
-            Modal.closeModal();
-            this.load();
+            const memberInfo = await API.member.get(memberId);
+            const member = memberInfo.member || memberInfo;
+            
+            let sisaSekarang = member.waktu_saved || member.waktu_tersimpan || 0;
+            let totalSetelah = sisaSekarang + totalMenit;
+
+            const dataLines = [
+                { label: 'Member', value: member.username || member.nama || '-' },
+                { separator: true },
+                { label: 'Paket Terpilih', value: '' }
+            ];
+
+            selections.forEach(sel => {
+                let paketList = typeof MemberRefill !== 'undefined' ? MemberRefill._currentPaketList : (this._currentPaketList || []);
+                const paket = (paketList || []).find(p => p.id === sel.paket_id);
+                if (paket) {
+                    dataLines.push({
+                        label: `- ${paket.nama} ${sel.qty > 1 ? 'x' + sel.qty : ''}`,
+                        value: Utils.formatRupiah((paket.harga || 0) * sel.qty)
+                    });
+                }
+            });
+
+            dataLines.push(
+                { separator: true },
+                { label: 'Sisa Waktu Saat Ini', value: Utils.formatDurasiFriendly(sisaSekarang) },
+                { label: 'Total Tambahan', value: Utils.formatDurasiFriendly(totalMenit) },
+                { label: 'Total Setelah', value: Utils.formatDurasiFriendly(totalSetelah), highlight: true },
+                { separator: true },
+                { label: 'Total Harga', value: Utils.formatRupiah(totalHarga), highlight: true }
+            );
+
+            ModalConfirmTambah.open({
+                title: "Konfirmasi Isi Waktu Billing",
+                dataLines: dataLines,
+                onConfirm: async () => {
+                    try {
+                        await API.member.tambahWaktu(memberId, { member_id: memberId, selections: selections });
+                        Toast.success('Saldo ditambahkan');
+                        Modal.closeModal();
+                        this.load();
+                    } catch (err) {
+                        Toast.error(err.message);
+                    }
+                }
+            });
         } catch (err) {
-            Toast.error(err.message);
+            Toast.error('Gagal mengambil info member: ' + err.message);
         }
     },
 

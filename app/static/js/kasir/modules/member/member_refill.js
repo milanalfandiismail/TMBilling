@@ -21,8 +21,8 @@ const MemberRefill = {
             const options = paketList.map((p, idx) => `
                 <div class="flex items-center justify-between p-3 bg-[#141414] border border-[#2a2a2a] rounded-xl transition-all gap-4 select-item relative hover:border-neutral-500" data-paket-id="${p.id}">
                     <div class="flex items-center gap-3 min-w-0 flex-1">
-                        <input type="checkbox" id="chk-paket-${p.id}" value="${p.id}" onchange="Member.togglePaketSelection(${p.id})" class="w-4 h-4 rounded text-neutral-100 border-[#2a2a2a] focus:ring-neutral-500 bg-[#050505] focus:ring-2 cursor-pointer shrink-0">
-                        <label for="chk-paket-${p.id}" class="cursor-pointer min-w-0 flex-1 select-none flex flex-col justify-center py-0.5">
+                        <input type="checkbox" id="mem-chk-paket-${p.id}" value="${p.id}" onchange="MemberRefill.togglePaketSelection(${p.id})" class="w-4 h-4 rounded text-neutral-100 border-[#2a2a2a] focus:ring-neutral-500 bg-[#050505] focus:ring-2 cursor-pointer shrink-0">
+                        <label for="mem-chk-paket-${p.id}" class="cursor-pointer min-w-0 flex-1 select-none flex flex-col justify-center py-0.5">
                             <span class="font-bold text-xs lg:text-base text-neutral-200 break-words whitespace-normal" title="${p.nama}">${p.nama}</span>
                             <span class="font-mono text-[10px] lg:text-base text-neutral-400 flex items-center gap-1.5 mt-0.5">
                                 <span>${Utils.formatDurasiFriendly(p.durasi_menit)}</span>
@@ -32,10 +32,10 @@ const MemberRefill = {
                         </label>
                     </div>
                     <!-- Qty input for this package -->
-                    <div class="flex items-center bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg overflow-hidden h-8 opacity-45 pointer-events-none transition-all shrink-0" id="qty-container-${p.id}">
-                        <button onclick="Member.adjustPaketQty(${p.id}, -1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs lg:text-base transition-colors flex items-center justify-center select-none">-</button>
-                        <input type="number" id="qty-paket-${p.id}" value="1" min="1" max="100" class="w-10 h-full text-center bg-transparent border-none text-xs lg:text-base font-mono font-bold focus:ring-0 focus:outline-none p-0 !border-0" style="background-color: transparent !important; border: 0 !important;">
-                        <button onclick="Member.adjustPaketQty(${p.id}, 1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs lg:text-base transition-colors flex items-center justify-center select-none">+</button>
+                    <div class="flex items-center bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg overflow-hidden h-8 opacity-45 pointer-events-none transition-all shrink-0" id="mem-qty-container-${p.id}">
+                        <button onclick="MemberRefill.adjustPaketQty(${p.id}, -1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs lg:text-base transition-colors flex items-center justify-center select-none">-</button>
+                        <input type="number" id="mem-qty-paket-${p.id}" value="1" min="1" max="100" class="w-10 h-full text-center bg-transparent border-none text-xs lg:text-base font-mono font-bold focus:ring-0 focus:outline-none p-0 !border-0" style="background-color: transparent !important; border: 0 !important;">
+                        <button onclick="MemberRefill.adjustPaketQty(${p.id}, 1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs lg:text-base transition-colors flex items-center justify-center select-none">+</button>
                     </div>
                 </div>
             `).join('');
@@ -91,47 +91,49 @@ const MemberRefill = {
             Modal.show(html);
             
             paketList.forEach(p => {
-                const qtyInput = document.getElementById(`qty-paket-${p.id}`);
+                const qtyInput = document.getElementById(`mem-qty-paket-${p.id}`);
                 if (qtyInput) {
                     qtyInput.addEventListener('input', () => {
                         let val = parseInt(qtyInput.value);
                         if (isNaN(val) || val < 1) qtyInput.value = 1;
-                        Member.updateTotalPreview();
+                        MemberRefill.updateTotalPreview();
                     });
                 }
             });
 
-            Member.updateTotalPreview();
+            MemberRefill.updateTotalPreview();
         } catch (err) {
             Toast.error(err.message);
         }
     },
 
     togglePaketSelection(paketId) {
-        const chk = document.getElementById(`chk-paket-${paketId}`);
-        const qtyContainer = document.getElementById(`qty-container-${paketId}`);
-        const card = document.querySelector(`.select-item[data-paket-id="${paketId}"]`);
+        const chk = document.getElementById(`mem-chk-paket-${paketId}`);
+        const container = document.getElementById(`mem-qty-container-${paketId}`);
+        if (!chk || !container) return;
         
-        if (chk && qtyContainer && card) {
-            if (chk.checked) {
-                qtyContainer.classList.remove('opacity-45', 'pointer-events-none');
-                card.classList.remove('border-[#2a2a2a]', 'bg-[#141414]');
-                card.classList.add('border-neutral-400', 'bg-[#1e1e1e]');
-            } else {
-                qtyContainer.classList.add('opacity-45', 'pointer-events-none');
-                card.classList.remove('border-neutral-400', 'bg-[#1e1e1e]');
-                card.classList.add('border-[#2a2a2a]', 'bg-[#141414]');
-            }
+        if (chk.checked) {
+            container.classList.remove('opacity-45', 'pointer-events-none');
+            container.classList.add('opacity-100');
+        } else {
+            container.classList.add('opacity-45', 'pointer-events-none');
+            container.classList.remove('opacity-100');
+            const qtyInput = document.getElementById(`mem-qty-paket-${paketId}`);
+            if (qtyInput) qtyInput.value = 1;
         }
+        
         this.updateTotalPreview();
     },
 
     adjustPaketQty(paketId, delta) {
-        const qtyInput = document.getElementById(`qty-paket-${paketId}`);
+        const qtyInput = document.getElementById(`mem-qty-paket-${paketId}`);
         if (!qtyInput) return;
-        let val = parseInt(qtyInput.value) || 1;
-        val = Math.max(1, val + delta);
+        
+        let val = parseInt(qtyInput.value) + delta;
+        if (val < 1) val = 1;
+        if (val > 100) val = 100;
         qtyInput.value = val;
+        
         this.updateTotalPreview();
     },
 
@@ -143,9 +145,9 @@ const MemberRefill = {
         let totalHarga = 0;
         let checkedCount = 0;
         
-        document.querySelectorAll('input[type="checkbox"][id^="chk-paket-"]:checked').forEach(chk => {
+        document.querySelectorAll('input[type="checkbox"][id^="mem-chk-paket-"]:checked').forEach(chk => {
             const paketId = parseInt(chk.value);
-            const qtyInput = document.getElementById(`qty-paket-${paketId}`);
+            const qtyInput = document.getElementById(`mem-qty-paket-${paketId}`);
             const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
             const paket = (this._currentPaketList || []).find(p => p.id === paketId);
             
