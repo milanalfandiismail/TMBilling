@@ -8,6 +8,7 @@ const PC = {
     async load() {
         const area = document.getElementById('pc-table');
         if (!area) return;
+        area.innerHTML = '<div class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
         try {
             const filterSelect = document.getElementById('pc-grup-filter-select');
@@ -43,6 +44,10 @@ const PC = {
         this.currentPage = 1;
         this.load();
     },
+
+    debouncedSearch: Utils.debounce(function() {
+        PC.doSearch();
+    }, 500),
 
     clearSearch() {
         document.getElementById('pc-search-input').value = '';

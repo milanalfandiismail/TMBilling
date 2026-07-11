@@ -42,6 +42,10 @@ const Paket = {
         this.load();
     },
 
+    debouncedSearch: Utils.debounce(function() {
+        Paket.doSearch();
+    }, 500),
+
     clearSearch() {
         document.getElementById('paket-search-input').value = '';
         document.getElementById('paket-grup-filter-select').value = '';
