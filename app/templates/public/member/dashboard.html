@@ -70,7 +70,7 @@
                     <div class="text-[9px] lg:text-xs text-neutral-400 border-t border-[#1f1f1f] pt-3 z-10">
                         {% if member.kadaluarsa_pada %}
                         Kadaluarsa pada: <span class="font-bold font-mono text-neutral-300">{{
-                            member.kadaluarsa_pada.strftime("%d-%m-%Y") }}</span>
+                            format_display(member.kadaluarsa_pada, fmt="%d-%m-%Y") }}</span>
                         {% else %}
                         Masa aktif: <span class="font-bold text-neutral-300">Tanpa Batas</span>
                         {% endif %}
@@ -124,7 +124,7 @@
                                 {% for s in sesi_history %}
                                 <tr class="border-b border-[#1f1f1f] text-xs lg:text-sm">
                                     <td class="py-3 pr-4 text-neutral-400 font-mono">
-                                        {{ s.mulai_pada.strftime("%d-%m-%Y %H:%M") }}
+                                        {{ format_display(s.mulai_pada, fmt="%d-%m-%Y %H:%M") }}
                                     </td>
                                     <td class="py-3 px-4 text-center font-bold text-neutral-200 font-mono">
                                         {{ s.pc.kode if s.pc else '-' }}
@@ -182,7 +182,7 @@
                                     {% for t in transaksi_history %}
                                     <tr class="border-b border-[#1f1f1f] text-xs lg:text-sm">
                                         <td class="py-3 pr-4 text-neutral-400 font-mono">
-                                            {{ t.dibuat_pada.strftime("%d-%m-%Y %H:%M") }}
+                                            {{ format_display(t.dibuat_pada, fmt="%d-%m-%Y %H:%M") }}
                                         </td>
                                         <td class="py-3 px-4">
                                             <p class="font-bold text-neutral-200">{{ t._get_jenis_display() }}</p>
@@ -342,7 +342,7 @@
                         <ul class="text-xs text-neutral-400 space-y-2">
                             <li class="flex justify-between">
                                 <span>Bergabung:</span>
-                                <span class="font-mono text-neutral-200">{{ member.dibuat_pada.strftime("%d-%m-%Y") if
+                                <span class="font-mono text-neutral-200">{{ format_display(member.dibuat_pada, fmt="%d-%m-%Y") if
                                     member.dibuat_pada else '-' }}</span>
                             </li>
                             <li class="flex justify-between">
