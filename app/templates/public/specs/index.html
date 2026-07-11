@@ -100,7 +100,7 @@
 
                         <!-- Card Footer (Status Online/Offline) -->
                         <div class="border-t border-[#1f1f1f] pt-4 flex items-center justify-between">
-                            <span class="text-[10px] text-neutral-500 font-mono">Last Sync: {{ h.last_update.strftime("%H:%M:%S") if h and h.last_update else '-' }}</span>
+                            <span class="text-[10px] text-neutral-500 font-mono">Last Sync: {{ format_display(h.last_update, fmt="%H:%M:%S") if h and h.last_update else '-' }}</span>
                             {% if pc.aktif %}
                             <span class="px-2 py-0.5 bg-emerald-950/60 border border-emerald-800/30 text-emerald-400 rounded-md text-[10px] font-mono font-bold flex items-center gap-1 shadow-md shadow-emerald-500/5">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ONLINE

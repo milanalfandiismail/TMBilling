@@ -197,8 +197,9 @@ def create_app():
         except Exception:
             plugin_menus = []
             
+        from app.utils.timezone_utils import format_display
         version = current_app.config.get("VERSION", "v1.0")
-        return dict(warnet_title=title, plugin_menus=plugin_menus, version=version)
+        return dict(warnet_title=title, plugin_menus=plugin_menus, version=version, format_display=format_display)
 
     with app.app_context():
         db.create_all()

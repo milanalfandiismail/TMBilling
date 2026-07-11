@@ -10,6 +10,9 @@ const Member = {
     _currentPaketList: [],
 
     async load() {
+        const area = document.getElementById('member-table');
+        if (area) area.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div></div>';
+
         try {
             const [memberData, grupData] = await Promise.all([
                 API.member.list({
@@ -52,6 +55,10 @@ const Member = {
         this.currentPage = 1;
         this.load();
     },
+
+    debouncedSearch: Utils.debounce(function() {
+        Member.doSearch();
+    }, 500),
 
     clearSearch() {
         const searchInput = document.getElementById('member-search-input');

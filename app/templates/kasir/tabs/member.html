@@ -21,6 +21,7 @@
             <div class="flex flex-wrap items-center gap-2">
                 <input type="text" id="member-search-input" placeholder="Cari username..."
                     class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 w-40"
+                    oninput="Member.debouncedSearch()"
                     onkeypress="if(event.key === 'Enter') Member.doSearch()">
                 <select id="member-grup-filter-select"
                     class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
