@@ -79,14 +79,41 @@ const Settings = {
                 const bUnit = document.getElementById('scheduler-backup-unit');
                 const cVal = document.getElementById('scheduler-cleanup-value');
                 const cUnit = document.getElementById('scheduler-cleanup-unit');
+                const sEnabled = document.getElementById('scheduler-screenshot-enabled');
+                const sVal = document.getElementById('scheduler-screenshot-value');
+                const sUnit = document.getElementById('scheduler-screenshot-unit');
+                
                 if (bVal && res.settings.auto_backup_value !== undefined) bVal.value = res.settings.auto_backup_value;
                 if (bUnit && res.settings.auto_backup_unit !== undefined) bUnit.value = res.settings.auto_backup_unit;
                 if (cVal && res.settings.auto_cleanup_value !== undefined) cVal.value = res.settings.auto_cleanup_value;
                 if (cUnit && res.settings.auto_cleanup_unit !== undefined) cUnit.value = res.settings.auto_cleanup_unit;
+                
+                if (sEnabled && res.settings.screenshot_auto_enabled !== undefined) {
+                    sEnabled.checked = (res.settings.screenshot_auto_enabled === "1" || res.settings.screenshot_auto_enabled === "true");
+                }
+                if (sVal && res.settings.screenshot_auto_value !== undefined) sVal.value = res.settings.screenshot_auto_value;
+                if (sUnit && res.settings.screenshot_auto_unit !== undefined) sUnit.value = res.settings.screenshot_auto_unit;
+                
+                // Set initial disabled state
+                const sCfg = document.getElementById('scheduler-screenshot-config');
+                if(sEnabled && sCfg) {
+                    const toggleDisabled = () => {
+                        const checked = sEnabled.checked;
+                        sVal.disabled = !checked;
+                        sUnit.disabled = !checked;
+                        if(checked) {
+                            sCfg.classList.remove('opacity-50');
+                        } else {
+                            sCfg.classList.add('opacity-50');
+                        }
+                    };
+                    toggleDisabled();
+                    sEnabled.addEventListener('change', toggleDisabled);
+                }
                 this._updateSchedulerPreview();
 
                 // Bind live preview update
-                ['scheduler-backup-value','scheduler-backup-unit','scheduler-cleanup-value','scheduler-cleanup-unit'].forEach(id => {
+                ['scheduler-backup-value','scheduler-backup-unit','scheduler-cleanup-value','scheduler-cleanup-unit', 'scheduler-screenshot-enabled', 'scheduler-screenshot-value', 'scheduler-screenshot-unit'].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.addEventListener('change', () => this._updateSchedulerPreview());
                 });
@@ -352,8 +379,25 @@ const Settings = {
         const bUnit = document.getElementById('scheduler-backup-unit')?.value || 'menit';
         const cVal = document.getElementById('scheduler-cleanup-value')?.value || '30';
         const cUnit = document.getElementById('scheduler-cleanup-unit')?.value || 'hari';
+        const sEnabled = document.getElementById('scheduler-screenshot-enabled')?.checked || false;
+        const sVal = document.getElementById('scheduler-screenshot-value')?.value || '60';
+        const sUnit = document.getElementById('scheduler-screenshot-unit')?.value || 'detik';
+        
         document.getElementById('scheduler-backup-preview').innerHTML = `Backup otomatis setiap <strong class="text-neutral-300">${bVal} ${bUnit}</strong>`;
         document.getElementById('scheduler-cleanup-preview').innerHTML = `Hapus log lebih dari <strong class="text-neutral-300">${cVal} ${cUnit}</strong>`;
+        
+        const previewEl = document.getElementById('scheduler-screenshot-preview');
+        if (previewEl) {
+            if (sEnabled) {
+                previewEl.innerHTML = `Screenshot otomatis setiap <strong class="text-neutral-300">${sVal} ${sUnit}</strong>`;
+                previewEl.classList.remove('text-neutral-500');
+                previewEl.classList.add('text-green-500');
+            } else {
+                previewEl.innerHTML = `Screenshot otomatis setiap <strong class="text-neutral-300">${sVal} ${sUnit}</strong> (Nonaktif)`;
+                previewEl.classList.remove('text-green-500');
+                previewEl.classList.add('text-neutral-500');
+            }
+        }
     },
 
     async saveSchedulerConfig() {
@@ -361,8 +405,11 @@ const Settings = {
         const backupUnit = document.getElementById('scheduler-backup-unit')?.value;
         const cleanupValue = document.getElementById('scheduler-cleanup-value')?.value;
         const cleanupUnit = document.getElementById('scheduler-cleanup-unit')?.value;
+        const screenshotEnabled = document.getElementById('scheduler-screenshot-enabled')?.checked ? '1' : '0';
+        const screenshotValue = document.getElementById('scheduler-screenshot-value')?.value;
+        const screenshotUnit = document.getElementById('scheduler-screenshot-unit')?.value;
 
-        if (!backupValue || !cleanupValue) {
+        if (!backupValue || !cleanupValue || !screenshotValue) {
             Toast.error('Semua field wajib diisi');
             return;
         }
@@ -375,7 +422,10 @@ const Settings = {
                     backup_value: parseInt(backupValue),
                     backup_unit: backupUnit,
                     cleanup_value: parseInt(cleanupValue),
-                    cleanup_unit: cleanupUnit
+                    cleanup_unit: cleanupUnit,
+                    screenshot_enabled: screenshotEnabled,
+                    screenshot_value: parseInt(screenshotValue),
+                    screenshot_unit: screenshotUnit
                 })
             });
 

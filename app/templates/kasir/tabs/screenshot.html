@@ -1,0 +1,39 @@
+<!-- ===== TAB: SCREENSHOT MONITOR ===== -->
+<div id="tab-screenshot" class="tab-content hidden w-full h-full">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 min-h-[calc(100vh-120px)]">
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+            <div>
+                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Screenshot Monitor</h3>
+                <p class="text-[10px] lg:text-sm text-neutral-500 mt-1">Pantauan visual real-time seluruh PC yang sedang aktif.</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="Screenshot.triggerAll()"
+                    class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Ambil Semua
+                </button>
+                <button onclick="Screenshot.load()"
+                    class="px-4 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    ↻ Refresh
+                </button>
+            </div>
+        </div>
+        
+        <div id="screenshot-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
+            <div class="col-span-full flex justify-center py-10">
+                <div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox Modal untuk melihat gambar full screen -->
+<div id="screenshot-lightbox" class="fixed inset-0 z-[9999] bg-black/95 hidden flex flex-col items-center justify-center p-4">
+    <div class="absolute top-4 right-4 flex gap-4">
+        <div id="lightbox-title" class="text-white font-mono font-bold text-lg bg-black/50 px-3 py-1 rounded">PC-01</div>
+        <button onclick="document.getElementById('screenshot-lightbox').classList.add('hidden')" class="text-white hover:text-red-500 bg-black/50 px-3 py-1 rounded">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    </div>
+    <img id="lightbox-img" src="" class="max-w-full max-h-[90vh] object-contain rounded border border-neutral-800" alt="Full Screenshot">
+</div>

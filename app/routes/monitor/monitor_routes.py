@@ -210,3 +210,40 @@ def get_screenshot_status(pc_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+
+@monitor_api_bp.route("/screenshot/all", methods=["GET"])
+@login_required
+def get_all_screenshot_status():
+    """Mengecek status dan timestamp screenshot terakhir untuk semua PC."""
+    try:
+        import os
+        from flask import current_app
+        from app.repositories import PCRepository
+        from datetime import datetime
+
+        pcs = PCRepository.get_all()
+        result = []
+
+        for pc in pcs:
+            screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{pc.kode}.png")
+            if os.path.exists(screenshot_path):
+                mtime = os.path.getmtime(screenshot_path)
+                screenshot_time = datetime.fromtimestamp(mtime).strftime("%d/%m/%Y %H:%M:%S")
+                result.append({
+                    "pc_id": pc.id,
+                    "pc_kode": pc.kode,
+                    "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
+                    "screenshot_time": screenshot_time
+                })
+            else:
+                result.append({
+                    "pc_id": pc.id,
+                    "pc_kode": pc.kode,
+                    "screenshot_url": None,
+                    "screenshot_time": None
+                })
+                
+        return jsonify({"success": True, "data": result}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+

@@ -1,0 +1,140 @@
+const Screenshot = {
+    pollingInterval: null,
+
+    init() {
+        if(App.currentTab === 'screenshot') {
+            this.load();
+            this.startPolling();
+        } else {
+            this.stopPolling();
+        }
+    },
+
+    startPolling() {
+        if(this.pollingInterval) clearInterval(this.pollingInterval);
+        this.pollingInterval = setInterval(() => {
+            if(App.currentTab === 'screenshot') {
+                this.load();
+            } else {
+                this.stopPolling();
+            }
+        }, 30000); // Poll setiap 30 detik
+    },
+
+    stopPolling() {
+        if(this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+        }
+    },
+
+    async load() {
+        try {
+            const response = await fetch('/api/v1/kasir/monitor/screenshot/all');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.renderGrid(data.data);
+            } else {
+                Toast.show("Gagal memuat screenshot", "error");
+            }
+        } catch (error) {
+            console.error("Error loading screenshots:", error);
+            Toast.show("Terjadi kesalahan jaringan", "error");
+        }
+    },
+
+    async triggerAll() {
+        try {
+            // Kita bisa iterasi dari data yang ada di grid, atau panggil API spesifik trigger all
+            // Untuk simple, kita panggil alert untuk saat ini
+            if(confirm("Apakah Anda yakin ingin memicu screenshot di semua PC aktif?")) {
+                const pcElements = document.querySelectorAll('.screenshot-card');
+                let count = 0;
+                for (const el of pcElements) {
+                    const pcId = el.dataset.pcid;
+                    if(pcId) {
+                        await fetch(`/api/v1/kasir/monitor/screenshot/trigger/${pcId}`, {
+                            method: 'POST'
+                        });
+                        count++;
+                    }
+                }
+                Toast.show(`Perintah screenshot dikirim ke ${count} PC`, "success");
+                setTimeout(() => this.load(), 5000); // Reload setelah 5 detik
+            }
+        } catch (error) {
+            console.error("Error trigger all:", error);
+            Toast.show("Terjadi kesalahan saat memicu screenshot", "error");
+        }
+    },
+
+    async triggerSingle(pcId) {
+        try {
+            const response = await fetch(`/api/v1/kasir/monitor/screenshot/trigger/${pcId}`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+            if(data.success) {
+                Toast.show(`Perintah screenshot dikirim`, "success");
+                setTimeout(() => this.load(), 5000);
+            } else {
+                Toast.show(data.error || "Gagal mengirim perintah", "error");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            Toast.show("Kesalahan jaringan", "error");
+        }
+    },
+
+    openLightbox(url, pcKode) {
+        if(!url) return;
+        const lightbox = document.getElementById('screenshot-lightbox');
+        const img = document.getElementById('lightbox-img');
+        const title = document.getElementById('lightbox-title');
+        
+        img.src = `${url}?t=${new Date().getTime()}`; // Bypass cache
+        title.textContent = pcKode;
+        lightbox.classList.remove('hidden');
+    },
+
+    renderGrid(data) {
+        const container = document.getElementById('screenshot-grid');
+        if (!data || data.length === 0) {
+            container.innerHTML = `<div class="col-span-full text-center py-10 text-neutral-500">Tidak ada PC aktif</div>`;
+            return;
+        }
+
+        container.innerHTML = data.map(pc => {
+            const hasImage = !!pc.screenshot_url;
+            const imageUrl = hasImage ? `${pc.screenshot_url}?t=${new Date().getTime()}` : '';
+            
+            return `
+                <div class="screenshot-card bg-[#121212] border border-[#1c1c1c] rounded overflow-hidden flex flex-col" data-pcid="${pc.pc_id}">
+                    <div class="p-3 border-b border-[#1c1c1c] flex justify-between items-center bg-[#171717]">
+                        <div class="font-bold text-neutral-200 text-sm">${pc.pc_kode}</div>
+                        <button onclick="Screenshot.triggerSingle(${pc.pc_id})" class="text-neutral-400 hover:text-white p-1 rounded hover:bg-[#222]" title="Ambil Ulang">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+                        </button>
+                    </div>
+                    <div class="relative aspect-video bg-black flex items-center justify-center group cursor-pointer" onclick="Screenshot.openLightbox('${hasImage ? pc.screenshot_url : ''}', '${pc.pc_kode}')">
+                        ${hasImage 
+                            ? `<img src="${imageUrl}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" alt="Screenshot ${pc.pc_kode}">
+                               <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+                                   <svg class="w-8 h-8 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+                               </div>` 
+                            : `<div class="text-neutral-600 flex flex-col items-center gap-2">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                <span class="text-xs">Belum ada screenshot</span>
+                               </div>`
+                        }
+                    </div>
+                    <div class="p-2 text-[10px] text-neutral-500 flex justify-between bg-[#0c0c0c]">
+                        <span>Update:</span>
+                        <span>${pc.screenshot_time || 'N/A'}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+};
