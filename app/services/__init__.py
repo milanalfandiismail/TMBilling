@@ -50,6 +50,7 @@ from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
 from app.services.owner.analytics_service import OwnerAnalyticsService
 from app.services.plugins.plugin_manager import PluginManager
 from app.services.plugins.base_plugin import BasePlugin
+from app.services.game.game_service import GameService
 
 __all__ = [
     "ShiftService",
@@ -73,5 +74,6 @@ __all__ = [
     "IpWhitelistService",
     "SettingsService",
     "TransaksiService",
-    "UserService"
+    "UserService",
+    "GameService"
 ]

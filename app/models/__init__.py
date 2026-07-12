@@ -34,10 +34,11 @@ from app.models.hardware.hardware import HardwareMonitor, PCProcess
 from app.models.menu.menu import MenuItem, TransaksiMenu
 from app.models.tournament.tournament import Turnamen, TurnamenTahap, TurnamenTim, TurnamenMatch
 from app.models.shift.shift_record import ShiftRecord
+from app.models.game.game import Game
 
 __all__ = [
     'db', 'now_local', 'Grup', 'Paket', 'Member', 'PC', 'Sesi', 'Transaksi', 
     'User', 'Settings', 'MikroTikConfig', 'HardwareMonitor', 'PCProcess', 'MenuItem', 'TransaksiMenu',
     'Turnamen', 'TurnamenTahap', 'TurnamenTim', 'TurnamenMatch',
-    'ShiftRecord'
+    'ShiftRecord', 'Game'
 ]

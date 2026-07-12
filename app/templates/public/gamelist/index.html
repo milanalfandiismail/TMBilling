@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    {% set page_title = "Daftar Game Terpasang | " ~ warnet_title %}
+    {% include 'public/components/_head.html' %}
+    <style>
+        .game-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .game-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15) !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 30px 0px rgba(255, 255, 255, 0.02);
+        }
+    </style>
+</head>
+
+<body class="bg-[#050505] text-neutral-200 min-h-screen flex flex-col font-space-grotesk antialiased">
+
+    <!-- Navbar -->
+    {% include 'public/components/_navbar_public.html' %}
+
+    <!-- Main Content -->
+    <main class="flex-1 w-full max-w-7xl mx-auto px-6 md:px-10 py-8 space-y-8">
+
+        <!-- Header Section -->
+        <section class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 relative">
+            <div class="absolute -inset-4 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 blur-xl opacity-20 pointer-events-none rounded-full"></div>
+            <div class="space-y-4 max-w-2xl relative z-10">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-800 bg-[#0c0c0c]/80 backdrop-blur-md text-xs font-mono text-neutral-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Warnet Game Directory
+                </div>
+                <h2 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-500 tracking-tight leading-tight">
+                    Daftar Game Terpasang
+                </h2>
+                <p class="text-neutral-400 text-xs md:text-sm leading-relaxed">
+                    Cari dan temukan game favorit Anda yang siap dimainkan langsung dari PC billing. Daftar game dan status update diperbarui secara real-time.
+                </p>
+            </div>
+
+            <!-- Search and Category Filters -->
+            <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto shrink-0 z-10">
+                <!-- Search -->
+                <div class="relative w-full sm:w-64">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <svg class="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </span>
+                    <input type="text" id="public-game-search" oninput="handleSearch(this.value)"
+                        placeholder="Cari game favorit..." 
+                        class="w-full pl-9 pr-4 py-2.5 bg-[#0a0a0a] border border-neutral-800 focus:border-neutral-500 focus:outline-none rounded-xl text-xs text-neutral-200 font-medium placeholder-neutral-600 transition-all">
+                </div>
+
+                <!-- Categories Dropdown/Filter -->
+                <div class="inline-flex rounded-xl bg-[#0c0c0c] p-1 border border-neutral-800 text-xs shrink-0">
+                    <button onclick="filterCategory('all')" id="cat-btn-all"
+                        class="px-3 py-1.5 rounded-lg font-bold transition-all bg-neutral-800 text-neutral-100 cat-filter-btn uppercase tracking-wider">Semua</button>
+                    <button onclick="filterCategory('FPS')" id="cat-btn-FPS" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 cat-filter-btn uppercase tracking-wider">FPS</button>
+                    <button onclick="filterCategory('MOBA')" id="cat-btn-MOBA" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 cat-filter-btn uppercase tracking-wider">MOBA</button>
+                    <button onclick="filterCategory('RPG')" id="cat-btn-RPG" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 cat-filter-btn uppercase tracking-wider">RPG</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dynamic Game Grid -->
+        <section id="game-grid-container" class="relative min-h-[300px]">
+            <!-- Loading State -->
+            <div id="game-loading-state" class="flex flex-col items-center justify-center py-20">
+                <div class="w-8 h-8 border-2 border-neutral-800 border-t-neutral-100 rounded-full animate-spin"></div>
+                <p class="text-xs text-neutral-500 mt-3 font-mono">Memuat game list...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="game-empty-state" class="hidden flex flex-col items-center justify-center py-20 text-neutral-500">
+                <p class="font-bold text-sm">Game Tidak Ditemukan</p>
+                <p class="text-xs text-neutral-600 mt-1">Coba kata kunci pencarian atau kategori lain.</p>
+            </div>
+
+            <!-- Grid -->
+            <div id="game-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 hidden">
+                <!-- Rendered by Javascript -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    {% set footer_label = "E-Sports & Gaming Arena" %}
+    {% include 'public/components/_footer.html' %}
+
+    <script>
+        let allGames = [];
+        let currentCategory = 'all';
+        let searchQuery = '';
+
+        async function fetchGames() {
+            try {
+                const res = await fetch('/api/v1/public/game/all');
+                const result = await res.json();
+                if (result && result.success) {
+                    allGames = result.data || [];
+                    renderGames();
+                } else {
+                    showError();
+                }
+            } catch (err) {
+                showError();
+            }
+        }
+
+        function renderGames() {
+            const grid = document.getElementById('game-grid');
+            const loading = document.getElementById('game-loading-state');
+            const empty = document.getElementById('game-empty-state');
+            
+            loading.classList.add('hidden');
+            
+            const filtered = allGames.filter(g => {
+                const matchesCat = currentCategory === 'all' || g.kategori === currentCategory;
+                const matchesSearch = !searchQuery || g.nama.toLowerCase().includes(searchQuery.toLowerCase()) || (g.deskripsi && g.deskripsi.toLowerCase().includes(searchQuery.toLowerCase()));
+                return matchesCat && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.classList.add('hidden');
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            grid.classList.remove('hidden');
+
+            grid.innerHTML = filtered.map(g => {
+                let statusBadge = '';
+                if (g.status === 'Ready') {
+                    statusBadge = `<span class="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/30 text-emerald-400 text-[10px] font-bold font-mono tracking-wider">Ready to Play</span>`;
+                } else if (g.status === 'Updating') {
+                    statusBadge = `<span class="px-2 py-0.5 rounded bg-amber-950/60 border border-amber-800/30 text-amber-400 text-[10px] font-bold font-mono tracking-wider animate-pulse">Updating</span>`;
+                } else if (g.status === 'Maintenance') {
+                    statusBadge = `<span class="px-2 py-0.5 rounded bg-red-950/60 border border-red-800/30 text-red-400 text-[10px] font-bold font-mono tracking-wider">Maintenance</span>`;
+                } else if (g.status === 'Coming Soon') {
+                    statusBadge = `<span class="px-2 py-0.5 rounded bg-purple-950/60 border border-purple-800/30 text-purple-400 text-[10px] font-bold font-mono tracking-wider">Coming Soon</span>`;
+                }
+
+                const iconUrl = g.icon_url || 'https://placehold.co/120x120/0c0c0c/888888?text=Game';
+                const devText = g.developer || 'Unknown';
+                const sizeText = g.file_size || 'N/A';
+
+                return `
+                    <div class="bg-[#0a0a0a] border border-neutral-900 rounded-2xl p-5 flex flex-col justify-between space-y-4 game-card overflow-hidden relative">
+                        <div class="space-y-4">
+                            <!-- Card Header -->
+                            <div class="flex items-start gap-4">
+                                <img src="${iconUrl}" class="w-14 h-14 rounded-xl object-cover border border-neutral-900 shadow-md shrink-0" onerror="this.src='https://placehold.co/120x120/0c0c0c/888888?text=Game'">
+                                <div class="min-w-0">
+                                    <h4 class="font-extrabold text-neutral-100 text-sm tracking-wide truncate" title="${g.nama}">${g.nama}</h4>
+                                    <p class="text-[10px] text-neutral-500 font-mono mt-0.5 truncate">${devText}</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Badges -->
+                            <div class="flex items-center gap-1.5">
+                                ${statusBadge}
+                                <span class="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-400 text-[10px] font-bold font-mono">${g.kategori}</span>
+                            </div>
+
+                            <!-- Description -->
+                            <p class="text-neutral-400 text-xs leading-relaxed line-clamp-3 font-sans mt-2">${g.deskripsi || 'Tidak ada deskripsi game.'}</p>
+                        </div>
+
+                        <!-- Card Footer -->
+                        <div class="border-t border-neutral-900 pt-3 flex items-center justify-between text-[10px] text-neutral-500 font-mono">
+                            <span>Kapasitas: <strong class="text-neutral-300">${sizeText}</strong></span>
+                            <span>ID: ${g.id}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterCategory(category) {
+            currentCategory = category;
+            document.querySelectorAll('.cat-filter-btn').forEach(btn => {
+                const cat = btn.id.replace('cat-btn-', '');
+                if (cat === category) {
+                    btn.className = "px-3 py-1.5 rounded-lg font-bold transition-all bg-neutral-800 text-neutral-100 cat-filter-btn uppercase tracking-wider";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 cat-filter-btn uppercase tracking-wider";
+                }
+            });
+            renderGames();
+        }
+
+        function handleSearch(query) {
+            searchQuery = query;
+            renderGames();
+        }
+
+        function showError() {
+            const loading = document.getElementById('game-loading-state');
+            loading.innerHTML = '<p class="text-xs text-red-400 font-mono">Gagal memuat game list dari server.</p>';
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchGames();
+        });
+    </script>
+</body>
+
+</html>

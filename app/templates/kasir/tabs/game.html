@@ -1,0 +1,191 @@
+<!-- ===== TAB: KELOLA GAME ===== -->
+<div id="tab-game_management" class="tab-content hidden space-y-6">
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#171717] pb-5">
+        <div>
+            <h2 class="text-xl font-black text-neutral-100 tracking-wider uppercase">Kelola Game</h2>
+            <p class="text-xs text-neutral-500 mt-1">Daftar game yang terpasang di client dan ditampilkan di portal publik.</p>
+        </div>
+        <button onclick="GameManagement.openAddModal()" 
+            class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded-lg transition-all flex items-center gap-2 self-start sm:self-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Tambah Game Baru
+        </button>
+    </div>
+
+    <!-- Filters & Search -->
+    <div class="flex flex-col md:flex-row gap-4 items-center justify-between bg-[#0c0c0c] border border-[#171717] p-4 rounded-xl">
+        <div class="flex flex-wrap gap-2 text-xs">
+            <button onclick="GameManagement.filterCategory('all')" id="game-cat-all" 
+                class="px-3 py-1.5 rounded-lg bg-neutral-800 text-neutral-100 font-bold border border-neutral-700 transition-all game-cat-btn">
+                Semua
+            </button>
+            <button onclick="GameManagement.filterCategory('FPS')" id="game-cat-FPS" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 transition-all game-cat-btn">FPS</button>
+            <button onclick="GameManagement.filterCategory('MOBA')" id="game-cat-MOBA" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 transition-all game-cat-btn">MOBA</button>
+            <button onclick="GameManagement.filterCategory('RPG')" id="game-cat-RPG" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 transition-all game-cat-btn">RPG</button>
+            <button onclick="GameManagement.filterCategory('Simulator')" id="game-cat-Simulator" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 transition-all game-cat-btn">Simulator</button>
+            <button onclick="GameManagement.filterCategory('Strategy')" id="game-cat-Strategy" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 transition-all game-cat-btn">Strategy</button>
+            <button onclick="GameManagement.filterCategory('Casual')" id="game-cat-Casual" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 transition-all game-cat-btn">Casual</button>
+        </div>
+        <div class="relative w-full md:w-64">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg class="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </span>
+            <input type="text" id="game-search" oninput="GameManagement.handleSearch(this.value)"
+                placeholder="Cari nama game..." 
+                class="w-full pl-9 pr-4 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200 font-medium placeholder-neutral-600 transition-all">
+        </div>
+    </div>
+
+    <!-- Games Table Card -->
+    <div class="bg-[#0c0c0c] border border-[#171717] rounded-xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="border-b border-[#171717] bg-[#070707] text-neutral-400 font-mono uppercase tracking-wider">
+                        <th class="p-4 w-16">Icon</th>
+                        <th class="p-4">Nama Game</th>
+                        <th class="p-4">Kategori</th>
+                        <th class="p-4">Ukuran</th>
+                        <th class="p-4">Status</th>
+                        <th class="p-4 w-28">Tampilkan</th>
+                        <th class="p-4 w-32 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="game-table-body" class="divide-y divide-[#121212] text-neutral-300">
+                    <!-- Data game akan di-render di sini oleh JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        <div id="game-empty-state" class="hidden flex flex-col items-center justify-center py-16 text-neutral-500">
+            <p class="font-bold text-sm">Tidak Ada Game Ditemukan</p>
+            <p class="text-xs text-neutral-600 mt-1">Silakan tambah game baru menggunakan tombol di atas.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Tambah/Edit Game -->
+<div id="game-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden p-4">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-black/85" onclick="GameManagement.closeModal()"></div>
+    
+    <!-- Modal Content -->
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl w-full max-w-xl relative z-10 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="p-5 border-b border-[#1c1c1c] flex items-center justify-between">
+            <h3 id="game-modal-title" class="text-sm font-black text-neutral-200 uppercase tracking-wider">Tambah Game Baru</h3>
+            <button onclick="GameManagement.closeModal()" class="text-neutral-500 hover:text-neutral-300 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <form id="game-form" onsubmit="GameManagement.handleSubmit(event)" class="overflow-y-auto p-6 space-y-4">
+            <input type="hidden" id="form-game-id">
+            
+            <!-- Nama Game & Kategori -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">Nama Game <span class="text-red-500">*</span></label>
+                    <input type="text" id="form-game-nama" required placeholder="Contoh: Valorant"
+                        class="w-full px-3.5 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">Kategori <span class="text-red-500">*</span></label>
+                    <select id="form-game-kategori" required
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200">
+                        <option value="FPS">FPS</option>
+                        <option value="MOBA">MOBA</option>
+                        <option value="RPG">RPG</option>
+                        <option value="Simulator">Simulator</option>
+                        <option value="Strategy">Strategy</option>
+                        <option value="Casual">Casual</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Size & Status -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">Ukuran File (Size)</label>
+                    <input type="text" id="form-game-size" placeholder="Contoh: 35 GB"
+                        class="w-full px-3.5 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">Status Game</label>
+                    <select id="form-game-status"
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200">
+                        <option value="Ready">Ready (Aman)</option>
+                        <option value="Updating">Updating</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Coming Soon">Coming Soon</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Developer & File Icon -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">Developer / Publisher</label>
+                    <input type="text" id="form-game-developer" placeholder="Contoh: Riot Games"
+                        class="w-full px-3.5 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">Icon Game (.png / .jpg)</label>
+                    <input type="file" id="form-game-icon" accept="image/*"
+                        class="w-full px-3.5 py-1.5 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-400 file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-neutral-800 file:text-neutral-200 hover:file:bg-neutral-700">
+                </div>
+            </div>
+
+            <!-- Executable Launcher Path & Arguments -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider flex items-center gap-1">
+                        <span>Launcher Path</span>
+                        <span class="text-[9px] text-neutral-600">(Masa Depan)</span>
+                    </label>
+                    <input type="text" id="form-game-path" placeholder="Contoh: D:\Games\Valorant.exe"
+                        class="w-full px-3.5 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200 font-mono">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider flex items-center gap-1">
+                        <span>Launch Arguments</span>
+                        <span class="text-[9px] text-neutral-600">(Masa Depan)</span>
+                    </label>
+                    <input type="text" id="form-game-argumen" placeholder="Contoh: --launch-direct"
+                        class="w-full px-3.5 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200 font-mono">
+                </div>
+            </div>
+
+            <!-- Deskripsi -->
+            <div class="space-y-1">
+                <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">Deskripsi Game</label>
+                <textarea id="form-game-deskripsi" rows="3" placeholder="Tuliskan deskripsi singkat game ini..."
+                    class="w-full px-3.5 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200 resize-none"></textarea>
+            </div>
+
+            <!-- Checkbox Aktif -->
+            <div class="flex items-center gap-2 pt-2">
+                <input type="checkbox" id="form-game-aktif" checked
+                    class="w-4 h-4 rounded border-[#1c1c1c] bg-[#050505] text-neutral-100 focus:ring-0 focus:ring-offset-0">
+                <label for="form-game-aktif" class="text-xs text-neutral-300 font-semibold select-none">Tampilkan di halaman publik</label>
+            </div>
+
+            <!-- Footer Action -->
+            <div class="flex items-center justify-end gap-2 border-t border-[#1c1c1c] pt-5 mt-5">
+                <button type="button" onclick="GameManagement.closeModal()"
+                    class="px-4 py-2 border border-[#1c1c1c] hover:bg-neutral-900 text-neutral-400 hover:text-neutral-200 text-xs font-bold rounded-lg transition-all">
+                    Batal
+                </button>
+                <button type="submit"
+                    class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded-lg transition-all">
+                    Simpan Game
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

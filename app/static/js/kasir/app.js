@@ -166,7 +166,7 @@ const App = {
             grup: 'Grup', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Aktivitas Sistem',
             monitor: 'Hardware Monitor', hardware_checker: 'Hardware Checker', blackout: 'Blackout', screenshot: 'Screenshot Monitor',
             user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat',
-            menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen',
+            menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen', game_management: 'Kelola Game',
             settings_general: 'Pengaturan Umum & Kiosk',
             whitelist_ip: 'Pengaturan Whitelist IP',
             settings_backup: 'Pengaturan Database & Backup',
@@ -203,6 +203,7 @@ const App = {
             case 'hardware_checker': if (typeof HardwareChecker !== 'undefined') await HardwareChecker.load(); break;
             case 'screenshot': if (typeof Screenshot !== 'undefined') Screenshot.init(); break;
             case 'blackout': await Blackout.load(); break;
+            case 'game_management': if (typeof GameManagement !== 'undefined') await GameManagement.load(); break;
             case 'user': if (typeof User !== 'undefined') await User.load(); break;
             case 'struk': if (typeof Struk !== 'undefined') await Struk.init(); break;
             case 'settings': if (typeof Settings !== 'undefined') await Settings.load(); break;
