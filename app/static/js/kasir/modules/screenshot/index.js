@@ -135,6 +135,13 @@ const Screenshot = {
         img.src = `${url}?t=${new Date().getTime()}`; // Bypass cache
         title.textContent = pcKode;
         lightbox.classList.remove('hidden');
+        lightbox.classList.add('flex');
+    },
+
+    closeLightbox() {
+        const lightbox = document.getElementById('screenshot-lightbox');
+        lightbox.classList.add('hidden');
+        lightbox.classList.remove('flex');
     },
 
     populateGroupFilter() {
