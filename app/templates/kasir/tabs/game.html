@@ -1,0 +1,184 @@
+<!-- ===== TAB: KELOLA GAME ===== -->
+<div id="tab-game_management" class="tab-content hidden space-y-6">
+    <!-- Header Section -->
+    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide">Kelola Game</h3>
+                <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Daftar game yang terpasang di client dan ditampilkan di portal publik.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="KategoriManagement.openModal()" 
+                    class="px-4 py-2.5 bg-[#1a1a1a] hover:bg-[#222] border border-[#2a2a2a] text-neutral-300 text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
+                    Kelola Kategori
+                </button>
+                <button onclick="GameManagement.openAddModal()" 
+                    class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Tambah Game Baru
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters & Search Card -->
+    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-400 uppercase tracking-wider">Daftar Game</h3>
+            <div class="flex flex-wrap items-center gap-2">
+                <input type="text" id="game-search" oninput="GameManagement.handleSearch(this.value)"
+                    placeholder="Cari nama game..." 
+                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 w-40 md:w-64">
+                <select id="game-category-filter"
+                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
+                    onchange="GameManagement.filterCategory(this.value)">
+                    <option value="all">Semua Kategori</option>
+                    <!-- Option kategori akan diisi lewat JS -->
+                </select>
+                <button onclick="GameManagement.fetchGames()"
+                    class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Cari</button>
+            </div>
+        </div>
+
+        <!-- Games Table -->
+        <div class="overflow-x-hidden w-full">
+            <table class="w-full text-xs lg:text-base block lg:table">
+                <thead class="hidden lg:table-header-group">
+                    <tr class="text-[9px] lg:text-base text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
+                        <th class="px-4 py-2 text-left w-[45%] md:w-[40%] font-bold">Game</th>
+                        <th class="px-4 py-2 text-center w-[30%] md:w-[20%] font-bold">Tampilkan</th>
+                        <th class="px-4 py-2 text-right w-[25%] md:w-[40%] font-bold">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="game-table-body" class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] block lg:table-row-group">
+                    <!-- Data game akan di-render di sini oleh JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        <div id="game-empty-state" class="hidden flex flex-col items-center justify-center py-20 text-neutral-500 bg-[#0c0c0c] border border-dashed border-[#1c1c1c] rounded">
+            <svg class="w-12 h-12 mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+            <p class="text-xs lg:text-base font-bold uppercase tracking-wider">Tidak Ada Game Ditemukan</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Tambah/Edit Game -->
+<div id="game-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden p-4">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-black/85" onclick="GameManagement.closeModal()"></div>
+    
+    <!-- Modal Content -->
+    <div class="bg-[#111] border border-[#1f1f1f] rounded-2xl w-full max-w-xl relative z-10 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="p-5 border-b border-[#1f1f1f] flex items-center justify-between">
+            <h3 id="game-modal-title" class="text-base font-bold text-neutral-200">Tambah Game Baru</h3>
+            <button onclick="GameManagement.closeModal()" class="text-neutral-500 hover:text-neutral-300 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <form id="game-form" onsubmit="GameManagement.handleSubmit(event)" class="overflow-y-auto p-6 space-y-4">
+            <input type="hidden" id="form-game-id">
+            
+            <!-- Nama Game & Kategori -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="text-[11px] text-neutral-400 font-medium tracking-wide">Nama Game <span class="text-red-500">*</span></label>
+                    <input type="text" id="form-game-nama" required placeholder="Contoh: Valorant"
+                        class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-neutral-500 focus:outline-none rounded-lg text-[13px] text-neutral-200">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[11px] text-neutral-400 font-medium tracking-wide">Kategori <span class="text-red-500">*</span></label>
+                    <select id="form-game-kategori" required
+                        class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-neutral-500 focus:outline-none rounded-lg text-[13px] text-neutral-200">
+                        <!-- Option kategori akan diisi lewat JS -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- File Icon -->
+            <div class="space-y-1.5">
+                <label class="text-[11px] text-neutral-400 font-medium tracking-wide">Icon Game (.png / .jpg)</label>
+                <input type="file" id="form-game-icon" accept="image/*"
+                    class="w-full px-3 py-1.5 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-neutral-500 focus:outline-none rounded-lg text-[13px] text-neutral-400 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-[11px] file:font-semibold file:bg-[#1a1a1a] file:text-neutral-300 hover:file:bg-[#222]">
+            </div>
+
+            <!-- Executable Launcher Path & Arguments -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="text-[11px] text-neutral-400 font-medium tracking-wide flex items-center gap-1">
+                        <span>Launcher Path</span>
+                        <span class="text-[10px] text-neutral-600">(Ketik / Paste Manual)</span>
+                    </label>
+                    <input type="text" id="form-game-path" placeholder="Contoh: D:\Games\Valorant.exe"
+                        class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-neutral-500 focus:outline-none rounded-lg text-[13px] text-neutral-200">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[11px] text-neutral-400 font-medium tracking-wide flex items-center gap-1">
+                        <span>Launch Arguments</span>
+                        <span class="text-[10px] text-neutral-600">(Masa Depan)</span>
+                    </label>
+                    <input type="text" id="form-game-argumen" placeholder="Contoh: --launch-direct"
+                        class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-neutral-500 focus:outline-none rounded-lg text-[13px] text-neutral-200">
+                </div>
+            </div>
+
+            <!-- Checkbox Aktif -->
+            <div class="flex items-center gap-2 pt-2">
+                <input type="checkbox" id="form-game-aktif" checked
+                    class="w-4 h-4 rounded border-[#2a2a2a] bg-[#0a0a0a] text-neutral-100 focus:ring-0 focus:ring-offset-0">
+                <label for="form-game-aktif" class="text-[13px] text-neutral-300 select-none">Tampilkan di halaman publik</label>
+            </div>
+
+            <!-- Footer Action -->
+            <div class="flex items-center justify-end gap-2 border-t border-[#1f1f1f] pt-5 mt-5">
+                <button type="button" onclick="GameManagement.closeModal()"
+                    class="px-4 py-2 border border-[#2a2a2a] bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 text-[13px] font-bold rounded-lg transition-colors">
+                    Batal
+                </button>
+                <button type="submit"
+                    class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-[13px] font-bold rounded-lg transition-colors">
+                    Simpan Game
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Kelola Kategori -->
+<div id="kategori-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden p-4">
+    <div class="fixed inset-0 bg-black/85" onclick="KategoriManagement.closeModal()"></div>
+    
+    <div class="bg-[#111] border border-[#1f1f1f] rounded-2xl w-full max-w-md relative z-10 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="p-5 border-b border-[#1f1f1f] flex items-center justify-between">
+            <h3 class="text-base font-bold text-neutral-200">Kelola Kategori</h3>
+            <button onclick="KategoriManagement.closeModal()" class="text-neutral-500 hover:text-neutral-300 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="p-5 overflow-y-auto">
+            <form id="kategori-form" onsubmit="KategoriManagement.addKategori(event)" class="flex gap-2 mb-6">
+                <input type="text" id="form-kategori-nama" required placeholder="Nama Kategori Baru"
+                    class="flex-1 px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-neutral-500 focus:outline-none rounded-lg text-[13px] text-neutral-200">
+                <button type="submit" class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-[13px] font-bold rounded-lg transition-colors">
+                    Tambah
+                </button>
+            </form>
+            
+            <div class="border border-[#1f1f1f] rounded-lg overflow-hidden bg-[#0c0c0c]">
+                <table class="w-full text-left border-collapse text-[13px]">
+                    <tbody id="kategori-table-body" class="divide-y divide-[#1f1f1f] text-neutral-300">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="kategori-empty" class="hidden py-6 text-center text-[13px] text-neutral-500">Belum ada kategori.</div>
+        </div>
+    </div>
+</div>
