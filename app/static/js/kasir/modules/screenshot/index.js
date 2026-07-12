@@ -217,7 +217,7 @@ const Screenshot = {
                                </div>`
                         }
                     </div>
-                    <div class="p-3 text-sm text-neutral-400 flex justify-between items-center bg-[#0c0c0c] border-t border-[#1c1c1c]">
+                    <div class="p-3 text-sm text-neutral-400 flex justify-between items-center bg-[#0c0c0c] border-t border-[#1c1c1c] mt-auto">
                         <span>Update:</span>
                         <span class="font-medium text-neutral-200">${pc.screenshot_time || 'N/A'}</span>
                     </div>
