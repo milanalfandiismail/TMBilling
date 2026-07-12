@@ -16,6 +16,7 @@ const App = {
         setInterval(() => {
             if (this.currentTab === 'dash') Dashboard.load();
             if (this.currentTab === 'monitor' && typeof Monitor !== 'undefined') Monitor.load();
+            if (this.currentTab === 'hardware_checker' && typeof HardwareChecker !== 'undefined') HardwareChecker.load();
             if (this.currentTab === 'screenshot' && typeof Screenshot !== 'undefined') Screenshot.load();
         }, 5000);
 
