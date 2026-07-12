@@ -35,13 +35,9 @@ class Game(db.Model):
             "id": self.id,
             "nama": self.nama,
             "kategori": self.kategori,
-            "status": self.status,
             "exe_path": self.exe_path,
             "argumen": self.argumen,
             "icon_url": self.icon_url,
-            "deskripsi": self.deskripsi,
-            "developer": self.developer,
-            "file_size": self.file_size,
             "aktif": self.aktif,
             "dibuat_pada": self.dibuat_pada.strftime("%d/%m/%Y %H:%M:%S") if self.dibuat_pada else None
         }
