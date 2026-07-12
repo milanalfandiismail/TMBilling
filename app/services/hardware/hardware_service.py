@@ -8,7 +8,8 @@ untuk ditampilkan di dashboard kasir.
 """
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
+from app.utils.timezone_utils import now_utc
 from app.models import db
 from app.models import HardwareMonitor
 from app.repositories import HardwareRepository
@@ -108,7 +109,7 @@ class HardwareService:
                     hardware.hardware_mismatch = False
                     hardware.hardware_mismatch_desc = None
                     hardware.hardware_mismatch_time = None
-                    hardware.hardware_last_sync = datetime.now()
+                    hardware.hardware_last_sync = now_utc()
                 else:
                     try:
                         baseline = json.loads(hardware.hardware_baseline)
@@ -158,14 +159,14 @@ class HardwareService:
                         if mismatch_reasons:
                             if not hardware.hardware_mismatch:
                                 hardware.hardware_mismatch = True
-                                hardware.hardware_mismatch_time = datetime.now()
+                                hardware.hardware_mismatch_time = now_utc()
                                 hardware.hardware_mismatch_desc = "; ".join(mismatch_reasons)
                                 write_log("HARDWARE_ALERT", f"PC {pc.kode} terdeteksi mismatch: {hardware.hardware_mismatch_desc}")
                         else:
                             hardware.hardware_mismatch = False
                             hardware.hardware_mismatch_desc = None
                             hardware.hardware_mismatch_time = None
-                            hardware.hardware_last_sync = datetime.now()
+                            hardware.hardware_last_sync = now_utc()
 
             # 5. Sync Process List if provided
             process_list = data.get("ProcessList", data.get("processList", data.get("process_list")))
@@ -289,7 +290,7 @@ class HardwareService:
             hardware.hardware_mismatch = False
             hardware.hardware_mismatch_desc = None
             hardware.hardware_mismatch_time = None
-            hardware.hardware_last_sync = datetime.now()
+            hardware.hardware_last_sync = now_utc()
             
             db.session.commit()
             

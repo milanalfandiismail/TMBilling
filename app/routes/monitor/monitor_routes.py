@@ -187,7 +187,8 @@ def get_screenshot_status(pc_id):
         import os
         from flask import current_app
         from app.repositories import PCRepository
-        from datetime import datetime
+        from app.utils.timezone_utils import format_display
+        from datetime import datetime, timezone
 
         pc = PCRepository.get_by_id(pc_id)
         if not pc:
@@ -196,7 +197,8 @@ def get_screenshot_status(pc_id):
         screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{pc.kode}.png")
         if os.path.exists(screenshot_path):
             mtime = os.path.getmtime(screenshot_path)
-            screenshot_time = datetime.fromtimestamp(mtime).strftime("%d/%m/%Y %H:%M:%S")
+            dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
+            screenshot_time = format_display(dt_utc)
             return jsonify({
                 "success": True,
                 "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
@@ -220,7 +222,8 @@ def get_all_screenshot_status():
         import os
         from flask import current_app
         from app.repositories import PCRepository
-        from datetime import datetime
+        from app.utils.timezone_utils import format_display
+        from datetime import datetime, timezone
 
         pcs = PCRepository.get_all()
         result = []
@@ -229,7 +232,8 @@ def get_all_screenshot_status():
             screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{pc.kode}.png")
             if os.path.exists(screenshot_path):
                 mtime = os.path.getmtime(screenshot_path)
-                screenshot_time = datetime.fromtimestamp(mtime).strftime("%d/%m/%Y %H:%M:%S")
+                dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
+                screenshot_time = format_display(dt_utc)
                 result.append({
                     "pc_id": pc.id,
                     "pc_kode": pc.kode,
