@@ -47,6 +47,11 @@ struct HardwareHelperOutput {
     Motherboard: String,
     CpuName: String,
     GpuName: String,
+    MotherboardSerial: String,
+    CpuId: String,
+    GpuPnpId: String,
+    RamSerials: Vec<String>,
+    DiskSerials: Vec<String>,
 }
 
 fn get_hardware_helper_data() -> Option<HardwareHelperOutput> {
@@ -561,6 +566,12 @@ fn main() {
                 }
             }
 
+            let mobo_serial = helper.as_ref().map(|h| h.MotherboardSerial.clone()).unwrap_or_else(|| "Unknown".to_string());
+            let cpu_id = helper.as_ref().map(|h| h.CpuId.clone()).unwrap_or_else(|| "Unknown".to_string());
+            let gpu_pnp_id = helper.as_ref().map(|h| h.GpuPnpId.clone()).unwrap_or_else(|| "Unknown".to_string());
+            let ram_serials = helper.as_ref().map(|h| h.RamSerials.clone()).unwrap_or_else(|| vec![]);
+            let disk_serials = helper.as_ref().map(|h| h.DiskSerials.clone()).unwrap_or_else(|| vec![]);
+
             let payload = json!({
                 "IpAddress": ip_address,
                 "MacAddress": mac_address,
@@ -573,7 +584,14 @@ fn main() {
                 "CpuName": cpu_name,
                 "GpuName": gpu_name,
                 "ActiveWindow": get_active_window_title(),
-                "ProcessList": process_list
+                "ProcessList": process_list,
+                "HardwareSerials": {
+                    "MotherboardSerial": mobo_serial,
+                    "CpuId": cpu_id,
+                    "GpuPnpId": gpu_pnp_id,
+                    "RamSerials": ram_serials,
+                    "DiskSerials": disk_serials
+                }
             });
 
             let resp = ureq::post(&server_url)

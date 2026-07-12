@@ -114,7 +114,7 @@ const App = {
             user: 'staff',
             laporan: 'laporan', laporan_menu: 'laporan', struk: 'laporan',
             log: 'sistemlog',
-            monitor: 'system', blackout: 'system', screenshot: 'system',
+            monitor: 'system', hardware_checker: 'system', blackout: 'system', screenshot: 'system',
             settings_general: 'settings',
             whitelist_ip: 'settings',
             settings_backup: 'settings',
@@ -158,7 +158,7 @@ const App = {
         const titles = {
             dash: 'Dashboard', pc: 'Unit PC', paket: 'Paket', member: 'Member',
             grup: 'Grup', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Aktivitas Sistem',
-            monitor: 'Hardware Monitor', blackout: 'Blackout', screenshot: 'Screenshot Monitor',
+            monitor: 'Hardware Monitor', hardware_checker: 'Hardware Checker', blackout: 'Blackout', screenshot: 'Screenshot Monitor',
             user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat',
             menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen',
             settings_general: 'Pengaturan Umum & Kiosk',
@@ -194,6 +194,7 @@ const App = {
             case 'log': await Log.load(); break;
             case 'grup': await Grup.load(); break;
             case 'monitor': if (typeof Monitor !== 'undefined') await Monitor.load(); break;
+            case 'hardware_checker': if (typeof HardwareChecker !== 'undefined') await HardwareChecker.load(); break;
             case 'screenshot': if (typeof Screenshot !== 'undefined') Screenshot.init(); break;
             case 'blackout': await Blackout.load(); break;
             case 'user': if (typeof User !== 'undefined') await User.load(); break;

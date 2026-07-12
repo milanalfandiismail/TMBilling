@@ -6,7 +6,7 @@ Blueprint ini menyediakan endpoint untuk menerima telemetry
 dari C# Hardware Monitor Agent dan menampilkan data metrik
 hardware semua PC di dashboard kasir.
 """
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from app.services import HardwareService
 from app.utils.logger import write_log
 from app.routes.auth.auth_kasir_routes import login_required
@@ -245,6 +245,19 @@ def get_all_screenshot_status():
                 })
                 
         return jsonify({"success": True, "data": result}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@monitor_kasir_bp.route("/register/<int:pc_id>", methods=["POST"])
+@login_required
+def register_pc_hardware(pc_id):
+    """Endpoint untuk mendaftarkan hardware saat ini sebagai baseline resmi PC (Update Baseline)."""
+    try:
+        operator = session.get("kasir_username", "admin")
+        pc_kode = HardwareService.update_pc_baseline(pc_id, operator=operator)
+        return jsonify({"success": True, "message": f"Baseline hardware PC {pc_kode} berhasil diperbarui"}), 200
+    except ValueError as val_e:
+        return jsonify({"success": False, "error": str(val_e)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
