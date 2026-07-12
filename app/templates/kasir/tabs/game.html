@@ -50,8 +50,6 @@
                         <th class="p-4 w-16">Icon</th>
                         <th class="p-4">Nama Game</th>
                         <th class="p-4">Kategori</th>
-                        <th class="p-4">Ukuran</th>
-                        <th class="p-4">Status</th>
                         <th class="p-4 w-28">Tampilkan</th>
                         <th class="p-4 w-32 text-right">Aksi</th>
                     </tr>
@@ -108,37 +106,11 @@
                 </div>
             </div>
 
-            <!-- Size & Status -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-1">
-                    <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">Ukuran File (Size)</label>
-                    <input type="text" id="form-game-size" placeholder="Contoh: 35 GB"
-                        class="w-full px-3.5 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200">
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">Status Game</label>
-                    <select id="form-game-status"
-                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200">
-                        <option value="Ready">Ready (Aman)</option>
-                        <option value="Updating">Updating</option>
-                        <option value="Maintenance">Maintenance</option>
-                        <option value="Coming Soon">Coming Soon</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Developer & File Icon -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-1">
-                    <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">Developer / Publisher</label>
-                    <input type="text" id="form-game-developer" placeholder="Contoh: Riot Games"
-                        class="w-full px-3.5 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200">
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">Icon Game (.png / .jpg)</label>
-                    <input type="file" id="form-game-icon" accept="image/*"
-                        class="w-full px-3.5 py-1.5 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-400 file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-neutral-800 file:text-neutral-200 hover:file:bg-neutral-700">
-                </div>
+            <!-- File Icon -->
+            <div class="space-y-1">
+                <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">Icon Game (.png / .jpg)</label>
+                <input type="file" id="form-game-icon" accept="image/*"
+                    class="w-full px-3.5 py-1.5 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-400 file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-neutral-800 file:text-neutral-200 hover:file:bg-neutral-700">
             </div>
 
             <!-- Executable Launcher Path & Arguments -->
@@ -161,12 +133,7 @@
                 </div>
             </div>
 
-            <!-- Deskripsi -->
-            <div class="space-y-1">
-                <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">Deskripsi Game</label>
-                <textarea id="form-game-deskripsi" rows="3" placeholder="Tuliskan deskripsi singkat game ini..."
-                    class="w-full px-3.5 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200 resize-none"></textarea>
-            </div>
+
 
             <!-- Checkbox Aktif -->
             <div class="flex items-center gap-2 pt-2">

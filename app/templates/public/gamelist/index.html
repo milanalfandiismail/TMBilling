@@ -118,7 +118,7 @@
             
             const filtered = allGames.filter(g => {
                 const matchesCat = currentCategory === 'all' || g.kategori === currentCategory;
-                const matchesSearch = !searchQuery || g.nama.toLowerCase().includes(searchQuery.toLowerCase()) || (g.deskripsi && g.deskripsi.toLowerCase().includes(searchQuery.toLowerCase()));
+                const matchesSearch = !searchQuery || g.nama.toLowerCase().includes(searchQuery.toLowerCase());
                 return matchesCat && matchesSearch;
             });
 
@@ -131,48 +131,16 @@
             empty.classList.add('hidden');
             grid.classList.remove('hidden');
 
-            grid.innerHTML = filtered.map(g => {
-                let statusBadge = '';
-                if (g.status === 'Ready') {
-                    statusBadge = `<span class="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/30 text-emerald-400 text-[10px] font-bold font-mono tracking-wider">Ready to Play</span>`;
-                } else if (g.status === 'Updating') {
-                    statusBadge = `<span class="px-2 py-0.5 rounded bg-amber-950/60 border border-amber-800/30 text-amber-400 text-[10px] font-bold font-mono tracking-wider animate-pulse">Updating</span>`;
-                } else if (g.status === 'Maintenance') {
-                    statusBadge = `<span class="px-2 py-0.5 rounded bg-red-950/60 border border-red-800/30 text-red-400 text-[10px] font-bold font-mono tracking-wider">Maintenance</span>`;
-                } else if (g.status === 'Coming Soon') {
-                    statusBadge = `<span class="px-2 py-0.5 rounded bg-purple-950/60 border border-purple-800/30 text-purple-400 text-[10px] font-bold font-mono tracking-wider">Coming Soon</span>`;
-                }
-
                 const iconUrl = g.icon_url || 'https://placehold.co/120x120/0c0c0c/888888?text=Game';
-                const devText = g.developer || 'Unknown';
-                const sizeText = g.file_size || 'N/A';
 
                 return `
-                    <div class="bg-[#0a0a0a] border border-neutral-900 rounded-2xl p-5 flex flex-col justify-between space-y-4 game-card overflow-hidden relative">
-                        <div class="space-y-4">
-                            <!-- Card Header -->
-                            <div class="flex items-start gap-4">
-                                <img src="${iconUrl}" class="w-14 h-14 rounded-xl object-cover border border-neutral-900 shadow-md shrink-0" onerror="this.src='https://placehold.co/120x120/0c0c0c/888888?text=Game'">
-                                <div class="min-w-0">
-                                    <h4 class="font-extrabold text-neutral-100 text-sm tracking-wide truncate" title="${g.nama}">${g.nama}</h4>
-                                    <p class="text-[10px] text-neutral-500 font-mono mt-0.5 truncate">${devText}</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Badges -->
-                            <div class="flex items-center gap-1.5">
-                                ${statusBadge}
+                    <div class="bg-[#0a0a0a] border border-neutral-900 rounded-2xl p-5 flex flex-col justify-center items-center space-y-4 game-card overflow-hidden relative text-center">
+                        <img src="${iconUrl}" class="w-20 h-20 rounded-2xl object-cover border border-neutral-900 shadow-xl shrink-0" onerror="this.src='https://placehold.co/120x120/0c0c0c/888888?text=Game'">
+                        <div class="w-full">
+                            <h4 class="font-extrabold text-neutral-100 text-sm tracking-wide truncate" title="${g.nama}">${g.nama}</h4>
+                            <div class="mt-2">
                                 <span class="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-400 text-[10px] font-bold font-mono">${g.kategori}</span>
                             </div>
-
-                            <!-- Description -->
-                            <p class="text-neutral-400 text-xs leading-relaxed line-clamp-3 font-sans mt-2">${g.deskripsi || 'Tidak ada deskripsi game.'}</p>
-                        </div>
-
-                        <!-- Card Footer -->
-                        <div class="border-t border-neutral-900 pt-3 flex items-center justify-between text-[10px] text-neutral-500 font-mono">
-                            <span>Kapasitas: <strong class="text-neutral-300">${sizeText}</strong></span>
-                            <span>ID: ${g.id}</span>
                         </div>
                     </div>
                 `;

@@ -25,7 +25,7 @@ const GameManagement = {
         // Filter local
         const filtered = this.allGames.filter(g => {
             const matchesCat = this.currentCategory === 'all' || g.kategori === this.currentCategory;
-            const matchesSearch = !this.searchQuery || g.nama.toLowerCase().includes(this.searchQuery.toLowerCase()) || (g.deskripsi && g.deskripsi.toLowerCase().includes(this.searchQuery.toLowerCase()));
+            const matchesSearch = !this.searchQuery || g.nama.toLowerCase().includes(this.searchQuery.toLowerCase());
             return matchesCat && matchesSearch;
         });
 
@@ -37,17 +37,6 @@ const GameManagement = {
 
         emptyState.classList.add('hidden');
         tbody.innerHTML = filtered.map(g => {
-            let statusBadge = '';
-            if (g.status === 'Ready') {
-                statusBadge = '<span class="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/30 text-emerald-400 font-bold font-mono">Ready</span>';
-            } else if (g.status === 'Updating') {
-                statusBadge = '<span class="px-2 py-0.5 rounded bg-amber-950/60 border border-amber-800/30 text-amber-400 font-bold font-mono">Updating</span>';
-            } else if (g.status === 'Maintenance') {
-                statusBadge = '<span class="px-2 py-0.5 rounded bg-red-950/60 border border-red-800/30 text-red-400 font-bold font-mono">Maintenance</span>';
-            } else if (g.status === 'Coming Soon') {
-                statusBadge = '<span class="px-2 py-0.5 rounded bg-purple-950/60 border border-purple-800/30 text-purple-400 font-bold font-mono">Coming Soon</span>';
-            }
-
             const iconHtml = g.icon_url 
                 ? `<img src="${g.icon_url}" class="w-10 h-10 rounded-lg object-cover border border-[#222]" onerror="this.src='https://placehold.co/40'">`
                 : `<div class="w-10 h-10 rounded-lg bg-neutral-900 border border-[#222] flex items-center justify-center text-xs font-bold text-neutral-600">🎮</div>`;
@@ -57,11 +46,8 @@ const GameManagement = {
                     <td class="p-4">${iconHtml}</td>
                     <td class="p-4 font-semibold text-neutral-100">
                         <div>${Utils.escapeHtml(g.nama)}</div>
-                        <div class="text-[10px] text-neutral-500 font-normal mt-0.5">${Utils.escapeHtml(g.developer || 'Unknown Developer')}</div>
                     </td>
                     <td class="p-4 text-neutral-400">${Utils.escapeHtml(g.kategori)}</td>
-                    <td class="p-4 text-neutral-400 font-mono">${Utils.escapeHtml(g.file_size || '-')}</td>
-                    <td class="p-4">${statusBadge}</td>
                     <td class="p-4">
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" class="sr-only peer" ${g.aktif ? 'checked' : ''} 
@@ -116,12 +102,8 @@ const GameManagement = {
         document.getElementById('form-game-id').value = game.id;
         document.getElementById('form-game-nama').value = game.nama;
         document.getElementById('form-game-kategori').value = game.kategori;
-        document.getElementById('form-game-size').value = game.file_size || '';
-        document.getElementById('form-game-status').value = game.status;
-        document.getElementById('form-game-developer').value = game.developer || '';
         document.getElementById('form-game-path').value = game.exe_path || '';
         document.getElementById('form-game-argumen').value = game.argumen || '';
-        document.getElementById('form-game-deskripsi').value = game.deskripsi || '';
         document.getElementById('form-game-aktif').checked = game.aktif;
 
         // Kosongkan file input
@@ -142,12 +124,8 @@ const GameManagement = {
         
         formData.append('nama', document.getElementById('form-game-nama').value);
         formData.append('kategori', document.getElementById('form-game-kategori').value);
-        formData.append('file_size', document.getElementById('form-game-size').value);
-        formData.append('status', document.getElementById('form-game-status').value);
-        formData.append('developer', document.getElementById('form-game-developer').value);
         formData.append('exe_path', document.getElementById('form-game-path').value);
         formData.append('argumen', document.getElementById('form-game-argumen').value);
-        formData.append('deskripsi', document.getElementById('form-game-deskripsi').value);
         formData.append('aktif', document.getElementById('form-game-aktif').checked);
         
         const fileInput = document.getElementById('form-game-icon');
