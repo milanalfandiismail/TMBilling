@@ -79,9 +79,25 @@ class Program
                 foreach (ManagementObject obj in searcher.Get())
                 {
                     object snObj = obj["SerialNumber"];
-                    string sn = snObj != null ? snObj.ToString().Trim() : "Unknown";
+                    string sn = snObj != null ? snObj.ToString().Trim() : "";
                     object modelObj = obj["Model"];
-                    string model = modelObj != null ? modelObj.ToString().Trim() : "Unknown";
+                    string model = modelObj != null ? modelObj.ToString().Trim() : "";
+                    
+                    // Lewati disk jika serial kosong atau bertuliskan "Unknown"
+                    if (string.IsNullOrEmpty(sn) || sn.ToLower().Contains("unknown"))
+                        continue;
+                        
+                    // Lewati jika terdeteksi drive virtual sistem diskless (CCBoot, iSCSI, dll.)
+                    string modelLower = model.ToLower();
+                    if (modelLower.Contains("ccboot") || 
+                        modelLower.Contains("iscsi") || 
+                        modelLower.Contains("virtual") || 
+                        modelLower.Contains("sanboot") || 
+                        modelLower.Contains("superspeed"))
+                    {
+                        continue;
+                    }
+                    
                     // Bersihkan karakter petik dua
                     sn = sn.Replace("\"", "\\\"");
                     model = model.Replace("\"", "\\\"");
