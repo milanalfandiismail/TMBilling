@@ -13,6 +13,7 @@ from app.routes.auth.auth_kasir_routes import login_required
 from app.routes.client.client_routes import api_key_required
 
 monitor_api_bp = Blueprint("monitor", __name__)
+monitor_kasir_bp = Blueprint("monitor_kasir", __name__)
 
 @monitor_api_bp.route("/all", methods=["GET"])
 def get_all_hardware():
@@ -103,7 +104,7 @@ def delete_hardware_data(hardware_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@monitor_api_bp.route("/screenshot/trigger/<int:pc_id>", methods=["POST"])
+@monitor_kasir_bp.route("/screenshot/trigger/<int:pc_id>", methods=["POST"])
 @login_required
 def trigger_screenshot(pc_id):
     """Trigger request screenshot ke client PC berdasarkan PC ID."""
@@ -119,7 +120,7 @@ def trigger_screenshot(pc_id):
         return jsonify({"success": True, "message": f"Perintah screenshot berhasil dikirim ke {pc.kode}"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-@monitor_api_bp.route("/remote/<int:pc_id>/<string:action>", methods=["POST"])
+@monitor_kasir_bp.route("/remote/<int:pc_id>/<string:action>", methods=["POST"])
 @login_required
 def trigger_remote_action(pc_id, action):
     """Trigger remote action (shutdown atau restart) ke client PC berdasarkan PC ID."""
@@ -178,7 +179,7 @@ def upload_screenshot():
         return jsonify({"error": str(e)}), 500
 
 
-@monitor_api_bp.route("/screenshot/status/<int:pc_id>", methods=["GET"])
+@monitor_kasir_bp.route("/screenshot/status/<int:pc_id>", methods=["GET"])
 @login_required
 def get_screenshot_status(pc_id):
     """Mengecek status dan timestamp screenshot terakhir untuk PC tertentu."""
@@ -211,7 +212,7 @@ def get_screenshot_status(pc_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@monitor_api_bp.route("/screenshot/all", methods=["GET"])
+@monitor_kasir_bp.route("/screenshot/all", methods=["GET"])
 @login_required
 def get_all_screenshot_status():
     """Mengecek status dan timestamp screenshot terakhir untuk semua PC."""
@@ -232,14 +233,14 @@ def get_all_screenshot_status():
                 result.append({
                     "pc_id": pc.id,
                     "pc_kode": pc.kode,
-                    "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
+                    "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",                    "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
                     "screenshot_time": screenshot_time
                 })
             else:
                 result.append({
                     "pc_id": pc.id,
                     "pc_kode": pc.kode,
-                    "screenshot_url": None,
+                    "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",                    "screenshot_url": None,
                     "screenshot_time": None
                 })
                 
