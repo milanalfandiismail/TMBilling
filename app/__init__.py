@@ -77,7 +77,9 @@ def create_app():
         member_portal_bp,
         shift_api_bp,
         migration_api_bp,
-        mikrotik_api_bp
+        mikrotik_api_bp,
+        game_kasir_api_bp,
+        game_public_api_bp
     )
 
     # ==========================================
@@ -109,6 +111,7 @@ def create_app():
     from app.routes.settings.plugin_routes import plugin_api_bp
     app.register_blueprint(plugin_api_bp, url_prefix="/api/v1/kasir/settings/plugins")
     app.register_blueprint(monitor_kasir_bp, url_prefix="/api/v1/kasir/monitor")
+    app.register_blueprint(game_kasir_api_bp, url_prefix="/api/v1/kasir/game")
 
     # ==========================================
     # 3. PUBLIC APIs (/api/v1/public/...)
@@ -116,6 +119,7 @@ def create_app():
     app.register_blueprint(auth_api_bp, url_prefix="/api/v1/public/auth")
     app.register_blueprint(client_api_bp, url_prefix="/api/v1/public/client")
     app.register_blueprint(monitor_api_bp, url_prefix="/api/v1/public/monitor")
+    app.register_blueprint(game_public_api_bp, url_prefix="/api/v1/public/game")
     
     # ==========================================
     # 4. CSRF EXEMPTIONS (APIs using Tokens/Keys)
@@ -184,6 +188,11 @@ def create_app():
                 groups_with_pcs.append(g)
                 
         return render_template("public/specs/index.html", groups=groups_with_pcs)
+
+    @app.route("/games")
+    def public_games():
+        """Render halaman daftar game (Game Launcher)."""
+        return render_template("public/game/index.html")
 
     @app.context_processor
     def inject_global_settings():

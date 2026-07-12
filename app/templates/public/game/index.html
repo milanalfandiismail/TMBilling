@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    {% set page_title = "Daftar Game | " ~ warnet_title %}
+    {% include 'public/components/_head.html' %}
+</head>
+
+<body class="bg-[#050505] text-neutral-200 min-h-screen flex flex-col font-space-grotesk antialiased">
+
+    <!-- Navbar -->
+    {% include 'public/components/_navbar_public.html' %}
+
+    <!-- Main Content -->
+    <main class="flex-1 w-full max-w-[90rem] mx-auto px-6 md:px-10 py-8 lg:py-12 space-y-8">
+        
+        <!-- Header & Search -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative">
+            <div class="absolute -top-20 -left-20 w-64 h-64 bg-emerald-500/20 blur-[100px] rounded-full pointer-events-none"></div>
+            
+            <div class="relative z-10">
+                <h2 class="text-3xl lg:text-5xl font-black text-white tracking-tight">Daftar Game</h2>
+                <p class="text-neutral-400 mt-2 font-medium">Jelajahi dan temukan game favorit Anda sebelum bermain.</p>
+            </div>
+            
+            <div class="relative z-10 flex-shrink-0 w-full md:w-80">
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-neutral-500 group-focus-within:text-emerald-400 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <input type="text" id="search-game" placeholder="Cari game..." 
+                        class="w-full pl-12 pr-4 py-3 bg-[#0a0a0a]/80 backdrop-blur-md border border-neutral-800 rounded-xl text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all shadow-xl">
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories Filters -->
+        <div class="relative z-10 flex flex-wrap items-center gap-2" id="kategori-filters">
+            <!-- Rendered by JS -->
+            <button class="px-5 py-2 rounded-full text-sm font-bold bg-neutral-100 text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]">Semua</button>
+            <button class="px-5 py-2 rounded-full text-sm font-bold bg-[#0f0f0f] text-neutral-400 border border-[#1f1f1f] hover:text-white hover:border-neutral-700 transition-colors">Loading...</button>
+        </div>
+
+        <!-- Games Grid -->
+        <div class="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pt-4" id="game-grid">
+            <!-- Skeletons while loading -->
+            {% for i in range(12) %}
+            <div class="animate-pulse bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl overflow-hidden aspect-[3/4]"></div>
+            {% endfor %}
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden flex-col items-center justify-center py-32 text-neutral-500">
+            <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <p class="font-bold text-lg md:text-xl text-neutral-400">Game tidak ditemukan</p>
+            <p class="text-sm mt-2 text-neutral-600">Coba ubah kata kunci pencarian Anda.</p>
+        </div>
+        
+    </main>
+
+    <!-- Footer -->
+    {% include 'public/components/_footer.html' %}
+
+    <!-- Scripts -->
+    <script src="/static/js/public/games.js"></script>
+</body>
+
+</html>
