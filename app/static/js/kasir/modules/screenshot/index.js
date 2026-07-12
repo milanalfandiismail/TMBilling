@@ -67,7 +67,7 @@ const Screenshot = {
 
     async load() {
         try {
-            const response = await fetch('/api/v1/public/monitor/screenshot/all');
+            const response = await fetch('/api/v1/kasir/monitor/screenshot/all');
             const data = await response.json();
             
             if (data.success) {
@@ -93,7 +93,7 @@ const Screenshot = {
                 for (const el of pcElements) {
                     const pcId = el.dataset.pcid;
                     if(pcId) {
-                        await fetch(`/api/v1/public/monitor/screenshot/trigger/${pcId}`, {
+                        await fetch(`/api/v1/kasir/monitor/screenshot/trigger/${pcId}`, {
                             method: 'POST'
                         });
                         count++;
@@ -110,7 +110,7 @@ const Screenshot = {
 
     async triggerSingle(pcId) {
         try {
-            const response = await fetch(`/api/v1/public/monitor/screenshot/trigger/${pcId}`, {
+            const response = await fetch(`/api/v1/kasir/monitor/screenshot/trigger/${pcId}`, {
                 method: 'POST'
             });
             const data = await response.json();

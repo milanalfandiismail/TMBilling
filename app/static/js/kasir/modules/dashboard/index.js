@@ -268,7 +268,7 @@ const Dashboard = {
         text.innerText = 'MEMINTA...';
 
         try {
-            const response = await fetch(`/api/v1/public/monitor/screenshot/trigger/${pcId}`, {
+            const response = await fetch(`/api/v1/kasir/monitor/screenshot/trigger/${pcId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -288,7 +288,7 @@ const Dashboard = {
             const interval = setInterval(async () => {
                 attempts++;
                 try {
-                    const statusRes = await fetch(`/api/v1/public/monitor/screenshot/status/${pcId}`);
+                    const statusRes = await fetch(`/api/v1/kasir/monitor/screenshot/status/${pcId}`);
                     const statusData = await statusRes.json();
                     if (statusData.success && statusData.screenshot_url) {
                         const timeSpan = document.getElementById('screenshot-time');
@@ -347,7 +347,7 @@ const Dashboard = {
             </div>
         `, async () => {
             try {
-                const response = await fetch(`/api/v1/public/monitor/remote/${pcId}/${action}`, {
+                const response = await fetch(`/api/v1/kasir/monitor/remote/${pcId}/${action}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
