@@ -4,6 +4,7 @@ const Screenshot = {
     cachedData: [],
     searchQuery: '',
     filterStatus: 'all',
+    filterGroup: 'all',
     searchTimeout: null,
 
     init() {
@@ -19,6 +20,7 @@ const Screenshot = {
     bindEvents() {
         const searchInput = document.getElementById('screenshot-search');
         const filterSelect = document.getElementById('screenshot-filter');
+        const groupFilterSelect = document.getElementById('screenshot-group-filter');
 
         if(searchInput) {
             searchInput.addEventListener('input', (e) => {
@@ -33,6 +35,13 @@ const Screenshot = {
         if(filterSelect) {
             filterSelect.addEventListener('change', (e) => {
                 this.filterStatus = e.target.value;
+                this.renderGrid();
+            });
+        }
+
+        if(groupFilterSelect) {
+            groupFilterSelect.addEventListener('change', (e) => {
+                this.filterGroup = e.target.value;
                 this.renderGrid();
             });
         }
@@ -63,6 +72,7 @@ const Screenshot = {
             
             if (data.success) {
                 this.cachedData = data.data;
+                this.populateGroupFilter();
                 this.renderGrid();
             } else {
                 Toast.show("Gagal memuat screenshot", "error");
@@ -127,8 +137,43 @@ const Screenshot = {
         lightbox.classList.remove('hidden');
     },
 
+    populateGroupFilter() {
+        const select = document.getElementById('screenshot-group-filter');
+        if(!select) return;
+        
+        // Simpan value saat ini
+        const currentValue = select.value;
+        
+        // Ambil unique grup dari data
+        const groups = new Set();
+        this.cachedData.forEach(pc => {
+            if(pc.pc_grup_nama) groups.add(pc.pc_grup_nama);
+        });
+
+        // Rebuild options
+        select.innerHTML = '<option value="all">Semua Grup / Zona</option>';
+        [...groups].sort().forEach(grup => {
+            const opt = document.createElement('option');
+            opt.value = grup;
+            opt.textContent = grup;
+            select.appendChild(opt);
+        });
+        
+        // Kembalikan value sebelumnya jika ada
+        if([...select.options].some(o => o.value === currentValue)) {
+            select.value = currentValue;
+        } else {
+            this.filterGroup = 'all';
+        }
+    },
+
     renderGrid() {
         let data = this.cachedData || [];
+        
+        // Apply group filter
+        if (this.filterGroup !== 'all') {
+            data = data.filter(pc => pc.pc_grup_nama === this.filterGroup);
+        }
         
         // Apply filter
         if (this.filterStatus === 'has_screenshot') {
@@ -172,7 +217,7 @@ const Screenshot = {
                                </div>`
                         }
                     </div>
-                    <div class="p-2 text-[10px] text-neutral-500 flex justify-between bg-[#0c0c0c]">
+                    <div class="p-2 text-xs text-neutral-500 flex justify-between bg-[#0c0c0c]">
                         <span>Update:</span>
                         <span>${pc.screenshot_time || 'N/A'}</span>
                     </div>
