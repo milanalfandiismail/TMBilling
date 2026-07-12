@@ -198,14 +198,15 @@ const Screenshot = {
             const imageUrl = hasImage ? `${pc.screenshot_url}?t=${new Date().getTime()}` : '';
             
             return `
-                <div class="screenshot-card bg-[#121212] border border-[#1c1c1c] rounded overflow-hidden flex flex-col" data-pcid="${pc.pc_id}">
-                    <div class="p-3 border-b border-[#1c1c1c] flex justify-between items-center bg-[#171717]">
-                        <div class="font-bold text-neutral-200 text-sm">${pc.pc_kode}</div>
-                        <button onclick="Screenshot.triggerSingle(${pc.pc_id})" class="text-neutral-400 hover:text-white p-1 rounded hover:bg-[#222]" title="Ambil Ulang">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
-                        </button>
-                    </div>
-                    <div class="relative aspect-video bg-black flex items-center justify-center group cursor-pointer" onclick="Screenshot.openLightbox('${hasImage ? pc.screenshot_url : ''}', '${pc.pc_kode}')">
+                <div class="screenshot-card h-full bg-[#121212] border border-[#1c1c1c] rounded overflow-hidden flex flex-col justify-between" data-pcid="${pc.pc_id}">
+                    <div>
+                        <div class="p-3 border-b border-[#1c1c1c] flex justify-between items-center bg-[#171717]">
+                            <div class="font-bold text-neutral-200 text-sm">${pc.pc_kode}</div>
+                            <button onclick="Screenshot.triggerSingle(${pc.pc_id})" class="text-neutral-400 hover:text-white p-1 rounded hover:bg-[#222]" title="Ambil Ulang">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+                            </button>
+                        </div>
+                        <div class="relative aspect-video w-full bg-black flex items-center justify-center group cursor-pointer" onclick="Screenshot.openLightbox('${hasImage ? pc.screenshot_url : ''}', '${pc.pc_kode}')">
                         ${hasImage 
                             ? `<img src="${imageUrl}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" alt="Screenshot ${pc.pc_kode}">
                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
@@ -216,8 +217,9 @@ const Screenshot = {
                                 <span class="text-xs">Belum ada screenshot</span>
                                </div>`
                         }
+                        </div>
                     </div>
-                    <div class="p-3 text-sm text-neutral-400 flex justify-between items-center bg-[#0c0c0c] border-t border-[#1c1c1c] mt-auto">
+                    <div class="p-3 text-sm text-neutral-400 flex justify-between items-center bg-[#0c0c0c] border-t border-[#1c1c1c]">
                         <span>Update:</span>
                         <span class="font-medium text-neutral-200">${pc.screenshot_time || 'N/A'}</span>
                     </div>
