@@ -69,6 +69,7 @@ def create_app():
         grup_api_bp,
         settings_api_bp,
         monitor_api_bp,
+        monitor_kasir_bp,
         user_api_bp,
         menu_api_bp,
         backup_api_bp,
@@ -107,6 +108,7 @@ def create_app():
     app.register_blueprint(mikrotik_api_bp, url_prefix="/api/v1/kasir/mikrotik")
     from app.routes.settings.plugin_routes import plugin_api_bp
     app.register_blueprint(plugin_api_bp, url_prefix="/api/v1/kasir/settings/plugins")
+    app.register_blueprint(monitor_kasir_bp, url_prefix="/api/v1/kasir/monitor")
 
     # ==========================================
     # 3. PUBLIC APIs (/api/v1/public/...)

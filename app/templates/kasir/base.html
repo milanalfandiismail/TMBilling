@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ warnet_title }} - Kasir{% endblock %}</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=3">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
@@ -85,60 +85,62 @@
     {% block content %}{% endblock %}
 
     <!-- ===== SCRIPTS ===== -->
-    <script src="{{ url_for('static', filename='js/kasir/core/api.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/core/utils.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/core/toast.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/core/modal.js') }}?v=20"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/api.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/utils.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/toast.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/modal.js') }}?v=22"></script>
     
     <!-- Components -->
-    <script src="{{ url_for('static', filename='js/kasir/components/modal-buka.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/components/modal-tambah.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/components/modal-confirm-tambah.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/kasir/components/modal-buka.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/components/modal-tambah.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/components/modal-confirm-tambah.js') }}?v=22"></script>
     
     <!-- Modules / Subfolders -->
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/sidebar.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_cards.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/map_view.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/index.js') }}?v=20"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/sidebar.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_cards.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/map_view.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/index.js') }}?v=27"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/grup/index.js') }}?v=20"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/grup/index.js') }}?v=22"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_grid.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_modal.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/pc/index.js') }}?v=20"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_grid.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_modal.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/pc/index.js') }}?v=22"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_table.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_modal.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/paket/index.js') }}?v=20"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_table.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_modal.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/paket/index.js') }}?v=22"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_table.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_modal.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_refill.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/index.js') }}?v=20"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_table.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_modal.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_refill.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/index.js') }}?v=22"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/laporan/index.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/laporan_menu/index.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/log/index.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/monitor/index.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/blackout/index.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/settings/index.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/settings/plugins.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/settings/migration.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/mikrotik/index.js') }}?v=20"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/laporan/index.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/laporan_menu/index.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/log/index.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/monitor/index.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/hardware_checker/index.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/screenshot/index.js') }}?v=34"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/blackout/index.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/settings/index.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/settings/plugins.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/settings/migration.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/mikrotik/index.js') }}?v=22"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/struk/struk_preview.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/struk/index.js') }}?v=20"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/struk/struk_preview.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/struk/index.js') }}?v=22"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/shift/index.js') }}?v=20"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/shift/index.js') }}?v=22"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/user/index.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/menu/index.js') }}?v=20"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/tournament/index.js') }}?v=20"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/user/index.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/menu/index.js') }}?v=22"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/tournament/index.js') }}?v=22"></script>
     
     <!-- Owner Analytics -->
     <script src="{{ url_for('static', filename='js/kasir/modules/owner/analytics.js') }}"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/app.js') }}?v=20"></script>
+    <script src="{{ url_for('static', filename='js/kasir/app.js') }}?v=22"></script>
     {% block scripts %}{% endblock %}
 </body>
 

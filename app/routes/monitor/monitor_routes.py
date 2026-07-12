@@ -6,13 +6,14 @@ Blueprint ini menyediakan endpoint untuk menerima telemetry
 dari C# Hardware Monitor Agent dan menampilkan data metrik
 hardware semua PC di dashboard kasir.
 """
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from app.services import HardwareService
 from app.utils.logger import write_log
 from app.routes.auth.auth_kasir_routes import login_required
 from app.routes.client.client_routes import api_key_required
 
 monitor_api_bp = Blueprint("monitor", __name__)
+monitor_kasir_bp = Blueprint("monitor_kasir", __name__)
 
 @monitor_api_bp.route("/all", methods=["GET"])
 def get_all_hardware():
@@ -103,7 +104,7 @@ def delete_hardware_data(hardware_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@monitor_api_bp.route("/screenshot/trigger/<int:pc_id>", methods=["POST"])
+@monitor_kasir_bp.route("/screenshot/trigger/<int:pc_id>", methods=["POST"])
 @login_required
 def trigger_screenshot(pc_id):
     """Trigger request screenshot ke client PC berdasarkan PC ID."""
@@ -119,7 +120,7 @@ def trigger_screenshot(pc_id):
         return jsonify({"success": True, "message": f"Perintah screenshot berhasil dikirim ke {pc.kode}"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-@monitor_api_bp.route("/remote/<int:pc_id>/<string:action>", methods=["POST"])
+@monitor_kasir_bp.route("/remote/<int:pc_id>/<string:action>", methods=["POST"])
 @login_required
 def trigger_remote_action(pc_id, action):
     """Trigger remote action (shutdown atau restart) ke client PC berdasarkan PC ID."""
@@ -178,7 +179,7 @@ def upload_screenshot():
         return jsonify({"error": str(e)}), 500
 
 
-@monitor_api_bp.route("/screenshot/status/<int:pc_id>", methods=["GET"])
+@monitor_kasir_bp.route("/screenshot/status/<int:pc_id>", methods=["GET"])
 @login_required
 def get_screenshot_status(pc_id):
     """Mengecek status dan timestamp screenshot terakhir untuk PC tertentu."""
@@ -186,7 +187,8 @@ def get_screenshot_status(pc_id):
         import os
         from flask import current_app
         from app.repositories import PCRepository
-        from datetime import datetime
+        from app.utils.timezone_utils import format_display
+        from datetime import datetime, timezone
 
         pc = PCRepository.get_by_id(pc_id)
         if not pc:
@@ -195,7 +197,8 @@ def get_screenshot_status(pc_id):
         screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{pc.kode}.png")
         if os.path.exists(screenshot_path):
             mtime = os.path.getmtime(screenshot_path)
-            screenshot_time = datetime.fromtimestamp(mtime).strftime("%d/%m/%Y %H:%M:%S")
+            dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
+            screenshot_time = format_display(dt_utc)
             return jsonify({
                 "success": True,
                 "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
@@ -207,6 +210,58 @@ def get_screenshot_status(pc_id):
                 "screenshot_url": None,
                 "screenshot_time": None
             }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@monitor_kasir_bp.route("/screenshot/all", methods=["GET"])
+@login_required
+def get_all_screenshot_status():
+    """Mengecek status dan timestamp screenshot terakhir untuk semua PC."""
+    try:
+        import os
+        from flask import current_app
+        from app.repositories import PCRepository
+        from app.utils.timezone_utils import format_display
+        from datetime import datetime, timezone
+
+        pcs = PCRepository.get_all()
+        result = []
+
+        for pc in pcs:
+            screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{pc.kode}.png")
+            if os.path.exists(screenshot_path):
+                mtime = os.path.getmtime(screenshot_path)
+                dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
+                screenshot_time = format_display(dt_utc)
+                result.append({
+                    "pc_id": pc.id,
+                    "pc_kode": pc.kode,
+                    "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",                    "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
+                    "screenshot_time": screenshot_time
+                })
+            else:
+                result.append({
+                    "pc_id": pc.id,
+                    "pc_kode": pc.kode,
+                    "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",                    "screenshot_url": None,
+                    "screenshot_time": None
+                })
+                
+        return jsonify({"success": True, "data": result}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@monitor_kasir_bp.route("/register/<int:pc_id>", methods=["POST"])
+@login_required
+def register_pc_hardware(pc_id):
+    """Endpoint untuk mendaftarkan hardware saat ini sebagai baseline resmi PC (Update Baseline)."""
+    try:
+        operator = session.get("kasir_username", "admin")
+        pc_kode = HardwareService.update_pc_baseline(pc_id, operator=operator)
+        return jsonify({"success": True, "message": f"Baseline hardware PC {pc_kode} berhasil diperbarui"}), 200
+    except ValueError as val_e:
+        return jsonify({"success": False, "error": str(val_e)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

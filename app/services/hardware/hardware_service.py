@@ -8,7 +8,8 @@ untuk ditampilkan di dashboard kasir.
 """
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
+from app.utils.timezone_utils import now_utc
 from app.models import db
 from app.models import HardwareMonitor
 from app.repositories import HardwareRepository
@@ -94,6 +95,79 @@ class HardwareService:
             # --- NEW: Process Monitoring Data ---
             hardware.active_window = str(data.get("ActiveWindow", data.get("active_window", hardware.active_window or "")))
             
+            # --- Hardware Checker Logic (Always-On) ---
+            serials = data.get("HardwareSerials", data.get("hardwareSerials", data.get("hardware_serials")))
+            if serials and isinstance(serials, dict):
+                import json
+                
+                # Simpan specs telemetry saat ini secara berkala
+                hardware.hardware_current_specs = json.dumps(serials)
+                
+                # Jika baseline kosong, daftarkan baseline awal secara otomatis
+                if not hardware.hardware_baseline:
+                    hardware.hardware_baseline = json.dumps(serials)
+                    hardware.hardware_mismatch = False
+                    hardware.hardware_mismatch_desc = None
+                    hardware.hardware_mismatch_time = None
+                    hardware.hardware_last_sync = now_utc()
+                else:
+                    try:
+                        baseline = json.loads(hardware.hardware_baseline)
+                    except Exception:
+                        baseline = None
+                        
+                    if baseline and isinstance(baseline, dict):
+                        mismatch_reasons = []
+                        
+                        # 1. Motherboard
+                        base_mobo = baseline.get("MotherboardSerial", "Unknown")
+                        curr_mobo = serials.get("MotherboardSerial", "Unknown")
+                        if base_mobo != "Unknown" and curr_mobo != "Unknown" and base_mobo != curr_mobo:
+                            mismatch_reasons.append(f"Motherboard Serial berubah (dari '{base_mobo}' ke '{curr_mobo}')")
+                            
+                        # 2. CPU
+                        base_cpu = baseline.get("CpuId", "Unknown")
+                        curr_cpu = serials.get("CpuId", "Unknown")
+                        if base_cpu != "Unknown" and curr_cpu != "Unknown" and base_cpu != curr_cpu:
+                            mismatch_reasons.append(f"Processor ID berubah (dari '{base_cpu}' ke '{curr_cpu}')")
+                            
+                        # 3. GPU
+                        base_gpu = baseline.get("GpuPnpId", "Unknown")
+                        curr_gpu = serials.get("GpuPnpId", "Unknown")
+                        if base_gpu != "Unknown" and curr_gpu != "Unknown" and base_gpu != curr_gpu:
+                            mismatch_reasons.append("GPU/VGA ditukar (PNP Device ID berbeda)")
+                            
+                        # 4. RAM Serials
+                        base_rams = set(baseline.get("RamSerials") or [])
+                        curr_rams = set(serials.get("RamSerials") or [])
+                        if base_rams and curr_rams:
+                            missing_rams = base_rams - curr_rams
+                            added_rams = curr_rams - base_rams
+                            if missing_rams:
+                                mismatch_reasons.append(f"{len(missing_rams)} keping RAM dicopot/ditukar")
+                            elif added_rams:
+                                mismatch_reasons.append(f"Terdeteksi keping RAM baru terpasang")
+                                
+                        # 5. Disk Serials
+                        base_disks = set(baseline.get("DiskSerials") or [])
+                        curr_disks = set(serials.get("DiskSerials") or [])
+                        if base_disks and curr_disks:
+                            missing_disks = base_disks - curr_disks
+                            if missing_disks:
+                                mismatch_reasons.append(f"Penyimpanan (SSD/HDD) dicopot/ditukar")
+                                
+                        if mismatch_reasons:
+                            if not hardware.hardware_mismatch:
+                                hardware.hardware_mismatch = True
+                                hardware.hardware_mismatch_time = now_utc()
+                                hardware.hardware_mismatch_desc = "; ".join(mismatch_reasons)
+                                write_log("HARDWARE_ALERT", f"PC {pc.kode} terdeteksi mismatch: {hardware.hardware_mismatch_desc}")
+                        else:
+                            hardware.hardware_mismatch = False
+                            hardware.hardware_mismatch_desc = None
+                            hardware.hardware_mismatch_time = None
+                            hardware.hardware_last_sync = now_utc()
+
             # 5. Sync Process List if provided
             process_list = data.get("ProcessList", data.get("processList", data.get("process_list")))
             if process_list is not None and isinstance(process_list, list):
@@ -198,4 +272,31 @@ class HardwareService:
             return pc_kode
         except Exception as e:
             HardwareRepository.rollback()
+            raise e
+
+    @staticmethod
+    def update_pc_baseline(pc_id, operator="admin"):
+        """Mengambil data current specs dari telemetry terakhir dan menyimpannya sebagai baseline resmi."""
+        try:
+            hardware = HardwareRepository.get_by_pc_id(pc_id)
+            if not hardware:
+                raise ValueError("Data hardware monitor tidak ditemukan")
+                
+            if not hardware.hardware_current_specs:
+                raise ValueError("Belum ada data telemetry yang masuk dari PC ini untuk dijadikan baseline")
+                
+            # Copy current specs ke baseline
+            hardware.hardware_baseline = hardware.hardware_current_specs
+            hardware.hardware_mismatch = False
+            hardware.hardware_mismatch_desc = None
+            hardware.hardware_mismatch_time = None
+            hardware.hardware_last_sync = now_utc()
+            
+            db.session.commit()
+            
+            pc_kode = hardware.pc.kode if hardware.pc else "Unknown"
+            write_log("UPDATE_BASELINE", f"Baseline hardware PC {pc_kode} berhasil diperbarui oleh kasir/owner", user=operator)
+            return pc_kode
+        except Exception as e:
+            db.session.rollback()
             raise e

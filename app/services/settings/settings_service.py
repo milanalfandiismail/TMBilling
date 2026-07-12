@@ -40,7 +40,10 @@ class SettingsService:
             "mikrotik_port": "8728",
             "mikrotik_username": "admin",
             "mikrotik_password": "",
-            "mikrotik_hotspot_profile": "default"
+            "mikrotik_hotspot_profile": "default",
+            "screenshot_auto_enabled": "0",
+            "screenshot_auto_value": "60",
+            "screenshot_auto_unit": "detik"
         }
         for k, v in defaults.items():
             if k not in data or not data[k]:
