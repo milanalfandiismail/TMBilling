@@ -67,8 +67,7 @@ const Screenshot = {
 
     async load() {
         try {
-            const response = await fetch('/api/v1/kasir/monitor/screenshot/all');
-            const data = await response.json();
+            const data = await API.request('/api/v1/kasir/monitor/screenshot/all');
             
             if (data.success) {
                 this.cachedData = data.data;
@@ -93,10 +92,12 @@ const Screenshot = {
                 for (const el of pcElements) {
                     const pcId = el.dataset.pcid;
                     if(pcId) {
-                        await fetch(`/api/v1/kasir/monitor/screenshot/trigger/${pcId}`, {
-                            method: 'POST'
-                        });
-                        count++;
+                        try {
+                            await API.request(`/api/v1/kasir/monitor/screenshot/trigger/${pcId}`, {
+                                method: 'POST'
+                            });
+                            count++;
+                        } catch(e) { console.error(e); }
                     }
                 }
                 Toast.show(`Perintah screenshot dikirim ke ${count} PC`, "success");
@@ -110,10 +111,9 @@ const Screenshot = {
 
     async triggerSingle(pcId) {
         try {
-            const response = await fetch(`/api/v1/kasir/monitor/screenshot/trigger/${pcId}`, {
+            const data = await API.request(`/api/v1/kasir/monitor/screenshot/trigger/${pcId}`, {
                 method: 'POST'
             });
-            const data = await response.json();
             if(data.success) {
                 Toast.show(`Perintah screenshot dikirim`, "success");
                 setTimeout(() => this.load(), 5000);
