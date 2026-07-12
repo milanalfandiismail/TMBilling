@@ -13,12 +13,17 @@ const App = {
         // if (typeof Shift !== 'undefined') Shift.load();
         this.updatePageTitle('dash');
 
+        // 5-second interval for Dashboard and Monitor
         setInterval(() => {
             if (this.currentTab === 'dash') Dashboard.load();
             if (this.currentTab === 'monitor' && typeof Monitor !== 'undefined') Monitor.load();
+        }, 5000);
+
+        // 60-second interval for Hardware Checker and Screenshot
+        setInterval(() => {
             if (this.currentTab === 'hardware_checker' && typeof HardwareChecker !== 'undefined') HardwareChecker.load();
             if (this.currentTab === 'screenshot' && typeof Screenshot !== 'undefined') Screenshot.load();
-        }, 5000);
+        }, 60000);
 
         // Session polling sudah di api.js (startSessionCheck)
     },
