@@ -1,12 +1,40 @@
 const Screenshot = {
     pollingInterval: null,
 
+    cachedData: [],
+    searchQuery: '',
+    filterStatus: 'all',
+    searchTimeout: null,
+
     init() {
         if(App.currentTab === 'screenshot') {
+            this.bindEvents();
             this.load();
             this.startPolling();
         } else {
             this.stopPolling();
+        }
+    },
+
+    bindEvents() {
+        const searchInput = document.getElementById('screenshot-search');
+        const filterSelect = document.getElementById('screenshot-filter');
+
+        if(searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                if(this.searchTimeout) clearTimeout(this.searchTimeout);
+                this.searchTimeout = setTimeout(() => {
+                    this.searchQuery = e.target.value.toLowerCase();
+                    this.renderGrid();
+                }, 300);
+            });
+        }
+
+        if(filterSelect) {
+            filterSelect.addEventListener('change', (e) => {
+                this.filterStatus = e.target.value;
+                this.renderGrid();
+            });
         }
     },
 
@@ -34,7 +62,8 @@ const Screenshot = {
             const data = await response.json();
             
             if (data.success) {
-                this.renderGrid(data.data);
+                this.cachedData = data.data;
+                this.renderGrid();
             } else {
                 Toast.show("Gagal memuat screenshot", "error");
             }
@@ -98,7 +127,21 @@ const Screenshot = {
         lightbox.classList.remove('hidden');
     },
 
-    renderGrid(data) {
+    renderGrid() {
+        let data = this.cachedData || [];
+        
+        // Apply filter
+        if (this.filterStatus === 'has_screenshot') {
+            data = data.filter(pc => !!pc.screenshot_url);
+        } else if (this.filterStatus === 'no_screenshot') {
+            data = data.filter(pc => !pc.screenshot_url);
+        }
+
+        // Apply search
+        if (this.searchQuery) {
+            data = data.filter(pc => pc.pc_kode.toLowerCase().includes(this.searchQuery));
+        }
+
         const container = document.getElementById('screenshot-grid');
         if (!data || data.length === 0) {
             container.innerHTML = `<div class="col-span-full text-center py-10 text-neutral-500">Tidak ada PC aktif</div>`;
@@ -138,3 +181,5 @@ const Screenshot = {
         }).join('');
     }
 };
+
+window.Screenshot = Screenshot;
