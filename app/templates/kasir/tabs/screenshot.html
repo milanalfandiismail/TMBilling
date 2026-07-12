@@ -1,0 +1,65 @@
+<!-- ===== TAB: SCREENSHOT MONITOR ===== -->
+<div id="tab-screenshot" class="tab-content hidden space-y-6">
+    <!-- Header Action -->
+    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide uppercase">Screenshot Monitor</h3>
+                <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Pantauan visual real-time seluruh PC yang sedang aktif.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="Screenshot.triggerAll()"
+                    class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Ambil Semua
+                </button>
+                <button onclick="Screenshot.load()"
+                    class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
+                    ↻ Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filter & Grid -->
+    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-400 uppercase tracking-wider">Pantauan PC</h3>
+            <div class="flex flex-wrap items-center gap-2">
+                <input type="text" id="screenshot-search" placeholder="Cari PC..."
+                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 w-48">
+                
+                <select id="screenshot-group-filter"
+                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-48">
+                    <option value="all">Semua Grup / Zona</option>
+                </select>
+                
+                <select id="screenshot-filter"
+                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-48">
+                    <option value="all">Semua Status</option>
+                    <option value="has_screenshot">Ada Screenshot</option>
+                    <option value="no_screenshot">Belum Ada Screenshot</option>
+                </select>
+            </div>
+        </div>
+        
+        <div id="screenshot-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
+            <div class="col-span-full flex justify-center py-10">
+                <div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Lightbox (tetap tidak berubah logikanya) -->
+<div id="screenshot-lightbox" class="fixed inset-0 bg-black/90 z-50 hidden flex-col items-center justify-center p-4">
+    <div class="w-full max-w-6xl relative">
+        <div class="flex justify-between items-center mb-4 text-white">
+            <h3 id="lightbox-title" class="text-xl font-bold">Screenshot</h3>
+            <button onclick="Screenshot.closeLightbox()" class="hover:text-neutral-300">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <img id="lightbox-img" src="" class="w-full max-h-[80vh] object-contain rounded border border-[#262626]">
+    </div>
+</div>

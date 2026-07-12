@@ -28,6 +28,15 @@ if %ERRORLEVEL% NEQ 0 (
 echo.
 echo [2/5] Memulai kompilasi TMMonitor (Rust - TMBilling_Monitor)...
 cd /d "%CURRENT_DIR%WarnetAgent\TMBilling_Monitor"
+
+echo Mengompilasi HardwareHelper.cs ke HardwareHelper.exe...
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /target:exe /out:HardwareHelper.exe /reference:LibreHardwareMonitorLib.dll /reference:System.Management.dll HardwareHelper.cs
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] Gagal melakukan build HardwareHelper C#!
+    pause
+    exit /b %ERRORLEVEL%
+)
+
 cargo build --release
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Gagal melakukan build TMMonitor!

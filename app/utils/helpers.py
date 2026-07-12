@@ -190,3 +190,22 @@ def run_cleanup_logs(app):
                 write_log("SCHEDULER", f"Cleanup log: {removed} baris lama dihapus (>{value} {unit})", user="SYSTEM")
         except Exception as e:
             write_log("SCHEDULER_ERROR", f"Error cleanup log: {str(e)}", user="SYSTEM")
+
+
+def run_auto_screenshots(app):
+    """Wrapper untuk auto-screenshot yang dijalankan oleh scheduler."""
+    with app.app_context():
+        from app.services import SettingsService, ClientService
+        from app.repositories import SesiRepository
+        
+        try:
+            enabled = SettingsService.get("screenshot_auto_enabled", "0")
+            if enabled == "1" or str(enabled).lower() == "true":
+                active_sessions = SesiRepository.get_all_aktif()
+                count = 0
+                for sesi in active_sessions:
+                    if sesi.pc_id:
+                        ClientService.queue_command(sesi.pc_id, "screenshot")
+                        count += 1
+        except Exception as e:
+            write_log("SCHEDULER_ERROR", f"Error auto-screenshot: {str(e)}", user="SYSTEM")

@@ -281,24 +281,30 @@ def update_scheduler_config():
         backup_unit = data.get("backup_unit")
         cleanup_value = data.get("cleanup_value")
         cleanup_unit = data.get("cleanup_unit")
+        screenshot_enabled = data.get("screenshot_enabled", "0")
+        screenshot_value = data.get("screenshot_value")
+        screenshot_unit = data.get("screenshot_unit")
 
         # Validasi
         if backup_value is None or backup_unit is None:
             return jsonify({"error": "backup_value dan backup_unit wajib diisi"}), 400
         if cleanup_value is None or cleanup_unit is None:
             return jsonify({"error": "cleanup_value dan cleanup_unit wajib diisi"}), 400
+        if screenshot_value is None or screenshot_unit is None:
+            return jsonify({"error": "screenshot_value dan screenshot_unit wajib diisi"}), 400
 
         try:
             backup_value = int(backup_value)
             cleanup_value = int(cleanup_value)
+            screenshot_value = int(screenshot_value)
         except ValueError:
             return jsonify({"error": "Nilai interval harus berupa angka"}), 400
 
-        if backup_value < 1 or cleanup_value < 1:
+        if backup_value < 1 or cleanup_value < 1 or screenshot_value < 1:
             return jsonify({"error": "Nilai interval minimal 1"}), 400
 
         valid_units = set(UNIT_MULTIPLIER.keys())
-        if backup_unit not in valid_units or cleanup_unit not in valid_units:
+        if backup_unit not in valid_units or cleanup_unit not in valid_units or screenshot_unit not in valid_units:
             return jsonify({"error": f"Unit tidak valid. Gunakan: {', '.join(valid_units)}"}), 400
 
         # Simpan ke DB
@@ -306,9 +312,12 @@ def update_scheduler_config():
         SettingsService.set("auto_backup_unit", backup_unit)
         SettingsService.set("auto_cleanup_value", str(cleanup_value))
         SettingsService.set("auto_cleanup_unit", cleanup_unit)
+        SettingsService.set("screenshot_auto_enabled", str(screenshot_enabled))
+        SettingsService.set("screenshot_auto_value", str(screenshot_value))
+        SettingsService.set("screenshot_auto_unit", screenshot_unit)
 
         operator = session.get("kasir_username", "admin")
-        write_log("SCHEDULER_CONFIG", f"Backup: {backup_value} {backup_unit}, Cleanup: {cleanup_value} {cleanup_unit}", user=operator)
+        write_log("SCHEDULER_CONFIG", f"Backup: {backup_value} {backup_unit}, Cleanup: {cleanup_value} {cleanup_unit}, Screenshot: {'On' if screenshot_enabled == '1' else 'Off'} ({screenshot_value} {screenshot_unit})", user=operator)
 
         return jsonify({"success": True, "message": "Konfigurasi scheduler disimpan"}), 200
     except Exception as e:

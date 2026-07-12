@@ -17,7 +17,7 @@ Usage:
 
 from app import create_app
 from apscheduler.schedulers.background import BackgroundScheduler
-from app.utils.helpers import run_cleanup_expired, run_database_backup, run_cleanup_logs, UNIT_MULTIPLIER
+from app.utils.helpers import run_cleanup_expired, run_database_backup, run_cleanup_logs, run_auto_screenshots, UNIT_MULTIPLIER
 import os
 import time
 
@@ -66,6 +66,16 @@ def start_scheduler(app):
         trigger="interval",
         seconds=cleanup_seconds,
         id="cleanup_logs"
+    )
+
+    # Task 4: Auto Screenshot (interval dinamis)
+    screenshot_seconds = get_scheduler_interval("screenshot_auto_value", "screenshot_auto_unit", 60, "detik")
+    scheduler.add_job(
+        func=run_auto_screenshots,
+        args=[app],
+        trigger="interval",
+        seconds=screenshot_seconds,
+        id="auto_screenshots"
     )
 
     return scheduler

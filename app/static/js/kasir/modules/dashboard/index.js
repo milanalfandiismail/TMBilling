@@ -268,13 +268,9 @@ const Dashboard = {
         text.innerText = 'MEMINTA...';
 
         try {
-            const response = await fetch(`/api/v1/public/monitor/screenshot/trigger/${pcId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+            const result = await API.request(`/api/v1/kasir/monitor/screenshot/trigger/${pcId}`, {
+                method: 'POST'
             });
-            const result = await response.json();
             if (!result.success) {
                 throw new Error(result.error || 'Gagal memicu screenshot');
             }
@@ -288,8 +284,7 @@ const Dashboard = {
             const interval = setInterval(async () => {
                 attempts++;
                 try {
-                    const statusRes = await fetch(`/api/v1/public/monitor/screenshot/status/${pcId}`);
-                    const statusData = await statusRes.json();
+                    const statusData = await API.request(`/api/v1/kasir/monitor/screenshot/status/${pcId}`);
                     if (statusData.success && statusData.screenshot_url) {
                         const timeSpan = document.getElementById('screenshot-time');
                         const img = document.getElementById('screenshot-img');
@@ -347,13 +342,9 @@ const Dashboard = {
             </div>
         `, async () => {
             try {
-                const response = await fetch(`/api/v1/public/monitor/remote/${pcId}/${action}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+                const result = await API.request(`/api/v1/kasir/monitor/remote/${pcId}/${action}`, {
+                    method: 'POST'
                 });
-                const result = await response.json();
                 if (!result.success) {
                     throw new Error(result.error || 'Gagal mengirim perintah');
                 }
