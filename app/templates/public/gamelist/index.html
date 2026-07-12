@@ -131,15 +131,18 @@
             empty.classList.add('hidden');
             grid.classList.remove('hidden');
 
+            grid.innerHTML = filtered.map(g => {
                 const iconUrl = g.icon_url || 'https://placehold.co/120x120/0c0c0c/888888?text=Game';
 
                 return `
-                    <div class="bg-[#0a0a0a] border border-neutral-900 rounded-2xl p-5 flex flex-col justify-center items-center space-y-4 game-card overflow-hidden relative text-center">
-                        <img src="${iconUrl}" class="w-20 h-20 rounded-2xl object-cover border border-neutral-900 shadow-xl shrink-0" onerror="this.src='https://placehold.co/120x120/0c0c0c/888888?text=Game'">
-                        <div class="w-full">
-                            <h4 class="font-extrabold text-neutral-100 text-sm tracking-wide truncate" title="${g.nama}">${g.nama}</h4>
-                            <div class="mt-2">
-                                <span class="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-400 text-[10px] font-bold font-mono">${g.kategori}</span>
+                    <div class="bg-[#0a0a0a] border border-neutral-900 rounded-2xl p-5 flex flex-col space-y-4 game-card overflow-hidden relative">
+                        <div class="flex items-start gap-4">
+                            <img src="${iconUrl}" class="w-14 h-14 rounded-xl object-cover border border-neutral-900 shadow-md shrink-0" onerror="this.src='https://placehold.co/120x120/0c0c0c/888888?text=Game'">
+                            <div class="min-w-0 flex-1">
+                                <h4 class="font-extrabold text-neutral-100 text-sm tracking-wide truncate" title="${g.nama}">${g.nama}</h4>
+                                <div class="mt-1.5">
+                                    <span class="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-400 text-[10px] font-bold font-mono">${g.kategori}</span>
+                                </div>
                             </div>
                         </div>
                     </div>

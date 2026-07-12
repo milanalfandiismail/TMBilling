@@ -16,8 +16,7 @@ class GameRepository:
             query = query.filter_by(kategori=category)
         if search_query:
             query = query.filter(
-                (Game.nama.ilike(f"%{search_query}%")) |
-                (Game.deskripsi.ilike(f"%{search_query}%"))
+                (Game.nama.ilike(f"%{search_query}%"))
             )
         return query.order_by(Game.nama).all()
 

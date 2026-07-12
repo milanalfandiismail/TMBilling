@@ -35,12 +35,8 @@ class GameService:
             raise ValueError(f"Game dengan nama '{nama}' sudah ada")
 
         kategori = data.get("kategori", "Casual").strip()
-        status = data.get("status", "Ready").strip()
         exe_path = data.get("exe_path", "").strip() or None
         argumen = data.get("argumen", "").strip() or None
-        deskripsi = data.get("deskripsi", "").strip() or None
-        developer = data.get("developer", "").strip() or None
-        file_size = data.get("file_size", "").strip() or None
         aktif = data.get("aktif", True)
         if isinstance(aktif, str):
             aktif = aktif.lower() in ("true", "1", "yes")
@@ -52,13 +48,9 @@ class GameService:
         game = Game(
             nama=nama,
             kategori=kategori,
-            status=status,
             exe_path=exe_path,
             argumen=argumen,
             icon_url=icon_url,
-            deskripsi=deskripsi,
-            developer=developer,
-            file_size=file_size,
             aktif=aktif
         )
 
@@ -83,18 +75,10 @@ class GameService:
 
         if "kategori" in data:
             game.kategori = data["kategori"].strip()
-        if "status" in data:
-            game.status = data["status"].strip()
         if "exe_path" in data:
             game.exe_path = data["exe_path"].strip() or None
         if "argumen" in data:
             game.argumen = data["argumen"].strip() or None
-        if "deskripsi" in data:
-            game.deskripsi = data["deskripsi"].strip() or None
-        if "developer" in data:
-            game.developer = data["developer"].strip() or None
-        if "file_size" in data:
-            game.file_size = data["file_size"].strip() or None
         if "aktif" in data:
             aktif_val = data["aktif"]
             if isinstance(aktif_val, str):

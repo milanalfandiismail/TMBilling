@@ -24,13 +24,9 @@ class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nama = db.Column(db.String(100), nullable=False, unique=True)
     kategori = db.Column(db.String(50), nullable=False, default="Casual")
-    status = db.Column(db.String(30), nullable=False, default="Ready")
     exe_path = db.Column(db.String(255), nullable=True)
     argumen = db.Column(db.String(255), nullable=True)
     icon_url = db.Column(db.String(255), nullable=True)
-    deskripsi = db.Column(db.Text, nullable=True)
-    developer = db.Column(db.String(100), nullable=True)
-    file_size = db.Column(db.String(30), nullable=True)
     aktif = db.Column(db.Boolean, default=True)
     dibuat_pada = db.Column(db.DateTime, default=now_local)
 
