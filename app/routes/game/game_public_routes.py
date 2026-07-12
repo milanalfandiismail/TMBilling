@@ -21,3 +21,17 @@ def get_public_games():
         }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+from app.services.game.game_kategori_service import GameKategoriService
+
+@game_public_api_bp.route("/kategori", methods=["GET"])
+def get_public_kategori():
+    """Mengambil daftar kategori untuk dropdown/filter di halaman publik."""
+    try:
+        kategori_list = GameKategoriService.get_all()
+        return jsonify({
+            "success": True,
+            "data": [k.to_dict() for k in kategori_list]
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500

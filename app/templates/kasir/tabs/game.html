@@ -6,28 +6,29 @@
             <h2 class="text-xl font-black text-neutral-100 tracking-wider uppercase">Kelola Game</h2>
             <p class="text-xs text-neutral-500 mt-1">Daftar game yang terpasang di client dan ditampilkan di portal publik.</p>
         </div>
-        <button onclick="GameManagement.openAddModal()" 
-            class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded-lg transition-all flex items-center gap-2 self-start sm:self-center">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Tambah Game Baru
-        </button>
+        <div class="flex items-center gap-2 self-start sm:self-center">
+            <button onclick="KategoriManagement.openModal()" 
+                class="px-4 py-2 bg-[#171717] hover:bg-[#262626] border border-[#262626] text-neutral-300 text-xs font-bold rounded-lg transition-all flex items-center gap-2">
+                Kelola Kategori
+            </button>
+            <button onclick="GameManagement.openAddModal()" 
+                class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded-lg transition-all flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Tambah Game Baru
+            </button>
+        </div>
     </div>
 
     <!-- Filters & Search -->
     <div class="flex flex-col md:flex-row gap-4 items-center justify-between bg-[#0c0c0c] border border-[#171717] p-4 rounded-xl">
-        <div class="flex flex-wrap gap-2 text-xs">
+        <div id="game-category-filters" class="flex flex-wrap gap-2 text-xs">
             <button onclick="GameManagement.filterCategory('all')" id="game-cat-all" 
                 class="px-3 py-1.5 rounded-lg bg-neutral-800 text-neutral-100 font-bold border border-neutral-700 transition-all game-cat-btn">
                 Semua
             </button>
-            <button onclick="GameManagement.filterCategory('FPS')" id="game-cat-FPS" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 transition-all game-cat-btn">FPS</button>
-            <button onclick="GameManagement.filterCategory('MOBA')" id="game-cat-MOBA" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 transition-all game-cat-btn">MOBA</button>
-            <button onclick="GameManagement.filterCategory('RPG')" id="game-cat-RPG" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 transition-all game-cat-btn">RPG</button>
-            <button onclick="GameManagement.filterCategory('Simulator')" id="game-cat-Simulator" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 transition-all game-cat-btn">Simulator</button>
-            <button onclick="GameManagement.filterCategory('Strategy')" id="game-cat-Strategy" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 transition-all game-cat-btn">Strategy</button>
-            <button onclick="GameManagement.filterCategory('Casual')" id="game-cat-Casual" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 transition-all game-cat-btn">Casual</button>
+            <!-- Filter tombol akan di-render oleh JavaScript -->
         </div>
         <div class="relative w-full md:w-64">
             <span class="absolute top-1/2 -translate-y-1/2 left-3 flex items-center pointer-events-none">
@@ -96,12 +97,7 @@
                     <label class="text-[10px] text-neutral-500 font-mono uppercase tracking-wider">Kategori <span class="text-red-500">*</span></label>
                     <select id="form-game-kategori" required
                         class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200">
-                        <option value="FPS">FPS</option>
-                        <option value="MOBA">MOBA</option>
-                        <option value="RPG">RPG</option>
-                        <option value="Simulator">Simulator</option>
-                        <option value="Strategy">Strategy</option>
-                        <option value="Casual">Casual</option>
+                        <!-- Option kategori akan diisi lewat JS -->
                     </select>
                 </div>
             </div>
@@ -154,5 +150,40 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Modal: Kelola Kategori -->
+<div id="kategori-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden p-4">
+    <div class="fixed inset-0 bg-black/85" onclick="KategoriManagement.closeModal()"></div>
+    
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl w-full max-w-md relative z-10 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="p-5 border-b border-[#1c1c1c] flex items-center justify-between">
+            <h3 class="text-sm font-black text-neutral-200 uppercase tracking-wider">Kelola Kategori</h3>
+            <button onclick="KategoriManagement.closeModal()" class="text-neutral-500 hover:text-neutral-300 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="p-5 overflow-y-auto">
+            <form id="kategori-form" onsubmit="KategoriManagement.addKategori(event)" class="flex gap-2 mb-6">
+                <input type="text" id="form-kategori-nama" required placeholder="Nama Kategori Baru"
+                    class="flex-1 px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded-lg text-xs text-neutral-200">
+                <button type="submit" class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded-lg transition-all">
+                    Tambah
+                </button>
+            </form>
+            
+            <div class="border border-[#171717] rounded-lg overflow-hidden">
+                <table class="w-full text-left border-collapse text-xs">
+                    <tbody id="kategori-table-body" class="divide-y divide-[#171717] text-neutral-300">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="kategori-empty" class="hidden py-4 text-center text-xs text-neutral-500">Belum ada kategori.</div>
+        </div>
     </div>
 </div>

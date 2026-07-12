@@ -2,18 +2,46 @@ const GameManagement = {
     currentCategory: 'all',
     searchQuery: '',
     allGames: [],
+    allCategories: [],
 
     async load() {
         try {
-            const result = await window.API.request('/api/v1/kasir/game/');
-            if (result && result.success) {
-                this.allGames = result.data || [];
-                this.render();
-            } else {
-                Toast.error("Gagal memuat daftar game");
+            const [gameRes, catRes] = await Promise.all([
+                window.API.request('/api/v1/kasir/game/'),
+                window.API.request('/api/v1/kasir/game/kategori')
+            ]);
+            
+            if (gameRes && gameRes.success) {
+                this.allGames = gameRes.data || [];
             }
+            if (catRes && catRes.success) {
+                this.allCategories = catRes.data || [];
+                this.renderCategories();
+            }
+            this.render();
         } catch (error) {
-            Toast.error("Error koneksi server saat memuat game");
+            Toast.error("Error koneksi server saat memuat data game");
+        }
+    },
+
+    renderCategories() {
+        const filterContainer = document.getElementById('game-category-filters');
+        const selectCat = document.getElementById('form-game-kategori');
+        
+        if (filterContainer) {
+            let html = `<button onclick="GameManagement.filterCategory('all')" id="game-cat-all" 
+                class="px-3 py-1.5 rounded-lg ${this.currentCategory === 'all' ? 'bg-neutral-800 text-neutral-100 border-neutral-700 font-bold' : 'text-neutral-400 hover:text-neutral-200'} border border-transparent transition-all game-cat-btn">Semua</button>`;
+            
+            this.allCategories.forEach(cat => {
+                const isActive = this.currentCategory === cat.nama;
+                html += `<button onclick="GameManagement.filterCategory('${Utils.escapeHtml(cat.nama)}')" id="game-cat-${Utils.escapeHtml(cat.nama)}" 
+                    class="px-3 py-1.5 rounded-lg ${isActive ? 'bg-neutral-800 text-neutral-100 border-neutral-700 font-bold' : 'text-neutral-400 hover:text-neutral-200'} border border-transparent transition-all game-cat-btn">${Utils.escapeHtml(cat.nama)}</button>`;
+            });
+            filterContainer.innerHTML = html;
+        }
+
+        if (selectCat) {
+            selectCat.innerHTML = this.allCategories.map(c => `<option value="${Utils.escapeHtml(c.nama)}">${Utils.escapeHtml(c.nama)}</option>`).join('');
         }
     },
 
@@ -199,6 +227,87 @@ const GameManagement = {
                 this.load();
             } else {
                 Toast.error(res.error || "Gagal menghapus game");
+            }
+        } catch (error) {
+            Toast.error("Gagal menghubungi server");
+        }
+    }
+};
+
+const KategoriManagement = {
+    async load() {
+        try {
+            const res = await window.API.request('/api/v1/kasir/game/kategori');
+            if (res && res.success) {
+                this.render(res.data || []);
+            }
+        } catch (error) {
+            Toast.error("Error memuat kategori");
+        }
+    },
+
+    render(categories) {
+        const tbody = document.getElementById('kategori-table-body');
+        const empty = document.getElementById('kategori-empty');
+        if (!tbody) return;
+
+        if (categories.length === 0) {
+            tbody.innerHTML = '';
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        empty.classList.add('hidden');
+        tbody.innerHTML = categories.map(cat => `
+            <tr>
+                <td class="p-3 font-semibold text-neutral-200">${Utils.escapeHtml(cat.nama)}</td>
+                <td class="p-3 text-right">
+                    <button onclick="KategoriManagement.delete(${cat.id}, '${Utils.escapeHtml(cat.nama)}')" class="px-2 py-1 bg-red-950/20 text-red-400 rounded hover:bg-red-950/40 transition-colors">Hapus</button>
+                </td>
+            </tr>
+        `).join('');
+    },
+
+    openModal() {
+        document.getElementById('kategori-modal').classList.remove('hidden');
+        this.load();
+    },
+
+    closeModal() {
+        document.getElementById('kategori-modal').classList.add('hidden');
+        GameManagement.load(); // Refresh filter button dan opsi select di latar belakang
+    },
+
+    async addKategori(e) {
+        e.preventDefault();
+        const nama = document.getElementById('form-kategori-nama').value;
+        try {
+            const res = await window.API.request('/api/v1/kasir/game/kategori', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nama })
+            });
+            if (res && res.success) {
+                Toast.success("Kategori ditambahkan");
+                document.getElementById('form-kategori-nama').value = '';
+                this.load();
+            } else {
+                Toast.error(res.error || "Gagal tambah kategori");
+            }
+        } catch (error) {
+            Toast.error("Gagal menghubungi server");
+        }
+    },
+
+    async delete(id, nama) {
+        if (!confirm(`Hapus kategori "${nama}"?`)) return;
+        try {
+            const res = await window.API.request(`/api/v1/kasir/game/kategori/${id}`, { method: 'DELETE' });
+            if (res && res.success) {
+                Toast.success("Kategori dihapus");
+                this.load();
+            } else {
+                Toast.error(res.error || "Gagal hapus kategori");
             }
         } catch (error) {
             Toast.error("Gagal menghubungi server");

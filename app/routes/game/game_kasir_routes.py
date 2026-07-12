@@ -86,3 +86,48 @@ def hapus_game(game_id):
         return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+from app.services.game.game_kategori_service import GameKategoriService
+
+@game_kasir_api_bp.route("/kategori", methods=["GET"])
+@login_required
+def list_kategori():
+    try:
+        kategori_list = GameKategoriService.get_all()
+        return jsonify({
+            "success": True,
+            "data": [k.to_dict() for k in kategori_list]
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@game_kasir_api_bp.route("/kategori", methods=["POST"])
+@login_required
+@admin_required
+def tambah_kategori():
+    try:
+        data = request.json or {}
+        kasir = session.get("kasir_username", "admin")
+        kategori = GameKategoriService.create(data, operator=kasir)
+        return jsonify({
+            "success": True,
+            "message": f"Kategori '{kategori.nama}' berhasil ditambahkan",
+            "data": kategori.to_dict()
+        }), 201
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@game_kasir_api_bp.route("/kategori/<int:kategori_id>", methods=["DELETE"])
+@login_required
+@admin_required
+def hapus_kategori(kategori_id):
+    try:
+        kasir = session.get("kasir_username", "admin")
+        result = GameKategoriService.delete(kategori_id, operator=kasir)
+        return jsonify(result), 200
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500

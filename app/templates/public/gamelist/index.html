@@ -54,12 +54,10 @@
                 </div>
 
                 <!-- Categories Dropdown/Filter -->
-                <div class="inline-flex rounded-xl bg-[#0c0c0c] p-1 border border-neutral-800 text-xs shrink-0">
+                <div id="public-category-filters" class="inline-flex flex-wrap rounded-xl bg-[#0c0c0c] p-1 border border-neutral-800 text-xs shrink-0">
                     <button onclick="filterCategory('all')" id="cat-btn-all"
                         class="px-3 py-1.5 rounded-lg font-bold transition-all bg-neutral-800 text-neutral-100 cat-filter-btn uppercase tracking-wider">Semua</button>
-                    <button onclick="filterCategory('FPS')" id="cat-btn-FPS" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 cat-filter-btn uppercase tracking-wider">FPS</button>
-                    <button onclick="filterCategory('MOBA')" id="cat-btn-MOBA" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 cat-filter-btn uppercase tracking-wider">MOBA</button>
-                    <button onclick="filterCategory('RPG')" id="cat-btn-RPG" class="px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 cat-filter-btn uppercase tracking-wider">RPG</button>
+                    <!-- Kategori lain akan diload JS -->
                 </div>
             </div>
         </section>
@@ -94,19 +92,49 @@
         let currentCategory = 'all';
         let searchQuery = '';
 
+        let allCategories = [];
+
         async function fetchGames() {
             try {
-                const res = await fetch('/api/v1/public/game/all');
-                const result = await res.json();
-                if (result && result.success) {
-                    allGames = result.data || [];
-                    renderGames();
+                const [gameRes, catRes] = await Promise.all([
+                    fetch('/api/v1/public/game/all'),
+                    fetch('/api/v1/public/game/kategori')
+                ]);
+                
+                const gameResult = await gameRes.json();
+                const catResult = await catRes.json();
+
+                if (gameResult && gameResult.success) {
+                    allGames = gameResult.data || [];
                 } else {
                     showError();
                 }
+
+                if (catResult && catResult.success) {
+                    allCategories = catResult.data || [];
+                    renderCategories();
+                }
+
+                renderGames();
             } catch (err) {
                 showError();
             }
+        }
+
+        function renderCategories() {
+            const filterContainer = document.getElementById('public-category-filters');
+            if (!filterContainer) return;
+            
+            let html = `<button onclick="filterCategory('all')" id="cat-btn-all"
+                class="px-3 py-1.5 rounded-lg font-bold transition-all ${currentCategory === 'all' ? 'bg-neutral-800 text-neutral-100' : 'text-neutral-400 hover:text-neutral-200'} cat-filter-btn uppercase tracking-wider">Semua</button>`;
+            
+            allCategories.forEach(cat => {
+                const isActive = currentCategory === cat.nama;
+                html += `<button onclick="filterCategory('${cat.nama}')" id="cat-btn-${cat.nama.replace(/\s+/g, '-')}" 
+                    class="px-3 py-1.5 rounded-lg transition-all ${isActive ? 'bg-neutral-800 text-neutral-100 font-bold' : 'text-neutral-400 hover:text-neutral-200'} cat-filter-btn uppercase tracking-wider">${cat.nama}</button>`;
+            });
+            
+            filterContainer.innerHTML = html;
         }
 
         function renderGames() {
@@ -152,14 +180,7 @@
 
         function filterCategory(category) {
             currentCategory = category;
-            document.querySelectorAll('.cat-filter-btn').forEach(btn => {
-                const cat = btn.id.replace('cat-btn-', '');
-                if (cat === category) {
-                    btn.className = "px-3 py-1.5 rounded-lg font-bold transition-all bg-neutral-800 text-neutral-100 cat-filter-btn uppercase tracking-wider";
-                } else {
-                    btn.className = "px-3 py-1.5 rounded-lg text-neutral-400 hover:text-neutral-200 cat-filter-btn uppercase tracking-wider";
-                }
-            });
+            renderCategories();
             renderGames();
         }
 
