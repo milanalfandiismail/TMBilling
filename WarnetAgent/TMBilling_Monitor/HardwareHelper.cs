@@ -91,6 +91,7 @@ class Program
                     string modelLower = model.ToLower();
                     if (modelLower.Contains("ccboot") || 
                         modelLower.Contains("iscsi") || 
+                        modelLower.Contains("scsi") || 
                         modelLower.Contains("virtual") || 
                         modelLower.Contains("sanboot") || 
                         modelLower.Contains("superspeed"))
