@@ -42,15 +42,17 @@ from app.routes.tournament.tournament_routes import tournament_api_bp
 from app.routes.member.member_portal_routes import member_portal_bp
 from app.routes.shift.shift_routes import shift_api_bp
 from app.routes.settings.migration_routes import migration_api_bp
+from app.routes.settings.plugin_routes import plugin_api_bp
 from app.routes.mikrotik.mikrotik_routes import mikrotik_api_bp
 from app.routes.game.game_kasir_routes import game_kasir_api_bp
 from app.routes.game.game_public_routes import game_public_api_bp
+from app.routes.server_monitor.monitor_routes import server_monitor_bp
 
 __all__ = [
     'auth_api_bp', 'auth_kasir_api_bp', 'client_api_bp', 'dashboard_bp',
     'dashboard_api_bp', 'member_api_bp', 'paket_api_bp', 'pc_api_bp', 'report_api_bp', 
     'sesi_api_bp', 'grup_api_bp', 'blackout_api_bp', 'settings_api_bp', 'monitor_api_bp', 'monitor_kasir_bp', 
     'user_api_bp', 'menu_api_bp', 'backup_api_bp', 'tournament_api_bp', 
-    'member_portal_bp', 'shift_api_bp', 'migration_api_bp', 'mikrotik_api_bp',
-    'game_kasir_api_bp', 'game_public_api_bp'
+    'member_portal_bp', 'shift_api_bp', 'migration_api_bp', 'plugin_api_bp', 'mikrotik_api_bp',
+    'game_kasir_api_bp', 'game_public_api_bp', 'server_monitor_bp'
 ]
