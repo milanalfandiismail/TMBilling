@@ -2,6 +2,8 @@
 import os
 import zipfile
 import re
+import subprocess
+import re
 
 def get_version():
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app', 'config.py')
@@ -12,7 +14,43 @@ def get_version():
         return match.group(1)
     return "unknown"
 
+def compile_csharp_monitor():
+    print("Mengkompilasi TMLHMService (C# Microservice)...")
+    project_dir = os.path.dirname(os.path.abspath(__file__))
+    service_dir = os.path.join(project_dir, 'app', 'services', 'server_monitor')
+    
+    csc_path = r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+    if not os.path.exists(csc_path):
+        print(f"[ERROR] Compiler C# tidak ditemukan di {csc_path}")
+        return False
+        
+    cmd = [
+        csc_path,
+        "/target:winexe",
+        "/out:TMLHMService.exe",
+        "/reference:LibreHardwareMonitorLib.dll",
+        "/reference:System.Management.dll",
+        "TMLHMService.cs"
+    ]
+    
+    try:
+        result = subprocess.run(cmd, cwd=service_dir, capture_output=True, text=True)
+        if result.returncode != 0:
+            print("[ERROR] Kompilasi gagal!")
+            print(result.stdout)
+            print(result.stderr)
+            return False
+        print("[OK] Kompilasi TMLHMService berhasil.")
+        return True
+    except Exception as e:
+        print(f"[ERROR] Terjadi kesalahan saat kompilasi: {e}")
+        return False
+
 def main():
+    if not compile_csharp_monitor():
+        print("Membatalkan rilis karena kompilasi C# gagal.")
+        return
+
     project_dir = os.path.dirname(os.path.abspath(__file__))
     version = get_version()
     zip_filename = f"TMBilling_Server_v{version}.zip"
