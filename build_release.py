@@ -1,10 +1,21 @@
 # -*- coding: utf-8 -*-
 import os
 import zipfile
+import re
+
+def get_version():
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app', 'config.py')
+    with open(config_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    match = re.search(r'VERSION\s*=\s*[\'"]([^\'"]+)[\'"]', content)
+    if match:
+        return match.group(1)
+    return "unknown"
 
 def main():
     project_dir = os.path.dirname(os.path.abspath(__file__))
-    zip_filename = "TMBilling_Server_v.zip"
+    version = get_version()
+    zip_filename = f"TMBilling_Server_v{version}.zip"
     zip_filepath = os.path.join(project_dir, zip_filename)
     
     # Files and folders to include
