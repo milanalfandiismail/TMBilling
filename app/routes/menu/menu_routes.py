@@ -182,6 +182,7 @@ def checkout_order():
         pc_kode = payload.get("pc_kode")
         tunai = payload.get("tunai", 0)
         kembalian = payload.get("kembalian", 0)
+        metode_pembayaran = payload.get("metode_pembayaran", "Tunai")
 
         # Ambil identitas kasir dari session aktif
         kasir_username = session.get("kasir_username")
@@ -189,7 +190,7 @@ def checkout_order():
             return jsonify({"success": False, "error": "Kasir tidak terautentikasi"}), 401
 
         operator = kasir_username
-        result = MenuService.checkout_menu_order(cart_items, pc_kode, kasir_username, operator=operator, tunai=tunai, kembalian=kembalian)
+        result = MenuService.checkout_menu_order(cart_items, pc_kode, kasir_username, operator=operator, tunai=tunai, kembalian=kembalian, metode_pembayaran=metode_pembayaran)
 
         return jsonify({"success": True, "data": result, "message": "Transaksi F&B berhasil diproses!"}), 200
     except ValueError as val_e:

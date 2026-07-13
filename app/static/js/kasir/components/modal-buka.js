@@ -7,6 +7,16 @@ const BukaModal = {
         this.pcKode = pcKode;
         this.pcGrup = pcGrup;
 
+        let paymentMethods = ["Tunai", "QRIS", "Transfer Bank"];
+        try {
+            const settingsData = await API.settings.getAll();
+            if (settingsData && settingsData.success && settingsData.settings.payment_methods) {
+                paymentMethods = settingsData.settings.payment_methods.split(',').map(s => s.trim());
+            }
+        } catch (e) {
+            console.error("Gagal memuat metode pembayaran:", e);
+        }
+
         const modalHtml = `
             <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-4 md:p-6 max-w-md w-[calc(100%-2rem)] mx-auto md:w-full relative shadow-2xl">
                 <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#2a2a2a]">
@@ -37,6 +47,13 @@ const BukaModal = {
                             </div>
                         </div>
                         <input type="hidden" id="buka-paket" value="">
+                    </div>
+                    <div>
+                        <label class="text-[9px] lg:text-base text-neutral-400 font-bold uppercase tracking-wider mb-2 block">Metode Pembayaran</label>
+                        <select id="buka-metode-pembayaran" 
+                            class="w-full px-4 py-2.5 bg-[#050505] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 font-bold transition-all">
+                            ${paymentMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
+                        </select>
                     </div>
                 </div>
 
@@ -170,12 +187,14 @@ const BukaModal = {
             { label: 'Total Harga', value: Utils.formatRupiah(paket.harga || 0), highlight: true }
         ];
 
+        const metodePembayaran = document.getElementById('buka-metode-pembayaran')?.value || 'Tunai';
+
         ModalConfirmTambah.open({
             title: "Konfirmasi Buka Sesi",
             dataLines: dataLines,
             onConfirm: async () => {
                 try {
-                    await API.sesi.bukaGuest(this.pcKode, paketId, namaGuest);
+                    await API.sesi.bukaGuest(this.pcKode, paketId, namaGuest, metodePembayaran);
                     Toast.success('Sesi guest dibuka di PC ' + this.pcKode);
                     Modal.closeModal(); // Close the confirmation modal
                     if (typeof Dashboard !== 'undefined') Dashboard.load();

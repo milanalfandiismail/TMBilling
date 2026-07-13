@@ -204,12 +204,14 @@ const Member = {
                 { label: 'Total Harga', value: Utils.formatRupiah(totalHarga), highlight: true }
             );
 
+            const metodePembayaran = document.getElementById('member-refill-metode-pembayaran')?.value || 'Tunai';
+
             ModalConfirmTambah.open({
                 title: "Konfirmasi Isi Waktu Billing",
                 dataLines: dataLines,
                 onConfirm: async () => {
                     try {
-                        await API.member.tambahWaktu(memberId, { member_id: memberId, selections: selections });
+                        await API.member.tambahWaktu(memberId, { member_id: memberId, selections: selections }, 1, metodePembayaran);
                         Toast.success('Saldo ditambahkan');
                         Modal.closeModal();
                         this.load();

@@ -39,7 +39,7 @@ class ReportService:
         }
 
     @staticmethod
-    def get_laporan_by_tanggal(tanggal_str=None, kasir_id=None, page=1, per_page=10):
+    def get_laporan_by_tanggal(tanggal_str=None, kasir_id=None, page=1, per_page=10, metode_pembayaran=None):
         """Laporan mendalam berdasarkan filter tanggal tertentu (dan opsional kasir_id) dengan pagination."""
         try:
             if tanggal_str:
@@ -48,12 +48,12 @@ class ReportService:
                 tanggal = now_local().date()
 
             # 1. Ambil angka dasar pendapatan & refund (Filter Kasir)
-            total_pendapatan_billing = TransaksiRepository.get_total_pemasukan(tanggal, kasir_id)
-            total_refund = TransaksiRepository.get_total_refund(tanggal, kasir_id)
+            total_pendapatan_billing = TransaksiRepository.get_total_pemasukan(tanggal, kasir_id, metode_pembayaran)
+            total_refund = TransaksiRepository.get_total_refund(tanggal, kasir_id, metode_pembayaran)
             
             # Ambil pendapatan F&B
             from app.repositories import MenuRepository
-            total_pendapatan_menu = MenuRepository.get_total_pemasukan_by_date(tanggal, kasir_id)
+            total_pendapatan_menu = MenuRepository.get_total_pemasukan_by_date(tanggal, kasir_id, metode_pembayaran)
             total_pendapatan_gabungan = total_pendapatan_billing + total_pendapatan_menu
 
             # 2. Ambil statistik kuantitas sesi per tipe
@@ -66,7 +66,7 @@ class ReportService:
                 total_member = SesiRepository.count_by_tanggal_dan_tipe(tanggal, 'member')
 
             # History transaksi difilter berdasarkan kasir_id dengan pagination
-            pagination = TransaksiRepository.get_history_nota_paginated(tanggal, page, per_page, kasir_id)
+            pagination = TransaksiRepository.get_history_nota_paginated(tanggal, page, per_page, kasir_id, metode_pembayaran)
             history_struk = pagination.items
 
             return {
@@ -88,8 +88,8 @@ class ReportService:
                 "total_guest": total_guest,
                 "total_member": total_member,
                 # Pendapatan Per Tipe (Logic Mapping Baru)
-                "pendapatan_guest": ReportService.get_pendapatan_kategori(tanggal, 'guest', kasir_id),
-                "pendapatan_member": ReportService.get_pendapatan_kategori(tanggal, 'member', kasir_id),
+                "pendapatan_guest": ReportService.get_pendapatan_kategori(tanggal, 'guest', kasir_id, metode_pembayaran),
+                "pendapatan_member": ReportService.get_pendapatan_kategori(tanggal, 'member', kasir_id, metode_pembayaran),
                 # Footer & Histori
                 "sesi_aktif": len(SesiRepository.get_all_aktif()),
                 "history_struk": ReportService._format_history_struk(history_struk)
@@ -98,7 +98,7 @@ class ReportService:
             raise Exception(f"Gagal hitung laporan: {str(e)}")
 
     @staticmethod
-    def get_laporan_kantin_by_tanggal(tanggal_str=None, kasir_id=None, page=1, per_page=12):
+    def get_laporan_kantin_by_tanggal(tanggal_str=None, kasir_id=None, page=1, per_page=12, metode_pembayaran=None):
         """Laporan khusus kantin berdasarkan filter tanggal dengan pagination."""
         try:
             if tanggal_str:
@@ -109,10 +109,10 @@ class ReportService:
             from app.repositories import MenuRepository
             
             # Ambil total pendapatan F&B untuk tanggal tersebut
-            total_pendapatan_menu = MenuRepository.get_total_pemasukan_by_date(tanggal, kasir_id)
+            total_pendapatan_menu = MenuRepository.get_total_pemasukan_by_date(tanggal, kasir_id, metode_pembayaran)
 
             # History transaksi kantin dengan pagination
-            pagination = MenuRepository.get_transactions_by_date_paginated(tanggal, page, per_page, kasir_id)
+            pagination = MenuRepository.get_transactions_by_date_paginated(tanggal, page, per_page, kasir_id, metode_pembayaran)
             history_menu_raw = pagination.items
 
             history_menu = [
@@ -127,6 +127,7 @@ class ReportService:
                     "kasir_nama": tm.kasir.username if tm.kasir else "System",
                     "tunai": tm.tunai,
                     "kembalian": tm.kembalian,
+                    "metode_pembayaran": tm.metode_pembayaran or "Tunai",
                 } for tm in history_menu_raw
             ]
 
@@ -456,14 +457,14 @@ class ReportService:
     # Fokus: Fungsi pembantu untuk memproses data mentah sebelum dikirim ke UI.
 
     @staticmethod
-    def get_pendapatan_kategori(tanggal, kategori, kasir_id=None):
+    def get_pendapatan_kategori(tanggal, kategori, kasir_id=None, metode_pembayaran=None):
         """Menghitung pendapatan per kategori (Logic Mapping yang dipindah dari Repo)."""
         if kategori == 'guest':
             jenis = ["beli_paket_guest", "tambah_waktu_guest"]
         else:
             jenis = ["beli_paket_member", "tambah_waktu_sesi"]
         
-        return TransaksiRepository.get_total_pendapatan_by_tanggal(tanggal, jenis, kasir_id)
+        return TransaksiRepository.get_total_pendapatan_by_tanggal(tanggal, jenis, kasir_id, metode_pembayaran)
 
     @staticmethod
     def get_total_menit_harian(tanggal):
@@ -494,12 +495,13 @@ class ReportService:
                 "jumlah": t.jumlah,
                 "waktu": format_display(t.dibuat_pada),
                 "keterangan": t.keterangan,
-                "jenis": t.jenis or ""
+                "jenis": t.jenis or "",
+                "metode_pembayaran": t.metode_pembayaran or "Tunai"
             })
         return formatted
 
     @staticmethod
-    def export_billing_pdf(tanggal_str=None, kasir_id=None):
+    def export_billing_pdf(tanggal_str=None, kasir_id=None, metode_pembayaran=None):
         """Mengekspor laporan billing harian ke PDF."""
         import io
         from reportlab.lib.pagesizes import A4
@@ -509,7 +511,7 @@ class ReportService:
         from reportlab.lib.units import cm
 
         # Ambil data semua (tanpa pagination)
-        data = ReportService.get_laporan_by_tanggal(tanggal_str, kasir_id, page=1, per_page=100000)
+        data = ReportService.get_laporan_by_tanggal(tanggal_str, kasir_id, page=1, per_page=100000, metode_pembayaran=metode_pembayaran)
         tanggal = data["tanggal"]
 
         warnet_title = SettingsRepository.get("warnet_title") or "TMBilling"
@@ -637,6 +639,7 @@ class ReportService:
             Paragraph("Pelanggan", style_table_header),
             Paragraph("PC", style_table_header),
             Paragraph("Keterangan", style_table_header),
+            Paragraph("Metode", style_table_header),
             Paragraph("Jumlah", style_table_header)
         ]
         
@@ -648,6 +651,7 @@ class ReportService:
             nama_p = t.get("nama_pelanggan", "-")
             pc = t.get("pc_kode", "-")
             ket = t.get("keterangan", "-")
+            metode = t.get("metode_pembayaran", "Tunai") or "Tunai"
             jumlah_raw = t.get("jumlah", 0)
             jumlah = f"Rp {jumlah_raw:,.0f}"
             
@@ -658,11 +662,12 @@ class ReportService:
                 Paragraph(nama_p, style_table_cell),
                 Paragraph(pc, style_table_cell_center),
                 Paragraph(ket, style_table_cell),
+                Paragraph(metode, style_table_cell_center),
                 Paragraph(jumlah, style_table_cell_right)
             ]
             table_data.append(row)
 
-        col_widths = [1.0*cm, 2.7*cm, 2.3*cm, 3.5*cm, 1.2*cm, 5.5*cm, 2.8*cm]
+        col_widths = [0.8*cm, 2.5*cm, 2.3*cm, 3.2*cm, 1.0*cm, 4.5*cm, 2.2*cm, 2.5*cm]
         data_table = Table(table_data, colWidths=col_widths, repeatRows=1)
         
         # Style table
@@ -900,7 +905,7 @@ class ReportService:
         return pdf_bytes, filename
 
     @staticmethod
-    def export_kantin_pdf(tanggal_str=None, kasir_id=None):
+    def export_kantin_pdf(tanggal_str=None, kasir_id=None, metode_pembayaran=None):
         """Mengekspor laporan omzet kantin ke PDF."""
         import io
         from reportlab.lib.pagesizes import A4
@@ -910,7 +915,7 @@ class ReportService:
         from reportlab.lib.units import cm
 
         # Ambil data
-        data = ReportService.get_laporan_by_tanggal(tanggal_str, kasir_id)
+        data = ReportService.get_laporan_kantin_by_tanggal(tanggal_str, kasir_id, page=1, per_page=100000, metode_pembayaran=metode_pembayaran)
         tanggal = data["tanggal"]
 
         # Fetch warnet info from settings repository (same as get_struk_data)
@@ -1044,6 +1049,7 @@ class ReportService:
             Paragraph("Item Menu", style_table_header),
             Paragraph("Qty", style_table_header),
             Paragraph("Total Harga", style_table_header),
+            Paragraph("Metode", style_table_header),
             Paragraph("Pemesanan", style_table_header),
             Paragraph("Kasir", style_table_header)
         ]
@@ -1060,6 +1066,7 @@ class ReportService:
             total_harga_raw = tm.get("total_harga", 0)
             total_harga = f"Rp {total_harga_raw:,.0f}"
             
+            metode = tm.get("metode_pembayaran", "Tunai") or "Tunai"
             pc_kode = tm.get("pc_kode", "-")
             pemesanan = "Take Away" if pc_kode != "Tempat" else "Makan di Tempat"
             kasir_nama = tm.get("kasir_nama", "-")
@@ -1070,12 +1077,13 @@ class ReportService:
                 Paragraph(menu_nama, style_table_cell),
                 Paragraph(jumlah, style_table_cell_center),
                 Paragraph(total_harga, style_table_cell_right),
+                Paragraph(metode, style_table_cell_center),
                 Paragraph(pemesanan, style_table_cell_center),
                 Paragraph(kasir_nama, style_table_cell_center)
             ]
             table_data.append(row)
 
-        col_widths = [2.7*cm, 2.5*cm, 4.0*cm, 1.0*cm, 2.8*cm, 2.8*cm, 2.2*cm]
+        col_widths = [2.5*cm, 2.3*cm, 3.5*cm, 0.8*cm, 2.5*cm, 2.2*cm, 2.5*cm, 1.7*cm]
         data_table = Table(table_data, colWidths=col_widths, repeatRows=1)
         
         # Style table

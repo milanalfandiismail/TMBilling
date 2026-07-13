@@ -5,6 +5,16 @@ const TambahModal = {
     async open(sesiId, pcGrup) {
         this.sesiId = sesiId;
 
+        let paymentMethods = ["Tunai", "QRIS", "Transfer Bank"];
+        try {
+            const settingsData = await API.settings.getAll();
+            if (settingsData && settingsData.success && settingsData.settings.payment_methods) {
+                paymentMethods = settingsData.settings.payment_methods.split(',').map(s => s.trim());
+            }
+        } catch (e) {
+            console.error("Gagal memuat metode pembayaran:", e);
+        }
+
         try {
             const data = await API.paket.list({ aktif_only: true });
             const allPaket = Array.isArray(data) ? data : (data.paket || data.paket_list || []);
@@ -78,6 +88,14 @@ const TambahModal = {
                             <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
                                 <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold">Total Tambahan</div>
                                 <div class="text-sm font-black text-neutral-200 mt-1" id="tambah-paket-total-preview">Pilih paket terlebih dahulu</div>
+                            </div>
+
+                            <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
+                                <label class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold block mb-1">Metode Bayar</label>
+                                <select id="tambah-metode-pembayaran" 
+                                    class="w-full px-2 py-1 bg-[#050505] border border-[#2a2a2a] rounded text-[10px] lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 font-bold transition-all">
+                                    ${paymentMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
+                                </select>
                             </div>
                         </div>
                         
@@ -243,12 +261,14 @@ const TambahModal = {
                 { label: 'Total Harga', value: Utils.formatRupiah(totalHarga), highlight: true }
             );
 
+            const metodePembayaran = document.getElementById('tambah-metode-pembayaran')?.value || 'Tunai';
+
             ModalConfirmTambah.open({
                 title: "Konfirmasi Tambah Waktu Sesi",
                 dataLines: dataLines,
                 onConfirm: async () => {
                     try {
-                        await API.sesi.tambahWaktu(this.sesiId, { selections: selections });
+                        await API.sesi.tambahWaktu(this.sesiId, { selections: selections }, 1, metodePembayaran);
                         Toast.success('Waktu berhasil ditambahkan');
                         Modal.closeModal();
                         if (typeof Dashboard !== 'undefined') Dashboard.load();

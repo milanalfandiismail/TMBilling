@@ -52,6 +52,7 @@ class TransaksiMenu(db.Model):
     # Kolom pembayaran
     tunai = db.Column(db.Integer, nullable=True, default=0)
     kembalian = db.Column(db.Integer, nullable=True, default=0)
+    metode_pembayaran = db.Column(db.String(50), nullable=True)
 
     # Relasi
     menu = db.relationship("MenuItem", backref=db.backref("transaksi", lazy=True))
@@ -73,4 +74,5 @@ class TransaksiMenu(db.Model):
             "kasir_nama": self.kasir.username if self.kasir else "System",
             "tunai": self.tunai,
             "kembalian": self.kembalian,
+            "metode_pembayaran": self.metode_pembayaran,
         }

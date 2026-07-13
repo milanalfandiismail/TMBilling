@@ -68,7 +68,7 @@ class TransaksiRepository:
         return TransaksiRepository.get_all_by_tanggal_with_nota(tanggal, kasir_id)
 
     @staticmethod
-    def get_history_nota_paginated(tanggal, page=1, per_page=10, kasir_id=None):
+    def get_history_nota_paginated(tanggal, page=1, per_page=10, kasir_id=None, metode_pembayaran=None):
         """Ambil histori nota dengan pagination."""
         query = Transaksi.query.filter(
             func.date(Transaksi.dibuat_pada) == tanggal,
@@ -76,6 +76,14 @@ class TransaksiRepository:
         )
         if kasir_id:
             query = query.filter(Transaksi.user_id == kasir_id)
+        if metode_pembayaran:
+            if metode_pembayaran == "Tunai":
+                query = query.filter(
+                    (Transaksi.metode_pembayaran.in_(["Tunai", "Cash"])) | 
+                    (Transaksi.metode_pembayaran == None)
+                )
+            else:
+                query = query.filter(Transaksi.metode_pembayaran == metode_pembayaran)
         
         return query.order_by(Transaksi.dibuat_pada.desc()).paginate(
             page=page, per_page=per_page, error_out=False
@@ -104,7 +112,7 @@ class TransaksiRepository:
     # =========================================================================
 
     @staticmethod
-    def get_total_pemasukan_hari_ini(tanggal, kasir_id=None):
+    def get_total_pemasukan_hari_ini(tanggal, kasir_id=None, metode_pembayaran=None):
         """Total pemasukan (jumlah > 0, tanpa refund)."""
         query = db.session.query(func.sum(Transaksi.jumlah)).filter(
             func.date(Transaksi.dibuat_pada) == tanggal,
@@ -112,10 +120,18 @@ class TransaksiRepository:
         )
         if kasir_id:
             query = query.filter(Transaksi.user_id == kasir_id)
+        if metode_pembayaran:
+            if metode_pembayaran == "Tunai":
+                query = query.filter(
+                    (Transaksi.metode_pembayaran.in_(["Tunai", "Cash"])) | 
+                    (Transaksi.metode_pembayaran == None)
+                )
+            else:
+                query = query.filter(Transaksi.metode_pembayaran == metode_pembayaran)
         return query.scalar() or 0
 
     @staticmethod
-    def get_total_refund_hari_ini(tanggal, kasir_id=None):
+    def get_total_refund_hari_ini(tanggal, kasir_id=None, metode_pembayaran=None):
         """Total refund (nilai positif)."""
         query = db.session.query(func.sum(Transaksi.jumlah)).filter(
             func.date(Transaksi.dibuat_pada) == tanggal,
@@ -123,6 +139,14 @@ class TransaksiRepository:
         )
         if kasir_id:
             query = query.filter(Transaksi.user_id == kasir_id)
+        if metode_pembayaran:
+            if metode_pembayaran == "Tunai":
+                query = query.filter(
+                    (Transaksi.metode_pembayaran.in_(["Tunai", "Cash"])) | 
+                    (Transaksi.metode_pembayaran == None)
+                )
+            else:
+                query = query.filter(Transaksi.metode_pembayaran == metode_pembayaran)
         refund = query.scalar() or 0
         return abs(refund)
 
@@ -137,7 +161,7 @@ class TransaksiRepository:
         return query.scalar() or 0
 
     @staticmethod
-    def get_total_pendapatan_by_tanggal(tanggal, jenis_list, kasir_id=None):
+    def get_total_pendapatan_by_tanggal(tanggal, jenis_list, kasir_id=None, metode_pembayaran=None):
         """Total pendapatan berdasarkan tanggal dan jenis transaksi tertentu."""
         query = db.session.query(func.sum(Transaksi.jumlah)).filter(
             func.date(Transaksi.dibuat_pada) == tanggal,
@@ -145,6 +169,14 @@ class TransaksiRepository:
         )
         if kasir_id:
             query = query.filter(Transaksi.user_id == kasir_id)
+        if metode_pembayaran:
+            if metode_pembayaran == "Tunai":
+                query = query.filter(
+                    (Transaksi.metode_pembayaran.in_(["Tunai", "Cash"])) | 
+                    (Transaksi.metode_pembayaran == None)
+                )
+            else:
+                query = query.filter(Transaksi.metode_pembayaran == metode_pembayaran)
         return query.scalar() or 0
 
     @staticmethod
@@ -165,14 +197,14 @@ class TransaksiRepository:
     # get_income_by_type dipindah ke ReportService (Logic Mapping)
 
     @staticmethod
-    def get_total_pemasukan(tanggal, kasir_id=None):
+    def get_total_pemasukan(tanggal, kasir_id=None, metode_pembayaran=None):
         """Alias untuk get_total_pemasukan_hari_ini"""
-        return TransaksiRepository.get_total_pemasukan_hari_ini(tanggal, kasir_id)
+        return TransaksiRepository.get_total_pemasukan_hari_ini(tanggal, kasir_id, metode_pembayaran)
 
     @staticmethod
-    def get_total_refund(tanggal, kasir_id=None):
+    def get_total_refund(tanggal, kasir_id=None, metode_pembayaran=None):
         """Alias untuk get_total_refund_hari_ini"""
-        return TransaksiRepository.get_total_refund_hari_ini(tanggal, kasir_id)
+        return TransaksiRepository.get_total_refund_hari_ini(tanggal, kasir_id, metode_pembayaran)
 
 
     # =========================================================================

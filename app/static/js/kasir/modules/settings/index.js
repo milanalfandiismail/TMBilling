@@ -18,6 +18,13 @@ const Settings = {
                 if (apiKeyInput && res.settings.client_api_key !== undefined) {
                     apiKeyInput.value = res.settings.client_api_key;
                 }
+                if (res.settings.payment_methods !== undefined) {
+                    this.currentPaymentMethods = res.settings.payment_methods.split(',').map(s => s.trim()).filter(s => s);
+                    this.renderPaymentMethods();
+                } else {
+                    this.currentPaymentMethods = ["Tunai", "QRIS", "Transfer Bank"];
+                    this.renderPaymentMethods();
+                }
                 const titleInput = document.getElementById('warnet-title-input');
                 if (titleInput && res.settings.warnet_title !== undefined) {
                     titleInput.value = res.settings.warnet_title;
@@ -147,6 +154,73 @@ const Settings = {
         } catch (err) {
             Toast.error('Gagal menyimpan token: ' + err.message);
         }
+    },
+
+    async savePaymentMethods() {
+        const val = (this.currentPaymentMethods || []).join(',');
+        try {
+            await API.request('/api/v1/kasir/settings/payment_methods', {
+                method: 'PUT',
+                body: JSON.stringify({ value: val })
+            });
+            Toast.success('Metode pembayaran berhasil disimpan');
+        } catch (err) {
+            Toast.error('Gagal menyimpan metode pembayaran: ' + err.message);
+        }
+    },
+
+    renderPaymentMethods() {
+        const listEl = document.getElementById('payment-methods-list');
+        if (!listEl) return;
+        
+        if (!this.currentPaymentMethods || this.currentPaymentMethods.length === 0) {
+            listEl.innerHTML = `<li class="px-4 py-3 text-sm text-neutral-500 text-center italic">Belum ada metode pembayaran</li>`;
+            return;
+        }
+
+        listEl.innerHTML = this.currentPaymentMethods.map((method, index) => `
+            <li class="flex items-center justify-between px-4 py-2 hover:bg-[#0a0a0a] transition-colors">
+                <span class="text-xs lg:text-base text-neutral-200 font-bold">${method}</span>
+                <button onclick="Settings.removePaymentMethod(${index})" class="text-red-500 hover:text-red-400 p-1" title="Hapus">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                    </svg>
+                </button>
+            </li>
+        `).join('');
+    },
+
+    addPaymentMethod() {
+        const inputEl = document.getElementById('new-payment-method-input');
+        if (!inputEl) return;
+        
+        const val = inputEl.value.trim();
+        if (!val) return;
+        
+        if (!this.currentPaymentMethods) this.currentPaymentMethods = [];
+        
+        // Cek duplikat (case insensitive)
+        const exists = this.currentPaymentMethods.some(m => m.toLowerCase() === val.toLowerCase());
+        if (exists) {
+            Toast.error('Metode pembayaran sudah ada');
+            return;
+        }
+
+        this.currentPaymentMethods.push(val);
+        inputEl.value = '';
+        this.renderPaymentMethods();
+    },
+
+    removePaymentMethod(index) {
+        if (!this.currentPaymentMethods) return;
+        
+        if (this.currentPaymentMethods[index].toLowerCase() === 'tunai') {
+            Toast.error('Metode Tunai adalah metode dasar dan tidak dapat dihapus');
+            return;
+        }
+        
+        this.currentPaymentMethods.splice(index, 1);
+        this.renderPaymentMethods();
     },
 
     async saveClientApiKey() {

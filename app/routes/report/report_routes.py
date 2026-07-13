@@ -25,6 +25,7 @@ def get_laporan():
     try:
         tanggal = request.args.get("tanggal")
         kasir_id = request.args.get("kasir_id")
+        metode_pembayaran = request.args.get("metode_pembayaran")
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 10, type=int)
         
@@ -32,7 +33,7 @@ def get_laporan():
         if session.get("kasir_role") == "kasir":
             kasir_id = session.get("kasir_id")
             
-        laporan = ReportService.get_laporan_by_tanggal(tanggal, kasir_id, page, per_page)
+        laporan = ReportService.get_laporan_by_tanggal(tanggal, kasir_id, page, per_page, metode_pembayaran)
         return jsonify(laporan), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -44,6 +45,7 @@ def get_laporan_kantin():
     try:
         tanggal = request.args.get("tanggal")
         kasir_id = request.args.get("kasir_id")
+        metode_pembayaran = request.args.get("metode_pembayaran")
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 12, type=int)
         
@@ -51,7 +53,7 @@ def get_laporan_kantin():
         if session.get("kasir_role") == "kasir":
             kasir_id = session.get("kasir_id")
             
-        laporan = ReportService.get_laporan_kantin_by_tanggal(tanggal, kasir_id, page, per_page)
+        laporan = ReportService.get_laporan_kantin_by_tanggal(tanggal, kasir_id, page, per_page, metode_pembayaran)
         return jsonify(laporan), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -280,12 +282,13 @@ def export_billing():
     try:
         tanggal = request.args.get("tanggal")
         kasir_id = request.args.get("kasir_id")
+        metode_pembayaran = request.args.get("metode_pembayaran")
         
         # RULE: Kasir hanya boleh lihat/ekspor laporan diri sendiri
         if session.get("kasir_role") == "kasir":
             kasir_id = session.get("kasir_id")
 
-        pdf_bytes, filename = ReportService.export_billing_pdf(tanggal, kasir_id)
+        pdf_bytes, filename = ReportService.export_billing_pdf(tanggal, kasir_id, metode_pembayaran)
         
         return Response(
             pdf_bytes,
@@ -302,12 +305,13 @@ def export_kantin():
     try:
         tanggal = request.args.get("tanggal")
         kasir_id = request.args.get("kasir_id")
+        metode_pembayaran = request.args.get("metode_pembayaran")
         
         # RULE: Kasir hanya boleh lihat/ekspor laporan diri sendiri
         if session.get("kasir_role") == "kasir":
             kasir_id = session.get("kasir_id")
 
-        pdf_bytes, filename = ReportService.export_kantin_pdf(tanggal, kasir_id)
+        pdf_bytes, filename = ReportService.export_kantin_pdf(tanggal, kasir_id, metode_pembayaran)
         
         return Response(
             pdf_bytes,

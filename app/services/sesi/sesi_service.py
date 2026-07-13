@@ -32,7 +32,7 @@ class SesiService:
     # Fokus: Validasi PC, Member/Guest, dan Paket sebelum sesi dimulai.
 
     @staticmethod
-    def buka_guest(pc_kode, paket_id, nama_guest="Guest", operator="system"):
+    def buka_guest(pc_kode, paket_id, nama_guest="Guest", operator="system", metode_pembayaran="Tunai"):
         """Buka sesi baru untuk guest dan generate nota pembelian."""
         pc = PCRepository.get_by_kode(pc_kode)
         if not pc: raise ValueError("PC tidak ditemukan")
@@ -53,7 +53,8 @@ class SesiService:
             paket_id=paket.id, jenis="beli_paket_guest", jumlah=paket.harga,
             menit=paket.durasi_menit, keterangan=f"Guest '{nama_guest}' di {pc_kode}",
             no_nota=TransaksiService.generate_nota(),
-            user_id=TransaksiService.get_user_id(operator)
+            user_id=TransaksiService.get_user_id(operator),
+            metode_pembayaran=metode_pembayaran
         )
         
         # Simpan secara atomik di Service Layer
@@ -115,7 +116,7 @@ class SesiService:
     # Fokus: Menambah durasi sesi dan sinkronisasi saldo waktu member.
 
     @staticmethod
-    def tambah_waktu_sesi(sesi_id, paket, operator="system", qty=1):
+    def tambah_waktu_sesi(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
         """Tambah durasi pada sesi berjalan (Guest/Member) + Suntik Nota TM."""
         sesi = SesiRepository.get_aktif_by_id(sesi_id)
         if not sesi: raise ValueError("Sesi tidak aktif")
@@ -133,7 +134,8 @@ class SesiService:
                 jenis="tambah_waktu_sesi", jumlah=paket.harga * qty, menit=paket.durasi_menit * qty,
                 keterangan=f"Tambah waktu member {sesi.member.username} x{qty}",
                 no_nota=TransaksiService.generate_nota(),
-                user_id=TransaksiService.get_user_id(operator)
+                user_id=TransaksiService.get_user_id(operator),
+                metode_pembayaran=metode_pembayaran
             )
             db.session.add(transaksi)
             db.session.commit()
@@ -149,7 +151,8 @@ class SesiService:
                 jumlah=paket.harga * qty, menit=paket.durasi_menit * qty,
                 keterangan=f"Tambah waktu guest {sesi.nama_guest} x{qty}",
                 no_nota=TransaksiService.generate_nota(),
-                user_id=TransaksiService.get_user_id(operator)
+                user_id=TransaksiService.get_user_id(operator),
+                metode_pembayaran=metode_pembayaran
             )
             db.session.add(transaksi)
             db.session.commit()

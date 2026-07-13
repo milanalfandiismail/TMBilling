@@ -252,6 +252,20 @@ const Shift = {
         const selisihClass = result.selisih >= 0 ? 'text-emerald-400' : 'text-red-400';
         const selisihLabel = result.selisih >= 0 ? 'SURPLUS' : 'DEFISIT';
 
+        let breakdownHtml = '';
+        if (result.breakdown) {
+            breakdownHtml = '<div class="border-t border-[#1c1c1c] pt-2 mt-2 space-y-1"><span class="text-[10px] text-neutral-500 uppercase font-bold">Rincian Metode Pembayaran:</span>';
+            for (const [method, amount] of Object.entries(result.breakdown)) {
+                breakdownHtml += `
+                    <div class="flex justify-between">
+                        <span class="text-neutral-400">- ${method}</span>
+                        <span class="text-neutral-300 font-mono">${Utils.formatRupiah(amount || 0)}</span>
+                    </div>
+                `;
+            }
+            breakdownHtml += '</div>';
+        }
+
         const modalHtml = `
             <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in">
                 <div class="px-6 py-5 border-b border-[#2a2a2a]">
@@ -289,6 +303,7 @@ const Shift = {
                             <span class="text-neutral-300">Total Pendapatan</span>
                             <span class="text-neutral-100 font-mono">${Utils.formatRupiah(result.total_pendapatan || 0)}</span>
                         </div>
+                        ${breakdownHtml}
                         <div class="border-t border-[#1c1c1c] pt-2"></div>
                         <div class="flex justify-between">
                             <span class="text-neutral-400">Uang Fisik</span>
@@ -328,8 +343,14 @@ const Shift = {
         const kantin = Utils.formatRawRupiah(result.total_kantin || 0);
         const totalPendapatan = Utils.formatRawRupiah(result.total_pendapatan || 0);
         const uangFisik = Utils.formatRawRupiah(result.uang_fisik || 0);
-        const selisih = Utils.formatRawRupiah(result.selisih || 0);
-        const selisihLabel = result.selisih >= 0 ? 'SURPLUS' : 'DEFISIT';
+
+        let breakdownPrint = '';
+        if (result.breakdown) {
+            breakdownPrint = '<div class="line"></div><div class="header" style="font-size:9px; margin-bottom: 2px;">RINCIAN PEMBAYARAN:</div>';
+            for (const [method, amount] of Object.entries(result.breakdown)) {
+                breakdownPrint += `<div class="row"><span class="label"> - ${method}</span><span class="value">Rp ${Utils.formatRawRupiah(amount || 0)}</span></div>`;
+            }
+        }
 
         const printContent = `
 <!DOCTYPE html>
@@ -361,9 +382,10 @@ const Shift = {
     <div class="row"><span class="label">Pendapatan Billing</span><span class="value">Rp ${billing}</span></div>
     <div class="row"><span class="label">Pendapatan Kantin</span><span class="value">Rp ${kantin}</span></div>
     <div class="row totals"><span class="label">TOTAL PENDAPATAN</span><span class="value">Rp ${totalPendapatan}</span></div>
+    ${breakdownPrint}
     <div class="line"></div>
     <div class="row"><span class="label">Uang Fisik</span><span class="value">Rp ${uangFisik}</span></div>
-    <div class="selisih-label">${selisihLabel} Rp ${Math.abs(result.selisih || 0).toLocaleString('id-ID')}</div>
+    <div class="selisih-label">${result.selisih >= 0 ? 'SURPLUS' : 'DEFISIT'} Rp ${Math.abs(result.selisih || 0).toLocaleString('id-ID')}</div>
     <div class="line" style="border-top: 1px solid #000;"></div>
     <div class="footer">Terima kasih<br>Dicetak: ${new Date().toLocaleString('id-ID')}</div>
 </body>

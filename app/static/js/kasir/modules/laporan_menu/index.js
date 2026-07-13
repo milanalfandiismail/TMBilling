@@ -8,6 +8,27 @@ const LaporanMenu = {
     async load() {
         await this.loadKasirList();
         await this.loadTanggalList();
+        await this.loadMetodePembayaranList();
+    },
+
+    async loadMetodePembayaranList() {
+        const select = document.getElementById('laporan-menu-metode-pembayaran-select');
+        if (!select) return;
+
+        let paymentMethods = ["Tunai", "QRIS", "Transfer Bank"];
+        try {
+            const settingsData = await API.settings.getAll();
+            if (settingsData && settingsData.success && settingsData.settings.payment_methods) {
+                paymentMethods = settingsData.settings.payment_methods.split(',').map(s => s.trim());
+            }
+        } catch (e) {
+            console.error("Gagal memuat metode pembayaran:", e);
+        }
+
+        select.innerHTML = '<option value="">Semua Metode</option>';
+        paymentMethods.forEach(m => {
+            select.innerHTML += `<option value="${m}">${m}</option>`;
+        });
     },
 
     async loadKasirList() {
@@ -68,10 +89,11 @@ const LaporanMenu = {
         }
     },
 
-    async loadByDate(tanggal, kasirId = '') {
+    async loadByDate(tanggal, kasirId = '', metodePembayaran = '') {
         if (!tanggal) return;
         this.currentDate = tanggal;
         this.currentKasirId = kasirId;
+        this.currentMetodePembayaran = metodePembayaran;
         this.currentPage = 1;
         
         await this.fetchData();
@@ -84,7 +106,7 @@ const LaporanMenu = {
         area.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
         try {
-            const data = await API.report.kantinByTanggal(this.currentDate, this.currentKasirId, this.currentPage, this.itemsPerPage);
+            const data = await API.report.kantinByTanggal(this.currentDate, this.currentKasirId, this.currentPage, this.itemsPerPage, this.currentMetodePembayaran);
             this.allData = data;
             this.render();
         } catch (err) {
@@ -130,6 +152,7 @@ const LaporanMenu = {
                                 <th class="px-4 py-3 text-right">Total Harga</th>
                                 <th class="px-4 py-3 text-right">Tunai</th>
                                 <th class="px-4 py-3 text-right">Kembalian</th>
+                                <th class="px-4 py-3 text-left">Metode</th>
                                 <th class="px-4 py-3 text-left">Pemesanan</th>
                                 <th class="px-4 py-3 text-left">Kasir</th>
                                 <th class="px-4 py-3 text-center">Aksi</th>
@@ -165,6 +188,10 @@ const LaporanMenu = {
                                     <td class="px-4 py-3 text-right font-mono text-emerald-400 font-bold flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kembalian</span>
                                         <span>${tm.kembalian ? Utils.formatRupiah(tm.kembalian) : '-'}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Metode</span>
+                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${tm.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${tm.metode_pembayaran || 'Tunai'}</span>
                                     </td>
                                     <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pemesanan</span>
@@ -206,7 +233,8 @@ const LaporanMenu = {
     filter() {
         const tanggal = document.getElementById('laporan-menu-tanggal-select').value;
         const kasirId = document.getElementById('laporan-menu-kasir-select').value;
-        this.loadByDate(tanggal, kasirId);
+        const metodePembayaran = document.getElementById('laporan-menu-metode-pembayaran-select')?.value || '';
+        this.loadByDate(tanggal, kasirId, metodePembayaran);
     },
 
     async printStruk(tmId) {
@@ -230,7 +258,8 @@ const LaporanMenu = {
             Toast.error("Pilih tanggal terlebih dahulu");
             return;
         }
-        window.location.href = `/api/v1/kasir/report/export/kantin?tanggal=${tanggal}&kasir_id=${kasirId}`;
+        const metodePembayaran = document.getElementById('laporan-menu-metode-pembayaran-select')?.value || '';
+        window.location.href = `/api/v1/kasir/report/export/kantin?tanggal=${tanggal}&kasir_id=${kasirId}&metode_pembayaran=${metodePembayaran}`;
     }
 };
 

@@ -2,6 +2,16 @@
 
 const MemberRefill = {
     async tambahWaktu(memberId) {
+        let paymentMethods = ["Tunai", "QRIS", "Transfer Bank"];
+        try {
+            const settingsData = await API.settings.getAll();
+            if (settingsData && settingsData.success && settingsData.settings.payment_methods) {
+                paymentMethods = settingsData.settings.payment_methods.split(',').map(s => s.trim());
+            }
+        } catch (e) {
+            console.error("Gagal memuat metode pembayaran:", e);
+        }
+
         try {
             const response = await API.member.get(memberId);
             const member = response.member || response;
@@ -71,6 +81,14 @@ const MemberRefill = {
                             <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
                                 <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold">Total Tambahan</div>
                                 <div class="text-sm font-black text-neutral-200 mt-1" id="tambah-waktu-total-preview">Pilih paket terlebih dahulu</div>
+                            </div>
+
+                            <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
+                                <label class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold block mb-1">Metode Bayar</label>
+                                <select id="member-refill-metode-pembayaran" 
+                                    class="w-full px-2 py-1 bg-[#050505] border border-[#2a2a2a] rounded text-[10px] lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 font-bold transition-all">
+                                    ${paymentMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
+                                </select>
                             </div>
                         </div>
                         

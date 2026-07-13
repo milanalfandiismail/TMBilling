@@ -6,6 +6,27 @@ const Laporan = {
     async load() {
         await this.loadKasirList();
         await this.loadTanggalList();
+        await this.loadMetodePembayaranList();
+    },
+
+    async loadMetodePembayaranList() {
+        const select = document.getElementById('laporan-metode-pembayaran-select');
+        if (!select) return;
+
+        let paymentMethods = ["Tunai", "QRIS", "Transfer Bank"];
+        try {
+            const settingsData = await API.settings.getAll();
+            if (settingsData && settingsData.success && settingsData.settings.payment_methods) {
+                paymentMethods = settingsData.settings.payment_methods.split(',').map(s => s.trim());
+            }
+        } catch (e) {
+            console.error("Gagal memuat metode pembayaran:", e);
+        }
+
+        select.innerHTML = '<option value="">Semua Metode</option>';
+        paymentMethods.forEach(m => {
+            select.innerHTML += `<option value="${m}">${m}</option>`;
+        });
     },
 
     async loadKasirList() {
@@ -67,10 +88,11 @@ const Laporan = {
         }
     },
 
-    async loadByDate(tanggal, kasirId = '', page = 1) {
+    async loadByDate(tanggal, kasirId = '', page = 1, metodePembayaran = '') {
         if (!tanggal) return;
         this.currentDate = tanggal;
         this.currentKasirId = kasirId;
+        this.currentMetodePembayaran = metodePembayaran;
         this.currentPage = page;
         
         const area = document.getElementById('laporan-area');
@@ -79,7 +101,7 @@ const Laporan = {
         area.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
         try {
-            const data = await API.report.byTanggal(tanggal, kasirId, page, 12);
+            const data = await API.report.byTanggal(tanggal, kasirId, page, 12, metodePembayaran);
             this.render(data);
         } catch (err) {
             area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:text-base">Gagal memuat laporan</div>';
@@ -132,6 +154,7 @@ const Laporan = {
                                 <th class="px-4 py-3 text-left">Pelanggan</th>
                                 <th class="px-4 py-3 text-right">Jumlah</th>
                                 <th class="px-4 py-3 text-left">PC</th>
+                                <th class="px-4 py-3 text-left">Metode</th>
                                 <th class="px-4 py-3 text-center">Aksi</th>
                             </tr>
                         </thead>
@@ -157,6 +180,10 @@ const Laporan = {
                                     <td class="px-4 py-3 text-neutral-500 font-mono flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">PC</span>
                                         <span>${t.pc_kode || '-'}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Metode</span>
+                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${t.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${t.metode_pembayaran || 'Tunai'}</span>
                                     </td>
                                     <td class="px-4 py-3 text-center flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
@@ -185,7 +212,8 @@ const Laporan = {
     filter() {
         const tanggal = document.getElementById('laporan-tanggal-select').value;
         const kasirId = document.getElementById('laporan-kasir-select').value;
-        this.loadByDate(tanggal, kasirId);
+        const metodePembayaran = document.getElementById('laporan-metode-pembayaran-select')?.value || '';
+        this.loadByDate(tanggal, kasirId, 1, metodePembayaran);
     },
 
     async printStruk(tId) {
@@ -209,7 +237,8 @@ const Laporan = {
             Toast.error("Pilih tanggal terlebih dahulu");
             return;
         }
-        window.location.href = `/api/v1/kasir/report/export/billing?tanggal=${tanggal}&kasir_id=${kasirId}`;
+        const metodePembayaran = document.getElementById('laporan-metode-pembayaran-select')?.value || '';
+        window.location.href = `/api/v1/kasir/report/export/billing?tanggal=${tanggal}&kasir_id=${kasirId}&metode_pembayaran=${metodePembayaran}`;
     },
 
     exportPnLPDF() {

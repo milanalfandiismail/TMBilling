@@ -88,11 +88,12 @@ const API = {
         create: data => API.request('/api/v1/kasir/member/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/v1/kasir/member/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
         delete: id => API.request(`/api/v1/kasir/member/${id}`, { method: 'DELETE' }),
-        tambahWaktu: (memberId, paketIdOrPayload, qty = 1) => {
+        tambahWaktu: (memberId, paketIdOrPayload, qty = 1, metodePembayaran = 'Tunai') => {
             if (paketIdOrPayload && typeof paketIdOrPayload === 'object') {
-                return API.request('/api/v1/kasir/member/tambah-waktu', { method: 'POST', body: JSON.stringify(paketIdOrPayload) });
+                const payload = { metode_pembayaran: metodePembayaran, ...paketIdOrPayload };
+                return API.request('/api/v1/kasir/member/tambah-waktu', { method: 'POST', body: JSON.stringify(payload) });
             }
-            return API.request('/api/v1/kasir/member/tambah-waktu', { method: 'POST', body: JSON.stringify({ member_id: memberId, paket_id: paketIdOrPayload, qty }) });
+            return API.request('/api/v1/kasir/member/tambah-waktu', { method: 'POST', body: JSON.stringify({ member_id: memberId, paket_id: paketIdOrPayload, qty, metode_pembayaran: metodePembayaran }) });
         },
         refundPaket: (memberId, transaksiId) => API.request('/api/v1/kasir/member/refund-paket', {
             method: 'POST',
@@ -143,13 +144,14 @@ const API = {
 
     // 🔗 LOGIKA SESI (GUEST & MEMBER)
     sesi: {
-        bukaGuest: (pcKode, paketId, namaGuest) => API.request('/api/v1/kasir/sesi/buka-guest', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, paket_id: paketId, nama_guest: namaGuest }) }),
+        bukaGuest: (pcKode, paketId, namaGuest, metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/sesi/buka-guest', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, paket_id: paketId, nama_guest: namaGuest, metode_pembayaran: metodePembayaran }) }),
         bukaMember: (pcKode, username) => API.request('/api/v1/kasir/sesi/buka-member', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, username }) }),
-        tambahWaktu: (sesiId, paketIdOrPayload, qty = 1) => {
+        tambahWaktu: (sesiId, paketIdOrPayload, qty = 1, metodePembayaran = 'Tunai') => {
             if (paketIdOrPayload && typeof paketIdOrPayload === 'object') {
-                return API.request(`/api/v1/kasir/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify(paketIdOrPayload) });
+                const payload = { metode_pembayaran: metodePembayaran, ...paketIdOrPayload };
+                return API.request(`/api/v1/kasir/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify(payload) });
             }
-            return API.request(`/api/v1/kasir/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify({ paket_id: paketIdOrPayload, qty }) });
+            return API.request(`/api/v1/kasir/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify({ paket_id: paketIdOrPayload, qty, metode_pembayaran: metodePembayaran }) });
         },
         tutup: sesiId => API.request(`/api/v1/kasir/sesi/tutup/${sesiId}`, { method: 'POST' }),
         pindahPC: (sesiId, pcKodeBaru) => API.request(`/api/v1/kasir/sesi/pindah-pc/${sesiId}`, { method: 'POST', body: JSON.stringify({ pc_kode_baru: pcKodeBaru }) }),
@@ -159,14 +161,16 @@ const API = {
     // 🔗 LAPORAN & LOG
     report: {
         harian: () => API.request('/api/v1/kasir/report/laporan-harian'),
-        byTanggal: (tanggal, kasirId = '', page = 1, perPage = 10) => {
+        byTanggal: (tanggal, kasirId = '', page = 1, perPage = 10, metodePembayaran = '') => {
             let url = `/api/v1/kasir/report/laporan/billing?tanggal=${tanggal}&page=${page}&per_page=${perPage}`;
             if (kasirId) url += `&kasir_id=${kasirId}`;
+            if (metodePembayaran) url += `&metode_pembayaran=${metodePembayaran}`;
             return API.request(url);
         },
-        kantinByTanggal: (tanggal, kasirId = '', page = 1, perPage = 12) => {
+        kantinByTanggal: (tanggal, kasirId = '', page = 1, perPage = 12, metodePembayaran = '') => {
             let url = `/api/v1/kasir/report/laporan/kantin?tanggal=${tanggal}&page=${page}&per_page=${perPage}`;
             if (kasirId) url += `&kasir_id=${kasirId}`;
+            if (metodePembayaran) url += `&metode_pembayaran=${metodePembayaran}`;
             return API.request(url);
         },
         tanggalList: () => API.request('/api/v1/kasir/report/tanggal'),
@@ -231,9 +235,9 @@ const API = {
         update: (id, formData) => API.request(`/api/v1/kasir/menu/${id}`, { method: 'PUT', body: formData }),
         delete: (id) => API.request(`/api/v1/kasir/menu/${id}`, { method: 'DELETE' }),
         deletePermanent: (id) => API.request(`/api/v1/kasir/menu/${id}/permanent`, { method: 'DELETE' }),
-        checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0) => API.request('/api/v1/kasir/menu/checkout', {
+        checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0, metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/menu/checkout', {
             method: 'POST',
-            body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode, tunai, kembalian })
+            body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode, tunai, kembalian, metode_pembayaran: metodePembayaran })
         }),
         transaksi: () => API.request('/api/v1/kasir/menu/transaksi')
     }
