@@ -101,13 +101,16 @@ def create_app():
     app.register_blueprint(user_api_bp, url_prefix="/api/v1/kasir/user")
     app.register_blueprint(menu_api_bp, url_prefix="/api/v1/kasir/menu")
     app.register_blueprint(report_api_bp, url_prefix="/api/v1/kasir/report")
-    app.register_blueprint(shift_api_bp, url_prefix="/api/v1/kasir/shift")
-    app.register_blueprint(backup_api_bp, url_prefix="/api/v1/kasir/backup")
+    
+    from app.routes.server_monitor.monitor_routes import server_monitor_bp
+    app.register_blueprint(server_monitor_bp)
     app.register_blueprint(blackout_api_bp, url_prefix="/api/v1/kasir/blackout")
     app.register_blueprint(tournament_api_bp, url_prefix="/api/v1/kasir/tournament")
     app.register_blueprint(settings_api_bp, url_prefix="/api/v1/kasir/settings")
     app.register_blueprint(migration_api_bp, url_prefix="/api/v1/kasir/settings/migration")
     app.register_blueprint(mikrotik_api_bp, url_prefix="/api/v1/kasir/mikrotik")
+    app.register_blueprint(shift_api_bp, url_prefix="/api/v1/kasir/shift")
+    app.register_blueprint(backup_api_bp, url_prefix="/api/v1/kasir/backup")
     from app.routes.settings.plugin_routes import plugin_api_bp
     app.register_blueprint(plugin_api_bp, url_prefix="/api/v1/kasir/settings/plugins")
     app.register_blueprint(monitor_kasir_bp, url_prefix="/api/v1/kasir/monitor")
@@ -128,6 +131,7 @@ def create_app():
     csrf.exempt(auth_api_bp)
     csrf.exempt(monitor_api_bp)
     csrf.exempt(shift_api_bp)
+    csrf.exempt(server_monitor_bp)
 
     @app.route("/")
     def index():

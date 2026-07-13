@@ -52,6 +52,18 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
+echo [2.5/5] Memulai kompilasi TMLHMService (C# Microservice untuk TMBilling Server)...
+cd /d "%CURRENT_DIR%app\services\server_monitor"
+copy /Y "%CURRENT_DIR%WarnetAgent\TMBilling_Monitor\LibreHardwareMonitorLib.dll" ".\LibreHardwareMonitorLib.dll"
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /target:winexe /out:TMLHMService.exe /reference:LibreHardwareMonitorLib.dll /reference:System.Management.dll TMLHMService.cs
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] Gagal melakukan build TMLHMService C#!
+    pause
+    exit /b %ERRORLEVEL%
+)
+cd /d "%CURRENT_DIR%"
+
+echo.
 echo [3/5] Memulai kompilasi MGCTM (Rust)...
 cd /d "%CURRENT_DIR%WarnetAgent\MGCTM"
 cargo build --release
