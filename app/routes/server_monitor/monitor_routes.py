@@ -9,7 +9,7 @@ server_monitor_bp = Blueprint('server_monitor_api', __name__, url_prefix='/api/v
 @login_required
 def get_metrics():
     """Endpoint API utama untuk Server Monitor (menggunakan LHM jika tersedia)."""
-    from app.services.server_monitor.server_monitor_service import ServerMonitorService
+    from app.services import ServerMonitorService
     try:
         metrics = ServerMonitorService.get_metrics()
         return jsonify({"success": True, "data": metrics}), 200
