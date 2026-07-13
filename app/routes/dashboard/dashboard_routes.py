@@ -66,6 +66,18 @@ def list_pc_api():
         return jsonify({"error": str(e)}), 500
 
 
+@dashboard_api_bp.route("/server-metrics", methods=["GET"])
+@login_required
+def server_metrics_api():
+    """Endpoint API untuk memantau performa Server (CPU, RAM, Disk, NIC, GPU)."""
+    from app.services.dashboard.server_monitor_service import ServerMonitorService
+    try:
+        metrics = ServerMonitorService.get_metrics()
+        return jsonify({"success": True, "data": metrics}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @dashboard_api_bp.route("/analytics", methods=["GET"])
 @login_required
 @admin_required
@@ -78,3 +90,4 @@ def analytics_data():
         return jsonify({"success": True, "data": data})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+

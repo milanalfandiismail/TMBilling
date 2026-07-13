@@ -111,7 +111,14 @@ const App = {
 
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
         const target = document.getElementById(`tab-${mainTab}`);
-        if (target) target.classList.remove('hidden');
+        if (target) {
+            target.classList.remove('hidden');
+            if (mainTab === 'server_statistic') {
+                if (typeof ServerMonitor !== 'undefined') ServerMonitor.start();
+            } else {
+                if (typeof ServerMonitor !== 'undefined') ServerMonitor.stop();
+            }
+        }
 
         // Auto-expand/collapse submenus based on the active tab
         const tabToSubmenu = {
@@ -120,7 +127,7 @@ const App = {
             user: 'staff',
             laporan: 'laporan', laporan_menu: 'laporan', struk: 'laporan',
             log: 'sistemlog',
-            monitor: 'system', hardware_checker: 'system', blackout: 'system', screenshot: 'system',
+            monitor: 'system', server_statistic: 'system', hardware_checker: 'system', blackout: 'system', screenshot: 'system',
             settings_general: 'settings',
             whitelist_ip: 'settings',
             settings_backup: 'settings',
