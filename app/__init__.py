@@ -80,7 +80,8 @@ def create_app():
         mikrotik_api_bp,
         game_kasir_api_bp,
         game_public_api_bp,
-        server_monitor_bp
+        server_monitor_bp,
+        plugin_api_bp
     )
 
     # ==========================================
@@ -110,7 +111,6 @@ def create_app():
     app.register_blueprint(mikrotik_api_bp, url_prefix="/api/v1/kasir/mikrotik")
     app.register_blueprint(shift_api_bp, url_prefix="/api/v1/kasir/shift")
     app.register_blueprint(backup_api_bp, url_prefix="/api/v1/kasir/backup")
-    from app.routes.settings.plugin_routes import plugin_api_bp
     app.register_blueprint(plugin_api_bp, url_prefix="/api/v1/kasir/settings/plugins")
     app.register_blueprint(monitor_kasir_bp, url_prefix="/api/v1/kasir/monitor")
     app.register_blueprint(game_kasir_api_bp, url_prefix="/api/v1/kasir/game")
