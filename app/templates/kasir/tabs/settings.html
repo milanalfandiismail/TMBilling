@@ -101,6 +101,36 @@
                 </div>
             </div>
 
+            <!-- Card: Payment Methods -->
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">💳 Metode
+                    Pembayaran</h3>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Kelola Metode Pembayaran</p>
+                        <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Daftar metode pembayaran yang tersedia saat transaksi.</p>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="new-payment-method-input"
+                            class="flex-1 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
+                            placeholder="Contoh: ShopeePay">
+                        <button onclick="Settings.addPaymentMethod()"
+                            class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors">+ Tambah</button>
+                    </div>
+
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded overflow-hidden">
+                        <ul id="payment-methods-list" class="divide-y divide-[#1c1c1c]">
+                            <!-- List item diisi via JS -->
+                        </ul>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-4 pt-4 border-t border-[#1c1c1c]">
+                    <button onclick="Settings.savePaymentMethods()"
+                        class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">Simpan Perubahan</button>
+                </div>
+            </div>
+
             <!-- Card: Konfigurasi Kiosk Screen -->
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
                 <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Konfigurasi Info

@@ -197,6 +197,16 @@ const Menu = {
             return;
         }
 
+        let paymentMethods = ["Tunai", "QRIS", "Transfer Bank"];
+        try {
+            const settingsData = await API.settings.getAll();
+            if (settingsData && settingsData.success && settingsData.settings.payment_methods) {
+                paymentMethods = settingsData.settings.payment_methods.split(',').map(s => s.trim());
+            }
+        } catch (e) {
+            console.error("Gagal memuat metode pembayaran:", e);
+        }
+
         const pcSelect = document.getElementById("menu-order-pc-select");
         const pcKode = pcSelect?.value || null;
 
@@ -221,6 +231,15 @@ const Menu = {
                         <div class="text-2xl font-black text-neutral-100 font-mono mt-1">${formattedTotal}</div>
                     </div>
 
+                    <!-- Metode Pembayaran -->
+                    <div>
+                        <label class="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">Metode Pembayaran</label>
+                        <select id="payment-method-select" onchange="Menu.onPaymentMethodChange()"
+                            class="w-full px-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm focus:border-neutral-500 transition-colors font-bold">
+                            ${paymentMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
+                        </select>
+                    </div>
+
                     <!-- Input Tunai -->
                     <div>
                         <label class="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">Uang Tunai</label>
@@ -233,7 +252,7 @@ const Menu = {
                     </div>
 
                     <!-- Shortcut Pecahan -->
-                    <div>
+                    <div id="payment-shortcut-container">
                         <label class="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">Shortcut</label>
                         <div class="flex flex-wrap gap-1.5">
                             ${[1000, 2000, 5000, 10000, 20000, 50000, 100000].map(n =>
@@ -268,6 +287,27 @@ const Menu = {
 
     _checkoutTotal: 0,
     _checkoutPcKode: null,
+
+    onPaymentMethodChange() {
+        const select = document.getElementById('payment-method-select');
+        const tunaiInput = document.getElementById('payment-tunai-input');
+        const shortcutContainer = document.getElementById('payment-shortcut-container');
+        if (!select || !tunaiInput) return;
+
+        const val = select.value.toLowerCase().trim();
+        const isCash = val === 'tunai' || val === 'cash';
+
+        if (isCash) {
+            tunaiInput.readOnly = false;
+            tunaiInput.value = '0';
+            if (shortcutContainer) shortcutContainer.classList.remove('opacity-45', 'pointer-events-none');
+        } else {
+            tunaiInput.readOnly = true;
+            tunaiInput.value = this._checkoutTotal;
+            if (shortcutContainer) shortcutContainer.classList.add('opacity-45', 'pointer-events-none');
+        }
+        this.hitungKembalian();
+    },
 
     hitungKembalian() {
         const tunaiInput = document.getElementById('payment-tunai-input');
@@ -308,13 +348,16 @@ const Menu = {
         const kembalian = tunai - total;
         if (tunai < total || total <= 0) return;
 
+        const paymentMethodSelect = document.getElementById('payment-method-select');
+        const metodePembayaran = paymentMethodSelect ? paymentMethodSelect.value : 'Tunai';
+
         Modal.closeModal();
 
         const cartItems = this.cart.map(c => ({ menu_id: c.menu.id, jumlah: c.jumlah }));
         const pcKode = this._checkoutPcKode;
 
         try {
-            const res = await window.API.menu.checkout(cartItems, pcKode, tunai, kembalian);
+            const res = await window.API.menu.checkout(cartItems, pcKode, tunai, kembalian, metodePembayaran);
             if (res.success) {
                 Toast.success(`Pembayaran berhasil! Kembalian: Rp ${kembalian.toLocaleString('id-ID')}`);
                 this.cart = [];

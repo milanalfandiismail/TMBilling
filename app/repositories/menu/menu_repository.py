@@ -74,16 +74,21 @@ class MenuRepository:
         return TransaksiMenu.query.filter(TransaksiMenu.tanggal >= today_start).count()
 
     @staticmethod
-    def get_total_pemasukan_by_date(date_obj, kasir_id=None):
+    def get_total_pemasukan_by_date(date_obj, kasir_id=None, metode_pembayaran=None):
         """Menghitung total pendapatan F&B pada tanggal tertentu, opsional difilter kasir."""
-        query = TransaksiMenu.query.filter(db.func.date(TransaksiMenu.tanggal) == date_obj)
-        if kasir_id:
-            query = query.filter(TransaksiMenu.kasir_id == kasir_id)
         res = db.session.query(db.func.sum(TransaksiMenu.total_harga)).select_from(TransaksiMenu).filter(
             db.func.date(TransaksiMenu.tanggal) == date_obj
         )
         if kasir_id:
             res = res.filter(TransaksiMenu.kasir_id == kasir_id)
+        if metode_pembayaran:
+            if metode_pembayaran == "Tunai":
+                res = res.filter(
+                    (TransaksiMenu.metode_pembayaran.in_(["Tunai", "Cash"])) | 
+                    (TransaksiMenu.metode_pembayaran == None)
+                )
+            else:
+                res = res.filter(TransaksiMenu.metode_pembayaran == metode_pembayaran)
         val = res.scalar()
         return int(val) if val else 0
 
@@ -96,11 +101,19 @@ class MenuRepository:
         return query.order_by(TransaksiMenu.tanggal.desc()).all()
 
     @staticmethod
-    def get_transactions_by_date_paginated(date_obj, page, per_page, kasir_id=None):
+    def get_transactions_by_date_paginated(date_obj, page, per_page, kasir_id=None, metode_pembayaran=None):
         """Mendapatkan daftar transaksi F&B dengan pagination pada tanggal tertentu."""
         query = TransaksiMenu.query.filter(db.func.date(TransaksiMenu.tanggal) == date_obj)
         if kasir_id:
             query = query.filter(TransaksiMenu.kasir_id == kasir_id)
+        if metode_pembayaran:
+            if metode_pembayaran == "Tunai":
+                query = query.filter(
+                    (TransaksiMenu.metode_pembayaran.in_(["Tunai", "Cash"])) | 
+                    (TransaksiMenu.metode_pembayaran == None)
+                )
+            else:
+                query = query.filter(TransaksiMenu.metode_pembayaran == metode_pembayaran)
         return query.order_by(TransaksiMenu.tanggal.desc()).paginate(page=page, per_page=per_page, error_out=False)
 
     @staticmethod

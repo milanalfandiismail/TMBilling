@@ -191,7 +191,7 @@ class MemberService:
     # Fokus: Menambah sisa waktu bermain dan pencatatan transaksi nota TM.
 
     @staticmethod
-    def tambah_waktu(member_id, paket, operator="system", qty=1):
+    def tambah_waktu(member_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
         """Tambah waktu member & suntik Nota Transaksi (TM)."""
         member = MemberRepository.get_by_id(member_id)
         if SesiRepository.get_aktif_by_member(member.id):
@@ -212,7 +212,8 @@ class MemberService:
             menit=paket.durasi_menit * qty,
             keterangan=f"Beli paket '{paket.nama}' x{qty} oleh {member.username}",
             no_nota=TransaksiService.generate_nota(),
-            user_id=TransaksiService.get_user_id(operator)
+            user_id=TransaksiService.get_user_id(operator),
+            metode_pembayaran=metode_pembayaran
         )
         db.session.add(transaksi)
         db.session.commit()

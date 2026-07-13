@@ -119,6 +119,7 @@ def tambah_waktu():
         data = request.get_json() or {}
         kasir = session.get("kasir_username", "kasir")
         member_id = data.get("member_id")
+        metode_pembayaran = data.get("metode_pembayaran", "Tunai")
         
         selections = data.get("selections")
         if selections:
@@ -128,14 +129,14 @@ def tambah_waktu():
                 if qty <= 0:
                     raise ValueError("Kuantitas harus minimal 1")
                 paket = PaketService.get_by_id(paket_id)
-                MemberService.tambah_waktu(member_id, paket, operator=kasir, qty=qty)
+                MemberService.tambah_waktu(member_id, paket, operator=kasir, qty=qty, metode_pembayaran=metode_pembayaran)
         else:
             paket_id = data.get("paket_id")
             qty = int(data.get("qty", 1))
             if qty <= 0:
                 raise ValueError("Kuantitas harus minimal 1")
             paket = PaketService.get_by_id(paket_id)
-            MemberService.tambah_waktu(member_id, paket, operator=kasir, qty=qty)
+            MemberService.tambah_waktu(member_id, paket, operator=kasir, qty=qty, metode_pembayaran=metode_pembayaran)
             
         return jsonify({"success": True, "message": "Waktu berhasil ditambah"}), 200
     except ValueError as e:

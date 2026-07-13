@@ -187,7 +187,7 @@ class MenuService:
         return f"{prefix}{str(new_num).zfill(3)}"
 
     @staticmethod
-    def checkout_menu_order(cart_items, pc_kode, kasir_username, operator="system", tunai=0, kembalian=0):
+    def checkout_menu_order(cart_items, pc_kode, kasir_username, operator="system", tunai=0, kembalian=0, metode_pembayaran="Tunai"):
         """Memproses transaksi pembelian F&B terpisah dari billing PC."""
         try:
             if not cart_items or not isinstance(cart_items, list):
@@ -228,6 +228,7 @@ class MenuService:
                     kasir_id=kasir.id,
                     tunai=tunai if tunai else None,
                     kembalian=kembalian if kembalian else None,
+                    metode_pembayaran=metode_pembayaran
                 )
                 MenuRepository.save(transaksi)
                 transaksi_list.append(transaksi)

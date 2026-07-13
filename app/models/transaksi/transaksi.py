@@ -59,6 +59,7 @@ class Transaksi(db.Model):
 
     # Kolom refund
     is_refunded = db.Column(db.Boolean, default=False)
+    metode_pembayaran = db.Column(db.String(50), nullable=True)
 
     
     def to_dict(self):
@@ -84,6 +85,7 @@ class Transaksi(db.Model):
             "menit_display": f"{self.menit} menit" if self.menit > 0 else "-",
             "keterangan": self.keterangan,
             "dibuat_pada": format_display(self.dibuat_pada) if self.dibuat_pada else None,
+            "metode_pembayaran": self.metode_pembayaran,
         }
     
     def _get_jenis_display(self):

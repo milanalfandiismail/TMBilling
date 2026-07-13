@@ -43,7 +43,8 @@ class SettingsService:
             "mikrotik_hotspot_profile": "default",
             "screenshot_auto_enabled": "0",
             "screenshot_auto_value": "60",
-            "screenshot_auto_unit": "detik"
+            "screenshot_auto_unit": "detik",
+            "payment_methods": "Tunai,QRIS,Transfer Bank"
         }
         for k, v in defaults.items():
             if k not in data or not data[k]:

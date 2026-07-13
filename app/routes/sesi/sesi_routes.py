@@ -30,7 +30,8 @@ def buka_guest():
             pc_kode=data.get("pc_kode"),
             paket_id=data.get("paket_id"),
             nama_guest=data.get("nama_guest", "Guest"),
-            operator=kasir
+            operator=kasir,
+            metode_pembayaran=data.get("metode_pembayaran", "Tunai")
         )
         return jsonify({
             "success": True,
@@ -80,6 +81,7 @@ def tambah_waktu_sesi(sesi_id):
     try:
         data = request.get_json() or {}
         kasir = session.get("kasir_username", "kasir")
+        metode_pembayaran = data.get("metode_pembayaran", "Tunai")
         
         selections = data.get("selections")
         if selections:
@@ -89,7 +91,7 @@ def tambah_waktu_sesi(sesi_id):
                 if qty <= 0:
                     raise ValueError("Kuantitas harus minimal 1")
                 paket = PaketService.get_by_id(paket_id)
-                SesiService.tambah_waktu_sesi(sesi_id, paket, operator=kasir, qty=qty)
+                SesiService.tambah_waktu_sesi(sesi_id, paket, operator=kasir, qty=qty, metode_pembayaran=metode_pembayaran)
             return jsonify({
                 "success": True,
                 "message": "Waktu berhasil ditambahkan"
@@ -100,7 +102,7 @@ def tambah_waktu_sesi(sesi_id):
             if qty <= 0:
                 raise ValueError("Kuantitas harus minimal 1")
             paket = PaketService.get_by_id(paket_id)
-            result = SesiService.tambah_waktu_sesi(sesi_id, paket, operator=kasir, qty=qty)
+            result = SesiService.tambah_waktu_sesi(sesi_id, paket, operator=kasir, qty=qty, metode_pembayaran=metode_pembayaran)
             return jsonify({
                 "success": True,
                 "message": f"Ditambahkan {paket.durasi_menit * qty} menit",
