@@ -223,76 +223,80 @@ const Menu = {
         ).join('');
 
         const modalHtml = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl max-w-lg w-[calc(100%-2rem)] mx-auto md:w-full shadow-2xl animate-in">
-                <div class="flex items-center justify-between px-6 py-5 border-b border-[#2a2a2a]">
-                    <div>
-                        <h3 class="text-sm font-bold text-neutral-100 tracking-wide uppercase">Pembayaran POS</h3>
-                        <p class="text-[10px] lg:text-xs text-neutral-500 mt-0.5">${targetDest}</p>
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-4 md:p-6 max-w-4xl w-[calc(100%-2rem)] mx-auto md:w-full max-h-[85vh] overflow-y-auto scrollbar-thin my-auto shadow-2xl">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-[#2a2a2a]">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
+                            <svg class="w-4 h-4 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xs lg:text-base font-bold text-neutral-100 uppercase tracking-wider">Pembayaran POS</h3>
+                            <p class="text-[9px] lg:text-base text-neutral-500 mt-0.5">${targetDest}</p>
+                        </div>
                     </div>
                     <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
                 </div>
-                <div class="px-6 py-5 space-y-4">
-                    <!-- Total -->
-                    <div class="bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-4 text-center">
-                        <span class="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Total Belanja</span>
-                        <div class="text-2xl font-black text-neutral-100 font-mono mt-1">${formattedTotal}</div>
-                    </div>
-
-                    <!-- Detail Keranjang -->
-                    <div class="bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-4">
-                        <span class="text-[10px] text-neutral-500 uppercase font-bold tracking-wider block mb-2">Daftar Pesanan</span>
-                        <div class="space-y-1.5 max-h-32 overflow-y-auto scrollbar-thin pr-2">
-                            ${this.cart.map(c => `
-                                <div class="flex justify-between items-center text-[10px] lg:text-xs text-neutral-300">
-                                    <span>${c.menu.nama} <span class="text-neutral-500 font-bold">x${c.jumlah}</span></span>
-                                    <span class="font-mono text-neutral-100">Rp${Utils.formatRupiah(c.menu.harga * c.jumlah).replace('Rp', '')}</span>
-                                </div>
-                            `).join('')}
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-5 mt-4">
+                    <!-- Left Column: Ringkasan Pesanan -->
+                    <div class="md:col-span-1 space-y-4">
+                        <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
+                            <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold">Total Belanja</div>
+                            <div class="font-bold text-lg lg:text-2xl text-neutral-100 font-mono mt-0.5">${formattedTotal}</div>
+                            
+                            <div class="border-t border-[#2a2a2a] my-3"></div>
+                            
+                            <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold mb-2">Daftar Pesanan</div>
+                            <div class="space-y-1.5 max-h-32 overflow-y-auto scrollbar-thin pr-1">
+                                ${this.cart.map(c => `
+                                    <div class="flex flex-col text-[10px] lg:text-xs">
+                                        <span class="text-neutral-300">${c.menu.nama} <span class="text-neutral-500 font-bold">x${c.jumlah}</span></span>
+                                        <span class="font-mono text-neutral-400">Rp${Utils.formatRupiah(c.menu.harga * c.jumlah).replace('Rp', '')}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Metode Pembayaran -->
-                        <div>
-                            <label class="text-[9px] lg:text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-2">Metode Pembayaran</label>
-                            <select id="payment-method-select" onchange="Menu.onPaymentMethodChange()"
-                                class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors font-bold">
+                        <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
+                            <label class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold block mb-1">Metode Bayar</label>
+                            <select id="payment-method-select" onchange="Menu.onPaymentMethodChange()" 
+                                class="w-full px-2 py-1 bg-[#050505] border border-[#2a2a2a] rounded text-[10px] lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 font-bold transition-all">
                                 ${paymentMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
                             </select>
                         </div>
-
-                        <!-- Input Tunai -->
-                        <div>
-                            <label class="text-[9px] lg:text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-2">Uang Tunai</label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-xs lg:text-sm">Rp</span>
+                    </div>
+                    
+                    <!-- Right Column: Pembayaran Tunai -->
+                    <div class="md:col-span-3 space-y-4">
+                        <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
+                            <label class="text-[9px] lg:text-base text-neutral-400 uppercase font-bold tracking-wider font-mono block mb-2">Input Uang Tunai</label>
+                            <div class="relative mb-4">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-xs lg:text-base">Rp</span>
                                 <input type="text" inputmode="numeric" id="payment-tunai-input" 
-                                    class="w-full pl-8 pr-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-xs lg:text-base font-mono text-right focus:outline-none focus:border-neutral-500 transition-colors"
+                                    class="w-full pl-9 pr-3 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm lg:text-xl font-mono text-right focus:outline-none focus:border-neutral-500 transition-colors"
                                     placeholder="0" oninput="Utils.formatInputRupiah(this); Menu.hitungKembalian()" autofocus />
+                            </div>
+
+                            <label class="text-[9px] lg:text-base text-neutral-400 uppercase font-bold tracking-wider font-mono block mb-2">Pecahan Cepat</label>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                ${pecahanHtml}
+                                <button onclick="Menu.setTunaiPas()" class="px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-[10px] lg:text-xs text-neutral-300 font-bold rounded flex-1 transition-colors">Uang Pas</button>
+                            </div>
+
+                            <div class="border-t border-[#2a2a2a] my-4"></div>
+
+                            <div class="flex justify-between items-center bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-3 lg:p-4">
+                                <span class="text-[10px] lg:text-sm text-neutral-400 uppercase font-bold tracking-wider">Kembalian</span>
+                                <span id="payment-kembalian-text" class="text-sm lg:text-2xl font-black text-neutral-100 font-mono">Rp0</span>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Shortcut Pecahan -->
-                    <div id="payment-shortcut-container">
-                        <label class="text-[9px] lg:text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-2">Shortcut</label>
-                        <div class="flex flex-wrap gap-1.5">
-                            ${pecahanHtml}
-                            <button onclick="Menu.setTunaiPas()" class="px-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-[10px] lg:text-xs text-neutral-300 font-bold rounded flex-1 transition-colors">Uang Pas</button>
-                        </div>
-                    </div>
-
-                    <!-- Kembalian -->
-                    <div id="payment-kembalian-container" class="flex justify-between items-center bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-3">
-                        <span class="text-[10px] text-neutral-400 uppercase font-bold tracking-wider">Kembalian</span>
-                        <span id="payment-kembalian-text" class="text-sm font-black text-neutral-100 font-mono">Rp0</span>
-                    </div>
                 </div>
                 
-                <div class="flex gap-3 justify-end px-6 py-4 border-t border-[#2a2a2a] bg-[#0a0a0a]">
+                <div class="flex gap-3 justify-end mt-5 pt-4 border-t border-[#2a2a2a]">
                     <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded-lg transition-colors">Batal</button>
                     <button onclick="Menu.submitPembayaran()" id="btn-submit-payment" disabled 
-                        class="px-5 py-2.5 bg-neutral-100 hover:bg-white disabled:bg-[#1a1a1a] disabled:text-neutral-500 disabled:cursor-not-allowed text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
+                        class="px-5 py-2.5 bg-neutral-100 hover:bg-[#e5e5e5] disabled:bg-[#1a1a1a] disabled:text-neutral-500 disabled:cursor-not-allowed text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                         Proses & Cetak
                     </button>
