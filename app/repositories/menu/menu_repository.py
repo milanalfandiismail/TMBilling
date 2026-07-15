@@ -74,6 +74,11 @@ class MenuRepository:
         return TransaksiMenu.query.filter(TransaksiMenu.tanggal >= today_start).count()
 
     @staticmethod
+    def count_transactions_by_prefix(prefix):
+        """Menghitung total transaksi menu berdasarkan prefix nomor nota."""
+        return TransaksiMenu.query.filter(TransaksiMenu.no_nota.like(f"{prefix}%")).count()
+
+    @staticmethod
     def get_total_pemasukan_by_date(date_obj, kasir_id=None, metode_pembayaran=None):
         """Menghitung total pendapatan F&B pada tanggal tertentu, opsional difilter kasir."""
         res = db.session.query(db.func.sum(TransaksiMenu.total_harga)).select_from(TransaksiMenu).filter(

@@ -175,7 +175,8 @@ const BukaModal = {
         const paket = (this._currentPaketList || []).find(p => p.id === parseInt(paketId));
         if (!paket) return Toast.error('Paket tidak valid');
 
-        // Use confirmation modal
+        const metodePembayaran = document.getElementById('buka-metode-pembayaran')?.value || 'Tunai';
+
         const dataLines = [
             { label: 'Target PC', value: this.pcKode },
             { label: 'Nama Guest', value: namaGuest },
@@ -184,10 +185,9 @@ const BukaModal = {
             { label: `- ${paket.nama}`, value: Utils.formatRupiah(paket.harga || 0) },
             { separator: true },
             { label: 'Total Durasi', value: Utils.formatDurasiFriendly(paket.durasi || paket.durasi_menit || 0), highlight: true },
-            { label: 'Total Harga', value: Utils.formatRupiah(paket.harga || 0), highlight: true }
+            { label: 'Total Harga', value: Utils.formatRupiah(paket.harga || 0), highlight: true },
+            { label: 'Pembayaran', value: metodePembayaran, highlight: true }
         ];
-
-        const metodePembayaran = document.getElementById('buka-metode-pembayaran')?.value || 'Tunai';
 
         ModalConfirmTambah.open({
             title: "Konfirmasi Buka Sesi",

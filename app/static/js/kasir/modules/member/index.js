@@ -195,16 +195,17 @@ const Member = {
                 }
             });
 
+            const metodePembayaran = document.getElementById('member-refill-metode-pembayaran')?.value || 'Tunai';
+
             dataLines.push(
                 { separator: true },
                 { label: 'Sisa Waktu Saat Ini', value: Utils.formatDurasiFriendly(sisaSekarang) },
                 { label: 'Total Tambahan', value: Utils.formatDurasiFriendly(totalMenit) },
                 { label: 'Total Setelah', value: Utils.formatDurasiFriendly(totalSetelah), highlight: true },
                 { separator: true },
-                { label: 'Total Harga', value: Utils.formatRupiah(totalHarga), highlight: true }
+                { label: 'Total Harga', value: Utils.formatRupiah(totalHarga), highlight: true },
+                { label: 'Pembayaran', value: metodePembayaran, highlight: true }
             );
-
-            const metodePembayaran = document.getElementById('member-refill-metode-pembayaran')?.value || 'Tunai';
 
             ModalConfirmTambah.open({
                 title: "Konfirmasi Isi Waktu Billing",
