@@ -99,7 +99,7 @@ class ReportService:
 
     @staticmethod
     def get_laporan_kantin_by_tanggal(tanggal_str=None, kasir_id=None, page=1, per_page=12, metode_pembayaran=None):
-        """Laporan khusus kantin berdasarkan filter tanggal dengan pagination."""
+        """Laporan khusus kantin berdasarkan filter tanggal dengan manual pagination untuk grouping per nota."""
         try:
             if tanggal_str:
                 tanggal = datetime.strptime(tanggal_str, "%Y-%m-%d").date()
@@ -111,35 +111,58 @@ class ReportService:
             # Ambil total pendapatan F&B untuk tanggal tersebut
             total_pendapatan_menu = MenuRepository.get_total_pemasukan_by_date(tanggal, kasir_id, metode_pembayaran)
 
-            # History transaksi kantin dengan pagination
-            pagination = MenuRepository.get_transactions_by_date_paginated(tanggal, page, per_page, kasir_id, metode_pembayaran)
-            history_menu_raw = pagination.items
+            # 1. Fetch semua transaksi untuk tanggal tersebut
+            all_tm = MenuRepository.get_transactions_by_date(tanggal, kasir_id, metode_pembayaran)
+            
+            # 2. Group by no_nota manually di memory
+            from collections import OrderedDict
+            grouped = OrderedDict()
+            for tm in all_tm:
+                key = tm.no_nota or f"ID-{tm.id}"
+                if key not in grouped:
+                    grouped[key] = []
+                grouped[key].append(tm)
+                
+            # 3. Manual Pagination
+            total_items = len(grouped)
+            pages = (total_items + per_page - 1) // per_page if per_page > 0 else 1
+            if page < 1: page = 1
+            start_idx = (page - 1) * per_page
+            end_idx = start_idx + per_page
+            
+            paginated_groups = list(grouped.values())[start_idx:end_idx]
 
-            history_menu = [
-                {
-                    "id": tm.id,
-                    "no_nota": tm.no_nota,
-                    "menu_nama": tm.menu.nama if tm.menu else "Menu Terhapus",
-                    "jumlah": tm.jumlah,
-                    "total_harga": tm.total_harga,
-                    "pc_kode": tm.pc_kode or "-",
-                    "waktu": format_display(tm.tanggal) if tm.tanggal else "-",
-                    "kasir_nama": tm.kasir.username if tm.kasir else "System",
-                    "tunai": tm.tunai,
-                    "kembalian": tm.kembalian,
-                    "metode_pembayaran": tm.metode_pembayaran or "Tunai",
-                } for tm in history_menu_raw
-            ]
+            history_menu = []
+            for nota_group in paginated_groups:
+                first_item = nota_group[0]
+                # Menggabungkan nama menu dengan rincian quantity
+                item_names = [f"{tm.menu.nama} x{tm.jumlah}" if tm.menu else f"Menu Terhapus x{tm.jumlah}" for tm in nota_group]
+                total_qty = sum(tm.jumlah for tm in nota_group)
+                total_harga = sum(tm.total_harga for tm in nota_group)
+                
+                history_menu.append({
+                    "id": first_item.id, # ID transaksi pertama (untuk patokan cetak struk)
+                    "no_nota": first_item.no_nota,
+                    "menu_nama": ", ".join(item_names),
+                    "jumlah": total_qty,
+                    "total_harga": total_harga,
+                    "pc_kode": first_item.pc_kode or "-",
+                    "waktu": format_display(first_item.tanggal) if first_item.tanggal else "-",
+                    "kasir_nama": first_item.kasir.username if first_item.kasir else "System",
+                    "tunai": first_item.tunai,
+                    "kembalian": first_item.kembalian,
+                    "metode_pembayaran": first_item.metode_pembayaran or "Tunai",
+                })
 
             return {
                 "status": "success",
                 "tanggal": tanggal.isoformat(),
                 # Pagination Info
-                "page": pagination.page,
-                "pages": pagination.pages,
-                "total": pagination.total,
-                "has_next": pagination.has_next,
-                "has_prev": pagination.has_prev,
+                "page": page,
+                "pages": pages,
+                "total": total_items,
+                "has_next": page < pages,
+                "has_prev": page > 1,
                 # Data Kantin
                 "total_pendapatan_menu": total_pendapatan_menu,
                 "history_menu": history_menu
@@ -237,16 +260,17 @@ class ReportService:
 
     @staticmethod
     def get_struk_menu_data(t_menu_id, kasir_name="Kasir"):
-        """Mengambil dan memetakan data transaksi menu ke format struk belanja."""
+        """Mengambil dan memetakan data transaksi menu ke format struk belanja (Mendukung grouping per nota)."""
         from app.repositories import MenuRepository
-        tm = MenuRepository.get_transaksi_by_id(t_menu_id)
-        if not tm:
+        from app.models.menu.menu import TransaksiMenu
+        tm_first = MenuRepository.get_transaksi_by_id(t_menu_id)
+        if not tm_first:
             return None
 
         # Penentuan nama kasir (prioritas nama lengkap)
         nama_kasir = "Kasir"
-        if tm.kasir:
-            nama_kasir = tm.kasir.nama_lengkap or tm.kasir.username
+        if tm_first.kasir:
+            nama_kasir = tm_first.kasir.nama_lengkap or tm_first.kasir.username
         else:
             nama_kasir = kasir_name
 
@@ -256,18 +280,32 @@ class ReportService:
         warnet_phone = SettingsRepository.get("warnet_phone") or "0812-3456-7890"
         warnet_footer = SettingsRepository.get("warnet_footer") or "Terima kasih atas kunjungan Anda!"
 
+        # Fetch semua transaksi dengan no_nota yang sama
+        if tm_first.no_nota:
+            semua_tm = TransaksiMenu.query.filter_by(no_nota=tm_first.no_nota).all()
+        else:
+            semua_tm = [tm_first]
+
+        rincian = []
+        total_harga = 0
+        total_qty = 0
+        for tm in semua_tm:
+            rincian.append({"keterangan": tm.menu.nama if tm.menu else "Menu Terhapus", "durasi": tm.jumlah, "harga": tm.total_harga})
+            total_harga += tm.total_harga
+            total_qty += tm.jumlah
+
         return {
-            "no_nota": tm.no_nota,
-            "tanggal": format_display(tm.tanggal) if tm.tanggal else "",
-            "pc_kode": tm.pc_kode or "-",
+            "no_nota": tm_first.no_nota or f"ID-{tm_first.id}",
+            "tanggal": format_display(tm_first.tanggal) if tm_first.tanggal else "",
+            "pc_kode": tm_first.pc_kode or "-",
             "tipe": "kantin",
             "nama_pelanggan": "Pelanggan POS",
-            "rincian": [{"keterangan": tm.menu.nama if tm.menu else "Menu Terhapus", "durasi": tm.jumlah, "harga": tm.total_harga}],
-            "total_durasi": tm.jumlah,
-            "total_harga": tm.total_harga,
+            "rincian": rincian,
+            "total_durasi": total_qty,
+            "total_harga": total_harga,
             "kasir": nama_kasir,
-            "tunai": tm.tunai,
-            "kembalian": tm.kembalian,
+            "tunai": tm_first.tunai,
+            "kembalian": tm_first.kembalian,
             "warnet_title": warnet_title,
             "warnet_address": warnet_address,
             "warnet_phone": warnet_phone,
