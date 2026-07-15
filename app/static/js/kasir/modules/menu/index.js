@@ -249,13 +249,15 @@ const Menu = {
                             <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold mb-3">Daftar Pesanan</div>
                             <div class="space-y-2 max-h-[160px] md:max-h-[300px] overflow-y-auto scrollbar-thin pr-1">
                                 ${this.cart.map(c => `
-                                    <div class="bg-[#111] border border-[#2a2a2a] p-3 rounded-lg flex justify-between items-center">
-                                        <div class="flex flex-col">
-                                            <span class="font-bold text-xs lg:text-base text-neutral-200">${c.menu.nama}</span>
-                                            <span class="text-[10px] lg:text-sm text-neutral-500 mt-0.5 font-bold">Kuantitas: <span class="text-neutral-300">${c.jumlah}</span></span>
-                                        </div>
-                                        <div class="text-right">
-                                            <span class="font-bold text-xs lg:text-base text-emerald-400 font-mono">Rp${Utils.formatRupiah(c.menu.harga * c.jumlah).replace('Rp', '')}</span>
+                                    <div class="bg-[#111] border border-[#2a2a2a] p-3 rounded-lg">
+                                        <div class="flex justify-between items-start">
+                                            <div class="flex-1 min-w-0 pr-3">
+                                                <div class="font-bold text-xs lg:text-base text-neutral-200 truncate">${c.menu.nama}</div>
+                                                <div class="text-[10px] lg:text-sm text-neutral-500 mt-0.5">Kuantitas: <span class="text-neutral-300 font-bold">${c.jumlah}</span></div>
+                                            </div>
+                                            <div class="text-right shrink-0">
+                                                <div class="font-bold text-xs lg:text-base text-emerald-400 font-mono">Rp${Utils.formatRupiah(c.menu.harga * c.jumlah).replace('Rp', '')}</div>
+                                            </div>
                                         </div>
                                     </div>
                                 `).join('')}
