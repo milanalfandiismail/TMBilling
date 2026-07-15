@@ -218,7 +218,7 @@ const Menu = {
         this._checkoutTotal = total;
         this._checkoutPcKode = pcKode;
         
-        const pecahanHtml = [10000, 20000, 50000, 100000].map(n =>
+        const pecahanHtml = [1000, 2000, 5000, 10000, 20000, 50000, 100000].map(n =>
             `<button onclick="Menu.setTunai(${n})" class="px-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-[10px] lg:text-xs text-neutral-300 font-bold rounded transition-colors">Rp${(n/1000).toFixed(0)}K</button>`
         ).join('');
 
@@ -266,9 +266,9 @@ const Menu = {
                             <label class="text-[9px] lg:text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-2">Uang Tunai</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-xs lg:text-sm">Rp</span>
-                                <input type="number" id="payment-tunai-input" min="0" value="0"
+                                <input type="text" inputmode="numeric" id="payment-tunai-input" 
                                     class="w-full pl-8 pr-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-xs lg:text-base font-mono text-right focus:outline-none focus:border-neutral-500 transition-colors"
-                                    placeholder="0" oninput="Menu.hitungKembalian()" autofocus />
+                                    placeholder="0" oninput="Utils.formatInputRupiah(this); Menu.hitungKembalian()" autofocus />
                             </div>
                         </div>
                     </div>
@@ -336,7 +336,8 @@ const Menu = {
         if (!tunaiInput || !kembalianDisplay || !submitBtn) return;
 
         const total = this._checkoutTotal;
-        const tunai = parseInt(tunaiInput.value) || 0;
+        const tunaiStr = tunaiInput.value.replace(/\D/g, '');
+        const tunai = parseInt(tunaiStr) || 0;
         const kembalian = tunai - total;
 
         if (tunai >= total && total > 0) {
@@ -354,16 +355,25 @@ const Menu = {
 
     setTunai(nominal) {
         const input = document.getElementById('payment-tunai-input');
-        if (input) { input.value = nominal; this.hitungKembalian(); }
+        if (input) { 
+            input.value = nominal; 
+            Utils.formatInputRupiah(input);
+            this.hitungKembalian(); 
+        }
     },
 
     setTunaiPas() {
-        this.setTunai(this._checkoutTotal);
+        const input = document.getElementById('payment-tunai-input');
+        if (input) { 
+            input.value = this._checkoutTotal; 
+            Utils.formatInputRupiah(input);
+            this.hitungKembalian(); 
+        }
     },
 
     async submitPembayaran() {
         const tunaiInput = document.getElementById('payment-tunai-input');
-        const tunai = parseInt(tunaiInput?.value) || 0;
+        const tunai = parseInt(tunaiInput?.value.replace(/\D/g, '')) || 0;
         const total = this._checkoutTotal;
         const kembalian = tunai - total;
         if (tunai < total || total <= 0) return;
