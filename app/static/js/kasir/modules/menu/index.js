@@ -246,12 +246,17 @@ const Menu = {
                             
                             <div class="border-t border-[#2a2a2a] my-3"></div>
                             
-                            <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold mb-2">Daftar Pesanan</div>
-                            <div class="space-y-1.5 max-h-32 overflow-y-auto scrollbar-thin pr-1">
+                            <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold mb-3">Daftar Pesanan</div>
+                            <div class="space-y-2 max-h-[160px] md:max-h-[300px] overflow-y-auto scrollbar-thin pr-1">
                                 ${this.cart.map(c => `
-                                    <div class="flex flex-col text-[10px] lg:text-xs">
-                                        <span class="text-neutral-300">${c.menu.nama} <span class="text-neutral-500 font-bold">x${c.jumlah}</span></span>
-                                        <span class="font-mono text-neutral-400">Rp${Utils.formatRupiah(c.menu.harga * c.jumlah).replace('Rp', '')}</span>
+                                    <div class="bg-[#111] border border-[#2a2a2a] p-3 rounded-lg flex justify-between items-center">
+                                        <div class="flex flex-col">
+                                            <span class="font-bold text-xs lg:text-base text-neutral-200">${c.menu.nama}</span>
+                                            <span class="text-[10px] lg:text-sm text-neutral-500 mt-0.5 font-bold">Kuantitas: <span class="text-neutral-300">${c.jumlah}</span></span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="font-bold text-xs lg:text-base text-emerald-400 font-mono">Rp${Utils.formatRupiah(c.menu.harga * c.jumlah).replace('Rp', '')}</span>
+                                        </div>
                                     </div>
                                 `).join('')}
                             </div>
