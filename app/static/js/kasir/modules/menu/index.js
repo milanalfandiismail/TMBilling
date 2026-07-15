@@ -284,7 +284,7 @@ const Menu = {
                             </div>
 
                             <label class="text-[9px] xl:text-base text-neutral-400 uppercase font-bold tracking-wider font-mono block mb-1 lg:mb-2">Pecahan Cepat</label>
-                            <div class="flex flex-wrap gap-1.5 lg:gap-2 mb-3 lg:mb-5">
+                            <div id="payment-shortcut-container" class="flex flex-wrap gap-1.5 lg:gap-2 mb-3 lg:mb-5 transition-opacity">
                                 ${pecahanHtml}
                                 <button onclick="Menu.setTunaiPas()" class="px-2 py-1.5 lg:px-3 lg:py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-[10px] xl:text-sm text-neutral-300 font-bold rounded flex-1 transition-colors">Uang Pas</button>
                             </div>
@@ -329,11 +329,15 @@ const Menu = {
         if (isCash) {
             tunaiInput.readOnly = false;
             tunaiInput.value = '0';
-            if (shortcutContainer) shortcutContainer.classList.remove('opacity-45', 'pointer-events-none');
+            tunaiInput.classList.remove('bg-[#1a1a1a]', 'text-neutral-500');
+            tunaiInput.classList.add('bg-[#0a0a0a]', 'text-neutral-200');
+            if (shortcutContainer) shortcutContainer.classList.remove('opacity-40', 'pointer-events-none');
         } else {
             tunaiInput.readOnly = true;
-            tunaiInput.value = this._checkoutTotal;
-            if (shortcutContainer) shortcutContainer.classList.add('opacity-45', 'pointer-events-none');
+            tunaiInput.value = Utils.formatRupiah(this._checkoutTotal).replace('Rp', '');
+            tunaiInput.classList.remove('bg-[#0a0a0a]', 'text-neutral-200');
+            tunaiInput.classList.add('bg-[#1a1a1a]', 'text-neutral-500');
+            if (shortcutContainer) shortcutContainer.classList.add('opacity-40', 'pointer-events-none');
         }
         this.hitungKembalian();
     },
