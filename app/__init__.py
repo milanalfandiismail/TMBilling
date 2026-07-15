@@ -44,7 +44,7 @@ def create_app():
 
     db.init_app(app)
     csrf.init_app(app)
-    migrate.init_app(app, db)
+    migrate.init_app(app, db, render_as_batch=True)
 
     # IP Whitelist middleware — proteksi dashboard /kasir dan /api/v1/kasir/*
     from app.middleware import check_ip_whitelist
