@@ -75,7 +75,7 @@ const StrukPreview = {
                         </div>
                     </div>
 
-                    ${(data.payment_method || 'Tunai').toLowerCase() === 'tunai' ? `
+                    ${(data.payment_method || 'Tunai').toLowerCase() === 'tunai' && data.tipe === 'kantin' ? `
                     <div class="border-t border-dashed border-[#2a2a2a] my-3"></div>
                     <div class="flex justify-between text-[10px] lg:text-base">
                         <span class="text-neutral-400">Metode Bayar</span>
@@ -93,7 +93,7 @@ const StrukPreview = {
                     <div class="border-t border-dashed border-[#2a2a2a] my-3"></div>
                     <div class="flex justify-between text-[10px] lg:text-base">
                         <span class="text-neutral-400">Metode Bayar</span>
-                        <span class="text-neutral-200 font-bold uppercase">${escape(data.payment_method)}</span>
+                        <span class="text-neutral-200 font-bold uppercase">${escape(data.payment_method || 'Tunai')}</span>
                     </div>
                     `}
 
