@@ -181,8 +181,8 @@ class MenuService:
         prefix = f"TMM-{date_str}-"
         
         # Cari total transaksi hari ini untuk penomoran
-        # Menggunakan format hitungan hari ini sebagai suffix
-        count_today = MenuRepository.count_transactions_today()
+        # Menggunakan pencarian prefix agar kebal terhadap isu timezone
+        count_today = MenuRepository.count_transactions_by_prefix(prefix)
         new_num = count_today + 1
         return f"{prefix}{str(new_num).zfill(3)}"
 
@@ -197,7 +197,16 @@ class MenuService:
             if not kasir:
                 raise ValueError("Kasir tidak valid")
 
+            today = datetime.now()
+            date_str = today.strftime('%Y%m%d')
+            prefix = f"TMM-{date_str}-"
+            count_today = MenuRepository.count_transactions_by_prefix(prefix)
+            
+            # Buat satu nomor nota untuk seluruh item dalam keranjang
+            no_nota = f"{prefix}{str(count_today + 1).zfill(3)}"
+
             transaksi_list = []
+
             for item in cart_items:
                 menu_id = item.get("menu_id")
                 jumlah = int(item.get("jumlah", 0))
@@ -215,8 +224,6 @@ class MenuService:
                         raise ValueError(f"Stok '{menu.nama}' tidak mencukupi (Tersedia: {menu.stok}, Diminta: {jumlah})")
                     menu.stok -= jumlah
 
-                # Buat transaksi
-                no_nota = MenuService.generate_nota_menu()
                 total = menu.harga * jumlah
 
                 transaksi = TransaksiMenu(

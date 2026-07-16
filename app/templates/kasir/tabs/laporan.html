@@ -12,12 +12,10 @@
                     class="flex-1 sm:flex-initial px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
                     <option value="">Semua Metode</option>
                 </select>
-                <select id="laporan-tanggal-select"
+                <select id="laporan-tanggal-select" onchange="Laporan.filter()"
                     class="flex-1 sm:flex-initial px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
                     <option value="">Pilih Tanggal</option>
                 </select>
-                <button onclick="Laporan.filter()"
-                    class="w-full sm:w-auto px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">Tampilkan</button>
                 <button onclick="Laporan.exportPDF()"
                     class="w-full sm:w-auto px-4 py-2 bg-rose-700 hover:bg-rose-600 text-white text-xs lg:text-base font-bold rounded transition-colors">Export PDF</button>
                 {% if session.get('kasir_role') == 'admin' %}

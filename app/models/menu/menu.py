@@ -38,7 +38,7 @@ class TransaksiMenu(db.Model):
     __tablename__ = "transaksi_menu"
     
     id = db.Column(db.Integer, primary_key=True)
-    no_nota = db.Column(db.String(50), nullable=False, unique=True)
+    no_nota = db.Column(db.String(50), nullable=False)
     
     menu_id = db.Column(db.Integer, db.ForeignKey("menu_item.id"), nullable=False)
     jumlah = db.Column(db.Integer, nullable=False, default=1)

@@ -75,17 +75,27 @@ const StrukPreview = {
                         </div>
                     </div>
 
-                    ${data.tunai !== null && data.tunai !== undefined ? `
+                    ${(data.payment_method || 'Tunai').toLowerCase() === 'tunai' && data.tipe === 'kantin' ? `
                     <div class="border-t border-dashed border-[#2a2a2a] my-3"></div>
                     <div class="flex justify-between text-[10px] lg:text-base">
-                        <span class="text-neutral-400">Tunai</span>
-                        <span class="text-neutral-200 font-bold">${Utils.formatRupiah(data.tunai)}</span>
+                        <span class="text-neutral-400">Metode Bayar</span>
+                        <span class="text-neutral-200 font-bold uppercase">TUNAI</span>
+                    </div>
+                    <div class="flex justify-between text-[10px] lg:text-base">
+                        <span class="text-neutral-400">Uang Tunai</span>
+                        <span class="text-neutral-200 font-bold">${Utils.formatRupiah(data.tunai || 0)}</span>
                     </div>
                     <div class="flex justify-between text-[10px] lg:text-base">
                         <span class="text-neutral-400">Kembalian</span>
-                        <span class="text-emerald-400 font-bold">${Utils.formatRupiah(data.kembalian)}</span>
+                        <span class="text-emerald-400 font-bold">${Utils.formatRupiah(data.kembalian || 0)}</span>
                     </div>
-                    ` : ''}
+                    ` : `
+                    <div class="border-t border-dashed border-[#2a2a2a] my-3"></div>
+                    <div class="flex justify-between text-[10px] lg:text-base">
+                        <span class="text-neutral-400">Metode Bayar</span>
+                        <span class="text-neutral-200 font-bold uppercase">${escape(data.payment_method || 'Tunai')}</span>
+                    </div>
+                    `}
 
                     <div class="border-t border-dashed border-[#2a2a2a] my-3"></div>
 
