@@ -85,7 +85,12 @@ const ServerMonitor = {
         this.updateBarColor(bar, cpu.percent);
         
         document.getElementById('sm-cpu-cores').innerText = `${cpu.cores || 0} Cores / ${cpu.threads || 0} Threads`;
-        document.getElementById('sm-cpu-freq').innerText = cpu.freq_mhz > 0 ? `${cpu.freq_mhz} MHz` : (cpu.temp !== "N/A" ? `${cpu.temp}°C` : '--');
+        document.getElementById('sm-cpu-freq').innerText = cpu.freq_mhz > 0 ? `${cpu.freq_mhz} MHz` : '--';
+        
+        const tempEl = document.getElementById('sm-cpu-temp');
+        if (tempEl) {
+            tempEl.innerText = cpu.temp !== "N/A" ? `${cpu.temp}°C` : '--';
+        }
     },
 
     updateRam(ram) {
