@@ -74,6 +74,11 @@ class MenuRepository:
         return TransaksiMenu.query.filter(TransaksiMenu.tanggal >= today_start).count()
 
     @staticmethod
+    def count_transactions_by_prefix(prefix):
+        """Menghitung total transaksi menu berdasarkan prefix nomor nota."""
+        return TransaksiMenu.query.filter(TransaksiMenu.no_nota.like(f"{prefix}%")).count()
+
+    @staticmethod
     def get_total_pemasukan_by_date(date_obj, kasir_id=None, metode_pembayaran=None):
         """Menghitung total pendapatan F&B pada tanggal tertentu, opsional difilter kasir."""
         res = db.session.query(db.func.sum(TransaksiMenu.total_harga)).select_from(TransaksiMenu).filter(
@@ -93,11 +98,19 @@ class MenuRepository:
         return int(val) if val else 0
 
     @staticmethod
-    def get_transactions_by_date(date_obj, kasir_id=None):
+    def get_transactions_by_date(date_obj, kasir_id=None, metode_pembayaran=None):
         """Mendapatkan daftar transaksi F&B pada tanggal tertentu, opsional difilter kasir."""
         query = TransaksiMenu.query.filter(db.func.date(TransaksiMenu.tanggal) == date_obj)
         if kasir_id:
             query = query.filter(TransaksiMenu.kasir_id == kasir_id)
+        if metode_pembayaran:
+            if metode_pembayaran == "Tunai":
+                query = query.filter(
+                    (TransaksiMenu.metode_pembayaran.in_(["Tunai", "Cash"])) | 
+                    (TransaksiMenu.metode_pembayaran == None)
+                )
+            else:
+                query = query.filter(TransaksiMenu.metode_pembayaran == metode_pembayaran)
         return query.order_by(TransaksiMenu.tanggal.desc()).all()
 
     @staticmethod

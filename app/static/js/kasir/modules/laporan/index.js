@@ -122,21 +122,21 @@ const Laporan = {
         // Ringkasan cards untuk Billing saja
         html += `
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-20">
-                    <span class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold tracking-wider">Total Pendapatan Billing</span>
-                    <span class="text-base font-bold text-neutral-100 font-mono mt-1">${Utils.formatRupiah(data.total_pendapatan_billing || 0)}</span>
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-auto min-h-[5rem]">
+                    <span class="text-[10px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Total Pendapatan Billing</span>
+                    <span class="text-sm lg:text-base font-bold text-neutral-100 font-mono mt-2 truncate" title="${Utils.formatRupiah(data.total_pendapatan_billing || 0)}">${Utils.formatRupiah(data.total_pendapatan_billing || 0)}</span>
                 </div>
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-20">
-                    <span class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold tracking-wider">Total Sesi</span>
-                    <span class="text-lg font-bold text-neutral-100 font-mono mt-1">${data.total_sesi || 0}</span>
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-auto min-h-[5rem]">
+                    <span class="text-[10px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Total Sesi</span>
+                    <span class="text-sm lg:text-base font-bold text-neutral-100 font-mono mt-2 truncate" title="${data.total_sesi || 0}">${data.total_sesi || 0}</span>
                 </div>
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-20">
-                    <span class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold tracking-wider">Sesi Member</span>
-                    <span class="text-lg font-bold text-neutral-100 font-mono mt-1">${data.total_member || 0}</span>
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-auto min-h-[5rem]">
+                    <span class="text-[10px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Sesi Member</span>
+                    <span class="text-sm lg:text-base font-bold text-neutral-100 font-mono mt-2 truncate" title="${data.total_member || 0}">${data.total_member || 0}</span>
                 </div>
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-20">
-                    <span class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold tracking-wider">Sesi Guest</span>
-                    <span class="text-lg font-bold text-neutral-100 font-mono mt-1">${data.total_guest || 0}</span>
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-auto min-h-[5rem]">
+                    <span class="text-[10px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Sesi Guest</span>
+                    <span class="text-sm lg:text-base font-bold text-neutral-100 font-mono mt-2 truncate" title="${data.total_guest || 0}">${data.total_guest || 0}</span>
                 </div>
             </div>`;
 
@@ -183,7 +183,7 @@ const Laporan = {
                                     </td>
                                     <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Metode</span>
-                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${t.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${t.metode_pembayaran || 'Tunai'}</span>
+                                        <span class="px-2.5 py-1 rounded text-[10px] lg:text-base font-bold ${t.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${t.metode_pembayaran || 'Tunai'}</span>
                                     </td>
                                     <td class="px-4 py-3 text-center flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
