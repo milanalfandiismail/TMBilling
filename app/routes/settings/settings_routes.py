@@ -16,7 +16,7 @@ from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.services import SettingsService
 from app.utils.logger import write_log
 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
-from app.utils.helpers import UNIT_MULTIPLIER
+from app.utils.scheduler_tasks import UNIT_MULTIPLIER
 
 settings_api_bp = Blueprint("settings", __name__)
 

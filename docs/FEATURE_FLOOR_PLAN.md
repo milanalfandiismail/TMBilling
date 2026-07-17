@@ -149,3 +149,6 @@ GET /api/pc → Dashboard.load() → Dashboard.render() atau Dashboard.renderMap
 - **R1**: 50+ PC di satu zona bikin canvas penuh. Mitigasi: cell size auto-kecil berdasarkan jumlah PC
 - **R2**: Drag-drop di mobile/tablet tidak natural. Mitigasi: switch otomatis ke grid view di layar kecil
 - **R3**: pos_x=0, pos_y=0 ambigu (belum diset atau beneran di pojok). Mitigasi: PC dengan kedua 0 masuk area "Belum Dipetakan"
+
+---
+*TMBilling v1.4.4*
