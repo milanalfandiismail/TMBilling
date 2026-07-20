@@ -76,3 +76,26 @@ class GrupService:
         
         write_log("HAPUS_GRUP", f"Grup {nama_lama} dihapus", user=operator)
         return True
+
+    @staticmethod
+    def update(grup_id, data, operator="system"):
+        """Update data grup dengan validasi keunikan nama."""
+        grup = GrupRepository.get_by_id(grup_id)
+        if not grup:
+            raise ValueError("Grup tidak ditemukan")
+
+        nama = data.get("nama", "").strip().lower()
+        if not nama:
+            raise ValueError("Nama grup tidak boleh kosong")
+
+        if nama != grup.nama.lower():
+            if GrupRepository.find_by_nama(nama):
+                raise ValueError("Nama grup sudah digunakan oleh grup lain")
+
+        grup.nama = nama
+        grup.keterangan = data.get("keterangan")
+        grup.warna = data.get("warna")
+        db.session.commit()
+
+        write_log("EDIT_GRUP", f"Grup {nama} diupdate", user=operator)
+        return grup

@@ -77,3 +77,20 @@ def hapus_grup(grup_id):
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@grup_api_bp.route("/<int:grup_id>", methods=["PUT"])
+@login_required
+@admin_required
+def update_grup(grup_id):
+    """Update data grup berdasarkan ID."""
+    try:
+        kasir = session.get("kasir_username", "kasir")
+        grup = GrupService.update(grup_id, request.get_json() or {}, operator=kasir)
+        return jsonify({
+            "success": True,
+            "message": f"Grup {grup.nama} berhasil diperbarui"
+        }), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
