@@ -778,14 +778,23 @@ const Dashboard = {
         if (this._ctxOutsideHandler) {
             document.removeEventListener('click', this._ctxOutsideHandler);
         }
+        if (this._ctxKeydownHandler) {
+            document.removeEventListener('keydown', this._ctxKeydownHandler);
+        }
         this._ctxOutsideHandler = (e) => {
             if (!document.getElementById('pc-context-menu')?.contains(e.target)) {
+                this.closeContextMenu();
+            }
+        };
+        this._ctxKeydownHandler = (e) => {
+            if (e.key === 'Escape') {
                 this.closeContextMenu();
             }
         };
         // setTimeout agar click event yang memicu showContextMenu tidak langsung menutupnya
         setTimeout(() => {
             document.addEventListener('click', this._ctxOutsideHandler);
+            document.addEventListener('keydown', this._ctxKeydownHandler);
         }, 0);
     },
 
@@ -795,6 +804,10 @@ const Dashboard = {
         if (this._ctxOutsideHandler) {
             document.removeEventListener('click', this._ctxOutsideHandler);
             this._ctxOutsideHandler = null;
+        }
+        if (this._ctxKeydownHandler) {
+            document.removeEventListener('keydown', this._ctxKeydownHandler);
+            this._ctxKeydownHandler = null;
         }
     },
 
