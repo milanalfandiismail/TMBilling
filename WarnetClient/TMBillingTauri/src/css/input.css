@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap');
+
+@layer base {
+    * { 
+        margin: 0; 
+        padding: 0; 
+        box-sizing: border-box; 
+    }
+
+    html, body { 
+        background: none !important;
+        background-color: transparent !important;
+        color: white;
+        font-family: 'Outfit', sans-serif;
+        overflow: hidden;
+        user-select: none;
+        width: 100vw;
+        height: 100vh;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    input::placeholder {
+        color: rgba(255, 255, 255, 0.2);
+    }
+}
+
+@layer components {
+    /* Kiosk Login Screen Background */
+    #login-screen:not(.hidden) {
+        background-color: #050505 !important;
+        background-image: none !important;
+    }
+
+    .hidden { 
+        display: none !important; 
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    /* Custom Typography & Utils */
+    .text-glow-accent {
+        text-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
+    }
+
+    /* Toast Animations */
+    .toast {
+        animation: toast-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    .toast-out {
+        animation: toast-out 0.2s ease forwards;
+    }
+
+    /* Error Shake */
+    .shake {
+        animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    /* Custom Scrollbar */
+    .scrollbar-thin::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.01);
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 9999px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+        background: rgba(52, 211, 153, 0.3);
+    }
+
+    /* Premium Cyber Card */
+    .premium-cyber-card {
+        position: relative;
+        background: linear-gradient(135deg, rgba(17, 17, 17, 0.95), rgba(10, 10, 10, 0.98));
+        border: 1px solid rgba(255, 255, 255, 0.03);
+        box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.9), 
+                    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .premium-cyber-card::before {
+        content: '';
+        position: absolute;
+        top: -1px;
+        left: 10%;
+        right: 10%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(52, 211, 153, 0.4), transparent);
+        z-index: 1;
+    }
+
+    /* Glowing Inputs & Buttons */
+    input:focus {
+        border-color: #34d399 !important;
+        box-shadow: 0 0 12px rgba(52, 211, 153, 0.2) !important;
+        background: rgba(52, 211, 153, 0.02) !important;
+    }
+
+    .premium-btn {
+        position: relative;
+        overflow: hidden;
+        background: #ffffff;
+        color: #000000;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .premium-btn:hover {
+        background: #34d399;
+        box-shadow: 0 0 20px rgba(52, 211, 153, 0.4);
+        transform: translateY(-1px);
+    }
+
+    .premium-btn:active {
+        transform: translateY(0);
+    }
+}
+
+@layer utilities {
+    @keyframes toast-in {
+        from { opacity: 0; transform: translateX(100%) scale(0.9); }
+        to { opacity: 1; transform: translateX(0) scale(1); }
+    }
+
+    @keyframes toast-out {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.9); }
+    }
+
+    @keyframes shake {
+        10%, 90% { transform: translate3d(-1px, 0, 0); }
+        20%, 80% { transform: translate3d(2px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+        40%, 60% { transform: translate3d(4px, 0, 0); }
+    }
+
+    /* Custom Responsive Styles for Desktop Resolutions < 1428px */
+    @media (max-width: 1427px) {
+        .kiosk-login-card {
+            padding: 24px !important;
+        }
+    }
+}
