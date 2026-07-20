@@ -26,71 +26,8 @@ const MapView = {
     // DASHBOARD MAP VIEW — dot + text, no card mini
     // =========================================================================
 
-    render: function(groups, grupMeta) {
-        var c = document.getElementById('map-view-container');
-        if (!c) return;
-        var h = '', any = false;
-        for (var g in groups) {
-            if (!groups.hasOwnProperty(g)) continue;
-            var pcs = groups[g];
-            var mapped = pcs.filter(function(p){return p.pos_x>=0 && p.pos_y>=0;});
-            var unmapped = pcs.filter(function(p){return p.pos_x<0 || p.pos_y<0;});
-            if (!mapped.length && !unmapped.length) continue;
-            any = true;
-            var warna = (grupMeta[g] && grupMeta[g].warna) || '#888';
-            h += this._zone(g, pcs, mapped, unmapped, warna);
-        }
-        c.innerHTML = any ? h : '<div class="text-center py-12 text-neutral-300 text-sm lg:text-base">Belum ada PC dengan posisi denah. Admin klik <b>Edit Denah</b> untuk mengatur.</div>';
-    },
+    // Map View render methods removed. Editor remains.
 
-    _zone: function(grup, all, mapped, unmapped, warna) {
-        var gs = this._getGridSize(grup);
-        // Grid STRICT — pakai cols/rows dari setting, gak di-expand ke kanan
-        var cols = gs.cols, rows = gs.rows;
-        var cw = cols*this.cellW, ch = rows*this.cellH, adm = this._isAdmin();
-
-        return '<div class="mb-10"><div class="flex items-center justify-between mb-3">'
-            +'<div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:'+warna+'"></span>'
-            +'<h4 class="text-base lg:text-[22px] font-bold text-neutral-100 uppercase tracking-wider">'+this._esc(grup)+'</h4>'
-            +'<span class="text-xs lg:text-base text-neutral-400">'+this._act(all)+' / '+all.length+' AKTIF &middot; '+cols+'×'+rows+'</span></div>'
-            +(adm?'<button onclick="MapView.openEditor(\''+this._esc(grup)+'\')" class="px-3 py-1.5 bg-neutral-700 border border-neutral-600 hover:bg-neutral-600 hover:border-neutral-400 rounded text-xs lg:text-base text-neutral-200 font-semibold transition-colors shrink-0">✏️ Edit Denah</button>':'')
-            +'</div>'
-            +'<div class="relative overflow-auto rounded-lg bg-[#0a0a0a] border border-[#222] p-3" style="height:'+Math.min(ch+24,520)+'px">'
-            +'<div style="width:'+cw+'px;height:'+ch+'px" class="relative">'
-            +this._grid(cols,rows,cw,ch)
-            +mapped.map(this._dot.bind(this)).join('')
-            +'</div></div>'
-            +(unmapped.length?this._unmapped(unmapped):'')+'</div>';
-    },
-
-    _grid: function(cols,rows,w,h) {
-        var l='';
-        for (var x=0;x<=w;x+=this.cellW) l+='<div class="absolute top-0 bottom-0 border-l border-[#151515]" style="left:'+x+'px"></div>';
-        for (var y=0;y<=h;y+=this.cellH) l+='<div class="absolute left-0 right-0 border-t border-[#151515]" style="top:'+y+'px"></div>';
-        return '<div class="absolute inset-0 pointer-events-none">'+l+'</div>';
-    },
-
-    _dot: function(pc) {
-        var s = this._state(pc);
-        var l = (pc.pos_x>=0?pc.pos_x:0)*this.cellW + this.cellW/2;
-        var t = (pc.pos_y>=0?pc.pos_y:0)*this.cellH + this.cellH/2;
-        return '<div class="absolute flex flex-col items-center cursor-pointer transform -translate-x-1/2 -translate-y-1/2 hover:z-10 group" style="left:'+l+'px;top:'+t+'px" onclick="Dashboard.showDetail('+pc.id+')" oncontextmenu="MapView._ctx(event,'+pc.id+')">'
-            +'<span class="w-4 h-4 lg:w-5 lg:h-5 rounded-full shrink-0 '+s.dot+' shadow-md"></span>'
-            +'<span class="text-xs lg:text-base font-bold mt-1 '+s.text+' group-hover:text-neutral-100 whitespace-nowrap">'+this._esc(pc.kode)+'</span>'
-            +'<span class="text-[10px] lg:text-sm '+s.text+' mt-0.5 group-hover:text-neutral-200 whitespace-nowrap">'+this._esc(s.label)+'</span>'
-            +'</div>';
-    },
-
-    _unmapped: function(unmapped) {
-        return '<div class="mt-2 flex flex-wrap items-center gap-1.5"><span class="text-[10px] lg:text-sm text-neutral-500 uppercase font-bold">Belum Dipetakan:</span>'
-            +unmapped.map(function(pc){
-                var s=MapView._state(pc);
-                return '<span class="inline-flex items-center gap-1 px-3 py-1.5 bg-[#111] border border-[#222] rounded-lg text-[10px] lg:text-sm font-bold text-neutral-300 cursor-pointer hover:border-neutral-400" onclick="Dashboard.showDetail('+pc.id+')" oncontextmenu="MapView._ctx(event,'+pc.id+')">'
-                    +'<span class="w-2 h-2 rounded-full '+s.dot+'"></span>'+MapView._esc(pc.kode)+' <span class="text-neutral-500">'+MapView._esc(s.label)+'</span></span>';
-            }).join('')+'</div>';
-    },
-
-    _ctx: function(e,pcId){ e.preventDefault(); if(typeof Dashboard!=='undefined'&&Dashboard.showContextMenu)Dashboard.showContextMenu(e,pcId); },
 
     // =========================================================================
     // EDIT MODAL — pilih PC, klik cell
@@ -148,7 +85,7 @@ const MapView = {
             +self._editGrid(cols,rows)+placedDots+'</div></div></div>'
 
             +'<div class="px-6 py-3 border-t border-[#1c1c1c] flex items-center justify-between shrink-0 bg-[#0a0a0a] flex-wrap gap-2">'
-            +'<div class="flex items-center gap-2 text-xs lg:text-base text-neutral-400">Kolom <input type="number" id="edit-cols" value="'+gs.cols+'" min="2" max="30" class="w-16 px-2 py-1 bg-[#0a0a0a] border border-[#222] rounded text-neutral-200 text-center text-xs lg:text-base"> Baris <input type="number" id="edit-rows" value="'+gs.rows+'" min="2" max="20" class="w-16 px-2 py-1 bg-[#0a0a0a] border border-[#222] rounded text-neutral-200 text-center text-xs lg:text-base"> <button onclick="MapView._applyGrid(\''+self._esc(grup)+'\')" class="px-3 py-1 bg-neutral-700 border border-neutral-600 hover:bg-neutral-500 rounded text-xs lg:text-base text-neutral-200 font-semibold transition-colors">Terapkan</button></div>'
+            +'<div class="flex items-center gap-2 text-xs lg:text-base text-neutral-400">Kolom <input type="number" id="edit-cols" value="'+gs.cols+'" min="1" max="10" class="w-16 px-2 py-1 bg-[#0a0a0a] border border-[#222] rounded text-neutral-200 text-center text-xs lg:text-base"> Baris <input type="number" id="edit-rows" value="'+gs.rows+'" min="1" max="100" class="w-16 px-2 py-1 bg-[#0a0a0a] border border-[#222] rounded text-neutral-200 text-center text-xs lg:text-base"> <button onclick="MapView._applyGrid(\''+self._esc(grup)+'\')" class="px-3 py-1 bg-neutral-700 border border-neutral-600 hover:bg-neutral-500 rounded text-xs lg:text-base text-neutral-200 font-semibold transition-colors">Terapkan</button></div>'
             +'<div class="flex gap-2"><button onclick="Modal.closeModal()" class="px-4 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded">Batal</button>'
             +'<button onclick="MapView._save()" class="px-5 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded">Simpan Denah</button></div></div></div>';
 
@@ -226,9 +163,35 @@ const MapView = {
 
     _applyGrid: function(grup) {
         var c = document.getElementById('edit-cols'), r = document.getElementById('edit-rows');
-        var nc = c ? Math.max(2,Math.min(30,parseInt(c.value)||10)) : 10;
-        var nr = r ? Math.max(2,Math.min(20,parseInt(r.value)||7)) : 7;
-        this._setGridSize(grup,nc,nr);
+        var nc = c ? Math.max(1, Math.min(10, parseInt(c.value) || 10)) : 10;
+        var nr = r ? Math.max(1, Math.min(100, parseInt(r.value) || 7)) : 7;
+        
+        var data = (window.Dashboard && window.Dashboard.lastData) || null;
+        if (data) {
+            var pcs = data.by_grup[grup] || [];
+            var totalPC = pcs.length;
+            var maxCapacity = nc * nr;
+
+            if (maxCapacity < totalPC) {
+                alert('Gagal mengubah grid! Kapasitas grid baru (' + nc + 'x' + nr + ' = ' + maxCapacity + ' cell) tidak cukup untuk menampung ' + totalPC + ' unit PC di zona ini.');
+                return;
+            }
+            
+            var mapped = pcs.filter(function(p) { return p.pos_x >= 0 && p.pos_y >= 0; });
+            var outOfBounds = mapped.filter(function(p) { return p.pos_x >= nc || p.pos_y >= nr; });
+            if (outOfBounds.length > 0) {
+                var names = outOfBounds.map(function(p) { return p.kode; }).join(', ');
+                if (!confirm('PC berikut berada di luar batas grid baru: ' + names + '.\nSistem akan mengeluarkan PC ini dari denah (kembali ke Belum Dipetakan). Lanjutkan?')) {
+                    return;
+                }
+                outOfBounds.forEach(function(pc) {
+                    pc.pos_x = -1;
+                    pc.pos_y = -1;
+                });
+            }
+        }
+        
+        this._setGridSize(grup, nc, nr);
         Modal.closeModal();
         this.openEditor(grup);
     },
@@ -245,8 +208,8 @@ const MapView = {
     _save: function() {
         var grup = this._editorGrup;
         var colEl = document.getElementById('edit-cols'), rowEl = document.getElementById('edit-rows');
-        var cols = colEl ? Math.max(2,Math.min(30,parseInt(colEl.value)||10)) : 10;
-        var rows = rowEl ? Math.max(2,Math.min(20,parseInt(rowEl.value)||7)) : 7;
+        var cols = colEl ? Math.max(1,Math.min(10,parseInt(colEl.value)||10)) : 10;
+        var rows = rowEl ? Math.max(1,Math.min(100,parseInt(rowEl.value)||7)) : 7;
         this._setGridSize(grup, cols, rows);
 
         var grid = document.getElementById('editor-grid');
@@ -265,7 +228,7 @@ const MapView = {
 
         // Re-render langsung — gak nunggu API response
         Modal.closeModal();
-        if (window.Dashboard && window.Dashboard.lastData) window.Dashboard._renderMapInner(window.Dashboard.lastData);
+        if (window.Dashboard && window.Dashboard.lastData) window.Dashboard._render(window.Dashboard.lastData);
         Toast.success('Denah disimpan');
     },
 

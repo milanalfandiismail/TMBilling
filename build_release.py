@@ -64,7 +64,8 @@ def main():
         "start.bat",
         "stop.bat",
         ".env.example",
-        "README.md"
+        "README.md",
+        "PANDUAN_TIGHTVNC.md"
     ]
     include_dirs = [
         "app",

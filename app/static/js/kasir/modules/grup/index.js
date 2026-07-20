@@ -74,6 +74,77 @@ const Grup = {
         }
     },
 
+    showEditModal(id, nama, keterangan, warna) {
+        const formHtml = `
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-6 max-w-md w-[calc(100%-2rem)] mx-auto md:w-full shadow-2xl">
+                <div class="flex items-center justify-between mb-5 pb-4 border-b border-[#2a2a2a]">
+                    <div>
+                        <h3 class="text-sm font-bold text-neutral-100 tracking-wide">Edit Grup</h3>
+                        <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Ubah data zona / kelompok PC</p>
+                    </div>
+                    <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <input type="hidden" id="modal-grup-old-nama" value="${nama}">
+                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Grup <span class="text-red-400">*</span></label>
+                        <input type="text" id="modal-grup-nama" value="${nama}" placeholder="Nama Grup" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Keterangan</label>
+                        <input type="text" id="modal-grup-ket" value="${keterangan}" placeholder="Deskripsi grup (opsional)" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Warna Grup</label>
+                        <div class="flex items-center gap-3 px-4 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
+                            <input type="color" id="modal-grup-warna" value="${warna}" class="w-8 h-8 rounded border-0 bg-transparent cursor-pointer">
+                            <span class="text-[10px] lg:text-base text-neutral-500">Warna aksen untuk lencana grup ini</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#2a2a2a]">
+                    <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded-lg transition-colors">Batal</button>
+                    <button onclick="Grup.edit(${id})" class="px-5 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </div>`;
+        Modal.show(formHtml, null, { disableBackdropClose: true });
+    },
+
+    async edit(id) {
+        const get = (modalId) => document.getElementById(modalId);
+        const data = {
+            nama: get('modal-grup-nama')?.value?.trim() || '',
+            keterangan: get('modal-grup-ket')?.value?.trim() || '',
+            warna: get('modal-grup-warna')?.value || '#888888'
+        };
+        const oldNama = get('modal-grup-old-nama')?.value;
+
+        if (!data.nama) return Toast.error("Nama grup wajib diisi");
+        try {
+            await API.grup.update(id, data);
+            
+            // Migrate grid layout and sort settings in dashboard if group name changes
+            if (oldNama && data.nama && data.nama !== oldNama) {
+                const oldGrid = localStorage.getItem('map_grid_' + oldNama);
+                if (oldGrid) localStorage.setItem('map_grid_' + data.nama, oldGrid);
+                
+                const oldSort = localStorage.getItem('map_autosort_' + oldNama);
+                if (oldSort) localStorage.setItem('map_autosort_' + data.nama, oldSort);
+
+                localStorage.removeItem('map_grid_' + oldNama);
+                localStorage.removeItem('map_autosort_' + oldNama);
+            }
+
+            Toast.success(`Grup ${data.nama} berhasil diperbarui`);
+            Modal.closeModal();
+            this.load();
+        } catch (err) {
+            Toast.error(err.message);
+        }
+    },
+
 
     async delete(id, nama) {
         const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-400">Hapus grup <span class="text-neutral-200 font-bold uppercase">${nama}</span>? Pastikan tidak ada PC atau Paket yang terikat.</p></div>`;
@@ -140,9 +211,14 @@ const Grup = {
                                 <td class="px-6 py-4 text-right flex lg:table-cell justify-between items-center">
                                     <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
                                     ${(window.App && App.user && App.user.role === 'kasir') ? '' : `
-                                    <button onclick="Grup.delete(${g.id}, '${g.nama}')" class="w-8 h-8 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors">
-                                        <svg class="w-3.5 h-3.5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                    </button>`}
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button onclick="Grup.showEditModal(${g.id}, '${g.nama}', '${(g.keterangan || '').replace(/'/g, "\\'")}', '${g.warna}')" class="w-8 h-8 rounded bg-[#171717] border border-[#262626] text-blue-400 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center" title="Edit Grup">
+                                            ✏️
+                                        </button>
+                                        <button onclick="Grup.delete(${g.id}, '${g.nama}')" class="w-8 h-8 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center" title="Hapus Grup">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </div>`}
                                 </td>
                             </tr>`).join('')}
                     </tbody>

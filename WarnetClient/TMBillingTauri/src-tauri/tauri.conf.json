@@ -1,6 +1,6 @@
 {
   "build": {
-    "beforeBuildCommand": "",
+    "beforeBuildCommand": "npx tailwindcss@3 -i src/css/input.css -o src/css/output.css --minify",
     "beforeDevCommand": "",
     "devPath": "../src",
     "distDir": "../src",
@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "TMBilling",
-    "version": "1.4.4"
+    "version": "1.4.5"
   },
   "tauri": {
     "allowlist": {
@@ -38,7 +38,7 @@
     },
     "windows": [
       {
-        "fullscreen": false,
+        "fullscreen": true,
         "height": 700,
         "resizable": false,
         "title": "",

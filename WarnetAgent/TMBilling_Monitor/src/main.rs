@@ -55,7 +55,12 @@ struct HardwareHelperOutput {
 }
 
 fn get_hardware_helper_data() -> Option<HardwareHelperOutput> {
-    let output = Command::new(".\\HardwareHelper.exe")
+    let helper_path = std::env::current_exe()
+        .ok()
+        .and_then(|mut p| { p.set_file_name("HardwareHelper.exe"); Some(p) })
+        .unwrap_or_else(|| std::path::PathBuf::from(".\\HardwareHelper.exe"));
+
+    let output = Command::new(helper_path)
         .creation_flags(0x08000000) // 🔥 Sembunyikan Jendela CMD/Console dari Layar User!
         .output()
         .ok()?;
@@ -530,7 +535,7 @@ fn main() {
             let cpu_name = helper.as_ref().map(|h| h.CpuName.clone()).unwrap_or_else(|| {
                 let brand = sys.global_cpu_info().brand().to_string();
                 if brand.trim().is_empty() || brand == "Unknown" {
-                    "AMD Ryzen 7 8700F".to_string()
+                    "Unknown".to_string()
                 } else {
                     brand
                 }
@@ -543,7 +548,7 @@ fn main() {
             let motherboard = {
                 let name = get_motherboard_name();
                 if name == "Unknown" || name.trim().is_empty() {
-                    helper.as_ref().map(|h| h.Motherboard.clone()).unwrap_or_else(|| "Biostar B650MT".to_string())
+                    helper.as_ref().map(|h| h.Motherboard.clone()).unwrap_or_else(|| "Unknown".to_string())
                 } else {
                     name
                 }
