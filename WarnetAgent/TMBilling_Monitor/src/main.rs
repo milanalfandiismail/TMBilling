@@ -47,11 +47,6 @@ struct HardwareHelperOutput {
     Motherboard: String,
     CpuName: String,
     GpuName: String,
-    MotherboardSerial: String,
-    CpuId: String,
-    GpuPnpId: String,
-    RamSerials: Vec<String>,
-    DiskSerials: Vec<String>,
 }
 
 fn get_hardware_helper_data() -> Option<HardwareHelperOutput> {
@@ -167,6 +162,147 @@ fn get_backup_gpu_name() -> String {
                     .collect();
                 if !gpus.is_empty() {
                     return gpus.join(" / ");
+                }
+            }
+        }
+    }
+    "Unknown".to_string()
+}
+
+#[derive(Deserialize, Debug)]
+struct BaseBoardSerial {
+    SerialNumber: String,
+}
+
+fn get_motherboard_serial() -> String {
+    if let Ok(com) = COMLibrary::new() {
+        if let Ok(con) = WMIConnection::with_namespace_path("ROOT\\CIMV2", com) {
+            let query = "SELECT SerialNumber FROM Win32_BaseBoard";
+            if let Ok(list) = con.raw_query::<BaseBoardSerial>(query) {
+                if let Some(board) = list.first() {
+                    return board.SerialNumber.trim().to_string();
+                }
+            }
+        }
+    }
+    "Unknown".to_string()
+}
+
+#[derive(Deserialize, Debug)]
+struct ProcessorIdOnly {
+    ProcessorId: String,
+}
+
+fn get_cpu_id() -> String {
+    if let Ok(com) = COMLibrary::new() {
+        if let Ok(con) = WMIConnection::with_namespace_path("ROOT\\CIMV2", com) {
+            let query = "SELECT ProcessorId FROM Win32_Processor";
+            if let Ok(list) = con.raw_query::<ProcessorIdOnly>(query) {
+                if let Some(cpu) = list.first() {
+                    return cpu.ProcessorId.trim().to_string();
+                }
+            }
+        }
+    }
+    "Unknown".to_string()
+}
+
+#[derive(Deserialize, Debug)]
+struct VideoControllerPnp {
+    PNPDeviceID: String,
+}
+
+fn get_gpu_pnp_id() -> String {
+    if let Ok(com) = COMLibrary::new() {
+        if let Ok(con) = WMIConnection::with_namespace_path("ROOT\\CIMV2", com) {
+            let query = "SELECT PNPDeviceID FROM Win32_VideoController";
+            if let Ok(list) = con.raw_query::<VideoControllerPnp>(query) {
+                if let Some(gpu) = list.first() {
+                    return gpu.PNPDeviceID.trim().to_string();
+                }
+            }
+        }
+    }
+    "Unknown".to_string()
+}
+
+#[derive(Deserialize, Debug)]
+struct PhysicalMemory {
+    SerialNumber: Option<String>,
+    Capacity: Option<u64>,
+}
+
+fn get_ram_serials() -> Vec<String> {
+    let mut serials = Vec::new();
+    if let Ok(com) = COMLibrary::new() {
+        if let Ok(con) = WMIConnection::with_namespace_path("ROOT\\CIMV2", com) {
+            let query = "SELECT SerialNumber, Capacity FROM Win32_PhysicalMemory";
+            if let Ok(list) = con.raw_query::<PhysicalMemory>(query) {
+                for item in list {
+                    let sn = item.SerialNumber.map(|s| s.trim().to_string()).unwrap_or_else(|| "Unknown".to_string());
+                    let cap = item.Capacity.unwrap_or(0);
+                    serials.push(format!("{}_{}", sn, cap));
+                }
+            }
+        }
+    }
+    serials
+}
+
+#[derive(Deserialize, Debug)]
+struct DiskDrive {
+    SerialNumber: Option<String>,
+    Model: Option<String>,
+}
+
+fn get_disk_serials() -> Vec<String> {
+    let mut serials = Vec::new();
+    if let Ok(com) = COMLibrary::new() {
+        if let Ok(con) = WMIConnection::with_namespace_path("ROOT\\CIMV2", com) {
+            let query = "SELECT SerialNumber, Model FROM Win32_DiskDrive";
+            if let Ok(list) = con.raw_query::<DiskDrive>(query) {
+                for item in list {
+                    let sn = match item.SerialNumber {
+                        Some(s) => s.trim().to_string(),
+                        None => continue,
+                    };
+                    let model = item.Model.unwrap_or_default().trim().to_string();
+                    
+                    if sn.is_empty() || sn.to_lowercase().contains("unknown") {
+                        continue;
+                    }
+                    
+                    let model_lower = model.to_lowercase();
+                    if model_lower.contains("ccboot")
+                        || model_lower.contains("iscsi")
+                        || model_lower.contains("scsi")
+                        || model_lower.contains("virtual")
+                        || model_lower.contains("sanboot")
+                        || model_lower.contains("superspeed")
+                    {
+                        continue;
+                    }
+                    
+                    serials.push(format!("{}_{}", model, sn));
+                }
+            }
+        }
+    }
+    serials
+}
+
+#[derive(Deserialize, Debug)]
+struct Processor {
+    Name: String,
+}
+
+fn get_backup_cpu_name() -> String {
+    if let Ok(com) = COMLibrary::new() {
+        if let Ok(con) = WMIConnection::with_namespace_path("ROOT\\CIMV2", com) {
+            let query = "SELECT Name FROM Win32_Processor";
+            if let Ok(list) = con.raw_query::<Processor>(query) {
+                if let Some(cpu) = list.first() {
+                    return cpu.Name.trim().to_string();
                 }
             }
         }
@@ -532,14 +668,20 @@ fn main() {
             let cpu_temp = helper.as_ref().map(|h| h.CpuTemp).unwrap_or(0.0);
             let gpu_temp = helper.as_ref().map(|h| h.GpuTemp).unwrap_or(0.0);
             
-            let cpu_name = helper.as_ref().map(|h| h.CpuName.clone()).unwrap_or_else(|| {
-                let brand = sys.global_cpu_info().brand().to_string();
-                if brand.trim().is_empty() || brand == "Unknown" {
-                    "Unknown".to_string()
+            let cpu_name = {
+                let name = helper.as_ref().map(|h| h.CpuName.clone()).unwrap_or_default();
+                if name.is_empty() || name == "Unknown" {
+                    let wmi_cpu = get_backup_cpu_name();
+                    if wmi_cpu != "Unknown" && !wmi_cpu.trim().is_empty() {
+                        wmi_cpu
+                    } else {
+                        let brand = sys.global_cpu_info().brand().to_string();
+                        if brand.trim().is_empty() { "Unknown".to_string() } else { brand }
+                    }
                 } else {
-                    brand
+                    name
                 }
-            });
+            };
 
             let gpu_name = helper.as_ref().map(|h| h.GpuName.clone()).unwrap_or_else(|| {
                 get_backup_gpu_name()
@@ -571,11 +713,11 @@ fn main() {
                 }
             }
 
-            let mobo_serial = helper.as_ref().map(|h| h.MotherboardSerial.clone()).unwrap_or_else(|| "Unknown".to_string());
-            let cpu_id = helper.as_ref().map(|h| h.CpuId.clone()).unwrap_or_else(|| "Unknown".to_string());
-            let gpu_pnp_id = helper.as_ref().map(|h| h.GpuPnpId.clone()).unwrap_or_else(|| "Unknown".to_string());
-            let ram_serials = helper.as_ref().map(|h| h.RamSerials.clone()).unwrap_or_else(|| vec![]);
-            let disk_serials = helper.as_ref().map(|h| h.DiskSerials.clone()).unwrap_or_else(|| vec![]);
+            let mobo_serial = get_motherboard_serial();
+            let cpu_id = get_cpu_id();
+            let gpu_pnp_id = get_gpu_pnp_id();
+            let ram_serials = get_ram_serials();
+            let disk_serials = get_disk_serials();
 
             let payload = json!({
                 "IpAddress": ip_address,
