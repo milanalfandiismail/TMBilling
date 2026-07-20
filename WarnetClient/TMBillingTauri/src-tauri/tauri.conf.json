@@ -1,6 +1,6 @@
 {
   "build": {
-    "beforeBuildCommand": "npx @tailwindcss/cli -i src/css/input.css -o src/css/output.css --minify",
+    "beforeBuildCommand": "npx tailwindcss@3 -i src/css/input.css -o src/css/output.css --minify",
     "beforeDevCommand": "",
     "devPath": "../src",
     "distDir": "../src",
@@ -38,7 +38,7 @@
     },
     "windows": [
       {
-        "fullscreen": false,
+        "fullscreen": true,
         "height": 700,
         "resizable": false,
         "title": "",
