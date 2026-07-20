@@ -25,7 +25,7 @@ const Dashboard = {
     async load() {
         const container = document.getElementById('pc-area');
         try {
-            
+
             const data = await API.dashboard.pcList();
             if (!data || !data.by_grup) throw new Error('Data format invalid - missing by_grup');
             const groups = Object.keys(data.by_grup);
@@ -418,7 +418,7 @@ const Dashboard = {
             if (!json.success) throw new Error(json.error);
 
             let data = json.data || [];
-            
+
             // Urutkan berdasarkan RAM (terbesar ke terkecil)
             data.sort((a, b) => {
                 const getMem = str => {
@@ -437,8 +437,8 @@ const Dashboard = {
                 searchInput.value = '';
                 searchInput.oninput = (e) => {
                     const query = e.target.value.toLowerCase().trim();
-                    const filtered = this._activeProcesses.filter(p => 
-                        (p.name && p.name.toLowerCase().includes(query)) || 
+                    const filtered = this._activeProcesses.filter(p =>
+                        (p.name && p.name.toLowerCase().includes(query)) ||
                         (p.title && p.title.toLowerCase().includes(query))
                     );
                     this.renderProcessRows(pcId, filtered);
@@ -1027,7 +1027,7 @@ const Dashboard = {
             MemberRefill.tambahWaktu(memberId);
         } else {
             Toast.error('Gagal: modul refill belum siap');
-            }
+        }
     }
 
 };

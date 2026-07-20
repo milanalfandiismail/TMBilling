@@ -235,15 +235,17 @@ const CompactGrid = {
                     
                     <!-- Grid Container -->
                     ${isAutoSort ? `
-                        <!-- Auto-Sort Grid: flows naturally -->
-                        <div class="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10">
-                            ${pcs.map(pc => {
-                                return `
-                                    <div>
-                                        ${this.renderCompactCard(pc)}
-                                    </div>
-                                `;
-                            }).join('')}
+                        <!-- Auto-Sort Grid: flows naturally but scaled -->
+                        <div class="auto-grid-wrapper overflow-hidden w-full" style="transition: height 0.15s ease-out;">
+                            <div class="auto-grid-container grid gap-2 auto-rows-fr" data-cols="${Math.min(pcs.length, 10)}" style="grid-template-columns: repeat(${Math.min(pcs.length, 10)}, minmax(0, 1fr));">
+                                ${pcs.map(pc => {
+                                    return `
+                                        <div>
+                                            ${this.renderCompactCard(pc)}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
                         </div>
                     ` : `
                         <!-- Manual Layout Grid: uses absolute pos_x / pos_y -->
@@ -281,12 +283,13 @@ const CompactGrid = {
 
         container.innerHTML = html || '<div class="text-center py-20 text-neutral-500 text-sm">Data PC Tidak Tersedia</div>';
         Dashboard.attachEvents();
-        this.adjustManualGridScale();
+        this.adjustGridScale();
     },
 
-    adjustManualGridScale() {
-        const wrappers = document.querySelectorAll('.manual-grid-wrapper');
-        wrappers.forEach(wrapper => {
+    adjustGridScale() {
+        // Scale manual grid
+        const manualWrappers = document.querySelectorAll('.manual-grid-wrapper');
+        manualWrappers.forEach(wrapper => {
             const grid = wrapper.querySelector('.manual-grid-container');
             if (!grid) return;
             
@@ -294,13 +297,11 @@ const CompactGrid = {
             if (!parent) return;
             
             const containerWidth = parent.clientWidth;
-            if (containerWidth === 0) return; // parent is hidden
+            if (containerWidth === 0) return;
             
             const cols = parseInt(grid.dataset.cols) || 10;
-            
-            // Base column width: 130px is a perfect size for readability
             const baseColWidth = 130;
-            const gap = 8; // gap-2 is 8px
+            const gap = 8;
             const unscaledWidth = (cols * baseColWidth) + ((cols - 1) * gap);
             
             if (containerWidth < unscaledWidth) {
@@ -309,11 +310,42 @@ const CompactGrid = {
                 grid.style.transform = `scale(${scale})`;
                 grid.style.transformOrigin = 'top left';
                 
-                // Set the wrapper height to match the scaled height of the grid
                 const unscaledHeight = grid.scrollHeight;
                 wrapper.style.height = (unscaledHeight * scale) + 'px';
             } else {
-                // Reset styles if container is wide enough
+                grid.style.width = '';
+                grid.style.transform = '';
+                grid.style.transformOrigin = '';
+                wrapper.style.height = '';
+            }
+        });
+
+        // Scale auto-sort grid
+        const autoWrappers = document.querySelectorAll('.auto-grid-wrapper');
+        autoWrappers.forEach(wrapper => {
+            const grid = wrapper.querySelector('.auto-grid-container');
+            if (!grid) return;
+            
+            const parent = wrapper.parentElement;
+            if (!parent) return;
+            
+            const containerWidth = parent.clientWidth;
+            if (containerWidth === 0) return;
+            
+            const cols = parseInt(grid.dataset.cols) || 10;
+            const baseColWidth = 130;
+            const gap = 8;
+            const unscaledWidth = (cols * baseColWidth) + ((cols - 1) * gap);
+            
+            if (containerWidth < unscaledWidth) {
+                const scale = containerWidth / unscaledWidth;
+                grid.style.width = unscaledWidth + 'px';
+                grid.style.transform = `scale(${scale})`;
+                grid.style.transformOrigin = 'top left';
+                
+                const unscaledHeight = grid.scrollHeight;
+                wrapper.style.height = (unscaledHeight * scale) + 'px';
+            } else {
                 grid.style.width = '';
                 grid.style.transform = '';
                 grid.style.transformOrigin = '';
@@ -325,9 +357,9 @@ const CompactGrid = {
 
 window.CompactGrid = CompactGrid;
 
-// Scale manual grid on window resize
+// Scale grid on window resize
 window.addEventListener('resize', () => {
-    if (window.CompactGrid && typeof window.CompactGrid.adjustManualGridScale === 'function') {
-        window.CompactGrid.adjustManualGridScale();
+    if (window.CompactGrid && typeof window.CompactGrid.adjustGridScale === 'function') {
+        window.CompactGrid.adjustGridScale();
     }
 });
