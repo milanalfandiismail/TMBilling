@@ -1,0 +1,55 @@
+<div id="tab-remote_server" class="tab-content hidden w-full h-[calc(100vh-210px)] md:h-[calc(100vh-200px)]">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 md:p-4 flex flex-col h-full space-y-3 overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#1c1c1c] shrink-0">
+            <div>
+                <h3 class="text-base lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
+                    <span>📡</span> Remote Control Server (VNC)
+                </h3>
+                <p class="text-xs text-neutral-400 mt-1">Pemantauan dan Kendali Jarak Jauh Layar PC Server Kasir</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="vnc-status-badge" class="px-2.5 py-1 rounded text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700">
+                    Terputus
+                </span>
+                <input type="password" id="vnc-password-input" placeholder="Password TightVNC"
+                    class="px-3 py-1.5 bg-[#171717] border border-[#262626] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 w-36">
+                <button onclick="VNCClient.connect()" id="vnc-connect-btn"
+                    class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded transition-colors flex items-center gap-1.5">
+                    ▶ Hubungkan
+                </button>
+                <button onclick="VNCClient.disconnect()" id="vnc-disconnect-btn"
+                    class="px-3.5 py-1.5 bg-red-600/80 hover:bg-red-500 text-white text-xs font-bold rounded transition-colors hidden flex items-center gap-1.5">
+                    ⏹ Putuskan
+                </button>
+                <button onclick="VNCClient.toggleScale()" id="vnc-scale-btn"
+                    class="px-3 py-1.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded transition-colors">
+                    📐 Scaling On
+                </button>
+                <button onclick="VNCClient.toggleFullscreen()"
+                    class="px-3 py-1.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded transition-colors">
+                    ⛶ Fullscreen
+                </button>
+            </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <style>
+            #vnc-screen canvas {
+                max-width: 100% !important;
+                max-height: 100% !important;
+                object-fit: contain !important;
+                margin: auto;
+                display: block;
+            }
+        </style>
+        <div id="vnc-container" class="relative w-full flex-1 min-h-0 bg-[#050505] rounded-lg border border-[#1a1a1a] overflow-hidden flex items-center justify-center">
+            <div id="vnc-screen" class="w-full h-full overflow-hidden flex items-center justify-center"></div>
+            <div id="vnc-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-[#070707] text-neutral-500 space-y-3 z-10">
+                <svg class="w-12 h-12 stroke-neutral-700" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                <p class="text-xs font-semibold">Klik "Hubungkan" untuk memulai Sesi Remote VNC Server</p>
+            </div>
+        </div>
+    </div>
+</div>

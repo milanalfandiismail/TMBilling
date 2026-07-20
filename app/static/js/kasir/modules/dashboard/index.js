@@ -25,20 +25,13 @@ const Dashboard = {
     async load() {
         const container = document.getElementById('pc-area');
         try {
-            
+
             const data = await API.dashboard.pcList();
             if (!data || !data.by_grup) throw new Error('Data format invalid - missing by_grup');
             const groups = Object.keys(data.by_grup);
             if (groups.length === 0) throw new Error('Tidak ada grup PC tersedia');
             this.lastData = data;
-            this.renderTabs(data);
-            this._updateToggleButtons();
-            if (this.viewMode === 'map') {
-                this._renderMap(data);
-            } else {
-                this._renderGrid(data);
-            }
-            this.updateStats();
+            this._render(data);
             this.updateTime();
         } catch (err) {
             console.error('[Dashboard] Error:', err);
@@ -51,12 +44,7 @@ const Dashboard = {
     setGrup(grupKey) {
         this.activeGrup = grupKey;
         if (this.lastData) {
-            this.renderTabs(this.lastData);
-            if (this.viewMode === 'map') {
-                this._renderMap(this.lastData);
-            } else {
-                this._renderGrid(this.lastData);
-            }
+            this._render(this.lastData);
         }
     },
 
@@ -430,7 +418,7 @@ const Dashboard = {
             if (!json.success) throw new Error(json.error);
 
             let data = json.data || [];
-            
+
             // Urutkan berdasarkan RAM (terbesar ke terkecil)
             data.sort((a, b) => {
                 const getMem = str => {
@@ -449,8 +437,8 @@ const Dashboard = {
                 searchInput.value = '';
                 searchInput.oninput = (e) => {
                     const query = e.target.value.toLowerCase().trim();
-                    const filtered = this._activeProcesses.filter(p => 
-                        (p.name && p.name.toLowerCase().includes(query)) || 
+                    const filtered = this._activeProcesses.filter(p =>
+                        (p.name && p.name.toLowerCase().includes(query)) ||
                         (p.title && p.title.toLowerCase().includes(query))
                     );
                     this.renderProcessRows(pcId, filtered);
@@ -790,14 +778,23 @@ const Dashboard = {
         if (this._ctxOutsideHandler) {
             document.removeEventListener('click', this._ctxOutsideHandler);
         }
+        if (this._ctxKeydownHandler) {
+            document.removeEventListener('keydown', this._ctxKeydownHandler);
+        }
         this._ctxOutsideHandler = (e) => {
             if (!document.getElementById('pc-context-menu')?.contains(e.target)) {
+                this.closeContextMenu();
+            }
+        };
+        this._ctxKeydownHandler = (e) => {
+            if (e.key === 'Escape') {
                 this.closeContextMenu();
             }
         };
         // setTimeout agar click event yang memicu showContextMenu tidak langsung menutupnya
         setTimeout(() => {
             document.addEventListener('click', this._ctxOutsideHandler);
+            document.addEventListener('keydown', this._ctxKeydownHandler);
         }, 0);
     },
 
@@ -807,6 +804,10 @@ const Dashboard = {
         if (this._ctxOutsideHandler) {
             document.removeEventListener('click', this._ctxOutsideHandler);
             this._ctxOutsideHandler = null;
+        }
+        if (this._ctxKeydownHandler) {
+            document.removeEventListener('keydown', this._ctxKeydownHandler);
+            this._ctxKeydownHandler = null;
         }
     },
 
@@ -831,59 +832,12 @@ const Dashboard = {
     // MAP VIEW
     // =========================================================
 
-    viewMode: localStorage.getItem('dashboardViewMode') || 'grid',
-
-    toggleView(mode) {
-        if (mode === this.viewMode) return;
-        this.viewMode = mode;
-        localStorage.setItem('dashboardViewMode', mode);
-        if (this.lastData) {
-            if (mode === 'map') this._renderMap(this.lastData);
-            else {
-                this._renderGrid(this.lastData);
-            }
-        }
-        this._updateToggleButtons();
-    },
-
-    _updateToggleButtons() {
-        const btnMap = document.getElementById('btn-map-view');
-        const btnGrid = document.getElementById('btn-grid-view');
-        if (!btnMap || !btnGrid) return;
-        if (this.viewMode === 'map') {
-            btnMap.classList.add('hidden');
-            btnGrid.classList.remove('hidden');
-        } else {
-            btnGrid.classList.add('hidden');
-            btnMap.classList.remove('hidden');
-        }
-    },
-
-    _renderMap(data) {
-        const grid = document.getElementById('pc-area');
-        const map = document.getElementById('map-view-container');
-        if (!grid || !map) return;
-        grid.classList.add('hidden');
-        map.classList.remove('hidden');
-        this._renderMapInner(data);
-    },
-
-    _renderMapInner(data) {
-        let groups = data.by_grup;
-        if (this.activeGrup !== 'semua' && groups[this.activeGrup]) {
-            groups = { [this.activeGrup]: groups[this.activeGrup] };
-        }
-        MapView.render(groups, data.grup_meta);
-        this.renderTabs(data);
-        this.updateStats();
-    },
-
-    _renderGrid(data) {
-        const map = document.getElementById('map-view-container');
-        const grid = document.getElementById('pc-area');
-        if (map) map.classList.add('hidden');
-        if (grid) grid.classList.remove('hidden');
-        DashboardCards.render(data);
+    _render(data) {
+        const container = document.getElementById('pc-area');
+        const mapContainer = document.getElementById('map-view-container');
+        if (mapContainer) mapContainer.classList.add('hidden');
+        if (container) container.classList.remove('hidden');
+        this.render(data);
         this.renderTabs(data);
         this.updateStats();
     },
@@ -1073,11 +1027,11 @@ const Dashboard = {
             MemberRefill.tambahWaktu(memberId);
         } else {
             Toast.error('Gagal: modul refill belum siap');
-            }
+        }
     }
 
 };
 
-Object.assign(Dashboard, DashboardCards);
+Object.assign(Dashboard, CompactGrid);
 window.Dashboard = Dashboard;
 // Document ready initialization (only for layout handlers)

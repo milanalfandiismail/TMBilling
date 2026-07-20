@@ -87,7 +87,7 @@ if __name__ == "__main__":
     # Cegah double execution saat Flask debug mode (reloader) aktif
     if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         scheduler.start()
-        version = app.config.get("VERSION", "1.4.4")
+        version = app.config.get("VERSION", "1.4.5")
         print(f"[v{version}] Background Tasks Started (Cleanup & Backup)")
     
     # Mode produksi menggunakan Waitress jika DEBUG_MODE = False
