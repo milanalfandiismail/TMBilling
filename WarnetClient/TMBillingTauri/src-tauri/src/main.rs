@@ -62,3 +62,4 @@ fn main() {
     // Bersihkan hook saat aplikasi benar-benar berhenti
     crate::utils::keyboard::cleanup_keyboard_hook();
 }
+// force rebuild

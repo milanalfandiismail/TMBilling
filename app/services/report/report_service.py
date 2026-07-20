@@ -543,144 +543,43 @@ class ReportService:
     @staticmethod
     def export_billing_pdf(tanggal_str=None, kasir_id=None, metode_pembayaran=None):
         """Mengekspor laporan billing harian ke PDF."""
-        import io
-        from reportlab.lib.pagesizes import A4
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
         from reportlab.lib import colors
         from reportlab.lib.units import cm
+        from app.utils.pdf_helper import PdfHelper
 
         # Ambil data semua (tanpa pagination)
         data = ReportService.get_laporan_by_tanggal(tanggal_str, kasir_id, page=1, per_page=100000, metode_pembayaran=metode_pembayaran)
         tanggal = data["tanggal"]
 
-        warnet_title = SettingsRepository.get("warnet_title") or "TMBilling"
-        warnet_address = SettingsRepository.get("warnet_address") or "Jl. Merdeka No. 123, Kota"
-        warnet_phone = SettingsRepository.get("warnet_phone") or "0812-3456-7890"
-
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(
-            buffer,
-            pagesize=A4,
-            rightMargin=1.0*cm,
-            leftMargin=1.0*cm,
-            topMargin=1.2*cm,
-            bottomMargin=1.2*cm
-        )
-
-        styles = getSampleStyleSheet()
+        doc, buffer = PdfHelper.create_document_and_buffer(margin_left=1.0, margin_right=1.0)
+        styles = PdfHelper.get_common_styles(base_font_size=8)
         
-        style_title = ParagraphStyle(
-            name="TitleStyle",
-            parent=styles["Heading1"],
-            fontName="Helvetica-Bold",
-            fontSize=16,
-            textColor=colors.HexColor("#1F2937"),
-            alignment=1, # Center
-            spaceAfter=6
-        )
-        style_subtitle = ParagraphStyle(
-            name="SubTitleStyle",
-            parent=styles["Normal"],
-            fontName="Helvetica",
-            fontSize=10,
-            textColor=colors.HexColor("#4B5563"),
-            alignment=1, # Center
-            spaceAfter=15
-        )
-        style_section = ParagraphStyle(
-            name="SectionStyle",
-            parent=styles["Heading3"],
-            fontName="Helvetica-Bold",
-            fontSize=12,
-            textColor=colors.HexColor("#1F2937"),
-            spaceBefore=10,
-            spaceAfter=6
-        )
-        style_meta = ParagraphStyle(
-            name="MetaStyle",
-            parent=styles["Normal"],
-            fontName="Helvetica",
-            fontSize=10,
-            textColor=colors.HexColor("#1F2937")
-        )
-        style_table_header = ParagraphStyle(
-            name="TableHeaderStyle",
-            parent=styles["Normal"],
-            fontName="Helvetica-Bold",
-            fontSize=8,
-            textColor=colors.white,
-            alignment=1 # Center
-        )
-        style_table_cell = ParagraphStyle(
-            name="TableCellStyle",
-            parent=styles["Normal"],
-            fontName="Helvetica",
-            fontSize=8,
-            textColor=colors.HexColor("#374151")
-        )
-        style_table_cell_center = ParagraphStyle(
-            name="TableCellCenterStyle",
-            parent=style_table_cell,
-            alignment=1 # Center
-        )
-        style_table_cell_right = ParagraphStyle(
-            name="TableCellRightStyle",
-            parent=style_table_cell,
-            alignment=2 # Right
-        )
-        style_total = ParagraphStyle(
-            name="TotalStyle",
-            parent=styles["Normal"],
-            fontName="Helvetica-Bold",
-            fontSize=9,
-            textColor=colors.HexColor("#1F2937"),
-            alignment=2 # Right
-        )
-
         story = []
 
         # Warnet Header (Kop Laporan)
-        story.append(Paragraph(warnet_title, style_title))
-        story.append(Paragraph(f"{warnet_address} | Telp: {warnet_phone}", style_subtitle))
-        story.append(Spacer(1, 0.4*cm))
+        story.extend(PdfHelper.get_warnet_header_elements(styles))
 
         # Judul Laporan
-        story.append(Paragraph("LAPORAN OMZET BILLING", style_section))
+        story.append(Paragraph("LAPORAN OMZET BILLING", styles["section"]))
         story.append(Spacer(1, 0.2*cm))
 
         # Meta info kasir & date
-        nama_kasir = "Semua Kasir"
-        if kasir_id:
-            from app.repositories import UserRepository
-            u = UserRepository.get_by_id(kasir_id)
-            if u:
-                nama_kasir = u.nama_lengkap or u.username
-
-        meta_data = [
-            [Paragraph(f"<b>Tanggal Laporan:</b> {tanggal}", style_meta), Paragraph(f"<b>Kasir:</b> {nama_kasir}", style_meta)],
-            [Paragraph(f"<b>Waktu Cetak:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", style_meta), Paragraph("", style_meta)]
-        ]
-        meta_table = Table(meta_data, colWidths=[9.5*cm, 9.5*cm])
-        meta_table.setStyle(TableStyle([
-            ('VALIGN', (0,0), (-1,-1), 'TOP'),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-            ('LEFTPADDING', (0,0), (-1,-1), 0),
-        ]))
+        meta_table, nama_kasir = PdfHelper.get_meta_table(tanggal, kasir_id, styles, col_widths=[9.5*cm, 9.5*cm])
         story.append(meta_table)
         story.append(Spacer(1, 0.5*cm))
 
         history_struk = data.get("history_struk", [])
         
         headers = [
-            Paragraph("No", style_table_header),
-            Paragraph("Waktu", style_table_header),
-            Paragraph("No. Nota", style_table_header),
-            Paragraph("Pelanggan", style_table_header),
-            Paragraph("PC", style_table_header),
-            Paragraph("Keterangan", style_table_header),
-            Paragraph("Metode", style_table_header),
-            Paragraph("Jumlah", style_table_header)
+            Paragraph("No", styles["table_header"]),
+            Paragraph("Waktu", styles["table_header"]),
+            Paragraph("No. Nota", styles["table_header"]),
+            Paragraph("Pelanggan", styles["table_header"]),
+            Paragraph("PC", styles["table_header"]),
+            Paragraph("Keterangan", styles["table_header"]),
+            Paragraph("Metode", styles["table_header"]),
+            Paragraph("Jumlah", styles["table_header"])
         ]
         
         table_data = [headers]
@@ -696,35 +595,20 @@ class ReportService:
             jumlah = f"Rp {jumlah_raw:,.0f}"
             
             row = [
-                Paragraph(str(idx), style_table_cell_center),
-                Paragraph(waktu, style_table_cell_center),
-                Paragraph(no_nota, style_table_cell_center),
-                Paragraph(nama_p, style_table_cell),
-                Paragraph(pc, style_table_cell_center),
-                Paragraph(ket, style_table_cell),
-                Paragraph(metode, style_table_cell_center),
-                Paragraph(jumlah, style_table_cell_right)
+                Paragraph(str(idx), styles["table_cell_center"]),
+                Paragraph(waktu, styles["table_cell_center"]),
+                Paragraph(no_nota, styles["table_cell_center"]),
+                Paragraph(nama_p, styles["table_cell"]),
+                Paragraph(pc, styles["table_cell_center"]),
+                Paragraph(ket, styles["table_cell"]),
+                Paragraph(metode, styles["table_cell_center"]),
+                Paragraph(jumlah, styles["table_cell_right"])
             ]
             table_data.append(row)
 
         col_widths = [0.8*cm, 2.5*cm, 2.3*cm, 3.2*cm, 1.0*cm, 4.5*cm, 2.2*cm, 2.5*cm]
         data_table = Table(table_data, colWidths=col_widths, repeatRows=1)
-        
-        # Style table
-        t_style = TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#374151")),
-            ('ALIGN', (0,0), (-1,0), 'CENTER'),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#D1D5DB")),
-            ('TOPPADDING', (0,0), (-1,-1), 5),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 5),
-        ])
-        
-        for i in range(1, len(table_data)):
-            if i % 2 == 0:
-                t_style.add('BACKGROUND', (0, i), (-1, i), colors.HexColor("#F9FAFB"))
-                
-        data_table.setStyle(t_style)
+        PdfHelper.apply_standard_table_style(data_table, table_data)
         story.append(data_table)
         story.append(Spacer(1, 0.4*cm))
 
@@ -733,7 +617,7 @@ class ReportService:
         total_omzet = f"Rp {total_omzet_raw:,.0f}"
         
         total_data = [
-            ["", "", Paragraph("<b>TOTAL OMZET BILLING:</b>", style_total), Paragraph(total_omzet, style_total)]
+            ["", "", Paragraph("<b>TOTAL OMZET BILLING:</b>", styles["total"]), Paragraph(total_omzet, styles["total"])]
         ]
         total_col_widths = [1.0*cm, 9.7*cm, 5.5*cm, 2.8*cm]
         total_table = Table(total_data, colWidths=total_col_widths)
@@ -947,135 +831,29 @@ class ReportService:
     @staticmethod
     def export_kantin_pdf(tanggal_str=None, kasir_id=None, metode_pembayaran=None):
         """Mengekspor laporan omzet kantin ke PDF."""
-        import io
-        from reportlab.lib.pagesizes import A4
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
         from reportlab.lib import colors
         from reportlab.lib.units import cm
+        from app.utils.pdf_helper import PdfHelper
 
         # Ambil data
         data = ReportService.get_laporan_kantin_by_tanggal(tanggal_str, kasir_id, page=1, per_page=100000, metode_pembayaran=metode_pembayaran)
         tanggal = data["tanggal"]
 
-        # Fetch warnet info from settings repository (same as get_struk_data)
-        warnet_title = SettingsRepository.get("warnet_title") or "TMBilling"
-        warnet_address = SettingsRepository.get("warnet_address") or "Jl. Merdeka No. 123, Kota"
-        warnet_phone = SettingsRepository.get("warnet_phone") or "0812-3456-7890"
-
-        # Buffer PDF
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(
-            buffer,
-            pagesize=A4,
-            rightMargin=1.5*cm,
-            leftMargin=1.5*cm,
-            topMargin=1.5*cm,
-            bottomMargin=1.5*cm
-        )
-
-        styles = getSampleStyleSheet()
+        doc, buffer = PdfHelper.create_document_and_buffer(margin_left=1.5, margin_right=1.5, margin_top=1.5, margin_bottom=1.5)
+        styles = PdfHelper.get_common_styles(base_font_size=9)
         
-        # Custom styles
-        style_title = ParagraphStyle(
-            name="TitleStyle",
-            parent=styles["Heading1"],
-            fontName="Helvetica-Bold",
-            fontSize=16,
-            textColor=colors.HexColor("#1F2937"),
-            alignment=1, # Center
-            spaceAfter=6
-        )
-        style_subtitle = ParagraphStyle(
-            name="SubTitleStyle",
-            parent=styles["Normal"],
-            fontName="Helvetica",
-            fontSize=10,
-            textColor=colors.HexColor("#4B5563"),
-            alignment=1, # Center
-            spaceAfter=15
-        )
-        style_section = ParagraphStyle(
-            name="SectionStyle",
-            parent=styles["Heading3"],
-            fontName="Helvetica-Bold",
-            fontSize=12,
-            textColor=colors.HexColor("#1F2937"),
-            spaceBefore=10,
-            spaceAfter=6
-        )
-        style_meta = ParagraphStyle(
-            name="MetaStyle",
-            parent=styles["Normal"],
-            fontName="Helvetica",
-            fontSize=10,
-            textColor=colors.HexColor("#1F2937")
-        )
-        style_table_header = ParagraphStyle(
-            name="TableHeaderStyle",
-            parent=styles["Normal"],
-            fontName="Helvetica-Bold",
-            fontSize=9,
-            textColor=colors.white,
-            alignment=1 # Center
-        )
-        style_table_cell = ParagraphStyle(
-            name="TableCellStyle",
-            parent=styles["Normal"],
-            fontName="Helvetica",
-            fontSize=9,
-            textColor=colors.HexColor("#374151")
-        )
-        style_table_cell_center = ParagraphStyle(
-            name="TableCellCenterStyle",
-            parent=style_table_cell,
-            alignment=1 # Center
-        )
-        style_table_cell_right = ParagraphStyle(
-            name="TableCellRightStyle",
-            parent=style_table_cell,
-            alignment=2 # Right
-        )
-        style_total = ParagraphStyle(
-            name="TotalStyle",
-            parent=styles["Normal"],
-            fontName="Helvetica-Bold",
-            fontSize=10,
-            textColor=colors.HexColor("#1F2937"),
-            alignment=2 # Right
-        )
-
         story = []
 
         # Warnet Header (Kop Laporan)
-        story.append(Paragraph(warnet_title, style_title))
-        story.append(Paragraph(f"{warnet_address} | Telp: {warnet_phone}", style_subtitle))
-        story.append(Spacer(1, 0.5*cm))
+        story.extend(PdfHelper.get_warnet_header_elements(styles))
 
         # Judul Laporan
-        story.append(Paragraph("LAPORAN OMZET KANTIN / F&B", style_section))
+        story.append(Paragraph("LAPORAN OMZET KANTIN / F&B", styles["section"]))
         story.append(Spacer(1, 0.2*cm))
 
         # Meta info kasir & date
-        nama_kasir = "Semua Kasir"
-        if kasir_id:
-            from app.repositories import UserRepository
-            u = UserRepository.get_by_id(kasir_id)
-            if u:
-                nama_kasir = u.nama_lengkap or u.username
-
-        meta_data = [
-            [Paragraph(f"<b>Tanggal Laporan:</b> {tanggal}", style_meta), Paragraph(f"<b>Kasir:</b> {nama_kasir}", style_meta)],
-            [Paragraph(f"<b>Waktu Cetak:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", style_meta), Paragraph("", style_meta)]
-        ]
-        meta_table = Table(meta_data, colWidths=[9*cm, 9*cm])
-        meta_table.setStyle(TableStyle([
-            ('VALIGN', (0,0), (-1,-1), 'TOP'),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-            ('TOPPADDING', (0,0), (-1,-1), 0),
-            ('LEFTPADDING', (0,0), (-1,-1), 0),
-            ('RIGHTPADDING', (0,0), (-1,-1), 0),
-        ]))
+        meta_table, nama_kasir = PdfHelper.get_meta_table(tanggal, kasir_id, styles, col_widths=[9*cm, 9*cm])
         story.append(meta_table)
         story.append(Spacer(1, 0.6*cm))
 
@@ -1084,14 +862,14 @@ class ReportService:
         
         # Define table headers and col widths (A4 width without margins = ~18cm)
         headers = [
-            Paragraph("Waktu", style_table_header),
-            Paragraph("No. Nota", style_table_header),
-            Paragraph("Item Menu", style_table_header),
-            Paragraph("Qty", style_table_header),
-            Paragraph("Total Harga", style_table_header),
-            Paragraph("Metode", style_table_header),
-            Paragraph("Pemesanan", style_table_header),
-            Paragraph("Kasir", style_table_header)
+            Paragraph("Waktu", styles["table_header"]),
+            Paragraph("No. Nota", styles["table_header"]),
+            Paragraph("Item Menu", styles["table_header"]),
+            Paragraph("Qty", styles["table_header"]),
+            Paragraph("Total Harga", styles["table_header"]),
+            Paragraph("Metode", styles["table_header"]),
+            Paragraph("Pemesanan", styles["table_header"]),
+            Paragraph("Kasir", styles["table_header"])
         ]
         
         table_data = [headers]
@@ -1112,36 +890,20 @@ class ReportService:
             kasir_nama = tm.get("kasir_nama", "-")
             
             row = [
-                Paragraph(waktu, style_table_cell_center),
-                Paragraph(no_nota, style_table_cell_center),
-                Paragraph(menu_nama, style_table_cell),
-                Paragraph(jumlah, style_table_cell_center),
-                Paragraph(total_harga, style_table_cell_right),
-                Paragraph(metode, style_table_cell_center),
-                Paragraph(pemesanan, style_table_cell_center),
-                Paragraph(kasir_nama, style_table_cell_center)
+                Paragraph(waktu, styles["table_cell_center"]),
+                Paragraph(no_nota, styles["table_cell_center"]),
+                Paragraph(menu_nama, styles["table_cell"]),
+                Paragraph(jumlah, styles["table_cell_center"]),
+                Paragraph(total_harga, styles["table_cell_right"]),
+                Paragraph(metode, styles["table_cell_center"]),
+                Paragraph(pemesanan, styles["table_cell_center"]),
+                Paragraph(kasir_nama, styles["table_cell_center"])
             ]
             table_data.append(row)
 
         col_widths = [2.5*cm, 2.3*cm, 3.5*cm, 0.8*cm, 2.5*cm, 2.2*cm, 2.5*cm, 1.7*cm]
         data_table = Table(table_data, colWidths=col_widths, repeatRows=1)
-        
-        # Style table
-        t_style = TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#374151")), # Dark gray header
-            ('ALIGN', (0,0), (-1,0), 'CENTER'),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#D1D5DB")),
-            ('TOPPADDING', (0,0), (-1,-1), 6),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-        ])
-        
-        # Alternate row backgrounds
-        for i in range(1, len(table_data)):
-            if i % 2 == 0:
-                t_style.add('BACKGROUND', (0, i), (-1, i), colors.HexColor("#F9FAFB"))
-                
-        data_table.setStyle(t_style)
+        PdfHelper.apply_standard_table_style(data_table, table_data, padding=6)
         story.append(data_table)
         story.append(Spacer(1, 0.4*cm))
 
@@ -1150,7 +912,7 @@ class ReportService:
         total_omzet = f"Rp {total_omzet_raw:,.0f}"
         
         total_data = [
-            ["", "", "", Paragraph("<b>TOTAL OMZET KANTIN:</b>", style_total), Paragraph(total_omzet, style_total)]
+            ["", "", "", Paragraph("<b>TOTAL OMZET KANTIN:</b>", styles["total"]), Paragraph(total_omzet, styles["total"])]
         ]
         # Total col widths to match the rightmost alignment of the table
         total_col_widths = [2.7*cm, 2.5*cm, 4.0*cm, 3.8*cm, 5.0*cm]

@@ -181,3 +181,6 @@ erDiagram
     TRANSAKSI ||--o| USER : "di-input"
     TRANSAKSI ||--o| PAKET : membeli
 ```
+
+---
+*TMBilling v1.4.4*

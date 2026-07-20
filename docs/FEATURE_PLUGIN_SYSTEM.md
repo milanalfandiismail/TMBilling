@@ -62,3 +62,6 @@ Karena plugin beroperasi di dalam modul Flask utama, plugin memiliki **akses pen
 - Plugin dapat mengimpor model dari `app.models` (seperti `User`, `Transaksi`, `Sesi`).
 - Plugin dapat melakukan kueri ke database menggunakan instance `db` bawaan.
 - **PERINGATAN:** Jangan meng-install plugin dari sumber yang tidak dipercaya, karena plugin secara teori dapat mengakses dan mengubah data utama secara langsung, atau mem-bypass sistem otentikasi jika diprogram demikian.
+
+---
+*TMBilling v1.4.4*

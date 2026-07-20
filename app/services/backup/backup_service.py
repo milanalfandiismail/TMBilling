@@ -49,7 +49,8 @@ class BackupService:
         """
         thread = threading.Thread(target=self._run, daemon=True)
         thread.start()
-        print(f"[v1.0] Backup Service Active | Interval: {self.interval}s")
+        from app.config import Config
+        print(f"[v{Config.VERSION}] Backup Service Active | Interval: {self.interval}s")
 
     def _run(self):
         """Loop utama backup yang berjalan di background thread.

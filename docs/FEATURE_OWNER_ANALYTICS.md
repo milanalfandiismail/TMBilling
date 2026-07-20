@@ -60,3 +60,6 @@
 | 7 hari terakhir | 30 hari / custom | Ringan, cukup lihat trend |
 | Route `/owner/analytics` | `/analytics` | Prefix grouping |
 | Index kolom tanggal | Tanpa index | Query 50rb record |
+
+---
+*TMBilling v1.4.4*

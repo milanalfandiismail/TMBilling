@@ -26,7 +26,10 @@ const MemberRefill = {
             });
             if (!paketList.length) return Toast.error(`Tidak ada paket untuk ${mGrup.toUpperCase()}`);
 
-            this._currentPaketList = paketList;
+            MemberRefill._currentPaketList = paketList;
+            if (typeof Member !== 'undefined') {
+                Member._currentPaketList = paketList;
+            }
 
             const options = paketList.map((p, idx) => `
                 <div class="flex items-center justify-between p-3 bg-[#141414] border border-[#2a2a2a] rounded-xl transition-all gap-4 select-item relative hover:border-neutral-500" data-paket-id="${p.id}">
@@ -84,9 +87,7 @@ const MemberRefill = {
                             </div>
 
                             <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
-                                <label class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold block mb-1">Metode Bayar</label>
-                                <select id="member-refill-metode-pembayaran" 
-                                    class="w-full px-2 py-1 bg-[#050505] border border-[#2a2a2a] rounded text-[10px] lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 font-bold transition-all">
+                                <label class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold block mb-1">Metode Bayar</label>\n                                <select id="member-refill-metode-pembayaran" \n                                    class="w-full px-2 py-1 bg-[#050505] border border-[#2a2a2a] rounded text-[10px] lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 font-bold transition-all">
                                     ${paymentMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
                                 </select>
                             </div>
@@ -140,7 +141,7 @@ const MemberRefill = {
             if (qtyInput) qtyInput.value = 1;
         }
         
-        this.updateTotalPreview();
+        MemberRefill.updateTotalPreview();
     },
 
     adjustPaketQty(paketId, delta) {
@@ -152,7 +153,7 @@ const MemberRefill = {
         if (val > 100) val = 100;
         qtyInput.value = val;
         
-        this.updateTotalPreview();
+        MemberRefill.updateTotalPreview();
     },
 
     updateTotalPreview() {
@@ -163,11 +164,13 @@ const MemberRefill = {
         let totalHarga = 0;
         let checkedCount = 0;
         
+        const paketList = MemberRefill._currentPaketList || [];
+        
         document.querySelectorAll('input[type="checkbox"][id^="mem-chk-paket-"]:checked').forEach(chk => {
             const paketId = parseInt(chk.value);
             const qtyInput = document.getElementById(`mem-qty-paket-${paketId}`);
             const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
-            const paket = (this._currentPaketList || []).find(p => p.id === paketId);
+            const paket = (paketList || []).find(p => p.id === paketId);
             
             if (paket) {
                 totalMenit += (paket.durasi_menit || 0) * qty;

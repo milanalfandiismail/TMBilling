@@ -47,7 +47,7 @@
 
 Sistem dirancang untuk:
 
-- **Kasir** — Buka/tutup sesi, monitor PC grid real-time, cetak struk thermal 58mm
+- **Kasir** — Buka/tutup sesi, monitor PC grid real-time (termasuk suhu CPU), laporan real-time, cetak struk thermal 58mm
 - **Member** — Login prepaid dengan saldo waktu, top-up via paket
 - **Admin** — Manajemen PC, paket, grup, user, laporan, dan recovery blackout
 - **Client PC** — Lockscreen kiosk, auto-login sesi aktif, polling tiap 5 detik, shutdown otomatis
@@ -84,7 +84,7 @@ Sistem dirancang untuk:
     <td>
       <h4>📊 Monitoring Hardware</h4>
       <ul>
-        <li>CPU/GPU temperature & usage real-time</li>
+        <li>CPU/GPU temperature & usage real-time (termasuk suhu CPU di dashboard UI)</li>
         <li>RAM, motherboard, NIC speed</li>
         <li>Active window detection</li>
         <li>Telemetry tiap 60 detik</li>
@@ -1268,7 +1268,7 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more informa
 </p>
 
 <p align="center">
-  <sub>TMBilling v1.1.1</sub>
+  <sub>TMBilling v1.4.4</sub>
 </p>
 
 ---

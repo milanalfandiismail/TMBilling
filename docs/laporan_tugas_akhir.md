@@ -506,3 +506,6 @@ Meskipun sistem TMBilling saat ini telah bekerja secara stabil dengan tingkat ke
 
 ---
 **Dibuat oleh Tim Pengembang TMBilling untuk Memenuhi Tugas Akhir Rekayasa Perangkat Lunak (RPL) - Tahun 2026**
+
+---
+*TMBilling v1.4.4*

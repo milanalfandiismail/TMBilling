@@ -85,3 +85,6 @@ Sebelumnya, jika sebuah menu yang memiliki riwayat transaksi penjualan dihapus, 
     Disediakan opsi penghapusan total beserta seluruh riwayat transaksinya melalui REST API khusus:
     `DELETE /api/menu/<menu_id>/permanent`
     *(Membutuhkan konfirmasi ganda dari kasir sebelum dieksekusi untuk mencegah hilangnya data keuangan historis).*
+
+---
+*TMBilling v1.4.4*

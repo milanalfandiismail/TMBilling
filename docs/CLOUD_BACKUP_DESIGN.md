@@ -78,3 +78,6 @@ class BaseBackupProvider(ABC):
 * `POST /api/backup/test-connection` : Menerima kredensial sementara untuk salah satu provider dan menguji unggahan berkas dummy.
 * `GET /api/backup/download/<filename>` : Mengunduh berkas backup tertentu dari server lokal.
 * `PUT /api/backup/config` : Menyimpan konfigurasi backup ke tabel `settings`.
+
+---
+*TMBilling v1.4.4*

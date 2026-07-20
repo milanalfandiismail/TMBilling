@@ -94,3 +94,6 @@ Fitur handover shift kasir menyediakan audit keuangan yang aman melalui metode *
         `Pendapatan Seharusnya = Modal Awal + Total Pendapatan Billing + Total Pendapatan Kantin (F&B)`
     *   Menghitung deviasi selisih: positif (**Surplus**) atau negatif (**Defisit**).
 4.  **Cetak Struk Handover**: Setelah shift ditutup, sistem mencetak laporan pertanggungjawaban shift secara otomatis menggunakan printer thermal 58mm via format monospace standar.
+
+---
+*TMBilling v1.4.4*
