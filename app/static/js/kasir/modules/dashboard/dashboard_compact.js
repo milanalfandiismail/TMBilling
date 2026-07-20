@@ -234,7 +234,18 @@ const CompactGrid = {
                     </div>
                     
                     <!-- Grid Container -->
-                    ${isAutoSort ? `
+                    ${isAutoSort ? (isMobile ? `
+                        <!-- Auto-Sort Mobile Grid: 2 columns natural wrap -->
+                        <div class="grid gap-2 grid-cols-2">
+                            ${pcs.map(pc => {
+                                return `
+                                    <div>
+                                        ${this.renderCompactCard(pc)}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    ` : `
                         <!-- Auto-Sort Grid: flows naturally but scaled -->
                         <div class="auto-grid-wrapper overflow-hidden w-full" style="transition: height 0.15s ease-out;">
                             <div class="auto-grid-container grid gap-2 auto-rows-fr" data-cols="${Math.min(pcs.length, 10)}" style="grid-template-columns: repeat(${Math.min(pcs.length, 10)}, minmax(0, 1fr));">
@@ -247,7 +258,7 @@ const CompactGrid = {
                                 }).join('')}
                             </div>
                         </div>
-                    ` : `
+                    `) : `
                         <!-- Manual Layout Grid: uses absolute pos_x / pos_y -->
                         <div class="manual-grid-wrapper overflow-hidden w-full" style="transition: height 0.15s ease-out;">
                             <div class="manual-grid-container grid gap-2 auto-rows-fr" data-cols="${cols}" data-rows="${rows}" style="grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, minmax(0, 1fr));">
