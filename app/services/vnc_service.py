@@ -41,8 +41,8 @@ class VNCService:
             return False, "VNC Server (TightVNC) tidak terdeteksi pada 127.0.0.1:5900. Pastikan TightVNC Server sudah berjalan."
 
         try:
-            # Perintah untuk menjalankan websockify proxy: 8081 -> 127.0.0.1:5900
-            cmd = [sys.executable, "-m", "websockify", str(cls.LISTEN_PORT), f"{cls.VNC_HOST}:{cls.VNC_PORT}"]
+            # Perintah untuk menjalankan websockify proxy: 0.0.0.0:8081 -> 127.0.0.1:5900
+            cmd = [sys.executable, "-m", "websockify", f"0.0.0.0:{cls.LISTEN_PORT}", f"{cls.VNC_HOST}:{cls.VNC_PORT}"]
             cls._process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.DEVNULL,
