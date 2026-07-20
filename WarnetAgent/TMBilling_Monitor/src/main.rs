@@ -124,24 +124,7 @@ fn get_nic_speed() -> String {
     "Unknown".to_string()
 }
 
-#[derive(Deserialize, Debug)]
-struct BaseBoardSerial {
-    SerialNumber: String,
-}
 
-fn get_motherboard_serial() -> String {
-    if let Ok(com) = COMLibrary::new() {
-        if let Ok(con) = WMIConnection::with_namespace_path("ROOT\\CIMV2", com) {
-            let query = "SELECT SerialNumber FROM Win32_BaseBoard";
-            if let Ok(list) = con.raw_query::<BaseBoardSerial>(query) {
-                if let Some(board) = list.first() {
-                    return board.SerialNumber.trim().to_string();
-                }
-            }
-        }
-    }
-    "Unknown".to_string()
-}
 
 #[derive(Deserialize, Debug)]
 struct ProcessorIdOnly {
@@ -625,7 +608,7 @@ fn main() {
                 }
             }
 
-            let mobo_serial = get_motherboard_serial();
+            let mobo_serial = motherboard.clone();
             let cpu_id = get_cpu_id();
             let gpu_pnp_id = get_gpu_pnp_id();
             let ram_serials = get_ram_serials();

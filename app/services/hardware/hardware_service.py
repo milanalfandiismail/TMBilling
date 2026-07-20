@@ -123,7 +123,7 @@ class HardwareService:
                         base_mobo = baseline.get("MotherboardSerial", "Unknown")
                         curr_mobo = serials.get("MotherboardSerial", "Unknown")
                         if base_mobo != "Unknown" and curr_mobo != "Unknown" and base_mobo != curr_mobo:
-                            mismatch_reasons.append(f"Motherboard Serial berubah (dari '{base_mobo}' ke '{curr_mobo}')")
+                            mismatch_reasons.append(f"Motherboard berubah (dari '{base_mobo}' ke '{curr_mobo}')")
                             
                         # 2. CPU
                         base_cpu = baseline.get("CpuId", "Unknown")
