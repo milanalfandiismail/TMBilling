@@ -4,15 +4,22 @@ const VNCClient = {
     rfb: null,
     scaleFactor: true,
 
-    init() {
-        // Dynamic load noVNC RFB module jika belum dimuat
-        if (typeof window.RFB === 'undefined' && !document.getElementById('novnc-script')) {
-            const script = document.createElement('script');
-            script.id = 'novnc-script';
-            script.type = 'module';
-            script.src = 'https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.js';
-            script.onload = () => console.log('[VNC] noVNC RFB module loaded');
-            document.head.appendChild(script);
+    RFBClass: null,
+
+    async getRFB() {
+        if (this.RFBClass) return this.RFBClass;
+        if (window.RFB) {
+            this.RFBClass = window.RFB;
+            return this.RFBClass;
+        }
+        try {
+            const mod = await import('https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.js');
+            this.RFBClass = mod.default;
+            window.RFB = mod.default;
+            return this.RFBClass;
+        } catch (err) {
+            console.error('Gagal memuat modul noVNC RFB:', err);
+            return null;
         }
     },
 
@@ -26,8 +33,18 @@ const VNCClient = {
 
         if (!screen) return;
 
-        badge.textContent = 'Menyiapkan Websockify...';
+        badge.textContent = 'Memuat Modul VNC...';
         badge.className = 'px-2.5 py-1 rounded text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30';
+
+        const RFBClass = await this.getRFB();
+        if (!RFBClass) {
+            badge.textContent = 'Gagal Load Module';
+            badge.className = 'px-2.5 py-1 rounded text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
+            Toast.error('Gagal memuat modul noVNC. Pastikan PC terhubung ke internet untuk mengunduh library rfb.js');
+            return;
+        }
+
+        badge.textContent = 'Menyiapkan Websockify...';
 
         // 1. Panggil API backend untuk memastikan daemon websockify aktif
         let listenPort = 8081;
@@ -57,29 +74,18 @@ const VNCClient = {
         badge.textContent = 'Menghubungkan...';
 
         try {
-            if (typeof RFB !== 'undefined') {
-                this.rfb = new RFB(screen, url, { credentials: { password: vncPassword } });
+            this.rfb = new RFBClass(screen, url, {
+                credentials: { password: vncPassword },
+                scaleViewport: this.scaleFactor
+            });
 
-                this.rfb.addEventListener('credentialsrequired', () => {
-                    const pass = prompt('TightVNC meminta Password. Masukkan password VNC:');
-                    if (pass !== null) {
-                        this.rfb.sendCredentials({ password: pass });
-                        if (pwdInput) pwdInput.value = pass;
-                    }
-                });
-            } else {
-                // Fallback iframe
-                screen.innerHTML = `<iframe src="${url}" class="w-full h-full border-none"></iframe>`;
-                badge.textContent = 'Terhubung (Direct WebSockets)';
-                badge.className = 'px-2.5 py-1 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
-                placeholder.classList.add('hidden');
-                connectBtn.classList.add('hidden');
-                disconnectBtn.classList.remove('hidden');
-                return;
-            }
-
-            this.rfb.scaleViewport = this.scaleFactor;
-            this.rfb.resizeSession = true;
+            this.rfb.addEventListener('credentialsrequired', () => {
+                const pass = prompt('TightVNC meminta Password. Masukkan password VNC:');
+                if (pass !== null) {
+                    this.rfb.sendCredentials({ password: pass });
+                    if (pwdInput) pwdInput.value = pass;
+                }
+            });
 
             this.rfb.addEventListener('connect', () => {
                 badge.textContent = 'Terhubung';
@@ -87,8 +93,28 @@ const VNCClient = {
                 placeholder.classList.add('hidden');
                 connectBtn.classList.add('hidden');
                 disconnectBtn.classList.remove('hidden');
+
+                // Trigger resize & scale recalculation setelah DOM placeholder hidden
+                setTimeout(() => {
+                    if (this.rfb) {
+                        this.rfb.scaleViewport = this.scaleFactor;
+                        try { this.rfb.focus(); } catch(e) {}
+                    }
+                    window.dispatchEvent(new Event('resize'));
+                }, 50);
+
                 Toast.success('Koneksi VNC Server Terhubung');
             });
+
+            // Pastikan saat frame pertama diterima, scaling langsung dipaksa update
+            if (typeof this.rfb.addEventListener === 'function') {
+                this.rfb.addEventListener('firstframe', () => {
+                    if (this.rfb) {
+                        this.rfb.scaleViewport = this.scaleFactor;
+                    }
+                    window.dispatchEvent(new Event('resize'));
+                });
+            }
 
             this.rfb.addEventListener('disconnect', (e) => {
                 badge.textContent = 'Terputus';
@@ -146,5 +172,5 @@ const VNCClient = {
 window.VNCClient = VNCClient;
 
 document.addEventListener('DOMContentLoaded', () => {
-    VNCClient.init();
+    VNCClient.getRFB();
 });
