@@ -646,3 +646,4 @@ Prefix: `/api/v1/kasir/settings/migration` — Auth: `admin_required`
 
 ---
 *TMBilling — API Documentation*
+*TMBilling v1.4.4*

@@ -25,34 +25,8 @@ csrf = CSRFProtect()
 migrate = Migrate()
 
 
-def create_app():
-    """Membuat dan mengkonfigurasi instance aplikasi Flask.
-    
-    Factory pattern digunakan agar aplikasi bisa diinstansiasi
-    beberapa kali dengan konfigurasi berbeda (contoh: testing).
-    
-    Returns:
-        Flask: Instance aplikasi Flask yang sudah terkonfigurasi lengkap
-               dengan semua blueprint, database, dan CORS.
-    """
-    app = Flask(__name__, template_folder='templates')
-    app.config.from_object(Config)
-
-    # Konfigurasi CORS yang lebih ketat
-    allowed_origins = os.environ.get('ALLOWED_ORIGINS', '*').split(',')
-    CORS(app, resources={r"/*": {"origins": allowed_origins}}, supports_credentials=True)
-
-    db.init_app(app)
-    csrf.init_app(app)
-    migrate.init_app(app, db, render_as_batch=True)
-
-    # IP Whitelist middleware — proteksi dashboard /kasir dan /api/v1/kasir/*
-    from app.middleware import check_ip_whitelist
-    app.before_request(check_ip_whitelist)
-
-    os.makedirs("logs", exist_ok=True)
-
-    # Import dan registrasi blueprints
+def _register_blueprints(app):
+    """Mendaftarkan seluruh blueprint pada aplikasi."""
     from app.routes import (
         auth_api_bp,
         auth_kasir_api_bp,
@@ -76,7 +50,6 @@ def create_app():
         tournament_api_bp,
         member_portal_bp,
         shift_api_bp,
-        migration_api_bp,
         mikrotik_api_bp,
         game_kasir_api_bp,
         game_public_api_bp,
@@ -132,6 +105,8 @@ def create_app():
     csrf.exempt(shift_api_bp)
     csrf.exempt(server_monitor_bp)
 
+def _register_public_routes(app):
+    """Mendaftarkan route publik."""
     @app.route("/")
     def index():
         """Render public warnet homepage (landing page)."""
@@ -197,6 +172,8 @@ def create_app():
         """Render halaman daftar game (Game Launcher)."""
         return render_template("public/game/index.html")
 
+def _register_context_processors(app):
+    """Mendaftarkan context processor untuk template jinja."""
     @app.context_processor
     def inject_global_settings():
         try:
@@ -215,6 +192,8 @@ def create_app():
         version = current_app.config.get("VERSION", "v1.0")
         return dict(warnet_title=title, plugin_menus=plugin_menus, version=version, format_display=format_display)
 
+def _init_app_context(app):
+    """Inisialisasi yang membutuhkan app context (database, plugin, admin)."""
     with app.app_context():
         db.create_all()
         
@@ -253,5 +232,37 @@ def create_app():
                 print("✅ [TMBilling] Database kosong. Admin default otomatis dibuat (username: admin, password: admin123)")
         except Exception as e:
             app.logger.error(f"Gagal membuat admin default saat bootstrap: {e}")
+
+def create_app():
+    """Membuat dan mengkonfigurasi instance aplikasi Flask.
+    
+    Factory pattern digunakan agar aplikasi bisa diinstansiasi
+    beberapa kali dengan konfigurasi berbeda (contoh: testing).
+    
+    Returns:
+        Flask: Instance aplikasi Flask yang sudah terkonfigurasi lengkap
+               dengan semua blueprint, database, dan CORS.
+    """
+    app = Flask(__name__, template_folder='templates')
+    app.config.from_object(Config)
+
+    # Konfigurasi CORS yang lebih ketat
+    allowed_origins = os.environ.get('ALLOWED_ORIGINS', '*').split(',')
+    CORS(app, resources={r"/*": {"origins": allowed_origins}}, supports_credentials=True)
+
+    db.init_app(app)
+    csrf.init_app(app)
+    migrate.init_app(app, db, render_as_batch=True)
+
+    # IP Whitelist middleware — proteksi dashboard /kasir dan /api/v1/kasir/*
+    from app.middleware import check_ip_whitelist
+    app.before_request(check_ip_whitelist)
+
+    os.makedirs("logs", exist_ok=True)
+
+    _register_blueprints(app)
+    _register_public_routes(app)
+    _register_context_processors(app)
+    _init_app_context(app)
 
     return app

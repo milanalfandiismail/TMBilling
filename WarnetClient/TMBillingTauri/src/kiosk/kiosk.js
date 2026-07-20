@@ -7,7 +7,7 @@ import { AppState } from '../shared/state.js';
 import { Api } from '../shared/api.js';
 import { UI } from '../shared/ui.js';
 import { formatRupiah, formatDuration } from '../shared/utils.js';
-import { ITEMS_PER_PAGE } from '../shared/constants.js';
+import { ITEMS_PER_PAGE, ITEMS_PER_RULES_PAGE } from '../shared/constants.js';
 
 export const Kiosk = {
     /**
@@ -213,7 +213,7 @@ export const Kiosk = {
      * Render rules for current page
      */
     renderRules() {
-        const itemsPerRules = ITEMS_PER_RULES;
+        const itemsPerRules = ITEMS_PER_RULES_PAGE;
         AppState.totalRulesPages = Math.ceil(AppState.allRules.length / itemsPerRules) || 1;
 
         const startIdx = (AppState.currentRulesPage - 1) * itemsPerRules;

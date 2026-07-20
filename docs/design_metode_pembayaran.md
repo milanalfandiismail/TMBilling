@@ -62,3 +62,6 @@ if metode_pembayaran:
     query = query.filter(Transaksi.metode_pembayaran == metode_pembayaran)
 ```
 Di halaman rekapitulasi shift, total nominal tunai dan cashless akan dikelompokkan secara terpisah untuk memudahkan pencocokan uang fisik di laci kasir.
+
+---
+*TMBilling v1.4.4*

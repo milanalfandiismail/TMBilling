@@ -17,7 +17,7 @@ Usage:
 
 from app import create_app
 from apscheduler.schedulers.background import BackgroundScheduler
-from app.utils.helpers import run_cleanup_expired, run_database_backup, run_cleanup_logs, run_auto_screenshots, UNIT_MULTIPLIER
+from app.utils.scheduler_tasks import run_cleanup_expired, run_database_backup, run_cleanup_logs, run_auto_screenshots, UNIT_MULTIPLIER
 import os
 import time
 
@@ -87,7 +87,8 @@ if __name__ == "__main__":
     # Cegah double execution saat Flask debug mode (reloader) aktif
     if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         scheduler.start()
-        print("[v1.0] Background Tasks Started (Cleanup & Backup)")
+        version = app.config.get("VERSION", "1.4.4")
+        print(f"[v{version}] Background Tasks Started (Cleanup & Backup)")
     
     # Mode produksi menggunakan Waitress jika DEBUG_MODE = False
     is_debug = app.config.get("DEBUG_MODE", False)
