@@ -98,35 +98,8 @@ fn get_active_ip_and_mac() -> (String, String) {
 }
 
 #[derive(Deserialize, Debug)]
-struct BaseBoard {
-    Manufacturer: String,
-    Product: String,
-}
-
-fn get_motherboard_name() -> String {
-    if let Ok(com) = COMLibrary::new() {
-        if let Ok(con) = WMIConnection::with_namespace_path("ROOT\\CIMV2", com) {
-            let query = "SELECT Manufacturer, Product FROM Win32_BaseBoard";
-            if let Ok(list) = con.raw_query::<BaseBoard>(query) {
-                if let Some(board) = list.first() {
-                    let manufacturer = board.Manufacturer.trim();
-                    let product = board.Product.trim();
-                    return format!("{} {}", manufacturer, product);
-                }
-            }
-        }
-    }
-    "Unknown".to_string()
-}
-
-#[derive(Deserialize, Debug)]
 struct NetworkAdapter {
     Speed: Option<u64>,
-}
-
-#[derive(Deserialize, Debug)]
-struct VideoController {
-    Name: String,
 }
 
 fn get_nic_speed() -> String {
@@ -144,24 +117,6 @@ fn get_nic_speed() -> String {
                             format!("{} bps", speed)
                         };
                     }
-                }
-            }
-        }
-    }
-    "Unknown".to_string()
-}
-
-fn get_backup_gpu_name() -> String {
-    if let Ok(com) = COMLibrary::new() {
-        if let Ok(con) = WMIConnection::with_namespace_path("ROOT\\CIMV2", com) {
-            let query = "SELECT Name FROM Win32_VideoController";
-            if let Ok(list) = con.raw_query::<VideoController>(query) {
-                let gpus: Vec<String> = list.into_iter()
-                    .map(|gpu| gpu.Name.trim().to_string())
-                    .filter(|name| !name.is_empty())
-                    .collect();
-                if !gpus.is_empty() {
-                    return gpus.join(" / ");
                 }
             }
         }
@@ -289,25 +244,6 @@ fn get_disk_serials() -> Vec<String> {
         }
     }
     serials
-}
-
-#[derive(Deserialize, Debug)]
-struct Processor {
-    Name: String,
-}
-
-fn get_backup_cpu_name() -> String {
-    if let Ok(com) = COMLibrary::new() {
-        if let Ok(con) = WMIConnection::with_namespace_path("ROOT\\CIMV2", com) {
-            let query = "SELECT Name FROM Win32_Processor";
-            if let Ok(list) = con.raw_query::<Processor>(query) {
-                if let Some(cpu) = list.first() {
-                    return cpu.Name.trim().to_string();
-                }
-            }
-        }
-    }
-    "Unknown".to_string()
 }
 
 // =========================================================================
@@ -668,33 +604,9 @@ fn main() {
             let cpu_temp = helper.as_ref().map(|h| h.CpuTemp).unwrap_or(0.0);
             let gpu_temp = helper.as_ref().map(|h| h.GpuTemp).unwrap_or(0.0);
             
-            let cpu_name = {
-                let name = helper.as_ref().map(|h| h.CpuName.clone()).unwrap_or_default();
-                if name.is_empty() || name == "Unknown" {
-                    let wmi_cpu = get_backup_cpu_name();
-                    if wmi_cpu != "Unknown" && !wmi_cpu.trim().is_empty() {
-                        wmi_cpu
-                    } else {
-                        let brand = sys.global_cpu_info().brand().to_string();
-                        if brand.trim().is_empty() { "Unknown".to_string() } else { brand }
-                    }
-                } else {
-                    name
-                }
-            };
-
-            let gpu_name = helper.as_ref().map(|h| h.GpuName.clone()).unwrap_or_else(|| {
-                get_backup_gpu_name()
-            });
-
-            let motherboard = {
-                let name = get_motherboard_name();
-                if name == "Unknown" || name.trim().is_empty() {
-                    helper.as_ref().map(|h| h.Motherboard.clone()).unwrap_or_else(|| "Unknown".to_string())
-                } else {
-                    name
-                }
-            };
+            let cpu_name = helper.as_ref().map(|h| h.CpuName.clone()).unwrap_or_else(|| "Unknown".to_string());
+            let gpu_name = helper.as_ref().map(|h| h.GpuName.clone()).unwrap_or_else(|| "Unknown".to_string());
+            let motherboard = helper.as_ref().map(|h| h.Motherboard.clone()).unwrap_or_else(|| "Unknown".to_string());
 
             let total_ram = helper.as_ref().map(|h| h.TotalRam.clone()).unwrap_or_else(|| {
                 format!("{:.2} GB", sys.total_memory() as f64 / 1024.0 / 1024.0 / 1024.0)
