@@ -125,9 +125,9 @@ const App = {
             menu: 'operasional', tournament: 'operasional',
             member: 'master', paket: 'master', pc: 'master', grup: 'master',
             user: 'staff',
-            laporan: 'laporan', laporan_menu: 'laporan', struk: 'laporan',
+            laporan: 'laporan', laporan_menu: 'laporan', struk: 'laporan', laporan_maintenance: 'laporan',
             log: 'sistemlog',
-            monitor: 'system', server_statistic: 'system', hardware_checker: 'system', blackout: 'system', screenshot: 'system',
+            monitor: 'system', server_statistic: 'system', hardware_checker: 'system', maintenance: 'system', blackout: 'system', screenshot: 'system',
             settings_general: 'settings',
             whitelist_ip: 'settings',
             settings_backup: 'settings',
@@ -171,7 +171,7 @@ const App = {
         const titles = {
             dash: 'Dashboard', pc: 'Unit PC', paket: 'Paket', member: 'Member',
             grup: 'Grup', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Aktivitas Sistem',
-            monitor: 'Hardware Monitor', hardware_checker: 'Hardware Checker', blackout: 'Blackout', screenshot: 'Screenshot Monitor',
+            monitor: 'Hardware Monitor', hardware_checker: 'Hardware Checker', maintenance: 'Perawatan PC', laporan_maintenance: 'Laporan Perawatan', blackout: 'Blackout', screenshot: 'Screenshot Monitor',
             user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat',
             menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen',
             settings_general: 'Pengaturan Umum & Kiosk',
@@ -208,6 +208,8 @@ const App = {
             case 'grup': await Grup.load(); break;
             case 'monitor': if (typeof Monitor !== 'undefined') await Monitor.load(); break;
             case 'hardware_checker': if (typeof HardwareChecker !== 'undefined') await HardwareChecker.load(); break;
+            case 'maintenance': if (typeof Maintenance !== 'undefined') await Maintenance.init(); break;
+            case 'laporan_maintenance': if (typeof LaporanMaintenance !== 'undefined') await LaporanMaintenance.init(); break;
             case 'screenshot': if (typeof Screenshot !== 'undefined') Screenshot.init(); break;
             case 'blackout': await Blackout.load(); break;
             case 'user': if (typeof User !== 'undefined') await User.load(); break;
