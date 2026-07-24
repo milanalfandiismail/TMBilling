@@ -51,22 +51,26 @@ const Maintenance = {
         if (!container) return;
 
         const grouped = {};
+        const groupColors = {};
         this.pcs.forEach(pc => {
             const g = pc.grup || 'Reguler';
             if (!grouped[g]) grouped[g] = [];
             grouped[g].push(pc);
+            if (pc.grup_warna) {
+                groupColors[g] = pc.grup_warna;
+            }
         });
 
         let html = '';
         Object.keys(grouped).sort().forEach(gName => {
+            const gColor = groupColors[gName] || '#888888';
             html += `
                 <div class="pc-group-section" data-group="${gName}">
-                    <div class="text-[10px] uppercase font-bold text-neutral-500 tracking-wider mb-2 pb-1 border-b border-[#1f1f1f]">${gName}</div>
+                    <div class="text-[11px] uppercase font-bold tracking-wider mb-2 pb-1 border-b" style="color: ${gColor}; border-color: ${gColor};">${gName}</div>
                     <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
                         ${grouped[gName].map(pc => `
                             <button type="button" 
                                 class="pc-item-btn p-2 bg-[#171717] border border-[#262626] rounded-lg text-center hover:bg-neutral-100 hover:text-black hover:border-white transition-all text-xs font-bold flex flex-col items-center justify-center gap-1"
-                                style="border-left: 3px solid ${pc.grup_warna || '#888888'};"
                                 data-id="${pc.id}" 
                                 data-kode="${pc.kode}" 
                                 data-nama="${pc.nama || ''}"
