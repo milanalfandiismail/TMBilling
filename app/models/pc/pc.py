@@ -102,6 +102,7 @@ class PC(db.Model):
             "ip_address": self.ip_address,
             "mac_address": self.mac_address,
             "grup": self.grup.nama if self.grup else "reguler", 
+            "grup_warna": self.grup.warna if self.grup else "#888888",
             "zona": self.zona_nama,
             "aktif": self.aktif,
             "status": "terpakai" if s else ("admin" if self.is_admin_mode else "kosong"),
