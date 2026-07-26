@@ -51,6 +51,7 @@ from app.services.owner.analytics_service import OwnerAnalyticsService
 from app.services.plugins.plugin_manager import PluginManager
 from app.services.plugins.base_plugin import BasePlugin
 from app.services.server_monitor.server_monitor_service import ServerMonitorService
+from app.services.maintenance.maintenance_service import MaintenanceService
 
 __all__ = [
     "ShiftService",
@@ -75,5 +76,6 @@ __all__ = [
     "SettingsService",
     "TransaksiService",
     "UserService",
-    "ServerMonitorService"
+    "ServerMonitorService",
+    "MaintenanceService"
 ]

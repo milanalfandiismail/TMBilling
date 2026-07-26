@@ -55,7 +55,8 @@ def _register_blueprints(app):
         game_public_api_bp,
         server_monitor_bp,
         plugin_api_bp,
-        vnc_api_bp
+        vnc_api_bp,
+        maintenance_api_bp
     )
 
     # ==========================================
@@ -89,6 +90,7 @@ def _register_blueprints(app):
     app.register_blueprint(monitor_kasir_bp, url_prefix="/api/v1/kasir/monitor")
     app.register_blueprint(game_kasir_api_bp, url_prefix="/api/v1/kasir/game")
     app.register_blueprint(vnc_api_bp, url_prefix="/api/v1/kasir/vnc")
+    app.register_blueprint(maintenance_api_bp, url_prefix="/api/v1/kasir/maintenance")
 
     # ==========================================
     # 3. PUBLIC APIs (/api/v1/public/...)
