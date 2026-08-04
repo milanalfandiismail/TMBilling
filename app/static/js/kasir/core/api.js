@@ -241,6 +241,12 @@ const API = {
             body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode, tunai, kembalian, metode_pembayaran: metodePembayaran })
         }),
         transaksi: () => API.request('/api/v1/kasir/menu/transaksi')
+    },
+
+    // ???? UPTIME TRACKER
+    uptime: {
+        daily: (date) => API.request(`/api/v1/kasir/uptime/daily${date ? '?date=' + date : ''}`),
+        range: (start, end) => API.request(`/api/v1/kasir/uptime/range?start=${start}&end=${end}`)
     }
 
 };
