@@ -85,7 +85,7 @@ const App = {
         }
 
         // RBAC: Kasir tidak boleh membuka tab admin-only
-        const kasirOnlyRestricted = ['user', 'log', 'settings_general', 'settings_backup', 'settings_scheduler', 'settings_migration', 'analytics'];
+        const kasirOnlyRestricted = ['user', 'log', 'settings_general', 'settings_backup', 'settings_scheduler', 'settings_migration', 'analytics', 'uptime'];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');
             tab = 'dash';
@@ -127,7 +127,7 @@ const App = {
             user: 'staff',
             laporan: 'laporan', laporan_menu: 'laporan', struk: 'laporan', laporan_maintenance: 'laporan',
             log: 'sistemlog',
-            monitor: 'system', server_statistic: 'system', hardware_checker: 'system', maintenance: 'system', blackout: 'system', screenshot: 'system',
+            monitor: 'system', server_statistic: 'system', hardware_checker: 'system', maintenance: 'system', blackout: 'system', screenshot: 'system', uptime: 'system',
             settings_general: 'settings',
             whitelist_ip: 'settings',
             settings_backup: 'settings',
@@ -172,6 +172,7 @@ const App = {
             dash: 'Dashboard', pc: 'Unit PC', paket: 'Paket', member: 'Member',
             grup: 'Grup', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Aktivitas Sistem',
             monitor: 'Hardware Monitor', hardware_checker: 'Hardware Checker', maintenance: 'Perawatan PC', laporan_maintenance: 'Laporan Perawatan', blackout: 'Blackout', screenshot: 'Screenshot Monitor',
+            uptime: 'Uptime Tracker',
             user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat',
             menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen',
             settings_general: 'Pengaturan Umum & Kiosk',
@@ -211,6 +212,7 @@ const App = {
             case 'maintenance': if (typeof Maintenance !== 'undefined') await Maintenance.init(); break;
             case 'laporan_maintenance': if (typeof LaporanMaintenance !== 'undefined') await LaporanMaintenance.init(); break;
             case 'screenshot': if (typeof Screenshot !== 'undefined') Screenshot.init(); break;
+            case 'uptime': if (typeof UptimeTracker !== 'undefined') await UptimeTracker.init(); break;
             case 'blackout': await Blackout.load(); break;
             case 'user': if (typeof User !== 'undefined') await User.load(); break;
             case 'struk': if (typeof Struk !== 'undefined') await Struk.init(); break;

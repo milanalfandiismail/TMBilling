@@ -16,6 +16,8 @@ from app.repositories import HardwareRepository
 from app.repositories import ProcessRepository
 from app.repositories import PCRepository
 from app.utils.logger import write_log
+from app.services.hardware.uptime_service import UptimeService
+
 
 # Histori telemetry in-memory global untuk deteksi warning PC
 # Key: pc_id (int), Value: list of dict {"cpu_usage": float, "ram_usage_pct": float}
@@ -189,6 +191,9 @@ class HardwareService:
             # 7. Simpan secara atomik di Service Layer
             db.session.add(hardware)
             db.session.commit()
+            
+            # --- NEW: Record Heartbeat for Uptime Tracker ---
+            UptimeService.record_heartbeat(pc.id)
             
             return pc
             
