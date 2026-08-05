@@ -201,4 +201,4 @@ return render_template('public/access_denied.html', ip=client_ip,
 | `app/templates/public/access_denied.html` | Update (session_destroy flag + pesan beda) |
 
 ---
-*TMBilling v1.4.4*
+*TMBilling v1.5.0*

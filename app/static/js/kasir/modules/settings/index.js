@@ -50,6 +50,37 @@ const Settings = {
                     qrisPreview.src = res.settings.qris_image_url;
                 }
 
+                // Load TV Signage Settings
+                const tvRunningText = document.getElementById('tv-running-text');
+                if (tvRunningText) {
+                    tvRunningText.value = res.settings.tv_running_text !== undefined ? res.settings.tv_running_text : 'Selamat datang di TMBilling! Nikmati koneksi internet ultra cepat...';
+                }
+                const tvSlideDuration = document.getElementById('tv-slide-duration');
+                if (tvSlideDuration) {
+                    tvSlideDuration.value = res.settings.tv_slide_duration !== undefined ? res.settings.tv_slide_duration : '15';
+                }
+                if (res.settings.tv_slides_enabled !== undefined) {
+                    const enabledSlides = res.settings.tv_slides_enabled.split(',').map(s => parseInt(s.trim()));
+                    for (let i = 1; i <= 4; i++) {
+                        const cb = document.getElementById(`tv-slide-${i}`);
+                        if (cb) cb.checked = enabledSlides.includes(i);
+                    }
+                } else {
+                    for (let i = 1; i <= 4; i++) {
+                        const cb = document.getElementById(`tv-slide-${i}`);
+                        if (cb) cb.checked = true;
+                    }
+                }
+
+                const tvDynamicLanPreview = document.getElementById('tv-dynamic-lan-url-preview');
+                if (tvDynamicLanPreview) {
+                    tvDynamicLanPreview.innerText = `${window.location.origin}/tv/dynamic`;
+                }
+                const tvStaticLanPreview = document.getElementById('tv-static-lan-url-preview');
+                if (tvStaticLanPreview) {
+                    tvStaticLanPreview.innerText = `${window.location.origin}/tv/static`;
+                }
+
                 // Load Timezone
                 this._populateTimezoneSelect(res.settings.timezone);
 
@@ -593,6 +624,43 @@ const Settings = {
             await this.load(); // Refresh data
         } catch (err) {
             Toast.error('Gagal menyimpan pengaturan Kiosk: ' + err.message);
+        }
+    },
+
+    async saveTVSignageSettings() {
+        const runningText = document.getElementById('tv-running-text').value;
+        const slideDuration = document.getElementById('tv-slide-duration').value;
+        
+        const enabledSlides = [];
+        for (let i = 1; i <= 4; i++) {
+            const cb = document.getElementById(`tv-slide-${i}`);
+            if (cb && cb.checked) {
+                enabledSlides.push(i);
+            }
+        }
+        const slidesStr = enabledSlides.join(',');
+
+        Toast.success('Menyimpan pengaturan TV Signage...');
+        try {
+            await API.request('/api/v1/kasir/settings/tv_running_text', {
+                method: 'PUT',
+                body: JSON.stringify({ value: runningText })
+            });
+
+            await API.request('/api/v1/kasir/settings/tv_slide_duration', {
+                method: 'PUT',
+                body: JSON.stringify({ value: slideDuration })
+            });
+
+            await API.request('/api/v1/kasir/settings/tv_slides_enabled', {
+                method: 'PUT',
+                body: JSON.stringify({ value: slidesStr })
+            });
+
+            Toast.success('Pengaturan TV Signage berhasil disimpan');
+            await this.load();
+        } catch (err) {
+            Toast.error('Gagal menyimpan pengaturan TV Signage: ' + err.message);
         }
     },
 

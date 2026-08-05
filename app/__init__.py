@@ -57,7 +57,8 @@ def _register_blueprints(app):
         plugin_api_bp,
         vnc_api_bp,
         maintenance_api_bp,
-        uptime_api_bp
+        uptime_api_bp,
+        tv_public_api_bp
     )
 
     # ==========================================
@@ -101,6 +102,7 @@ def _register_blueprints(app):
     app.register_blueprint(client_api_bp, url_prefix="/api/v1/public/client")
     app.register_blueprint(monitor_api_bp, url_prefix="/api/v1/public/monitor")
     app.register_blueprint(game_public_api_bp, url_prefix="/api/v1/public/game")
+    app.register_blueprint(tv_public_api_bp, url_prefix="/api/v1/public/tv")
     
     # ==========================================
     # 4. CSRF EXEMPTIONS (APIs using Tokens/Keys)
@@ -178,6 +180,17 @@ def _register_public_routes(app):
         """Render halaman daftar game (Game Launcher)."""
         return render_template("public/game/index.html")
 
+    @app.route("/tv/dynamic")
+    def public_tv_signage():
+        """Render public Smart TV Digital Signage view."""
+        return render_template("public/tv/index.html")
+
+    @app.route("/tv/static")
+    @app.route("/tv-static")
+    def public_tv_static():
+        """Render public Smart TV Static Dashboard view."""
+        return render_template("public/tv/static.html")
+
 def _register_context_processors(app):
     """Mendaftarkan context processor untuk template jinja."""
     @app.context_processor
@@ -195,7 +208,7 @@ def _register_context_processors(app):
             plugin_menus = []
             
         from app.utils.timezone_utils import format_display
-        version = current_app.config.get("VERSION", "v1.0")
+        version = current_app.config.get("VERSION", "v1.5.0")
         return dict(warnet_title=title, plugin_menus=plugin_menus, version=version, format_display=format_display)
 
 def _init_app_context(app):

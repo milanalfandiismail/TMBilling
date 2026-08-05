@@ -151,4 +151,4 @@ GET /api/pc → Dashboard.load() → Dashboard.render() atau Dashboard.renderMap
 - **R3**: pos_x=0, pos_y=0 ambigu (belum diset atau beneran di pojok). Mitigasi: PC dengan kedua 0 masuk area "Belum Dipetakan"
 
 ---
-*TMBilling v1.4.4*
+*TMBilling v1.5.0*

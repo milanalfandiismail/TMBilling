@@ -487,4 +487,4 @@ Client Tauri dikecualikan: `csrf.exempt(client_bp)`.
 *TMBilling — Backend Guide*
 
 ---
-*TMBilling v1.4.4*
+*TMBilling v1.5.0*

@@ -64,4 +64,4 @@ if metode_pembayaran:
 Di halaman rekapitulasi shift, total nominal tunai dan cashless akan dikelompokkan secara terpisah untuk memudahkan pencocokan uang fisik di laci kasir.
 
 ---
-*TMBilling v1.4.4*
+*TMBilling v1.5.0*

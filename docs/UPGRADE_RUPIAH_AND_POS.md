@@ -87,4 +87,4 @@ Sebelumnya, jika sebuah menu yang memiliki riwayat transaksi penjualan dihapus, 
     *(Membutuhkan konfirmasi ganda dari kasir sebelum dieksekusi untuk mencegah hilangnya data keuangan historis).*
 
 ---
-*TMBilling v1.4.4*
+*TMBilling v1.5.0*
