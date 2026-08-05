@@ -267,4 +267,4 @@ def api():
 *Last Updated: 2026-06-20 | TMBilling Core Team*
 
 ---
-*TMBilling v1.4.4*
+*TMBilling v1.5.0*

@@ -39,7 +39,7 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 
 | File | Entity | Key Fields |
 |------|--------|------------|
-| `pc.py` | PC | kode, ip_address, mac_address, grup_id, is_admin_mode |
+| `pc.py` | PC | kode, ip_address, mac_address, grup_id, is_admin_mode, total_uptime_minutes, last_boot_time |
 | `sesi.py` | Sesi | tipe (guest/member/admin), durasi, status, pc_id |
 | `member.py` | Member | username, waktu_tersimpan, kadaluarsa_pada |
 | `transaksi.py` | Transaksi | jenis, jumlah, no_nota (TM-YYYYMMDD-NNN) |
@@ -50,6 +50,7 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 | `menu/menu.py` | MenuItem, TransaksiMenu | nama, harga, stok, is_active, no_nota, menu_id, jumlah, total_harga, tunai, kembalian |
 | `shift/shift_record.py` | ShiftRecord | kasir_id, waktu_mulai, waktu_selesai, modal_awal, uang_fisik, status |
 | `tournament/tournament.py` | Turnamen, TurnamenTahap, TurnamenTim, TurnamenMatch | nama, status, tipe_jalur, teams, matches, scores, next_match_id |
+| `pc/maintenance_ticket.py` | MaintenanceTicket | pc_id, subjek, deskripsi, prioritas, status, dilaporkan_oleh, ditangani_oleh |
 
 ### 1.3 Services (`app/services/`)
 
@@ -67,6 +68,7 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 | `menu_service.py` | CRUD katalog F&B menu, checkout pesanan kasir POS, data transaksi, soft/hard delete menu |
 | `backup/backup_service.py` | Kompresi ZIP database dan eksekusi upload ke cloud provider aktif |
 | `backup/providers.py` | Adapter/strategy untuk upload ke Discord, WebDAV, GDrive, dan NAS |
+| `public/tv_service.py` | TVSignageService — agregasi real-time status PC, turnamen, promo, F&B menu kantin, dan settings lobi |
 
 ### 1.4 Routes (`app/routes/`)
 
@@ -91,6 +93,8 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 | `member/member_portal_routes.py` | `/member` | Member | Web portal member (login, logout, dashboard sisa waktu, riwayat) |
 | `shift/shift_routes.py` | `/api/v1/kasir/shift` | Session | API shift handover (start, active, summary, end, history) |
 | `settings/migration_routes.py` | `/api/v1/kasir/settings/migration` | Admin | DB Migration Manager — status, upload ZIP update, auto-migrate |
+| `public/tv_public_routes.py` | `/tv`, `/tv/static`, `/api/v1/public/tv` | Public | Smart TV Signage views (Dynamic Carousel & Static Grid) + live JSON API |
+| `pc/maintenance_routes.py` | `/api/v1/kasir/pc/maintenance` | Session | API tiket perawatan PC (CRUD, prioritas, status, rekap) |
 
 ### 1.5 Frontend Dashboard (`app/static/js/kasir/`)
 
@@ -116,6 +120,9 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 | Blackout | `modules/blackout.js` | Blackout detection & recovery |
 | User | `modules/user.js` | Staff management (admin) |
 | Settings | `modules/settings.js` | Auto-shutdown, API key, backup |
+| Maintenance | `modules/pc/maintenance.js` | Modal & tiket perawatan PC rusak (priority color-coded) |
+| TV Dynamic | `public/tv.js` | Signage carousel controller (15s rotation, group-based UI) |
+| TV Static | `public/tv_static.js` | Signage static dashboard controller (multi-panel 3-row grid + auto viewport scale) |
 
 ### 1.6 Background Scheduler (`run.py`)
 
@@ -435,4 +442,4 @@ cd WarnetAgent/TMBilling_Monitor && cargo build --release
 ---
 
 *TMBilling — Codebase Documentation*
-*TMBilling v1.4.4*
+*TMBilling v1.5.0*

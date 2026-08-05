@@ -440,4 +440,4 @@ Tambah entry di `app/templates/kasir/components/sidebar.html` di dalam dropdown 
 Lihat `implementation_plan.md` untuk detail langkah eksekusi.
 
 ---
-*TMBilling v1.4.4*
+*TMBilling v1.5.0*

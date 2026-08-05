@@ -231,6 +231,25 @@ Sistem dirancang untuk:
       </ul>
     </td>
   </tr>
+  <tr>
+    <td>
+      <h4>📺 TV Mode & Digital Signage Lobi</h4>
+      <ul>
+        <li>Mode Carousel Dinamis (<code>/tv</code>) & Mode Grid Dashboard Statis (<code>/tv/static</code>)</li>
+        <li>Auto-scaling viewport Smart TV presisi tanpa scrollbar</li>
+        <li>Integrasi katalog makanan/minuman Kantin (F&B Menu)</li>
+        <li>Inisial logo warnet dinamis (misal: BE untuk BLI ESPORT)</li>
+      </ul>
+    </td>
+    <td>
+      <h4>🛠️ Maintenance Tickets & Uptime Tracker</h4>
+      <ul>
+        <li>Manajemen tiket perawatan PC rusak ter-grouping warna prioritas</li>
+        <li>Pelacak akumulasi total jam operasional PC (Uptime Tracker)</li>
+        <li>Laporan rekapitulasi kendala teknis unit PC</li>
+      </ul>
+    </td>
+  </tr>
 </table>
 
 ---
@@ -1196,14 +1215,15 @@ Atau untuk development: cukup restart server — `db.create_all()` otomatis biki
 
 | File | Isi |
 |------|-----|
-| [docs/CODEBASE_DOCUMENTATION.md](docs/CODEBASE_DOCUMENTATION.md) | 📘 Ringkasan semua komponen (start here!) |
+| [docs/PRD.md](docs/PRD.md) | 📘 **Product Requirement Document (PRD)** — Visi, arsitektur, spesifikasi modul, dan future roadmap |
+| [docs/CODEBASE_DOCUMENTATION.md](docs/CODEBASE_DOCUMENTATION.md) | 📘 Ringkasan semua komponen backend/frontend (start here!) |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 🏗️ Arsitektur 3-layer, data flow diagrams |
 | [docs/BACKEND_GUIDE.md](docs/BACKEND_GUIDE.md) | 🐍 Panduan backend, coding patterns, error handling |
 | [docs/FRONTEND_GUIDE.md](docs/FRONTEND_GUIDE.md) | 🎨 JS modular, design tokens, UI components |
 | [docs/TECHNICAL_DOCS.md](docs/TECHNICAL_DOCS.md) | 🌐 API endpoint reference (lengkap req/res) |
 | [docs/walkthrough.md](docs/walkthrough.md) | 🛡️ Walkthrough Hex-XOR, watchdog, offline uninstall |
 | [docs/CLOUD_BACKUP_DESIGN.md](docs/CLOUD_BACKUP_DESIGN.md) | ☁️ Rencana Desain: Sistem Backup Multi-Provider TMBilling |
-| [docs/NEW_FEATURES_GUIDE.md](docs/NEW_FEATURES_GUIDE.md) | 🚀 Panduan fitur baru (Tauri Single-Instance, Portal Member, Turnamen, Shift, & DB Migration Manager) |
+| [docs/NEW_FEATURES_GUIDE.md](docs/NEW_FEATURES_GUIDE.md) | 🚀 Panduan fitur baru (Tauri Single-Instance, Member Portal, Turnamen, Shift, DB Migration, Maintenance, Uptime, & TV Mode) |
 | [docs/UPGRADE_RUPIAH_AND_POS.md](docs/UPGRADE_RUPIAH_AND_POS.md) | 🪙 Pembaruan format Rupiah, layout mobile & POS F&B |
 | [docs/agent.md](docs/agent.md) | 📋 Agent task tracker |
 
@@ -1268,7 +1288,7 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more informa
 </p>
 
 <p align="center">
-  <sub>TMBilling v1.4.4</sub>
+  <sub>TMBilling v1.5.0</sub>
 </p>
 
 ---

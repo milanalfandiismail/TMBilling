@@ -96,4 +96,43 @@ Fitur handover shift kasir menyediakan audit keuangan yang aman melalui metode *
 4.  **Cetak Struk Handover**: Setelah shift ditutup, sistem mencetak laporan pertanggungjawaban shift secara otomatis menggunakan printer thermal 58mm via format monospace standar.
 
 ---
-*TMBilling v1.4.4*
+
+## 🛠️ 6. Sistem Tiket Perawatan PC (Maintenance Ticket System - v1.5.0)
+
+Modul ini memfasilitasi pelaporan dan pelacakan masalah fisik maupun perangkat lunak pada unit PC di warnet.
+
+### Model Data (`maintenance_ticket.py`):
+*   Mencatat `pc_id`, `subjek`, `deskripsi`, `prioritas` (*Rendah*, *Sedang*, *Tinggi*, *Darurat*), `status` (*Terbuka*, *Diproses*, *Selesai*), `dilaporkan_oleh`, dan `ditangani_oleh`.
+
+### Fitur Utama:
+*   **Modal Ter-Grouping Warna**: UI Kasir/Admin menampilkan tiket berdasarkan warna prioritas dan status penanganan.
+*   **Laporan Maintenance**: Rekapitulasi historis unit PC yang sering mengalami kendala teknis untuk mendukung keputusan penggantian komponen hardware.
+
+---
+
+## ⏱️ 7. Pelacak Uptime PC (Uptime Tracker - v1.5.0)
+
+Modul ini mencatat akumulasi total jam operasional PC secara otomatis untuk membantu pemilik warnet memperkirakan masa pakai hardware.
+
+### Detail Teknis:
+*   **Field Data (`PC` model)**: `total_uptime_minutes` dan `last_boot_time`.
+*   **Inkrementasi Otomatis**: Setiap kali client PC mengirimkan heartbeat polling, durasi aktif ditambahkan ke total akumulasi uptime.
+*   **Visualisasi UI**: Statistik jam kerja PC ditampilkan pada halaman detail PC di dashboard kasir.
+
+---
+
+## 📺 8. TV Mode & Digital Signage Lobi (v1.5.0)
+
+Fitur ini menyediakan tampilan display publik beresolusi tinggi (1080p/4K) untuk dipasang pada Smart TV di lobi warnet via koneksi LAN (`http://IP_SERVER:7015/tv`).
+
+### Mode Tampilan:
+1.  **Mode Dinamis (Carousel)** (`/tv` atau `/tv-signage`):
+    *   Rotasi slide otomatis setiap 15 detik (Live PC Status $\rightarrow$ Esports Turnamen $\rightarrow$ Promo & Paket $\rightarrow$ Aturan Warnet).
+    *   Slide PC Status & Paket Billing dikelompokkan secara dinamis per grup (*Reguler*, *VIP*, *VVIP*).
+2.  **Mode Statis (Dashboard Grid)** (`/tv/static` atau `/tv-static`):
+    *   Tampilan multi-panel 3 baris secara bersamaan (Status PC, Promo, Menu Makanan Kantin, Turnamen, Aturan).
+    *   **Auto-Scaling Viewport**: Menggunakan CSS `transform: scale()` presisi untuk menjamin layout pas di layar TV tanpa scrollbar.
+    *   **Inisial Logo Dinamis**: Logo header kiri atas secara otomatis mengekstrak inisial nama warnet dari database (misal: *BLI ESPORT* $\rightarrow$ `BE`).
+
+---
+*TMBilling v1.5.0*
