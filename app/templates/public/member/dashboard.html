@@ -129,14 +129,14 @@
                                     <td class="py-4 px-4 text-center font-bold text-neutral-200 font-mono">
                                         {{ s.pc.kode if s.pc else '-' }}
                                     </td>
-                                    <td class="py-4 px-4 text-center font-mono text-neutral-300">
+                                    <td class="py-4 px-4 text-center font-mono text-neutral-300 whitespace-nowrap">
                                         {% set s_val = s.menit_terpakai() %}
                                         {% set s_hours = s_val // 60 %}
                                         {% set s_mins = s_val % 60 %}
                                         {% if s_hours > 0 %}
-                                        {{ s_hours }} J {{ s_mins }} M
+                                        {{ s_hours }} Jam {{ s_mins }} Menit
                                         {% else %}
-                                        {{ s_mins }} M
+                                        {{ s_mins }} Menit
                                         {% endif %}
                                     </td>
                                     <td class="py-4 pl-4 text-right">
@@ -189,14 +189,14 @@
                                             <p class="text-xs text-neutral-500 mt-1">{{ t.keterangan or 'Tanpa Catatan' }}
                                             </p>
                                         </td>
-                                        <td class="py-4 px-4 text-center font-mono text-neutral-400">
+                                        <td class="py-4 px-4 text-center font-mono text-neutral-400 whitespace-nowrap">
                                             {% set t_val = t.menit %}
                                             {% set t_hours = t_val // 60 %}
                                             {% set t_mins = t_val % 60 %}
                                             {% if t_hours > 0 %}
-                                            {{ t_hours }} J {{ t_mins }} M
+                                            {{ t_hours }} Jam {{ t_mins }} Menit
                                             {% else %}
-                                            {{ t_mins }} M
+                                            {{ t_mins }} Menit
                                             {% endif %}
                                         </td>
                                         <td class="py-4 pl-4 text-right font-mono font-bold text-neutral-200">
