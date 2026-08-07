@@ -4,7 +4,7 @@ Middleware ini dipasang sebagai @app.before_request global di app/__init__.py.
 Flow: path filter → token check → auth exemption → enabled check → IP check → block.
 """
 
-from flask import request, session as flask_session, redirect, jsonify, render_template
+from flask import request, session as flask_session, redirect, jsonify
 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
 from app.utils.logger import write_log
 
@@ -26,14 +26,13 @@ def check_ip_whitelist():
 
     # =========================================================================
     # STEP 0: Token bypass — proses token even before auth exemption.
-    # Ini penting: kalau user buka /kasir/?token=xxx, session harus di-set
-    # SEBELUM login form dimuat (which is an exempt path).
     # =========================================================================
     if IpWhitelistService.is_enabled():
         url_token = request.args.get('token', '')
         current_token = IpWhitelistService.get_token()
         if url_token and url_token == current_token:
-            IpWhitelistService.authenticate_session()
+            flask_session['ip_wh_authenticated'] = True
+            flask_session['ip_wh_token_version'] = IpWhitelistService.get_token_version()
             clean_url = request.base_url  # URL without ?token=...
             return redirect(clean_url)
 
@@ -54,15 +53,21 @@ def check_ip_whitelist():
         return None
 
     # =========================================================================
-    # STEP 3: Session already authenticated via bypass token?
+    # STEP 3: Admin role or session authenticated via bypass token?
     # =========================================================================
-    if IpWhitelistService.is_session_authenticated():
+    if flask_session.get('kasir_role') == 'admin':
         return None
+
+    auth_flag = flask_session.get('ip_wh_authenticated')
+    token_ver = flask_session.get('ip_wh_token_version')
+    if IpWhitelistService.is_session_token_valid(auth_flag, token_ver):
+        return None
+
 
     # =========================================================================
     # STEP 4: IP in whitelist?
     # =========================================================================
-    client_ip = IpWhitelistService.get_client_ip()
+    client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
     if IpWhitelistService.is_ip_whitelisted(client_ip):
         return None
 
@@ -73,7 +78,6 @@ def check_ip_whitelist():
                                   flask_session.get('kasir_nama', 'anonymous'))
     user_role = flask_session.get('kasir_role', '')
 
-    # Jika user belum login (no session), redirect atau 403 untuk API
     if 'kasir_id' not in flask_session:
         if request.accept_mimetypes.best == 'application/json' \
            or request.path.startswith('/api/') \
@@ -81,7 +85,6 @@ def check_ip_whitelist():
             return jsonify({'error': 'forbidden', 'ip': client_ip}), 403
         return redirect('/kasir/login')
 
-    # Jika user memiliki session aktif, hancurkan sebelum block
     write_log(
         aksi='IP_WHITELIST_SESSION_DESTROY',
         detail=f"Session user {username} ({user_role}) dari IP {client_ip} "

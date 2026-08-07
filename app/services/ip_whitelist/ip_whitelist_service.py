@@ -5,14 +5,13 @@ Module ini menyediakan static methods untuk:
 - CRUD IP entries
 - Bypass token management
 - First-run seeding
-- Client IP detection (X-Forwarded-For aware)
+- Client IP detection (pure parameters, HTTP agnostic)
 """
 
 import json
 import ipaddress
 import secrets
 import socket
-from flask import request, session as flask_session
 from app.services.settings.settings_service import SettingsService
 from app.utils.logger import write_log
 
@@ -58,12 +57,13 @@ class IpWhitelistService:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def get_client_ip():
-        """Ambil IP client: X-Forwarded-For first, fallback remote_addr."""
-        xff = request.headers.get('X-Forwarded-For')
-        if xff:
-            return xff.split(',')[0].strip()
-        return request.remote_addr or '0.0.0.0'
+    def extract_client_ip(headers=None, remote_addr=None):
+        """Ambil IP client dari headers/remote_addr (HTTP-agnostic)."""
+        if headers:
+            xff = headers.get('X-Forwarded-For')
+            if xff:
+                return xff.split(',')[0].strip()
+        return remote_addr or '0.0.0.0'
 
     @staticmethod
     def is_path_in_scope(path):
@@ -153,7 +153,7 @@ class IpWhitelistService:
         return new_entries
 
     # ------------------------------------------------------------------
-    # 4. BYPASS TOKEN
+    # 4. BYPASS TOKEN & SESSION VALIDATION
     # ------------------------------------------------------------------
 
     @staticmethod
@@ -171,7 +171,7 @@ class IpWhitelistService:
 
     @staticmethod
     def regenerate_token():
-        """Generate token baru. Invalidate semua sesi existing. Return (token, version)."""
+        """Generate token baru. Return (token, version)."""
         new_token = secrets.token_urlsafe(32)
         new_version = IpWhitelistService.get_token_version() + 1
 
@@ -194,18 +194,10 @@ class IpWhitelistService:
         return token or ''
 
     @staticmethod
-    def is_session_authenticated():
-        """Cek apakah session saat ini authenticated via bypass token."""
-        auth_flag = flask_session.get('ip_wh_authenticated')
-        session_version = flask_session.get('ip_wh_token_version')
+    def is_session_token_valid(session_auth_flag, session_token_version):
+        """Cek apakah data session token valid (HTTP agnostic)."""
         current_version = IpWhitelistService.get_token_version()
-        return auth_flag is True and session_version == current_version
-
-    @staticmethod
-    def authenticate_session():
-        """Set session flags setelah token valid (digunakan di middleware)."""
-        flask_session['ip_wh_authenticated'] = True
-        flask_session['ip_wh_token_version'] = IpWhitelistService.get_token_version()
+        return session_auth_flag is True and session_token_version == current_version
 
     # ------------------------------------------------------------------
     # 5. SEEDING (FIRST-RUN)
@@ -220,7 +212,6 @@ class IpWhitelistService:
                 SettingsService.set(IpWhitelistService.ENABLED_KEY, 'true')
 
             if SettingsService.get(IpWhitelistService.WHITELIST_KEY) is None:
-                # Deteksi LAN IP yang benar (bukan 127.0.0.1)
                 lan_ip = '127.0.0.1'
                 try:
                     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -238,7 +229,6 @@ class IpWhitelistService:
                 default_list = [
                     {'ip': '127.0.0.1', 'added_at': now_iso, 'label': 'localhost'}
                 ]
-                # Jangan tambah 127.0.0.1 dua kali
                 if lan_ip != '127.0.0.1' and lan_ip:
                     default_list.append(
                         {'ip': lan_ip, 'added_at': now_iso, 'label': 'Server warnet'}

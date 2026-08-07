@@ -393,11 +393,14 @@ def ip_whitelist_admin_required(f):
         if not session.get('kasir_id') or session.get('kasir_role') != 'admin':
             return jsonify({'error': 'unauthorized'}), 401
 
-        ip = IpWhitelistService.get_client_ip()
+        ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
         is_ip_ok = IpWhitelistService.is_ip_whitelisted(ip)
-        is_session_ok = IpWhitelistService.is_session_authenticated()
+        auth_flag = session.get('ip_wh_authenticated')
+        token_ver = session.get('ip_wh_token_version')
+        is_session_ok = IpWhitelistService.is_session_token_valid(auth_flag, token_ver)
 
         if not (is_ip_ok or is_session_ok):
+
             write_log(
                 aksi='IP_WHITELIST_BLOCK',
                 detail=f"Admin diblokir mengedit whitelist dari IP {ip}",
@@ -501,8 +504,9 @@ def status_whitelist():
         entries = IpWhitelistService.get_entries()
         token = IpWhitelistService.get_token()
         token_masked = IpWhitelistService.get_token_masked()
-        current_ip = IpWhitelistService.get_client_ip()
+        current_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
         public_url = IpWhitelistService.get_public_url()
+
 
         if public_url:
             base = public_url.rstrip('/')
