@@ -52,6 +52,15 @@ class TransaksiRepository:
         ).order_by(Transaksi.dibuat_pada.desc()).all()
 
     @staticmethod
+    def get_riwayat_paket_sesi(sesi_id):
+        """Ambil riwayat paket sesi yang belum direfund (untuk guest refund)."""
+        return Transaksi.query.filter(
+            Transaksi.sesi_id == sesi_id,
+            Transaksi.jenis.in_(["beli_paket_guest", "tambah_waktu_guest"]),
+            Transaksi.is_refunded == False
+        ).order_by(Transaksi.dibuat_pada.desc()).all()
+
+    @staticmethod
     def get_all_by_tanggal_with_nota(tanggal, kasir_id=None):
         """Pusat query transaksi harian yang ada nomor notanya."""
         query = Transaksi.query.filter(
