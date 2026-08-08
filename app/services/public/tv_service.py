@@ -6,8 +6,9 @@ from app.models.tournament.tournament import Turnamen, TurnamenTahap, TurnamenMa
 from app.models.menu.menu import MenuItem
 from app.services.dashboard.dashboard_service import DashboardService
 from app.services.settings.settings_service import SettingsService
-from app.routes.tournament.tournament_routes import get_swiss_standings
+from app.services.tournament.tournament_service import TournamentService
 from app.models.base.base import db
+
 
 class TVSignageService:
     """Service to gather all real-time data needed for TV Mode & Digital Signage."""
@@ -58,7 +59,8 @@ class TVSignageService:
 
                 if active_stage.tipe_format == "swiss":
                     # Get standings dict
-                    standings_dict = get_swiss_standings(active_stage.id)
+                    standings_dict = TournamentService.get_swiss_standings(active_stage.id)
+
                     # Convert to list and sort: wins DESC, losses ASC
                     sorted_standings = sorted(
                         standings_dict.values(),

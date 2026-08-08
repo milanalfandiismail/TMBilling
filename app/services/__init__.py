@@ -45,6 +45,9 @@ from app.services.member.member_service import MemberService
 from app.services.paket.paket_service import PaketService
 from app.services.pc.pc_service import PCService
 from app.services.report.report_service import ReportService
+from app.services.report.log_audit_service import LogAuditService
+from app.services.report.pdf_export_service import PdfExportService
+from app.services.tournament.tournament_service import TournamentService
 from app.services.sesi.sesi_service import SesiService
 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
 from app.services.owner.analytics_service import OwnerAnalyticsService
@@ -71,6 +74,9 @@ __all__ = [
     "PluginManager",
     "BasePlugin",
     "ReportService",
+    "LogAuditService",
+    "PdfExportService",
+    "TournamentService",
     "SesiService",
     "IpWhitelistService",
     "SettingsService",
@@ -78,4 +84,4 @@ __all__ = [
     "UserService",
     "ServerMonitorService",
     "MaintenanceService"
-]
+]

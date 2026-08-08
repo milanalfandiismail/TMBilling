@@ -156,8 +156,14 @@ const API = {
         },
         tutup: sesiId => API.request(`/api/v1/kasir/sesi/tutup/${sesiId}`, { method: 'POST' }),
         pindahPC: (sesiId, pcKodeBaru) => API.request(`/api/v1/kasir/sesi/pindah-pc/${sesiId}`, { method: 'POST', body: JSON.stringify({ pc_kode_baru: pcKodeBaru }) }),
-        detail: sesiId => API.request(`/api/v1/kasir/sesi/${sesiId}`)
+        detail: sesiId => API.request(`/api/v1/kasir/sesi/${sesiId}`),
+        getRiwayatPaket: sesiId => API.request(`/api/v1/kasir/sesi/${sesiId}/riwayat-paket`),
+        refundPaket: (sesiId, transaksiId) => API.request('/api/v1/kasir/sesi/refund-paket', {
+            method: 'POST',
+            body: JSON.stringify({ sesi_id: sesiId, transaksi_id: transaksiId })
+        }),
     },
+
 
     // 🔗 LAPORAN & LOG
     report: {

@@ -86,7 +86,7 @@ const TambahModal = {
                             </div>
                             
                             <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
-                                <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold">Total Tambahan</div>
+                                <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold">Total Tambahan Waktu</div>
                                 <div class="text-sm font-black text-neutral-200 mt-1" id="tambah-paket-total-preview">Pilih paket terlebih dahulu</div>
                             </div>
 
@@ -240,21 +240,13 @@ const TambahModal = {
                 }
             });
 
-            // Jika Member, baru tampilkan sisa waktu dan total setelah
-            if (sesi.member_id) {
-                dataLines.push(
-                    { separator: true },
-                    { label: 'Sisa Waktu Saat Ini', value: Utils.formatDurasiFriendly(sisaSekarang) },
-                    { label: 'Total Tambahan Waktu', value: Utils.formatDurasiFriendly(totalMenit) },
-                    { label: 'Total Setelah', value: Utils.formatDurasiFriendly(totalSetelah), highlight: true }
-                );
-            } else {
-                // Jika Guest, cukup tampilkan tambahan waktu saja
-                dataLines.push(
-                    { separator: true },
-                    { label: 'Total Tambahan Waktu', value: Utils.formatDurasiFriendly(totalMenit), highlight: true }
-                );
-            }
+            // Tampilkan rincian sisa waktu dan total setelah ditambah baik untuk guest maupun member
+            dataLines.push(
+                { separator: true },
+                { label: 'Total Waktu Saat Ini', value: Utils.formatDurasiFriendly(sisaSekarang) },
+                { label: 'Total Tambahan Waktu', value: Utils.formatDurasiFriendly(totalMenit) },
+                { label: 'Total Setelah Ditambah', value: Utils.formatDurasiFriendly(totalSetelah), highlight: true }
+            );
 
             const metodePembayaran = document.getElementById('tambah-metode-pembayaran')?.value || 'Tunai';
 

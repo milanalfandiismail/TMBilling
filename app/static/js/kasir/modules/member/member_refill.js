@@ -77,12 +77,12 @@ const MemberRefill = {
                                 
                                 <div class="border-t border-[#2a2a2a] my-3"></div>
                                 
-                                <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold">Sisa Waktu Saat Ini</div>
+                                <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold">Total Waktu Saat Ini</div>
                                 <div class="font-bold text-xs lg:text-base text-neutral-100 font-mono mt-0.5">${Utils.formatDurasiFriendly(member.waktu_saved || member.waktu_tersimpan)}</div>
                             </div>
                             
                             <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
-                                <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold">Total Tambahan</div>
+                                <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold">Total Tambahan Waktu</div>
                                 <div class="text-sm font-black text-neutral-200 mt-1" id="tambah-waktu-total-preview">Pilih paket terlebih dahulu</div>
                             </div>
 

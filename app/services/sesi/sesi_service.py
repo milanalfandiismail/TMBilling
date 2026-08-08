@@ -326,3 +326,106 @@ class SesiService:
             "guest_nama": sesi.nama_guest,
             "sisa_waktu": sesi.sisa_menit() if hasattr(sesi, 'sisa_menit') else 0
         }
+
+    @staticmethod
+    def get_riwayat_paket_sesi(sesi_id):
+        """Mengambil riwayat pembelian paket guest untuk audit/refund kasir."""
+        sesi = SesiRepository.get_by_id(sesi_id)
+        if not sesi or sesi.tipe != "guest":
+            return []
+
+        transaksi_list = TransaksiRepository.get_riwayat_paket_sesi(sesi_id)
+        result = []
+        
+        # Sisa waktu sesi saat ini
+        sisa_sekala = sesi.sisa_menit()
+        
+        # Loop dari yang terbaru ke terlama
+        for t in transaksi_list:
+            if sisa_sekala <= 0:
+                break
+                
+            durasi = t.menit or (t.paket.durasi_menit if t.paket else 0)
+            base_durasi = t.paket.durasi_menit if (t.paket and t.paket.durasi_menit) else durasi
+            qty = max(1, durasi // base_durasi) if base_durasi > 0 else 1
+            
+            from app.utils.timezone_utils import format_display
+            result.append({
+                "id": t.id,
+                "nama": t.paket.nama if t.paket else "Paket Dihapus",
+                "durasi_menit": durasi,
+                "base_durasi_menit": base_durasi,
+                "qty": qty,
+                "harga": t.jumlah,
+                "dibuat_pada": format_display(t.dibuat_pada),
+                "jenis": t.jenis,
+            })
+            
+            sisa_sekala -= durasi
+            
+        return result
+
+    @staticmethod
+    def refund_paket_guest(sesi_id, transaksi_id, operator="system"):
+        """Batalkan pembelian paket & potong durasi beli guest."""
+        sesi = SesiRepository.get_aktif_by_id(sesi_id)
+        if not sesi or sesi.tipe != "guest":
+            raise ValueError("Sesi tidak aktif atau bukan tipe guest")
+
+        transaksi = TransaksiRepository.get_by_id(transaksi_id)
+        if not transaksi or transaksi.sesi_id != sesi.id or transaksi.is_refunded:
+            raise ValueError("Transaksi tidak valid atau sudah direfund")
+
+        durasi = transaksi.menit or (transaksi.paket.durasi_menit if transaksi.paket else 0)
+        
+        # Validasi apakah durasi beli guest mencukupi untuk dikurangi
+        sisa_menit = sesi.sisa_menit()
+        if sisa_menit <= 0:
+            raise ValueError("Sisa waktu guest sudah habis. Paket tidak dapat direfund.")
+
+        # Durasi yang dikurangi dibatasi oleh sisa waktu real-time guest saat ini
+        sebelum = sesi.durasi_beli_menit
+        durasi_dikurangi = min(durasi, sisa_menit)
+        
+        # Potong durasi beli guest
+        sesi.durasi_beli_menit -= durasi_dikurangi
+        
+        # Potong juga total bayar
+        refund_jumlah = -(transaksi.jumlah)
+        sesi.total_bayar = max(0, sesi.total_bayar + refund_jumlah)
+        
+        transaksi.is_refunded = True
+
+        # INJECT NOTA REFUND TM
+        transaksi_refund = Transaksi(
+            sesi_id=sesi.id,
+            paket_id=transaksi.paket_id,
+            jenis="refund_paket",
+            jumlah=refund_jumlah,
+            menit=-(durasi_dikurangi),
+            keterangan=f"Refund paket guest '{transaksi.paket.nama if transaksi.paket else '?'}'",
+            no_nota=TransaksiService.generate_nota(),
+            user_id=TransaksiService.get_user_id(operator)
+        )
+        db.session.add(transaksi_refund)
+        db.session.commit()
+
+        refund_details = {
+            "nama_guest": sesi.nama_guest,
+            "no_nota_refund": transaksi_refund.no_nota,
+            "no_nota_original": transaksi.no_nota,
+            "jumlah_refund": transaksi_refund.jumlah,
+            "durasi_beli_sebelum": sebelum,
+            "durasi_beli_sesudah": sesi.durasi_beli_menit,
+            "durasi_dikurangi": durasi_dikurangi
+        }
+
+        write_log("REFUND_PAKET", f"Guest:{sesi.nama_guest} | Durasi: {sebelum}m -> {sesi.durasi_beli_menit}m", user=operator, detail_json=refund_details)
+        write_log("TRANSAKSI", f"REFUND | Nota:{transaksi_refund.no_nota} | Rp {transaksi_refund.jumlah}", user=operator, detail_json=refund_details)
+        
+        return {
+            "nama_guest": sesi.nama_guest,
+            "durasi_beli_sebelum": sebelum,
+            "durasi_beli_sesudah": sesi.durasi_beli_menit,
+            "durasi_dikurangi": durasi_dikurangi
+        }

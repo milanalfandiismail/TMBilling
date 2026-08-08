@@ -199,9 +199,9 @@ const Member = {
 
             dataLines.push(
                 { separator: true },
-                { label: 'Sisa Waktu Saat Ini', value: Utils.formatDurasiFriendly(sisaSekarang) },
-                { label: 'Total Tambahan', value: Utils.formatDurasiFriendly(totalMenit) },
-                { label: 'Total Setelah', value: Utils.formatDurasiFriendly(totalSetelah), highlight: true },
+                { label: 'Total Waktu Saat Ini', value: Utils.formatDurasiFriendly(sisaSekarang) },
+                { label: 'Total Tambahan Waktu', value: Utils.formatDurasiFriendly(totalMenit) },
+                { label: 'Total Setelah Ditambah', value: Utils.formatDurasiFriendly(totalSetelah), highlight: true },
                 { separator: true },
                 { label: 'Total Harga', value: Utils.formatRupiah(totalHarga), highlight: true },
                 { label: 'Pembayaran', value: metodePembayaran, highlight: true }
@@ -226,8 +226,41 @@ const Member = {
         }
     },
 
-    async refund(memberId, transaksiId) {
-        Modal.confirm('<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Refund Paket Billing?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Saldo waktu member akan dikurangi sesuai durasi paket.</p></div>', async () => {
+    async refund(memberId, transaksiId, namaPaket, durasiMenit, dibuatPada, sisaWaktuSekarang) {
+        const durasiFriendly = Utils.formatDurasiFriendly(durasiMenit);
+        const sisaSekarangFriendly = Utils.formatDurasiFriendly(sisaWaktuSekarang);
+        const setelahDeduction = Math.max(0, sisaWaktuSekarang - durasiMenit);
+        const setelahDeductionFriendly = Utils.formatDurasiFriendly(setelahDeduction);
+
+        const confirmHtml = `
+            <div class="text-center space-y-2">
+                <p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Refund Paket Billing Member?</p>
+                <div class="bg-[#050505] border border-[#2a2a2a] rounded-lg p-3 my-2 text-left space-y-1.5 font-mono">
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Paket:</span>
+                        <span class="font-bold text-neutral-200 text-right">${namaPaket}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c] pt-1.5">
+                        <span>Total Waktu Sekarang:</span>
+                        <span class="font-bold text-neutral-300 text-right">${sisaSekarangFriendly}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Potongan Refund:</span>
+                        <span class="font-bold text-red-400 text-right">-${durasiFriendly}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c]/80 pt-1.5">
+                        <span>Total Akhir Waktu:</span>
+                        <span class="font-bold text-emerald-400 text-right">${setelahDeductionFriendly}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c]/80 pt-1.5">
+                        <span>Pembelian:</span>
+                        <span class="text-neutral-400 text-right">${dibuatPada}</span>
+                    </div>
+                </div>
+                <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Total waktu bermain member akan dikurangi menjadi <strong>${setelahDeductionFriendly}</strong>.</p>
+            </div>
+        `;
+        Modal.confirm(confirmHtml, async () => {
             try {
                 const res = await API.member.refundPaket(memberId, transaksiId);
                 Toast.success(res.message || 'Refund berhasil');
