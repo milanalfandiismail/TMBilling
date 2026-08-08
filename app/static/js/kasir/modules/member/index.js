@@ -199,9 +199,9 @@ const Member = {
 
             dataLines.push(
                 { separator: true },
-                { label: 'Sisa Waktu Saat Ini', value: Utils.formatDurasiFriendly(sisaSekarang) },
-                { label: 'Total Tambahan', value: Utils.formatDurasiFriendly(totalMenit) },
-                { label: 'Total Setelah', value: Utils.formatDurasiFriendly(totalSetelah), highlight: true },
+                { label: 'Total Waktu Saat Ini', value: Utils.formatDurasiFriendly(sisaSekarang) },
+                { label: 'Total Tambahan Waktu', value: Utils.formatDurasiFriendly(totalMenit) },
+                { label: 'Total Setelah Ditambah', value: Utils.formatDurasiFriendly(totalSetelah), highlight: true },
                 { separator: true },
                 { label: 'Total Harga', value: Utils.formatRupiah(totalHarga), highlight: true },
                 { label: 'Pembayaran', value: metodePembayaran, highlight: true }
@@ -241,7 +241,7 @@ const Member = {
                         <span class="font-bold text-neutral-200 text-right">${namaPaket}</span>
                     </div>
                     <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c] pt-1.5">
-                        <span>Saldo Sekarang:</span>
+                        <span>Total Waktu Sekarang:</span>
                         <span class="font-bold text-neutral-300 text-right">${sisaSekarangFriendly}</span>
                     </div>
                     <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
@@ -249,7 +249,7 @@ const Member = {
                         <span class="font-bold text-red-400 text-right">-${durasiFriendly}</span>
                     </div>
                     <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c]/80 pt-1.5">
-                        <span>Saldo Akhir:</span>
+                        <span>Total Akhir Waktu:</span>
                         <span class="font-bold text-emerald-400 text-right">${setelahDeductionFriendly}</span>
                     </div>
                     <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c]/80 pt-1.5">
@@ -257,7 +257,7 @@ const Member = {
                         <span class="text-neutral-400 text-right">${dibuatPada}</span>
                     </div>
                 </div>
-                <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Saldo waktu bermain member akan dikurangi menjadi <strong>${setelahDeductionFriendly}</strong>.</p>
+                <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Total waktu bermain member akan dikurangi menjadi <strong>${setelahDeductionFriendly}</strong>.</p>
             </div>
         `;
         Modal.confirm(confirmHtml, async () => {
