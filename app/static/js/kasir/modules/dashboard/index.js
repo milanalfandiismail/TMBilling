@@ -1,5 +1,10 @@
 // app/static/js/kasir/modules/dashboard/index.js
 
+/**
+ * Main Controller untuk Dashboard Kasir TMBilling.
+ * Mengkoordinasikan perenderan grid PC, context menu, filter grup, dan modal refilling/refund.
+ */
+
 const Dashboard = {
     refreshInterval: null,
     isSidebarMini: false,
@@ -25,7 +30,6 @@ const Dashboard = {
     async load() {
         const container = document.getElementById('pc-area');
         try {
-
             const data = await API.dashboard.pcList();
             if (!data || !data.by_grup) throw new Error('Data format invalid - missing by_grup');
             const groups = Object.keys(data.by_grup);
@@ -50,446 +54,35 @@ const Dashboard = {
 
     showDetail(pcId) {
         this._currentPcId = pcId;
-        const pc = this.lastData.pc_list.find(p => p.id === pcId);
-        if (!pc) return;
-
-        const isOnline = pc.status !== 'offline';
-        const sesi = pc.sesi_detail;
-
-        const modalHtml = `
-            <div id="pc-detail-modal-card" class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-in transition-all duration-300">
-                <div class="px-6 py-4 border-b border-[#2a2a2a] flex items-center justify-between">
-                    <div>
-                        <h3 class="text-sm font-bold text-neutral-100 tracking-wide font-mono">${pc.kode}</h3>
-                        <div class="flex items-center gap-2 mt-1">
-                            <span class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase font-mono">${pc.grup}</span>
-                            <span class="text-[9px] lg:text-base text-neutral-600 font-mono">${pc.ip_address}</span>
-                        </div>
-                    </div>
-                    <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
-                </div>
-
-                <div id="modal-view-container" class="flex-1 overflow-y-auto flex flex-col">
-                    <div id="view-action-menu" class="p-5">
-                        <div class="grid grid-cols-3 gap-3">
-
-                            <!-- 1. Monitor Proses -->
-                            <button onclick="Dashboard.showProcesses()"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 rounded-lg transition-colors ${!isOnline ? 'opacity-40 cursor-not-allowed' : ''}"
-                                ${!isOnline ? 'disabled' : ''}>
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-                                    <svg class="w-4.5 h-4.5 w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase tracking-wider text-center leading-tight">Monitor Proses</span>
-                            </button>
-
-                            <!-- 2. Remote Layar (disabled) -->
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] rounded-lg opacity-25">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Remote Layar</span>
-                            </div>
-
-                            <!-- 3. Wake-on-LAN -->
-                            ${pc.mac_address ? `
-                            <button onclick="Modal.closeModal(); Dashboard.wolSingle(${pc.id})"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#0a1a0f] border border-green-900/40 hover:border-green-600/60 hover:bg-[#0d2014] rounded-lg transition-colors">
-                                <div class="w-9 h-9 rounded-lg bg-green-950/50 border border-green-900/50 flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-green-500 uppercase tracking-wider text-center leading-tight">Wake-on-LAN</span>
-                            </button>` : `
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-30 cursor-not-allowed" title="Tidak ada MAC Address">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Wake-on-LAN</span>
-                            </div>`}
-
-                            <!-- 4. Pindah PC -->
-                            ${sesi && sesi.tipe !== 'admin' ? `
-                            <button onclick="Dashboard.pindahSesi(${sesi.id}, '${sesi.tipe}', '${pc.grup}')"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-400 hover:bg-[#141414] rounded-lg transition-colors">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase tracking-wider text-center leading-tight">Pindah PC</span>
-                            </button>` : `
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Pindah PC</span>
-                            </div>`}
-
-                            <!-- 5. Hardware (reserved) -->
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] rounded-lg opacity-25">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Hardware</span>
-                            </div>
-
-                            <!-- 6-9: Reserved slots -->
-                            <button id="btn-screenshot-${pc.id}" onclick="Dashboard.takeScreenshot(${pc.id})"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 rounded-lg transition-colors ${!isOnline ? 'opacity-40 cursor-not-allowed' : ''}"
-                                ${!isOnline ? 'disabled' : ''}>
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    </svg>
-                                </div>
-                                <span id="text-screenshot-${pc.id}" class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase tracking-wider text-center leading-tight">Ambil Gambar</span>
-                            </button>
-                            <!-- 7. Restart PC -->
-                            ${isOnline ? `
-                            <button onclick="Modal.closeModal(); Dashboard.remoteAction(${pc.id}, 'restart')"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#1a0a0f] border border-red-900/40 hover:border-red-600/60 hover:bg-[#200d14] rounded-lg transition-colors">
-                                <div class="w-9 h-9 rounded-lg bg-red-950/50 border border-red-900/50 flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5" />
-                                    </svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-red-400 uppercase tracking-wider text-center leading-tight">Restart PC</span>
-                            </button>` : `
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5" />
-                                    </svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Restart PC</span>
-                            </div>`}
-
-                            <!-- 8. Shutdown PC -->
-                            ${isOnline ? `
-                            <button onclick="Modal.closeModal(); Dashboard.remoteAction(${pc.id}, 'shutdown')"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#1f0a0f] border border-red-900/50 hover:border-red-600/70 hover:bg-[#280d14] rounded-lg transition-colors">
-                                <div class="w-9 h-9 rounded-lg bg-red-950/60 border border-red-900/60 flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L12 12m0-6v6" />
-                                    </svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-red-500 uppercase tracking-wider text-center leading-tight">Shutdown PC</span>
-                            </button>` : `
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L12 12m0-6v6" />
-                                    </svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Shutdown PC</span>
-                            </div>`}
-
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0a0a0a] border border-dashed border-[#1a1a1a] rounded-lg opacity-20"><span class="text-[9px] lg:text-base text-neutral-700 uppercase tracking-widest mt-4">—</span></div>
-
-                        </div>
-
-                        <!-- Area Preview Tangkapan Layar -->
-                        <div id="screenshot-preview-container" class="mt-4 p-4 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase tracking-wider font-mono">Tangkapan Layar</span>
-                                <span id="screenshot-time" class="text-[9px] lg:text-base text-neutral-500 font-mono">
-                                    ${pc.screenshot_time ? pc.screenshot_time : 'BELUM DIAMBIL'}
-                                </span>
-                            </div>
-                            <div class="relative w-full aspect-video rounded-lg overflow-hidden border border-[#1a1a1a] bg-black/60 flex items-center justify-center group">
-                                <img id="screenshot-img" src="${pc.screenshot_url ? pc.screenshot_url + '?t=' + Date.now() : ''}" 
-                                    class="w-full h-full object-cover cursor-pointer transition-opacity duration-200 hover:opacity-90 ${pc.screenshot_url ? '' : 'hidden'}" 
-                                    onclick="Dashboard.viewFullscreen(this)" />
-                                <div id="screenshot-placeholder" class="text-neutral-600 text-xs lg:text-base font-mono ${pc.screenshot_url ? 'hidden' : ''}">Tidak ada gambar</div>
-                                <div id="screenshot-fullscreen-hint" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${pc.screenshot_url ? '' : 'hidden'}">
-                                    <div class="bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-lg flex items-center gap-2">
-                                        <svg class="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
-                                        <span class="text-[10px] lg:text-base font-bold text-white/80 uppercase tracking-wider">Fullscreen</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="view-process-list" class="hidden flex-1 flex flex-col overflow-hidden">
-                        <div class="px-6 py-3 border-b border-[#1c1c1c] flex items-center justify-between">
-                            <button onclick="Dashboard.backToMenu()" class="text-xs lg:text-base text-neutral-400 hover:text-neutral-200 font-bold transition-colors">&larr; Kembali</button>
-                            <span id="modal-pc-count" class="text-xs lg:text-base text-neutral-500 font-mono">0 PROSES</span>
-                        </div>
-                        <div class="px-6 py-2.5 border-b border-[#1c1c1c] bg-[#0a0a0a] flex items-center">
-                            <input type="text" id="input-search-processes" placeholder="Cari nama proses (contoh: chrome, valo)..." class="w-full bg-[#141414] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-xs lg:text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 font-mono" />
-                        </div>
-                        <div class="flex-1 overflow-x-hidden overflow-y-auto scrollbar-mono w-full max-h-[55vh]">
-                            <table class="w-full text-xs lg:text-base">
-                                <thead class="sticky top-0 bg-[#0c0c0c] z-10">
-                                    <tr class="border-b border-[#1c1c1c] text-[10px] lg:text-base text-neutral-500 uppercase tracking-wider">
-                                        <th class="px-6 py-3 text-left">Layanan / Aplikasi</th>
-                                        <th class="px-6 py-3 text-right w-32">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="modal-process-list" class="divide-y divide-[#1c1c1c]">
-                                    <tr><td colspan="2" class="px-6 py-10 text-center text-neutral-500 text-xs lg:text-base font-mono">Memuat...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="p-4 border-t border-[#2a2a2a] flex justify-end">
-                            <button id="btn-refresh-processes" onclick="Dashboard.loadProcesses(${pc.id})" class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Segarkan</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="p-4 border-t border-[#2a2a2a] flex justify-end">
-                    <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded-lg transition-colors">Tutup</button>
-                </div>
-            </div>
-        `;
-
-        Modal.show(modalHtml);
+        DashboardDetailModal.showDetail(pcId, this.lastData);
     },
 
-    async takeScreenshot(pcId) {
-        const btn = document.getElementById(`btn-screenshot-${pcId}`);
-        const text = document.getElementById(`text-screenshot-${pcId}`);
-        if (!btn) return;
-
-        btn.disabled = true;
-        btn.classList.add('opacity-40', 'cursor-not-allowed');
-        const oldText = text.innerText;
-        text.innerText = 'MEMINTA...';
-
-        try {
-            const result = await API.request(`/api/v1/kasir/monitor/screenshot/trigger/${pcId}`, {
-                method: 'POST'
-            });
-            if (!result.success) {
-                throw new Error(result.error || 'Gagal memicu screenshot');
-            }
-
-            Toast.success('Permintaan screenshot dikirim ke PC!');
-            text.innerText = 'MENUNGGU...';
-
-            // Polling status screenshot baru setiap 2 detik (maksimal 8 kali = 16 detik)
-            let attempts = 0;
-            const maxAttempts = 8;
-            const interval = setInterval(async () => {
-                attempts++;
-                try {
-                    const statusData = await API.request(`/api/v1/kasir/monitor/screenshot/status/${pcId}`);
-                    if (statusData.success && statusData.screenshot_url) {
-                        const timeSpan = document.getElementById('screenshot-time');
-                        const img = document.getElementById('screenshot-img');
-                        const placeholder = document.getElementById('screenshot-placeholder');
-
-                        const prevTime = timeSpan ? timeSpan.innerText.trim() : '';
-                        if (statusData.screenshot_time && statusData.screenshot_time !== prevTime) {
-                            clearInterval(interval);
-                            if (timeSpan) timeSpan.innerText = statusData.screenshot_time;
-                            if (img) {
-                                img.src = statusData.screenshot_url + '?t=' + Date.now();
-                                img.classList.remove('hidden');
-                            }
-                            if (placeholder) placeholder.classList.add('hidden');
-
-                            Toast.success('Tangkapan layar berhasil diperbarui!');
-
-                            btn.disabled = false;
-                            btn.classList.remove('opacity-40', 'cursor-not-allowed');
-                            text.innerText = oldText;
-                            return;
-                        }
-                    }
-                } catch (err) {
-                    console.error('[Dashboard] Error polling screenshot:', err);
-                }
-
-                if (attempts >= maxAttempts) {
-                    clearInterval(interval);
-                    Toast.error('Batas waktu habis: PC klien tidak merespon permintaan screenshot.');
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-40', 'cursor-not-allowed');
-                    text.innerText = oldText;
-                }
-            }, 2000);
-
-        } catch (err) {
-            console.error('[Dashboard] Screenshot error:', err);
-            Toast.error(err.message || 'Gagal memicu screenshot');
-            btn.disabled = false;
-            btn.classList.remove('opacity-40', 'cursor-not-allowed');
-            text.innerText = oldText;
-        }
+    takeScreenshot(pcId) {
+        DashboardDetailModal.takeScreenshot(pcId);
     },
 
-    remoteAction(pcId, action) {
-        const actionLabel = action === 'shutdown' ? 'Shutdown (Matikan)' : 'Restart (Mulai Ulang)';
-        const pc = this.lastData?.pc_list?.find(p => p.id === pcId);
-        const pcName = pc ? pc.kode : `PC #${pcId}`;
-
-        Modal.confirm(`
-            <div class="text-center">
-                <p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">${actionLabel} PC ${pcName}?</p>
-                <p class="text-[10px] lg:text-base text-red-400 font-bold mt-1">⚠️ Perhatian: PC akan langsung mati/restart secara paksa. Semua pekerjaan yang belum disimpan di PC client akan hilang.</p>
-            </div>
-        `, async () => {
-            try {
-                const result = await API.request(`/api/v1/kasir/monitor/remote/${pcId}/${action}`, {
-                    method: 'POST'
-                });
-                if (!result.success) {
-                    throw new Error(result.error || 'Gagal mengirim perintah');
-                }
-                Toast.success(`Perintah ${action === 'shutdown' ? 'Shutdown' : 'Restart'} berhasil dikirim ke PC!`);
-            } catch (err) {
-                console.error('[Dashboard] Remote action error:', err);
-                Toast.error(err.message || 'Gagal mengirim perintah remote');
-            }
-        });
+    remoteAction(pcId, action, pcKode = '') {
+        DashboardDetailModal.remoteAction(pcId, action, pcKode);
     },
 
     viewFullscreen(imgEl) {
-        if (!imgEl || !imgEl.src) return;
-        const overlay = document.createElement('div');
-        overlay.className = 'fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4 cursor-pointer animate-in';
-        overlay.onclick = () => overlay.remove();
-        overlay.innerHTML = `
-            <div class="relative w-full h-full flex items-center justify-center">
-                <button class="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 border border-white/10 text-white/60 hover:text-white hover:bg-black/70 flex items-center justify-center text-xl leading-none transition-all z-10">&times;</button>
-                <img src="${imgEl.src}" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />
-            </div>
-        `;
-        document.body.appendChild(overlay);
+        DashboardDetailModal.viewFullscreen(imgEl);
     },
 
     showProcesses() {
-        document.getElementById('view-action-menu').classList.add('hidden');
-        document.getElementById('view-process-list').classList.remove('hidden');
-        const card = document.getElementById('pc-detail-modal-card');
-        if (card) {
-            card.classList.remove('max-w-lg');
-            card.classList.add('max-w-4xl');
-        }
-        this.loadProcesses(this._currentPcId);
+        DashboardProcessMonitor.showProcesses(this._currentPcId);
     },
 
     backToMenu() {
-        document.getElementById('view-action-menu').classList.remove('hidden');
-        document.getElementById('view-process-list').classList.add('hidden');
-        const card = document.getElementById('pc-detail-modal-card');
-        if (card) {
-            card.classList.remove('max-w-4xl');
-            card.classList.add('max-w-lg');
-        }
+        DashboardProcessMonitor.backToMenu();
     },
 
-    renderProcessRows(pcId, processes) {
-        const container = document.getElementById('modal-process-list');
-        const countEl = document.getElementById('modal-pc-count');
-        if (!container || !countEl) return;
-
-        countEl.innerText = `${processes.length} PROSES`;
-
-        if (processes.length === 0) {
-            container.innerHTML = '<tr><td colspan="2" class="px-6 py-10 text-center text-neutral-500 text-xs lg:text-base font-mono">Tidak ada proses</td></tr>';
-            return;
-        }
-
-        container.innerHTML = processes.map(p => `
-            <tr class="hover:bg-[#121212] transition-colors">
-                <td class="px-6 py-2.5 text-xs lg:text-base text-neutral-200 font-mono">
-                    <div class="font-bold text-neutral-100">${p.name}</div>
-                    <div class="text-[10px] lg:text-xs text-neutral-500 mt-0.5">${p.title || '-'}</div>
-                </td>
-                <td class="px-6 py-2.5 text-right whitespace-nowrap">
-                    <button onclick="Dashboard.killProcess(${pcId}, '${p.name}')" class="px-3 py-1 bg-red-950/40 hover:bg-red-900 border border-red-800/40 hover:border-red-700 text-red-400 hover:text-red-200 text-xs font-bold rounded-lg transition-all font-mono uppercase tracking-wider">
-                        Akhiri
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+    loadProcesses(pcId) {
+        DashboardProcessMonitor.loadProcesses(pcId);
     },
 
-    async loadProcesses(pcId) {
-        const container = document.getElementById('modal-process-list');
-        if (container) container.innerHTML = '<tr><td colspan="2" class="px-6 py-10 text-center text-neutral-500 text-xs lg:text-base font-mono">Memuat...</td></tr>';
-
-        try {
-            const res = await fetch(`/api/v1/public/monitor/processes/${pcId}`);
-            const json = await res.json();
-
-            if (!json.success) throw new Error(json.error);
-
-            let data = json.data || [];
-
-            // Urutkan berdasarkan RAM (terbesar ke terkecil)
-            data.sort((a, b) => {
-                const getMem = str => {
-                    if (!str) return 0;
-                    const match = str.match(/Mem:\s*(\d+)\s*MB/i);
-                    return match ? parseInt(match[1], 10) : 0;
-                };
-                return getMem(b.title) - getMem(a.title);
-            });
-
-            this._activeProcesses = data;
-            this.renderProcessRows(pcId, this._activeProcesses);
-
-            const searchInput = document.getElementById('input-search-processes');
-            if (searchInput) {
-                searchInput.value = '';
-                searchInput.oninput = (e) => {
-                    const query = e.target.value.toLowerCase().trim();
-                    const filtered = this._activeProcesses.filter(p =>
-                        (p.name && p.name.toLowerCase().includes(query)) ||
-                        (p.title && p.title.toLowerCase().includes(query))
-                    );
-                    this.renderProcessRows(pcId, filtered);
-                };
-            }
-        } catch (err) {
-            if (container) container.innerHTML = `<tr><td colspan="2" class="px-6 py-10 text-center text-red-400 text-xs lg:text-base font-mono">Gagal: ${err.message}</td></tr>`;
-        }
-    },
-
-    async killProcess(pcId, name) {
-        const overlay = document.createElement('div');
-        overlay.className = 'fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200';
-        overlay.innerHTML = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-sm flex flex-col overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
-                <div class="p-6 text-center">
-                    <div class="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-4 border border-red-500/20">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                        </svg>
-                    </div>
-                    <p class="text-xs lg:text-base text-neutral-200 font-bold uppercase tracking-wider mb-2">Akhiri Proses?</p>
-                    <p class="text-[10px] lg:text-sm text-neutral-500">Apakah Anda yakin ingin menghentikan paksa proses <strong class="text-red-400 font-mono">${name}</strong> di PC client?</p>
-                </div>
-                <div class="p-4 border-t border-[#2a2a2a] flex items-center justify-end gap-3 bg-[#0a0a0a]">
-                    <button id="btn-cancel-kill" class="px-4 py-2 text-xs lg:text-sm font-bold text-neutral-400 hover:text-white transition-colors">Batal</button>
-                    <button id="btn-confirm-kill" class="px-4 py-2 bg-red-950/80 hover:bg-red-900 border border-red-800 hover:border-red-700 text-red-200 text-xs lg:text-sm font-bold rounded-lg transition-all uppercase tracking-wider">Ya, Akhiri</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-
-        const closeConfirm = () => {
-            overlay.classList.add('fade-out');
-            setTimeout(() => overlay.remove(), 200);
-        };
-
-        document.getElementById('btn-cancel-kill').onclick = closeConfirm;
-        document.getElementById('btn-confirm-kill').onclick = async () => {
-            closeConfirm();
-            try {
-                const json = await window.API.monitor.processesKill(pcId, name);
-                if (!json.success) throw new Error(json.error);
-                Toast.success(`Perintah mengakhiri '${name}' berhasil dikirim!`);
-                // Segarkan proses otomatis jika modal masih terbuka
-                this.loadProcesses(pcId);
-            } catch (err) {
-                console.error('[Dashboard] Kill process error:', err);
-                Toast.error(err.message || 'Gagal mengirim perintah kill process');
-            }
-        };
+    killProcess(pcId, name) {
+        DashboardProcessMonitor.killProcess(pcId, name);
     },
 
     async tutupSesi(sesiId) {
@@ -508,8 +101,222 @@ const Dashboard = {
         this.pindahPc(sesiId, tipe, grup);
     },
 
+    async showGuestRefundModal(sesiId) {
+        try {
+            const [sesiRes, paketRes] = await Promise.all([
+                API.sesi.detail(sesiId),
+                API.sesi.getRiwayatPaket(sesiId)
+            ]);
+            const sesi = sesiRes.data || sesiRes;
+            const riwayatPaket = paketRes.paket || [];
+
+            let riwayatHtml = '';
+            if (riwayatPaket.length === 0) {
+                riwayatHtml = `<div class="text-center py-10 text-neutral-500 text-xs lg:text-base font-bold uppercase tracking-wider">Tidak ada riwayat paket refundable</div>`;
+            } else {
+                riwayatHtml = `
+                    <div class="divide-y divide-[#1c1c1c]/60 max-h-[350px] overflow-y-auto pr-1 scrollbar-mono">
+                        ${riwayatPaket.map(t => `
+                            <div class="py-3 flex items-center justify-between gap-3">
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-bold text-neutral-200 text-xs lg:text-base lg:truncate break-words whitespace-normal font-mono">${t.nama}</div>
+                                    <div class="text-[9px] lg:text-base text-neutral-400 mt-0.5 font-semibold">
+                                        QTY : <span class="text-neutral-200">${t.qty || 1}x</span> (${Utils.formatDurasiFriendly(t.durasi_menit)})
+                                    </div>
+                                    <div class="text-[9px] lg:text-base text-neutral-500 font-mono mt-0.5">
+                                        ${t.dibuat_pada}
+                                    </div>
+                                </div>
+                                <div class="text-right flex items-center gap-3">
+                                    <span class="text-xs lg:text-base font-mono font-bold text-neutral-300">${Utils.formatRupiah(t.harga)}</span>
+                                    <button onclick="Dashboard.refundGuestPaket(${sesiId}, ${t.id}, '${t.nama.replace(/'/g, "\\'")}', ${t.durasi_menit}, '${t.dibuat_pada}', ${sesi.sisa_waktu || 0})" 
+                                        class="px-2 py-1 text-[9px] lg:text-xs font-bold bg-[#3b1216] border border-[#ef4444]/30 text-red-200 hover:bg-red-600 hover:text-white rounded transition-colors uppercase shrink-0 font-mono">
+                                        REFUND
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            const detailHtml = `
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-4 md:p-6 max-w-lg w-[calc(100%-2rem)] mx-auto md:w-full max-h-[85vh] overflow-y-auto scrollbar-thin my-auto">
+                    <div class="flex items-center justify-between mb-4 pb-4 border-b border-[#1c1c1c]">
+                        <div>
+                            <h3 class="text-xs lg:text-base font-bold text-neutral-200 uppercase tracking-wider font-mono">Refund Paket Guest</h3>
+                            <p class="text-[9px] lg:text-base text-neutral-500 mt-0.5">Riwayat Pembelian Paket Sesi Ini</p>
+                        </div>
+                        <button onclick="Modal.closeModal()" class="text-neutral-500 hover:text-neutral-300 text-xl leading-none">&times;</button>
+                    </div>
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-4">
+                        ${riwayatHtml}
+                    </div>
+                    <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#1c1c1c]">
+                        <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded-lg transition-colors font-mono">Tutup</button>
+                    </div>
+                </div>`;
+            Modal.show(detailHtml);
+        } catch (err) {
+            Toast.error('Gagal mengambil detail riwayat paket: ' + err.message);
+        }
+    },
+
     attachEvents() {
-        // no longer needed - buttons use inline onclick
+        // Event listeners handled via inline onclick handlers
+    },
+
+    async refundGuestPaket(sesiId, transaksiId, namaPaket, durasiMenit, dibuatPada, sisaWaktuSekarang) {
+        const durasiFriendly = Utils.formatDurasiFriendly(durasiMenit);
+        const sisaSekarangFriendly = Utils.formatDurasiFriendly(sisaWaktuSekarang);
+        const setelahDeduction = Math.max(0, sisaWaktuSekarang - durasiMenit);
+        const setelahDeductionFriendly = Utils.formatDurasiFriendly(setelahDeduction);
+
+        const confirmHtml = `
+            <div class="text-center space-y-2">
+                <p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Refund Paket Billing Guest?</p>
+                <div class="bg-[#050505] border border-[#2a2a2a] rounded-lg p-3 my-2 text-left space-y-1.5 font-mono">
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Paket:</span>
+                        <span class="font-bold text-neutral-200 text-right">${namaPaket}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c] pt-1.5">
+                        <span>Total Waktu Sekarang:</span>
+                        <span class="font-bold text-neutral-300 text-right">${sisaSekarangFriendly}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Potongan Refund:</span>
+                        <span class="font-bold text-red-400 text-right">-${durasiFriendly}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c]/80 pt-1.5">
+                        <span>Total Akhir Waktu:</span>
+                        <span class="font-bold text-emerald-400 text-right">${setelahDeductionFriendly}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c]/80 pt-1.5">
+                        <span>Pembelian:</span>
+                        <span class="text-neutral-400 text-right">${dibuatPada}</span>
+                    </div>
+                </div>
+                <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Total waktu bermain guest akan dikurangi menjadi <strong>${setelahDeductionFriendly}</strong>.</p>
+            </div>
+        `;
+        Modal.confirm(confirmHtml, async () => {
+            try {
+                const res = await API.sesi.refundPaket(sesiId, transaksiId);
+                Toast.success(res.message || 'Refund berhasil');
+                Modal.closeModal();
+                this.load();
+            } catch (err) {
+                Toast.error(err.message || 'Gagal refund');
+            }
+        });
+    },
+
+    async showMemberRefundModal(memberId) {
+        try {
+            const [memberRes, paketRes] = await Promise.all([
+                API.member.get(memberId),
+                API.member.getPaket(memberId)
+            ]);
+            const member = memberRes.member || memberRes.data || memberRes;
+            const riwayatPaket = paketRes.paket || [];
+
+            let riwayatHtml = '';
+            if (riwayatPaket.length === 0) {
+                riwayatHtml = `<div class="text-center py-10 text-neutral-500 text-xs lg:text-base font-bold uppercase tracking-wider">Tidak ada riwayat paket refundable</div>`;
+            } else {
+                riwayatHtml = `
+                    <div class="divide-y divide-[#1c1c1c]/60 max-h-[350px] overflow-y-auto pr-1 scrollbar-mono">
+                        ${riwayatPaket.map(t => `
+                            <div class="py-3 flex items-center justify-between gap-3">
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-bold text-neutral-200 text-xs lg:text-base lg:truncate break-words whitespace-normal font-mono">${t.nama}</div>
+                                    <div class="text-[9px] lg:text-base text-neutral-400 mt-0.5 font-semibold">
+                                        QTY : <span class="text-neutral-200">${t.qty || 1}x</span> (${Utils.formatDurasiFriendly(t.durasi_menit)})
+                                    </div>
+                                    <div class="text-[9px] lg:text-base text-neutral-500 font-mono mt-0.5">
+                                        ${t.dibuat_pada}
+                                    </div>
+                                </div>
+                                <div class="text-right flex items-center gap-3">
+                                    <span class="text-xs lg:text-base font-mono font-bold text-neutral-300">${Utils.formatRupiah(t.harga)}</span>
+                                    <button onclick="Dashboard.refundMemberPaket(${memberId}, ${t.id}, '${t.nama.replace(/'/g, "\\'")}', ${t.durasi_menit}, '${t.dibuat_pada}', ${member.waktu_saved || member.waktu_tersimpan || 0})" 
+                                        class="px-2 py-1 text-[9px] lg:text-xs font-bold bg-[#3b1216] border border-[#ef4444]/30 text-red-200 hover:bg-red-600 hover:text-white rounded transition-colors uppercase shrink-0 font-mono">
+                                        REFUND
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            const detailHtml = `
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-4 md:p-6 max-w-lg w-[calc(100%-2rem)] mx-auto md:w-full max-h-[85vh] overflow-y-auto scrollbar-thin my-auto">
+                    <div class="flex items-center justify-between mb-4 pb-4 border-b border-[#1c1c1c]">
+                        <div>
+                            <h3 class="text-xs lg:text-base font-bold text-neutral-200 uppercase tracking-wider font-mono">Refund Paket Member</h3>
+                            <p class="text-[9px] lg:text-base text-neutral-500 mt-0.5">Riwayat Pembelian Paket Member Ini</p>
+                        </div>
+                        <button onclick="Modal.closeModal()" class="text-neutral-500 hover:text-neutral-300 text-xl leading-none">&times;</button>
+                    </div>
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-4">
+                        ${riwayatHtml}
+                    </div>
+                    <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#1c1c1c]">
+                        <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded-lg transition-colors font-mono">Tutup</button>
+                    </div>
+                </div>`;
+            Modal.show(detailHtml);
+        } catch (err) {
+            Toast.error('Gagal mengambil detail riwayat paket: ' + err.message);
+        }
+    },
+
+    async refundMemberPaket(memberId, transaksiId, namaPaket, durasiMenit, dibuatPada, sisaWaktuSekarang) {
+        const durasiFriendly = Utils.formatDurasiFriendly(durasiMenit);
+        const sisaSekarangFriendly = Utils.formatDurasiFriendly(sisaWaktuSekarang);
+        const setelahDeduction = Math.max(0, sisaWaktuSekarang - durasiMenit);
+        const setelahDeductionFriendly = Utils.formatDurasiFriendly(setelahDeduction);
+
+        const confirmHtml = `
+            <div class="text-center space-y-2">
+                <p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Refund Paket Billing Member?</p>
+                <div class="bg-[#050505] border border-[#2a2a2a] rounded-lg p-3 my-2 text-left space-y-1.5 font-mono">
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Paket:</span>
+                        <span class="font-bold text-neutral-200 text-right">${namaPaket}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c] pt-1.5">
+                        <span>Total Waktu Sekarang:</span>
+                        <span class="font-bold text-neutral-300 text-right">${sisaSekarangFriendly}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Potongan Refund:</span>
+                        <span class="font-bold text-red-400 text-right">-${durasiFriendly}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c]/80 pt-1.5">
+                        <span>Total Akhir Waktu:</span>
+                        <span class="font-bold text-emerald-400 text-right">${setelahDeductionFriendly}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c]/80 pt-1.5">
+                        <span>Pembelian:</span>
+                        <span class="text-neutral-400 text-right">${dibuatPada}</span>
+                    </div>
+                </div>
+                <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Total waktu bermain member akan dikurangi menjadi <strong>${setelahDeductionFriendly}</strong>.</p>
+            </div>
+        `;
+        Modal.confirm(confirmHtml, async () => {
+            try {
+                const res = await API.member.refundPaket(memberId, transaksiId);
+                Toast.success(res.message || 'Refund berhasil');
+                Modal.closeModal();
+                this.load();
+            } catch (err) {
+                Toast.error(err.message || 'Gagal refund');
+            }
+        });
     },
 
     async pindahPc(sesiId, tipe, pcGrup) {
@@ -646,10 +453,6 @@ const Dashboard = {
         });
     },
 
-    // =========================================================
-    // RIGHT-CLICK CONTEXT MENU
-    // =========================================================
-
     showContextMenu(event, pcId) {
         this.closeContextMenu();
 
@@ -668,14 +471,12 @@ const Dashboard = {
             'animate-in fade-in slide-in-from-top-1 duration-100'
         ].join(' ');
 
-        // Header — nama PC
         menu.innerHTML = `
             <div class="px-4 py-2 border-b border-[#222] mb-1">
                 <div class="text-xs lg:text-base font-bold text-neutral-200 font-mono">${pc.kode}</div>
                 <div class="text-[10px] lg:text-base text-neutral-500 font-mono">${pc.ip_address || 'Tidak ada IP'}</div>
             </div>
 
-            <!-- Detail PC -->
             <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
                     onclick="Dashboard.closeContextMenu(); Dashboard.showDetail(${pcId})">
                 <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -684,7 +485,6 @@ const Dashboard = {
                 <span>Detail PC</span>
             </button>
 
-            <!-- Buka Sesi (jika kosong) -->
             ${!pc.sesi_detail && !isAdminMode ? `
             <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
                     onclick="Dashboard.closeContextMenu(); BukaModal.open('${pc.kode}', '${pc.grup}')">
@@ -694,7 +494,6 @@ const Dashboard = {
                 <span>Buka Sesi</span>
             </button>` : ''}
 
-            <!-- Tambah Waktu (jika ada sesi aktif non-admin) -->
             ${hasSesi ? `
             <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
                     onclick="Dashboard.closeContextMenu(); TambahModal.open(${pc.sesi_detail.id}, '${pc.grup}')">
@@ -704,7 +503,15 @@ const Dashboard = {
                 <span>Tambah Waktu</span>
             </button>` : ''}
 
-            <!-- Tutup Sesi (jika ada sesi aktif non-admin) -->
+            ${hasSesi ? `
+            <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left font-mono"
+                    onclick="Dashboard.closeContextMenu(); ${pc.sesi_detail.tipe === 'guest' ? `Dashboard.showGuestRefundModal(${pc.sesi_detail.id})` : `Dashboard.showMemberRefundModal(${pc.sesi_detail.member_id})`}">
+                <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"/>
+                </svg>
+                <span>Refund Paket</span>
+            </button>` : ''}
+
             ${hasSesi ? `
             <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left"
                     onclick="Dashboard.closeContextMenu(); Dashboard.tutupSesi(${pc.sesi_detail.id})">
@@ -714,7 +521,6 @@ const Dashboard = {
                 <span>Tutup Sesi</span>
             </button>` : ''}
 
-            <!-- Pindah PC (jika ada sesi aktif non-admin) -->
             ${hasSesi ? `
             <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
                     onclick="Dashboard.closeContextMenu(); Dashboard.pindahSesi(${pc.sesi_detail.id}, '${pc.sesi_detail.tipe}', '${pc.grup}')">
@@ -726,7 +532,6 @@ const Dashboard = {
 
             <div class="border-t border-[#222] my-1"></div>
 
-            <!-- Wake-on-LAN -->
             ${hasMac ? `
             <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-green-400 hover:bg-green-950/40 hover:text-green-300 transition-colors text-left"
                     onclick="Dashboard.closeContextMenu(); Dashboard.wolSingle(${pcId})">
@@ -744,7 +549,6 @@ const Dashboard = {
                 <span class="ml-auto text-[9px] lg:text-base text-neutral-700">No MAC</span>
             </div>`}
 
-            <!-- Remote Power Actions (Hanya jika PC Online) -->
             ${pc.status !== 'offline' ? `
             <div class="border-t border-[#222] my-1"></div>
             <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left"
@@ -763,7 +567,6 @@ const Dashboard = {
             </button>` : ''}
         `;
 
-        // Posisi menu relatif ke kursor, jaga agar tidak keluar layar
         document.body.appendChild(menu);
         const mw = menu.offsetWidth || 210;
         const mh = menu.offsetHeight || 220;
@@ -774,7 +577,6 @@ const Dashboard = {
         menu.style.left = x + 'px';
         menu.style.top = y + 'px';
 
-        // Tutup saat klik di luar (pasang listener baru, lepas yang lama dulu)
         if (this._ctxOutsideHandler) {
             document.removeEventListener('click', this._ctxOutsideHandler);
         }
@@ -791,7 +593,6 @@ const Dashboard = {
                 this.closeContextMenu();
             }
         };
-        // setTimeout agar click event yang memicu showContextMenu tidak langsung menutupnya
         setTimeout(() => {
             document.addEventListener('click', this._ctxOutsideHandler);
             document.addEventListener('keydown', this._ctxKeydownHandler);
@@ -811,7 +612,6 @@ const Dashboard = {
         }
     },
 
-    /** Nyalakan satu PC via WoL (dipanggil dari context menu) */
     async wolSingle(pcId) {
         try {
             const result = await API.pc.wol([pcId]);
@@ -828,10 +628,6 @@ const Dashboard = {
         }
     },
 
-    // =========================================================
-    // MAP VIEW
-    // =========================================================
-
     _render(data) {
         const container = document.getElementById('pc-area');
         const mapContainer = document.getElementById('map-view-container');
@@ -846,12 +642,7 @@ const Dashboard = {
         this.showDetail(pcId);
     },
 
-    // =========================================================
-    // TAMBAH WAKTU MEMBER (MODAL SEARCH)
-    // =========================================================
-
     async tambahWaktuMember() {
-        // Fetch all members + groups
         let groups = [];
         try {
             const [memberData, grupData] = await Promise.all([
@@ -927,7 +718,6 @@ const Dashboard = {
     _applyFilters() {
         let filtered = [...this._searchMembers];
 
-        // Filter grup
         if (this._selectedGrup) {
             filtered = filtered.filter(m => {
                 const grupName = (typeof m.grup === 'object' ? (m.grup.nama || '').toLowerCase() : (m.grup || '').toLowerCase());
@@ -936,7 +726,6 @@ const Dashboard = {
             });
         }
 
-        // Filter search
         const query = document.getElementById('member-search-input-dash')?.value?.toLowerCase().trim() || '';
         if (query) {
             filtered = filtered.filter(m => {
@@ -1029,9 +818,7 @@ const Dashboard = {
             Toast.error('Gagal: modul refill belum siap');
         }
     }
-
 };
 
 Object.assign(Dashboard, CompactGrid);
 window.Dashboard = Dashboard;
-// Document ready initialization (only for layout handlers)

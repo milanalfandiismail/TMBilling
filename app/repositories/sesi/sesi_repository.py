@@ -62,6 +62,12 @@ class SesiRepository:
         """Ambil semua sesi admin yang aktif."""
         return Sesi.query.filter_by(tipe="admin", status="aktif").all()
 
+    @staticmethod
+    def get_history_by_member(member_id, limit=10):
+        """Mengambil riwayat sesi bermain member terurut dari yang terbaru."""
+        return Sesi.query.filter_by(member_id=member_id).order_by(Sesi.mulai_pada.desc()).limit(limit).all()
+
+
 
     # =========================================================================
     # 2. PROSES SIMPAN & UPDATE (WRITE)

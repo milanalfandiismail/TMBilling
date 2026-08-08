@@ -35,8 +35,10 @@ def login():
     if pre_user.role != "admin":
         try:
             from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
-            if IpWhitelistService.is_enabled() and not IpWhitelistService.is_session_authenticated():
-                client_ip = IpWhitelistService.get_client_ip()
+            auth_flag = session.get("ip_wh_authenticated")
+            token_ver = session.get("ip_wh_token_version")
+            if IpWhitelistService.is_enabled() and not IpWhitelistService.is_session_token_valid(auth_flag, token_ver):
+                client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
                 if not IpWhitelistService.is_ip_whitelisted(client_ip):
                     write_log("LOGIN_GAGAL",
                               f"Username:{username} - IP {client_ip} tidak di whitelist")
@@ -45,6 +47,7 @@ def login():
                         "detail": f"IP {client_ip} tidak diizinkan mengakses dashboard kasir. "
                                    f"Hubungi admin untuk mendaftarkan IP Anda."
                     }), 403
+
         except Exception:
             pass
 
@@ -57,7 +60,8 @@ def login():
         if role == "admin":
             try:
                 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
-                client_ip = IpWhitelistService.get_client_ip()
+                client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
+
                 if IpWhitelistService.is_enabled() and not IpWhitelistService.is_ip_whitelisted(client_ip):
                     IpWhitelistService.add(client_ip, 'Auto (login)')
             except Exception:
@@ -109,10 +113,13 @@ def check_session():
     if result.get("logged_in"):
         try:
             from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
-            if IpWhitelistService.is_enabled() and not IpWhitelistService.is_session_authenticated():
-                client_ip = IpWhitelistService.get_client_ip()
+            auth_flag = session.get("ip_wh_authenticated")
+            token_ver = session.get("ip_wh_token_version")
+            if IpWhitelistService.is_enabled() and not IpWhitelistService.is_session_token_valid(auth_flag, token_ver):
+                client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
                 if not IpWhitelistService.is_ip_whitelisted(client_ip):
                     result = {"logged_in": False, "reason": "ip_not_whitelisted"}
+
         except Exception:
             pass
 

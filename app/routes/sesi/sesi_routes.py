@@ -163,3 +163,34 @@ def get_sesi(sesi_id):
         return jsonify({"error": str(e)}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@sesi_api_bp.route("/<int:sesi_id>/riwayat-paket", methods=["GET"])
+@login_required
+def get_riwayat_paket(sesi_id):
+    """Ambil histori pembelian paket guest untuk audit/refund kasir."""
+    try:
+        paket_list = SesiService.get_riwayat_paket_sesi(sesi_id)
+        return jsonify({"paket": paket_list}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@sesi_api_bp.route("/refund-paket", methods=["POST"])
+@login_required
+def refund_paket():
+    """Batalkan transaksi paket guest: Potong saldo waktu sesi guest dan tandai transaksi direfund."""
+    try:
+        data = request.get_json() or {}
+        kasir = session.get("kasir_username", "kasir")
+        result = SesiService.refund_paket_guest(
+            sesi_id=data.get("sesi_id"),
+            transaksi_id=data.get("transaksi_id"),
+            operator=kasir
+        )
+        return jsonify({
+            "success": True,
+            "message": f"Refund berhasil: -{result['durasi_dikurangi']} Menit | Guest {result['nama_guest']}."
+        }), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
