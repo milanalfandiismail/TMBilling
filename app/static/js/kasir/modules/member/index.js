@@ -226,8 +226,12 @@ const Member = {
         }
     },
 
-    async refund(memberId, transaksiId, namaPaket, durasiMenit, dibuatPada) {
+    async refund(memberId, transaksiId, namaPaket, durasiMenit, dibuatPada, sisaWaktuSekarang) {
         const durasiFriendly = Utils.formatDurasiFriendly(durasiMenit);
+        const sisaSekarangFriendly = Utils.formatDurasiFriendly(sisaWaktuSekarang);
+        const setelahDeduction = Math.max(0, sisaWaktuSekarang - durasiMenit);
+        const setelahDeductionFriendly = Utils.formatDurasiFriendly(setelahDeduction);
+
         const confirmHtml = `
             <div class="text-center space-y-2">
                 <p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Refund Paket Billing Member?</p>
@@ -236,16 +240,24 @@ const Member = {
                         <span>Paket:</span>
                         <span class="font-bold text-neutral-200 text-right">${namaPaket}</span>
                     </div>
-                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
-                        <span>Durasi:</span>
-                        <span class="font-bold text-red-400 text-right">-${durasiFriendly}</span>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c] pt-1.5">
+                        <span>Saldo Sekarang:</span>
+                        <span class="font-bold text-neutral-300 text-right">${sisaSekarangFriendly}</span>
                     </div>
                     <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Potongan Refund:</span>
+                        <span class="font-bold text-red-400 text-right">-${durasiFriendly}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c]/80 pt-1.5">
+                        <span>Saldo Akhir:</span>
+                        <span class="font-bold text-emerald-400 text-right">${setelahDeductionFriendly}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm border-t border-[#1c1c1c]/80 pt-1.5">
                         <span>Pembelian:</span>
                         <span class="text-neutral-400 text-right">${dibuatPada}</span>
                     </div>
                 </div>
-                <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Saldo waktu member akan dikurangi sesuai durasi paket tersebut.</p>
+                <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Saldo waktu bermain member akan dikurangi menjadi <strong>${setelahDeductionFriendly}</strong>.</p>
             </div>
         `;
         Modal.confirm(confirmHtml, async () => {
