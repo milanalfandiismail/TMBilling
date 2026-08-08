@@ -176,6 +176,76 @@ const Dashboard = {
         });
     },
 
+    async showMemberRefundModal(memberId) {
+        try {
+            const res = await API.member.getPaket(memberId);
+            const riwayatPaket = res.paket || [];
+
+            let riwayatHtml = '';
+            if (riwayatPaket.length === 0) {
+                riwayatHtml = `<div class="text-center py-10 text-neutral-500 text-xs lg:text-base font-bold uppercase tracking-wider">Tidak ada riwayat paket refundable</div>`;
+            } else {
+                riwayatHtml = `
+                    <div class="divide-y divide-[#1c1c1c]/60 max-h-[350px] overflow-y-auto pr-1 scrollbar-mono">
+                        ${riwayatPaket.map(t => `
+                            <div class="py-3 flex items-center justify-between gap-3">
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-bold text-neutral-200 text-xs lg:text-base lg:truncate break-words whitespace-normal font-mono">${t.nama}</div>
+                                    <div class="text-[9px] lg:text-base text-neutral-400 mt-0.5 font-semibold">
+                                        QTY : <span class="text-neutral-200">${t.qty || 1}x</span> (${Utils.formatDurasiFriendly(t.durasi_menit)})
+                                    </div>
+                                    <div class="text-[9px] lg:text-base text-neutral-500 font-mono mt-0.5">
+                                        ${t.dibuat_pada}
+                                    </div>
+                                </div>
+                                <div class="text-right flex items-center gap-3">
+                                    <span class="text-xs lg:text-base font-mono font-bold text-neutral-300">${Utils.formatRupiah(t.harga)}</span>
+                                    <button onclick="Dashboard.refundMemberPaket(${memberId}, ${t.id})" 
+                                        class="px-2 py-1 text-[9px] lg:text-xs font-bold bg-[#3b1216] border border-[#ef4444]/30 text-red-200 hover:bg-red-600 hover:text-white rounded transition-colors uppercase shrink-0 font-mono">
+                                        REFUND
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            const detailHtml = `
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-4 md:p-6 max-w-lg w-[calc(100%-2rem)] mx-auto md:w-full max-h-[85vh] overflow-y-auto scrollbar-thin my-auto">
+                    <div class="flex items-center justify-between mb-4 pb-4 border-b border-[#1c1c1c]">
+                        <div>
+                            <h3 class="text-xs lg:text-base font-bold text-neutral-200 uppercase tracking-wider font-mono">Refund Paket Member</h3>
+                            <p class="text-[9px] lg:text-base text-neutral-500 mt-0.5">Riwayat Pembelian Paket Member Ini</p>
+                        </div>
+                        <button onclick="Modal.closeModal()" class="text-neutral-500 hover:text-neutral-300 text-xl leading-none">&times;</button>
+                    </div>
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-4">
+                        ${riwayatHtml}
+                    </div>
+                    <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#1c1c1c]">
+                        <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded-lg transition-colors font-mono">Tutup</button>
+                    </div>
+                </div>`;
+            Modal.show(detailHtml);
+        } catch (err) {
+            Toast.error('Gagal mengambil detail riwayat paket: ' + err.message);
+        }
+    },
+
+    async refundMemberPaket(memberId, transaksiId) {
+        Modal.confirm('<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Refund Paket Billing?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Saldo waktu member akan dikurangi sesuai durasi paket.</p></div>', async () => {
+            try {
+                const res = await API.member.refundPaket(memberId, transaksiId);
+                Toast.success(res.message || 'Refund berhasil');
+                Modal.closeModal();
+                this.load();
+            } catch (err) {
+                Toast.error(err.message || 'Gagal refund');
+            }
+        });
+    },
+
     async pindahPc(sesiId, tipe, pcGrup) {
         try {
             const data = await API.pc.list();
@@ -360,9 +430,9 @@ const Dashboard = {
                 <span>Tambah Waktu</span>
             </button>` : ''}
 
-            ${hasSesi && pc.sesi_detail.tipe === 'guest' ? `
+            ${hasSesi ? `
             <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left font-mono"
-                    onclick="Dashboard.closeContextMenu(); Dashboard.showGuestRefundModal(${pc.sesi_detail.id})">
+                    onclick="Dashboard.closeContextMenu(); ${pc.sesi_detail.tipe === 'guest' ? `Dashboard.showGuestRefundModal(${pc.sesi_detail.id})` : `Dashboard.showMemberRefundModal(${pc.sesi_detail.member_id})`}">
                 <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"/>
                 </svg>
