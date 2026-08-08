@@ -125,7 +125,7 @@ const Dashboard = {
                                 </div>
                                 <div class="text-right flex items-center gap-3">
                                     <span class="text-xs lg:text-base font-mono font-bold text-neutral-300">${Utils.formatRupiah(t.harga)}</span>
-                                    <button onclick="Dashboard.refundGuestPaket(${sesiId}, ${t.id})" 
+                                    <button onclick="Dashboard.refundGuestPaket(${sesiId}, ${t.id}, '${t.nama.replace(/'/g, "\\'")}', ${t.durasi_menit}, '${t.dibuat_pada}')" 
                                         class="px-2 py-1 text-[9px] lg:text-xs font-bold bg-[#3b1216] border border-[#ef4444]/30 text-red-200 hover:bg-red-600 hover:text-white rounded transition-colors uppercase shrink-0 font-mono">
                                         REFUND
                                     </button>
@@ -162,9 +162,29 @@ const Dashboard = {
         // Event listeners handled via inline onclick handlers
     },
 
-    async refundGuestPaket(sesiId, transaksiId) {
-
-        Modal.confirm('<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Refund Paket Billing Guest?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Durasi sesi guest akan dikurangi sesuai durasi paket.</p></div>', async () => {
+    async refundGuestPaket(sesiId, transaksiId, namaPaket, durasiMenit, dibuatPada) {
+        const durasiFriendly = Utils.formatDurasiFriendly(durasiMenit);
+        const confirmHtml = `
+            <div class="text-center space-y-2">
+                <p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Refund Paket Billing Guest?</p>
+                <div class="bg-[#050505] border border-[#2a2a2a] rounded-lg p-3 my-2 text-left space-y-1.5 font-mono">
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Paket:</span>
+                        <span class="font-bold text-neutral-200 text-right">${namaPaket}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Durasi:</span>
+                        <span class="font-bold text-red-400 text-right">-${durasiFriendly}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Pembelian:</span>
+                        <span class="text-neutral-400 text-right">${dibuatPada}</span>
+                    </div>
+                </div>
+                <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Durasi sesi guest akan dikurangi sesuai durasi paket tersebut.</p>
+            </div>
+        `;
+        Modal.confirm(confirmHtml, async () => {
             try {
                 const res = await API.sesi.refundPaket(sesiId, transaksiId);
                 Toast.success(res.message || 'Refund berhasil');
@@ -200,7 +220,7 @@ const Dashboard = {
                                 </div>
                                 <div class="text-right flex items-center gap-3">
                                     <span class="text-xs lg:text-base font-mono font-bold text-neutral-300">${Utils.formatRupiah(t.harga)}</span>
-                                    <button onclick="Dashboard.refundMemberPaket(${memberId}, ${t.id})" 
+                                    <button onclick="Dashboard.refundMemberPaket(${memberId}, ${t.id}, '${t.nama.replace(/'/g, "\\'")}', ${t.durasi_menit}, '${t.dibuat_pada}')" 
                                         class="px-2 py-1 text-[9px] lg:text-xs font-bold bg-[#3b1216] border border-[#ef4444]/30 text-red-200 hover:bg-red-600 hover:text-white rounded transition-colors uppercase shrink-0 font-mono">
                                         REFUND
                                     </button>
@@ -233,8 +253,29 @@ const Dashboard = {
         }
     },
 
-    async refundMemberPaket(memberId, transaksiId) {
-        Modal.confirm('<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Refund Paket Billing?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Saldo waktu member akan dikurangi sesuai durasi paket.</p></div>', async () => {
+    async refundMemberPaket(memberId, transaksiId, namaPaket, durasiMenit, dibuatPada) {
+        const durasiFriendly = Utils.formatDurasiFriendly(durasiMenit);
+        const confirmHtml = `
+            <div class="text-center space-y-2">
+                <p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Refund Paket Billing Member?</p>
+                <div class="bg-[#050505] border border-[#2a2a2a] rounded-lg p-3 my-2 text-left space-y-1.5 font-mono">
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Paket:</span>
+                        <span class="font-bold text-neutral-200 text-right">${namaPaket}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Durasi:</span>
+                        <span class="font-bold text-red-400 text-right">-${durasiFriendly}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Pembelian:</span>
+                        <span class="text-neutral-400 text-right">${dibuatPada}</span>
+                    </div>
+                </div>
+                <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Saldo waktu member akan dikurangi sesuai durasi paket tersebut.</p>
+            </div>
+        `;
+        Modal.confirm(confirmHtml, async () => {
             try {
                 const res = await API.member.refundPaket(memberId, transaksiId);
                 Toast.success(res.message || 'Refund berhasil');

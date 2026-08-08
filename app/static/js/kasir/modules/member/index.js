@@ -226,8 +226,29 @@ const Member = {
         }
     },
 
-    async refund(memberId, transaksiId) {
-        Modal.confirm('<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Refund Paket Billing?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Saldo waktu member akan dikurangi sesuai durasi paket.</p></div>', async () => {
+    async refund(memberId, transaksiId, namaPaket, durasiMenit, dibuatPada) {
+        const durasiFriendly = Utils.formatDurasiFriendly(durasiMenit);
+        const confirmHtml = `
+            <div class="text-center space-y-2">
+                <p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Refund Paket Billing Member?</p>
+                <div class="bg-[#050505] border border-[#2a2a2a] rounded-lg p-3 my-2 text-left space-y-1.5 font-mono">
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Paket:</span>
+                        <span class="font-bold text-neutral-200 text-right">${namaPaket}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Durasi:</span>
+                        <span class="font-bold text-red-400 text-right">-${durasiFriendly}</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300 text-xs lg:text-sm">
+                        <span>Pembelian:</span>
+                        <span class="text-neutral-400 text-right">${dibuatPada}</span>
+                    </div>
+                </div>
+                <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Saldo waktu member akan dikurangi sesuai durasi paket tersebut.</p>
+            </div>
+        `;
+        Modal.confirm(confirmHtml, async () => {
             try {
                 const res = await API.member.refundPaket(memberId, transaksiId);
                 Toast.success(res.message || 'Refund berhasil');
