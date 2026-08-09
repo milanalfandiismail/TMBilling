@@ -93,8 +93,15 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 | `member/member_portal_routes.py` | `/member` | Member | Web portal member (login, logout, dashboard sisa waktu, riwayat) |
 | `shift/shift_routes.py` | `/api/v1/kasir/shift` | Session | API shift handover (start, active, summary, end, history) |
 | `settings/migration_routes.py` | `/api/v1/kasir/settings/migration` | Admin | DB Migration Manager — status, upload ZIP update, auto-migrate |
+| `settings/plugin_routes.py` | `/api/v1/kasir/settings/plugin` | Admin | Plugin System Manager — upload, list, activate, deactivate |
 | `public/tv_public_routes.py` | `/tv`, `/tv/static`, `/api/v1/public/tv` | Public | Smart TV Signage views (Dynamic Carousel & Static Grid) + live JSON API |
 | `pc/maintenance_routes.py` | `/api/v1/kasir/pc/maintenance` | Session | API tiket perawatan PC (CRUD, prioritas, status, rekap) |
+| `game/game_kasir_routes.py` | `/api/v1/kasir/game` | Session | API manajemen katalog game PC, kategori, executable & parameter |
+| `game/game_public_routes.py` | `/api/v1/public/game` | Public | API list game publik per PC |
+| `hardware/hardware_routes.py` | `/api/v1/kasir/hardware` | Session | API telemetry hardware, suhu CPU/GPU, dan nomor seri komponen |
+| `server_monitor/monitor_routes.py` | `/api/v1/kasir/server-monitor` | Session | API status monitoring hardware server real-time (C# TMLHMService) |
+| `mikrotik/mikrotik_routes.py` | `/api/v1/kasir/mikrotik` | Session | API konfigurasi & sync router MikroTik Hotspot |
+| `vnc/vnc_routes.py` | `/api/v1/kasir/vnc` | Session | API peluncuran koneksi remote desktop TightVNC 1-klik |
 
 ### 1.5 Frontend Dashboard (`app/static/js/kasir/`)
 
@@ -106,23 +113,35 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 | Core | `core/utils.js` | formatRupiah(), formatMenit(), escapeHtml() |
 | Core | `core/toast.js` | Toast notification |
 | Core | `core/modal.js` | Dynamic modal, confirm dialog |
-| Dashboard | `modules/dashboard.js` | PC grid real-time, group tabs |
+| Dashboard | `modules/dashboard/index.js` | PC grid real-time, group tabs, context menu refund member & guest |
 | Session | `components/modal-buka.js` | Buka sesi guest |
-| Session | `components/modal-tambah.js` | Tambah durasi |
-| Member | `modules/member.js` | CRUD, search, pagination |
-| Paket | `modules/paket.js` | CRUD, auto-name suggest |
-| PC | `modules/pc.js` | CRUD, batch registration |
-| Grup | `modules/grup.js` | CRUD, dropdown sync |
-| Laporan | `modules/laporan.js` | Report by date/kasir |
-| Log | `modules/log.js` | System log viewer, export |
-| Struk | `modules/struk.js` | History, print receipt (58mm thermal) |
-| Monitor | `modules/monitor.js` | Hardware monitoring table |
-| Blackout | `modules/blackout.js` | Blackout detection & recovery |
-| User | `modules/user.js` | Staff management (admin) |
-| Settings | `modules/settings.js` | Auto-shutdown, API key, backup |
+| Session | `components/modal-tambah.js` | Tambah durasi (3-line breakdown kalkulasi waktu) |
+| Member | `modules/member/index.js` | CRUD, search, pagination, `Member.refund()` |
+| Member Refill | `modules/member/member_refill.js` | Modal isi ulang paket member dengan rincian durasi |
+| Paket | `modules/paket/index.js` | CRUD, auto-name suggest |
+| PC | `modules/pc/index.js` | CRUD, batch registration |
+| Grup | `modules/grup/index.js` | CRUD, dropdown sync |
+| Laporan | `modules/laporan/index.js` | Report by date/kasir |
+| Laporan Maint. | `modules/laporan_maintenance/index.js` | Rekapitulasi historis tiket perawatan PC |
+| Laporan Menu | `modules/laporan_menu/index.js` | Laporan transaksi penjualan F&B kantin POS |
+| Log | `modules/log/index.js` | System log viewer, export |
+| Struk | `modules/struk/index.js` | History, print receipt (58mm thermal) |
+| Monitor | `modules/monitor/index.js` | Hardware monitoring table |
+| Hardware Check | `modules/hardware_checker/index.js` | Viewer detail spesifikasi & nomor seri hardware PC |
+| Blackout | `modules/blackout/index.js` | Blackout detection & recovery |
+| User | `modules/user/index.js` | Staff management (admin) |
+| Settings | `modules/settings/index.js` | Auto-shutdown, API key, backup |
+| Settings Migr. | `modules/settings/migration.js` | Interface DB migration manager |
+| Whitelist IP | `modules/settings/whitelist_ip.js` | Interface manajemen IP whitelist & token |
 | Maintenance | `modules/pc/maintenance.js` | Modal & tiket perawatan PC rusak (priority color-coded) |
+| Game Launcher | `modules/game/index.js` | Interface manajemen katalog game PC |
+| MikroTik | `modules/mikrotik/index.js` | Interface konfigurasi router MikroTik |
+| Remote Desktop | `modules/remote/index.js` | Dispatcher perintah aksi remote PC |
+| Screenshot | `modules/screenshot/index.js` | Viewer tangkapan layar PC manual & otomatis |
+| Server Hardware | `modules/server_monitor/server_monitor.js` | Real-time Server Hardware Monitor UI |
 | TV Dynamic | `public/tv.js` | Signage carousel controller (15s rotation, group-based UI) |
 | TV Static | `public/tv_static.js` | Signage static dashboard controller (multi-panel 3-row grid + auto viewport scale) |
+
 
 ### 1.6 Background Scheduler (`run.py`)
 
@@ -442,4 +461,4 @@ cd WarnetAgent/TMBilling_Monitor && cargo build --release
 ---
 
 *TMBilling — Codebase Documentation*
-*TMBilling v1.5.0*
+*TMBilling v1.5.1*

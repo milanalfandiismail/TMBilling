@@ -170,6 +170,16 @@ Prefix: `/api/v1/kasir/member` — Auth: `@login_required`
 { "member_id": 1, "transaksi_id": 5 }
 ```
 
+**Refund Response:**
+```json
+{
+    "success": true,
+    "message": "Refund berhasil. Sisa waktu tersimpan disesuaikan.",
+    "sisa_menit": 120,
+    "transaksi_id": 5
+}
+```
+
 ## PC Management
 
 Prefix: `/api/v1/kasir/pc` — Auth: `@login_required`
@@ -646,4 +656,4 @@ Prefix: `/api/v1/kasir/settings/migration` — Auth: `admin_required`
 
 ---
 *TMBilling — API Documentation*
-*TMBilling v1.5.0*
+*TMBilling v1.5.1*
