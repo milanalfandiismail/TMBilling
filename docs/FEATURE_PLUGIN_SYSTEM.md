@@ -64,4 +64,4 @@ Karena plugin beroperasi di dalam modul Flask utama, plugin memiliki **akses pen
 - **PERINGATAN:** Jangan meng-install plugin dari sumber yang tidak dipercaya, karena plugin secara teori dapat mengakses dan mengubah data utama secara langsung, atau mem-bypass sistem otentikasi jika diprogram demikian.
 
 ---
-*TMBilling v1.5.0*
+*TMBilling v1.5.1*
