@@ -26,4 +26,4 @@ TMBilling menggunakan arsitektur multi-timezone untuk memastikan konsistensi wak
 Untuk sistem lama yang sebelumnya menggunakan asumsi waktu lokal (WIB), skrip migrasi `seed.py` telah diperbarui untuk mengonversi data waktu dari format *naive* menjadi *UTC-aware* saat TMBilling di-upgrade.
 
 ---
-*TMBilling v1.5.0*
+*TMBilling v1.5.1*

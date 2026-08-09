@@ -80,4 +80,4 @@ class BaseBackupProvider(ABC):
 * `PUT /api/backup/config` : Menyimpan konfigurasi backup ke tabel `settings`.
 
 ---
-*TMBilling v1.5.0*
+*TMBilling v1.5.1*
