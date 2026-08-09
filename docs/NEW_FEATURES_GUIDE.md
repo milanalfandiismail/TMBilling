@@ -135,4 +135,32 @@ Fitur ini menyediakan tampilan display publik beresolusi tinggi (1080p/4K) untuk
     *   **Inisial Logo Dinamis**: Logo header kiri atas secara otomatis mengekstrak inisial nama warnet dari database (misal: *BLI ESPORT* $\rightarrow$ `BE`).
 
 ---
-*TMBilling v1.5.0*
+
+## 💸 9. Dashboard Member Refund & Breakdown Kalkulasi Durasi (v1.5.1)
+
+Versi 1.5.1 memperluas fleksibilitas operasional kasir dengan memungkinkan refund paket billing member secara langsung dari Dashboard Kasir, serta meningkatkan transparansi kalkulasi waktu pada modal konfirmasi.
+
+### 1. Refund Paket Member via Context Menu Dashboard
+*   **Aksesibilitas**: Opsi **Refund Paket** kini aktif di Context Menu PC (klik kanan card PC) untuk PC yang sedang dalam sesi Member (`pc.sesi_detail.tipe === 'member'`).
+*   **Alur Kerja (`dashboard/index.js`)**:
+    1.  Kasir mengeklik *Refund Paket* pada PC Member.
+    2.  `showMemberRefundModal(memberId)` memanggil endpoint `API.member.getPaket(memberId)` untuk mengambil daftar paket aktif member yang dapat di-refund.
+    3.  Kasir mengeklik tombol *Refund* pada salah satu item paket, memicu `refundMemberPaket()`.
+
+### 2. Breakdown Rincian Kalkulasi Durasi pada Modal Refund
+Modal konfirmasi refund (baik Guest maupun Member) kini tidak lagi hanya menampilkan nama paket, melainkan secara transparan menghitung dan menampilkan rincian:
+*   **Total Waktu Sekarang**: Sisa waktu bermain / saldo waktu tersimpan saat ini.
+*   **Potongan Refund**: Jumlah durasi paket yang akan ditarik (misal: `-3 Jam 0 Menit`).
+*   **Total Akhir Waktu**: Hasil kalkulasi bersih sisa waktu bermain / saldo waktu setelah pengurangan.
+
+### 3. Penyelarasan Istilah & Rincian Modal Tambah Waktu
+Untuk menjaga konsistensi istilah di seluruh aplikasi, UI form dan modal konfirmasi penambahan waktu diselaraskan menjadi:
+*   `Total Waktu Saat Ini`
+*   `Total Tambahan Waktu`
+*   `Total Setelah Ditambah`
+
+Rincian kalkulasi ini ditayangkan secara utuh baik pada sesi Guest maupun Member (pada `modal-tambah.js` dan `member_refill.js`).
+
+---
+*TMBilling v1.5.1*
+
