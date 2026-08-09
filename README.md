@@ -63,8 +63,8 @@ Sistem dirancang untuk:
       <ul>
         <li>Grid PC dengan status warna (kosong/terpakai/admin/offline)</li>
         <li>Group tabs per zona (reguler, vip, vvip)</li>
-        <li>Auto-refresh tiap 5 detik</li>
-        <li>Buka sesi guest/member dalam 2 clicks</li>
+        <li>Auto-refresh tiap 5 detik & context menu refund (Guest & Member)</li>
+        <li>Buka sesi guest/member & breakdown kalkulasi sisa waktu</li>
       </ul>
     </td>
     <td width="50%">
@@ -1288,7 +1288,7 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more informa
 </p>
 
 <p align="center">
-  <sub>TMBilling v1.5.0</sub>
+  <sub>TMBilling v1.5.1</sub>
 </p>
 
 ---
