@@ -548,4 +548,31 @@ def set_app_public_url():
         return jsonify({'error': str(e)}), 500
 
 
+@settings_api_bp.route("/database/purge-and-vacuum", methods=["POST"])
+@login_required
+@admin_required
+def purge_and_vacuum_database():
+    """Endpoint untuk pembersihan histori database tua dan optimasi VACUUM (Admin only)."""
+    data = request.get_json(silent=True) or {}
+    retention_months = data.get("retention_months", 6)
+
+    try:
+        retention_months = int(retention_months)
+    except (ValueError, TypeError):
+        return jsonify({"success": False, "error": "Batas bulan retensi tidak valid."}), 400
+
+    try:
+        from app.services.settings.db_maintenance_service import DBMaintenanceService
+        result = DBMaintenanceService.purge_and_vacuum(retention_months)
+        operator = session.get("kasir_username", "admin")
+        write_log(
+            aksi="DB_MAINTENANCE",
+            detail=f"Admin membersihkan data histori > {retention_months} bulan & VACUUM DB. Space terhemat: {result['storage_stats']['saved_space_human']}",
+            user=operator
+        )
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
     return execute_request()

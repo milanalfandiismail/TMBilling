@@ -410,6 +410,57 @@ const Settings = {
         }
     },
 
+    async executeDbMaintenance() {
+        const retentionSelect = document.getElementById('db-retention-months');
+        const retentionMonths = retentionSelect ? retentionSelect.value : '6';
+
+        if (!confirm(`Apakah Anda yakin ingin melakukan Backup dan Pembersihan data histori yang berumur lebih dari ${retentionMonths} bulan?\n\n- Snapshot cadangan utuh akan disimpan di folder backups/archive/\n- SQLite VACUUM akan mengompresi kapasitas memori disk secara fisik.\n- Saldo member & data master TIDAK AKAN terhapus.`)) {
+            return;
+        }
+
+        Toast.info('Memulai backup & pembersihan histori database...');
+
+        try {
+            const res = await API.request('/api/v1/kasir/settings/database/purge-and-vacuum', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ retention_months: parseInt(retentionMonths, 10) })
+            });
+
+            if (res.success) {
+                const initialStr = res.storage_stats ? res.storage_stats.initial_size_human : 'N/A';
+                const finalStr = res.storage_stats ? res.storage_stats.final_size_human : 'N/A';
+                const savedStr = res.storage_stats ? res.storage_stats.saved_space_human : 'N/A';
+
+                const totalRows = res.deleted_summary
+                    ? Object.values(res.deleted_summary).reduce((a, b) => a + b, 0)
+                    : 0;
+
+                const msg = `Pembersihan Selesai!\n\n` +
+                    `📁 Snapshot Backup: ${res.backup_file}\n` +
+                    `🧹 Total Baris Histori Dihapus: ${totalRows.toLocaleString()}\n` +
+                    `💾 Ukuran Disk: ${initialStr} ➔ ${finalStr} (Hemat ${savedStr})`;
+
+                if (window.Modal && typeof window.Modal.alert === 'function') {
+                    Modal.alert({
+                        title: 'Database Maintenance Berhasil',
+                        message: msg.replace(/\n/g, '<br>'),
+                        type: 'success'
+                    });
+                } else {
+                    alert(msg);
+                }
+
+                Toast.success('Optimasi database VACUUM selesai!');
+                this.loadBackupFiles();
+            } else {
+                Toast.error(res.error || 'Gagal mengeksekusi pemeliharaan database.');
+            }
+        } catch (err) {
+            Toast.error('Gagal mengeksekusi pemeliharaan database: ' + err.message);
+        }
+    },
+
     previewQRIS(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
