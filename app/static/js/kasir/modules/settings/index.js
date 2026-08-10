@@ -414,11 +414,11 @@ const Settings = {
         const retentionSelect = document.getElementById('db-retention-months');
         const retentionMonths = retentionSelect ? retentionSelect.value : '6';
 
-        if (!confirm(`Apakah Anda yakin ingin melakukan Backup dan Pembersihan data histori yang berumur lebih dari ${retentionMonths} bulan?\n\n- Snapshot cadangan utuh akan disimpan di folder backups/archive/\n- SQLite VACUUM akan mengompresi kapasitas memori disk secara fisik.\n- Saldo member & data master TIDAK AKAN terhapus.`)) {
+        if (!confirm(`Apakah Anda yakin ingin melakukan Backup dan Pembersihan histori transaksi yang berumur lebih dari ${retentionMonths} bulan?\n\n- File cadangan (backup) otomatis akan disimpan di folder backups/archive/\n- Kapasitas penyimpanan server akan dioptimalkan secara otomatis.\n- Saldo member & data utama TIDAK AKAN terhapus.`)) {
             return;
         }
 
-        Toast.info('Memulai backup & pembersihan histori database...');
+        Toast.info('Membuat backup & membersihkan histori lama...');
 
         try {
             const res = await API.request('/api/v1/kasir/settings/database/purge-and-vacuum', {
@@ -436,14 +436,14 @@ const Settings = {
                     ? Object.values(res.deleted_summary).reduce((a, b) => a + b, 0)
                     : 0;
 
-                const msg = `Pembersihan Selesai!\n\n` +
-                    `📁 Snapshot Backup: ${res.backup_file}\n` +
-                    `🧹 Total Baris Histori Dihapus: ${totalRows.toLocaleString()}\n` +
-                    `💾 Ukuran Disk: ${initialStr} ➔ ${finalStr} (Hemat ${savedStr})`;
+                const msg = `Pembersihan Histori Selesai!\n\n` +
+                    `📁 File Cadangan: ${res.backup_file}\n` +
+                    `🧹 Total Riwayat Dihapus: ${totalRows.toLocaleString()} baris\n` +
+                    `💾 Ukuran Penyimpanan: ${initialStr} ➔ ${finalStr} (Berhasil menghemat ${savedStr})`;
 
                 if (window.Modal && typeof window.Modal.alert === 'function') {
                     Modal.alert({
-                        title: 'Database Maintenance Berhasil',
+                        title: 'Pembersihan Database Berhasil',
                         message: msg.replace(/\n/g, '<br>'),
                         type: 'success'
                     });
@@ -451,13 +451,13 @@ const Settings = {
                     alert(msg);
                 }
 
-                Toast.success('Optimasi database VACUUM selesai!');
+                Toast.success('Pembersihan & pemeliharaan database selesai!');
                 this.loadBackupFiles();
             } else {
-                Toast.error(res.error || 'Gagal mengeksekusi pemeliharaan database.');
+                Toast.error(res.error || 'Gagal melakukan pembersihan database.');
             }
         } catch (err) {
-            Toast.error('Gagal mengeksekusi pemeliharaan database: ' + err.message);
+            Toast.error('Gagal melakukan pembersihan database: ' + err.message);
         }
     },
 

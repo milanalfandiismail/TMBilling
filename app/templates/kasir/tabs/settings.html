@@ -653,45 +653,46 @@
 
             <!-- Card Maintenance Database & Data Retention (Admin Only) -->
             {% if session.get('kasir_role') == 'admin' or session.get('role') == 'admin' %}
-            <div class="bg-neutral-800/80 rounded-2xl border border-neutral-700/80 p-5 lg:p-6 shadow-lg">
-                <div class="flex items-center justify-between mb-4 border-b border-neutral-700/50 pb-3">
-                    <div class="flex items-center space-x-3">
-                        <div class="p-2.5 bg-amber-500/10 rounded-xl border border-amber-500/20 text-amber-400">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
+                <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-4">
+                    <div class="flex items-center gap-4">
+                        <div
+                            class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center">
+                            <svg class="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                </path>
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-base lg:text-lg font-bold text-white flex items-center gap-2">
-                                Database Maintenance & Purge
-                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 font-mono font-semibold">Admin Exclusive</span>
-                            </h3>
-                            <p class="text-xs text-neutral-400">Pembersihan histori lampau & kompresi fisik SQLite disk space (`VACUUM`). Saldo member & data master tetap aman 100%.</p>
+                            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">
+                                Pembersihan Histori Database</h3>
+                            <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Bersihkan riwayat transaksi &amp; log bermain lama untuk menghemat penyimpanan server. Saldo member &amp; data utama tetap aman 100%.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-neutral-300 mb-1.5">Batas Usia Data Histori:</label>
-                        <select id="db-retention-months" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3.5 py-2 text-xs lg:text-sm text-white focus:outline-none focus:border-amber-500/50 transition font-medium">
-                            <option value="1">> 1 Bulan (Hapus data > 30 hari)</option>
-                            <option value="3">> 3 Bulan (Hapus data > 90 hari)</option>
-                            <option value="6" selected>> 6 Bulan (Rekomendasi - Hapus data > 180 hari)</option>
-                            <option value="12">> 1 Tahun (Hapus data > 365 hari)</option>
-                        </select>
+                        <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider mb-1">Hapus Histori Yang Lebih Tua Dari</p>
+                        <p class="text-[9px] lg:text-base text-neutral-500">Pilih rentang waktu riwayat lama yang ingin dibersihkan dari server</p>
                     </div>
-                    <div class="md:col-span-2 flex flex-col md:flex-row items-stretch md:items-center justify-end gap-3 pt-2 md:pt-4">
-                        <button type="button" onclick="Settings.executeDbMaintenance()" class="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs lg:text-sm font-semibold rounded-xl transition shadow-md flex items-center justify-center space-x-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                            <span>Backup &amp; Bersihkan Database</span>
+                    <div class="flex items-center gap-3 w-full md:w-auto">
+                        <select id="db-retention-months" class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-medium">
+                            <option value="1">1 Bulan</option>
+                            <option value="3">3 Bulan</option>
+                            <option value="6" selected>6 Bulan (Rekomendasi)</option>
+                            <option value="12">1 Tahun</option>
+                        </select>
+                        <button onclick="Settings.executeDbMaintenance()"
+                            class="px-4 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors whitespace-nowrap">
+                            Backup &amp; Bersihkan Sekarang
                         </button>
                     </div>
                 </div>
             </div>
             {% endif %}
+
         </div>
     </div>
 
