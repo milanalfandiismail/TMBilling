@@ -414,51 +414,83 @@ const Settings = {
         const retentionSelect = document.getElementById('db-retention-months');
         const retentionMonths = retentionSelect ? retentionSelect.value : '6';
 
-        if (!confirm(`Apakah Anda yakin ingin melakukan Backup dan Pembersihan histori transaksi yang berumur lebih dari ${retentionMonths} bulan?\n\n- File cadangan (backup) otomatis akan disimpan di folder backups/archive/\n- Kapasitas penyimpanan server akan dioptimalkan secara otomatis.\n- Saldo member & data utama TIDAK AKAN terhapus.`)) {
-            return;
-        }
+        const confirmMsg = `Apakah Anda yakin ingin melakukan pembersihan histori transaksi yang berumur lebih dari <strong class="text-neutral-200">${retentionMonths} bulan</strong>?<br><br>` +
+            `<ul class="list-disc pl-4 space-y-1 text-neutral-400 font-medium">` +
+            `<li>File cadangan (backup) otomatis disimpan di folder <code class="text-neutral-300">backups/archive/</code></li>` +
+            `<li>Kapasitas penyimpanan server akan dioptimalkan secara otomatis</li>` +
+            `<li>Saldo member &amp; data utama <strong class="text-emerald-400">TIDAK AKAN terhapus</strong></li>` +
+            `</ul>`;
 
-        Toast.info('Membuat backup & membersihkan histori lama...');
+        Modal.confirm(confirmMsg, async () => {
+            Toast.info('Sedang membuat backup &amp; membersihkan histori...');
 
-        try {
-            const res = await API.request('/api/v1/kasir/settings/database/purge-and-vacuum', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ retention_months: parseInt(retentionMonths, 10) })
-            });
+            try {
+                const res = await API.request('/api/v1/kasir/settings/database/purge-and-vacuum', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ retention_months: parseInt(retentionMonths, 10) })
+                });
 
-            if (res.success) {
-                const initialStr = res.storage_stats ? res.storage_stats.initial_size_human : 'N/A';
-                const finalStr = res.storage_stats ? res.storage_stats.final_size_human : 'N/A';
-                const savedStr = res.storage_stats ? res.storage_stats.saved_space_human : 'N/A';
+                if (res.success) {
+                    const initialStr = res.storage_stats ? res.storage_stats.initial_size_human : '0 B';
+                    const finalStr = res.storage_stats ? res.storage_stats.final_size_human : '0 B';
+                    const savedStr = res.storage_stats ? res.storage_stats.saved_space_human : '0 B';
 
-                const totalRows = res.deleted_summary
-                    ? Object.values(res.deleted_summary).reduce((a, b) => a + b, 0)
-                    : 0;
+                    const totalRows = res.deleted_summary
+                        ? Object.values(res.deleted_summary).reduce((a, b) => a + b, 0)
+                        : 0;
 
-                const msg = `Pembersihan Histori Selesai!\n\n` +
-                    `📁 File Cadangan: ${res.backup_file}\n` +
-                    `🧹 Total Riwayat Dihapus: ${totalRows.toLocaleString()} baris\n` +
-                    `💾 Ukuran Penyimpanan: ${initialStr} ➔ ${finalStr} (Berhasil menghemat ${savedStr})`;
+                    Toast.success('Pembersihan &amp; pemeliharaan database berhasil diselesaikan!');
 
-                if (window.Modal && typeof window.Modal.alert === 'function') {
-                    Modal.alert({
-                        title: 'Pembersihan Database Berhasil',
-                        message: msg.replace(/\n/g, '<br>'),
-                        type: 'success'
-                    });
+                    const modalHtml = `
+                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 max-w-lg w-full space-y-5">
+                            <div class="flex items-center gap-3 border-b border-[#1c1c1c] pb-4">
+                                <div class="w-10 h-10 rounded bg-emerald-950/40 border border-emerald-900/50 flex items-center justify-center text-emerald-400">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-xs lg:text-base font-bold text-neutral-200 uppercase tracking-wider">Pembersihan Database Berhasil</h3>
+                                    <p class="text-[10px] lg:text-xs text-neutral-500">Kapasitas penyimpanan server berhasil dioptimalkan</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-3 text-xs lg:text-sm text-neutral-300 font-medium">
+                                <div class="flex items-center justify-between p-2.5 bg-[#141414] border border-[#222] rounded">
+                                    <span class="text-neutral-400">📁 File Cadangan:</span>
+                                    <span class="font-mono text-neutral-200 font-semibold">${res.backup_file}</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2.5 bg-[#141414] border border-[#222] rounded">
+                                    <span class="text-neutral-400">🧹 Riwayat Dihapus:</span>
+                                    <span class="font-bold text-emerald-400">${totalRows.toLocaleString()} baris</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2.5 bg-[#141414] border border-[#222] rounded">
+                                    <span class="text-neutral-400">💾 Ukuran Storage:</span>
+                                    <span class="font-mono text-neutral-200">${initialStr} ➔ <strong class="text-emerald-400">${finalStr}</strong></span>
+                                </div>
+                                <div class="p-2.5 bg-emerald-950/20 border border-emerald-900/30 rounded text-emerald-400 text-center font-bold">
+                                    ✨ Berhasil menghemat ${savedStr} ruang disk server!
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end pt-2">
+                                <button onclick="Modal.closeModal(); Settings.loadBackupFiles();" class="px-5 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-sm font-bold rounded transition-colors">
+                                    Selesai
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    Modal.show(modalHtml);
+                    this.loadBackupFiles();
                 } else {
-                    alert(msg);
+                    Toast.error(res.error || 'Gagal melakukan pembersihan database.');
                 }
-
-                Toast.success('Pembersihan & pemeliharaan database selesai!');
-                this.loadBackupFiles();
-            } else {
-                Toast.error(res.error || 'Gagal melakukan pembersihan database.');
+            } catch (err) {
+                Toast.error('Gagal melakukan pembersihan database: ' + err.message);
             }
-        } catch (err) {
-            Toast.error('Gagal melakukan pembersihan database: ' + err.message);
-        }
+        });
     },
 
     previewQRIS(input) {
