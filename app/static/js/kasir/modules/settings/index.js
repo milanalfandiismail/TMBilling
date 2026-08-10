@@ -770,6 +770,11 @@ const Settings = {
             target.classList.remove('hidden');
         }
 
+        // Backup & Local files — fetch backup list
+        if (subTab === 'local_backup' || subTab === 'cloud_backup' || subTab === 'backup') {
+            this.loadBackupFiles();
+        }
+
         // Whitelist IP — render & load data
         if (subTab === 'whitelist_ip') {
             this._renderWhitelistIP();
