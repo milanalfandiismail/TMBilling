@@ -14,12 +14,17 @@ const Toast = {
         
         const toast = document.createElement('div');
         const isError = type === 'error';
+        const isInfo = type === 'info';
         const colors = isError 
             ? 'bg-[#0c0c0c] border border-red-950/40 text-red-200' 
-            : 'bg-[#0c0c0c] border border-[#1c1c1c] text-neutral-100';
+            : (isInfo 
+                ? 'bg-[#0c0c0c] border border-blue-950/40 text-blue-200'
+                : 'bg-[#0c0c0c] border border-[#1c1c1c] text-neutral-100');
         const icon = isError
             ? '<svg class="w-4 h-4 shrink-0 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
-            : '<svg class="w-4 h-4 shrink-0 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+            : (isInfo
+                ? '<svg class="w-4 h-4 shrink-0 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+                : '<svg class="w-4 h-4 shrink-0 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>');
         
         toast.className = `pointer-events-auto px-4 py-3 rounded ${colors} shadow-lg flex items-center gap-3 min-w-[300px] transform translate-x-full opacity-0 transition-all duration-300`;
         toast.innerHTML = `${icon}<span class="text-sm font-medium">${msg}</span>`;
@@ -37,5 +42,7 @@ const Toast = {
     },
     
     success(msg) { this.show(msg, 'success'); },
-    error(msg) { this.show(msg, 'error'); }
+    error(msg) { this.show(msg, 'error'); },
+    info(msg) { this.show(msg, 'info'); }
 };
+
