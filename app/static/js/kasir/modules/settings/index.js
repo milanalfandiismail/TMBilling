@@ -414,12 +414,14 @@ const Settings = {
         const retentionSelect = document.getElementById('db-retention-months');
         const retentionMonths = retentionSelect ? retentionSelect.value : '6';
 
-        const confirmMsg = `Apakah Anda yakin ingin melakukan pembersihan histori transaksi yang berumur lebih dari <strong class="text-neutral-200">${retentionMonths} bulan</strong>?<br><br>` +
-            `<ul class="list-disc pl-4 space-y-1 text-neutral-400 font-medium">` +
-            `<li>File cadangan (backup) otomatis disimpan di folder <code class="text-neutral-200 font-mono">backups/archive/</code></li>` +
+        const confirmMsg = `<div class="text-xs lg:text-sm text-neutral-300 space-y-3 leading-relaxed">` +
+            `<p>Apakah Anda yakin ingin melakukan pembersihan histori transaksi yang berumur lebih dari <strong class="text-neutral-100 font-bold underline underline-offset-2">${retentionMonths} bulan</strong>?</p>` +
+            `<ul class="list-disc pl-5 space-y-1.5 text-neutral-400">` +
+            `<li>File cadangan (backup) otomatis disimpan di folder <code class="text-neutral-200 font-mono bg-[#171717] px-1.5 py-0.5 rounded">backups/archive/</code></li>` +
             `<li>Kapasitas penyimpanan server akan dioptimalkan secara otomatis</li>` +
-            `<li>Saldo member &amp; data utama <strong class="text-neutral-200 font-bold">TIDAK AKAN terhapus</strong></li>` +
-            `</ul>`;
+            `<li>Saldo member &amp; data utama <strong class="text-emerald-400 font-bold">TIDAK AKAN terhapus</strong></li>` +
+            `</ul>` +
+            `</div>`;
 
         Modal.confirm(confirmMsg, async () => {
             Toast.info('Sedang membuat backup &amp; membersihkan histori...');
@@ -443,42 +445,42 @@ const Settings = {
                     Toast.success('Pembersihan &amp; pemeliharaan database berhasil diselesaikan!');
 
                     const modalHtml = `
-                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 max-w-md w-full animate-in space-y-4">
+                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 max-w-lg w-full animate-in space-y-5">
                             <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="flex items-center gap-3.5">
+                                    <div class="w-11 h-11 rounded bg-emerald-950/40 border border-emerald-900/50 flex items-center justify-center text-emerald-400 shrink-0">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                         </svg>
                                     </div>
                                     <div>
-                                        <h3 class="text-xs font-bold text-neutral-200 uppercase tracking-wider">Pembersihan Database Berhasil</h3>
-                                        <p class="text-[9px] text-neutral-500 mt-0.5">Kapasitas penyimpanan server berhasil dioptimalkan</p>
+                                        <h3 class="text-sm lg:text-base font-bold text-neutral-100 uppercase tracking-wider">Pembersihan Database Berhasil</h3>
+                                        <p class="text-xs text-neutral-400 mt-0.5">Kapasitas penyimpanan server berhasil dioptimalkan</p>
                                     </div>
                                 </div>
-                                <button onclick="Modal.closeModal(); Settings.loadBackupFiles();" class="text-neutral-500 hover:text-neutral-300 text-xl leading-none">&times;</button>
+                                <button onclick="Modal.closeModal(); Settings.loadBackupFiles();" class="text-neutral-500 hover:text-neutral-300 text-2xl leading-none">&times;</button>
                             </div>
 
-                            <div class="space-y-2.5 text-xs text-neutral-300">
+                            <div class="space-y-3 text-xs lg:text-sm text-neutral-300">
                                 <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded flex items-center justify-between">
                                     <span class="text-neutral-400">📁 File Cadangan</span>
-                                    <span class="font-mono text-neutral-200 font-bold">${res.backup_file}</span>
+                                    <span class="font-mono text-neutral-100 font-bold">${res.backup_file}</span>
                                 </div>
                                 <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded flex items-center justify-between">
                                     <span class="text-neutral-400">🧹 Riwayat Dihapus</span>
-                                    <span class="font-bold text-neutral-200">${totalRows.toLocaleString()} baris</span>
+                                    <span class="font-bold text-emerald-400 text-sm lg:text-base">${totalRows.toLocaleString()} baris</span>
                                 </div>
                                 <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded flex items-center justify-between">
                                     <span class="text-neutral-400">💾 Ukuran Storage</span>
-                                    <span class="font-mono text-neutral-200">${initialStr} ➔ <strong class="text-neutral-100">${finalStr}</strong></span>
+                                    <span class="font-mono text-neutral-200">${initialStr} ➔ <strong class="text-emerald-400">${finalStr}</strong></span>
                                 </div>
-                                <div class="p-3 bg-[#171717] border border-[#262626] rounded text-center font-bold text-neutral-200">
+                                <div class="p-3.5 bg-emerald-950/20 border border-emerald-900/30 rounded text-center font-bold text-xs lg:text-sm text-emerald-400">
                                     ✨ Berhasil menghemat ${savedStr} ruang disk server!
                                 </div>
                             </div>
 
-                            <div class="flex justify-end pt-2 border-t border-[#1c1c1c]">
-                                <button onclick="Modal.closeModal(); Settings.loadBackupFiles();" class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors">
+                            <div class="flex justify-end pt-3 border-t border-[#1c1c1c]">
+                                <button onclick="Modal.closeModal(); Settings.loadBackupFiles();" class="px-5 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-sm font-bold rounded transition-colors">
                                     Selesai
                                 </button>
                             </div>
