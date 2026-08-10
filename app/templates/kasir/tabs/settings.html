@@ -652,7 +652,7 @@
             </div>
 
             <!-- Card Maintenance Database & Data Retention (Admin Only) -->
-            {% if session.get('role') == 'admin' %}
+            {% if session.get('kasir_role') == 'admin' or session.get('role') == 'admin' %}
             <div class="bg-neutral-800/80 rounded-2xl border border-neutral-700/80 p-5 lg:p-6 shadow-lg">
                 <div class="flex items-center justify-between mb-4 border-b border-neutral-700/50 pb-3">
                     <div class="flex items-center space-x-3">
