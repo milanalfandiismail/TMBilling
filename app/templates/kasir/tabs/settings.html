@@ -4,6 +4,7 @@
     <div class="w-full space-y-6">
 
         <!-- ==================== SUB-TAB: GENERAL ==================== -->
+        <!-- ==================== SUB-TAB: GENERAL (UMUM & KEAMANAN) ==================== -->
         <div id="subtab-general" class="subtab-content space-y-6">
             <!-- Card: Auto Shutdown -->
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
@@ -86,7 +87,7 @@
                     <div>
                         <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Timezone
                             Display</p>
-                        <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Semua waktu di dashboard & laporan akan
+                        <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Semua waktu di dashboard &amp; laporan akan
                             ditampilkan dalam zona waktu ini</p>
                     </div>
                     <div class="flex items-center gap-2">
@@ -100,7 +101,10 @@
                         class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">Simpan</button>
                 </div>
             </div>
+        </div>
 
+        <!-- ==================== SUB-TAB: METODE PEMBAYARAN ==================== -->
+        <div id="subtab-payment" class="subtab-content hidden space-y-6">
             <!-- Card: Payment Methods -->
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
                 <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">💳 Metode
@@ -130,7 +134,10 @@
                         class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">Simpan Perubahan</button>
                 </div>
             </div>
+        </div>
 
+        <!-- ==================== SUB-TAB: INFO WARNET & KIOSK ==================== -->
+        <div id="subtab-kiosk" class="subtab-content hidden space-y-6">
             <!-- Card: Konfigurasi Kiosk Screen -->
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
                 <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Konfigurasi Info
@@ -245,10 +252,13 @@
                         Pengaturan Kiosk</button>
                 </div>
             </div>
+        </div>
 
+        <!-- ==================== SUB-TAB: TV SIGNAGE ==================== -->
+        <div id="subtab-tv" class="subtab-content hidden space-y-6">
             <!-- Card: Konfigurasi TV Signage -->
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
-                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">📺 Konfigurasi TV Signage & Digital Signage</h3>
+                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">📺 Konfigurasi TV Signage &amp; Digital Signage</h3>
 
                 <!-- Running Text -->
                 <div class="flex flex-col md:flex-row gap-4">
@@ -288,15 +298,15 @@
                     <div class="flex-1 space-y-3">
                         <label class="flex items-center gap-3 cursor-pointer">
                             <input type="checkbox" id="tv-slide-1" class="rounded border-[#1c1c1c] bg-[#050505] text-emerald-500 focus:ring-0 w-4 h-4" checked>
-                            <span class="text-xs lg:text-base text-neutral-300 font-medium">Slide 1: Live PC Grid & Okupansi Map</span>
+                            <span class="text-xs lg:text-base text-neutral-300 font-medium">Slide 1: Live PC Grid &amp; Okupansi Map</span>
                         </label>
                         <label class="flex items-center gap-3 cursor-pointer">
                             <input type="checkbox" id="tv-slide-3" class="rounded border-[#1c1c1c] bg-[#050505] text-emerald-500 focus:ring-0 w-4 h-4" checked>
-                            <span class="text-xs lg:text-base text-neutral-300 font-medium">Slide 2: Daftar Paket Billing & Promo Aktif</span>
+                            <span class="text-xs lg:text-base text-neutral-300 font-medium">Slide 2: Daftar Paket Billing &amp; Promo Aktif</span>
                         </label>
                         <label class="flex items-center gap-3 cursor-pointer">
                             <input type="checkbox" id="tv-slide-4" class="rounded border-[#1c1c1c] bg-[#050505] text-emerald-500 focus:ring-0 w-4 h-4" checked>
-                            <span class="text-xs lg:text-base text-neutral-300 font-medium">Slide 3: Pengumuman & Aturan Warnet</span>
+                            <span class="text-xs lg:text-base text-neutral-300 font-medium">Slide 3: Pengumuman &amp; Aturan Warnet</span>
                         </label>
                     </div>
                 </div>
@@ -369,7 +379,7 @@
                     Cleanup Log</h3>
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Interval &
+                        <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Interval &amp;
                             Umur Log</p>
                         <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Hapus otomatis log aktivitas yang lebih
                             lama dari periode tertentu</p>
@@ -428,7 +438,7 @@
             <div class="flex justify-end">
                 <button onclick="Settings.saveSchedulerConfig()"
                     class="px-6 py-3 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
-                    💾 Simpan & Restart Scheduler
+                    💾 Simpan &amp; Restart Scheduler
                 </button>
             </div>
         </div>
@@ -436,9 +446,8 @@
         <!-- ==================== SUB-TAB: MIGRASI & UPDATE ==================== -->
         {% include "kasir/settings/migration.html" %}
 
-        <!-- ==================== SUB-TAB: BACKUP ==================== -->
-        <!-- ==================== SUB-TAB: BACKUP ==================== -->
-        <div id="subtab-backup" class="subtab-content hidden space-y-6">
+        <!-- ==================== SUB-TAB: CLOUD BACKUP ==================== -->
+        <div id="subtab-cloud_backup" class="subtab-content hidden space-y-6">
             <!-- Card: Database & Cloud Backup Settings -->
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
                 <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-4">
@@ -614,7 +623,10 @@
                     </div>
                 </div>
             </div>
+        </div>
 
+        <!-- ==================== SUB-TAB: BERKAS BACKUP LOKAL ==================== -->
+        <div id="subtab-local_backup" class="subtab-content hidden space-y-6">
             <!-- Card: Local Backup List -->
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-4">
                 <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Berkas Cadangan Lokal (Maks 5 File Teratas)</h3>
@@ -637,10 +649,12 @@
                     </table>
                 </div>
             </div>
+        </div>
 
-
+        <!-- ==================== SUB-TAB: PEMBERSIHAN DATABASE ==================== -->
+        {% if session.get('kasir_role') == 'admin' or session.get('role') == 'admin' %}
+        <div id="subtab-db_cleanup" class="subtab-content hidden space-y-6">
             <!-- Card Maintenance Database & Data Retention (Admin Only) -->
-            {% if session.get('kasir_role') == 'admin' or session.get('role') == 'admin' %}
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
                 <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-4">
                     <div class="flex items-center gap-4">
@@ -679,11 +693,11 @@
                     </div>
                 </div>
             </div>
-            {% endif %}
-
         </div>
-    </div>
+        {% endif %}
 
+    </div>
 </div>
+
 
 
