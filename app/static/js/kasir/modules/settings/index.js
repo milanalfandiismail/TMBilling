@@ -445,10 +445,10 @@ const Settings = {
                     Toast.success('Pembersihan &amp; pemeliharaan database berhasil diselesaikan!');
 
                     const modalHtml = `
-                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 max-w-lg w-full animate-in space-y-5">
-                            <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-4">
+                        <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-6 max-w-lg w-full animate-in space-y-5">
+                            <div class="flex items-center justify-between border-b border-[#2a2a2a] pb-4">
                                 <div class="flex items-center gap-3.5">
-                                    <div class="w-11 h-11 rounded bg-emerald-950/40 border border-emerald-900/50 flex items-center justify-center text-emerald-400 shrink-0">
+                                    <div class="w-11 h-11 rounded-lg bg-emerald-950/40 border border-emerald-900/50 flex items-center justify-center text-emerald-400 shrink-0">
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                         </svg>
@@ -462,25 +462,25 @@ const Settings = {
                             </div>
 
                             <div class="space-y-3 text-xs lg:text-sm text-neutral-300">
-                                <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded flex items-center justify-between">
+                                <div class="p-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg flex items-center justify-between">
                                     <span class="text-neutral-400">📁 File Cadangan</span>
                                     <span class="font-mono text-neutral-100 font-bold">${res.backup_file}</span>
                                 </div>
-                                <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded flex items-center justify-between">
+                                <div class="p-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg flex items-center justify-between">
                                     <span class="text-neutral-400">🧹 Riwayat Dihapus</span>
                                     <span class="font-bold text-emerald-400 text-sm lg:text-base">${totalRows.toLocaleString()} baris</span>
                                 </div>
-                                <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded flex items-center justify-between">
+                                <div class="p-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg flex items-center justify-between">
                                     <span class="text-neutral-400">💾 Ukuran Storage</span>
                                     <span class="font-mono text-neutral-200">${initialStr} ➔ <strong class="text-emerald-400">${finalStr}</strong></span>
                                 </div>
-                                <div class="p-3.5 bg-emerald-950/20 border border-emerald-900/30 rounded text-center font-bold text-xs lg:text-sm text-emerald-400">
+                                <div class="p-3.5 bg-emerald-950/20 border border-emerald-900/30 rounded-lg text-center font-bold text-xs lg:text-sm text-emerald-400">
                                     ✨ Berhasil menghemat ${savedStr} ruang disk server!
                                 </div>
                             </div>
 
-                            <div class="flex justify-end pt-3 border-t border-[#1c1c1c]">
-                                <button onclick="Modal.closeModal(); Settings.loadBackupFiles();" class="px-5 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-sm font-bold rounded transition-colors">
+                            <div class="flex justify-end pt-3 border-t border-[#2a2a2a]">
+                                <button onclick="Modal.closeModal(); Settings.loadBackupFiles();" class="px-5 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-sm font-bold rounded-lg transition-colors">
                                     Selesai
                                 </button>
                             </div>
