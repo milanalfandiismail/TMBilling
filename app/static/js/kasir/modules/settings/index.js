@@ -1,7 +1,12 @@
 const Settings = {
-    async load() {
+    currentSubTab: 'general',
+
+    async load(preserveSubTab = false) {
         // Tampilkan sub-tab default (Umum & Kiosk) segera agar halaman tidak kosong
-        this.switchSubTab('general');
+        if (!preserveSubTab && !this.currentSubTab) {
+            this.currentSubTab = 'general';
+        }
+        this.switchSubTab(this.currentSubTab);
 
         try {
             const res = await API.settings.getAll();
@@ -709,7 +714,7 @@ const Settings = {
             }
             
             Toast.success('Pengaturan Kiosk berhasil disimpan');
-            await this.load(); // Refresh data
+            await this.load(true); // Refresh data
         } catch (err) {
             Toast.error('Gagal menyimpan pengaturan Kiosk: ' + err.message);
         }
@@ -746,16 +751,19 @@ const Settings = {
             });
 
             Toast.success('Pengaturan TV Signage berhasil disimpan');
-            await this.load();
+            await this.load(true);
         } catch (err) {
             Toast.error('Gagal menyimpan pengaturan TV Signage: ' + err.message);
         }
     },
 
     switchSubTab(subTab) {
+        if (subTab) {
+            this.currentSubTab = subTab;
+        }
         document.querySelectorAll('.subnav-item').forEach(btn => {
             const onclick = btn.getAttribute('onclick') || '';
-            if (onclick.includes(`'${subTab}'`)) {
+            if (onclick.includes(`'${this.currentSubTab}'`)) {
                 btn.classList.add('bg-neutral-800', 'text-neutral-100', 'font-bold');
                 btn.classList.remove('text-neutral-400', 'hover:text-neutral-100', 'hover:bg-[#121212]');
             } else {
@@ -765,24 +773,24 @@ const Settings = {
         });
 
         document.querySelectorAll('.subtab-content').forEach(el => el.classList.add('hidden'));
-        const target = document.getElementById(`subtab-${subTab}`);
+        const target = document.getElementById(`subtab-${this.currentSubTab}`);
         if (target) {
             target.classList.remove('hidden');
         }
 
         // Backup & Local files — fetch backup list
-        if (subTab === 'local_backup' || subTab === 'cloud_backup' || subTab === 'backup') {
+        if (this.currentSubTab === 'local_backup' || this.currentSubTab === 'cloud_backup' || this.currentSubTab === 'backup') {
             this.loadBackupFiles();
         }
 
         // Whitelist IP — render & load data
-        if (subTab === 'whitelist_ip') {
+        if (this.currentSubTab === 'whitelist_ip') {
             this._renderWhitelistIP();
             this._loadWhitelistStatus();
         }
 
         // Migrasi & Update — init module
-        if (subTab === 'migration') {
+        if (this.currentSubTab === 'migration') {
             if (typeof MigrationModule !== 'undefined') {
                 MigrationModule.init();
             }
@@ -959,16 +967,37 @@ const Settings = {
             document.getElementById('wlNewIp').value = '';
             document.getElementById('wlNewLabel').value = '';
             await this._wlRefreshList();
-        } catch (e) {}
+            if (typeof Toast !== 'undefined') Toast.success('IP Whitelist berhasil ditambahkan');
+        } catch (e) {
+            if (typeof Toast !== 'undefined') Toast.error('Gagal menambahkan IP Whitelist');
+        }
     },
 
     async _wlRemove(ip) {
         if (!confirm(`Hapus ${ip}?`)) return;
-        try { await this._wlFetch('DELETE', `/api/v1/kasir/settings/ip-whitelist/${ip}`); await this._wlRefreshList(); } catch (e) {}
+        try { 
+            await this._wlFetch('DELETE', `/api/v1/kasir/settings/ip-whitelist/${ip}`); 
+            await this._wlRefreshList(); 
+            if (typeof Toast !== 'undefined') Toast.info('IP Whitelist berhasil dihapus');
+        } catch (e) {
+            if (typeof Toast !== 'undefined') Toast.error('Gagal menghapus IP Whitelist');
+        }
     },
 
     async _wlToggle(enabled) {
-        try { await this._wlFetch('POST', '/api/v1/kasir/settings/ip-whitelist/toggle', { enabled }); } catch (e) { document.getElementById('wlToggle').checked = !enabled; }
+        try { 
+            await this._wlFetch('POST', '/api/v1/kasir/settings/ip-whitelist/toggle', { enabled }); 
+            if (typeof Toast !== 'undefined') {
+                if (enabled) {
+                    Toast.success('Whitelist IP diaktifkan');
+                } else {
+                    Toast.info('Whitelist IP dinonaktifkan');
+                }
+            }
+        } catch (e) { 
+            document.getElementById('wlToggle').checked = !enabled; 
+            if (typeof Toast !== 'undefined') Toast.error('Gagal mengubah status Whitelist IP');
+        }
     },
 
     async _wlRegenerate() {
@@ -982,7 +1011,13 @@ const Settings = {
 
     async _wlSavePublicUrl() {
         const url = document.getElementById('wlPublicUrl').value.trim();
-        try { await this._wlFetch('POST', '/api/v1/kasir/settings/app-public-url', { url }); await this._loadWhitelistStatus(); } catch (e) {}
+        try { 
+            await this._wlFetch('POST', '/api/v1/kasir/settings/app-public-url', { url }); 
+            await this._loadWhitelistStatus(); 
+            if (typeof Toast !== 'undefined') Toast.success('URL Publik berhasil disimpan');
+        } catch (e) {
+            if (typeof Toast !== 'undefined') Toast.error('Gagal menyimpan URL Publik');
+        }
     },
 
     _wlCopyUrl() {

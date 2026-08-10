@@ -85,7 +85,13 @@ const App = {
         }
 
         // RBAC: Kasir tidak boleh membuka tab admin-only
-        const kasirOnlyRestricted = ['user', 'log', 'settings_general', 'settings_backup', 'settings_scheduler', 'settings_migration', 'analytics', 'uptime'];
+        const kasirOnlyRestricted = [
+            'user', 'log', 
+            'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv', 
+            'settings_cloud_backup', 'settings_local_backup', 'settings_db_cleanup', 
+            'settings_scheduler', 'settings_migration', 
+            'analytics', 'uptime'
+        ];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');
             tab = 'dash';
@@ -129,8 +135,13 @@ const App = {
             log: 'sistemlog',
             monitor: 'system', server_statistic: 'system', hardware_checker: 'system', maintenance: 'system', blackout: 'system', screenshot: 'system', uptime: 'system',
             settings_general: 'settings',
+            settings_payment: 'settings',
+            settings_kiosk: 'settings',
+            settings_tv: 'settings',
             whitelist_ip: 'settings',
-            settings_backup: 'settings',
+            settings_cloud_backup: 'settings',
+            settings_local_backup: 'settings',
+            settings_db_cleanup: 'settings',
             settings_scheduler: 'settings',
             settings_migration: 'settings',
             analytics: 'analytics',
@@ -198,7 +209,7 @@ const App = {
         if (tab.startsWith('settings_') || tab === 'whitelist_ip') {
             const sub = tab === 'whitelist_ip' ? 'whitelist_ip' : tab.replace('settings_', '');
             if (typeof Settings !== 'undefined') {
-                await Settings.load();
+                await Settings.load(true);
                 Settings.switchSubTab(sub);
             }
             return;
