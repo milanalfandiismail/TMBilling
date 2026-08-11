@@ -198,6 +198,7 @@ const App = {
             settings_db_cleanup: 'Pembersihan Database',
             settings_scheduler: 'Auto Scheduler',
             settings_migration: 'Migrasi & Update',
+            settings_tutorials: 'Dokumentasi & Tutorial',
             analytics: 'Analytics Owner',
             plugins: 'Plugins & Ekstensi',
             mikrotik: 'MikroTik Hotspot'
