@@ -189,7 +189,16 @@ toolbar: [
 ]
 ```
 
-- [ ] **Step 2: Load `tutorials/index.js` script in `dashboard.html`**
+- [ ] **Step 2: Add subtab-general responsive typography & card styling**
+
+Ensure UI classes match `subtab-general` (Umum & Keamanan):
+- Header titles: `text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider`
+- Subtitle/descriptions: `text-[9px] lg:text-base text-neutral-500 mt-1`
+- Buttons & badges: `text-xs lg:text-base font-bold rounded transition-colors`
+- Card containers: `bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-4`
+- Article text: `prose prose-invert max-w-none text-xs lg:text-base text-neutral-300 leading-relaxed`
+
+- [ ] **Step 3: Load `tutorials/index.js` script in `dashboard.html`**
 
 Add `<script src="{{ url_for('static', filename='js/kasir/modules/tutorials/index.js') }}"></script>` to `dashboard.html`.
 

@@ -41,9 +41,11 @@ Pembaruan ini bertujuan untuk:
 - Custom Upload Adapter JS function in `app/static/js/kasir/modules/tutorials/index.js` or `settings/index.js`.
 - Intercepts file uploads in CKEditor 5, uploads to `/api/v1/kasir/tutorials/upload-image`, and inserts `<img src="..." />` into the editor DOM.
 
----
+## 3. Component UI/UX Consistency (Matching Umum & Keamanan)
 
-## 3. Component UI/UX Consistency
-- Title Bar: Standard `App.updatePageTitle('tutorials')` -> `"Dokumentasi & Tutorial"`.
-- Tab Content Container: `<div id="tab-tutorials" class="tab-content hidden space-y-6">`
-- Article Render: `prose prose-invert max-w-none text-neutral-300` with styled `img` tags (`rounded-xl border border-[#262626] shadow-lg my-4`).
+Untuk menjamin 100% konsistensi visual dengan tab **Umum & Keamanan**:
+- **Title Header**: `text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider`
+- **Sub-header / Deskripsi**: `text-[9px] lg:text-base text-neutral-500 mt-1`
+- **Tombol / Badges**: `text-xs lg:text-base font-bold rounded transition-colors`
+- **Card Container**: `bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-4`
+- **Artikel Prose**: `prose prose-invert max-w-none text-xs lg:text-base text-neutral-300 leading-relaxed` dengan gambar `rounded border border-[#262626] shadow-lg max-w-full my-4`.
