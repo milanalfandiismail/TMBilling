@@ -57,6 +57,7 @@ from app.services.server_monitor.server_monitor_service import ServerMonitorServ
 from app.services.maintenance.maintenance_service import MaintenanceService
 from app.services.cloudflare_tunnel.cloudflare_tunnel_service import CloudflareTunnelService
 from app.services.vnc.vnc_service import VNCService
+from app.services.tutorial.tutorial_service import TutorialService
 
 __all__ = [
     "ShiftService",
@@ -87,5 +88,6 @@ __all__ = [
     "ServerMonitorService",
     "MaintenanceService",
     "CloudflareTunnelService",
-    "VNCService"
+    "VNCService",
+    "TutorialService"
 ]

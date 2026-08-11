@@ -241,6 +241,13 @@ def _init_app_context(app):
             CloudflareTunnelService.init_app(app)
         except Exception as e:
             app.logger.warning(f"Gagal inisialisasi CloudflareTunnelService: {e}")
+
+        # Seed tutorial/panduan awal sistem jika database kosong
+        try:
+            from app.services import TutorialService
+            TutorialService.seed_initial_tutorials()
+        except Exception as e:
+            app.logger.warning(f"Gagal seed tutorial awal: {e}")
         
         # Otomatis buat user admin default jika database kosong
         try:
