@@ -4,6 +4,18 @@ Dokumen ini berisi panduan penginstalan dan konfigurasi **TightVNC Server** di P
 
 ---
 
+## 📌 Ringkasan Port yang Digunakan
+
+Berikut adalah daftar port jaringan yang digunakan oleh komponen Remote Control VNC di PC Server:
+
+| Port | Protokol | Layanan / Service | Fungsi & Penjelasan |
+| :--- | :--- | :--- | :--- |
+| **`7015`** | HTTP | Web Server TMBilling | Port utama aplikasi web & dashboard kasir TMBilling. |
+| **`8081`** | WebSocket | Websockify Proxy | Daemon proxy Python TMBilling yang menerjemahkan koneksi `ws://` / `wss://` dari browser ke protokol VNC. |
+| **`5900`** | TCP / RFB | TightVNC Server | Port native service TightVNC Server di PC Windows. |
+
+---
+
 ## 1. Unduh & Instalasi TightVNC Server
 
 1. **Unduh Installer**:
