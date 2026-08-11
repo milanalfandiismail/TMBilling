@@ -49,3 +49,9 @@ Untuk menjamin 100% konsistensi visual dengan tab **Umum & Keamanan**:
 - **Tombol / Badges**: `text-xs lg:text-base font-bold rounded transition-colors`
 - **Card Container**: `bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-4`
 - **Artikel Prose**: `prose prose-invert max-w-none text-xs lg:text-base text-neutral-300 leading-relaxed` dengan gambar `rounded border border-[#262626] shadow-lg max-w-full my-4`.
+
+---
+
+## 4. Port Correction (5000 to 7015)
+- Port bawaan TMBilling adalah **`7015`** (bukan `5000`). Semua file dokumentasi (seperti `docs/FEATURE_CLOUDFLARE_TUNNEL.md`, `app/services/tutorial/tutorial_service.py` seed data) wajib diperbarui dari port `5000` ke `7015` agar petunjuk konfigurasi akurat.
+- Port VNC tetap `5900` dan WebSocket VNC tetap `8081`.

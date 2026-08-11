@@ -212,3 +212,24 @@ Run: `npm run build:css` and test Flask factory boot & API endpoints.
 git add app/static/js/kasir/ app/templates/kasir/
 git commit -m "fitur: integrasi ckeditor 5 image upload adapter dan modul tutorials"
 ```
+
+---
+
+### Task 5: Port Corrections (5000 to 7015)
+
+**Files:**
+- Modify: `docs/FEATURE_CLOUDFLARE_TUNNEL.md`
+- Modify: `app/services/tutorial/tutorial_service.py`
+
+- [ ] **Step 1: Replace port 5000 with 7015 in docs/FEATURE_CLOUDFLARE_TUNNEL.md**
+
+- [ ] **Step 2: Replace port 5000 with 7015 in app/services/tutorial/tutorial_service.py**
+
+Ensure both `localhost:5000` -> `localhost:7015` and `http://100.x.y.z:5000` -> `http://100.x.y.z:7015`.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add docs/FEATURE_CLOUDFLARE_TUNNEL.md app/services/tutorial/tutorial_service.py
+git commit -m "fitur: perbarui port default tmbilling dari 5000 ke 7015 pada dokumentasi"
+```
