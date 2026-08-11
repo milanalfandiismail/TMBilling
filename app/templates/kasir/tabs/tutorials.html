@@ -1,5 +1,51 @@
-<!-- ===== TAB: TUTORIALS & DOKUMENTASI ===== -->
 <script src="{{ url_for('static', filename='vendor/ckeditor/ckeditor.js') }}"></script>
+
+<style>
+/* CKEditor 5 Dark Theme overrides */
+.ck-editor__main .ck-content {
+    background-color: #050505 !important;
+    color: #e5e5e5 !important;
+    border-color: #1c1c1c !important;
+    min-height: 300px;
+}
+.ck.ck-editor__top .ck-toolbar {
+    background-color: #0c0c0c !important;
+    border-color: #1c1c1c !important;
+}
+.ck.ck-button {
+    color: #e5e5e5 !important;
+}
+.ck.ck-button:hover, .ck.ck-button:active {
+    background-color: #1c1c1c !important;
+    color: #fff !important;
+}
+.ck.ck-button.ck-on {
+    background-color: #262626 !important;
+    color: #fff !important;
+}
+.ck.ck-dropdown__panel {
+    background-color: #0c0c0c !important;
+    border-color: #1c1c1c !important;
+}
+.ck.ck-list {
+    background-color: #0c0c0c !important;
+}
+.ck.ck-list__item .ck-button:hover {
+    background-color: #1c1c1c !important;
+}
+.ck.ck-toolbar__separator {
+    background-color: #1c1c1c !important;
+}
+/* Prose image display styles */
+.prose img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid #1c1c1c;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    margin: 1.5rem 0;
+}
+</style>
 
 <div id="tab-tutorials" class="tab-content hidden space-y-6">
     <!-- Header Bar & Actions -->

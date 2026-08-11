@@ -95,7 +95,7 @@ const Tutorials = {
                     </div>
                     ${isAdmin ? `
                     <div class="flex items-center gap-2">
-                        <button onclick="Tutorials.openTutorialModal(${t.id})" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-amber-400 text-xs lg:text-base font-bold rounded transition-colors border border-[#262626]">
+                        <button onclick="Tutorials.openTutorialModal(${t.id})" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors border border-[#262626]">
                             ✏️ Edit
                         </button>
                         <button onclick="Tutorials.deleteTutorial(${t.id})" class="px-4 py-2 bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 text-xs lg:text-base font-bold rounded transition-colors border border-rose-900/50">
