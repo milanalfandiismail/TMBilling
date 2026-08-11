@@ -585,7 +585,7 @@ def purge_and_vacuum_database():
 def cloudflare_tunnel_status():
     """GET — Status terkini dari Cloudflare Tunnel daemon."""
     try:
-        from app.services.cloudflare_tunnel_service import CloudflareTunnelService
+        from app.services import CloudflareTunnelService
         status = CloudflareTunnelService.get_status()
         return jsonify({"success": True, "status": status})
     except Exception as e:
@@ -619,7 +619,7 @@ def cloudflare_tunnel_toggle():
     try:
         data = request.get_json(silent=True) or {}
         enable = data.get("enable", False)
-        from app.services.cloudflare_tunnel_service import CloudflareTunnelService
+        from app.services import CloudflareTunnelService
         
         if enable:
             ok, msg = CloudflareTunnelService.start_tunnel()

@@ -1080,6 +1080,8 @@ const Settings = {
     // CLOUDFLARE TUNNEL AUTO-MANAGER
     // ------------------------------------------------------------------
 
+    _cfPoller: null,
+
     async loadCloudflareTunnelStatus() {
         const badge = document.getElementById('cf-tunnel-status-badge');
         const tokenInput = document.getElementById('cf-tunnel-token-input');
@@ -1105,6 +1107,40 @@ const Settings = {
                     } else {
                         tokenInput.value = '';
                         tokenInput.placeholder = 'Masukkan token eyJh...';
+                    }
+                }
+
+                // Handle download progress
+                if (s.download && s.download.downloading) {
+                    this._cfWasDownloading = true;
+                    const dl = s.download;
+                    const downloadedMb = (dl.downloaded_bytes / 1048576).toFixed(1);
+                    const totalMb = dl.total_bytes > 0 ? (dl.total_bytes / 1048576).toFixed(1) : '?';
+                    
+                    badge.textContent = `🟡 Mengunduh cloudflared (${dl.percent}%)...`;
+                    badge.className = 'px-3 py-1 rounded text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30';
+
+                    Toast.progress(
+                        'cf-download',
+                        'Mengunduh cloudflared.exe',
+                        dl.percent,
+                        `${downloadedMb} MB / ${totalMb} MB`
+                    );
+
+                    if (!this._cfPoller) {
+                        this._cfPoller = setInterval(() => this.loadCloudflareTunnelStatus(), 300);
+                    }
+                    return;
+                } else {
+                    if (this._cfPoller) {
+                        clearInterval(this._cfPoller);
+                        this._cfPoller = null;
+                    }
+                    if (this._cfWasDownloading) {
+                        this._cfWasDownloading = false;
+                        if (s.download && s.download.percent === 100) {
+                            Toast.progress('cf-download', 'Unduhan Selesai!', 100, 'cloudflared.exe berhasil diverifikasi');
+                        }
                     }
                 }
 

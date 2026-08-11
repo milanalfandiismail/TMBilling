@@ -43,6 +43,55 @@ const Toast = {
     
     success(msg) { this.show(msg, 'success'); },
     error(msg) { this.show(msg, 'error'); },
-    info(msg) { this.show(msg, 'info'); }
+    info(msg) { this.show(msg, 'info'); },
+
+    progress(id, title, percent, detail = '') {
+        this.init();
+        const toastId = `toast-progress-${id}`;
+        let toast = document.getElementById(toastId);
+
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = 'pointer-events-auto px-4 py-3 rounded bg-[#0c0c0c] border border-amber-500/40 text-neutral-100 shadow-xl flex flex-col gap-1.5 min-w-[320px] transform translate-x-full opacity-0 transition-all duration-300';
+            this.container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            });
+        }
+
+        const safePercent = Math.min(100, Math.max(0, percent || 0));
+        toast.innerHTML = `
+            <div class="flex items-center justify-between text-xs lg:text-sm font-semibold text-amber-400 gap-4">
+                <span class="flex items-center gap-2 mr-2">
+                    <svg class="w-4 h-4 animate-spin text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    ${title}
+                </span>
+                <span class="font-mono text-amber-300 font-bold shrink-0">${safePercent}%</span>
+            </div>
+            <div class="w-full bg-neutral-800 rounded-full h-2 overflow-hidden mt-0.5 border border-neutral-700">
+                <div class="bg-gradient-to-r from-amber-500 to-emerald-500 h-full transition-all duration-200" style="width: ${safePercent}%"></div>
+            </div>
+            ${detail ? `<span class="text-[10px] text-neutral-400 font-mono mt-0.5">${detail}</span>` : ''}
+        `;
+
+        if (safePercent >= 100) {
+            setTimeout(() => {
+                this.closeProgress(id);
+            }, 1800);
+        }
+    },
+
+    closeProgress(id) {
+        const toastId = `toast-progress-${id}`;
+        const toast = document.getElementById(toastId);
+        if (toast) {
+            toast.classList.add('translate-x-full', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }
+    }
 };
 

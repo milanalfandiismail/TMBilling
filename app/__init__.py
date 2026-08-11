@@ -237,7 +237,7 @@ def _init_app_context(app):
         
         # Init Cloudflare Tunnel auto-start daemon jika enabled
         try:
-            from app.services.cloudflare_tunnel_service import CloudflareTunnelService
+            from app.services import CloudflareTunnelService
             CloudflareTunnelService.init_app(app)
         except Exception as e:
             app.logger.warning(f"Gagal inisialisasi CloudflareTunnelService: {e}")

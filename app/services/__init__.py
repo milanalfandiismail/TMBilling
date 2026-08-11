@@ -55,6 +55,8 @@ from app.services.plugins.plugin_manager import PluginManager
 from app.services.plugins.base_plugin import BasePlugin
 from app.services.server_monitor.server_monitor_service import ServerMonitorService
 from app.services.maintenance.maintenance_service import MaintenanceService
+from app.services.cloudflare_tunnel.cloudflare_tunnel_service import CloudflareTunnelService
+from app.services.vnc.vnc_service import VNCService
 
 __all__ = [
     "ShiftService",
@@ -83,5 +85,7 @@ __all__ = [
     "TransaksiService",
     "UserService",
     "ServerMonitorService",
-    "MaintenanceService"
+    "MaintenanceService",
+    "CloudflareTunnelService",
+    "VNCService"
 ]

@@ -1,4 +1,4 @@
-# app/services/vnc_service.py
+# app/services/vnc/vnc_service.py
 import subprocess
 import socket
 import sys
