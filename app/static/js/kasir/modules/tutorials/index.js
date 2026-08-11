@@ -199,14 +199,17 @@ const Tutorials = {
 
                         this.ckeditorInstance = await ClassicEditor.create(editorEl, {
                             plugins: plugins,
-                            toolbar: [
-                                'heading', '|',
-                                'bold', 'italic', 'underline', 'strikethrough', 'highlight', '|',
-                                'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
-                                'alignment', 'link', 'bulletedList', 'numberedList', 'todoList', 'outdent', 'indent', '|',
-                                'blockQuote', 'codeBlock', 'insertTable', 'imageUpload', '|',
-                                'undo', 'redo'
-                            ],
+                            toolbar: {
+                                items: [
+                                    'heading', '|',
+                                    'bold', 'italic', 'underline', 'strikethrough', 'highlight', '|',
+                                    'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
+                                    'alignment', 'link', 'bulletedList', 'numberedList', 'todoList', 'outdent', 'indent', '|',
+                                    'blockQuote', 'codeBlock', 'insertTable', 'imageUpload', '|',
+                                    'undo', 'redo'
+                                ],
+                                shouldNotGroupWhenFull: true
+                            },
                             alignment: {
                                 options: [ 'left', 'center', 'right', 'justify' ]
                             },
