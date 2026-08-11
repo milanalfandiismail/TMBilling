@@ -180,48 +180,24 @@ const Tutorials = {
                 try {
                     const editorEl = document.querySelector('#tutorial-content-editor');
                     if (editorEl) {
-                        const {
-                            ClassicEditor,
-                            Essentials,
-                            Paragraph,
-                            Heading,
-                            Bold,
-                            Italic,
-                            Underline,
-                            Strikethrough,
-                            Link,
-                            List,
-                            TodoList,
-                            Indent,
-                            IndentBlock,
-                            BlockQuote,
-                            CodeBlock,
-                            Table,
-                            TableToolbar,
-                            TableProperties,
-                            TableCellProperties,
-                            Image,
-                            ImageToolbar,
-                            ImageCaption,
-                            ImageStyle,
-                            ImageUpload,
-                            ImageResize,
-                            Alignment,
-                            FontSize,
-                            FontFamily,
-                            FontColor,
-                            FontBackgroundColor,
-                            Highlight
-                        } = CKEDITOR;
-
-                        this.ckeditorInstance = await ClassicEditor.create(editorEl, {
-                            plugins: [
-                                Essentials, Paragraph, Heading, Bold, Italic, Underline, Strikethrough,
-                                Link, List, TodoList, Indent, IndentBlock, BlockQuote, CodeBlock, Table, TableToolbar,
-                                TableProperties, TableCellProperties,
-                                Image, ImageToolbar, ImageCaption, ImageStyle, ImageUpload, ImageResize,
-                                Alignment, FontSize, FontFamily, FontColor, FontBackgroundColor, Highlight,
-                                CustomUploadAdapterPlugin
+                        this.ckeditorInstance = await CKEDITOR.ClassicEditor.create(editorEl, {
+                            extraPlugins: [CustomUploadAdapterPlugin],
+                            removePlugins: [
+                                'CloudServices',
+                                'CloudServicesCommentsAdapter',
+                                'CloudServicesCore',
+                                'CloudServicesUploadAdapter',
+                                'PresenceList',
+                                'InlineAnnotations',
+                                'AIAssistantEditing',
+                                'PaginationUI',
+                                'CKBox',
+                                'CKFinder',
+                                'EasyImage',
+                                'ExportPdf',
+                                'ExportWord',
+                                'MathType',
+                                'WProofreader'
                             ],
                             toolbar: [
                                 'heading', '|',
