@@ -173,6 +173,10 @@ const Tutorials = {
         await this.loadCategories(categoryVal);
         modal.classList.remove('hidden');
 
+        if (typeof ckeditor5 !== 'undefined') {
+            window.ClassicEditor = ckeditor5.ClassicEditor;
+        }
+
         if (typeof ClassicEditor !== 'undefined') {
             if (this.ckeditorInstance) {
                 this.ckeditorInstance.setData(contentHtml);
@@ -180,8 +184,21 @@ const Tutorials = {
                 try {
                     const editorEl = document.querySelector('#tutorial-content-editor');
                     if (editorEl) {
+                        const plugins = typeof ckeditor5 !== 'undefined' ? [
+                            ckeditor5.Essentials, ckeditor5.Paragraph, ckeditor5.Heading,
+                            ckeditor5.Bold, ckeditor5.Italic, ckeditor5.Underline, ckeditor5.Strikethrough,
+                            ckeditor5.Alignment, ckeditor5.FontColor, ckeditor5.FontBackgroundColor,
+                            ckeditor5.FontSize, ckeditor5.FontFamily, ckeditor5.Highlight,
+                            ckeditor5.Link, ckeditor5.List, ckeditor5.TodoList,
+                            ckeditor5.Indent, ckeditor5.IndentBlock, ckeditor5.BlockQuote, ckeditor5.CodeBlock,
+                            ckeditor5.Table, ckeditor5.TableToolbar, ckeditor5.TableProperties, ckeditor5.TableCellProperties,
+                            ckeditor5.Image, ckeditor5.ImageToolbar, ckeditor5.ImageCaption, ckeditor5.ImageStyle,
+                            ckeditor5.ImageUpload, ckeditor5.ImageResize, ckeditor5.Undo,
+                            CustomUploadAdapterPlugin
+                        ] : [CustomUploadAdapterPlugin];
+
                         this.ckeditorInstance = await ClassicEditor.create(editorEl, {
-                            extraPlugins: [CustomUploadAdapterPlugin],
+                            plugins: plugins,
                             toolbar: [
                                 'heading', '|',
                                 'bold', 'italic', 'underline', 'strikethrough', 'highlight', '|',
