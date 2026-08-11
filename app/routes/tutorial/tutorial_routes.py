@@ -5,7 +5,7 @@ from app.services import TutorialService
 
 tutorial_api_bp = Blueprint("tutorial", __name__)
 
-@tutorial_api_bp.route("", methods=["GET"])
+@tutorial_api_bp.route("/", methods=["GET"], strict_slashes=False)
 @login_required
 def get_tutorials():
     """GET — Ambil seluruh daftar panduan sistem."""
@@ -18,7 +18,7 @@ def get_tutorials():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@tutorial_api_bp.route("", methods=["POST"])
+@tutorial_api_bp.route("/", methods=["POST"], strict_slashes=False)
 @login_required
 @admin_required
 def create_tutorial():
@@ -37,7 +37,7 @@ def create_tutorial():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@tutorial_api_bp.route("/<int:tutorial_id>", methods=["PUT"])
+@tutorial_api_bp.route("/<int:tutorial_id>", methods=["PUT"], strict_slashes=False)
 @login_required
 @admin_required
 def update_tutorial(tutorial_id):
@@ -56,7 +56,7 @@ def update_tutorial(tutorial_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@tutorial_api_bp.route("/<int:tutorial_id>", methods=["DELETE"])
+@tutorial_api_bp.route("/<int:tutorial_id>", methods=["DELETE"], strict_slashes=False)
 @login_required
 @admin_required
 def delete_tutorial(tutorial_id):

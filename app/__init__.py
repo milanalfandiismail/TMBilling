@@ -114,6 +114,7 @@ def _register_blueprints(app):
     csrf.exempt(monitor_api_bp)
     csrf.exempt(shift_api_bp)
     csrf.exempt(server_monitor_bp)
+    csrf.exempt(tutorial_api_bp)
 
 def _register_public_routes(app):
     """Mendaftarkan route publik."""
