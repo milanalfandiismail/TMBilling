@@ -38,10 +38,11 @@ from app.models.game.game import Game
 from app.models.game.game_kategori import GameKategori
 from app.models.maintenance.maintenance import MaintenanceTicket
 from app.models.pc.pc_uptime import PCUptimeLog
+from app.models.tutorial.tutorial_model import SystemTutorial
 
 __all__ = [
     'db', 'now_local', 'Grup', 'Paket', 'Member', 'PC', 'Sesi', 'Transaksi', 
     'User', 'Settings', 'MikroTikConfig', 'HardwareMonitor', 'PCProcess', 'MenuItem', 'TransaksiMenu',
     'Turnamen', 'TurnamenTahap', 'TurnamenTim', 'TurnamenMatch',
-    'ShiftRecord', 'Game', 'GameKategori', 'MaintenanceTicket', 'PCUptimeLog'
+    'ShiftRecord', 'Game', 'GameKategori', 'MaintenanceTicket', 'PCUptimeLog', 'SystemTutorial'
 ]
