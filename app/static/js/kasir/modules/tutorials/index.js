@@ -173,108 +173,15 @@ const Tutorials = {
         await this.loadCategories(categoryVal);
         modal.classList.remove('hidden');
 
-        if (typeof CKEDITOR !== 'undefined') {
+        if (typeof ClassicEditor !== 'undefined') {
             if (this.ckeditorInstance) {
                 this.ckeditorInstance.setData(contentHtml);
             } else {
                 try {
                     const editorEl = document.querySelector('#tutorial-content-editor');
                     if (editorEl) {
-                        const disabledPlugins = [
-                            'RealTimeCollaborativeEditing',
-                            'RealTimeCollaborativeComments',
-                            'RealTimeCollaborativeTrackChanges',
-                            'RealTimeCollaborativeRevisionHistory',
-                            'RevisionHistory',
-                            'RevisionHistoryUI',
-                            'RevisionHistoryEditing',
-                            'RevisionHistoryService',
-                            'CollaborativeEditingService',
-                            'Comments',
-                            'CommentsEditing',
-                            'CommentsUI',
-                            'CommentsOnly',
-                            'CommentsRepository',
-                            'TrackChanges',
-                            'TrackChangesEditing',
-                            'TrackChangesUI',
-                            'TrackChangesRepository',
-                            'TrackChangesService',
-                            'PresenceList',
-                            'InlineAnnotations',
-                            'CloudServices',
-                            'CloudServicesCommentsAdapter',
-                            'CloudServicesCore',
-                            'CloudServicesUploadAdapter',
-                            'AIAssistant',
-                            'AIAssistantEditing',
-                            'AIAssistantUI',
-                            'Pagination',
-                            'PaginationUI',
-                            'CKBox',
-                            'CKBoxEditing',
-                            'CKBoxUI',
-                            'CKBoxUploadAdapter',
-                            'CKBoxUtils',
-                            'CKBoxImageEdit',
-                            'CKBoxImageEditEditing',
-                            'CKBoxImageEditUI',
-                            'CKFinder',
-                            'CKFinderEditing',
-                            'CKFinderUI',
-                            'CKFinderUploadAdapter',
-                            'EasyImage',
-                            'ExportPdf',
-                            'ExportWord',
-                            'MathType',
-                            'WProofreader',
-                            'WProofreaderEditing',
-                            'WProofreaderUI',
-                            'FormatPainter',
-                            'FormatPainterUI',
-                            'FormatPainterEditing',
-                            'CaseChange',
-                            'CaseChangeUI',
-                            'CaseChangeEditing'
-                        ];
-
-                        if (CKEDITOR.ClassicEditor && CKEDITOR.ClassicEditor.builtinPlugins) {
-                            CKEDITOR.ClassicEditor.builtinPlugins = CKEDITOR.ClassicEditor.builtinPlugins.filter(p => {
-                                return p && !disabledPlugins.includes(p.pluginName);
-                            });
-                        }
-
-                        this.ckeditorInstance = await CKEDITOR.ClassicEditor.create(editorEl, {
-                            extraPlugins: [CustomUploadAdapterPlugin],
-                            toolbar: [
-                                'heading', '|',
-                                'bold', 'italic', 'underline', 'strikethrough', 'highlight', '|',
-                                'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
-                                'alignment', 'link', 'bulletedList', 'numberedList', 'todoList', 'outdent', 'indent', '|',
-                                'blockQuote', 'codeBlock', 'insertTable', 'imageUpload', '|',
-                                'undo', 'redo'
-                            ],
-                            alignment: {
-                                options: [ 'left', 'center', 'right', 'justify' ]
-                            },
-                            image: {
-                                toolbar: [
-                                    'imageStyle:inline',
-                                    'imageStyle:block',
-                                    'imageStyle:side',
-                                    '|',
-                                    'toggleImageCaption',
-                                    'imageTextAlternative',
-                                    '|',
-                                    'resizeImage'
-                                ]
-                            },
-                            table: {
-                                contentToolbar: [
-                                    'tableColumn', 'tableRow', 'mergeTableCells',
-                                    'tableProperties', 'tableCellProperties'
-                                ]
-                            }
+                        this.ckeditorInstance = await ClassicEditor.create(editorEl, {
+                            extraPlugins: [CustomUploadAdapterPlugin]
                         });
                         this.ckeditorInstance.setData(contentHtml);
                     }
