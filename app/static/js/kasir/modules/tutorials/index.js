@@ -181,7 +181,36 @@ const Tutorials = {
                     const editorEl = document.querySelector('#tutorial-content-editor');
                     if (editorEl) {
                         this.ckeditorInstance = await ClassicEditor.create(editorEl, {
-                            extraPlugins: [CustomUploadAdapterPlugin]
+                            extraPlugins: [CustomUploadAdapterPlugin],
+                            toolbar: [
+                                'heading', '|',
+                                'bold', 'italic', 'underline', 'strikethrough', 'highlight', '|',
+                                'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
+                                'alignment', 'link', 'bulletedList', 'numberedList', 'todoList', 'outdent', 'indent', '|',
+                                'blockQuote', 'codeBlock', 'insertTable', 'imageUpload', '|',
+                                'undo', 'redo'
+                            ],
+                            alignment: {
+                                options: [ 'left', 'center', 'right', 'justify' ]
+                            },
+                            image: {
+                                toolbar: [
+                                    'imageStyle:inline',
+                                    'imageStyle:block',
+                                    'imageStyle:side',
+                                    '|',
+                                    'toggleImageCaption',
+                                    'imageTextAlternative',
+                                    '|',
+                                    'resizeImage'
+                                ]
+                            },
+                            table: {
+                                contentToolbar: [
+                                    'tableColumn', 'tableRow', 'mergeTableCells',
+                                    'tableProperties', 'tableCellProperties'
+                                ]
+                            }
                         });
                         this.ckeditorInstance.setData(contentHtml);
                     }
