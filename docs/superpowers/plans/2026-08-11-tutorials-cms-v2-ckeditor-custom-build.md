@@ -40,7 +40,7 @@ Create `tools/ckeditor-builder/package.json`:
   "description": "Permanent local builder tool for TMBilling custom CKEditor 5 standalone bundle",
   "private": true,
   "scripts": {
-    "build": "esbuild src/build.js --bundle --minify --outfile=../../app/static/vendor/ckeditor/ckeditor.js"
+    "build": "esbuild src/build.js --bundle --minify --outfile=../../app/static/vendor/ckeditor/ckeditor.js --loader:.svg=text --loader:.css=css"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-alignment": "^38.0.0",
@@ -170,7 +170,7 @@ Expected: `ckeditor.js` generated in `app/static/vendor/ckeditor/ckeditor.js`.
 
 - [ ] **Step 4: Commit**
 
-Run: `git add tools/ckeditor-builder package.json app/static/vendor/ckeditor/ckeditor.js`
+Run: `git add tools/ckeditor-builder package.json app/static/vendor/ckeditor/ckeditor.js app/static/vendor/ckeditor/ckeditor.css`
 Run: `git commit -m "fitur: buat alat kompilasi kustom ckeditor 5 di tools/ckeditor-builder"`
 
 ---
