@@ -52,12 +52,12 @@ def upload_tutorial_image():
 
     ext = file.filename.rsplit('.', 1)[1].lower()
     filename = f"{uuid.uuid4().hex}.{ext}"
-    upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'tutorials')
+    upload_dir = os.path.join(current_app.root_path, 'static', 'assets', 'tutorials')
     os.makedirs(upload_dir, exist_ok=True)
     file_path = os.path.join(upload_dir, filename)
     file.save(file_path)
 
-    url = f"/static/uploads/tutorials/{filename}"
+    url = f"/static/assets/tutorials/{filename}"
     return jsonify({"url": url, "uploaded": True})
 ```
 

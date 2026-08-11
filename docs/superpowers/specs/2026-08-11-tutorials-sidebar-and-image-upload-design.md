@@ -27,11 +27,11 @@ Pembaruan ini bertujuan untuk:
 - ID Tab Utama: `tab-tutorials` (`app/templates/kasir/tabs/tutorials.html` - terpisah dari `settings.html`).
 
 ### 2.2 Image Upload Endpoint & Storage
-- Storage Folder: `app/static/uploads/tutorials/`
+- Storage Folder: `app/static/assets/tutorials/`
 - Endpoint: `POST /api/v1/kasir/tutorials/upload-image`
 - Header: `@login_required`, `@admin_required`
 - Payload: Multipart form file (`upload` field per CKEditor standard upload adapter interface)
-- Response JSON: `{ "url": "/static/uploads/tutorials/<filename>.png" }`
+- Response JSON: `{ "url": "/static/assets/tutorials/<filename>.png" }`
 
 ### 2.3 CKEditor 5 Image Upload Adapter Integration
 - Custom Upload Adapter JS function in `app/static/js/kasir/modules/tutorials/index.js` or `settings/index.js`.
