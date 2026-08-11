@@ -173,20 +173,85 @@ const Tutorials = {
         await this.loadCategories(categoryVal);
         modal.classList.remove('hidden');
 
-        if (typeof ClassicEditor !== 'undefined') {
+        if (typeof CKEDITOR !== 'undefined') {
             if (this.ckeditorInstance) {
                 this.ckeditorInstance.setData(contentHtml);
             } else {
                 try {
                     const editorEl = document.querySelector('#tutorial-content-editor');
                     if (editorEl) {
+                        const {
+                            ClassicEditor,
+                            Essentials,
+                            Paragraph,
+                            Heading,
+                            Bold,
+                            Italic,
+                            Underline,
+                            Strikethrough,
+                            Link,
+                            List,
+                            TodoList,
+                            Indent,
+                            IndentBlock,
+                            BlockQuote,
+                            CodeBlock,
+                            Table,
+                            TableToolbar,
+                            TableProperties,
+                            TableCellProperties,
+                            Image,
+                            ImageToolbar,
+                            ImageCaption,
+                            ImageStyle,
+                            ImageUpload,
+                            ImageResize,
+                            Alignment,
+                            FontSize,
+                            FontFamily,
+                            FontColor,
+                            FontBackgroundColor,
+                            Highlight
+                        } = CKEDITOR;
+
                         this.ckeditorInstance = await ClassicEditor.create(editorEl, {
-                            extraPlugins: [CustomUploadAdapterPlugin],
+                            plugins: [
+                                Essentials, Paragraph, Heading, Bold, Italic, Underline, Strikethrough,
+                                Link, List, TodoList, Indent, IndentBlock, BlockQuote, CodeBlock, Table, TableToolbar,
+                                TableProperties, TableCellProperties,
+                                Image, ImageToolbar, ImageCaption, ImageStyle, ImageUpload, ImageResize,
+                                Alignment, FontSize, FontFamily, FontColor, FontBackgroundColor, Highlight,
+                                CustomUploadAdapterPlugin
+                            ],
                             toolbar: [
                                 'heading', '|',
-                                'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', 'insertTable', 'imageUpload', '|',
+                                'bold', 'italic', 'underline', 'strikethrough', 'highlight', '|',
+                                'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
+                                'alignment', 'link', 'bulletedList', 'numberedList', 'todoList', 'outdent', 'indent', '|',
+                                'blockQuote', 'codeBlock', 'insertTable', 'imageUpload', '|',
                                 'undo', 'redo'
-                            ]
+                            ],
+                            alignment: {
+                                options: [ 'left', 'center', 'right', 'justify' ]
+                            },
+                            image: {
+                                toolbar: [
+                                    'imageStyle:inline',
+                                    'imageStyle:block',
+                                    'imageStyle:side',
+                                    '|',
+                                    'toggleImageCaption',
+                                    'imageTextAlternative',
+                                    '|',
+                                    'resizeImage'
+                                ]
+                            },
+                            table: {
+                                contentToolbar: [
+                                    'tableColumn', 'tableRow', 'mergeTableCells',
+                                    'tableProperties', 'tableCellProperties'
+                                ]
+                            }
                         });
                         this.ckeditorInstance.setData(contentHtml);
                     }
