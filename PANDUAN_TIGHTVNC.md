@@ -146,4 +146,28 @@ ingress:
 > [!IMPORTANT]
 > Pastikan port firewall **8081** (websockify) dan **5900** (TightVNC) diperbolehkan (Allowed) dalam Windows Defender Firewall jika diakses melintasi interface jaringan yang berbeda.
 
+---
+
+## 5. Akses Remote via Tailscale / ZeroTier (VPN Mesh - Tanpa Setting Path)
+
+Jika Anda menginginkan akses remote dari luar jaringan **paling mudah tanpa perlu menyetting domain, HTTPS, reverse proxy, atau path Cloudflare Tunnel**, Anda dapat menggunakan layanan **VPN Mesh** gratis seperti **Tailscale** atau **ZeroTier**.
+
+### Cara Kerja:
+Dengan Tailscale / ZeroTier, PC Server Kasir dan perangkat Anda (Laptop/HP/Tablet luar) akan berada di dalam jaringan privat maya yang sama. Browser akan mengakses TMBilling via IP Virtual Tailscale (`http://100.x.y.z:7015`), sehingga koneksi WebSocket VNC akan otomatis langsung tersambung ke `ws://100.x.y.z:8081` tanpa perlu proxy path `/ws/vnc`!
+
+### Langkah Setting Tailscale (Rekomendasi ⚡):
+1. **Instal Tailscale di PC Server**:
+   - Unduh dan instal Tailscale untuk Windows: [https://tailscale.com/download](https://tailscale.com/download)
+   - Login dengan akun Anda (Google/Microsoft/GitHub).
+   - Catat **IP Tailscale PC Server** (Format: `100.x.y.z`).
+2. **Instal Tailscale di Perangkat Remote (HP / Laptop Luar)**:
+   - Instal aplikasi Tailscale di Android / iOS / Laptop luar Anda.
+   - Login menggunakan **akun yang sama** dengan PC Server.
+3. **Buka TMBilling & Remote VNC**:
+   - Buka browser di perangkat remote, ketik URL: `http://100.x.y.z:7015`
+   - Masuk ke menu **Sistem & Utilitas** -> **📡 Remote Control Server**.
+   - Masukkan password VNC lalu klik **▶ Hubungkan**.
+   - Remote Control VNC akan langsung lancar terhubung 100% tanpa kendala!
+
+
 
