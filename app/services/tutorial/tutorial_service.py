@@ -112,6 +112,10 @@ class TutorialService:
         return TutorialRepository.get_all_categories()
 
     @staticmethod
+    def delete_category(category_name):
+        return TutorialRepository.delete_category(category_name)
+
+    @staticmethod
     def seed_initial_tutorials():
         try:
             existing = TutorialRepository.get_all()

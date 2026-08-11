@@ -31,6 +31,7 @@ function CustomUploadAdapterPlugin(editor) {
 const Tutorials = {
     tutorialsData: [],
     activeTutorialCategory: 'Semua',
+    selectedTutorialId: null,
     ckeditorInstance: null,
 
     async load() {
@@ -42,6 +43,10 @@ const Tutorials = {
             const res = await API.request('/api/v1/kasir/tutorials');
             if (res.success) {
                 this.tutorialsData = res.tutorials || [];
+                // Auto select first tutorial if not set
+                if (!this.selectedTutorialId && this.tutorialsData.length > 0) {
+                    this.selectedTutorialId = this.tutorialsData[0].id;
+                }
                 this.renderTutorialsList();
             }
         } catch (err) {
@@ -49,66 +54,140 @@ const Tutorials = {
         }
     },
 
-    filterTutorials(category, btnEl) {
-        this.activeTutorialCategory = category;
-        document.querySelectorAll('.tutorial-cat-btn').forEach(btn => {
-            btn.className = 'tutorial-cat-btn px-4 py-2 bg-[#0c0c0c] text-neutral-400 hover:text-white font-bold text-xs lg:text-base rounded transition-all border border-[#1c1c1c]';
-        });
-        if (btnEl) {
-            btnEl.className = 'tutorial-cat-btn px-4 py-2 bg-neutral-800 text-white font-bold text-xs lg:text-base rounded transition-all border border-[#262626]';
-        }
+    selectTutorial(id) {
+        this.selectedTutorialId = id;
         this.renderTutorialsList();
     },
 
     renderTutorialsList() {
-        const container = document.getElementById('tutorials-container');
-        if (!container) return;
+        this.renderSidebar();
+        this.renderActiveTutorial();
+    },
 
-        let filtered = this.tutorialsData;
-        if (this.activeTutorialCategory !== 'Semua') {
-            filtered = filtered.filter(t => t.category.toLowerCase().includes(this.activeTutorialCategory.toLowerCase()));
-        }
+    renderSidebar() {
+        const sidebar = document.getElementById('wiki-sidebar');
+        if (!sidebar) return;
 
-        if (filtered.length === 0) {
-            container.innerHTML = `
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-12 text-center text-neutral-500">
-                    <span class="text-4xl block mb-2">📭</span>
-                    <p class="font-bold text-xs lg:text-base">Belum ada panduan untuk kategori ini.</p>
+        // Group by category
+        const catMap = {};
+        this.tutorialsData.forEach(t => {
+            const cat = t.category || 'Kosong';
+            if (!catMap[cat]) catMap[cat] = [];
+            catMap[cat].push(t);
+        });
+
+        const categories = Object.keys(catMap).sort();
+        const isAdmin = App.user && App.user.role === 'admin';
+
+        let html = '';
+        categories.forEach(cat => {
+            const items = catMap[cat];
+            const icon = cat === 'Kosong' ? '📁' : '⚙️';
+            
+            html += `
+                <div class="space-y-2">
+                    <div class="group flex items-center justify-between px-2 pb-1 border-b border-[#1c1c1c]">
+                        <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">${icon} ${cat}</span>
+                        ${isAdmin && cat !== 'Kosong' ? `
+                        <button onclick="Tutorials.deleteCategory('${cat}')"
+                            title="Hapus Kategori '${cat}'"
+                            class="opacity-0 group-hover:opacity-100 text-[10px] text-neutral-500 hover:text-rose-400 transition-opacity">
+                            🗑️
+                        </button>
+                        ` : ''}
+                    </div>
+                    <div class="space-y-1 pl-1">
+                        ${items.map(t => {
+                            const isActive = t.id === this.selectedTutorialId;
+                            return `
+                                <button onclick="Tutorials.selectTutorial(${t.id})"
+                                    class="w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                        isActive
+                                            ? 'bg-neutral-800 text-white border border-[#262626]'
+                                            : 'text-neutral-400 hover:bg-neutral-900/60 hover:text-white border border-transparent'
+                                    }">
+                                    ${t.icon || '🌐'} ${t.title}
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        });
+
+        sidebar.innerHTML = html;
+    },
+
+    renderActiveTutorial() {
+        const area = document.getElementById('wiki-reader-area');
+        if (!area) return;
+
+        const tutorial = this.tutorialsData.find(t => t.id === this.selectedTutorialId);
+        const isAdmin = App.user && App.user.role === 'admin';
+
+        if (!tutorial) {
+            area.innerHTML = `
+                <div class="flex-1 flex flex-col items-center justify-center text-center p-12 text-neutral-500">
+                    <span class="text-5xl block mb-3">📖</span>
+                    <h4 class="font-bold text-base text-neutral-400">Pilih Panduan Untuk Dibaca</h4>
+                    <p class="text-xs text-neutral-600 mt-1 max-w-sm">Klik salah satu panduan di sidebar kiri untuk melihat petunjuk penggunaan lengkap.</p>
                 </div>
             `;
             return;
         }
 
-        const isAdmin = App.user && App.user.role === 'admin';
-
-        container.innerHTML = filtered.map(t => `
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-4 shadow-lg hover:border-[#262626] transition-all">
-                <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-4">
+        area.innerHTML = `
+            <div class="space-y-6">
+                <!-- Reader Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1c1c1c] pb-5">
                     <div class="flex items-center gap-3">
-                        <span class="text-2xl">${t.icon || '🌐'}</span>
+                        <span class="text-3xl lg:text-4xl p-2.5 bg-neutral-900 border border-[#262626] rounded-xl">${tutorial.icon || '🌐'}</span>
                         <div>
-                            <h4 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">${t.title}</h4>
-                            <span class="inline-block mt-1 text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded bg-neutral-900 border border-[#262626] text-neutral-400">
-                                ${t.category}
-                            </span>
+                            <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">${tutorial.category}</span>
+                            <h2 class="text-base lg:text-2xl font-bold text-neutral-100 tracking-wide mt-0.5">${tutorial.title}</h2>
                         </div>
                     </div>
+
                     ${isAdmin ? `
-                    <div class="flex items-center gap-2">
-                        <button onclick="Tutorials.openTutorialModal(${t.id})" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors border border-[#262626]">
-                            ✏️ Edit
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button onclick="Tutorials.openTutorialModal(${tutorial.id})" class="px-3.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold rounded-lg transition-all border border-[#262626] flex items-center gap-1.5">
+                            <span>✏️</span> Edit
                         </button>
-                        <button onclick="Tutorials.deleteTutorial(${t.id})" class="px-4 py-2 bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 text-xs lg:text-base font-bold rounded transition-colors border border-rose-900/50">
-                            🗑️ Hapus
+                        <button onclick="Tutorials.deleteTutorial(${tutorial.id})" class="px-3.5 py-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 text-xs font-bold rounded-lg transition-all border border-rose-900/50 flex items-center gap-1.5">
+                            <span>🗑️</span> Hapus
                         </button>
                     </div>
                     ` : ''}
                 </div>
+
+                <!-- Reader Content -->
                 <div class="prose prose-invert max-w-none text-xs lg:text-base text-neutral-300 leading-relaxed overflow-x-auto">
-                    ${t.content}
+                    ${tutorial.content}
                 </div>
             </div>
-        `).join('');
+        `;
+    },
+
+    async deleteCategory(categoryName) {
+        if (!confirm(`Apakah Anda yakin ingin menghapus kategori '${categoryName}'?\nSemua panduan dalam kategori ini akan dipindahkan ke kategori 'Kosong'.`)) {
+            return;
+        }
+
+        try {
+            const res = await API.request(`/api/v1/kasir/tutorials/categories/${encodeURIComponent(categoryName)}`, {
+                method: 'DELETE'
+            });
+
+            if (res.success) {
+                Toast.success(res.message);
+                this.selectedTutorialId = null;
+                await this.loadTutorials();
+            } else {
+                Toast.error(res.error || 'Gagal menghapus kategori');
+            }
+        } catch (err) {
+            Toast.error('Error menghapus kategori: ' + err.message);
+        }
     },
 
     handleCategorySelectChange(val) {
@@ -210,6 +289,24 @@ const Tutorials = {
                                 ],
                                 shouldNotGroupWhenFull: true
                             },
+                            fontFamily: {
+                                options: [
+                                    'default',
+                                    'Inter, sans-serif',
+                                    'Roboto, sans-serif',
+                                    'Arial, Helvetica, sans-serif',
+                                    'Courier New, Courier, monospace',
+                                    'Georgia, serif',
+                                    'Tahoma, Geneva, sans-serif',
+                                    'Times New Roman, Times, serif',
+                                    'Verdana, Geneva, sans-serif'
+                                ],
+                                supportAllValues: true
+                            },
+                            fontSize: {
+                                options: [ 9, 11, 12, 14, 'default', 18, 20, 24, 28, 32 ],
+                                supportAllValues: true
+                            },
                             alignment: {
                                 options: [ 'left', 'center', 'right', 'justify' ]
                             },
@@ -307,6 +404,9 @@ const Tutorials = {
 
             if (res.success) {
                 Toast.success(res.message);
+                if (this.selectedTutorialId === id) {
+                    this.selectedTutorialId = null;
+                }
                 await this.loadTutorials();
             } else {
                 Toast.error(res.error || 'Gagal menghapus panduan');

@@ -95,6 +95,20 @@ def get_categories():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@tutorial_api_bp.route("/categories/<path:category_name>", methods=["DELETE"], strict_slashes=False)
+@login_required
+@admin_required
+def delete_category(category_name):
+    """DELETE — Hapus kategori dan pindahkan tutorial ke 'Kosong' (Khusus Admin)."""
+    try:
+        updated_count = TutorialService.delete_category(category_name)
+        return jsonify({
+            "success": True,
+            "message": f"Kategori '{category_name}' berhasil dihapus. {updated_count} panduan dipindahkan ke kategori Kosong."
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @tutorial_api_bp.route("/upload-image", methods=["POST"], strict_slashes=False)
 @login_required
 @admin_required

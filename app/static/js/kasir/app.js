@@ -2,6 +2,10 @@ const App = {
     currentTab: 'dash',
 
     async init() {
+        if (window.IS_DOCUMENTATION_PAGE) {
+            await this.checkAuth();
+            return;
+        }
         const loggedIn = await this.checkAuth();
         if (!loggedIn) {
             return;

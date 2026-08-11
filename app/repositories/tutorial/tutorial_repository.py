@@ -52,6 +52,15 @@ class TutorialRepository:
         return True
 
     @staticmethod
+    def delete_category(category_name):
+        category_name = str(category_name).strip()
+        tuts = SystemTutorial.query.filter_by(category=category_name).all()
+        for t in tuts:
+            t.category = "Kosong"
+        db.session.commit()
+        return len(tuts)
+
+    @staticmethod
     def get_all_categories():
         categories = db.session.query(SystemTutorial.category).distinct().all()
         result = set([c[0] for c in categories if c[0]])
