@@ -575,4 +575,66 @@ def purge_and_vacuum_database():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-    return execute_request()
+# ------------------------------------------------------------------
+# CLOUDFLARE TUNNEL AUTO-MANAGER ENDPOINTS
+# ------------------------------------------------------------------
+
+@settings_api_bp.route("/cloudflare-tunnel/status", methods=["GET"])
+@login_required
+@admin_required
+def cloudflare_tunnel_status():
+    """GET — Status terkini dari Cloudflare Tunnel daemon."""
+    try:
+        from app.services.cloudflare_tunnel_service import CloudflareTunnelService
+        status = CloudflareTunnelService.get_status()
+        return jsonify({"success": True, "status": status})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@settings_api_bp.route("/cloudflare-tunnel/save-token", methods=["POST"])
+@login_required
+@admin_required
+def cloudflare_tunnel_save_token():
+    """POST — Simpan token Cloudflare Tunnel."""
+    try:
+        data = request.get_json(silent=True) or {}
+        token = data.get("token", "").strip()
+        SettingsService.set("cloudflare_tunnel_token", token)
+        write_log(
+            aksi="CLOUDFLARE_TUNNEL_SAVE_TOKEN",
+            detail="Token Cloudflare Tunnel diubah",
+            user=session.get("kasir_username", "admin")
+        )
+        return jsonify({"success": True, "message": "Token Cloudflare Tunnel berhasil disimpan"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@settings_api_bp.route("/cloudflare-tunnel/toggle", methods=["POST"])
+@login_required
+@admin_required
+def cloudflare_tunnel_toggle():
+    """POST — Jalankan atau Hentikan Cloudflare Tunnel daemon."""
+    try:
+        data = request.get_json(silent=True) or {}
+        enable = data.get("enable", False)
+        from app.services.cloudflare_tunnel_service import CloudflareTunnelService
+        
+        if enable:
+            ok, msg = CloudflareTunnelService.start_tunnel()
+        else:
+            ok, msg = CloudflareTunnelService.stop_tunnel()
+
+        if ok:
+            write_log(
+                aksi="CLOUDFLARE_TUNNEL_TOGGLE",
+                detail=f"Cloudflare Tunnel {'diaktifkan' if enable else 'dinonaktifkan'}",
+                user=session.get("kasir_username", "admin")
+            )
+            return jsonify({"success": True, "message": msg, "running": enable})
+        else:
+            return jsonify({"success": False, "error": msg}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+

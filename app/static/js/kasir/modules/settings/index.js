@@ -789,6 +789,11 @@ const Settings = {
             this._loadWhitelistStatus();
         }
 
+        // Cloudflare Tunnel — load status
+        if (this.currentSubTab === 'cloudflare_tunnel') {
+            this.loadCloudflareTunnelStatus();
+        }
+
         // Migrasi & Update — init module
         if (this.currentSubTab === 'migration') {
             if (typeof MigrationModule !== 'undefined') {
@@ -1038,6 +1043,27 @@ const Settings = {
             document.body.appendChild(ta);
             ta.select();
             document.execCommand('copy');
+        }
+    },
+
+    _wlCopyUrl() {
+        const el = document.getElementById('wlUrlDisplay');
+        const text = el ? (el.textContent || '') : '';
+        if (!text || text === '-') {
+            alert('URL token belum tersedia.');
+            return;
+        }
+        try {
+            navigator.clipboard.writeText(text);
+            Toast.success('URL token disalin!');
+        } catch (e) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
             document.body.removeChild(ta);
             alert('URL token disalin!');
         }
@@ -1048,6 +1074,104 @@ const Settings = {
         const d = document.createElement('div');
         d.appendChild(document.createTextNode(s));
         return d.innerHTML;
+    },
+
+    // ------------------------------------------------------------------
+    // CLOUDFLARE TUNNEL AUTO-MANAGER
+    // ------------------------------------------------------------------
+
+    async loadCloudflareTunnelStatus() {
+        const badge = document.getElementById('cf-tunnel-status-badge');
+        const tokenInput = document.getElementById('cf-tunnel-token-input');
+        const toggle = document.getElementById('cf-tunnel-toggle');
+        if (!badge) return;
+
+        try {
+            const res = await API.request('/api/v1/kasir/settings/cloudflare-tunnel/status');
+            if (res.success && res.status) {
+                const s = res.status;
+                if (toggle) toggle.checked = s.enabled;
+                if (tokenInput) {
+                    if (s.token_set) {
+                        tokenInput.value = '••••••••••••••••••••••••••••••••';
+                        if (!tokenInput.dataset.focusBound) {
+                            tokenInput.dataset.focusBound = 'true';
+                            tokenInput.addEventListener('focus', () => {
+                                if (tokenInput.value === '••••••••••••••••••••••••••••••••') {
+                                    tokenInput.value = '';
+                                }
+                            });
+                        }
+                    } else {
+                        tokenInput.value = '';
+                        tokenInput.placeholder = 'Masukkan token eyJh...';
+                    }
+                }
+
+                if (s.running) {
+                    badge.textContent = '🟢 Tunnel Aktif';
+                    badge.className = 'px-3 py-1 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                } else if (s.enabled) {
+                    badge.textContent = '🟡 Menghubungkan...';
+                    badge.className = 'px-3 py-1 rounded text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                } else {
+                    badge.textContent = '🔴 Tunnel Nonaktif';
+                    badge.className = 'px-3 py-1 rounded text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
+                }
+            }
+        } catch (err) {
+            badge.textContent = '⚠️ Gagal Load Status';
+            badge.className = 'px-3 py-1 rounded text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700';
+        }
+    },
+
+    async saveCloudflareToken() {
+        const tokenInput = document.getElementById('cf-tunnel-token-input');
+        const token = tokenInput ? tokenInput.value.trim() : '';
+
+        if (!token || token === '••••••••••••••••••••••••••••••••') {
+            Toast.error('Masukkan token Cloudflare Tunnel yang baru');
+            return;
+        }
+
+        try {
+            const res = await API.request('/api/v1/kasir/settings/cloudflare-tunnel/save-token', {
+                method: 'POST',
+                body: JSON.stringify({ token })
+            });
+
+            if (res.success) {
+                Toast.success(res.message || 'Token berhasil disimpan');
+                await this.loadCloudflareTunnelStatus();
+            } else {
+                Toast.error(res.error || 'Gagal menyimpan token');
+            }
+        } catch (err) {
+            Toast.error('Gagal menyimpan token: ' + err.message);
+        }
+    },
+
+    async toggleCloudflareTunnel(enable) {
+        const toggle = document.getElementById('cf-tunnel-toggle');
+        Toast.info(enable ? 'Mulai menjalankan Cloudflare Tunnel...' : 'Menghentikan Cloudflare Tunnel...');
+
+        try {
+            const res = await API.request('/api/v1/kasir/settings/cloudflare-tunnel/toggle', {
+                method: 'POST',
+                body: JSON.stringify({ enable })
+            });
+
+            if (res.success) {
+                Toast.success(res.message);
+                await this.loadCloudflareTunnelStatus();
+            } else {
+                if (toggle) toggle.checked = !enable;
+                Toast.error(res.error || 'Gagal mengubah status tunnel');
+            }
+        } catch (err) {
+            if (toggle) toggle.checked = !enable;
+            Toast.error('Error saat mengubah status tunnel: ' + err.message);
+        }
     }
 };
 

@@ -235,6 +235,13 @@ def _init_app_context(app):
         except Exception as e:
             app.logger.warning(f"Gagal seed IP whitelist defaults: {e}")
         
+        # Init Cloudflare Tunnel auto-start daemon jika enabled
+        try:
+            from app.services.cloudflare_tunnel_service import CloudflareTunnelService
+            CloudflareTunnelService.init_app(app)
+        except Exception as e:
+            app.logger.warning(f"Gagal inisialisasi CloudflareTunnelService: {e}")
+        
         # Otomatis buat user admin default jika database kosong
         try:
             from app.models import User

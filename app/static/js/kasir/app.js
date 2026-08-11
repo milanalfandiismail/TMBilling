@@ -88,6 +88,7 @@ const App = {
         const kasirOnlyRestricted = [
             'user', 'log', 
             'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv', 
+            'settings_cloudflare_tunnel',
             'settings_cloud_backup', 'settings_local_backup', 'settings_db_cleanup', 
             'settings_scheduler', 'settings_migration', 
             'analytics', 'uptime'
@@ -139,6 +140,7 @@ const App = {
             settings_kiosk: 'settings',
             settings_tv: 'settings',
             whitelist_ip: 'settings',
+            settings_cloudflare_tunnel: 'settings',
             settings_cloud_backup: 'settings',
             settings_local_backup: 'settings',
             settings_db_cleanup: 'settings',
