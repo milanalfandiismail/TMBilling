@@ -53,8 +53,31 @@ Ketika TMBilling diakses dari luar jaringan lokal menggunakan domain HTTPS (sepe
 
 Agar koneksi VNC berhasil masuk melewati tunnel, Anda perlu merutekan traffic WebSocket tersebut ke port **`8081`** (port proxy websockify TMBilling).
 
-### Opsi A: Menggunakan Nginx di Server (Sangat Direkomendasikan)
-Jika Anda menggunakan Nginx sebagai reverse proxy di depan TMBilling, tambahkan blok konfigurasi berikut di dalam konfigurasi server block Nginx Anda:
+### Opsi A: Menggunakan Cloudflare Zero Trust Web Dashboard (GUI - Paling Mudah)
+
+Jika Anda mengelola Cloudflare Tunnel melalui Dashboard Web Cloudflare Zero Trust, ikuti langkah setting berikut pada menu **Tunnels & Mesh** -> Edit Tunnel Anda -> tab **Published application routes**:
+
+1. **Tambahkan Route 1 (WebSocket VNC Sub-path)**:
+   - Klik **+ Add a published application route**.
+   - **Domain / Hostname**: `kasir.domainanda.com` (Contoh: `tmbilling.milannn.my.id`).
+   - **Path**: `ws/vnc`
+   - **Service Type**: `HTTP`
+   - **URL / IP Target**: `http://IP_SERVER:8081` (Contoh: `http://10.10.10.10:8081` atau `http://localhost:8081`).
+
+2. **Tambahkan Route 2 (Dashboard Utama TMBilling)**:
+   - Klik **+ Add a published application route**.
+   - **Domain / Hostname**: `kasir.domainanda.com` (Contoh: `tmbilling.milannn.my.id`).
+   - **Path**: `*` (atau kosongkan untuk menangkap semua path).
+   - **Service Type**: `HTTP`
+   - **URL / IP Target**: `http://IP_SERVER:7015` (Contoh: `http://10.10.10.10:7015` atau `http://localhost:7015`).
+
+> [!TIP]
+> **PENTING**: Urutan *Published application routes* di dashboard Cloudflare harus menempatkan **Route 1 (`ws/vnc` -> port 8081)** di bagian **paling atas** (urutan #1), agar request yang menuju ke `/ws/vnc` dicocokkan spesifik ke Websockify terlebih dahulu sebelum ditangkap oleh route wildcard `*` di bawahnya.
+
+---
+
+### Opsi B: Menggunakan Nginx di Server (Reverse Proxy Local)
+Jika Anda menggunakan Nginx di server sebagai reverse proxy di depan TMBilling, tambahkan blok konfigurasi berikut di dalam konfigurasi server block Nginx Anda:
 
 ```nginx
 server {
@@ -83,9 +106,11 @@ server {
 }
 ```
 
-*Setelah itu, di dashboard Cloudflare Tunnel (Zero Trust), cukup arahkan Public Hostname `kasir.domainanda.com` ke Nginx lokal Anda (`http://localhost:80` atau `http://127.0.0.1`).*
+*Setelah itu, di dashboard Cloudflare Tunnel, cukup arahkan Hostname `kasir.domainanda.com` ke Nginx lokal Anda (`http://localhost:80`).*
 
-### Opsi B: Menggunakan File Konfigurasi CLI (`config.yml` cloudflared)
+---
+
+### Opsi C: Menggunakan File Konfigurasi CLI (`config.yml` cloudflared)
 Jika Anda menjalankan Cloudflare Tunnel secara lokal menggunakan file konfigurasi `config.yml`, Anda dapat merutekan path secara langsung dengan aturan ingress berikut:
 
 ```yaml
@@ -108,4 +133,5 @@ ingress:
 
 > [!IMPORTANT]
 > Pastikan port firewall **8081** (websockify) dan **5900** (TightVNC) diperbolehkan (Allowed) dalam Windows Defender Firewall jika diakses melintasi interface jaringan yang berbeda.
+
 
