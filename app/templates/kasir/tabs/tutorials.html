@@ -74,30 +74,31 @@
     padding-left: 0 !important;
     text-align: left !important;
 }
-/* Prose Table Rendering styles (Premium dark theme matching Umum & Keamanan) */
-.prose table {
+/* Prose & CKEditor Content Table Rendering styles (High-contrast borders on dark background) */
+.prose table, .ck-content table {
     width: 100% !important;
     border-collapse: collapse !important;
     margin: 1.5rem 0 !important;
     font-size: 13px !important;
     line-height: 1.5 !important;
-    border: 1px solid #1c1c1c !important;
+    border: 1px solid #3d3d3d !important;
     border-radius: 8px !important;
     overflow: hidden !important;
 }
-.prose th, .prose td {
-    border: 1px solid #1c1c1c !important;
+.prose th, .prose td, .ck-content th, .ck-content td {
+    border: 1px solid #3d3d3d !important;
     padding: 0.75rem 1rem !important;
     text-align: left !important;
 }
-.prose th {
-    background-color: #0c0c0c !important;
-    color: #f5f5f5 !important;
+.prose th, .ck-content th {
+    background-color: #1a1a1a !important;
+    color: #ffffff !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
+    border-bottom: 2px solid #4a4a4a !important;
 }
-.prose tr:nth-child(even) {
+.prose tr:nth-child(even), .ck-content tr:nth-child(even) {
     background-color: #080808 !important;
 }
 .prose tr:hover {
