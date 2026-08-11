@@ -2,38 +2,46 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a custom, clean, standalone CKEditor 5 JS bundle without any commercial/collaboration modules, resolving all cascading dependency errors while supporting Text Alignment, Image Resize handles, Table Cell Colors, and Font Colors in 100% dark theme balloon UI.
+**Goal:** Build a custom, clean, standalone CKEditor 5 JS bundle without any commercial/collaboration modules in a permanent tool directory `tools/ckeditor-builder/`, allowing developers to re-build or customize CKEditor easily via `npm run build:ckeditor`.
 
-**Architecture:** Create an isolated build script using Node.js/esbuild to compile CKEditor 5 modules into a single `ckeditor.js` file, and style floating balloons with dark mode CSS in `tutorials.html`.
+**Architecture:** Create a permanent builder tool in `tools/ckeditor-builder/` with package.json, source entry, and esbuild script that outputs `app/static/vendor/ckeditor/ckeditor.js`, and style floating balloons with dark mode CSS in `tutorials.html`.
 
 **Tech Stack:** Node.js, esbuild, CKEditor 5 Packages, Vanilla JavaScript, Flask Jinja2, Tailwind CSS.
 
 ## Global Constraints
 
 - **Commit timing**: Do not perform automatic git commit/push without explicit user request.
-- **Commit language**: Indonesian (e.g. `fitur: kompilasi bundel kustom standalone ckeditor 5 offline`).
+- **Commit language**: Indonesian (e.g. `fitur: buat alat kompilasi kustom ckeditor 5 di tools/ckeditor-builder`).
 - **Dark Theme Palette**: Latar belakang `#0c0c0c` / `#050505`, border `#262626`, warna teks `#e5e5e5` / `#ffffff`.
 
 ---
 
-### Task 1: Compile Custom Standalone CKEditor 5 Bundle
+### Task 1: Create Permanent Builder Tool & Compile Standalone CKEditor 5 Bundle
 
 **Files:**
+- Create: `tools/ckeditor-builder/package.json`
+- Create: `tools/ckeditor-builder/src/build.js`
+- Create: `tools/ckeditor-builder/README.md`
+- Modify: `package.json` (root)
 - Create: `app/static/vendor/ckeditor/ckeditor.js`
 
 **Interfaces:**
-- Produces: Single standalone `ckeditor.js` bundle exporting global `ClassicEditor` with Alignment, ImageResize, TableProperties, FontColor, and basic editing plugins.
+- Produces: `tools/ckeditor-builder` directory with npm build script and single standalone `ckeditor.js` bundle in `app/static/vendor/ckeditor/ckeditor.js`.
 
-- [ ] **Step 1: Set up temporary build directory and install CKEditor 5 packages**
+- [ ] **Step 1: Create directory tools/ckeditor-builder and package.json**
 
-Run: `node -e "const fs=require('fs'); if(!fs.existsSync('.ckeditor-builder')) fs.mkdirSync('.ckeditor-builder');"`
+Run: `node -e "const fs=require('fs'); if(!fs.existsSync('tools/ckeditor-builder')) fs.mkdirSync('tools/ckeditor-builder', {recursive: true}); if(!fs.existsSync('tools/ckeditor-builder/src')) fs.mkdirSync('tools/ckeditor-builder/src', {recursive: true});"`
 
-Create `.ckeditor-builder/package.json`:
+Create `tools/ckeditor-builder/package.json`:
 ```json
 {
-  "name": "custom-ckeditor-build",
+  "name": "tmbilling-ckeditor-builder",
   "version": "1.0.0",
+  "description": "Permanent local builder tool for TMBilling custom CKEditor 5 standalone bundle",
   "private": true,
+  "scripts": {
+    "build": "esbuild src/build.js --bundle --minify --outfile=../../app/static/vendor/ckeditor/ckeditor.js"
+  },
   "dependencies": {
     "@ckeditor/ckeditor5-alignment": "^38.0.0",
     "@ckeditor/ckeditor5-basic-styles": "^38.0.0",
@@ -59,11 +67,9 @@ Create `.ckeditor-builder/package.json`:
 }
 ```
 
-Run: `cmd.exe /c "cd .ckeditor-builder && npm install"`
+- [ ] **Step 2: Create src/build.js and README.md**
 
-- [ ] **Step 2: Create entry script src/build.js**
-
-Create `.ckeditor-builder/src/build.js`:
+Create `tools/ckeditor-builder/src/build.js`:
 ```javascript
 import ClassicEditorBase from '@ckeditor/ckeditor5-editor-classic/src/classiceditor';
 import Essentials from '@ckeditor/ckeditor5-essentials/src/essentials';
@@ -138,15 +144,34 @@ ClassicEditor.defaultConfig = {
 window.ClassicEditor = ClassicEditor;
 ```
 
-- [ ] **Step 3: Bundle to app/static/vendor/ckeditor/ckeditor.js and clean up**
+Create `tools/ckeditor-builder/README.md`:
+```markdown
+# TMBilling Custom CKEditor 5 Builder
 
-Run: `cmd.exe /c "cd .ckeditor-builder && npx esbuild src/build.js --bundle --minify --outfile=../app/static/vendor/ckeditor/ckeditor.js"`
-Run: `cmd.exe /c "rmdir /s /q .ckeditor-builder"`
+Direktori ini berisi konfigurasi dan alat kompilasi bundel kustom CKEditor 5 standalone untuk TMBilling.
+
+## Cara Menggunakan untuk Developer:
+
+1. Untuk mengompilasi ulang bundel CKEditor 5 dari root project:
+   ```bash
+   npm run build:ckeditor
+   ```
+
+2. Hasil kompilasi akan otomatis diperbarui pada:
+   `app/static/vendor/ckeditor/ckeditor.js`
+```
+
+- [ ] **Step 3: Update root package.json and compile build**
+
+Add `"build:ckeditor": "cd tools/ckeditor-builder && npm install && npm run build"` to `scripts` in root `package.json`.
+
+Run: `cmd.exe /c "npm run build:ckeditor"`
+Expected: `ckeditor.js` generated in `app/static/vendor/ckeditor/ckeditor.js`.
 
 - [ ] **Step 4: Commit**
 
-Run: `git add app/static/vendor/ckeditor/ckeditor.js`
-Run: `git commit -m "fitur: kompilasi bundel kustom standalone ckeditor 5 offline"`
+Run: `git add tools/ckeditor-builder package.json app/static/vendor/ckeditor/ckeditor.js`
+Run: `git commit -m "fitur: buat alat kompilasi kustom ckeditor 5 di tools/ckeditor-builder"`
 
 ---
 
