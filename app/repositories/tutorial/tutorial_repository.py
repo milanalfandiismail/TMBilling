@@ -50,3 +50,10 @@ class TutorialRepository:
         db.session.delete(t)
         db.session.commit()
         return True
+
+    @staticmethod
+    def get_all_categories():
+        categories = db.session.query(SystemTutorial.category).distinct().all()
+        result = set([c[0] for c in categories if c[0]])
+        result.add("Umum")
+        return sorted(list(result))

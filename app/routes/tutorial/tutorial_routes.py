@@ -82,6 +82,19 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+@tutorial_api_bp.route("/categories", methods=["GET"], strict_slashes=False)
+@login_required
+def get_categories():
+    """GET — Ambil daftar seluruh kategori unik dari panduan sistem."""
+    try:
+        categories = TutorialService.get_all_categories()
+        return jsonify({
+            "success": True,
+            "categories": categories
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @tutorial_api_bp.route("/upload-image", methods=["POST"], strict_slashes=False)
 @login_required
 @admin_required
