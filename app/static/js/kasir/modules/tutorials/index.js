@@ -143,10 +143,16 @@ const Tutorials = {
                 try {
                     const editorEl = document.querySelector('#tutorial-content-editor');
                     if (editorEl) {
+                        const ClassicEditor = CKEDITOR.ClassicEditor;
                         this.ckeditorInstance = await ClassicEditor.create(editorEl, {
                             extraPlugins: [CustomUploadAdapterPlugin],
                             toolbar: [
-                                'heading', '|', 'bold', 'italic', 'underline', 'strikethrough', 'highlight', '|', 'alignment', 'link', 'bulletedList', 'numberedList', 'blockQuote', 'codeBlock', 'insertTable', 'imageUpload', '|', 'undo', 'redo'
+                                'heading', '|',
+                                'bold', 'italic', 'underline', 'strikethrough', 'highlight', '|',
+                                'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
+                                'alignment', 'link', 'bulletedList', 'numberedList', 'todoList', 'outdent', 'indent', '|',
+                                'blockQuote', 'codeBlock', 'insertTable', 'imageUpload', '|',
+                                'undo', 'redo'
                             ],
                             alignment: {
                                 options: [ 'left', 'center', 'right', 'justify' ]
