@@ -30,6 +30,7 @@ import ImageStyle from '@ckeditor/ckeditor5-image/src/imagestyle';
 import ImageUpload from '@ckeditor/ckeditor5-image/src/imageupload';
 import ImageResize from '@ckeditor/ckeditor5-image/src/imageresize';
 import Undo from '@ckeditor/ckeditor5-undo/src/undo';
+import '@ckeditor/ckeditor5-theme-lark/theme/theme.css';
 
 class ClassicEditor extends ClassicEditorBase {}
 
