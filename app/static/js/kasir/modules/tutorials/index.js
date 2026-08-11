@@ -111,6 +111,43 @@ const Tutorials = {
         `).join('');
     },
 
+    handleCategorySelectChange(val) {
+        const newInp = document.getElementById('tutorial-new-category-input');
+        if (newInp) {
+            if (val === '__NEW__') {
+                newInp.classList.remove('hidden');
+                newInp.value = '';
+                newInp.focus();
+            } else {
+                newInp.classList.add('hidden');
+            }
+        }
+    },
+
+    async loadCategories(selectedCategory = 'Umum') {
+        try {
+            const res = await API.request('/api/v1/kasir/tutorials/categories');
+            const select = document.getElementById('tutorial-category-select');
+            const newInp = document.getElementById('tutorial-new-category-input');
+            if (select && newInp) {
+                const categories = res.categories || ['Umum'];
+                select.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('') +
+                    '<option value="__NEW__">➕ Tambah Kategori Baru...</option>';
+                
+                if (categories.includes(selectedCategory)) {
+                    select.value = selectedCategory;
+                    newInp.classList.add('hidden');
+                } else {
+                    select.value = '__NEW__';
+                    newInp.classList.remove('hidden');
+                    newInp.value = selectedCategory;
+                }
+            }
+        } catch (e) {
+            console.error('Error fetching categories:', e);
+        }
+    },
+
     async openTutorialModal(id = null) {
         const modal = document.getElementById('modal-tutorial-editor');
         if (!modal) return;
@@ -118,21 +155,22 @@ const Tutorials = {
         document.getElementById('tutorial-id-input').value = id || '';
         document.getElementById('tutorial-title-input').value = '';
         document.getElementById('tutorial-icon-input').value = '🌐';
-        document.getElementById('tutorial-category-input').value = 'Umum';
         document.getElementById('tutorial-urutan-input').value = 0;
 
         let contentHtml = '';
+        let categoryVal = 'Umum';
         if (id) {
             const tut = this.tutorialsData.find(t => t.id === id);
             if (tut) {
                 document.getElementById('tutorial-title-input').value = tut.title;
                 document.getElementById('tutorial-icon-input').value = tut.icon || '🌐';
-                document.getElementById('tutorial-category-input').value = tut.category || 'Umum';
                 document.getElementById('tutorial-urutan-input').value = tut.urutan || 0;
+                categoryVal = tut.category || 'Umum';
                 contentHtml = tut.content || '';
             }
         }
 
+        await this.loadCategories(categoryVal);
         modal.classList.remove('hidden');
 
         // Init CKEditor 5 Classic with local image upload adapter
@@ -179,7 +217,13 @@ const Tutorials = {
         const id = document.getElementById('tutorial-id-input').value;
         const title = document.getElementById('tutorial-title-input').value.trim();
         const icon = document.getElementById('tutorial-icon-input').value.trim() || '🌐';
-        const category = document.getElementById('tutorial-category-input').value.trim() || 'Umum';
+        const categorySelect = document.getElementById('tutorial-category-select').value;
+        let category = 'Umum';
+        if (categorySelect === '__NEW__') {
+            category = document.getElementById('tutorial-new-category-input').value.trim() || 'Umum';
+        } else {
+            category = categorySelect;
+        }
         const urutan = parseInt(document.getElementById('tutorial-urutan-input').value) || 0;
 
         let content = '';
