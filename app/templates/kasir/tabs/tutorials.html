@@ -1,0 +1,106 @@
+<!-- ===== TAB: TUTORIALS & DOKUMENTASI ===== -->
+<script src="{{ url_for('static', filename='vendor/ckeditor/ckeditor.js') }}"></script>
+
+<div id="tab-tutorials" class="tab-content hidden space-y-6">
+    <!-- Header Bar & Actions -->
+    <div class="flex items-center justify-between gap-4 bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+        <div>
+            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
+                <span>📚</span> Dokumentasi & Panduan Sistem
+            </h3>
+            <p class="text-[9px] lg:text-base text-neutral-500 mt-1">
+                Pusat petunjuk penggunaan, troubleshooting, dan panduan konfigurasi teknis TMBilling.
+            </p>
+        </div>
+        {% if session.get('kasir_role') == 'admin' %}
+        <button onclick="Tutorials.openTutorialModal()"
+            class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors shrink-0 flex items-center gap-2">
+            <span>➕</span> Tambah Panduan Baru
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Category Filter Tabs -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-[#1c1c1c]" id="tutorial-category-tabs">
+        <button onclick="Tutorials.filterTutorials('Semua', this)" class="tutorial-cat-btn px-4 py-2 bg-neutral-800 text-white font-bold text-xs lg:text-base rounded transition-all border border-[#262626]">
+            Semua Panduan
+        </button>
+        <button onclick="Tutorials.filterTutorials('Cloudflare & VNC', this)" class="tutorial-cat-btn px-4 py-2 bg-[#0c0c0c] text-neutral-400 hover:text-white font-bold text-xs lg:text-base rounded transition-all border border-[#1c1c1c]">
+            🌐 Cloudflare & VNC
+        </button>
+        <button onclick="Tutorials.filterTutorials('Jaringan', this)" class="tutorial-cat-btn px-4 py-2 bg-[#0c0c0c] text-neutral-400 hover:text-white font-bold text-xs lg:text-base rounded transition-all border border-[#1c1c1c]">
+            📡 Jaringan
+        </button>
+        <button onclick="Tutorials.filterTutorials('Umum', this)" class="tutorial-cat-btn px-4 py-2 bg-[#0c0c0c] text-neutral-400 hover:text-white font-bold text-xs lg:text-base rounded transition-all border border-[#1c1c1c]">
+            ⚙️ Umum
+        </button>
+    </div>
+
+    <!-- Dynamic Tutorials List Grid -->
+    <div id="tutorials-container" class="grid grid-cols-1 gap-6">
+        <!-- Loaded via JS -->
+    </div>
+</div>
+
+<!-- Modal Editor Panduan (CKEditor 5) -->
+<div id="modal-tutorial-editor" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] w-full max-w-4xl rounded overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-[#1c1c1c] bg-[#080808]">
+            <h3 id="modal-tutorial-title-text" class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
+                <span>📝</span> Editor Panduan Sistem
+            </h3>
+            <button onclick="Tutorials.closeTutorialModal()" class="text-neutral-400 hover:text-white p-1 rounded transition-colors text-xs lg:text-base">
+                ✕
+            </button>
+        </div>
+
+        <!-- Modal Body (Form) -->
+        <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs lg:text-base">
+            <input type="hidden" id="tutorial-id-input">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1.5">Judul Panduan / Header *</label>
+                    <input type="text" id="tutorial-title-input" placeholder="Misal: Panduan Setup Cloudflare Tunnel"
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 font-semibold text-xs lg:text-base">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1.5">Ikon / Emoji</label>
+                    <input type="text" id="tutorial-icon-input" placeholder="🌐" value="🌐"
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-center font-bold text-xs lg:text-base">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1.5">Kategori *</label>
+                    <input type="text" id="tutorial-category-input" placeholder="Misal: Cloudflare & VNC, Jaringan, Umum" value="Umum"
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:text-base">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1.5">Nomor Urut Tampilan</label>
+                    <input type="number" id="tutorial-urutan-input" placeholder="0" value="0"
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono text-xs lg:text-base">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1.5">Isi Panduan & Langkah-Langkah *</label>
+                <div class="bg-neutral-900 rounded overflow-hidden border border-[#1c1c1c] text-black">
+                    <textarea id="tutorial-content-editor"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#1c1c1c] bg-[#080808]">
+            <button onclick="Tutorials.closeTutorialModal()" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold rounded transition-colors text-xs lg:text-base">
+                Batal
+            </button>
+            <button onclick="Tutorials.saveTutorial()" class="px-5 py-2 bg-neutral-100 hover:bg-neutral-200 text-black font-bold rounded transition-colors shadow flex items-center gap-2 text-xs lg:text-base">
+                <span>💾</span> Simpan Panduan
+            </button>
+        </div>
+    </div>
+</div>
