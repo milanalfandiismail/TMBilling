@@ -198,7 +198,7 @@ const App = {
             settings_db_cleanup: 'Pembersihan Database',
             settings_scheduler: 'Auto Scheduler',
             settings_migration: 'Migrasi & Update',
-            settings_tutorials: 'Dokumentasi & Tutorial',
+            tutorials: 'Dokumentasi & Tutorial',
             analytics: 'Analytics Owner',
             plugins: 'Plugins & Ekstensi',
             mikrotik: 'MikroTik Hotspot'
@@ -241,6 +241,7 @@ const App = {
             case 'analytics': if (typeof OwnerAnalytics !== 'undefined') await OwnerAnalytics.load(); break;
             case 'plugins': if (typeof PluginsModule !== 'undefined') PluginsModule.init(); break;
             case 'mikrotik': if (typeof SettingsMikrotik !== 'undefined') SettingsMikrotik.init(); break;
+            case 'tutorials': if (typeof Tutorials !== 'undefined') await Tutorials.load(); break;
         }
     },
  
