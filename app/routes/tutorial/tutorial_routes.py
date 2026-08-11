@@ -72,3 +72,40 @@ def delete_tutorial(tutorial_id):
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+import os
+import uuid
+from flask import current_app
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@tutorial_api_bp.route("/upload-image", methods=["POST"], strict_slashes=False)
+@login_required
+@admin_required
+def upload_tutorial_image():
+    """POST — Upload file gambar tutorial (Khusus Admin)."""
+    try:
+        if 'upload' not in request.files and 'file' not in request.files:
+            return jsonify({"error": "Tidak ada file gambar yang diunggah"}), 400
+        
+        file = request.files.get('upload') or request.files.get('file')
+        if not file or file.filename == '':
+            return jsonify({"error": "File gambar tidak valid"}), 400
+
+        if not allowed_file(file.filename):
+            return jsonify({"error": "Format file tidak didukung (.png, .jpg, .jpeg, .webp, .gif)"}), 400
+
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        filename = f"{uuid.uuid4().hex}.{ext}"
+        upload_dir = os.path.join(current_app.root_path, 'static', 'assets', 'tutorials')
+        os.makedirs(upload_dir, exist_ok=True)
+        file_path = os.path.join(upload_dir, filename)
+        file.save(file_path)
+
+        url = f"/static/assets/tutorials/{filename}"
+        return jsonify({"url": url, "uploaded": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
