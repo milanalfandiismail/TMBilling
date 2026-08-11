@@ -344,6 +344,8 @@ const Tutorials = {
     closeTutorialModal() {
         const modal = document.getElementById('modal-tutorial-editor');
         if (modal) modal.classList.add('hidden');
+        // Bersihkan gambar sementara di folder temp
+        API.request('/api/v1/kasir/tutorials/cleanup-temp', { method: 'POST' }).catch(() => {});
     },
 
     async saveTutorial() {

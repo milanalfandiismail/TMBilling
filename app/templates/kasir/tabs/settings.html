@@ -349,7 +349,7 @@
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-6 lg:p-8 space-y-6">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl shrink-0">🌐</div>
+                        <div class="w-10 h-10 rounded-lg bg-neutral-800/60 border border-neutral-700/50 flex items-center justify-center text-neutral-300 text-xl shrink-0">🌐</div>
                         <h3 class="text-base sm:text-lg lg:text-xl font-bold text-neutral-100 uppercase tracking-wider">
                             Cloudflare Tunnel Auto-Manager
                         </h3>
@@ -366,15 +366,15 @@
                             Cloudflare Tunnel Token
                         </p>
                         <p class="text-xs sm:text-sm text-neutral-400 mt-1 leading-relaxed">
-                            Token dinamis dari Cloudflare Zero Trust (<code class="bg-[#171717] px-1.5 py-0.5 rounded text-amber-400 text-xs">Networks -&gt; Tunnels -&gt; Add a Tunnel</code>). 
-                            <a href="https://one.dash.cloudflare.com/" target="_blank" rel="noopener noreferrer" class="text-amber-400 hover:underline font-semibold inline-flex items-center gap-1 ml-1">
+                            Token dinamis dari Cloudflare Zero Trust (<code class="bg-[#171717] px-1.5 py-0.5 rounded text-neutral-300 text-xs">Networks -&gt; Tunnels -&gt; Add a Tunnel</code>). 
+                            <a href="https://one.dash.cloudflare.com/" target="_blank" rel="noopener noreferrer" class="text-neutral-400 hover:text-white underline font-semibold inline-flex items-center gap-1 ml-1">
                                 Buka Dashboard Cloudflare ↗
                             </a>
                         </p>
                     </div>
                     <div class="flex items-center gap-3">
                         <input type="password" id="cf-tunnel-token-input" placeholder="Masukkan token eyJh..."
-                            class="w-full sm:w-72 md:w-96 px-4 py-2.5 bg-[#050505] border border-[#262626] rounded-lg text-sm sm:text-base text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-amber-500/50 font-mono">
+                            class="w-full sm:w-72 md:w-96 px-4 py-2.5 bg-[#050505] border border-[#262626] rounded-lg text-sm sm:text-base text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 font-mono">
                         <button onclick="Settings.saveCloudflareToken()"
                             class="px-5 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs sm:text-sm font-bold rounded-lg transition-colors shrink-0 shadow">
                             Simpan Token
@@ -389,77 +389,13 @@
                             Status Daemon Cloudflare Tunnel
                         </p>
                         <p class="text-xs sm:text-sm text-neutral-400 mt-1">
-                            Aktifkan untuk menjalankan biner <code class="bg-[#171717] px-1.5 py-0.5 rounded text-amber-400 text-xs">cloudflared</code> di latar belakang server secara otomatis
+                            Aktifkan untuk menjalankan biner <code class="bg-[#171717] px-1.5 py-0.5 rounded text-neutral-300 text-xs">cloudflared</code> di latar belakang server secara otomatis
                         </p>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer shrink-0">
                         <input type="checkbox" id="cf-tunnel-toggle" class="sr-only peer" onchange="Settings.toggleCloudflareTunnel(this.checked)">
                         <div class="w-14 h-7 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
                     </label>
-                </div>
-            </div>
-
-            <!-- Card: Step-by-Step Documentation & Setup Guide -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Guide 1: Cloudflare Tunnel Setup -->
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-6 space-y-4">
-                    <div class="flex items-center gap-3 border-b border-[#1c1c1c] pb-3">
-                        <span class="text-xl">🌐</span>
-                        <h4 class="text-sm sm:text-base font-bold text-amber-400 uppercase tracking-wider">
-                            Panduan Setup Cloudflare Tunnel
-                        </h4>
-                    </div>
-                    <ol class="list-decimal list-inside text-xs sm:text-sm text-neutral-300 space-y-2.5 leading-relaxed">
-                        <li>
-                            Buka <a href="https://one.dash.cloudflare.com/" target="_blank" rel="noopener noreferrer" class="text-amber-400 underline font-semibold">Cloudflare Zero Trust ↗</a> -> <strong>Networks</strong> -> <strong>Tunnels</strong> -> <strong>Create a Tunnel</strong>.
-                        </li>
-                        <li>
-                            Beri nama tunnel (misal: <code class="bg-[#171717] px-1 py-0.5 rounded text-amber-300 text-xs">TMBilling-Server</code>) lalu simpan.
-                        </li>
-                        <li>
-                            Di tab <strong>Public Hostname</strong>, tambahkan Hostname:
-                            <ul class="list-disc list-inside ml-4 mt-1 space-y-1 text-neutral-400 text-xs">
-                                <li>Type: <code class="text-amber-300">HTTP</code></li>
-                                <li>URL: <code class="text-amber-300">localhost:5000</code> *(port server TMBilling)*</li>
-                            </ul>
-                        </li>
-                        <li>
-                            Salin string Token unik panjang (<code class="bg-[#171717] px-1 py-0.5 rounded text-amber-300 text-xs">eyJh...</code>) pada instruksi Windows.
-                        </li>
-                        <li>
-                            Tempelkan token ke form di atas, klik <strong>Simpan Token</strong>, lalu nyalakan <strong>Status Daemon</strong>.
-                        </li>
-                    </ol>
-                </div>
-
-                <!-- Guide 2: VNC Remote Desktop Setup -->
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-6 space-y-4">
-                    <div class="flex items-center gap-3 border-b border-[#1c1c1c] pb-3">
-                        <span class="text-xl">🖥️</span>
-                        <h4 class="text-sm sm:text-base font-bold text-amber-400 uppercase tracking-wider">
-                            Panduan Setup VNC Remote Desktop
-                        </h4>
-                    </div>
-                    <ol class="list-decimal list-inside text-xs sm:text-sm text-neutral-300 space-y-2.5 leading-relaxed">
-                        <li>
-                            Unduh dan install <a href="https://www.tightvnc.com/" target="_blank" rel="noopener noreferrer" class="text-amber-400 underline font-semibold">TightVNC Server ↗</a> pada PC yang akan di-remote.
-                        </li>
-                        <li>
-                            Pastikan pilihan <strong>Register TightVNC Service</strong> tercentang saat proses instalasi.
-                        </li>
-                        <li>
-                            Di pengaturan TightVNC (Access Control), aktifkan centang <strong>Allow loopback connections</strong>.
-                        </li>
-                        <li>
-                            Install modul proxy Websockify di terminal server:
-                            <div class="mt-1 bg-[#050505] border border-[#262626] rounded px-3 py-1.5 font-mono text-xs text-amber-300 select-all w-fit">
-                                pip install websockify
-                            </div>
-                        </li>
-                        <li>
-                            Akses menu Remote Control VNC di dashboard kasir untuk memulai streaming layar via HTML5 noVNC (`Port 8081`).
-                        </li>
-                    </ol>
                 </div>
             </div>
         </div>

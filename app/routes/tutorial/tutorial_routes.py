@@ -127,12 +127,27 @@ def upload_tutorial_image():
 
         ext = file.filename.rsplit('.', 1)[1].lower()
         filename = f"{uuid.uuid4().hex}.{ext}"
-        upload_dir = os.path.join(current_app.root_path, 'static', 'assets', 'tutorials')
+        upload_dir = os.path.join(current_app.root_path, 'static', 'assets', 'tutorials', 'temp')
         os.makedirs(upload_dir, exist_ok=True)
         file_path = os.path.join(upload_dir, filename)
         file.save(file_path)
 
-        url = f"/static/assets/tutorials/{filename}"
+        url = f"/static/assets/tutorials/temp/{filename}"
         return jsonify({"url": url, "uploaded": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@tutorial_api_bp.route("/cleanup-temp", methods=["POST"], strict_slashes=False)
+@login_required
+@admin_required
+def cleanup_temp_images():
+    """POST — Hapus semua file sementara di folder temp tutorial (dipanggil saat Batal)."""
+    try:
+        import shutil
+        temp_dir = os.path.join(current_app.root_path, 'static', 'assets', 'tutorials', 'temp')
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+            os.makedirs(temp_dir, exist_ok=True)
+        return jsonify({"success": True, "message": "Folder temp berhasil dibersihkan"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500

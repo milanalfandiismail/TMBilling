@@ -1,5 +1,9 @@
 # app/services/tutorial/tutorial_service.py
 import logging
+import os
+import re
+import shutil
+from flask import current_app
 from app.repositories import TutorialRepository
 
 logger = logging.getLogger(__name__)
@@ -86,6 +90,33 @@ INITIAL_SEED_TUTORIALS = [
     }
 ]
 
+def move_temp_images(content):
+    if not content:
+        return content
+    
+    # regex to find all temp tutorial image URLs
+    pattern = r'/static/assets/tutorials/temp/([a-fA-F0-9]+\.(?:png|jpg|jpeg|gif|webp))'
+    filenames = re.findall(pattern, content)
+    
+    if not filenames:
+        return content
+        
+    static_dir = os.path.join(current_app.root_path, 'static', 'assets', 'tutorials')
+    temp_dir = os.path.join(static_dir, 'temp')
+    
+    os.makedirs(static_dir, exist_ok=True)
+    
+    for filename in filenames:
+        temp_path = os.path.join(temp_dir, filename)
+        perm_path = os.path.join(static_dir, filename)
+        if os.path.exists(temp_path):
+            try:
+                shutil.move(temp_path, perm_path)
+            except Exception as e:
+                logger.warning(f"Gagal memindahkan gambar draf tutorial {filename}: {e}")
+                
+    return content.replace('/static/assets/tutorials/temp/', '/static/assets/tutorials/')
+
 class TutorialService:
     @staticmethod
     def get_all():
@@ -97,10 +128,14 @@ class TutorialService:
 
     @staticmethod
     def create(data):
+        if "content" in data and data["content"]:
+            data["content"] = move_temp_images(data["content"])
         return TutorialRepository.create(data)
 
     @staticmethod
     def update(tutorial_id, data):
+        if "content" in data and data["content"]:
+            data["content"] = move_temp_images(data["content"])
         return TutorialRepository.update(tutorial_id, data)
 
     @staticmethod
