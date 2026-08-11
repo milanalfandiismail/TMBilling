@@ -54,7 +54,7 @@ INITIAL_SEED_TUTORIALS = [
             <td><strong>Route #2 (Bawah)</strong></td>
             <td><code>*</code> (atau kosong)</td>
             <td>HTTP</td>
-            <td><code>http://localhost:5000</code></td>
+            <td><code>http://localhost:7015</code></td>
             <td>Dashboard utama TMBilling</td>
         </tr>
     </tbody>
@@ -79,7 +79,7 @@ INITIAL_SEED_TUTORIALS = [
     <li>Unduh dan install Tailscale untuk Windows di PC Server: <a href="https://tailscale.com/download" target="_blank">tailscale.com/download</a>.</li>
     <li>Login dengan akun Anda (Google / Microsoft / GitHub) dan catat IP Tailscale PC Server (Format: <code>100.x.y.z</code>).</li>
     <li>Install aplikasi Tailscale di HP / Laptop luar Anda dan login dengan akun yang sama.</li>
-    <li>Buka browser di HP/Laptop luar, ketik URL: <code>http://100.x.y.z:5000</code>.</li>
+    <li>Buka browser di HP/Laptop luar, ketik URL: <code>http://100.x.y.z:7015</code>.</li>
     <li>Buka menu <strong>Remote Control VNC</strong> di TMBilling, masukkan password TightVNC lalu klik <strong>▶ Hubungkan</strong>.</li>
 </ol>
 """
