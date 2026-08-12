@@ -1,0 +1,15 @@
+{
+  "name": "tmbilling-ckeditor-builder",
+  "version": "1.0.0",
+  "description": "Permanent local builder tool for TMBilling custom CKEditor 5 standalone bundle",
+  "private": true,
+  "scripts": {
+    "build": "esbuild src/build.js --bundle --minify --outfile=../../app/static/vendor/ckeditor/ckeditor.js --loader:.svg=text --loader:.css=css"
+  },
+  "dependencies": {
+    "ckeditor5": "^42.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.0"
+  }
+}

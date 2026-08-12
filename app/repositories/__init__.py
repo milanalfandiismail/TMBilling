@@ -24,6 +24,7 @@ from app.repositories.menu.menu_repository import MenuRepository
 from app.repositories.hardware.hardware_repository import HardwareRepository
 from app.repositories.process.process_repository import ProcessRepository
 from app.repositories.tournament.tournament_repository import TournamentRepository
+from app.repositories.tutorial.tutorial_repository import TutorialRepository
 
 __all__ = [
     "MemberRepository",
@@ -37,5 +38,6 @@ __all__ = [
     "MenuRepository",
     "HardwareRepository",
     "ProcessRepository",
-    "TournamentRepository"
+    "TournamentRepository",
+    "TutorialRepository"
 ]

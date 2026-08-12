@@ -58,7 +58,8 @@ def _register_blueprints(app):
         vnc_api_bp,
         maintenance_api_bp,
         uptime_api_bp,
-        tv_public_api_bp
+        tv_public_api_bp,
+        tutorial_api_bp
     )
 
     # ==========================================
@@ -94,6 +95,7 @@ def _register_blueprints(app):
     app.register_blueprint(vnc_api_bp, url_prefix="/api/v1/kasir/vnc")
     app.register_blueprint(maintenance_api_bp, url_prefix="/api/v1/kasir/maintenance")
     app.register_blueprint(uptime_api_bp, url_prefix="/api/v1/kasir/uptime")
+    app.register_blueprint(tutorial_api_bp, url_prefix="/api/v1/kasir/tutorials")
 
     # ==========================================
     # 3. PUBLIC APIs (/api/v1/public/...)
@@ -112,6 +114,7 @@ def _register_blueprints(app):
     csrf.exempt(monitor_api_bp)
     csrf.exempt(shift_api_bp)
     csrf.exempt(server_monitor_bp)
+    csrf.exempt(tutorial_api_bp)
 
 def _register_public_routes(app):
     """Mendaftarkan route publik."""
@@ -234,6 +237,20 @@ def _init_app_context(app):
             IpWhitelistService.seed_defaults(app)
         except Exception as e:
             app.logger.warning(f"Gagal seed IP whitelist defaults: {e}")
+        
+        # Init Cloudflare Tunnel auto-start daemon jika enabled
+        try:
+            from app.services import CloudflareTunnelService
+            CloudflareTunnelService.init_app(app)
+        except Exception as e:
+            app.logger.warning(f"Gagal inisialisasi CloudflareTunnelService: {e}")
+
+        # Seed tutorial/panduan awal sistem jika database kosong
+        try:
+            from app.services import TutorialService
+            TutorialService.seed_initial_tutorials()
+        except Exception as e:
+            app.logger.warning(f"Gagal seed tutorial awal: {e}")
         
         # Otomatis buat user admin default jika database kosong
         try:

@@ -170,9 +170,15 @@
                 <svg id="settings-arrow" class="w-3 h-3 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </button>
             <div id="settings-submenu" class="hidden pl-8 space-y-1">
-                <button onclick="App.switchTab('settings_general')" data-tab="settings_general" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">⚙️ Umum & Kiosk</button>
+                <button onclick="App.switchTab('settings_general')" data-tab="settings_general" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">⚙️ Umum & Keamanan</button>
+                <button onclick="App.switchTab('settings_payment')" data-tab="settings_payment" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">💳 Metode Pembayaran</button>
+                <button onclick="App.switchTab('settings_kiosk')" data-tab="settings_kiosk" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🖥️ Info Warnet & Kiosk</button>
+                <button onclick="App.switchTab('settings_tv')" data-tab="settings_tv" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">📺 TV Signage Display</button>
                 <button onclick="App.switchTab('whitelist_ip')" data-tab="whitelist_ip" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🛡️ Whitelist IP</button>
-                <button onclick="App.switchTab('settings_backup')" data-tab="settings_backup" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">💾 Database & Backup</button>
+                <button onclick="App.switchTab('settings_cloudflare_tunnel')" data-tab="settings_cloudflare_tunnel" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🌐 Cloudflare Tunnel</button>
+                <button onclick="App.switchTab('settings_cloud_backup')" data-tab="settings_cloud_backup" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">☁️ Cloud Backup</button>
+                <button onclick="App.switchTab('settings_local_backup')" data-tab="settings_local_backup" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">📂 Berkas Backup Lokal</button>
+                <button onclick="App.switchTab('settings_db_cleanup')" data-tab="settings_db_cleanup" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🧹 Pembersihan Database</button>
                 <button onclick="App.switchTab('settings_scheduler')" data-tab="settings_scheduler" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🤖 Auto Scheduler</button>
                 <button onclick="App.switchTab('settings_migration')" data-tab="settings_migration" class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🗄️ Migrasi & Update</button>
             </div>
@@ -225,6 +231,15 @@
                 {% endfor %}
             </div>
         </div>
+
+        <!-- 10. Dokumentasi & Tutorial -->
+        <a href="/kasir/documentation"
+            class="w-full flex items-center gap-3 px-3 py-2 rounded text-[13px] font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+            <span>Dokumentasi & Tutorial</span>
+        </a>
     </nav>
 
     <div class="border-t border-[#171717] p-4 pb-24 lg:pb-4 shrink-0 bg-[#080808]">

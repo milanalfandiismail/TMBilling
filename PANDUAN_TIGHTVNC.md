@@ -4,6 +4,18 @@ Dokumen ini berisi panduan penginstalan dan konfigurasi **TightVNC Server** di P
 
 ---
 
+## 📌 Ringkasan Port yang Digunakan
+
+Berikut adalah daftar port jaringan yang digunakan oleh komponen Remote Control VNC di PC Server:
+
+| Port | Protokol | Layanan / Service | Fungsi & Penjelasan |
+| :--- | :--- | :--- | :--- |
+| **`7015`** | HTTP | Web Server TMBilling | Port utama aplikasi web & dashboard kasir TMBilling. |
+| **`8081`** | WebSocket | Websockify Proxy | Daemon proxy Python TMBilling yang menerjemahkan koneksi `ws://` / `wss://` dari browser ke protokol VNC. |
+| **`5900`** | TCP / RFB | TightVNC Server | Port native service TightVNC Server di PC Windows. |
+
+---
+
 ## 1. Unduh & Instalasi TightVNC Server
 
 1. **Unduh Installer**:
@@ -44,3 +56,118 @@ Agar service proxy `websockify` lokal dapat menghubungkan browser ke TightVNC, A
 3. Ketikkan password TightVNC Anda pada kolom input password di atas toolbar.
 4. Klik **▶ Hubungkan**.
 5. Layar PC Server Kasir akan langsung tampil interaktif di dalam browser tanpa scrollbar.
+
+---
+
+## 4. Akses Remote via Cloudflare Tunnel / HTTPS Reverse Proxy
+
+Ketika TMBilling diakses dari luar jaringan lokal menggunakan domain HTTPS (seperti Cloudflare Tunnel atau Nginx Reverse Proxy), browser akan mencoba menghubungkan WebSocket VNC secara aman via sub-path `/ws/vnc` (misalnya: `wss://kasir.domainanda.com/ws/vnc`).
+
+Agar koneksi VNC berhasil masuk melewati tunnel, Anda perlu merutekan traffic WebSocket tersebut ke port **`8081`** (port proxy websockify TMBilling).
+
+### Opsi A: Menggunakan Cloudflare Zero Trust Web Dashboard (GUI - Paling Mudah)
+
+Jika Anda mengelola Cloudflare Tunnel melalui Dashboard Web Cloudflare Zero Trust, ikuti langkah setting berikut pada menu **Tunnels & Mesh** -> Edit Tunnel Anda -> tab **Published application routes**:
+
+1. **Tambahkan Route 1 (WebSocket VNC Sub-path)**:
+   - Klik **+ Add a published application route**.
+   - **Domain / Hostname**: `kasir.domainanda.com` (Contoh: `tmbilling.milannn.my.id`).
+   - **Path**: `ws/vnc`
+   - **Service Type**: `HTTP`
+   - **URL / IP Target**: `http://IP_SERVER:8081` (Contoh: `http://10.10.10.10:8081` atau `http://localhost:8081`).
+
+2. **Tambahkan Route 2 (Dashboard Utama TMBilling)**:
+   - Klik **+ Add a published application route**.
+   - **Domain / Hostname**: `kasir.domainanda.com` (Contoh: `tmbilling.milannn.my.id`).
+   - **Path**: `*` (atau kosongkan untuk menangkap semua path).
+   - **Service Type**: `HTTP`
+   - **URL / IP Target**: `http://IP_SERVER:7015` (Contoh: `http://10.10.10.10:7015` atau `http://localhost:7015`).
+
+> [!TIP]
+> **PENTING**: Urutan *Published application routes* di dashboard Cloudflare harus menempatkan **Route 1 (`ws/vnc` -> port 8081)** di bagian **paling atas** (urutan #1), agar request yang menuju ke `/ws/vnc` dicocokkan spesifik ke Websockify terlebih dahulu sebelum ditangkap oleh route wildcard `*` di bawahnya.
+
+---
+
+### Opsi B: Menggunakan Nginx di Server (Reverse Proxy Local)
+Jika Anda menggunakan Nginx di server sebagai reverse proxy di depan TMBilling, tambahkan blok konfigurasi berikut di dalam konfigurasi server block Nginx Anda:
+
+```nginx
+server {
+    listen 80;
+    server_name kasir.domainanda.com;
+
+    # 1. Route utama ke Dashboard TMBilling
+    location / {
+        proxy_pass http://127.0.0.1:7015;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # 2. Route khusus WebSocket VNC (Websockify)
+    location /ws/vnc {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+    }
+}
+```
+
+*Setelah itu, di dashboard Cloudflare Tunnel, cukup arahkan Hostname `kasir.domainanda.com` ke Nginx lokal Anda (`http://localhost:80`).*
+
+---
+
+### Opsi C: Menggunakan File Konfigurasi CLI (`config.yml` cloudflared)
+Jika Anda menjalankan Cloudflare Tunnel secara lokal menggunakan file konfigurasi `config.yml`, Anda dapat merutekan path secara langsung dengan aturan ingress berikut:
+
+```yaml
+tunnel: <TUNNEL_ID>
+credentials-file: C:\Users\<Username>\.cloudflared\<TUNNEL_ID>.json
+
+ingress:
+  # 1. Rutekan traffic WebSocket VNC ke port websockify 8081
+  - hostname: kasir.domainanda.com
+    path: /ws/vnc
+    service: ws://localhost:8081
+  
+  # 2. Rutekan traffic utama web ke port dashboard 7015
+  - hostname: kasir.domainanda.com
+    service: http://localhost:7015
+
+  # Catch-all rule (wajib ada di baris terakhir)
+  - service: http_status:404
+```
+
+> [!IMPORTANT]
+> Pastikan port firewall **8081** (websockify) dan **5900** (TightVNC) diperbolehkan (Allowed) dalam Windows Defender Firewall jika diakses melintasi interface jaringan yang berbeda.
+
+---
+
+## 5. Akses Remote via Tailscale / ZeroTier (VPN Mesh - Tanpa Setting Path)
+
+Jika Anda menginginkan akses remote dari luar jaringan **paling mudah tanpa perlu menyetting domain, HTTPS, reverse proxy, atau path Cloudflare Tunnel**, Anda dapat menggunakan layanan **VPN Mesh** gratis seperti **Tailscale** atau **ZeroTier**.
+
+### Cara Kerja:
+Dengan Tailscale / ZeroTier, PC Server Kasir dan perangkat Anda (Laptop/HP/Tablet luar) akan berada di dalam jaringan privat maya yang sama. Browser akan mengakses TMBilling via IP Virtual Tailscale (`http://100.x.y.z:7015`), sehingga koneksi WebSocket VNC akan otomatis langsung tersambung ke `ws://100.x.y.z:8081` tanpa perlu proxy path `/ws/vnc`!
+
+### Langkah Setting Tailscale (Rekomendasi ⚡):
+1. **Instal Tailscale di PC Server**:
+   - Unduh dan instal Tailscale untuk Windows: [https://tailscale.com/download](https://tailscale.com/download)
+   - Login dengan akun Anda (Google/Microsoft/GitHub).
+   - Catat **IP Tailscale PC Server** (Format: `100.x.y.z`).
+2. **Instal Tailscale di Perangkat Remote (HP / Laptop Luar)**:
+   - Instal aplikasi Tailscale di Android / iOS / Laptop luar Anda.
+   - Login menggunakan **akun yang sama** dengan PC Server.
+3. **Buka TMBilling & Remote VNC**:
+   - Buka browser di perangkat remote, ketik URL: `http://100.x.y.z:7015`
+   - Masuk ke menu **Sistem & Utilitas** -> **📡 Remote Control Server**.
+   - Masukkan password VNC lalu klik **▶ Hubungkan**.
+   - Remote Control VNC akan langsung lancar terhubung 100% tanpa kendala!
+
+
+

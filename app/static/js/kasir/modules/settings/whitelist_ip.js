@@ -121,10 +121,18 @@ const WhitelistIP = {
     async toggle(enabled) {
         try {
             await this._fetch('POST', '/api/v1/kasir/settings/ip-whitelist/toggle', { enabled });
+            if (typeof Toast !== 'undefined') {
+                if (enabled) {
+                    Toast.success('Whitelist IP diaktifkan');
+                } else {
+                    Toast.info('Whitelist IP dinonaktifkan');
+                }
+            }
         } catch (e) {
             // revert toggle visual
             const toggle = document.getElementById('whitelistToggle');
             if (toggle) toggle.checked = !enabled;
+            if (typeof Toast !== 'undefined') Toast.error('Gagal mengubah status Whitelist IP');
         }
     },
 
