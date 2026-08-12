@@ -341,10 +341,18 @@ const Tutorials = {
         }
     },
 
-    async exportTutorialsToJson() {
-        if (!confirm('Apakah Anda yakin ingin mengekspor seluruh tutorial saat ini ke seed_tutorials.json?')) {
-            return;
-        }
+    exportTutorialsToJson() {
+        const modal = document.getElementById('modal-confirm-export');
+        if (modal) modal.classList.remove('hidden');
+    },
+
+    closeConfirmExportModal() {
+        const modal = document.getElementById('modal-confirm-export');
+        if (modal) modal.classList.add('hidden');
+    },
+
+    async confirmExportTutorialsToJson() {
+        this.closeConfirmExportModal();
         try {
             const res = await API.request('/api/v1/kasir/tutorials/export-json', {
                 method: 'POST'
