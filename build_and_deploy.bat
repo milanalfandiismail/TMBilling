@@ -10,6 +10,15 @@ set "CURRENT_DIR=%~dp0"
 
 echo [1/5] Memulai kompilasi Tauri Client (TMBilling)...
 cd /d "%CURRENT_DIR%WarnetClient\TMBillingTauri"
+if not exist "%CURRENT_DIR%WarnetClient\TMBillingTauri\node_modules\" (
+    echo [INFO] node_modules belum ditemukan di TMBillingTauri, menjalankan npm install...
+    call npm install
+    if %ERRORLEVEL% NEQ 0 (
+        echo [ERROR] Gagal melakukan npm install di TMBillingTauri!
+        pause
+        exit /b %ERRORLEVEL%
+    )
+)
 call npm run tauri build
 if %ERRORLEVEL% NEQ 0 (
     echo.
