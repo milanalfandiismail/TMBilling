@@ -277,6 +277,34 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Konfirmasi Ekspor JSON -->
+<div id="modal-confirm-export" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 animate-fade-in">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl shrink-0">
+                📥
+            </div>
+            <div>
+                <h3 class="text-sm lg:text-base font-bold text-neutral-100">Ekspor Tutorial ke JSON</h3>
+                <p class="text-[10px] lg:text-xs text-neutral-400 mt-0.5">Konfirmasi pembaruan file data seed</p>
+            </div>
+        </div>
+        <p class="text-xs lg:text-sm text-neutral-300 leading-relaxed">
+            Apakah Anda yakin ingin mengekspor seluruh data tutorial saat ini ke file <code class="bg-[#171717] px-1.5 py-0.5 rounded text-amber-400 font-mono text-xs">seed_tutorials.json</code>?
+        </p>
+        <div class="flex items-center justify-end gap-3 pt-2">
+            <button type="button" onclick="Tutorials.closeConfirmExportModal()"
+                class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-bold rounded-lg transition-all border border-[#262626]">
+                Batal
+            </button>
+            <button type="button" onclick="Tutorials.confirmExportTutorialsToJson()"
+                class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg transition-all shadow">
+                Ya, Ekspor Sekarang
+            </button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
