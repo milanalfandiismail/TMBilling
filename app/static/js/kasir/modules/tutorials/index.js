@@ -358,13 +358,13 @@ const Tutorials = {
                 method: 'POST'
             });
             if (res.success) {
-                showToast(`Sukses: ${res.message || 'Tutorial berhasil diekspor!'}`, 'success');
+                Toast.success(res.message || 'Tutorial berhasil diekspor!');
             } else {
-                showToast(`Gagal: ${res.error || 'Gagal mengekspor tutorial'}`, 'error');
+                Toast.error(res.error || 'Gagal mengekspor tutorial');
             }
         } catch (e) {
             console.error('Error export tutorials:', e);
-            showToast('Terjadi kesalahan sistem saat mengekspor tutorial.', 'error');
+            Toast.error('Terjadi kesalahan sistem saat mengekspor tutorial.');
         }
     },
 
