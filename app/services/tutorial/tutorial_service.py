@@ -81,6 +81,29 @@ class TutorialService:
         return TutorialRepository.delete_category(category_name)
 
     @staticmethod
+    def export_to_json():
+        """Mengekspor seluruh tutorial dari database ke app/data/seed_tutorials.json."""
+        tutorials = TutorialRepository.get_all()
+        export_data = []
+        for t in tutorials:
+            export_data.append({
+                "title": t.title,
+                "icon": t.icon,
+                "category": t.category,
+                "urutan": t.urutan,
+                "content": t.content
+            })
+            
+        target_dir = os.path.join(current_app.root_path, 'data')
+        os.makedirs(target_dir, exist_ok=True)
+        target_path = os.path.join(target_dir, 'seed_tutorials.json')
+        
+        with open(target_path, 'w', encoding='utf-8') as f:
+            json.dump(export_data, f, ensure_ascii=False, indent=2)
+            
+        return len(export_data)
+
+    @staticmethod
     def seed_initial_tutorials():
         """Seed tutorial default dari JSON — hanya menambahkan tutorial yang judulnya belum ada di database."""
         try:

@@ -151,3 +151,19 @@ def cleanup_temp_images():
         return jsonify({"success": True, "message": "Folder temp berhasil dibersihkan"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+@tutorial_api_bp.route("/export-json", methods=["POST"], strict_slashes=False)
+@login_required
+@admin_required
+def export_tutorials_json():
+    """POST — Ekspor seluruh tutorial dari database ke file seed JSON (Khusus Admin)."""
+    try:
+        count = TutorialService.export_to_json()
+        return jsonify({
+            "success": True,
+            "message": f"Berhasil mengekspor {count} tutorial ke JSON",
+            "count": count
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
