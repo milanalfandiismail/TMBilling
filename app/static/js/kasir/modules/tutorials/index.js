@@ -341,6 +341,25 @@ const Tutorials = {
         }
     },
 
+    async exportTutorialsToJson() {
+        if (!confirm('Apakah Anda yakin ingin mengekspor seluruh tutorial saat ini ke seed_tutorials.json?')) {
+            return;
+        }
+        try {
+            const res = await API.request('/api/v1/kasir/tutorials/export-json', {
+                method: 'POST'
+            });
+            if (res.success) {
+                showToast(`Sukses: ${res.message || 'Tutorial berhasil diekspor!'}`, 'success');
+            } else {
+                showToast(`Gagal: ${res.error || 'Gagal mengekspor tutorial'}`, 'error');
+            }
+        } catch (e) {
+            console.error('Error export tutorials:', e);
+            showToast('Terjadi kesalahan sistem saat mengekspor tutorial.', 'error');
+        }
+    },
+
     closeTutorialModal() {
         const modal = document.getElementById('modal-tutorial-editor');
         if (modal) modal.classList.add('hidden');
