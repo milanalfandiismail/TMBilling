@@ -2,6 +2,10 @@ const App = {
     currentTab: 'dash',
 
     async init() {
+        if (window.IS_DOCUMENTATION_PAGE) {
+            await this.checkAuth();
+            return;
+        }
         const loggedIn = await this.checkAuth();
         if (!loggedIn) {
             return;
@@ -85,7 +89,14 @@ const App = {
         }
 
         // RBAC: Kasir tidak boleh membuka tab admin-only
-        const kasirOnlyRestricted = ['user', 'log', 'settings_general', 'settings_backup', 'settings_scheduler', 'settings_migration', 'analytics', 'uptime'];
+        const kasirOnlyRestricted = [
+            'user', 'log', 
+            'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv', 
+            'settings_cloudflare_tunnel',
+            'settings_cloud_backup', 'settings_local_backup', 'settings_db_cleanup', 
+            'settings_scheduler', 'settings_migration', 
+            'analytics', 'uptime'
+        ];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');
             tab = 'dash';
@@ -129,8 +140,14 @@ const App = {
             log: 'sistemlog',
             monitor: 'system', server_statistic: 'system', hardware_checker: 'system', maintenance: 'system', blackout: 'system', screenshot: 'system', uptime: 'system',
             settings_general: 'settings',
+            settings_payment: 'settings',
+            settings_kiosk: 'settings',
+            settings_tv: 'settings',
             whitelist_ip: 'settings',
-            settings_backup: 'settings',
+            settings_cloudflare_tunnel: 'settings',
+            settings_cloud_backup: 'settings',
+            settings_local_backup: 'settings',
+            settings_db_cleanup: 'settings',
             settings_scheduler: 'settings',
             settings_migration: 'settings',
             analytics: 'analytics',
@@ -175,11 +192,17 @@ const App = {
             uptime: 'Uptime Tracker',
             user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat',
             menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen',
-            settings_general: 'Pengaturan Umum & Kiosk',
+            settings_general: 'Pengaturan Umum & Keamanan',
+            settings_payment: 'Metode Pembayaran',
+            settings_kiosk: 'Info Warnet & Kiosk',
+            settings_tv: 'TV Signage Display',
             whitelist_ip: 'Pengaturan Whitelist IP',
-            settings_backup: 'Pengaturan Database & Backup',
+            settings_cloud_backup: 'Cloud Backup',
+            settings_local_backup: 'Berkas Backup Lokal',
+            settings_db_cleanup: 'Pembersihan Database',
             settings_scheduler: 'Auto Scheduler',
             settings_migration: 'Migrasi & Update',
+            tutorials: 'Dokumentasi & Tutorial',
             analytics: 'Analytics Owner',
             plugins: 'Plugins & Ekstensi',
             mikrotik: 'MikroTik Hotspot'
@@ -193,7 +216,7 @@ const App = {
         if (tab.startsWith('settings_') || tab === 'whitelist_ip') {
             const sub = tab === 'whitelist_ip' ? 'whitelist_ip' : tab.replace('settings_', '');
             if (typeof Settings !== 'undefined') {
-                await Settings.load();
+                await Settings.load(true);
                 Settings.switchSubTab(sub);
             }
             return;
@@ -222,6 +245,7 @@ const App = {
             case 'analytics': if (typeof OwnerAnalytics !== 'undefined') await OwnerAnalytics.load(); break;
             case 'plugins': if (typeof PluginsModule !== 'undefined') PluginsModule.init(); break;
             case 'mikrotik': if (typeof SettingsMikrotik !== 'undefined') SettingsMikrotik.init(); break;
+            case 'tutorials': if (typeof Tutorials !== 'undefined') await Tutorials.load(); break;
         }
     },
  

@@ -1,7 +1,12 @@
 const Settings = {
-    async load() {
+    currentSubTab: 'general',
+
+    async load(preserveSubTab = false) {
         // Tampilkan sub-tab default (Umum & Kiosk) segera agar halaman tidak kosong
-        this.switchSubTab('general');
+        if (!preserveSubTab && !this.currentSubTab) {
+            this.currentSubTab = 'general';
+        }
+        this.switchSubTab(this.currentSubTab);
 
         try {
             const res = await API.settings.getAll();
@@ -410,6 +415,94 @@ const Settings = {
         }
     },
 
+    async executeDbMaintenance() {
+        const retentionSelect = document.getElementById('db-retention-months');
+        const retentionMonths = retentionSelect ? retentionSelect.value : '6';
+
+        const confirmMsg = `<div class="text-xs lg:text-sm text-neutral-300 space-y-3 leading-relaxed">` +
+            `<p>Apakah Anda yakin ingin melakukan pembersihan histori transaksi yang berumur lebih dari <strong class="text-neutral-100 font-bold underline underline-offset-2">${retentionMonths} bulan</strong>?</p>` +
+            `<ul class="list-disc pl-5 space-y-1.5 text-neutral-400">` +
+            `<li>File cadangan (backup) otomatis disimpan di folder <code class="text-neutral-200 font-mono bg-[#171717] px-1.5 py-0.5 rounded">backups/archive/</code></li>` +
+            `<li>Kapasitas penyimpanan server akan dioptimalkan secara otomatis</li>` +
+            `<li>Saldo member &amp; data utama <strong class="text-emerald-400 font-bold">TIDAK AKAN terhapus</strong></li>` +
+            `</ul>` +
+            `</div>`;
+
+        Modal.confirm(confirmMsg, async () => {
+            Toast.info('Sedang membuat backup &amp; membersihkan histori...');
+
+            try {
+                const res = await API.request('/api/v1/kasir/settings/database/purge-and-vacuum', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ retention_months: parseInt(retentionMonths, 10) })
+                });
+
+                if (res.success) {
+                    const initialStr = res.storage_stats ? res.storage_stats.initial_size_human : '0 B';
+                    const finalStr = res.storage_stats ? res.storage_stats.final_size_human : '0 B';
+                    const savedStr = res.storage_stats ? res.storage_stats.saved_space_human : '0 B';
+
+                    const totalRows = res.deleted_summary
+                        ? Object.values(res.deleted_summary).reduce((a, b) => a + b, 0)
+                        : 0;
+
+                    Toast.success('Pembersihan &amp; pemeliharaan database berhasil diselesaikan!');
+
+                    const modalHtml = `
+                        <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-6 max-w-lg w-full animate-in space-y-5">
+                            <div class="flex items-center justify-between border-b border-[#2a2a2a] pb-4">
+                                <div class="flex items-center gap-3.5">
+                                    <div class="w-11 h-11 rounded-lg bg-emerald-950/40 border border-emerald-900/50 flex items-center justify-center text-emerald-400 shrink-0">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm lg:text-base font-bold text-neutral-100 uppercase tracking-wider">Pembersihan Database Berhasil</h3>
+                                        <p class="text-xs text-neutral-400 mt-0.5">Kapasitas penyimpanan server berhasil dioptimalkan</p>
+                                    </div>
+                                </div>
+                                <button onclick="Modal.closeModal(); Settings.loadBackupFiles();" class="text-neutral-500 hover:text-neutral-300 text-2xl leading-none">&times;</button>
+                            </div>
+
+                            <div class="space-y-3 text-xs lg:text-sm text-neutral-300">
+                                <div class="p-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg flex items-center justify-between">
+                                    <span class="text-neutral-400">📁 File Cadangan</span>
+                                    <span class="font-mono text-neutral-100 font-bold">${res.backup_file}</span>
+                                </div>
+                                <div class="p-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg flex items-center justify-between">
+                                    <span class="text-neutral-400">🧹 Riwayat Dihapus</span>
+                                    <span class="font-bold text-emerald-400 text-sm lg:text-base">${totalRows.toLocaleString()} baris</span>
+                                </div>
+                                <div class="p-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg flex items-center justify-between">
+                                    <span class="text-neutral-400">💾 Ukuran Storage</span>
+                                    <span class="font-mono text-neutral-200">${initialStr} ➔ <strong class="text-emerald-400">${finalStr}</strong></span>
+                                </div>
+                                <div class="p-3.5 bg-emerald-950/20 border border-emerald-900/30 rounded-lg text-center font-bold text-xs lg:text-sm text-emerald-400">
+                                    ✨ Berhasil menghemat ${savedStr} ruang disk server!
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end pt-3 border-t border-[#2a2a2a]">
+                                <button onclick="Modal.closeModal(); Settings.loadBackupFiles();" class="px-5 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-sm font-bold rounded-lg transition-colors">
+                                    Selesai
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    Modal.show(modalHtml);
+                    this.loadBackupFiles();
+                } else {
+                    Toast.error(res.error || 'Gagal melakukan pembersihan database.');
+                }
+            } catch (err) {
+                Toast.error('Gagal melakukan pembersihan database: ' + err.message);
+            }
+        });
+    },
+
     previewQRIS(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
@@ -621,7 +714,7 @@ const Settings = {
             }
             
             Toast.success('Pengaturan Kiosk berhasil disimpan');
-            await this.load(); // Refresh data
+            await this.load(true); // Refresh data
         } catch (err) {
             Toast.error('Gagal menyimpan pengaturan Kiosk: ' + err.message);
         }
@@ -658,16 +751,19 @@ const Settings = {
             });
 
             Toast.success('Pengaturan TV Signage berhasil disimpan');
-            await this.load();
+            await this.load(true);
         } catch (err) {
             Toast.error('Gagal menyimpan pengaturan TV Signage: ' + err.message);
         }
     },
 
     switchSubTab(subTab) {
+        if (subTab) {
+            this.currentSubTab = subTab;
+        }
         document.querySelectorAll('.subnav-item').forEach(btn => {
             const onclick = btn.getAttribute('onclick') || '';
-            if (onclick.includes(`'${subTab}'`)) {
+            if (onclick.includes(`'${this.currentSubTab}'`)) {
                 btn.classList.add('bg-neutral-800', 'text-neutral-100', 'font-bold');
                 btn.classList.remove('text-neutral-400', 'hover:text-neutral-100', 'hover:bg-[#121212]');
             } else {
@@ -677,23 +773,35 @@ const Settings = {
         });
 
         document.querySelectorAll('.subtab-content').forEach(el => el.classList.add('hidden'));
-        const target = document.getElementById(`subtab-${subTab}`);
+        const target = document.getElementById(`subtab-${this.currentSubTab}`);
         if (target) {
             target.classList.remove('hidden');
         }
 
+        // Backup & Local files — fetch backup list
+        if (this.currentSubTab === 'local_backup' || this.currentSubTab === 'cloud_backup' || this.currentSubTab === 'backup') {
+            this.loadBackupFiles();
+        }
+
         // Whitelist IP — render & load data
-        if (subTab === 'whitelist_ip') {
+        if (this.currentSubTab === 'whitelist_ip') {
             this._renderWhitelistIP();
             this._loadWhitelistStatus();
         }
 
+        // Cloudflare Tunnel — load status
+        if (this.currentSubTab === 'cloudflare_tunnel') {
+            this.loadCloudflareTunnelStatus();
+        }
+
         // Migrasi & Update — init module
-        if (subTab === 'migration') {
+        if (this.currentSubTab === 'migration') {
             if (typeof MigrationModule !== 'undefined') {
                 MigrationModule.init();
             }
         }
+
+
     },
 
     toggleSubmenu() {
@@ -866,16 +974,37 @@ const Settings = {
             document.getElementById('wlNewIp').value = '';
             document.getElementById('wlNewLabel').value = '';
             await this._wlRefreshList();
-        } catch (e) {}
+            if (typeof Toast !== 'undefined') Toast.success('IP Whitelist berhasil ditambahkan');
+        } catch (e) {
+            if (typeof Toast !== 'undefined') Toast.error('Gagal menambahkan IP Whitelist');
+        }
     },
 
     async _wlRemove(ip) {
         if (!confirm(`Hapus ${ip}?`)) return;
-        try { await this._wlFetch('DELETE', `/api/v1/kasir/settings/ip-whitelist/${ip}`); await this._wlRefreshList(); } catch (e) {}
+        try { 
+            await this._wlFetch('DELETE', `/api/v1/kasir/settings/ip-whitelist/${ip}`); 
+            await this._wlRefreshList(); 
+            if (typeof Toast !== 'undefined') Toast.info('IP Whitelist berhasil dihapus');
+        } catch (e) {
+            if (typeof Toast !== 'undefined') Toast.error('Gagal menghapus IP Whitelist');
+        }
     },
 
     async _wlToggle(enabled) {
-        try { await this._wlFetch('POST', '/api/v1/kasir/settings/ip-whitelist/toggle', { enabled }); } catch (e) { document.getElementById('wlToggle').checked = !enabled; }
+        try { 
+            await this._wlFetch('POST', '/api/v1/kasir/settings/ip-whitelist/toggle', { enabled }); 
+            if (typeof Toast !== 'undefined') {
+                if (enabled) {
+                    Toast.success('Whitelist IP diaktifkan');
+                } else {
+                    Toast.info('Whitelist IP dinonaktifkan');
+                }
+            }
+        } catch (e) { 
+            document.getElementById('wlToggle').checked = !enabled; 
+            if (typeof Toast !== 'undefined') Toast.error('Gagal mengubah status Whitelist IP');
+        }
     },
 
     async _wlRegenerate() {
@@ -889,7 +1018,34 @@ const Settings = {
 
     async _wlSavePublicUrl() {
         const url = document.getElementById('wlPublicUrl').value.trim();
-        try { await this._wlFetch('POST', '/api/v1/kasir/settings/app-public-url', { url }); await this._loadWhitelistStatus(); } catch (e) {}
+        try { 
+            await this._wlFetch('POST', '/api/v1/kasir/settings/app-public-url', { url }); 
+            await this._loadWhitelistStatus(); 
+            if (typeof Toast !== 'undefined') Toast.success('URL Publik berhasil disimpan');
+        } catch (e) {
+            if (typeof Toast !== 'undefined') Toast.error('Gagal menyimpan URL Publik');
+        }
+    },
+
+    _wlCopyUrl() {
+        const el = document.getElementById('wlUrlDisplay');
+        const text = el ? (el.textContent || '') : '';
+        if (!text || text === '-') {
+            alert('URL token belum tersedia.');
+            return;
+        }
+        try {
+            navigator.clipboard.writeText(text);
+            Toast.success('URL token disalin!');
+        } catch (e) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+        }
     },
 
     _wlCopyUrl() {
@@ -920,7 +1076,142 @@ const Settings = {
         const d = document.createElement('div');
         d.appendChild(document.createTextNode(s));
         return d.innerHTML;
-    }
+    },
+
+    // ------------------------------------------------------------------
+    // CLOUDFLARE TUNNEL AUTO-MANAGER
+    // ------------------------------------------------------------------
+
+    _cfPoller: null,
+
+    async loadCloudflareTunnelStatus() {
+        const badge = document.getElementById('cf-tunnel-status-badge');
+        const tokenInput = document.getElementById('cf-tunnel-token-input');
+        const toggle = document.getElementById('cf-tunnel-toggle');
+        if (!badge) return;
+
+        try {
+            const res = await API.request('/api/v1/kasir/settings/cloudflare-tunnel/status');
+            if (res.success && res.status) {
+                const s = res.status;
+                if (toggle) toggle.checked = s.enabled;
+                if (tokenInput) {
+                    if (s.token_set) {
+                        tokenInput.value = '••••••••••••••••••••••••••••••••';
+                        if (!tokenInput.dataset.focusBound) {
+                            tokenInput.dataset.focusBound = 'true';
+                            tokenInput.addEventListener('focus', () => {
+                                if (tokenInput.value === '••••••••••••••••••••••••••••••••') {
+                                    tokenInput.value = '';
+                                }
+                            });
+                        }
+                    } else {
+                        tokenInput.value = '';
+                        tokenInput.placeholder = 'Masukkan token eyJh...';
+                    }
+                }
+
+                // Handle download progress
+                if (s.download && s.download.downloading) {
+                    this._cfWasDownloading = true;
+                    const dl = s.download;
+                    const downloadedMb = (dl.downloaded_bytes / 1048576).toFixed(1);
+                    const totalMb = dl.total_bytes > 0 ? (dl.total_bytes / 1048576).toFixed(1) : '?';
+                    
+                    badge.textContent = `🟡 Mengunduh cloudflared (${dl.percent}%)...`;
+                    badge.className = 'px-3 py-1 rounded text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30';
+
+                    Toast.progress(
+                        'cf-download',
+                        'Mengunduh cloudflared.exe',
+                        dl.percent,
+                        `${downloadedMb} MB / ${totalMb} MB`
+                    );
+
+                    if (!this._cfPoller) {
+                        this._cfPoller = setInterval(() => this.loadCloudflareTunnelStatus(), 300);
+                    }
+                    return;
+                } else {
+                    if (this._cfPoller) {
+                        clearInterval(this._cfPoller);
+                        this._cfPoller = null;
+                    }
+                    if (this._cfWasDownloading) {
+                        this._cfWasDownloading = false;
+                        if (s.download && s.download.percent === 100) {
+                            Toast.progress('cf-download', 'Unduhan Selesai!', 100, 'cloudflared.exe berhasil diverifikasi');
+                        }
+                    }
+                }
+
+                if (s.running) {
+                    badge.textContent = '🟢 Tunnel Aktif';
+                    badge.className = 'px-3 py-1 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                } else if (s.enabled) {
+                    badge.textContent = '🟡 Menghubungkan...';
+                    badge.className = 'px-3 py-1 rounded text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                } else {
+                    badge.textContent = '🔴 Tunnel Nonaktif';
+                    badge.className = 'px-3 py-1 rounded text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
+                }
+            }
+        } catch (err) {
+            badge.textContent = '⚠️ Gagal Load Status';
+            badge.className = 'px-3 py-1 rounded text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700';
+        }
+    },
+
+    async saveCloudflareToken() {
+        const tokenInput = document.getElementById('cf-tunnel-token-input');
+        const token = tokenInput ? tokenInput.value.trim() : '';
+
+        if (!token || token === '••••••••••••••••••••••••••••••••') {
+            Toast.error('Masukkan token Cloudflare Tunnel yang baru');
+            return;
+        }
+
+        try {
+            const res = await API.request('/api/v1/kasir/settings/cloudflare-tunnel/save-token', {
+                method: 'POST',
+                body: JSON.stringify({ token })
+            });
+
+            if (res.success) {
+                Toast.success(res.message || 'Token berhasil disimpan');
+                await this.loadCloudflareTunnelStatus();
+            } else {
+                Toast.error(res.error || 'Gagal menyimpan token');
+            }
+        } catch (err) {
+            Toast.error('Gagal menyimpan token: ' + err.message);
+        }
+    },
+
+    async toggleCloudflareTunnel(enable) {
+        const toggle = document.getElementById('cf-tunnel-toggle');
+        Toast.info(enable ? 'Mulai menjalankan Cloudflare Tunnel...' : 'Menghentikan Cloudflare Tunnel...');
+
+        try {
+            const res = await API.request('/api/v1/kasir/settings/cloudflare-tunnel/toggle', {
+                method: 'POST',
+                body: JSON.stringify({ enable })
+            });
+
+            if (res.success) {
+                Toast.success(res.message);
+                await this.loadCloudflareTunnelStatus();
+            } else {
+                if (toggle) toggle.checked = !enable;
+                Toast.error(res.error || 'Gagal mengubah status tunnel');
+            }
+        } catch (err) {
+            if (toggle) toggle.checked = !enable;
+            Toast.error('Error saat mengubah status tunnel: ' + err.message);
+        }
+    },
+
 };
 
 window.Settings = Settings;

@@ -180,5 +180,7 @@ const MikrotikModule = {
 
 // Initialize when tab is shown
 document.addEventListener('DOMContentLoaded', () => {
-    MikrotikModule.init();
+    if (document.getElementById('mikrotik-enabled')) {
+        MikrotikModule.init();
+    }
 });

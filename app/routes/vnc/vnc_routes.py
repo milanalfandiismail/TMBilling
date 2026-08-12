@@ -1,6 +1,6 @@
 # app/routes/vnc/vnc_routes.py
 from flask import Blueprint, jsonify, session
-from app.services.vnc_service import VNCService
+from app.services import VNCService
 
 vnc_api_bp = Blueprint("vnc", __name__)
 

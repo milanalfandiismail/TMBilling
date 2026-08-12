@@ -588,3 +588,5 @@ app/static/src/
 # Release archives
 *.zip
 
+# Temporary tutorial images
+app/static/assets/tutorials/temp/

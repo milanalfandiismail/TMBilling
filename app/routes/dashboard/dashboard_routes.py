@@ -30,6 +30,12 @@ def dashboard():
     tz_label = get_tz_short_name(timezone)
     return render_template("kasir/index.html", user_timezone=timezone, user_timezone_label=tz_label)
 
+@dashboard_bp.route("/documentation", methods=["GET"])
+@login_required_html
+def documentation():
+    """Halaman standalone Dokumentasi & Panduan Sistem TMBilling."""
+    return render_template("kasir/documentation.html")
+
 @dashboard_bp.route("/login", methods=["GET"])
 def login_page():
     """Halaman login khusus kasir/admin."""
