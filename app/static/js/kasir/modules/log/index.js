@@ -1,3 +1,273 @@
+const LogFormatter = {
+    normalize(detailJson) {
+        if (!detailJson) return null;
+        if (typeof detailJson === 'string') {
+            try {
+                return JSON.parse(detailJson);
+            } catch (e) {
+                return detailJson;
+            }
+        }
+        return detailJson;
+    },
+
+    formatCurrency(val) {
+        if (typeof val === 'number') {
+            return 'Rp ' + val.toLocaleString('id-ID');
+        }
+        return val;
+    },
+
+    formatKey(key) {
+        if (!key) return '';
+        let result = key.replace(/_/g, ' ');
+        result = result.replace(/([A-Z])/g, ' $1');
+        result = result.trim();
+        return result.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    },
+
+    formatValue(key, val) {
+        if (val === null || val === undefined) return '-';
+        const keyLower = key.toLowerCase();
+        if (keyLower.includes('jumlah') || keyLower.includes('harga') || keyLower.includes('amount') || keyLower.includes('modal') || keyLower.includes('total') || keyLower.includes('saldo')) {
+            return this.formatCurrency(val);
+        }
+        if (keyLower.includes('durasi') || keyLower.includes('menit')) {
+            if (typeof val === 'number') {
+                return val + ' Menit';
+            }
+        }
+        return val;
+    },
+
+    formatRefund(data) {
+        const title = "Detail Refund";
+        let itemsHtml = '';
+        const order = [
+            { key: 'no_nota_refund', label: 'No. Nota Refund' },
+            { key: 'no_nota_original', label: 'No. Nota Asal' },
+            { key: 'jumlah_refund', label: 'Jumlah Refund' },
+            { key: 'saldo_sebelum', label: 'Saldo/Durasi Sebelum' },
+            { key: 'saldo_sesudah', label: 'Saldo/Durasi Sesudah' },
+            { key: 'durasi_beli_sebelum', label: 'Durasi Sebelum' },
+            { key: 'durasi_beli_sesudah', label: 'Durasi Sesudah' },
+            { key: 'durasi_dikurangi', label: 'Durasi Dikurangi' },
+            { key: 'username', label: 'Username Member' },
+            { key: 'nama_guest', label: 'Nama Guest' }
+        ];
+
+        order.forEach(item => {
+            if (data[item.key] !== undefined && data[item.key] !== null) {
+                const val = this.formatValue(item.key, data[item.key]);
+                itemsHtml += `
+                    <div class="flex justify-between items-center py-1 border-b border-[#1c1c1c]/50 text-[10px] lg:text-xs">
+                        <span class="text-neutral-500 font-semibold uppercase tracking-wider">${item.label}</span>
+                        <span class="text-neutral-200 font-mono font-bold">${val}</span>
+                    </div>`;
+            }
+        });
+
+        Object.keys(data).forEach(k => {
+            if (!order.some(item => item.key === k)) {
+                const label = this.formatKey(k);
+                const val = this.formatValue(k, data[k]);
+                itemsHtml += `
+                    <div class="flex justify-between items-center py-1 border-b border-[#1c1c1c]/50 text-[10px] lg:text-xs">
+                        <span class="text-neutral-500 font-semibold uppercase tracking-wider">${label}</span>
+                        <span class="text-neutral-200 font-mono font-bold">${val}</span>
+                    </div>`;
+            }
+        });
+
+        return `
+            <div class="mt-2 p-3 bg-[#0c0c0c] border border-red-500/20 rounded max-w-lg space-y-2">
+                <div class="text-[10px] lg:text-xs font-black uppercase text-red-400 tracking-wider flex items-center gap-1.5">
+                    <span>🔄</span> ${title}
+                </div>
+                <div class="space-y-1.5">${itemsHtml}</div>
+            </div>`;
+    },
+
+    formatDeleteStruk(data) {
+        const title = "Detail Penghapusan Struk";
+        let itemsHtml = '';
+        const order = [
+            { key: 'no_nota', label: 'No. Nota' },
+            { key: 'jenis', label: 'Jenis Transaksi' },
+            { key: 'jumlah', label: 'Jumlah / Nominal' },
+            { key: 'tanggal', label: 'Tanggal Transaksi' },
+            { key: 'keterangan', label: 'Keterangan' }
+        ];
+
+        order.forEach(item => {
+            if (data[item.key] !== undefined && data[item.key] !== null) {
+                const val = this.formatValue(item.key, data[item.key]);
+                itemsHtml += `
+                    <div class="flex justify-between items-center py-1 border-b border-[#1c1c1c]/50 text-[10px] lg:text-xs">
+                        <span class="text-neutral-500 font-semibold uppercase tracking-wider">${item.label}</span>
+                        <span class="text-neutral-200 font-mono font-bold">${val}</span>
+                    </div>`;
+            }
+        });
+
+        Object.keys(data).forEach(k => {
+            if (!order.some(item => item.key === k)) {
+                const label = this.formatKey(k);
+                const val = this.formatValue(k, data[k]);
+                itemsHtml += `
+                    <div class="flex justify-between items-center py-1 border-b border-[#1c1c1c]/50 text-[10px] lg:text-xs">
+                        <span class="text-neutral-500 font-semibold uppercase tracking-wider">${label}</span>
+                        <span class="text-neutral-200 font-mono">${val}</span>
+                    </div>`;
+            }
+        });
+
+        return `
+            <div class="mt-2 p-3 bg-[#0c0c0c] border border-amber-500/20 rounded max-w-lg space-y-2">
+                <div class="text-[10px] lg:text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                    <span>🗑️</span> ${title}
+                </div>
+                <div class="space-y-1.5">${itemsHtml}</div>
+            </div>`;
+    },
+
+    formatEditPaket(data) {
+        const title = "Perubahan Detail Paket";
+        let itemsHtml = '';
+
+        Object.keys(data).forEach(k => {
+            const label = this.formatKey(k);
+            const valObj = data[k];
+            if (valObj && typeof valObj === 'object' && 'old' in valObj && 'new' in valObj) {
+                const oldVal = this.formatValue(k, valObj.old);
+                const newVal = this.formatValue(k, valObj.new);
+                itemsHtml += `
+                    <div class="flex justify-between items-center py-1 border-b border-[#1c1c1c]/50 text-[10px] lg:text-xs gap-4">
+                        <span class="text-neutral-500 font-semibold uppercase tracking-wider">${label}</span>
+                        <span class="text-neutral-200 font-mono font-bold">
+                            <span class="text-neutral-500 line-through">${oldVal}</span> 
+                            <span class="text-neutral-400 mx-1">➔</span> 
+                            <span class="text-green-400">${newVal}</span>
+                        </span>
+                    </div>`;
+            } else {
+                const val = this.formatValue(k, valObj);
+                itemsHtml += `
+                    <div class="flex justify-between items-center py-1 border-b border-[#1c1c1c]/50 text-[10px] lg:text-xs">
+                        <span class="text-neutral-500 font-semibold uppercase tracking-wider">${label}</span>
+                        <span class="text-neutral-200 font-mono">${val}</span>
+                    </div>`;
+            }
+        });
+
+        return `
+            <div class="mt-2 p-3 bg-[#0c0c0c] border border-blue-500/20 rounded max-w-lg space-y-2">
+                <div class="text-[10px] lg:text-xs font-black uppercase text-blue-400 tracking-wider flex items-center gap-1.5">
+                    <span>📝</span> ${title}
+                </div>
+                <div class="space-y-1.5">${itemsHtml}</div>
+            </div>`;
+    },
+
+    formatGenericObject(obj, depth = 0) {
+        if (!obj || Object.keys(obj).length === 0) return '';
+        let itemsHtml = '';
+        
+        Object.keys(obj).forEach(k => {
+            const label = this.formatKey(k);
+            const val = obj[k];
+            
+            if (val && typeof val === 'object' && !Array.isArray(val)) {
+                itemsHtml += `
+                    <div class="py-1 border-b border-[#1c1c1c]/30 text-[10px] lg:text-xs">
+                        <div class="text-neutral-500 font-semibold uppercase tracking-wider mb-1">${label}</div>
+                        <div class="border-l-2 border-[#1c1c1c] pl-3 py-1 mt-1 space-y-1">
+                            ${this.formatGenericObject(val, depth + 1)}
+                        </div>
+                    </div>`;
+            } else if (Array.isArray(val)) {
+                itemsHtml += `
+                    <div class="py-1 border-b border-[#1c1c1c]/30 text-[10px] lg:text-xs">
+                        <div class="text-neutral-500 font-semibold uppercase tracking-wider mb-1">${label}</div>
+                        <div class="pl-3 py-1">
+                            ${this.formatGenericArray(val, depth + 1)}
+                        </div>
+                    </div>`;
+            } else {
+                const formattedVal = this.formatValue(k, val);
+                itemsHtml += `
+                    <div class="flex justify-between items-center py-1 border-b border-[#1c1c1c]/30 text-[10px] lg:text-xs">
+                        <span class="text-neutral-500 font-semibold uppercase tracking-wider">${label}</span>
+                        <span class="text-neutral-200 font-mono">${formattedVal}</span>
+                    </div>`;
+            }
+        });
+        
+        return itemsHtml;
+    },
+
+    formatGenericArray(arr, depth = 0) {
+        if (!arr || arr.length === 0) return '';
+        let itemsHtml = '';
+        arr.forEach((item, idx) => {
+            if (item && typeof item === 'object') {
+                itemsHtml += `
+                    <div class="p-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-[10px] lg:text-xs space-y-1 my-1">
+                        <div class="text-neutral-500 font-mono">Item #${idx + 1}</div>
+                        ${this.formatGenericObject(item, depth + 1)}
+                    </div>`;
+            } else {
+                itemsHtml += `<span class="inline-block px-2 py-0.5 bg-[#171717] border border-[#262626] rounded text-neutral-300 font-mono text-[10px] mr-1 mb-1">${item}</span>`;
+            }
+        });
+        return `<div class="flex flex-wrap">${itemsHtml}</div>`;
+    },
+
+    renderRawToggle(rawStr) {
+        const uniqId = 'raw-json-' + Math.random().toString(36).substring(2, 9);
+        return `
+            <div class="mt-2 text-[10px] lg:text-xs">
+                <button onclick="document.getElementById('${uniqId}').classList.toggle('hidden')" class="text-neutral-600 hover:text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors">
+                    <span>⚙️</span> Lihat Data Mentah (Raw)
+                </button>
+                <div id="${uniqId}" class="hidden mt-2 p-2 bg-[#050505] border border-[#1c1c1c] rounded text-[10px] lg:text-sm text-neutral-400 font-mono whitespace-pre overflow-x-auto">${Utils.escapeHtml(rawStr)}</div>
+            </div>`;
+    },
+
+    format(detailJson, action, detail) {
+        const data = this.normalize(detailJson);
+        if (!data) return '';
+
+        let formattedHtml = '';
+        const actUpper = (action || '').toUpperCase();
+
+        if (actUpper.includes('REFUND')) {
+            formattedHtml = this.formatRefund(data);
+        } else if (actUpper.includes('DELETE_STRUK')) {
+            formattedHtml = this.formatDeleteStruk(data);
+        } else if (actUpper.includes('EDIT_PAKET')) {
+            formattedHtml = this.formatEditPaket(data);
+        } else if (typeof data === 'object') {
+            if (Array.isArray(data)) {
+                formattedHtml = `
+                    <div class="mt-2 p-3 bg-[#0c0c0c] border border-[#1c1c1c] rounded max-w-lg space-y-1">
+                        ${this.formatGenericArray(data)}
+                    </div>`;
+            } else {
+                formattedHtml = `
+                    <div class="mt-2 p-3 bg-[#0c0c0c] border border-[#1c1c1c] rounded max-w-lg space-y-1">
+                        ${this.formatGenericObject(data)}
+                    </div>`;
+            }
+        } else {
+            formattedHtml = `<div class="mt-2 text-[10px] lg:text-xs text-neutral-400 font-mono">${Utils.escapeHtml(String(data))}</div>`;
+        }
+
+        const rawStr = typeof detailJson === 'string' ? detailJson : JSON.stringify(detailJson, null, 2);
+        return formattedHtml + this.renderRawToggle(rawStr);
+    }
+};
+
 const Log = {
     currentCategory: 'Semua',
 
@@ -50,8 +320,7 @@ const Log = {
             let detailJsonHtml = '';
             if (log.detail_json) {
                 try {
-                    const jsonStr = typeof log.detail_json === 'string' ? log.detail_json : JSON.stringify(log.detail_json, null, 2);
-                    detailJsonHtml = `<div class="mt-2 p-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-[10px] lg:text-sm text-neutral-400 font-mono whitespace-pre overflow-x-auto">${Utils.escapeHtml(jsonStr)}</div>`;
+                    detailJsonHtml = LogFormatter.format(log.detail_json, log.action, log.detail);
                 } catch (e) {
                     // Ignore
                 }
