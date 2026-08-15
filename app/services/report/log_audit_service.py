@@ -95,12 +95,28 @@ class LogAuditService:
         return {"logs": parsed_logs, "total": len(parsed_logs)}
 
     @staticmethod
-    def clear_system_logs(operator="system"):
-        """Bersihkan file log (Maintenance)."""
-        if clear_logs():
-            write_log("CLEAR_LOG", "Log dibersihkan", user=operator)
-            return True
-        return False
+    def clear_system_logs(operator="system", archive=True):
+        """Bersihkan file log dengan auto-archive dan pencatatan log audit terstruktur."""
+        res = clear_logs(archive=archive)
+        if res.get("success"):
+            detail_clear = {
+                "total_dibersihkan": res.get("total_lines", 0),
+                "diarsipkan": bool(res.get("archive_path")),
+                "lokasi_arsip": res.get("archive_path") or "-",
+                "dieksekusi_oleh": operator
+            }
+            write_log(
+                "CLEAR_LOG",
+                f"Log sistem dibersihkan ({res.get('total_lines', 0)} baris diarsipkan)",
+                user=operator,
+                detail_json=detail_clear
+            )
+            return {
+                "success": True,
+                "total_dibersihkan": res.get("total_lines", 0),
+                "archive_path": res.get("archive_path")
+            }
+        return {"success": False, "total_dibersihkan": 0, "archive_path": None}
 
     @staticmethod
     def clear_all_transactions(operator="system"):
