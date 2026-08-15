@@ -130,6 +130,32 @@ def seed_logs(include_legacy=True):
         write_log("DB_MAINTENANCE", "Admin membersihkan data > 6 bulan & VACUUM DB", user=operator, detail_json={
             "retention_months": 6, "space_saved": "12.4 MB"
         })
+        write_log("PAYMENT_METHOD_CONFIG", "Konfigurasi metode pembayaran diperbarui", user=operator, detail_json={
+            "key": "payment_methods", "old_value": "Tunai,QRIS", "new_value": "Tunai,QRIS,Transfer Bank,Debit"
+        })
+        write_log("SETTINGS_AUTO_SHUTDOWN", "Timer auto-shutdown PC Client diperbarui", user=operator, detail_json={
+            "timer_sebelum": "180", "timer_baru": "240"
+        })
+        write_log("CLIENT_ADMIN_LOGIN", "Admin login langsung di PC CLIENT-01", user=operator, detail_json={
+            "pc_kode": "CLIENT-01", "ip_address": "192.168.1.5", "mac_address": "00:11:22:33:44:55", "admin_user": "admin"
+        })
+        write_log("REMOTE_SCREENSHOT_TRIGGER", "Permintaan remote screenshot dikirim ke PC CLIENT-01", user=operator, detail_json={
+            "pc_kode": "CLIENT-01"
+        })
+        write_log("VNC_START", "Proxy Websockify VNC dijalankan pada port 5900", user=operator, detail_json={
+            "listen_port": 5900, "status": True
+        })
+        write_log("TOURNAMENT_CREATE", "Turnamen 'Audit Cup 2026' berhasil dibuat", user=operator, detail_json={
+            "nama": "Audit Cup 2026", "format": "playoff", "total_tim": 8
+        })
+        write_log("GAME_CREATE", "Game 'GTA V' ditambahkan ke katalog launcher", user=operator, detail_json={
+            "nama": "GTA V", "kategori": "Action", "exe_path": "C:\\Games\\GTA5.exe"
+        })
+        write_log("CLEAR_LOG", "Log audit sistem berhasil dibersihkan", user=operator, detail_json={
+            "total_dibersihkan": 250, "arsip_path": "logs/archives/warnet_log_20260815.jsonl.gz"
+        })
+
+        print("Base seeding done.")
 
         print("✅ Berhasil menyuntikkan seluruh sample logs (12 domain) ke sistem.")
 

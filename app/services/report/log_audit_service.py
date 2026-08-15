@@ -125,10 +125,15 @@ class LogAuditService:
             count_t = TransaksiRepository.delete_all()
             count_s = SesiRepository.delete_history()
             db.session.commit()
-            write_log("CLEAR_ALL_HISTORY", f"Seluruh riwayat dikosongkan ({count_t} transaksi, {count_s} sesi)", user=operator)
+            write_log(
+                "CLEAR_ALL_HISTORY",
+                f"Seluruh riwayat dikosongkan ({count_t} transaksi, {count_s} sesi)",
+                user=operator,
+                detail_json={"transaksi_dihapus": count_t, "sesi_dihapus": count_s, "action": "clear_all"}
+            )
             return True
         except Exception as e:
-            write_log("ERROR", f"Gagal hapus seluruh riwayat: {str(e)}", user=operator)
+            write_log("ERROR", f"Gagal hapus seluruh riwayat: {str(e)}", user=operator, detail_json={"error": str(e)})
             return False
 
     @staticmethod
@@ -144,7 +149,7 @@ class LogAuditService:
             t_detail = {
                 "no_nota": t.no_nota,
                 "total": t.jumlah if hasattr(t, 'jumlah') else 0,
-                "tipe_pembayaran": t.tipe_pembayaran if hasattr(t, 'tipe_pembayaran') else "-",
+                "metode_pembayaran": t.metode_pembayaran if hasattr(t, 'metode_pembayaran') else (t.tipe_pembayaran if hasattr(t, 'tipe_pembayaran') else "-"),
                 "jenis": t.jenis if hasattr(t, 'jenis') else "-",
                 "pelanggan": t.member.username if t.member else (t.sesi.nama_guest if hasattr(t, 'sesi') and t.sesi else "Guest")
             }
@@ -155,7 +160,7 @@ class LogAuditService:
                 return True
             return False
         except Exception as e:
-            write_log("ERROR", f"Gagal hapus struk {t_id}: {str(e)}", user=operator)
+            write_log("ERROR", f"Gagal hapus struk {t_id}: {str(e)}", user=operator, detail_json={"error": str(e)})
             return False
 
     @staticmethod
@@ -165,10 +170,15 @@ class LogAuditService:
             count_t = TransaksiRepository.delete_by_date(tanggal)
             count_s = SesiRepository.delete_history_by_date(tanggal)
             db.session.commit()
-            write_log("CLEAR_TANGGAL", f"Riwayat tanggal {tanggal} dihapus ({count_t} transaksi, {count_s} sesi)", user=operator)
+            write_log(
+                "CLEAR_TANGGAL",
+                f"Riwayat tanggal {tanggal} dihapus ({count_t} transaksi, {count_s} sesi)",
+                user=operator,
+                detail_json={"tanggal_target": tanggal, "transaksi_dihapus": count_t, "sesi_dihapus": count_s}
+            )
             return True
         except Exception as e:
-            write_log("ERROR", f"Gagal hapus riwayat tanggal {tanggal}: {str(e)}", user=operator)
+            write_log("ERROR", f"Gagal hapus riwayat tanggal {tanggal}: {str(e)}", user=operator, detail_json={"error": str(e), "tanggal_target": tanggal})
             return False
 
     @staticmethod

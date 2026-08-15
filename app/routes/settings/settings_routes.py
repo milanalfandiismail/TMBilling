@@ -455,6 +455,13 @@ def add_whitelist_ip():
             return jsonify({'error': 'IP address diperlukan.'}), 400
 
         entries = IpWhitelistService.add(ip, label)
+        operator = session.get('kasir_username', 'admin')
+        write_log(
+            "IP_WHITELIST_ADD",
+            f"IP {ip} ({label}) ditambahkan ke whitelist",
+            user=operator,
+            detail_json={"ip": ip, "label": label}
+        )
         return jsonify({'success': True, 'entries': entries})
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -470,6 +477,13 @@ def remove_whitelist_ip(ip):
     """DELETE — Hapus IP dari whitelist."""
     try:
         entries = IpWhitelistService.remove(ip)
+        operator = session.get('kasir_username', 'admin')
+        write_log(
+            "IP_WHITELIST_REMOVE",
+            f"IP {ip} dihapus dari whitelist",
+            user=operator,
+            detail_json={"ip": ip}
+        )
         return jsonify({'success': True, 'entries': entries})
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -488,10 +502,12 @@ def toggle_whitelist():
         enabled = data.get('enabled', False)
         IpWhitelistService.set_enabled(enabled)
 
+        operator = session.get('kasir_username', 'admin')
         write_log(
             aksi='IP_WHITELIST_TOGGLE',
             detail=f"Whitelist {'diaktifkan' if enabled else 'dinonaktifkan'}",
-            user=session.get('username', 'admin')
+            user=operator,
+            detail_json={"enabled": enabled}
         )
         return jsonify({'success': True, 'enabled': enabled})
     except Exception as e:
@@ -506,6 +522,13 @@ def regenerate_whitelist_token():
     """POST — Generate bypass token baru (invalidate semua sesi)."""
     try:
         token, version = IpWhitelistService.regenerate_token()
+        operator = session.get('kasir_username', 'admin')
+        write_log(
+            "IP_WHITELIST_TOKEN_REGEN",
+            f"Bypass token whitelist IP diregenerasi ke versi {version}",
+            user=operator,
+            detail_json={"version": version}
+        )
         return jsonify({'success': True, 'token': token, 'version': version})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
