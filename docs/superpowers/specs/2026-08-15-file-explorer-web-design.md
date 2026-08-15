@@ -1,77 +1,77 @@
-# Design Specification: File Explorer Web Component
+# Spesifikasi Desain: Komponen Web File Explorer
 
-- **Status**: Proposed
-- **Author**: Antigravity & User Pair
-- **Date**: 2026-08-15
-- **Category**: Architectural / Subsystem
-
----
-
-## 1. Executive Summary
-
-TMBilling requires a web-based **File Explorer** embedded directly in the admin dashboard. This enables administrators to inspect, browse, edit text/source files, and configure server directories within a restricted, sandboxed environment without opening remote desktop or arbitrary shell access.
+- **Status**: Disetujui
+- **Penulis**: Antigravity & Pasangan Pengembang
+- **Tanggal**: 15-08-2026
+- **Kategori**: Architectural / Subsystem
 
 ---
 
-## 2. Architecture & Tech Stack
+## 1. Ringkasan Eksekutif
 
-### 2.1 Technology Decisions
-
-1. **Backend Integration**: Direct Python Flask backend service utilizing `os`, `pathlib`, and `shutil`. A separate Rust background service is omitted because the Flask backend runs directly on the server host and already holds local filesystem access.
-2. **Frontend UI**:
-   - Modern Chamber Noir Dark UI matching existing TMBilling styling (`#0a0a0a`, `#171717`, `#1c1c1c`, Tailwind CSS).
-   - Dynamic Code Editor powered by **CodeMirror 6** (CDN bundle) with syntax highlighting, line numbers, and theme alignment.
-3. **Sidebar Placement**: Dedicated top-level navigation item: `📁 File Explorer` (Admin only).
-4. **Access Control**: Strict `@login_required` + `@admin_required` decorators on all routes.
+TMBilling membutuhkan fitur **File Explorer berbasis web** yang disematkan langsung di dashboard kasir/admin. Fitur ini memungkinkan administrator untuk menjelajahi direktori server, melihat metadata berkas, membuka dan menyunting berkas teks/kode sumber secara aman, serta mengonfigurasi direktori yang diizinkan (*allowed roots*) langsung dari antarmuka web tanpa membuka remote desktop atau memberikan akses shell/command sembarangan.
 
 ---
 
-## 3. Filesystem Security Sandbox & Allowed Roots
+## 2. Arsitektur & Pilihan Teknologi
 
-To prevent unauthorized file system deletion, tampering, or traversal:
+### 2.1 Keputusan Teknologi
 
-1. **Configurable Allowed Roots**:
-   - Admin configures allowed base directories via the File Explorer UI itself (persisted in database `Settings` table key `file_explorer_allowed_roots` as JSON array).
-   - Default root: Working directory of TMBilling (`c:\Project GIT\TMBilling`).
-2. **Strict Path Validation**:
-   - Every path requested is converted to an absolute canonical path (`os.path.realpath` / `pathlib.Path.resolve()`).
-   - The canonical target path MUST start with at least one canonical allowed root path.
-   - Symlinks and NTFS reparse points resolving outside allowed roots are rejected with `403 Forbidden`.
-   - Relative traversal components (`..`, `../`, `..\`) resolving outside allowed bounds are rejected.
+1. **Integrasi Backend**: Menggunakan backend Python Flask secara langsung dengan modul `os`, `pathlib`, dan `shutil`. Service background Rust terpisah tidak diperlukan karena backend Flask berjalan langsung di mesin server lokal dan telah memiliki akses filesystem lokal secara penuh.
+2. **Antarmuka Pengguna (Frontend)**:
+   - Tampilan tema *Chamber Noir Dark* konsisten dengan tema TMBilling (`#0a0a0a`, `#171717`, `#1c1c1c`, Tailwind CSS).
+   - Code Editor terintegrasi ditenagai oleh **CodeMirror 6** (CDN bundle) yang dilengkapi *syntax highlighting*, nomor baris, dan penyesuaian tema gelap.
+3. **Penempatan Navigasi Sidebar**: Menu tingkat atas tersendiri: `📁 File Explorer` (Khusus Administrator).
+4. **Kontrol Akses**: Proteksi ketat menggunakan dekorator `@login_required` + `@admin_required` di seluruh endpoint API dan tampilan tab.
 
 ---
 
-## 4. Editable File & Content Safety Policy
+## 3. Batasan Keamanan Filesystem & Direktori yang Diizinkan (*Allowed Roots*)
 
-1. **Binary Detection**:
-   - Extension blacklist/whitelist check + initial byte probe (check for null bytes `\x00` in the first 8000 bytes).
-   - Binary files (e.g. `.exe`, `.dll`, `.db`, `.png`, `.zip`) are marked as read-only/unsupported for editing.
-2. **File Size Limit**:
-   - File listing / directory stats: No limit.
-   - File text viewing / editing: Maximum **5 MB** to prevent browser memory exhaustion.
-3. **Encoding Handling**:
-   - Try UTF-8 first, then fallback to Latin-1 / CP1252 if UTF-8 decode fails.
-4. **Save Concurrency & Atomicity**:
-   - Optimistic concurrency check: Frontend passes last known `mtime` (modified timestamp). If disk `mtime` is newer, return conflict warning (`409 Conflict`) so changes aren't silently overwritten.
-   - Atomic writes: Write to a temporary file in the same directory first, then atomic replace (`os.replace`).
+Untuk mencegah penghapusan file sistem, peretasan direktori, atau eksploitasi path traversal:
+
+1. **Direktori Diizinkan yang Dapat Dikonfigurasi (*Configurable Allowed Roots*)**:
+   - Administrator mengonfigurasi daftar folder yang diizinkan langsung melalui antarmuka File Explorer (disimpan di database tabel `Settings` dengan kunci `file_explorer_allowed_roots` dalam format JSON array).
+   - Folder bawaan (*default*): Direktori kerja instalasi TMBilling (`c:\Project GIT\TMBilling`).
+2. **Validasi Path yang Ketat**:
+   - Setiap path yang diminta akan diubah menjadi *canonical path* mutlak (`os.path.realpath` / `pathlib.Path.resolve()`).
+   - Path tujuan WAJIB berawalan dari salah satu direktori yang terdaftar di *allowed roots*.
+   - Symlink atau junction point NTFS yang merujuk ke luar direktori yang diizinkan akan langsung ditolak dengan kode `403 Forbidden`.
+   - Pola traversal relatif (`..`, `../`, `..\`) yang berusaha melompat keluar dari batasan direktori akan ditolak.
 
 ---
 
-## 5. API Contracts
+## 4. Kebijakan Keamanan & Berkas yang Dapat Disunting
 
-All endpoints live under `/api/v1/kasir/fileexplorer/`:
+1. **Deteksi Berkas Biner (*Binary Detection*)**:
+   - Pengecekan ekstensi biner umum + pemeriksaan byte awal (memeriksa keberadaan *null bytes* `\x00` pada 8000 byte pertama).
+   - Berkas biner (contoh: `.exe`, `.dll`, `.db`, `.png`, `.zip`, `.gz`) hanya dapat dilihat infonya / tidak dapat disunting sebagai teks untuk mencegah kerusakan berkas.
+2. **Batas Ukuran Berkas (*File Size Limit*)**:
+   - Menjelajah folder & melihat metadata: Tidak ada batasan ukuran.
+   - Membaca / menyunting konten teks: Dibatasi maksimal **5 MB** guna mencegah peramban kehabisan memori (*out of memory*).
+3. **Penanganan Encoding**:
+   - Mencoba decode dengan UTF-8 terlebih dahulu, lalu otomatis beralih ke fallback Latin-1 / CP1252 jika decode UTF-8 gagal.
+4. **Konkurensi & Atomisitas Penyimpanan (*Save Concurrency & Atomicity*)**:
+   - Pemeriksaan konkurensi optimistik: Frontend mengirimkan nilai `mtime` (waktu modifikasi) terakhir yang diketahui. Jika `mtime` di disk ternyata lebih baru, server mengembalikan respon `409 Conflict` agar perubahan tidak ditimpa tanpa sengaja.
+   - Penulisan atomik: Menulis ke berkas sementara (*temp file*) di direktori yang sama terlebih dahulu, lalu menggantikannya secara atomik menggunakan `os.replace`.
+
+---
+
+## 5. Kontrak API (*API Contracts*)
+
+Seluruh endpoint berada di bawah prefix `/api/v1/kasir/fileexplorer/`:
 
 ### 5.1 `GET /api/v1/kasir/fileexplorer/roots`
-- **Desc**: Returns the list of currently allowed root directories.
-- **Response**: `{"success": true, "roots": ["C:\\Project GIT\\TMBilling", ...]}`
+- **Deskripsi**: Mengambil daftar direktori yang diizinkan saat ini.
+- **Respon**: `{"success": true, "roots": ["C:\\Project GIT\\TMBilling", ...]}`
 
 ### 5.2 `POST /api/v1/kasir/fileexplorer/roots`
-- **Desc**: Update/Add/Remove allowed root directories.
+- **Deskripsi**: Menambah, mengubah, atau menghapus daftar direktori yang diizinkan.
 - **Payload**: `{"roots": ["C:\\Project GIT\\TMBilling", "D:\\Backups"]}`
 
 ### 5.3 `GET /api/v1/kasir/fileexplorer/list?path=<canonical_path>`
-- **Desc**: Lists contents of a directory.
-- **Response**:
+- **Deskripsi**: Menampilkan daftar isi suatu direktori.
+- **Respon**:
   ```json
   {
     "success": true,
@@ -85,8 +85,8 @@ All endpoints live under `/api/v1/kasir/fileexplorer/`:
   ```
 
 ### 5.4 `GET /api/v1/kasir/fileexplorer/read?path=<canonical_path>`
-- **Desc**: Reads file contents for editing.
-- **Response**:
+- **Deskripsi**: Membaca isi berkas teks untuk disunting di editor.
+- **Respon**:
   ```json
   {
     "success": true,
@@ -100,7 +100,7 @@ All endpoints live under `/api/v1/kasir/fileexplorer/`:
   ```
 
 ### 5.5 `POST /api/v1/kasir/fileexplorer/save`
-- **Desc**: Saves changes to an existing file.
+- **Deskripsi**: Menyimpan perubahan isi berkas.
 - **Payload**:
   ```json
   {
@@ -112,57 +112,55 @@ All endpoints live under `/api/v1/kasir/fileexplorer/`:
   ```
 
 ### 5.6 `POST /api/v1/kasir/fileexplorer/create`
-- **Desc**: Creates a new file or folder.
-- **Payload**: `{"parent_path": "...", "name": "new_file.txt", "is_dir": false}`
+- **Deskripsi**: Membuat berkas atau folder baru.
+- **Payload**: `{"parent_path": "...", "name": "berkas_baru.txt", "is_dir": false}`
 
 ### 5.7 `POST /api/v1/kasir/fileexplorer/rename`
-- **Desc**: Renames a file or folder.
-- **Payload**: `{"path": "...", "new_name": "updated.txt"}`
+- **Deskripsi**: Mengganti nama berkas atau folder.
+- **Payload**: `{"path": "...", "new_name": "berkas_diperbarui.txt"}`
 
 ### 5.8 `POST /api/v1/kasir/fileexplorer/delete`
-- **Desc**: Deletes a file or directory (must be verified safe).
+- **Deskripsi**: Menghapus berkas atau folder (dijamin berada di dalam boundary).
 - **Payload**: `{"path": "..."}`
 
 ---
 
-## 6. Audit Logging
+## 6. Pencatatan Audit Log (*Audit Logging*)
 
-Every filesystem modification will emit an audit event using `write_log()`:
-- `FILE_EXPLORER_SAVE`: When a file is updated.
-- `FILE_EXPLORER_CREATE`: When a file/folder is created.
-- `FILE_EXPLORER_RENAME`: When a file/folder is renamed.
-- `FILE_EXPLORER_DELETE`: When a file/folder is deleted.
-- `FILE_EXPLORER_ROOTS_UPDATE`: When allowed roots configuration is modified.
-
-Category: `SYSTEM` or `MAINTENANCE`.
+Setiap operasi manipulasi berkas wajib dicatat menggunakan `write_log()` dengan kategori kanonikal `SYSTEM` / `MAINTENANCE`:
+- `FILE_EXPLORER_SAVE`: Saat berkas disimpan/diubah.
+- `FILE_EXPLORER_CREATE`: Saat berkas atau folder baru dibuat.
+- `FILE_EXPLORER_RENAME`: Saat berkas atau folder diubah namanya.
+- `FILE_EXPLORER_DELETE`: Saat berkas atau folder dihapus.
+- `FILE_EXPLORER_ROOTS_UPDATE`: Saat daftar direktori yang diizinkan diperbarui.
 
 ---
 
-## 7. Frontend Layout & UX
+## 7. Tata Letak & UX Frontend
 
-1. **Sidebar Link**:
-   - Located in `app/templates/kasir/components/sidebar.html`
-   - Icon: Folder SVG / 📁
+1. **Tautan Sidebar**:
+   - Lokasi: `app/templates/kasir/components/sidebar.html`
+   - Ikon: Berkas/Folder SVG 📁
    - Label: `File Explorer`
-2. **Main Tab View (`app/templates/kasir/tabs/fileexplorer.html`)**:
-   - Header with breadcrumbs bar + Action buttons (New File, New Folder, Refresh, Settings/Roots Config toggle).
-   - Split view or Dual Pane:
-     - Left Pane: Directory navigation tree & file list with search filter.
-     - Right Pane: CodeMirror 6 text editor, status bar (character count, line count, language/syntax mode, save indicator).
-   - Config Modal / Slide-out:
-     - Allowed roots manager (Add directory input, remove button, current active roots).
-3. **Scripting**:
-   - `app/static/js/kasir/modules/fileexplorer/index.js` loaded in `base.html`.
+2. **Tampilan Tab Utama (`app/templates/kasir/tabs/fileexplorer.html`)**:
+   - Bar navigasi rekam jejak (*breadcrumbs*) + tombol aksi (Buat Berkas, Buat Folder, Segarkan, Kelola Folder Diizinkan).
+   - Tampilan Terpisah (*Split View* / *Dual Pane*):
+     - **Panel Kiri**: Navigasi hierarki folder, daftar berkas, dan pencarian cepat.
+     - **Panel Kanan**: Code editor CodeMirror 6, bar status (jumlah baris, karakter, bahasa/syntax mode, status simpan).
+   - Modal Konfigurasi:
+     - Pengelola direktori yang diizinkan (Input tambah direktori, tombol hapus, daftar direktori aktif).
+3. **Modul JavaScript**:
+   - `app/static/js/kasir/modules/fileexplorer/index.js` dimuat di `base.html`.
 
 ---
 
-## 8. Verification Plan
+## 8. Rencana Pengujian & Verifikasi
 
-1. **Automated Unit & Integration Tests**:
-   - `tests/test_fileexplorer_security.py`: Tests path traversal attacks, symlink escape, non-allowed root rejection, binary file guard, file size limit.
-   - `tests/test_fileexplorer_api.py`: Tests list, read, save, create, rename, delete, conflict detection, and roots management endpoints.
-2. **Frontend UI Validation**:
-   - Verify tab navigation from sidebar.
-   - Verify breadcrumb path jumping.
-   - Verify file editing with CodeMirror 6 and hotkey `Ctrl+S` saving.
-   - Verify audit log emission.
+1. **Uji Otomatis Unit & Integrasi**:
+   - `tests/test_fileexplorer_security.py`: Menguji serangan path traversal, symlink escape, penolakan akses di luar allowed roots, perlindungan berkas biner, dan batasan ukuran berkas.
+   - `tests/test_fileexplorer_api.py`: Menguji fungsionalitas list, read, save, create, rename, delete, deteksi konflik perubahan, dan manajemen allowed roots.
+2. **Verifikasi Tampilan UI**:
+   - Navigasi tab dari sidebar berjalan lancar.
+   - Navigasi breadcrumb dapat diklik untuk melompat antar folder.
+   - Penyuntingan teks dengan CodeMirror 6 dan penyimpanan shortcut `Ctrl+S` berjalan mulus.
+   - Log audit tercatat dengan benar di sistem log.
