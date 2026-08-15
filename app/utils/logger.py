@@ -31,8 +31,173 @@ os.makedirs(LOG_ARCHIVE_DIR, exist_ok=True)
 
 LEGACY_LOG_PATTERN = re.compile(r"^\[(.*?)\] \[(.*?)\] (.*?) - (.*)$")
 
+ACTION_TO_CATEGORY_MAP = {
+    # 1. AUTHENTICATION
+    "LOGIN": "AUTHENTICATION",
+    "LOGOUT": "AUTHENTICATION",
+    "LOGIN_GAGAL": "AUTHENTICATION",
+    "LOGIN_MEMBER": "AUTHENTICATION",
+    "CLIENT_ADMIN_LOGIN": "AUTHENTICATION",
+    "EMERGENCY_LOGIN": "AUTHENTICATION",
+    "REMOTE_LOGOUT": "AUTHENTICATION",
+    "LOGOUT_ERROR": "AUTHENTICATION",
 
-def write_log(aksi, detail, user="kasir", detail_json=None):
+    # 2. USER_ACCOUNT
+    "TAMBAH_USER": "USER_ACCOUNT",
+    "UPDATE_USER": "USER_ACCOUNT",
+    "HAPUS_USER": "USER_ACCOUNT",
+    "TAMBAH_MEMBER": "USER_ACCOUNT",
+    "EDIT_MEMBER": "USER_ACCOUNT",
+    "DELETE_MEMBER": "USER_ACCOUNT",
+    "TAMBAH_GRUP": "USER_ACCOUNT",
+    "EDIT_GRUP": "USER_ACCOUNT",
+    "HAPUS_GRUP": "USER_ACCOUNT",
+
+    # 3. AUTHORIZATION_SECURITY
+    "ADMIN_CHECK_SUCCESS": "AUTHORIZATION_SECURITY",
+    "ADMIN_CHECK_FAILED": "AUTHORIZATION_SECURITY",
+    "ADMIN_CHECK_DENIED": "AUTHORIZATION_SECURITY",
+    "IP_WHITELIST_ADD": "AUTHORIZATION_SECURITY",
+    "IP_WHITELIST_REMOVE": "AUTHORIZATION_SECURITY",
+    "IP_WHITELIST_BLOCK": "AUTHORIZATION_SECURITY",
+    "IP_WHITELIST_SESSION_DESTROY": "AUTHORIZATION_SECURITY",
+    "IP_WHITELIST_TOGGLE": "AUTHORIZATION_SECURITY",
+    "IP_WHITELIST_TOKEN_REGEN": "AUTHORIZATION_SECURITY",
+    "API_KEY_GAGAL": "AUTHORIZATION_SECURITY",
+    "SETTINGS_APIKEY_CHANGE": "AUTHORIZATION_SECURITY",
+
+    # 4. PAYMENT_BILLING
+    "PAYMENT_METHOD_CONFIG": "PAYMENT_BILLING",
+    "SETTINGS_QRIS_CHANGE": "PAYMENT_BILLING",
+    "TOPUP_MEMBER": "PAYMENT_BILLING",
+    "TRANSAKSI": "PAYMENT_BILLING",
+    "TRANSAKSI_MENU": "PAYMENT_BILLING",
+    "REFUND_PAKET": "PAYMENT_BILLING",
+
+    # 5. TRANSACTION
+    "DELETE_STRUK": "TRANSACTION",
+    "SHIFT_BUKA": "TRANSACTION",
+    "SHIFT_TUTUP": "TRANSACTION",
+
+    # 6. SESI_BILLING
+    "BUKA_GUEST": "SESI_BILLING",
+    "BUKA_MEMBER": "SESI_BILLING",
+    "TAMBAH_WAKTU": "SESI_BILLING",
+    "PINDAH_PC": "SESI_BILLING",
+    "TUTUP_SESI": "SESI_BILLING",
+    "TUTUP_SESI_ERROR": "SESI_BILLING",
+    "CLEANUP": "SESI_BILLING",
+
+    # 7. DATA_CATALOG
+    "TAMBAH_MENU": "DATA_CATALOG",
+    "EDIT_MENU": "DATA_CATALOG",
+    "HAPUS_MENU": "DATA_CATALOG",
+    "HAPUS_MENU_PERMANEN": "DATA_CATALOG",
+    "ARSIP_MENU": "DATA_CATALOG",
+    "RESTORE_MENU": "DATA_CATALOG",
+    "TAMBAH_PAKET": "DATA_CATALOG",
+    "EDIT_PAKET": "DATA_CATALOG",
+    "HAPUS_PAKET": "DATA_CATALOG",
+    "TAMBAH_PC": "DATA_CATALOG",
+    "EDIT_PC": "DATA_CATALOG",
+    "HAPUS_PC": "DATA_CATALOG",
+    "BATCH_PC": "DATA_CATALOG",
+    "WOL_PACKET": "DATA_CATALOG",
+    "RESET_ADMIN": "DATA_CATALOG",
+
+    # 8. MONITOR_REMOTE
+    "REMOTE_ACTION": "MONITOR_REMOTE",
+    "REMOTE_KILL": "MONITOR_REMOTE",
+    "REMOTE_SCREENSHOT_TRIGGER": "MONITOR_REMOTE",
+    "VNC_START": "MONITOR_REMOTE",
+    "SCREENSHOT_UPLOAD": "MONITOR_REMOTE",
+    "SCREENSHOT_UPLOAD_ERROR": "MONITOR_REMOTE",
+    "MONITOR": "MONITOR_REMOTE",
+    "MONITOR_ERROR": "MONITOR_REMOTE",
+    "HARDWARE_ALERT": "MONITOR_REMOTE",
+    "UPDATE_BASELINE": "MONITOR_REMOTE",
+    "HAPUS_MONITOR": "MONITOR_REMOTE",
+    "IDENTIFY_START": "MONITOR_REMOTE",
+    "IDENTIFY_SUCCESS": "MONITOR_REMOTE",
+    "IDENTIFY_FAIL": "MONITOR_REMOTE",
+    "IDENTIFY_REJECTED": "MONITOR_REMOTE",
+    "IDENTIFY_AUTO_REG": "MONITOR_REMOTE",
+    "STATUS_AUTO_REG": "MONITOR_REMOTE",
+    "STATUS_REJECTED": "MONITOR_REMOTE",
+    "CLIENT_STATUS_CRASH": "MONITOR_REMOTE",
+    "CLIENT_STATUS_ERROR": "MONITOR_REMOTE",
+    "CLIENT_STATUS_MAC_FALLBACK": "MONITOR_REMOTE",
+    "CLIENT_STATUS_UNKNOWN": "MONITOR_REMOTE",
+    "CLIENT_TUTUP_ERROR": "MONITOR_REMOTE",
+
+    # 9. TOURNAMENT_GAME
+    "TOURNAMENT_CREATE": "TOURNAMENT_GAME",
+    "TOURNAMENT_DELETE": "TOURNAMENT_GAME",
+    "TOURNAMENT_SCORE_UPDATE": "TOURNAMENT_GAME",
+    "TOURNAMENT_STAGE_UPDATE": "TOURNAMENT_GAME",
+    "GAME_CREATE": "TOURNAMENT_GAME",
+    "GAME_UPDATE": "TOURNAMENT_GAME",
+    "GAME_DELETE": "TOURNAMENT_GAME",
+
+    # 10. CONFIGURATION
+    "SETTINGS_AUTO_SHUTDOWN": "CONFIGURATION",
+    "SETTINGS_TIMEZONE": "CONFIGURATION",
+    "SETTINGS_UPDATE": "CONFIGURATION",
+    "IP_WHITELIST_PUBLIC_URL": "CONFIGURATION",
+    "CLOUDFLARE_TUNNEL_SAVE_TOKEN": "CONFIGURATION",
+    "CLOUDFLARE_TUNNEL_TOGGLE": "CONFIGURATION",
+
+    # 11. API_INTEGRATION
+    "MIKROTIK_CONFIG": "API_INTEGRATION",
+    "MIKROTIK_ERROR": "API_INTEGRATION",
+    "MIKROTIK_SYNC": "API_INTEGRATION",
+
+    # 12. BACKGROUND_JOB
+    "SCHEDULER": "BACKGROUND_JOB",
+    "SCHEDULER_CONFIG": "BACKGROUND_JOB",
+    "SCHEDULER_ERROR": "BACKGROUND_JOB",
+    "SCHEDULER_RESTART": "BACKGROUND_JOB",
+
+    # 13. MAINTENANCE
+    "CLEAR_LOG": "MAINTENANCE",
+    "CLEAR_ALL_HISTORY": "MAINTENANCE",
+    "CLEAR_TANGGAL": "MAINTENANCE",
+    "DB_MAINTENANCE": "MAINTENANCE",
+    "DATABASE_BACKUP": "MAINTENANCE",
+    "DATABASE_DOWNLOAD": "MAINTENANCE",
+    "MANUAL_BACKUP": "MAINTENANCE",
+    "BACKUP_CLEANUP": "MAINTENANCE",
+    "BACKUP_DELETE": "MAINTENANCE",
+    "BACKUP_CLOUD_SUCCESS": "MAINTENANCE",
+    "BACKUP_CLOUD_FAILED": "MAINTENANCE",
+    "BACKUP_TEST_CONNECTION": "MAINTENANCE",
+    "DATABASE_MIGRATION_UPGRADE": "MAINTENANCE",
+    "BUAT_TIKET": "MAINTENANCE",
+    "UPDATE_TIKET": "MAINTENANCE",
+    "HAPUS_TIKET": "MAINTENANCE",
+
+    # 14. SYSTEM
+    "BLACKOUT_DETECT": "SYSTEM",
+    "BLACKOUT_RESOLVE_MEMBER": "SYSTEM",
+    "BLACKOUT_RESOLVE_GUEST_LANJUT": "SYSTEM",
+    "BLACKOUT_RESOLVE_GUEST_SAMA": "SYSTEM",
+    "BLACKOUT_RESOLVE_TUTUP": "SYSTEM",
+    "BLACKOUT_CLEAR": "SYSTEM",
+    "FORCE_CLOSE_ALL": "SYSTEM",
+    "ACCESS_DASHBOARD": "SYSTEM",
+    "APPLICATION_UPDATE": "SYSTEM",
+
+    # 15. ERROR_FAILURE
+    "ERROR": "ERROR_FAILURE",
+    "DB_ERROR": "ERROR_FAILURE",
+    "BACKUP_ERROR": "ERROR_FAILURE",
+    "DATABASE_MIGRATION_ERROR": "ERROR_FAILURE",
+    "SYNC_ERROR": "ERROR_FAILURE",
+    "UPTIME_SERVICE_ERROR": "ERROR_FAILURE",
+}
+
+
+def write_log(aksi, detail, user="kasir", detail_json=None, category=None):
     """Menulis satu baris log ke file warnet.log.
     
     Args:
@@ -40,6 +205,7 @@ def write_log(aksi, detail, user="kasir", detail_json=None):
         detail (str): Deskripsi detail dari aksi tersebut.
         user (str, optional): Identitas pelaku aksi. Defaults to 'kasir'.
         detail_json (dict, optional): Detail payload tambahan dalam bentuk JSON. Defaults to None.
+        category (str, optional): Kategori log. Jika tidak ada, di-resolve dari ACTION_TO_CATEGORY_MAP.
         
     Example:
         >>> write_log("LOGIN", "Kasir admin login", user="admin")
@@ -60,11 +226,15 @@ def write_log(aksi, detail, user="kasir", detail_json=None):
     elif user == "SYSTEM":
         browser_agent = "SYSTEM"
 
+    if not category:
+        category = ACTION_TO_CATEGORY_MAP.get(aksi.upper(), "SYSTEM")
+
     log_entry = {
         "timestamp": now,
         "user": user,
         "action": aksi,
         "detail": detail,
+        "category": category,
         "ip_address": ip_address,
         "browser_agent": browser_agent,
         "detail_json": detail_json
@@ -117,18 +287,24 @@ def normalize_legacy_log_line(line: str) -> dict:
         return {}
     if line_str.startswith("{") and line_str.endswith("}"):
         try:
-            return json.loads(line_str)
+            data = json.loads(line_str)
+            if "category" not in data:
+                action = data.get("action", "")
+                data["category"] = ACTION_TO_CATEGORY_MAP.get(action.upper(), "SYSTEM")
+            return data
         except Exception:
             pass
     
     match = LEGACY_LOG_PATTERN.match(line_str)
     if match:
         ts, user, action, detail = match.groups()
+        category = ACTION_TO_CATEGORY_MAP.get(action.upper(), "SYSTEM")
         return {
             "timestamp": ts,
             "user": user,
             "action": action,
             "detail": detail,
+            "category": category,
             "ip_address": "-",
             "browser_agent": "-",
             "detail_json": None
@@ -139,6 +315,7 @@ def normalize_legacy_log_line(line: str) -> dict:
         "user": "system",
         "action": "RAW_LOG",
         "detail": line_str,
+        "category": "SYSTEM",
         "ip_address": "-",
         "browser_agent": "-",
         "detail_json": None
