@@ -74,6 +74,7 @@ def list_pc_api():
 
 @dashboard_api_bp.route("/server-metrics", methods=["GET"])
 @login_required
+@admin_required
 def server_metrics_api():
     """Endpoint API untuk memantau performa Server (CPU, RAM, Disk, NIC, GPU)."""
     from app.services.dashboard.server_monitor_service import ServerMonitorService

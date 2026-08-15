@@ -9,7 +9,7 @@ hardware semua PC di dashboard kasir.
 from flask import Blueprint, request, jsonify, session
 from app.services import HardwareService
 from app.utils.logger import write_log
-from app.routes.auth.auth_kasir_routes import login_required
+from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.routes.client.client_routes import api_key_required
 
 monitor_api_bp = Blueprint("monitor", __name__)
@@ -71,6 +71,7 @@ def get_pc_processes(pc_id):
 
 @monitor_api_bp.route("/processes/<int:pc_id>/kill", methods=["POST"])
 @login_required
+@admin_required
 def kill_pc_process(pc_id):
     """Trigger request taskkill process ke client PC berdasarkan PC ID."""
     try:
@@ -93,6 +94,8 @@ def kill_pc_process(pc_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 @monitor_api_bp.route("/<int:hardware_id>", methods=["DELETE"])
+@login_required
+@admin_required
 def delete_hardware_data(hardware_id):
     """Endpoint untuk menghapus data hardware monitor tertentu secara manual dari dashboard."""
     try:
@@ -106,6 +109,7 @@ def delete_hardware_data(hardware_id):
 
 @monitor_kasir_bp.route("/screenshot/trigger/<int:pc_id>", methods=["POST"])
 @login_required
+@admin_required
 def trigger_screenshot(pc_id):
     """Trigger request screenshot ke client PC berdasarkan PC ID."""
     try:
@@ -122,6 +126,7 @@ def trigger_screenshot(pc_id):
         return jsonify({"success": False, "error": str(e)}), 500
 @monitor_kasir_bp.route("/remote/<int:pc_id>/<string:action>", methods=["POST"])
 @login_required
+@admin_required
 def trigger_remote_action(pc_id, action):
     """Trigger remote action (shutdown atau restart) ke client PC berdasarkan PC ID."""
     try:
@@ -254,6 +259,7 @@ def get_all_screenshot_status():
 
 @monitor_kasir_bp.route("/register/<int:pc_id>", methods=["POST"])
 @login_required
+@admin_required
 def register_pc_hardware(pc_id):
     """Endpoint untuk mendaftarkan hardware saat ini sebagai baseline resmi PC (Update Baseline)."""
     try:
