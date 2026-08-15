@@ -354,7 +354,7 @@ const Log = {
         cats.forEach(c => {
             const el = document.getElementById(`log-cat-${c}`);
             if (el) {
-                if (c === category) {
+                if (c.toLowerCase() === category.toLowerCase()) {
                     el.className = 'px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-neutral-100 text-black';
                 } else {
                     el.className = 'px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40';
