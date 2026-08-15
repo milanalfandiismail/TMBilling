@@ -4,6 +4,7 @@ import os
 from werkzeug.utils import secure_filename
 from app.repositories.game.game_repository import GameRepository
 from app.models.game.game import Game
+from app.utils.logger import write_log
 
 UPLOAD_FOLDER = os.path.join('app', 'static', 'uploads', 'games')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
@@ -54,7 +55,15 @@ class GameService:
         if operator:
             game.operator_id = operator
             
-        return GameRepository.add(game)
+        result = GameRepository.add(game)
+        op_name = operator if isinstance(operator, str) else "admin"
+        write_log(
+            "GAME_CREATE",
+            f"Game '{nama}' berhasil ditambahkan ke katalog",
+            user=op_name,
+            detail_json={"nama": game.nama, "kategori": game.kategori, "exe_path": game.exe_path, "argumen": game.argumen}
+        )
+        return result
 
     @staticmethod
     def update(game_id, data, icon_file=None, operator=None):
@@ -65,6 +74,9 @@ class GameService:
         if "nama" in data and not data["nama"]:
             raise ValueError("Nama game tidak boleh kosong")
             
+        old_nama = game.nama
+        old_kategori = game.kategori
+        
         if "nama" in data: game.nama = data["nama"]
         if "kategori" in data: game.kategori = data["kategori"]
         if "exe_path" in data: game.exe_path = data["exe_path"]
@@ -81,7 +93,15 @@ class GameService:
         if operator:
             game.operator_id = operator
             
-        return GameRepository.update(game)
+        result = GameRepository.update(game)
+        op_name = operator if isinstance(operator, str) else "admin"
+        write_log(
+            "GAME_UPDATE",
+            f"Game '{old_nama}' berhasil diperbarui",
+            user=op_name,
+            detail_json={"nama_sebelum": old_nama, "nama_baru": game.nama, "kategori_sebelum": old_kategori, "kategori_baru": game.kategori, "exe_path": game.exe_path}
+        )
+        return result
 
     @staticmethod
     def delete(game_id, operator=None):
@@ -99,4 +119,11 @@ class GameService:
                     pass
                     
         GameRepository.delete(game)
+        op_name = operator if isinstance(operator, str) else "admin"
+        write_log(
+            "GAME_DELETE",
+            f"Game '{game.nama}' berhasil dihapus dari katalog",
+            user=op_name,
+            detail_json={"nama": game.nama, "kategori": game.kategori}
+        )
         return {"success": True, "message": f"Game '{game.nama}' berhasil dihapus"}
