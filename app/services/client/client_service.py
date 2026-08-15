@@ -274,9 +274,6 @@ class ClientService:
         from app.repositories import UserRepository
         import secrets
         
-        from app.repositories import UserRepository
-        import secrets
-        
         pc = PCRepository.get_by_ip(ip_address)
         if not pc:
             raise ValueError("IP PC tidak terdaftar")
@@ -310,6 +307,12 @@ class ClientService:
         SesiService.buka_admin(pc.id, token)
         
         db.session.commit()
+        write_log(
+            "CLIENT_ADMIN_LOGIN",
+            f"Admin {username} login langsung di PC {pc.kode}",
+            user=username,
+            detail_json={"pc_kode": pc.kode, "ip_address": ip_address, "mac_address": mac_address, "admin_user": username}
+        )
         return {"success": True, "token_sesi": token}
 
 
