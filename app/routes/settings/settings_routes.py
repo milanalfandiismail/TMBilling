@@ -70,7 +70,15 @@ def update_auto_shutdown():
             return jsonify({"error": "Range timer harus antara 30 s/d 600 detik"}), 400
         
         # Simpan ke Database via Service
+        old_val = SettingsService.get("auto_shutdown_timer_seconds", "180")
         SettingsService.set("auto_shutdown_timer_seconds", str(timer_seconds))
+        operator = session.get("kasir_username", "admin")
+        write_log(
+            "SETTINGS_AUTO_SHUTDOWN",
+            f"Timer auto-shutdown diubah dari {old_val}s menjadi {timer_seconds}s",
+            user=operator,
+            detail_json={"timer_sebelum": old_val, "timer_baru": timer_seconds}
+        )
         return jsonify({"success": True, "message": "Timer berhasil diperbarui"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -87,7 +95,16 @@ def update_setting(key):
         if value is None:
             return jsonify({"error": "Nilai 'value' wajib diisi"}), 400
             
+        old_val = SettingsService.get(key, "-")
         SettingsService.set(key, str(value))
+        operator = session.get("kasir_username", "admin")
+        action_name = "PAYMENT_METHOD_CONFIG" if key == "payment_methods" else "SETTINGS_UPDATE"
+        write_log(
+            action_name,
+            f"Pengaturan '{key}' diperbarui",
+            user=operator,
+            detail_json={"key": key, "old_value": old_val, "new_value": str(value)}
+        )
         return jsonify({"success": True, "message": f"Setting '{key}' diperbarui"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
