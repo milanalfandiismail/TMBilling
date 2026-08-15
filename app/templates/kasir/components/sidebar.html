@@ -183,6 +183,7 @@
         </div>
         {% endif %}
 
+        {% if session.get('kasir_role') == 'admin' %}
         <!-- 7. Sistem & Utilitas -->
         <div class="space-y-1">
             <button onclick="Sidebar.toggleDropdown('system')"
@@ -229,6 +230,7 @@
                 {% endif %}
             </div>
         </div>
+        {% endif %}
 
         {% if session.get('kasir_role') == 'admin' %}
         <!-- 7. Pengaturan -->
@@ -314,6 +316,7 @@
         </button>
         {% endif %}
 
+        {% if session.get('kasir_role') == 'admin' %}
         <!-- 9. Ekstensi & Plugins (Dynamic) -->
         <div class="space-y-1">
             <button onclick="Sidebar.toggleDropdown('plugins')"
@@ -346,6 +349,7 @@
                 {% endfor %}
             </div>
         </div>
+        {% endif %}
 
         <!-- 10. Dokumentasi & Tutorial -->
         <a href="/kasir/documentation"
