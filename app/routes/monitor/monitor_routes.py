@@ -88,7 +88,8 @@ def kill_pc_process(pc_id):
         from app.services.client.client_service import ClientService
         ClientService.queue_command(pc.id, f"kill:{process_name}")
 
-        write_log("REMOTE_KILL", f"Perintah Kill Process '{process_name}' dikirim ke PC {pc.kode}")
+        operator = session.get("kasir_username", "admin")
+        write_log("REMOTE_KILL", f"Perintah Kill Process '{process_name}' dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode, "process_name": process_name})
         return jsonify({"success": True, "message": f"Perintah mengakhiri proses {process_name} berhasil dikirim ke {pc.kode}"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -121,6 +122,8 @@ def trigger_screenshot(pc_id):
         from app.services import ClientService
         ClientService.queue_command(pc.id, "screenshot")
 
+        operator = session.get("kasir_username", "admin")
+        write_log("REMOTE_SCREENSHOT_TRIGGER", f"Permintaan Screenshot dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode})
         return jsonify({"success": True, "message": f"Perintah screenshot berhasil dikirim ke {pc.kode}"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -142,7 +145,8 @@ def trigger_remote_action(pc_id, action):
         ClientService.queue_command(pc.id, action)
 
         action_label = "Shutdown" if action == "shutdown" else "Restart"
-        write_log("REMOTE_ACTION", f"Perintah {action_label} dikirim ke PC {pc.kode}")
+        operator = session.get("kasir_username", "admin")
+        write_log("REMOTE_ACTION", f"Perintah {action_label} dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode, "action": action})
         return jsonify({"success": True, "message": f"Perintah {action_label} berhasil dikirim ke {pc.kode}"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
