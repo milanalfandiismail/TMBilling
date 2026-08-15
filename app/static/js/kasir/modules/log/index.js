@@ -333,17 +333,7 @@ const LogFormatter = {
 const Log = {
     currentCategory: 'Semua',
 
-    async load(filter = '', kategori = '') {
-        try {
-            const data = await API.report.logs(filter, 500, kategori);
-            this.render(data.logs);
-        } catch (err) {
-            Toast.error('Gagal memuat log');
-        }
-    },
-
-    switchCategory(category, btnEl) {
-        this.currentCategory = category;
+    updateTabStyles(category) {
         const cats = [
             'Semua', 'sistem', 'transaksi', 'sesi', 'blackout',
             'AUTHENTICATION', 'USER_ACCOUNT', 'AUTHORIZATION_SECURITY', 'PAYMENT_BILLING',
@@ -355,12 +345,27 @@ const Log = {
             const el = document.getElementById(`log-cat-${c}`);
             if (el) {
                 if (c.toLowerCase() === category.toLowerCase()) {
-                    el.className = 'px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-neutral-100 text-black';
+                    el.className = 'px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-neutral-100 text-black border border-transparent';
                 } else {
                     el.className = 'px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40';
                 }
             }
         });
+    },
+
+    async load(filter = '', kategori = '') {
+        try {
+            this.updateTabStyles(this.currentCategory);
+            const data = await API.report.logs(filter, 500, kategori);
+            this.render(data.logs);
+        } catch (err) {
+            Toast.error('Gagal memuat log');
+        }
+    },
+
+    switchCategory(category, btnEl) {
+        this.currentCategory = category;
+        this.updateTabStyles(category);
         this.filter();
     },
     
