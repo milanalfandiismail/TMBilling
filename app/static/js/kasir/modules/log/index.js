@@ -225,23 +225,54 @@ const LogFormatter = {
 
     resolveTheme(action) {
         const act = (action || '').toUpperCase();
-        if (act.includes('REFUND')) return { icon: '🔄', title: 'Detail Refund', border: 'border-red-500/20', text: 'text-red-400' };
-        if (act.startsWith('BUKA_') || act === 'TUTUP_SESI' || act === 'PINDAH_PC' || act === 'TAMBAH_WAKTU') 
+        
+        // 1. Refund
+        if (act.includes('REFUND')) 
+            return { icon: '🔄', title: 'Detail Refund', border: 'border-red-500/20', text: 'text-red-400' };
+        
+        // 2. Blackout / Mati Lampu
+        if (act.includes('BLACKOUT')) 
+            return { icon: '⚡', title: 'Insiden Blackout (Mati Lampu)', border: 'border-amber-500/30', text: 'text-amber-400' };
+
+        // 3. Sesi & Billing
+        if (act.startsWith('BUKA_') || act.includes('TUTUP_SESI') || act === 'PINDAH_PC' || act === 'TAMBAH_WAKTU') 
             return { icon: '🎮', title: 'Detail Sesi & Billing', border: 'border-emerald-500/20', text: 'text-emerald-400' };
+        
+        // 4. Kantin & POS F&B
         if (act === 'TRANSAKSI_MENU' || act.includes('MENU')) 
             return { icon: '🍔', title: 'Detail Kantin & POS', border: 'border-amber-500/20', text: 'text-amber-400' };
+        
+        // 5. Member
         if (act.includes('MEMBER')) 
             return { icon: '👤', title: 'Detail Member', border: 'border-purple-500/20', text: 'text-purple-400' };
+        
+        // 6. Shift Kasir
         if (act.startsWith('SHIFT_')) 
             return { icon: '💵', title: 'Detail Shift Kasir', border: 'border-cyan-500/20', text: 'text-cyan-400' };
+        
+        // 7. Paket Billing
         if (act.includes('PAKET')) 
             return { icon: '💳', title: 'Detail Paket Billing', border: 'border-blue-500/20', text: 'text-blue-400' };
-        if (act.includes('PC') || act.includes('GRUP') || act.includes('BATCH_')) 
+        
+        // 8. Unit PC / Zona
+        if (act.includes('PC') || act.includes('GRUP') || act.includes('BATCH_') || act.includes('WOL_')) 
             return { icon: '🖥️', title: 'Detail Unit PC / Zona', border: 'border-indigo-500/20', text: 'text-indigo-400' };
-        if (act.includes('USER') || act.includes('LOGIN') || act.includes('LOGOUT')) 
+        
+        // 9. Akun & Keamanan (Auth, Whitelist)
+        if (act.includes('USER') || act.includes('LOGIN') || act.includes('LOGOUT') || act.includes('IP_WHITELIST')) 
             return { icon: '🔑', title: 'Detail Akun & Keamanan', border: 'border-neutral-500/20', text: 'text-neutral-300' };
+        
+        // 10. Perawatan & Tiket PC
         if (act.includes('TIKET') || act.includes('MAINTENANCE')) 
             return { icon: '🛠️', title: 'Detail Perawatan PC', border: 'border-orange-500/20', text: 'text-orange-400' };
+        
+        // 11. Pembersihan Log, Hapus Struk & Riwayat
+        if (act.includes('CLEAR_') || act.includes('DELETE_STRUK') || act.includes('CLEANUP')) 
+            return { icon: '🧹', title: 'Pembersihan Log & Riwayat', border: 'border-rose-500/20', text: 'text-rose-400' };
+
+        // 12. Sistem, Backup, Scheduler & Settings
+        if (act.includes('SETTINGS') || act.includes('BACKUP') || act.includes('MIGRATION') || act.includes('SCHEDULER') || act.includes('DB_') || act.includes('UPDATE')) 
+            return { icon: '⚙️', title: 'Sistem & Konfigurasi', border: 'border-sky-500/20', text: 'text-sky-400' };
         
         return { icon: '📄', title: 'Detail Data', border: 'border-[#1c1c1c]', text: 'text-neutral-400' };
     },
@@ -385,14 +416,29 @@ const Log = {
     },
     
     async clear() {
-        const message = '<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Hapus semua log?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Tindakan ini bersifat permanen.</p></div>';
-        Modal.confirm(message, async () => {
+        const modalHtml = `
+            <div class="text-left space-y-3">
+                <div class="text-center">
+                    <p class="text-xs lg:text-base text-neutral-200 font-bold uppercase tracking-wider">Bersihkan Semua Audit Log?</p>
+                    <p class="text-[11px] lg:text-xs text-neutral-400 mt-1">Tindakan ini akan mengosongkan riwayat log aktif di dashboard.</p>
+                </div>
+                <div class="p-3 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs space-y-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="chk-auto-archive" checked class="rounded border-neutral-700 bg-neutral-900 text-blue-500 focus:ring-0">
+                        <span class="text-neutral-300 font-medium">Buat file arsip otomatis (.jsonl.gz)</span>
+                    </label>
+                    <p class="text-[10px] text-neutral-500 pl-5">File arsip disimpan di folder <code class="text-neutral-400">logs/archives/</code> untuk audit trail masa depan.</p>
+                </div>
+            </div>`;
+
+        Modal.confirm(modalHtml, async () => {
+            const archive = document.getElementById('chk-auto-archive') ? document.getElementById('chk-auto-archive').checked : true;
             try {
-                await API.report.clearLogs();
-                Toast.success('Log berhasil dibersihkan');
+                const res = await API.report.clearLogs(archive);
+                Toast.success(res.message || 'Log berhasil dibersihkan');
                 this.load();
             } catch (err) {
-                Toast.error(err.message);
+                Toast.error(err.message || 'Gagal membersihkan log');
             }
         });
     },
