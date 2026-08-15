@@ -137,7 +137,16 @@ class MemberService:
         member.set_password(data.get("password", "123456"))
         db.session.add(member)
         db.session.commit()
-        write_log("TAMBAH_MEMBER", f"Member {username} ({grup_nama}) dibuat", user=operator)
+        
+        detail_member = {
+            "username": member.username,
+            "nama_lengkap": member.nama_lengkap,
+            "grup": grup_nama,
+            "saldo_menit": member.waktu_tersimpan,
+            "no_hp": member.no_hp,
+            "email": member.email
+        }
+        write_log("TAMBAH_MEMBER", f"Member {username} ({grup_nama}) dibuat", user=operator, detail_json=detail_member)
         
         # Sinkronisasi ke MikroTik
         MemberService._sync_mikrotik("add", member, data.get("password", "123456"))
@@ -165,7 +174,16 @@ class MemberService:
             MemberService._sync_mikrotik("update", member, data["password"])
         
         db.session.commit()
-        write_log("EDIT_MEMBER", f"Data member {member.username} diperbarui", user=operator)
+        
+        detail_member = {
+            "username": member.username,
+            "nama_lengkap": member.nama_lengkap,
+            "grup": member.grup.nama if member.grup else "",
+            "saldo_menit": member.waktu_tersimpan,
+            "no_hp": member.no_hp,
+            "email": member.email
+        }
+        write_log("EDIT_MEMBER", f"Data member {member.username} diperbarui", user=operator, detail_json=detail_member)
         return member
 
     @staticmethod
@@ -177,7 +195,16 @@ class MemberService:
         
         db.session.delete(member)
         db.session.commit()
-        write_log("DELETE_MEMBER", f"Member:{member.username} dihapus", user=operator)
+        
+        detail_member = {
+            "username": member.username,
+            "nama_lengkap": member.nama_lengkap,
+            "grup": member.grup.nama if member.grup else "",
+            "saldo_menit": member.waktu_tersimpan,
+            "no_hp": member.no_hp,
+            "email": member.email
+        }
+        write_log("DELETE_MEMBER", f"Member:{member.username} dihapus", user=operator, detail_json=detail_member)
         
         # Sinkronisasi ke MikroTik
         MemberService._sync_mikrotik("delete", member)
@@ -218,8 +245,18 @@ class MemberService:
         db.session.add(transaksi)
         db.session.commit()
         
-        write_log("TAMBAH_WAKTU", f"Member:{member.username} | +{paket.durasi_menit * qty}m", user=operator)
-        write_log("TRANSAKSI", f"Nota:{transaksi.no_nota} | Member:{member.username} | +{paket.durasi_menit * qty}m | Rp {paket.harga * qty}", user=operator)
+        topup_details = {
+            "username": member.username,
+            "paket": paket.nama,
+            "durasi_menit": paket.durasi_menit * qty,
+            "total_harga": paket.harga * qty,
+            "saldo_sebelum": member.waktu_tersimpan - (paket.durasi_menit * qty),
+            "saldo_sesudah": member.waktu_tersimpan,
+            "no_nota": transaksi.no_nota,
+            "metode_pembayaran": metode_pembayaran
+        }
+        write_log("TAMBAH_WAKTU", f"Member:{member.username} | +{paket.durasi_menit * qty}m", user=operator, detail_json=topup_details)
+        write_log("TRANSAKSI", f"Nota:{transaksi.no_nota} | Member:{member.username} | +{paket.durasi_menit * qty}m | Rp {paket.harga * qty}", user=operator, detail_json=topup_details)
         return member
 
 
