@@ -34,7 +34,7 @@
 **Interfaces:**
 - Produces: `LogFormatter.format(detailJson, action, detail)` -> Returns HTML string formatted cleanly.
 
-- [ ] **Step 1: Definisikan objek `LogFormatter` dengan helper parsing & formatters**
+- [x] **Step 1: Definisikan objek `LogFormatter` dengan helper parsing & formatters**
 Implementasikan fungsi:
 1. `normalize(detailJson)`: mengurai string JSON menjadi object/array jika berupa string.
 2. `formatCurrency(val)`: memformat angka menjadi format rupiah `Rp XX.XXX`.
@@ -46,13 +46,13 @@ Implementasikan fungsi:
 8. `formatGenericArray(arr, depth)`: list tag / badge formatter.
 9. `renderRawToggle(rawStr)`: subtle expandable accordion `[+ Raw JSON]` untuk kebutuhan audit teknis.
 
-- [ ] **Step 2: Hubungkan `LogFormatter.format()` ke dalam method `Log.render()`**
+- [x] **Step 2: Hubungkan `LogFormatter.format()` ke dalam method `Log.render()`**
 Ganti baris `detailJsonHtml` di `app/static/js/kasir/modules/log/index.js` agar memanggil `LogFormatter.format(log.detail_json, log.action, log.detail)`.
 
-- [ ] **Step 3: Uji visual rendering `LogFormatter`**
+- [x] **Step 3: Uji visual rendering `LogFormatter`**
 Pastikan event dengan dan tanpa `detail_json` ter-render sempurna tanpa error JavaScript di console.
 
-- [ ] **Step 4: Commit perubahan Task 1**
+- [x] **Step 4: Commit perubahan Task 1**
 ```bash
 git add app/static/js/kasir/modules/log/index.js
 git commit -m "feat(log): implement human-readable LogFormatter engine for audit log"
@@ -65,18 +65,18 @@ git commit -m "feat(log): implement human-readable LogFormatter engine for audit
 **Files:**
 - Modify: `app/services/report/pdf_export_service.py:480-495`
 
-- [ ] **Step 1: Perbaiki parser `detail_json` di `export_audit_pdf`**
+- [x] **Step 1: Perbaiki parser `detail_json` di `export_audit_pdf`**
 Alih-alih langsung melakukan `json.dumps(det_json, indent=2)`, lakukan parsing:
 - Jika dict `REFUND_PAKET` / `TRANSAKSI`: Formatkan `Nota Refund: {nota}, Jumlah: Rp {jumlah:,}, Saldo/Durasi: {sebelum}m -> {sesudah}m`.
 - Jika dict generik: Iterasi key-value pairs dan formatkan ke baris teks `<b>Key:</b> Value`.
 - Jika string/list: Konversi secara bersih tanpa kurung kurawal berantakan.
 
-- [ ] **Step 2: Verifikasi syntax Python**
+- [x] **Step 2: Verifikasi syntax Python**
 ```bash
 python -m py_compile app/services/report/pdf_export_service.py
 ```
 
-- [ ] **Step 3: Commit perubahan Task 2**
+- [x] **Step 3: Commit perubahan Task 2**
 ```bash
 git add app/services/report/pdf_export_service.py
 git commit -m "feat(report): format audit log detail_json human-readable in PDF export"
@@ -89,13 +89,13 @@ git commit -m "feat(report): format audit log detail_json human-readable in PDF 
 **Files:**
 - Modify: `app/templates/kasir/components/sidebar.html`
 
-- [ ] **Step 1: Kunci section `Sistem & Utilitas` (`system`)**
+- [x] **Step 1: Kunci section `Sistem & Utilitas` (`system`)**
 Bungkus blok `<!-- 7. Sistem & Utilitas -->` (baris 186–231) dengan `{% if session.get('kasir_role') == 'admin' %} ... {% endif %}`.
 
-- [ ] **Step 2: Kunci section `Ekstensi & Plugin` (`plugins`)**
+- [x] **Step 2: Kunci section `Ekstensi & Plugin` (`plugins`)**
 Bungkus blok `<!-- 9. Ekstensi & Plugins -->` (baris 318–348) dengan `{% if session.get('kasir_role') == 'admin' %} ... {% endif %}`.
 
-- [ ] **Step 3: Verifikasi 5 menu tersisa untuk Kasir**
+- [x] **Step 3: Verifikasi 5 menu tersisa untuk Kasir**
 Pastikan urutan menu yang tampil untuk role Kasir hanya:
 1. `Dashboard`
 2. `Operasional & POS`
@@ -103,7 +103,7 @@ Pastikan urutan menu yang tampil untuk role Kasir hanya:
 4. `Laporan Keuangan`
 5. `Dokumentasi & Tutorial`
 
-- [ ] **Step 4: Commit perubahan Task 3**
+- [x] **Step 4: Commit perubahan Task 3**
 ```bash
 git add app/templates/kasir/components/sidebar.html
 git commit -m "security(sidebar): restrict kasir sidebar visibility to 5 core menus only"
@@ -116,7 +116,7 @@ git commit -m "security(sidebar): restrict kasir sidebar visibility to 5 core me
 **Files:**
 - Modify: `app/static/js/kasir/app.js:91-106`
 
-- [ ] **Step 1: Perluas daftar `kasirOnlyRestricted` di `App.switchTab`**
+- [x] **Step 1: Perluas daftar `kasirOnlyRestricted` di `App.switchTab`**
 Tambahkan tab-tab berikut ke dalam array `kasirOnlyRestricted`:
 ```javascript
 const kasirOnlyRestricted = [
@@ -129,10 +129,10 @@ const kasirOnlyRestricted = [
 ];
 ```
 
-- [ ] **Step 2: Uji guard `switchTab`**
+- [x] **Step 2: Uji guard `switchTab`**
 Pastikan jika user ber-role `kasir` mencoba memanggil `App.switchTab('server_statistic')` atau tab admin lainnya, akses ditolak dengan `Toast.error` dan kembali ke tab `dash`.
 
-- [ ] **Step 3: Commit perubahan Task 4**
+- [x] **Step 3: Commit perubahan Task 4**
 ```bash
 git add app/static/js/kasir/app.js
 git commit -m "security(navigation): harden frontend tab switching guard for kasir role"
@@ -147,29 +147,29 @@ git commit -m "security(navigation): harden frontend tab switching guard for kas
 - Modify: `app/routes/dashboard/dashboard_routes.py`
 - Modify: `app/routes/monitor/monitor_routes.py`
 
-- [ ] **Step 1: Pasang `@admin_required` pada endpoint log & blackout di `report_routes.py`**
+- [x] **Step 1: Pasang `@admin_required` pada endpoint log & blackout di `report_routes.py`**
 - `@report_api_bp.route("/log", methods=["GET"])` -> tambahkan `@admin_required`
 - `@report_api_bp.route("/log/clear", methods=["POST"])` -> tambahkan `@admin_required`
 - `@report_api_bp.route("/log/export", methods=["GET"])` -> tambahkan `@admin_required`
 - `@report_api_bp.route("/export/audit-pdf", methods=["GET"])` -> tambahkan `@admin_required`
 - `@report_api_bp.route("/blackout-log", methods=["GET"])` -> tambahkan `@admin_required`
 
-- [ ] **Step 2: Pasang `@admin_required` pada server monitor di `dashboard_routes.py`**
+- [x] **Step 2: Pasang `@admin_required` pada server monitor di `dashboard_routes.py`**
 - `@dashboard_api_bp.route("/server-metrics", methods=["GET"])` -> tambahkan `@admin_required`
 
-- [ ] **Step 3: Pasang `@admin_required` pada kontrol hardware/remote di `monitor_routes.py`**
+- [x] **Step 3: Pasang `@admin_required` pada kontrol hardware/remote di `monitor_routes.py`**
 - `/processes/<int:pc_id>/kill` -> tambahkan `@admin_required`
 - `/<int:hardware_id>` (DELETE) -> tambahkan `@admin_required`
 - `/screenshot/trigger/<int:pc_id>` -> tambahkan `@admin_required`
 - `/remote/<int:pc_id>/<string:action>` -> tambahkan `@admin_required`
 - `/register/<int:pc_id>` -> tambahkan `@admin_required`
 
-- [ ] **Step 4: Verifikasi kompilasi Python**
+- [x] **Step 4: Verifikasi kompilasi Python**
 ```bash
 python -m py_compile app/routes/report/report_routes.py app/routes/dashboard/dashboard_routes.py app/routes/monitor/monitor_routes.py
 ```
 
-- [ ] **Step 5: Commit perubahan Task 5**
+- [x] **Step 5: Commit perubahan Task 5**
 ```bash
 git add app/routes/report/report_routes.py app/routes/dashboard/dashboard_routes.py app/routes/monitor/monitor_routes.py
 git commit -m "security(api): add admin_required decorators to audit log and system utility endpoints"
@@ -182,22 +182,22 @@ git commit -m "security(api): add admin_required decorators to audit log and sys
 **Files:**
 - Test execution script / manual verification checklist
 
-- [ ] **Step 1: Test Formatter Audit Log**
+- [x] **Step 1: Test Formatter Audit Log**
 - Uji payload Refund Guest & Member.
 - Uji payload Delete Struk & Edit Paket.
 - Uji payload generic Object, Array, JSON string, null/undefined, dan empty.
 - Verifikasi tidak ada raw JSON berantakan di UI utama log.
 
-- [ ] **Step 2: Negative Security Testing Role Kasir**
+- [x] **Step 2: Negative Security Testing Role Kasir**
 - Verifikasi sidebar Kasir hanya menampilkan 5 menu resmi.
 - Verifikasi tab admin ditolak oleh frontend guard `App.switchTab`.
 - Verifikasi endpoint API admin me-return status `403 Forbidden` saat diakses dengan session Kasir.
 - Verifikasi permission Data Master Kasir tetap konsisten (Member = CRU, lainnya = Read-Only).
 
-- [ ] **Step 3: Regression Testing Role Admin**
+- [x] **Step 3: Regression Testing Role Admin**
 - Verifikasi seluruh menu, tab, dan fungsi untuk Admin tetap bekerja normal tanpa degradasi fitur.
 
-- [ ] **Step 4: Commit dokumentasi & checklist plan final**
+- [x] **Step 4: Commit dokumentasi & checklist plan final**
 ```bash
 git add docs/superpowers/plans/2026-08-15-audit-log-and-kasir-rbac-plan.md
 git commit -m "docs(superpowers): complete plan for audit log formatter and kasir rbac"
