@@ -344,14 +344,20 @@ const Log = {
 
     switchCategory(category, btnEl) {
         this.currentCategory = category;
-        const cats = ['Semua', 'sistem', 'transaksi', 'sesi', 'blackout'];
+        const cats = [
+            'Semua', 'sistem', 'transaksi', 'sesi', 'blackout',
+            'AUTHENTICATION', 'USER_ACCOUNT', 'AUTHORIZATION_SECURITY', 'PAYMENT_BILLING',
+            'TRANSACTION', 'SESI_BILLING', 'DATA_CATALOG', 'MONITOR_REMOTE',
+            'TOURNAMENT_GAME', 'CONFIGURATION', 'API_INTEGRATION', 'BACKGROUND_JOB',
+            'MAINTENANCE', 'SYSTEM', 'ERROR_FAILURE'
+        ];
         cats.forEach(c => {
             const el = document.getElementById(`log-cat-${c}`);
             if (el) {
                 if (c === category) {
                     el.className = 'px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-neutral-100 text-black';
                 } else {
-                    el.className = 'px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200';
+                    el.className = 'px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40';
                 }
             }
         });
@@ -370,10 +376,24 @@ const Log = {
         
         container.innerHTML = logs.map((log, idx) => {
             let catColor = 'text-neutral-400 bg-[#0c0c0c] border-[#1c1c1c]';
-            if (log.category === 'transaksi') catColor = 'text-neutral-200 bg-[#171717] border-neutral-700';
-            else if (log.category === 'sesi') catColor = 'text-neutral-300 bg-[#0f0f0f] border-neutral-800';
+            const cat = log.category ? log.category.toUpperCase() : '';
+            if (cat === 'AUTHENTICATION') catColor = 'text-teal-400 bg-[#072421] border-teal-950';
+            else if (cat === 'USER_ACCOUNT') catColor = 'text-sky-400 bg-[#0b253a] border-sky-950';
+            else if (cat === 'AUTHORIZATION_SECURITY') catColor = 'text-indigo-400 bg-[#161b33] border-indigo-950';
+            else if (cat === 'PAYMENT_BILLING') catColor = 'text-emerald-400 bg-[#0a2f1d] border-emerald-950';
+            else if (cat === 'TRANSACTION') catColor = 'text-lime-400 bg-[#192b15] border-lime-950';
+            else if (cat === 'SESI_BILLING' || log.category === 'sesi') catColor = 'text-amber-400 bg-[#2b1f0d] border-amber-950';
+            else if (cat === 'DATA_CATALOG') catColor = 'text-violet-400 bg-[#1d1430] border-violet-950';
+            else if (cat === 'MONITOR_REMOTE') catColor = 'text-cyan-400 bg-[#06292b] border-cyan-950';
+            else if (cat === 'TOURNAMENT_GAME') catColor = 'text-fuchsia-400 bg-[#2e0b29] border-fuchsia-950';
+            else if (cat === 'CONFIGURATION') catColor = 'text-orange-400 bg-[#2a1708] border-orange-950';
+            else if (cat === 'API_INTEGRATION') catColor = 'text-pink-400 bg-[#2b0e1b] border-pink-950';
+            else if (cat === 'BACKGROUND_JOB') catColor = 'text-purple-400 bg-[#230f2b] border-purple-950';
+            else if (cat === 'MAINTENANCE') catColor = 'text-neutral-300 bg-[#1e1e1e] border-neutral-700';
+            else if (cat === 'SYSTEM' || log.category === 'sistem') catColor = 'text-neutral-400 bg-[#111111] border-neutral-800';
+            else if (cat === 'ERROR_FAILURE') catColor = 'text-red-400 bg-[#2a0e10] border-red-950';
+            else if (log.category === 'transaksi') catColor = 'text-neutral-200 bg-[#171717] border-neutral-700';
             else if (log.category === 'blackout') catColor = 'text-red-400 bg-[#2d1215] border-red-900/30';
-            else if (log.category === 'sistem') catColor = 'text-neutral-400 bg-[#111111] border-neutral-800';
 
             if (log.category === "unknown") {
                 return `<div class="border-b border-[#1c1c1c] py-3 px-4 text-xs lg:text-base text-neutral-500 font-mono">${Utils.escapeHtml(log.raw)}</div>`;
