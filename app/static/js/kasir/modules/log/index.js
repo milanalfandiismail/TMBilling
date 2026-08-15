@@ -223,6 +223,29 @@ const LogFormatter = {
         return `<div class="flex flex-wrap">${itemsHtml}</div>`;
     },
 
+    resolveTheme(action) {
+        const act = (action || '').toUpperCase();
+        if (act.includes('REFUND')) return { icon: '🔄', title: 'Detail Refund', border: 'border-red-500/20', text: 'text-red-400' };
+        if (act.startsWith('BUKA_') || act === 'TUTUP_SESI' || act === 'PINDAH_PC' || act === 'TAMBAH_WAKTU') 
+            return { icon: '🎮', title: 'Detail Sesi & Billing', border: 'border-emerald-500/20', text: 'text-emerald-400' };
+        if (act === 'TRANSAKSI_MENU' || act.includes('MENU')) 
+            return { icon: '🍔', title: 'Detail Kantin & POS', border: 'border-amber-500/20', text: 'text-amber-400' };
+        if (act.includes('MEMBER')) 
+            return { icon: '👤', title: 'Detail Member', border: 'border-purple-500/20', text: 'text-purple-400' };
+        if (act.startsWith('SHIFT_')) 
+            return { icon: '💵', title: 'Detail Shift Kasir', border: 'border-cyan-500/20', text: 'text-cyan-400' };
+        if (act.includes('PAKET')) 
+            return { icon: '💳', title: 'Detail Paket Billing', border: 'border-blue-500/20', text: 'text-blue-400' };
+        if (act.includes('PC') || act.includes('GRUP') || act.includes('BATCH_')) 
+            return { icon: '🖥️', title: 'Detail Unit PC / Zona', border: 'border-indigo-500/20', text: 'text-indigo-400' };
+        if (act.includes('USER') || act.includes('LOGIN') || act.includes('LOGOUT')) 
+            return { icon: '🔑', title: 'Detail Akun & Keamanan', border: 'border-neutral-500/20', text: 'text-neutral-300' };
+        if (act.includes('TIKET') || act.includes('MAINTENANCE')) 
+            return { icon: '🛠️', title: 'Detail Perawatan PC', border: 'border-orange-500/20', text: 'text-orange-400' };
+        
+        return { icon: '📄', title: 'Detail Data', border: 'border-[#1c1c1c]', text: 'text-neutral-400' };
+    },
+
     renderRawToggle(rawStr) {
         const uniqId = 'raw-json-' + Math.random().toString(36).substring(2, 9);
         return `
@@ -248,14 +271,22 @@ const LogFormatter = {
         } else if (actUpper.includes('EDIT_PAKET')) {
             formattedHtml = this.formatEditPaket(data);
         } else if (typeof data === 'object') {
+            const theme = this.resolveTheme(action);
+            const headerHtml = `
+                <div class="text-[10px] lg:text-xs font-black uppercase ${theme.text} tracking-wider flex items-center gap-1.5 mb-2">
+                    <span>${theme.icon}</span> ${theme.title}
+                </div>`;
+
             if (Array.isArray(data)) {
                 formattedHtml = `
-                    <div class="mt-2 p-3 bg-[#0c0c0c] border border-[#1c1c1c] rounded max-w-lg space-y-1">
+                    <div class="mt-2 p-3 bg-[#0c0c0c] border ${theme.border} rounded max-w-lg space-y-1">
+                        ${headerHtml}
                         ${this.formatGenericArray(data)}
                     </div>`;
             } else {
                 formattedHtml = `
-                    <div class="mt-2 p-3 bg-[#0c0c0c] border border-[#1c1c1c] rounded max-w-lg space-y-1">
+                    <div class="mt-2 p-3 bg-[#0c0c0c] border ${theme.border} rounded max-w-lg space-y-1">
+                        ${headerHtml}
                         ${this.formatGenericObject(data)}
                     </div>`;
             }
