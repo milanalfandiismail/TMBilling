@@ -48,20 +48,30 @@ class LogAuditService:
                     timestamp, user, action, detail = "", "", "", line
                     ip_address, browser_agent, detail_json = "-", "-", None
 
-            category = "sistem"
-            action_upper = action.upper()
+            from app.utils.logger import ACTION_TO_CATEGORY_MAP
+            if 'data' in locals() and isinstance(data, dict) and 'category' in data:
+                category = data['category']
+            else:
+                category = ACTION_TO_CATEGORY_MAP.get(action.upper(), "SYSTEM")
 
-            if any(k in action_upper for k in ["TRANSAKSI", "STRUK", "REFUND", "CLEAR_TANGGAL"]):
-                category = "transaksi"
-            elif any(k in action_upper for k in ["SESI", "TAMBAH_WAKTU", "PINDAH_PC", "BUKA_GUEST", "BUKA_MEMBER"]):
-                category = "sesi"
-            elif "BLACKOUT" in action_upper:
-                category = "blackout"
-
+            match_filter = True
             if kategori and kategori != "Semua":
-                kategori_lower = kategori.lower()
-                if kategori_lower != category:
-                    continue
+                kat_lower = kategori.lower()
+                cat_upper = category.upper()
+                act_upper = action.upper()
+                if kat_lower == "transaksi":
+                    match_filter = cat_upper in ["TRANSACTION", "PAYMENT_BILLING"]
+                elif kat_lower == "sesi":
+                    match_filter = cat_upper == "SESI_BILLING"
+                elif kat_lower == "blackout":
+                    match_filter = "BLACKOUT" in act_upper
+                elif kat_lower == "sistem":
+                    match_filter = (cat_upper not in ["TRANSACTION", "PAYMENT_BILLING", "SESI_BILLING"]) and ("BLACKOUT" not in act_upper)
+                else:
+                    match_filter = cat_upper == kategori.upper()
+
+            if not match_filter:
+                continue
 
             if timestamp:
                 parsed_logs.append({
