@@ -140,7 +140,15 @@ class PCService:
         
         db.session.add(pc)
         db.session.commit()
-        write_log("TAMBAH_PC", f"PC {kode} ({grup_nama}) didaftarkan", user=operator)
+        
+        detail_pc = {
+            "kode": kode,
+            "nama": pc.nama,
+            "ip_address": ip_address,
+            "mac_address": mac_address,
+            "grup": grup_nama
+        }
+        write_log("TAMBAH_PC", f"PC {kode} ({grup_nama}) didaftarkan", user=operator, detail_json=detail_pc)
         return pc
 
     @staticmethod
@@ -190,7 +198,15 @@ class PCService:
         pc.nama = data.get("nama", pc.nama)
         
         db.session.commit()
-        write_log("EDIT_PC", f"Data PC {pc.kode} diperbarui", user=operator)
+        
+        detail_pc = {
+            "kode": pc.kode,
+            "nama": pc.nama,
+            "ip_address": pc.ip_address,
+            "mac_address": pc.mac_address,
+            "grup": pc.grup.nama if pc.grup else ""
+        }
+        write_log("EDIT_PC", f"Data PC {pc.kode} diperbarui", user=operator, detail_json=detail_pc)
         return pc
 
     @staticmethod
@@ -199,7 +215,7 @@ class PCService:
         pc = PCRepository.get_by_id(pc_id)
         db.session.delete(pc)
         db.session.commit()
-        write_log("HAPUS_PC", f"PC:{pc.kode} dihapus permanen", user=operator)
+        write_log("HAPUS_PC", f"PC:{pc.kode} dihapus permanen", user=operator, detail_json={"kode": pc.kode})
         return {"success": True, "message": f"PC {pc.kode} berhasil dihapus"}
 
     @staticmethod
@@ -226,7 +242,7 @@ class PCService:
         
         pc.is_admin_mode = False
         db.session.commit()
-        write_log("RESET_ADMIN", f"Mode Admin PC {pc.kode} dimatikan paksa", user=operator)
+        write_log("RESET_ADMIN", f"Mode Admin PC {pc.kode} dimatikan paksa", user=operator, detail_json={"kode": pc.kode})
         return True
 
     @staticmethod
@@ -295,7 +311,13 @@ class PCService:
         if pc_to_save:
             db.session.add_all(pc_to_save)
             db.session.commit()
-            write_log("BATCH_PC", f"Tambah {len(added)} PC via IP Range", user=operator)
+            
+            detail_batch = {
+                "jumlah_ditambahkan": len(added),
+                "daftar_kode": added,
+                "grup": grup_nama
+            }
+            write_log("BATCH_PC", f"Tambah {len(added)} PC via IP Range", user=operator, detail_json=detail_batch)
             
         return {"added": added, "errors": []}
 
@@ -406,7 +428,7 @@ class PCService:
             try:
                 PCService.send_wol_packet(mac)
                 results["success"].append(mac)
-                write_log("WOL_PACKET", f"Magic Packet terkirim ke {mac}", user=operator)
+                write_log("WOL_PACKET", f"Magic Packet terkirim ke {mac}", user=operator, detail_json={"mac": mac})
             except Exception as e:
                 results["errors"].append({"mac": mac, "error": str(e)})
         return results
@@ -434,7 +456,7 @@ class PCService:
             try:
                 PCService.send_wol_packet(pc.mac_address)
                 results["success"].append(pc.kode)
-                write_log("WOL_PACKET", f"Magic Packet terkirim ke {pc.kode} ({pc.mac_address})", user=operator)
+                write_log("WOL_PACKET", f"Magic Packet terkirim ke {pc.kode} ({pc.mac_address})", user=operator, detail_json={"kode": pc.kode, "mac": pc.mac_address})
             except Exception as e:
                 results["errors"].append({"pc_id": pc_id, "error": f"{pc.kode}: {str(e)}"})
         return results

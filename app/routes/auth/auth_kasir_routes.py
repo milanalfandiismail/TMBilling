@@ -41,7 +41,9 @@ def login():
                 client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
                 if not IpWhitelistService.is_ip_whitelisted(client_ip):
                     write_log("LOGIN_GAGAL",
-                              f"Username:{username} - IP {client_ip} tidak di whitelist")
+                              f"Username:{username} - IP {client_ip} tidak di whitelist",
+                              user="system",
+                              detail_json={"username": username, "client_ip": client_ip, "reason": "IP tidak di whitelist"})
                     return jsonify({
                         "error": "Akses Anda dibatasi.",
                         "detail": f"IP {client_ip} tidak diizinkan mengakses dashboard kasir. "
