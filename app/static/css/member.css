@@ -9,11 +9,11 @@
     background: transparent;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: #2a2a2a;
+    background: #525252;
     border-radius: 2px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: #3a3a3a;
+    background: #737373;
 }
 
 /* Glow effects for PC map status */

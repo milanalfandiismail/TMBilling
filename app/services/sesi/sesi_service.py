@@ -64,8 +64,21 @@ class SesiService:
         db.session.add(transaksi)
         db.session.commit()
 
-        write_log("BUKA_GUEST", f"PC:{pc_kode} | Guest:{nama_guest} | {paket.durasi_menit}m", user=operator)
-        write_log("TRANSAKSI", f"Nota:{transaksi.no_nota} | Beli:{paket.nama} | Rp {paket.harga}", user=operator)
+        detail_guest = {
+            "nominal_pembayaran": paket.harga,
+            "metode_pembayaran": metode_pembayaran,
+            "durasi_menit": paket.durasi_menit,
+            "paket_id": paket.id
+        }
+        write_log("BUKA_GUEST", f"PC:{pc_kode} | Guest:{nama_guest} | {paket.durasi_menit}m", user=operator, detail_json=detail_guest)
+        
+        detail_transaksi = {
+            "nominal_transaksi": paket.harga,
+            "metode_pembayaran": metode_pembayaran,
+            "tipe_tambahan": "paket",
+            "paket_id": paket.id
+        }
+        write_log("TRANSAKSI", f"Nota:{transaksi.no_nota} | Beli:{paket.nama} | Rp {paket.harga}", user=operator, detail_json=detail_transaksi)
         return sesi
 
     @staticmethod
@@ -91,7 +104,14 @@ class SesiService:
         )
         db.session.add(sesi)
         db.session.commit()
-        write_log("BUKA_MEMBER", f"PC:{pc.kode} | Member:{member.username}", user=operator)
+        
+        detail_member = {
+            "member_id": member.id,
+            "username_member": member.username,
+            "sisa_saldo_sebelumnya": member.waktu_tersimpan,
+            "paket_id": None
+        }
+        write_log("BUKA_MEMBER", f"PC:{pc.kode} | Member:{member.username}", user=operator, detail_json=detail_member)
         return sesi
 
     @staticmethod
@@ -139,7 +159,14 @@ class SesiService:
             )
             db.session.add(transaksi)
             db.session.commit()
-            write_log("TAMBAH_WAKTU", f"Member:{sesi.member.username} | +{paket.durasi_menit * qty}m", user=operator)
+            
+            detail_tambah = {
+                "tipe_tambahan": "waktu",
+                "nominal_transaksi": paket.harga * qty,
+                "metode_pembayaran": metode_pembayaran,
+                "waktu_ditambahkan": paket.durasi_menit * qty
+            }
+            write_log("TAMBAH_WAKTU", f"Member:{sesi.member.username} | +{paket.durasi_menit * qty}m", user=operator, detail_json=detail_tambah)
             return {"tipe": "member", "waktu_tersimpan": sesi.member.waktu_tersimpan}
 
         elif sesi.tipe == "guest":
@@ -156,7 +183,14 @@ class SesiService:
             )
             db.session.add(transaksi)
             db.session.commit()
-            write_log("TAMBAH_WAKTU", f"Guest:{sesi.nama_guest} | +{paket.durasi_menit * qty}m", user=operator)
+            
+            detail_tambah = {
+                "tipe_tambahan": "waktu",
+                "nominal_transaksi": paket.harga * qty,
+                "metode_pembayaran": metode_pembayaran,
+                "waktu_ditambahkan": paket.durasi_menit * qty
+            }
+            write_log("TAMBAH_WAKTU", f"Guest:{sesi.nama_guest} | +{paket.durasi_menit * qty}m", user=operator, detail_json=detail_tambah)
             return {"tipe": "guest", "sisa_menit": sesi.sisa_menit()}
 
     @staticmethod
@@ -209,12 +243,17 @@ class SesiService:
             # 5. Commit semua dalam satu transaksi DB (3-Layered Arch)
             db.session.commit()
 
-            write_log("TUTUP_SESI", f"{sesi.tipe.upper()} | PC:{sesi.pc.kode} | Main:{sesi.menit_terpakai()}m")
+            detail_tutup = {
+                "tipe": sesi.tipe,
+                "menit_terpakai": sesi.menit_terpakai(),
+                "pc_kode": sesi.pc.kode
+            }
+            write_log("TUTUP_SESI", f"{sesi.tipe.upper()} | PC:{sesi.pc.kode} | Main:{sesi.menit_terpakai()}m", user=operator, detail_json=detail_tutup)
             return sesi
 
         except Exception as e:
             db.session.rollback() # Batalkan semua jika gagal
-            write_log("TUTUP_SESI_ERROR", f"Gagal menutup sesi {sesi_id}: {str(e)}")
+            write_log("TUTUP_SESI_ERROR", f"Gagal menutup sesi {sesi_id}: {str(e)}", detail_json={"error": str(e), "sesi_id": sesi_id})
             raise e
 
     @staticmethod
@@ -264,7 +303,12 @@ class SesiService:
         db.session.add(transaksi)
         db.session.commit()
 
-        write_log("PINDAH_PC", f"{pc_lama_kode} -> {pc_baru.kode} | Sisa:{sisa_waktu}m", user=operator)
+        detail_pindah = {
+            "pc_lama": pc_lama_kode,
+            "pc_baru": pc_baru.kode,
+            "sisa_waktu": sisa_waktu
+        }
+        write_log("PINDAH_PC", f"{pc_lama_kode} -> {pc_baru.kode} | Sisa:{sisa_waktu}m", user=operator, detail_json=detail_pindah)
         return {"pc_lama": pc_lama_kode, "pc_baru": pc_baru.kode, "sisa_waktu": sisa_waktu}
 
 

@@ -42,7 +42,12 @@ class GrupService:
         db.session.add(grup)
         db.session.commit()
         
-        write_log("TAMBAH_GRUP", f"Grup baru: {nama}", user=operator)
+        detail_grup = {
+            "nama": nama,
+            "keterangan": grup.keterangan,
+            "warna": grup.warna
+        }
+        write_log("TAMBAH_GRUP", f"Grup baru: {nama}", user=operator, detail_json=detail_grup)
         return grup
 
 
@@ -74,7 +79,7 @@ class GrupService:
         db.session.delete(grup)
         db.session.commit()
         
-        write_log("HAPUS_GRUP", f"Grup {nama_lama} dihapus", user=operator)
+        write_log("HAPUS_GRUP", f"Grup {nama_lama} dihapus", user=operator, detail_json={"nama_grup": nama_lama})
         return True
 
     @staticmethod
@@ -97,5 +102,10 @@ class GrupService:
         grup.warna = data.get("warna")
         db.session.commit()
 
-        write_log("EDIT_GRUP", f"Grup {nama} diupdate", user=operator)
+        detail_grup = {
+            "nama": nama,
+            "keterangan": grup.keterangan,
+            "warna": grup.warna
+        }
+        write_log("EDIT_GRUP", f"Grup {nama} diupdate", user=operator, detail_json=detail_grup)
         return grup

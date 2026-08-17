@@ -53,7 +53,13 @@ class UserService:
         db.session.add(new_user)
         db.session.commit()
         
-        write_log("TAMBAH_USER", f"Role:{role} | User:{username}", user=operator)
+        detail_user = {
+            "username": username,
+            "nama_lengkap": nama_lengkap,
+            "role": role,
+            "aktif": aktif
+        }
+        write_log("TAMBAH_USER", f"Role:{role} | User:{username}", user=operator, detail_json=detail_user)
         return new_user.to_dict()
 
     @staticmethod
@@ -87,7 +93,14 @@ class UserService:
             user.set_password(password)
         
         db.session.commit()
-        write_log("UPDATE_USER", f"ID:{user_id} | User:{user.username}", user=operator)
+        
+        detail_user = {
+            "username": user.username,
+            "nama_lengkap": user.nama_lengkap,
+            "role": user.role,
+            "aktif": user.aktif
+        }
+        write_log("UPDATE_USER", f"ID:{user_id} | User:{user.username}", user=operator, detail_json=detail_user)
         return user.to_dict()
 
     @staticmethod
@@ -107,5 +120,5 @@ class UserService:
         # SQLite ForeignKey ondelete="SET NULL" sudah dipasang di transaksi.py
         db.session.delete(user)
         db.session.commit()
-        write_log("HAPUS_USER", f"User:{user.username} dihapus secara permanen", user=operator)
+        write_log("HAPUS_USER", f"User:{user.username} dihapus secara permanen", user=operator, detail_json={"username": user.username})
         return {"success": True, "message": "User berhasil dihapus"}

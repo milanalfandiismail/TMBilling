@@ -90,12 +90,12 @@ const App = {
 
         // RBAC: Kasir tidak boleh membuka tab admin-only
         const kasirOnlyRestricted = [
-            'user', 'log', 
-            'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv', 
-            'settings_cloudflare_tunnel',
-            'settings_cloud_backup', 'settings_local_backup', 'settings_db_cleanup', 
-            'settings_scheduler', 'settings_migration', 
-            'analytics', 'uptime'
+            'user', 'log',
+            'server_statistic', 'monitor', 'hardware_checker', 'uptime', 'maintenance', 'screenshot', 'blackout', 'remote_server',
+            'settings', 'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv', 
+            'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup', 
+            'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'whitelist_ip',
+            'mikrotik', 'analytics', 'plugins', 'plugin-spa'
         ];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');

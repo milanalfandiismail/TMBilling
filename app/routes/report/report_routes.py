@@ -184,6 +184,7 @@ def get_struk_menu(t_menu_id):
 
 @report_api_bp.route("/log", methods=["GET"])
 @login_required
+@admin_required
 def get_logs():
     """Ambil daftar log sistem dengan filter teks dan kategori."""
     try:
@@ -197,12 +198,21 @@ def get_logs():
 
 @report_api_bp.route("/log/clear", methods=["POST"])
 @login_required
+@admin_required
 def clear_logs_endpoint():
-    """Bersihkan file log sistem."""
+    """Bersihkan file log sistem dengan auto-archive."""
     try:
         kasir = session.get("kasir_username", "kasir")
-        if ReportService.clear_system_logs(operator=kasir):
-            return jsonify({"success": True, "message": "Log dibersihkan"}), 200
+        data = request.get_json() or {}
+        archive = data.get("archive", True)
+        
+        result = ReportService.clear_system_logs(operator=kasir, archive=archive)
+        if result.get("success"):
+            return jsonify({
+                "success": True,
+                "message": f"Log berhasil dibersihkan ({result.get('total_dibersihkan', 0)} baris)",
+                "data": result
+            }), 200
         return jsonify({"error": "Gagal membersihkan log"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -248,6 +258,7 @@ def clear_date_transactions_endpoint(tanggal):
 
 @report_api_bp.route("/log/export", methods=["GET"])
 @login_required
+@admin_required
 def export_logs():
     """Download system logs dalam format .txt."""
     try:
@@ -263,6 +274,7 @@ def export_logs():
 
 @report_api_bp.route("/blackout-log", methods=["GET"])
 @login_required
+@admin_required
 def blackout_log():
     """Log khusus terkait kejadian mati lampu (Blackout) & Server Restart."""
     try:
@@ -341,6 +353,7 @@ def export_pnl():
 
 @report_api_bp.route("/export/audit-pdf", methods=["GET"])
 @login_required
+@admin_required
 def export_audit_pdf():
     """Download audit logs in PDF format."""
     try:

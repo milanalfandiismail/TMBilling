@@ -346,15 +346,15 @@
         <!-- ==================== SUB-TAB: CLOUDFLARE TUNNEL ==================== -->
         <div id="subtab-cloudflare_tunnel" class="subtab-content hidden space-y-6">
             <!-- Card: Cloudflare Tunnel Configuration -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-6 lg:p-8 space-y-6">
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-lg bg-neutral-800/60 border border-neutral-700/50 flex items-center justify-center text-neutral-300 text-xl shrink-0">🌐</div>
-                        <h3 class="text-base sm:text-lg lg:text-xl font-bold text-neutral-100 uppercase tracking-wider">
+                        <div class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300 text-xl shrink-0">🌐</div>
+                        <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">
                             Cloudflare Tunnel Auto-Manager
                         </h3>
                     </div>
-                    <div id="cf-tunnel-status-badge" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700 w-fit">
+                    <div id="cf-tunnel-status-badge" class="px-3.5 py-1.5 rounded text-xs lg:text-base font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700 w-fit">
                         Memuat Status...
                     </div>
                 </div>
@@ -362,21 +362,21 @@
                 <!-- Section 1: Tunnel Token -->
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-5 border-t border-[#1c1c1c]">
                     <div class="max-w-xl">
-                        <p class="text-sm sm:text-base font-bold text-neutral-200 tracking-wider">
+                        <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">
                             Cloudflare Tunnel Token
                         </p>
-                        <p class="text-xs sm:text-sm text-neutral-400 mt-1 leading-relaxed">
+                        <p class="text-[9px] lg:text-base text-neutral-500 mt-1">
                             Token dinamis dari Cloudflare Zero Trust (<code class="bg-[#171717] px-1.5 py-0.5 rounded text-neutral-300 text-xs">Networks -&gt; Tunnels -&gt; Add a Tunnel</code>). 
                             <a href="https://one.dash.cloudflare.com/" target="_blank" rel="noopener noreferrer" class="text-neutral-400 hover:text-white underline font-semibold inline-flex items-center gap-1 ml-1">
                                 Buka Dashboard Cloudflare ↗
                             </a>
                         </p>
                     </div>
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 w-full lg:w-auto">
                         <input type="password" id="cf-tunnel-token-input" placeholder="Masukkan token eyJh..."
-                            class="w-full sm:w-72 md:w-96 px-4 py-2.5 bg-[#050505] border border-[#262626] rounded-lg text-sm sm:text-base text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 font-mono">
+                            class="w-full lg:w-96 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 font-mono">
                         <button onclick="Settings.saveCloudflareToken()"
-                            class="px-5 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs sm:text-sm font-bold rounded-lg transition-colors shrink-0 shadow">
+                            class="px-4 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors shrink-0">
                             Simpan Token
                         </button>
                     </div>
@@ -385,16 +385,16 @@
                 <!-- Section 2: Daemon Autostart Toggle -->
                 <div class="flex items-center justify-between gap-4 pt-5 border-t border-[#1c1c1c]">
                     <div>
-                        <p class="text-sm sm:text-base font-bold text-neutral-200 tracking-wider">
+                        <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">
                             Status Daemon Cloudflare Tunnel
                         </p>
-                        <p class="text-xs sm:text-sm text-neutral-400 mt-1">
+                        <p class="text-[9px] lg:text-base text-neutral-500 mt-1">
                             Aktifkan untuk menjalankan biner <code class="bg-[#171717] px-1.5 py-0.5 rounded text-neutral-300 text-xs">cloudflared</code> di latar belakang server secara otomatis
                         </p>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer shrink-0">
                         <input type="checkbox" id="cf-tunnel-toggle" class="sr-only peer" onchange="Settings.toggleCloudflareTunnel(this.checked)">
-                        <div class="w-14 h-7 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                        <div class="w-11 h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                     </label>
                 </div>
             </div>
@@ -404,8 +404,7 @@
         <div id="subtab-scheduler" class="subtab-content hidden space-y-6">
             <!-- Card: Auto Backup -->
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">⏱ Auto
-                    Backup</h3>
+                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">⏱ Backup Otomatis</h3>
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Interval
@@ -432,8 +431,7 @@
 
             <!-- Card: Auto Cleanup Log -->
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">🗑 Auto
-                    Cleanup Log</h3>
+                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">🗑 Pembersihan Log Otomatis</h3>
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Interval &amp;
@@ -460,8 +458,7 @@
             <!-- Card: Auto Screenshot -->
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">📷 Auto
-                        Screenshot</h3>
+                    <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">📷 Screenshot Otomatis</h3>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="scheduler-screenshot-enabled" class="sr-only peer">
                         <div class="w-11 h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>

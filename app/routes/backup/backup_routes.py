@@ -85,12 +85,28 @@ def test_connection():
             return jsonify({"success": False, "error": f"Unknown provider: {provider_type}"}), 400
             
         success = provider.test_connection()
+        from flask import session
+        operator = session.get("kasir_username", "admin")
+        write_log(
+            "BACKUP_TEST_CONNECTION",
+            f"Tes koneksi provider backup '{provider_type}': {'Berhasil' if success else 'Gagal'}",
+            user=operator,
+            detail_json={"provider": provider_type, "success": success}
+        )
         if success:
             return jsonify({"success": True, "message": f"Koneksi ke {provider.name} Berhasil!"}), 200
         else:
             return jsonify({"success": False, "error": f"Koneksi ke {provider.name} Gagal! Silakan cek kredensial Anda."}), 400
             
     except Exception as e:
+        from flask import session
+        operator = session.get("kasir_username", "admin")
+        write_log(
+            "BACKUP_TEST_CONNECTION",
+            f"Tes koneksi provider backup '{provider_type}' error: {str(e)}",
+            user=operator,
+            detail_json={"provider": provider_type, "success": False, "error": str(e)}
+        )
         return jsonify({"success": False, "error": str(e)}), 500
 
 

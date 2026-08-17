@@ -1,14 +1,26 @@
 <!-- ===== TAB: USER ===== -->
-<div id="tab-user" class="tab-content hidden">
-    <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Manajemen Staff</h3>
-        <button onclick="User.openAddModal()"
-            class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">Tambah User</button>
+<div id="tab-user" class="tab-content hidden space-y-6">
+    <!-- User Action Header -->
+    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide">Manajemen Staff</h3>
+                <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Kelola akun kasir dan administrator — tambah kasir baru, ganti password, atur role</p>
+            </div>
+            <button onclick="User.openAddModal()"
+                class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Tambah User
+            </button>
+        </div>
     </div>
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+
+    <!-- User List -->
+    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+        <h3 class="text-xs lg:text-[22px] font-bold text-neutral-400 uppercase tracking-wider mb-4">Daftar Akun</h3>
         <div id="user-table" class="overflow-x-hidden w-full">
             <div class="flex justify-center py-10">
-                <div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div>
+                <div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div>
             </div>
         </div>
     </div>

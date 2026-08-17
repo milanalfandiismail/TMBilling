@@ -5,15 +5,47 @@
             <!-- Kategori tab bar -->
             <div class="flex gap-1 bg-[#050505] border border-[#1c1c1c] rounded-lg p-1 w-full overflow-x-auto scrollbar-thin">
                 <button id="log-cat-Semua" onclick="Log.switchCategory('Semua', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-neutral-100 text-black">Semua</button>
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-neutral-100 text-black border border-transparent">Semua</button>
                 <button id="log-cat-sistem" onclick="Log.switchCategory('sistem', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200">Sistem</button>
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">Sistem (Legacy)</button>
                 <button id="log-cat-transaksi" onclick="Log.switchCategory('transaksi', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200">Transaksi &amp; Struk</button>
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">Transaksi (Legacy)</button>
                 <button id="log-cat-sesi" onclick="Log.switchCategory('sesi', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200">Sesi &amp; Billing</button>
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">Sesi (Legacy)</button>
                 <button id="log-cat-blackout" onclick="Log.switchCategory('blackout', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200">Blackout</button>
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">Blackout (Legacy)</button>
+                
+                <!-- New Canonical Category Filters -->
+                <button id="log-cat-AUTHENTICATION" onclick="Log.switchCategory('AUTHENTICATION', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">🔐 Autentikasi</button>
+                <button id="log-cat-USER_ACCOUNT" onclick="Log.switchCategory('USER_ACCOUNT', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">👥 Akun &amp; User</button>
+                <button id="log-cat-AUTHORIZATION_SECURITY" onclick="Log.switchCategory('AUTHORIZATION_SECURITY', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">🛡️ Keamanan</button>
+                <button id="log-cat-PAYMENT_BILLING" onclick="Log.switchCategory('PAYMENT_BILLING', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">💳 Pembayaran</button>
+                <button id="log-cat-TRANSACTION" onclick="Log.switchCategory('TRANSACTION', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">📊 Transaksi</button>
+                <button id="log-cat-SESI_BILLING" onclick="Log.switchCategory('SESI_BILLING', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">⏱️ Sesi Rental</button>
+                <button id="log-cat-DATA_CATALOG" onclick="Log.switchCategory('DATA_CATALOG', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">📂 Katalog &amp; PC</button>
+                <button id="log-cat-MONITOR_REMOTE" onclick="Log.switchCategory('MONITOR_REMOTE', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">🖥️ Remote</button>
+                <button id="log-cat-TOURNAMENT_GAME" onclick="Log.switchCategory('TOURNAMENT_GAME', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">🏆 Turnamen &amp; Game</button>
+                <button id="log-cat-CONFIGURATION" onclick="Log.switchCategory('CONFIGURATION', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">⚙️ Konfigurasi</button>
+                <button id="log-cat-API_INTEGRATION" onclick="Log.switchCategory('API_INTEGRATION', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">🌐 Router Sync</button>
+                <button id="log-cat-BACKGROUND_JOB" onclick="Log.switchCategory('BACKGROUND_JOB', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">🕒 Scheduler</button>
+                <button id="log-cat-MAINTENANCE" onclick="Log.switchCategory('MAINTENANCE', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">🔧 Maintenance</button>
+                <button id="log-cat-SYSTEM" onclick="Log.switchCategory('SYSTEM', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">⚡ Sistem</button>
+                <button id="log-cat-ERROR_FAILURE" onclick="Log.switchCategory('ERROR_FAILURE', this)"
+                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">❌ Error</button>
             </div>
         </div>
         <div class="flex flex-wrap gap-3 mb-4">
