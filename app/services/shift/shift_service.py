@@ -60,7 +60,12 @@ class ShiftService:
         db.session.commit()
 
         from app.utils.logger import write_log
-        write_log("SHIFT_BUKA", f"Kasir:{kasir_username} | Modal:Rp{modal_awal:,}", user=operator)
+        
+        detail_shift = {
+            "kasir_username": kasir_username,
+            "modal_awal": modal_awal
+        }
+        write_log("SHIFT_BUKA", f"Kasir:{kasir_username} | Modal:Rp{modal_awal:,}", user=operator, detail_json=detail_shift)
 
         return shift
 
@@ -220,6 +225,16 @@ class ShiftService:
         db.session.commit()
 
         from app.utils.logger import write_log
+        
+        detail_shift = {
+            "kasir_username": shift.kasir.username,
+            "modal_awal": shift.modal_awal,
+            "total_billing": summary['total_billing'],
+            "total_kantin": summary['total_kantin'],
+            "uang_fisik": uang_fisik,
+            "selisih": selisih,
+            "status": "SELESAI"
+        }
         write_log(
             "SHIFT_TUTUP",
             f"Kasir:{shift.kasir.username} | "
@@ -229,6 +244,7 @@ class ShiftService:
             f"Fisik:{uang_fisik:,} | "
             f"Selisih:{selisih:+,}",
             user=operator,
+            detail_json=detail_shift
         )
 
         return {

@@ -53,10 +53,12 @@ class PCUptimeLog(db.Model):
             if utilisasi > 100.0:
                 utilisasi = 100.0
 
+        grup_nama = self.pc.grup.nama if self.pc and self.pc.grup else "reguler"
         return {
             "id": self.id,
             "pc_id": self.pc_id,
             "pc_kode": self.pc.kode if self.pc else "Unknown",
+            "grup": grup_nama,
             "tanggal": self.tanggal.isoformat() if self.tanggal else None,
             "total_online_menit": online_menit,
             "total_billing_menit": billing_menit,

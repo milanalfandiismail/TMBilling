@@ -9,7 +9,7 @@ hardware semua PC di dashboard kasir.
 from flask import Blueprint, request, jsonify, session
 from app.services import HardwareService
 from app.utils.logger import write_log
-from app.routes.auth.auth_kasir_routes import login_required
+from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.routes.client.client_routes import api_key_required
 
 monitor_api_bp = Blueprint("monitor", __name__)
@@ -71,6 +71,7 @@ def get_pc_processes(pc_id):
 
 @monitor_api_bp.route("/processes/<int:pc_id>/kill", methods=["POST"])
 @login_required
+@admin_required
 def kill_pc_process(pc_id):
     """Trigger request taskkill process ke client PC berdasarkan PC ID."""
     try:
@@ -87,12 +88,15 @@ def kill_pc_process(pc_id):
         from app.services.client.client_service import ClientService
         ClientService.queue_command(pc.id, f"kill:{process_name}")
 
-        write_log("REMOTE_KILL", f"Perintah Kill Process '{process_name}' dikirim ke PC {pc.kode}")
+        operator = session.get("kasir_username", "admin")
+        write_log("REMOTE_KILL", f"Perintah Kill Process '{process_name}' dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode, "process_name": process_name})
         return jsonify({"success": True, "message": f"Perintah mengakhiri proses {process_name} berhasil dikirim ke {pc.kode}"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
 @monitor_api_bp.route("/<int:hardware_id>", methods=["DELETE"])
+@login_required
+@admin_required
 def delete_hardware_data(hardware_id):
     """Endpoint untuk menghapus data hardware monitor tertentu secara manual dari dashboard."""
     try:
@@ -106,6 +110,7 @@ def delete_hardware_data(hardware_id):
 
 @monitor_kasir_bp.route("/screenshot/trigger/<int:pc_id>", methods=["POST"])
 @login_required
+@admin_required
 def trigger_screenshot(pc_id):
     """Trigger request screenshot ke client PC berdasarkan PC ID."""
     try:
@@ -117,11 +122,14 @@ def trigger_screenshot(pc_id):
         from app.services import ClientService
         ClientService.queue_command(pc.id, "screenshot")
 
+        operator = session.get("kasir_username", "admin")
+        write_log("REMOTE_SCREENSHOT_TRIGGER", f"Permintaan Screenshot dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode})
         return jsonify({"success": True, "message": f"Perintah screenshot berhasil dikirim ke {pc.kode}"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 @monitor_kasir_bp.route("/remote/<int:pc_id>/<string:action>", methods=["POST"])
 @login_required
+@admin_required
 def trigger_remote_action(pc_id, action):
     """Trigger remote action (shutdown atau restart) ke client PC berdasarkan PC ID."""
     try:
@@ -137,7 +145,8 @@ def trigger_remote_action(pc_id, action):
         ClientService.queue_command(pc.id, action)
 
         action_label = "Shutdown" if action == "shutdown" else "Restart"
-        write_log("REMOTE_ACTION", f"Perintah {action_label} dikirim ke PC {pc.kode}")
+        operator = session.get("kasir_username", "admin")
+        write_log("REMOTE_ACTION", f"Perintah {action_label} dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode, "action": action})
         return jsonify({"success": True, "message": f"Perintah {action_label} berhasil dikirim ke {pc.kode}"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -254,6 +263,7 @@ def get_all_screenshot_status():
 
 @monitor_kasir_bp.route("/register/<int:pc_id>", methods=["POST"])
 @login_required
+@admin_required
 def register_pc_hardware(pc_id):
     """Endpoint untuk mendaftarkan hardware saat ini sebagai baseline resmi PC (Update Baseline)."""
     try:

@@ -1,6 +1,7 @@
 # app/routes/vnc/vnc_routes.py
 from flask import Blueprint, jsonify, session
 from app.services import VNCService
+from app.utils.logger import write_log
 
 vnc_api_bp = Blueprint("vnc", __name__)
 
@@ -29,6 +30,14 @@ def start_vnc_proxy():
         return jsonify({"success": False, "error": "Akses ditolak"}), 403
 
     success, msg = VNCService.ensure_websockify_running()
+    operator = session.get("kasir_username", "admin")
+    write_log(
+        "VNC_START",
+        f"Proxy Websockify VNC dijalankan pada port {VNCService.LISTEN_PORT} ({msg})",
+        user=operator,
+        detail_json={"listen_port": VNCService.LISTEN_PORT, "status": success, "message": msg}
+    )
+
     if not success:
         return jsonify({"success": False, "error": msg}), 400
 

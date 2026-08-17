@@ -190,7 +190,10 @@ const API = {
             if (kategori) q.append('kategori', kategori);
             return API.request(`/api/v1/kasir/report/log?${q}`);
         },
-        clearLogs: () => API.request('/api/v1/kasir/report/log/clear', { method: 'POST' }),
+        clearLogs: (archive = true) => API.request('/api/v1/kasir/report/log/clear', {
+            method: 'POST',
+            body: JSON.stringify({ archive })
+        }),
         clearTransactions: () => API.request('/api/v1/kasir/report/transaksi/clear', { method: 'POST' }),
         deleteTransaction: (id) => API.request(`/api/v1/kasir/report/transaksi/${id}`, { method: 'DELETE' }),
         deleteByDate: (tanggal) => API.request(`/api/v1/kasir/report/transaksi/by-date/${tanggal}`, { method: 'DELETE' }),

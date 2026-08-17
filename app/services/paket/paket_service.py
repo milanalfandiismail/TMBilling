@@ -86,7 +86,15 @@ class PaketService:
         
         db.session.add(paket)
         db.session.commit()
-        write_log("TAMBAH_PAKET", f"Paket {nama} ({grup_nama}) berhasil dibuat", user=operator)
+        
+        detail_paket = {
+            "nama": nama,
+            "durasi_menit": paket.durasi_menit,
+            "harga": paket.harga,
+            "kadaluarsa_hari": paket.kadaluarsa_hari,
+            "grup": grup_nama
+        }
+        write_log("TAMBAH_PAKET", f"Paket {nama} ({grup_nama}) berhasil dibuat", user=operator, detail_json=detail_paket)
         return paket
 
 
@@ -158,5 +166,5 @@ class PaketService:
         nama_paket = paket.nama
         db.session.delete(paket)
         db.session.commit()
-        write_log("HAPUS_PAKET", f"Paket {nama_paket} dihapus permanen", user=operator)
+        write_log("HAPUS_PAKET", f"Paket {nama_paket} dihapus permanen", user=operator, detail_json={"nama_paket": nama_paket})
         return True

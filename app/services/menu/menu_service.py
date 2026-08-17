@@ -53,10 +53,16 @@ class MenuService:
                 if data.get("gambar_path"):
                     archived_dup.gambar_path = data["gambar_path"]
                 db.session.commit()
+                detail_restore = {
+                    "nama": nama,
+                    "harga": archived_dup.harga,
+                    "stok": archived_dup.stok
+                }
                 write_log(
                     "RESTORE_MENU",
                     f"Menu '{nama}' direstore dari arsip dengan data baru",
                     user=operator,
+                    detail_json=detail_restore
                 )
                 return archived_dup
 
@@ -70,7 +76,12 @@ class MenuService:
             MenuRepository.save(menu)
             db.session.commit()
 
-            write_log("TAMBAH_MENU", f"Menu '{nama}' berhasil ditambahkan ke katalog", user=operator)
+            detail_tambah = {
+                "nama": nama,
+                "harga": menu.harga,
+                "stok": menu.stok
+            }
+            write_log("TAMBAH_MENU", f"Menu '{nama}' berhasil ditambahkan ke katalog", user=operator, detail_json=detail_tambah)
             return menu
         except Exception as e:
             db.session.rollback()
@@ -103,7 +114,13 @@ class MenuService:
                 menu.gambar_path = data["gambar_path"]
 
             db.session.commit()
-            write_log("EDIT_MENU", f"Menu '{menu.nama}' berhasil diupdate", user=operator)
+            
+            detail_menu = {
+                "nama": menu.nama,
+                "harga": menu.harga,
+                "stok": menu.stok
+            }
+            write_log("EDIT_MENU", f"Menu '{menu.nama}' berhasil diupdate", user=operator, detail_json=detail_menu)
             return menu
         except Exception as e:
             db.session.rollback()
@@ -130,15 +147,21 @@ class MenuService:
             if transaksi_count > 0:
                 # Menu sudah pernah terjual — arsipkan saja agar FK tidak dilanggar
                 menu.is_active = False
+                detail_arsip = {
+                    "nama": nama,
+                    "transaksi_historis": transaksi_count
+                }
                 write_log(
                     "ARSIP_MENU",
                     f"Menu '{nama}' diarsipkan (memiliki {transaksi_count} transaksi historis)",
                     user=operator,
+                    detail_json=detail_arsip
                 )
             else:
                 # Tidak ada transaksi terkait — hapus permanen aman
                 MenuRepository.delete(menu)
-                write_log("HAPUS_MENU", f"Menu '{nama}' dihapus permanen dari katalog", user=operator)
+                detail_hapus = {"nama": nama, "transaksi_historis": 0}
+                write_log("HAPUS_MENU", f"Menu '{nama}' dihapus permanen dari katalog", user=operator, detail_json=detail_hapus)
 
             db.session.commit()
             return nama
@@ -163,10 +186,15 @@ class MenuService:
             MenuRepository.delete(menu)
             db.session.commit()
 
+            detail_hard = {
+                "nama": nama,
+                "transaksi_dihapus": transaksi_count
+            }
             write_log(
                 "HAPUS_MENU_PERMANEN",
                 f"Menu '{nama}' beserta {transaksi_count} transaksi terkait dihapus permanen",
                 user=operator,
+                detail_json=detail_hard
             )
             return {"nama": nama, "transaksi_dihapus": transaksi_count}
         except Exception as e:
@@ -243,7 +271,17 @@ class MenuService:
             db.session.commit()
             
             for t in transaksi_list:
-                write_log("TRANSAKSI_MENU", f"Penjualan {t.menu.nama} x{t.jumlah} (Total: Rp{t.total_harga:,}) sukses via {no_nota}", user=operator)
+                order_details = {
+                    "no_nota": no_nota,
+                    "nama_menu": t.menu.nama,
+                    "jumlah_qty": t.jumlah,
+                    "total_harga": t.total_harga,
+                    "pc_kode": t.pc_kode,
+                    "metode_pembayaran": t.metode_pembayaran,
+                    "tunai": tunai if tunai else None,
+                    "kembalian": kembalian if kembalian else None
+                }
+                write_log("TRANSAKSI_MENU", f"Penjualan {t.menu.nama} x{t.jumlah} (Total: Rp{t.total_harga:,}) sukses via {no_nota}", user=operator, detail_json=order_details)
 
             return [t.to_dict() for t in transaksi_list]
         except Exception as e:

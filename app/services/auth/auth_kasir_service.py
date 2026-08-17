@@ -40,11 +40,11 @@ class AuthKasirService:
         
         # Validasi user ada dan password cocok
         if not user or not user.check_password(password):
-            write_log("LOGIN_GAGAL", f"Username:{username} - Password salah")
+            write_log("LOGIN_GAGAL", f"Username:{username} - Password salah / tidak ditemukan", user=username, detail_json={"attempted_username": username, "reason": "Password salah atau user tidak ditemukan"})
             raise ValueError("Username atau password salah")
         
         # Catat log sukses dan return data user
-        write_log("LOGIN", f"Kasir:{username} ({user.nama_lengkap or ''}) login")
+        write_log("LOGIN", f"Kasir:{username} ({user.nama_lengkap or ''}) login", user=username, detail_json={"role": user.role, "nama_lengkap": user.nama_lengkap})
         return {
             "success": True,
             "user": user.to_dict(),
@@ -54,7 +54,7 @@ class AuthKasirService:
     @staticmethod
     def logout(username):
         """Logout kasir dan mencatat jejak audit."""
-        write_log("LOGOUT", f"Kasir {username} logout")
+        write_log("LOGOUT", f"Kasir {username} logout", user=username, detail_json={"username": username})
         return {"success": True, "message": "Logout berhasil"}
 
     @staticmethod
@@ -65,13 +65,14 @@ class AuthKasirService:
         
         user = UserRepository.get_by_username(username)
         if not user or not user.check_password(password):
-            write_log("ADMIN_CHECK_FAILED", f"Username:{username} - Salah password")
+            write_log("ADMIN_CHECK_FAILED", f"Username:{username} - Salah password / tidak ditemukan", user=username, detail_json={"attempted_username": username, "reason": "Kredensial salah"})
             raise ValueError("Username atau password salah")
         
         if user.role != "admin":
-            write_log("ADMIN_CHECK_DENIED", f"User:{username} bukan admin")
+            write_log("ADMIN_CHECK_DENIED", f"User:{username} bukan admin", user=username, detail_json={"username": username, "role": user.role, "reason": "Bukan admin"})
             raise ValueError("Akses ditolak. Perlu hak akses Admin.")
         
+        write_log("ADMIN_CHECK_SUCCESS", f"User:{username} berhasil verifikasi admin", user=username, detail_json={"username": username, "role": user.role})
         return {
             "success": True,
             "user": {

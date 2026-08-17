@@ -48,20 +48,30 @@ class LogAuditService:
                     timestamp, user, action, detail = "", "", "", line
                     ip_address, browser_agent, detail_json = "-", "-", None
 
-            category = "sistem"
-            action_upper = action.upper()
+            from app.utils.logger import ACTION_TO_CATEGORY_MAP
+            if 'data' in locals() and isinstance(data, dict) and 'category' in data:
+                category = data['category']
+            else:
+                category = ACTION_TO_CATEGORY_MAP.get(action.upper(), "SYSTEM")
 
-            if any(k in action_upper for k in ["TRANSAKSI", "STRUK", "REFUND", "CLEAR_TANGGAL"]):
-                category = "transaksi"
-            elif any(k in action_upper for k in ["SESI", "TAMBAH_WAKTU", "PINDAH_PC", "BUKA_GUEST", "BUKA_MEMBER"]):
-                category = "sesi"
-            elif "BLACKOUT" in action_upper:
-                category = "blackout"
-
+            match_filter = True
             if kategori and kategori != "Semua":
-                kategori_lower = kategori.lower()
-                if kategori_lower != category:
-                    continue
+                kat_lower = kategori.lower()
+                cat_upper = category.upper()
+                act_upper = action.upper()
+                if kat_lower == "transaksi":
+                    match_filter = cat_upper in ["TRANSACTION", "PAYMENT_BILLING"]
+                elif kat_lower == "sesi":
+                    match_filter = cat_upper == "SESI_BILLING"
+                elif kat_lower == "blackout":
+                    match_filter = "BLACKOUT" in act_upper
+                elif kat_lower == "sistem":
+                    match_filter = (cat_upper not in ["TRANSACTION", "PAYMENT_BILLING", "SESI_BILLING"]) and ("BLACKOUT" not in act_upper)
+                else:
+                    match_filter = cat_upper == kategori.upper()
+
+            if not match_filter:
+                continue
 
             if timestamp:
                 parsed_logs.append({
@@ -95,12 +105,28 @@ class LogAuditService:
         return {"logs": parsed_logs, "total": len(parsed_logs)}
 
     @staticmethod
-    def clear_system_logs(operator="system"):
-        """Bersihkan file log (Maintenance)."""
-        if clear_logs():
-            write_log("CLEAR_LOG", "Log dibersihkan", user=operator)
-            return True
-        return False
+    def clear_system_logs(operator="system", archive=True):
+        """Bersihkan file log dengan auto-archive dan pencatatan log audit terstruktur."""
+        res = clear_logs(archive=archive)
+        if res.get("success"):
+            detail_clear = {
+                "total_dibersihkan": res.get("total_lines", 0),
+                "diarsipkan": bool(res.get("archive_path")),
+                "lokasi_arsip": res.get("archive_path") or "-",
+                "dieksekusi_oleh": operator
+            }
+            write_log(
+                "CLEAR_LOG",
+                f"Log sistem dibersihkan ({res.get('total_lines', 0)} baris diarsipkan)",
+                user=operator,
+                detail_json=detail_clear
+            )
+            return {
+                "success": True,
+                "total_dibersihkan": res.get("total_lines", 0),
+                "archive_path": res.get("archive_path")
+            }
+        return {"success": False, "total_dibersihkan": 0, "archive_path": None}
 
     @staticmethod
     def clear_all_transactions(operator="system"):
@@ -109,10 +135,15 @@ class LogAuditService:
             count_t = TransaksiRepository.delete_all()
             count_s = SesiRepository.delete_history()
             db.session.commit()
-            write_log("CLEAR_ALL_HISTORY", f"Seluruh riwayat dikosongkan ({count_t} transaksi, {count_s} sesi)", user=operator)
+            write_log(
+                "CLEAR_ALL_HISTORY",
+                f"Seluruh riwayat dikosongkan ({count_t} transaksi, {count_s} sesi)",
+                user=operator,
+                detail_json={"transaksi_dihapus": count_t, "sesi_dihapus": count_s, "action": "clear_all"}
+            )
             return True
         except Exception as e:
-            write_log("ERROR", f"Gagal hapus seluruh riwayat: {str(e)}", user=operator)
+            write_log("ERROR", f"Gagal hapus seluruh riwayat: {str(e)}", user=operator, detail_json={"error": str(e)})
             return False
 
     @staticmethod
@@ -128,7 +159,7 @@ class LogAuditService:
             t_detail = {
                 "no_nota": t.no_nota,
                 "total": t.jumlah if hasattr(t, 'jumlah') else 0,
-                "tipe_pembayaran": t.tipe_pembayaran if hasattr(t, 'tipe_pembayaran') else "-",
+                "metode_pembayaran": t.metode_pembayaran if hasattr(t, 'metode_pembayaran') else (t.tipe_pembayaran if hasattr(t, 'tipe_pembayaran') else "-"),
                 "jenis": t.jenis if hasattr(t, 'jenis') else "-",
                 "pelanggan": t.member.username if t.member else (t.sesi.nama_guest if hasattr(t, 'sesi') and t.sesi else "Guest")
             }
@@ -139,7 +170,7 @@ class LogAuditService:
                 return True
             return False
         except Exception as e:
-            write_log("ERROR", f"Gagal hapus struk {t_id}: {str(e)}", user=operator)
+            write_log("ERROR", f"Gagal hapus struk {t_id}: {str(e)}", user=operator, detail_json={"error": str(e)})
             return False
 
     @staticmethod
@@ -149,10 +180,15 @@ class LogAuditService:
             count_t = TransaksiRepository.delete_by_date(tanggal)
             count_s = SesiRepository.delete_history_by_date(tanggal)
             db.session.commit()
-            write_log("CLEAR_TANGGAL", f"Riwayat tanggal {tanggal} dihapus ({count_t} transaksi, {count_s} sesi)", user=operator)
+            write_log(
+                "CLEAR_TANGGAL",
+                f"Riwayat tanggal {tanggal} dihapus ({count_t} transaksi, {count_s} sesi)",
+                user=operator,
+                detail_json={"tanggal_target": tanggal, "transaksi_dihapus": count_t, "sesi_dihapus": count_s}
+            )
             return True
         except Exception as e:
-            write_log("ERROR", f"Gagal hapus riwayat tanggal {tanggal}: {str(e)}", user=operator)
+            write_log("ERROR", f"Gagal hapus riwayat tanggal {tanggal}: {str(e)}", user=operator, detail_json={"error": str(e), "tanggal_target": tanggal})
             return False
 
     @staticmethod

@@ -481,11 +481,112 @@ class PdfExportService:
             det_json = log.get("detail_json")
             if det_json:
                 try:
-                    json_str = json.dumps(det_json, indent=2) if not isinstance(det_json, str) else det_json
-                    json_html = str(json_str).replace('<', '&lt;').replace('>', '&gt;').replace('\n', '<br/>').replace(' ', '&nbsp;')
-                    detail_str += f"<br/><b>Data:</b><br/>{json_html}"
+                    import json
+                    if isinstance(det_json, str):
+                        try:
+                            data = json.loads(det_json)
+                        except Exception:
+                            data = det_json
+                    else:
+                        data = det_json
+
+                    def format_val(k, v):
+                        if v is None:
+                            return "-"
+                        kl = k.lower()
+                        if any(x in kl for x in ["jumlah", "harga", "amount", "modal", "total", "saldo"]):
+                            try:
+                                return f"Rp {int(v):,}".replace(",", ".")
+                            except ValueError:
+                                try:
+                                    return f"Rp {float(v):,}".replace(",", ".")
+                                except Exception:
+                                    return str(v)
+                        if any(x in kl for x in ["durasi", "menit"]):
+                            try:
+                                return f"{int(v)} Menit"
+                            except Exception:
+                                return f"{v} Menit"
+                        return str(v)
+
+                    def format_key(k):
+                        parts = k.replace("_", " ").split()
+                        return " ".join([p.capitalize() for p in parts])
+
+                    html_lines = []
+                    act = log.get("action", "").upper()
+
+                    if isinstance(data, dict):
+                        if "REFUND" in act:
+                            order = [
+                                ("no_nota_refund", "No. Nota Refund"),
+                                ("no_nota_original", "No. Nota Asal"),
+                                ("jumlah_refund", "Jumlah Refund"),
+                                ("saldo_sebelum", "Saldo/Durasi Sebelum"),
+                                ("saldo_sesudah", "Saldo/Durasi Sesudah"),
+                                ("durasi_beli_sebelum", "Durasi Sebelum"),
+                                ("durasi_beli_sesudah", "Durasi Sesudah"),
+                                ("durasi_dikurangi", "Durasi Dikurangi"),
+                                ("username", "Username Member"),
+                                ("nama_guest", "Nama Guest")
+                            ]
+                            for key_id, label in order:
+                                if key_id in data and data[key_id] is not None:
+                                    html_lines.append(f"<b>{label}:</b> {format_val(key_id, data[key_id])}")
+                            for k, v in data.items():
+                                if not any(x[0] == k for x in order):
+                                    html_lines.append(f"<b>{format_key(k)}:</b> {format_val(k, v)}")
+                        elif "DELETE_STRUK" in act:
+                            order = [
+                                ("no_nota", "No. Nota"),
+                                ("jenis", "Jenis Transaksi"),
+                                ("jumlah", "Jumlah / Nominal"),
+                                ("tanggal", "Tanggal Transaksi"),
+                                ("keterangan", "Keterangan")
+                            ]
+                            for key_id, label in order:
+                                if key_id in data and data[key_id] is not None:
+                                    html_lines.append(f"<b>{label}:</b> {format_val(key_id, data[key_id])}")
+                            for k, v in data.items():
+                                if not any(x[0] == k for x in order):
+                                    html_lines.append(f"<b>{format_key(k)}:</b> {format_val(k, v)}")
+                        elif "EDIT_PAKET" in act:
+                            for k, v in data.items():
+                                label = format_key(k)
+                                if isinstance(v, dict) and "old" in v and "new" in v:
+                                    old_v = format_val(k, v["old"])
+                                    new_v = format_val(k, v["new"])
+                                    html_lines.append(f"<b>{label}:</b> {old_v} &rarr; {new_v}")
+                                else:
+                                    html_lines.append(f"<b>{label}:</b> {format_val(k, v)}")
+                        else:
+                            for k, v in data.items():
+                                label = format_key(k)
+                                if isinstance(v, dict):
+                                    html_lines.append(f"<b>{label}:</b>")
+                                    for sub_k, sub_v in v.items():
+                                        html_lines.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&bull; {format_key(sub_k)}: {format_val(sub_k, sub_v)}")
+                                elif isinstance(v, list):
+                                    items_str = ", ".join([str(item) for item in v])
+                                    html_lines.append(f"<b>{label}:</b> {items_str}")
+                                else:
+                                    html_lines.append(f"<b>{label}:</b> {format_val(k, v)}")
+                    elif isinstance(data, list):
+                        for item in data:
+                            if isinstance(item, dict):
+                                sub_lines = []
+                                for k, v in item.items():
+                                    sub_lines.append(f"{format_key(k)}: {format_val(k, v)}")
+                                html_lines.append("&bull; " + ", ".join(sub_lines))
+                            else:
+                                html_lines.append(f"&bull; {item}")
+                    else:
+                        html_lines.append(str(data))
+
+                    if html_lines:
+                        detail_str += "<br/><b>Data:</b><br/>" + "<br/>".join(html_lines)
                 except Exception:
-                    detail_str += f"<br/><b>Data:</b> {str(det_json)}"
+                    detail_str += f"<br/><b>Data (Raw):</b> {str(det_json)}"
 
             row = [
                 Paragraph(log.get("timestamp", ""), style_table_cell_center),

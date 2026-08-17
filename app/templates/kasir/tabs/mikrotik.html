@@ -1,26 +1,19 @@
 <!-- ==================== TAB: MIKROTIK ==================== -->
 <div id="tab-mikrotik" class="tab-content hidden space-y-6">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-            <h2 class="text-xl lg:text-2xl font-bold text-neutral-200">🌐 MikroTik Hotspot</h2>
-            <p class="text-xs lg:text-sm text-neutral-500 mt-1">Konfigurasi integrasi dengan RouterOS MikroTik</p>
-        </div>
-    </div>
-
     <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
         <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-4">
             <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center">
+                <div class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
                     <span class="text-xl">🌐</span>
                 </div>
                 <div>
-                    <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Status Integrasi</h3>
-                    <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Sinkronisasi otomatis member billing ke MikroTik Hotspot Users</p>
+                    <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">MikroTik Hotspot</h3>
+                    <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Konfigurasi integrasi dengan RouterOS MikroTik untuk sinkronisasi otomatis member billing</p>
                 </div>
             </div>
-            <label class="relative inline-flex items-center cursor-pointer">
+            <label class="relative inline-flex items-center cursor-pointer shrink-0">
                 <input type="checkbox" id="mikrotik-enabled" class="sr-only peer" onchange="MikrotikModule.toggleIntegration(this)">
-                <div class="w-14 h-7 bg-[#262626] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-neutral-200"></div>
+                <div class="w-11 h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
             </label>
         </div>
 
@@ -49,7 +42,7 @@
         </div>
 
         <div class="flex flex-col sm:flex-row justify-between items-center mt-6 pt-4 border-t border-[#1c1c1c] gap-4">
-            <div class="flex gap-2 w-full sm:w-auto">
+            <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                 <button id="btn-mikrotik-test" onclick="MikrotikModule.testConnection()" class="flex-1 sm:flex-none px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs lg:text-base font-semibold rounded transition-colors">Test Koneksi</button>
                 <button id="btn-mikrotik-sync" onclick="MikrotikModule.syncAllMembers()" class="flex-1 sm:flex-none px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs lg:text-base font-semibold rounded transition-colors">Selaraskan Semua Member</button>
             </div>

@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from sqlalchemy import func
 from app.models import db, PC, MaintenanceTicket
 from app.utils.timezone_utils import format_display
+from app.utils.logger import write_log
 
 class MaintenanceService:
 
@@ -42,6 +43,15 @@ class MaintenanceService:
 
         db.session.add(ticket)
         db.session.commit()
+        
+        detail_tiket = {
+            "pc_kode": pc.kode,
+            "reporter": reporter,
+            "kategori": kategori,
+            "prioritas": prioritas,
+            "judul": judul
+        }
+        write_log("BUAT_TIKET", f"Tiket {kategori} PC {pc.kode} dibuat (Prioritas {prioritas})", user=reporter, detail_json=detail_tiket)
         return ticket
 
     @staticmethod
@@ -84,6 +94,14 @@ class MaintenanceService:
             ticket.resolusi = resolusi
 
         db.session.commit()
+        
+        detail_tiket = {
+            "pc_kode": ticket.pc.kode if ticket.pc else "",
+            "status": status,
+            "resolved_by": resolved_by,
+            "biaya": biaya
+        }
+        write_log("UPDATE_TIKET", f"Tiket PC {ticket.pc.kode if ticket.pc else ''} diupdate ke {status}", user=resolved_by or "system", detail_json=detail_tiket)
         return ticket.to_dict()
 
     @staticmethod
@@ -153,4 +171,5 @@ class MaintenanceService:
 
         db.session.delete(ticket)
         db.session.commit()
+        write_log("HAPUS_TIKET", f"Tiket dihapus", user="system", detail_json={"ticket_id": ticket_id})
         return True

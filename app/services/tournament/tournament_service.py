@@ -427,6 +427,15 @@ class TournamentService:
                     match_index += 1
 
             TournamentRepository.commit()
+            from flask import has_request_context, session
+            from app.utils.logger import write_log
+            op_name = session.get("kasir_username", "admin") if has_request_context() else "admin"
+            write_log(
+                "TOURNAMENT_CREATE",
+                f"Turnamen '{nama}' berhasil dibuat",
+                user=op_name,
+                detail_json={"nama": t.nama, "format": tipe_jalur, "total_tim": len(db_teams)}
+            )
             return {"tournament_id": t.id, "nama": nama}
 
         except Exception as e:
@@ -477,6 +486,15 @@ class TournamentService:
                     t.status = "selesai"
                     TournamentRepository.commit()
 
+            from flask import has_request_context, session
+            from app.utils.logger import write_log
+            op_name = session.get("kasir_username", "admin") if has_request_context() else "admin"
+            write_log(
+                "TOURNAMENT_SCORE_UPDATE",
+                f"Skor pertandingan match_{m.id} diperbarui: {m.tim1.nama_tim if m.tim1 else 'Bye'} ({skor1}) vs {m.tim2.nama_tim if m.tim2 else 'Bye'} ({skor2})",
+                user=op_name,
+                detail_json={"match_id": m.id, "tim1": m.tim1.nama_tim if m.tim1 else "Bye", "tim2": m.tim2.nama_tim if m.tim2 else "Bye", "skor1": skor1, "skor2": skor2, "pemenang": m.pemenang.nama_tim if m.pemenang else None}
+            )
             return m.to_dict()
 
         except Exception as e:
@@ -506,6 +524,15 @@ class TournamentService:
         next_round = current_round + 1
         default_bo = matches[0].bo_format
         TournamentService.pair_swiss_round(stage.id, next_round, default_bo)
+        from flask import has_request_context, session
+        from app.utils.logger import write_log
+        op_name = session.get("kasir_username", "admin") if has_request_context() else "admin"
+        write_log(
+            "TOURNAMENT_STAGE_UPDATE",
+            f"Swiss Stage ronde {next_round} dimulai",
+            user=op_name,
+            detail_json={"stage": stage.nama, "status": stage.status, "round": next_round}
+        )
         return next_round
 
     @staticmethod
@@ -538,6 +565,15 @@ class TournamentService:
                 TournamentRepository.commit()
                 msg = f"Turnamen {t.nama} telah selesai."
 
+            from flask import has_request_context, session
+            from app.utils.logger import write_log
+            op_name = session.get("kasir_username", "admin") if has_request_context() else "admin"
+            write_log(
+                "TOURNAMENT_STAGE_UPDATE",
+                f"Stage '{stage.nama}' selesai. Msg: {msg}",
+                user=op_name,
+                detail_json={"stage": stage.nama, "status": stage.status, "message": msg}
+            )
             return msg
 
         except Exception as e:
@@ -554,6 +590,15 @@ class TournamentService:
         try:
             TournamentRepository.delete(t)
             TournamentRepository.commit()
+            from flask import has_request_context, session
+            from app.utils.logger import write_log
+            op_name = session.get("kasir_username", "admin") if has_request_context() else "admin"
+            write_log(
+                "TOURNAMENT_DELETE",
+                f"Turnamen '{t.nama}' berhasil dihapus",
+                user=op_name,
+                detail_json={"nama_turnamen": t.nama}
+            )
             return t.nama
         except Exception as e:
             TournamentRepository.rollback()
