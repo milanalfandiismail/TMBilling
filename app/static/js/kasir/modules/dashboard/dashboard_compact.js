@@ -141,27 +141,29 @@ const CompactGrid = {
         }
 
         const borderAttr = borderStyle ? `style="${borderStyle}"` : '';
+        const timerColorClass = isActive && sesi && sesi.sisa_menit <= 5 && sesi.tipe !== 'admin' ? 'text-red-400 animate-pulse' : 'text-emerald-300';
+        const timerFontSizeClass = timerStr.length > 8 ? 'text-[11px] lg:text-xs xl:text-sm' : 'text-xs lg:text-sm xl:text-base';
 
         return `
-            <div class="${cardBorderClass} ${cardBgClass} ${cardOpacityClass} rounded-xl p-2.5 sm:p-3 cursor-pointer transition-all hover:brightness-125 flex flex-col justify-between text-left h-[125px] w-full shadow-lg" 
+            <div class="${cardBorderClass} ${cardBgClass} ${cardOpacityClass} rounded-xl p-2 sm:p-2.5 cursor-pointer transition-all hover:brightness-125 flex flex-col justify-between text-left min-h-[125px] lg:min-h-[130px] h-auto w-full shadow-lg" 
                  ${borderAttr}
                  onclick="event.preventDefault(); event.stopPropagation(); Dashboard.showContextMenu(event, ${pc.id})"
                  oncontextmenu="event.preventDefault(); event.stopPropagation(); Dashboard.showContextMenu(event, ${pc.id})">
                 <!-- Row 1: Kode PC - DOT -->
                 <div class="flex items-center justify-between">
-                    <span class="text-base lg:text-lg font-black text-neutral-100 tracking-tight">${pc.kode}</span>
+                    <span class="text-sm lg:text-base xl:text-lg font-black text-neutral-100 tracking-tight">${pc.kode}</span>
                     <span class="w-2.5 h-2.5 rounded-full ${indicatorColorClass} shrink-0 bg-current"></span>
                 </div>
                 <!-- Row 2: Aplikasi / Active Window -->
-                <div class="text-xs lg:text-sm text-neutral-400 truncate mt-0.5" title="${activeAppName}">
+                <div class="text-[10px] lg:text-xs xl:text-sm text-neutral-400 truncate mt-0.5" title="${activeAppName}">
                     ${activeAppName}
                 </div>
                 <!-- Row 3: Timer -->
-                <div class="text-sm lg:text-base font-black font-mono ${isActive && sesi && sesi.sisa_menit <= 5 && sesi.tipe !== 'admin' ? 'text-red-400 animate-pulse' : 'text-emerald-300'} mt-0.5">
+                <div class="${timerFontSizeClass} font-black font-mono ${timerColorClass} mt-0.5">
                     ${timerStr}
                 </div>
                 <!-- Row 4: Nama Member / Guest -->
-                <div class="text-xs lg:text-sm text-neutral-300 truncate font-bold mt-0.5" title="${memberName}">
+                <div class="text-[10px] lg:text-xs xl:text-sm text-neutral-300 truncate font-bold mt-0.5" title="${memberName}">
                     ${memberName}
                 </div>
             </div>
