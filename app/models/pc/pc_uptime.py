@@ -73,7 +73,7 @@ class PCUptimeLog(db.Model):
             "last_seen": last_seen_local.isoformat() if last_seen_local else None,
             "first_seen_display": format_display(self.first_seen) if self.first_seen else "-",
             "last_seen_display": format_display(self.last_seen) if self.last_seen else "-",
-            "first_seen_time": first_seen_local.strftime("%H:%M") if first_seen_local else "-",
-            "last_seen_time": last_seen_local.strftime("%H:%M") if last_seen_local else "-",
+            "first_seen_time": format_display(self.first_seen, fmt="%H:%M") if self.first_seen else "-",
+            "last_seen_time": format_display(self.last_seen, fmt="%H:%M") if self.last_seen else "-",
             "utilisasi_persen": utilisasi
         }

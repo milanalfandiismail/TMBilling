@@ -62,6 +62,27 @@ class TestPCUptimeTimezone(unittest.TestCase):
         self.assertIn("+08:00", data["first_seen"])
         self.assertIn("WITA", data["first_seen_display"])
 
+    def test_pc_uptime_to_dict_includes_timezone_label(self):
+        # Set timezone to Asia/Makassar (WITA, UTC+8)
+        SettingsService.set("timezone", "Asia/Makassar")
+
+        log = PCUptimeLog(
+            pc_id=self.pc.id,
+            tanggal=date.today(),
+            total_online_seconds=3600,
+            total_billing_seconds=1800,
+            first_seen=datetime(2026, 8, 20, 2, 0, 0),  # 02:00 UTC -> 10:00 WITA
+            last_seen=datetime(2026, 8, 20, 3, 0, 0)    # 03:00 UTC -> 11:00 WITA
+        )
+        db.session.add(log)
+        db.session.commit()
+
+        d = log.to_dict()
+        self.assertIn("WITA", d["first_seen_time"])
+        self.assertIn("10:00", d["first_seen_time"])
+        self.assertIn("WITA", d["last_seen_time"])
+        self.assertIn("11:00", d["last_seen_time"])
+
 
 class TestPCHardDelete(unittest.TestCase):
     def setUp(self):
