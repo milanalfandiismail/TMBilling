@@ -40,8 +40,8 @@ const UptimeTracker = {
         if (this.mode === 'daily') {
             if (dailyFilter) dailyFilter.classList.remove('hidden');
             if (rangeFilter) rangeFilter.classList.add('hidden');
-            if (thSeenFirst) thSeenFirst.textContent = 'First Seen';
-            if (thSeenLast) thSeenLast.textContent = 'Last Seen';
+            if (thSeenFirst) thSeenFirst.textContent = 'Mulai Aktif';
+            if (thSeenLast) thSeenLast.textContent = 'Terakhir Aktif';
         } else {
             if (dailyFilter) dailyFilter.classList.add('hidden');
             if (rangeFilter) rangeFilter.classList.remove('hidden');
