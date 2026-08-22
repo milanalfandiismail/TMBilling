@@ -48,12 +48,44 @@ const FileExplorer = {
             const res = await API.fileexplorer.getRoots();
             if (res && res.success) {
                 this.roots = res.roots;
+                this.populateRootSelector();
                 if (this.roots.length > 0) {
                     await this.openDirectory(this.roots[0]);
                 }
             }
         } catch (err) {
             Toast.error('Gagal memuat allowed roots: ' + err.message);
+        }
+    },
+
+    populateRootSelector() {
+        const select = document.getElementById('fe-root-select');
+        if (!select) return;
+        select.innerHTML = '';
+        this.roots.forEach(root => {
+            const opt = document.createElement('option');
+            opt.value = root;
+            opt.textContent = root;
+            select.appendChild(opt);
+        });
+    },
+
+    async switchRoot(path) {
+        if (!path) return;
+        await this.openDirectory(path);
+    },
+
+    updateRootSelectorSelection() {
+        const select = document.getElementById('fe-root-select');
+        if (!select || !this.currentPath) return;
+
+        // Find which root matches currentPath prefix (case insensitive)
+        const activeRoot = this.roots.find(root => {
+            return this.currentPath.toLowerCase().startsWith(root.toLowerCase());
+        });
+
+        if (activeRoot) {
+            select.value = activeRoot;
         }
     },
 
@@ -65,6 +97,7 @@ const FileExplorer = {
                 this.items = res.items;
                 this.renderBreadcrumbs();
                 this.renderItemList();
+                this.updateRootSelectorSelection();
             } else {
                 Toast.error('Gagal membuka folder: ' + res.error);
             }
@@ -472,6 +505,7 @@ const FileExplorer = {
             const res = await API.fileexplorer.setRoots(this.tempRoots);
             if (res && res.success) {
                 this.roots = res.roots;
+                this.populateRootSelector();
                 this.closeRootsModal();
                 Toast.success('Daftar direktori diizinkan berhasil diperbarui');
                 // Reload explorer ke root pertama yang baru

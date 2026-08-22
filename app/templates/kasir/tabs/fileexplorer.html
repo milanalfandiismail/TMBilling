@@ -40,9 +40,18 @@
             <!-- Left Panel: Directory/File Tree List (hidden on editor mode in mobile) -->
             <div id="fe-left-panel" class="w-full md:w-80 border-r border-[#1c1c1c] flex flex-col h-full bg-[#090909] shrink-0">
                 <!-- Search bar inside tree list -->
-                <div class="p-3 border-b border-[#1c1c1c] shrink-0 bg-[#090909]">
+                <div class="p-3 border-b border-[#1c1c1c] shrink-0 bg-[#090909] space-y-2.5">
                     <input type="text" id="fe-search-input" oninput="FileExplorer.filterItems()" placeholder="Cari berkas/folder..." 
                         class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                    
+                    <!-- Root Folder Selector -->
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Direktori Aktif:</label>
+                        <select id="fe-root-select" onchange="FileExplorer.switchRoot(this.value)" 
+                            class="w-full px-2.5 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono">
+                            <!-- Dynamic allowed roots will be loaded here -->
+                        </select>
+                    </div>
                 </div>
                 <div id="fe-item-list" class="flex-1 overflow-auto p-2 space-y-0.5 text-xs text-neutral-400 scrollbar-thin">
                     <!-- Dynamic Files and Folders list -->
