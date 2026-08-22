@@ -292,6 +292,7 @@ const CompactGrid = {
                     `}
                 </div>
             `;
+        });
         const emptyStateHtml = `
             <div class="flex flex-col items-center justify-center py-24 text-neutral-500 w-full">
                 <div class="w-12 h-12 rounded-full bg-[#141414] border border-[#222] flex items-center justify-center mb-3 text-neutral-500 text-xl">
