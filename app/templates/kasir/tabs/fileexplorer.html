@@ -1,0 +1,101 @@
+<!-- ===== TAB: FILE EXPLORER ===== -->
+<div id="tab-fileexplorer" class="tab-content hidden w-full h-[calc(100vh-210px)] md:h-[calc(100vh-200px)]">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded flex flex-col h-full overflow-hidden">
+        
+        <!-- Header & Breadcrumbs -->
+        <div class="flex flex-wrap items-center justify-between gap-3 p-3 md:p-4 border-b border-[#1c1c1c] shrink-0 bg-[#070707]">
+            <div class="flex items-center gap-2 min-w-0">
+                <span class="text-neutral-400 text-lg">📁</span>
+                <div class="flex items-center text-xs md:text-sm font-semibold text-neutral-300 min-w-0" id="fe-breadcrumbs">
+                    <!-- Dynamic Breadcrumbs -->
+                    <span>Loading Path...</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="FileExplorer.createItem(false)" class="px-2.5 py-1.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded transition-colors flex items-center gap-1">
+                    <span>➕📄</span> Baru (File)
+                </button>
+                <button onclick="FileExplorer.createItem(true)" class="px-2.5 py-1.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded transition-colors flex items-center gap-1">
+                    <span>➕📁</span> Baru (Folder)
+                </button>
+                <button onclick="FileExplorer.refresh()" class="px-2.5 py-1.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded transition-colors flex items-center gap-1" title="Refresh">
+                    <span>🔄</span> Segarkan
+                </button>
+                <button onclick="FileExplorer.openRootsModal()" class="px-2.5 py-1.5 bg-amber-600/80 hover:bg-amber-500 text-white text-xs font-bold rounded transition-colors flex items-center gap-1">
+                    <span>⚙️</span> Folder Diizinkan
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Workspace (Split View) -->
+        <div class="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
+            
+            <!-- Left Panel: Directory/File Tree List -->
+            <div class="w-full md:w-80 border-r border-[#1c1c1c] flex flex-col h-full bg-[#090909] shrink-0">
+                <!-- Search bar inside tree list -->
+                <div class="p-2 border-b border-[#1c1c1c] shrink-0">
+                    <input type="text" id="fe-search-input" oninput="FileExplorer.filterItems()" placeholder="Cari berkas/folder..." 
+                        class="w-full px-3 py-1.5 bg-[#121212] border border-[#222] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500">
+                </div>
+                <div id="fe-item-list" class="flex-1 overflow-y-auto p-2 space-y-0.5 text-xs text-neutral-400 scrollbar-thin">
+                    <!-- Dynamic Files and Folders list -->
+                </div>
+            </div>
+
+            <!-- Right Panel: Text Editor -->
+            <div class="flex-1 flex flex-col h-full bg-[#050505] relative overflow-hidden">
+                <!-- Editor Toolbar -->
+                <div class="flex items-center justify-between p-2 border-b border-[#1c1c1c] bg-[#070707] shrink-0 text-xs text-neutral-400">
+                    <div class="flex items-center gap-2 font-mono" id="fe-file-info">
+                        Tidak ada berkas terbuka
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="fe-editor-status" class="text-neutral-500 italic">Idle</span>
+                        <button onclick="FileExplorer.saveFile()" id="fe-save-btn" disabled 
+                            class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white font-bold rounded transition-colors flex items-center gap-1.5">
+                            💾 Simpan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CodeMirror Editor Container -->
+                <div class="flex-1 relative overflow-hidden">
+                    <div id="fe-editor-container" class="absolute inset-0 w-full h-full text-xs overflow-auto font-mono"></div>
+                    <div id="fe-editor-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-[#070707] text-neutral-600 space-y-2 z-10">
+                        <span>📝</span>
+                        <p class="text-xs">Pilih berkas teks dari panel kiri untuk membukanya di editor</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal: Allowed Roots Manager -->
+<div id="fe-roots-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-[#0f0f0f] border border-[#222] rounded-lg w-full max-w-lg overflow-hidden flex flex-col shadow-2xl">
+        <div class="p-4 border-b border-[#222] flex items-center justify-between">
+            <h4 class="text-sm font-bold text-neutral-200">⚙️ Pengaturan Direktori yang Diizinkan (*Allowed Roots*)</h4>
+            <button onclick="FileExplorer.closeRootsModal()" class="text-neutral-500 hover:text-neutral-300">✖</button>
+        </div>
+        <div class="p-4 flex-1 overflow-y-auto max-h-60 space-y-3 text-xs">
+            <p class="text-neutral-400">Berkas yang dapat diakses oleh File Explorer dibatasi hanya pada daftar direktori di bawah ini demi keamanan sistem:</p>
+            <div id="fe-roots-list" class="space-y-1.5">
+                <!-- Dynamic allowed roots entries -->
+            </div>
+            
+            <div class="pt-2 border-t border-[#1c1c1c] flex items-center gap-2">
+                <input type="text" id="fe-new-root-input" placeholder="Contoh: D:\TMBillingBackups" 
+                    class="flex-1 px-3 py-2 bg-[#171717] border border-[#262626] rounded text-neutral-200 focus:outline-none focus:border-neutral-500">
+                <button onclick="FileExplorer.addRoot()" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold rounded">Tambah</button>
+            </div>
+        </div>
+        <div class="p-4 bg-[#0a0a0a] border-t border-[#222] flex justify-end gap-2 shrink-0">
+            <button onclick="FileExplorer.closeRootsModal()" class="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 rounded text-xs">Batal</button>
+            <button onclick="FileExplorer.saveRoots()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded text-xs">Simpan Perubahan</button>
+        </div>
+    </div>
+</div>
