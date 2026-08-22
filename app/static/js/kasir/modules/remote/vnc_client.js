@@ -172,6 +172,37 @@ const VNCClient = {
         } else {
             document.exitFullscreen();
         }
+    },
+
+    async load() {
+        try {
+            const res = await API.settings.getAll();
+            if (res && res.success && res.settings && res.settings.vnc_password !== undefined) {
+                const pwdInput = document.getElementById('vnc-password-input');
+                if (pwdInput) pwdInput.value = res.settings.vnc_password;
+            }
+        } catch (err) {
+            console.error('Gagal memuat password VNC global:', err);
+        }
+    },
+
+    async saveGlobalPassword() {
+        const pwdInput = document.getElementById('vnc-password-input');
+        if (!pwdInput) return;
+        const val = pwdInput.value;
+        const saveBtn = document.getElementById('vnc-save-pw-btn');
+        if (saveBtn) saveBtn.disabled = true;
+        try {
+            await API.request('/api/v1/kasir/settings/vnc_password', {
+                method: 'PUT',
+                body: JSON.stringify({ value: val })
+            });
+            Toast.success('Password VNC berhasil disimpan ke server');
+        } catch (err) {
+            Toast.error('Gagal menyimpan password VNC: ' + err.message);
+        } finally {
+            if (saveBtn) saveBtn.disabled = false;
+        }
     }
 };
 
@@ -179,4 +210,5 @@ window.VNCClient = VNCClient;
 
 document.addEventListener('DOMContentLoaded', () => {
     VNCClient.getRFB();
+    VNCClient.load();
 });

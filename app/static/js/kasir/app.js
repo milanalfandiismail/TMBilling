@@ -248,6 +248,7 @@ const App = {
             case 'mikrotik': if (typeof SettingsMikrotik !== 'undefined') SettingsMikrotik.init(); break;
             case 'tutorials': if (typeof Tutorials !== 'undefined') await Tutorials.load(); break;
             case 'fileexplorer': if (typeof FileExplorer !== 'undefined') await FileExplorer.load(); break;
+            case 'remote_server': if (typeof VNCClient !== 'undefined') await VNCClient.load(); break;
         }
     },
  
