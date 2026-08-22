@@ -119,8 +119,8 @@ const CompactGrid = {
             statusIndicator = '●';
             indicatorColorClass = 'text-amber-500';
             cardBgClass = 'bg-[#18120a] hover:bg-[#241b0f]';
-            timerStr = 'ADMIN BYPASS';
-            memberName = 'ADMIN';
+            timerStr = 'ADMIN';
+            memberName = pc.sesi_detail?.member_nama || pc.sesi_detail?.nama_guest || 'ADMIN';
             activeAppName = '-';
         } else if (pc.status_koneksi === 'online') {
             statusIndicator = '○';

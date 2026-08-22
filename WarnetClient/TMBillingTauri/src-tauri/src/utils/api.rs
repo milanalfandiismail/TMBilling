@@ -37,10 +37,20 @@ pub struct MemberLoginResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AdminUserData {
+    pub id: Option<i64>,
+    pub username: Option<String>,
+    pub nama_lengkap: Option<String>,
+    pub role: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AdminLoginResponse {
     pub success: bool,
     pub token_sesi: Option<String>,
+    pub user: Option<AdminUserData>,
 }
+
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WarnetConfig {
@@ -308,8 +318,8 @@ impl ApiService {
             return Ok(StatusResponse {
                 status: "admin".to_string(),
                 sisa_waktu: Some(0),
-                nama: Some(user.to_string()),
-                grup: Some("ADMINISTRATOR (EMERGENCY)".to_string()),
+                nama: Some("SYSTEM".to_string()),
+                grup: Some("SYSTEM".to_string()),
                 pc_kode: None,
                 shutdown_timer: Some(0),
                 command: None,
@@ -350,13 +360,18 @@ impl ApiService {
             return Err(format!("Gagal: {}", status));
         }
 
-        let _raw: AdminLoginResponse = serde_json::from_str(&body_text)
+        let raw: AdminLoginResponse = serde_json::from_str(&body_text)
             .map_err(|_| format!("Gagal urai data admin."))?;
+
+        let display_name = match &raw.user {
+            Some(u) => u.nama_lengkap.as_deref().unwrap_or(u.username.as_deref().unwrap_or(user)).to_string(),
+            None => user.to_string(),
+        };
 
         Ok(StatusResponse {
             status: "admin".to_string(),
             sisa_waktu: Some(0),
-            nama: Some(user.to_string()),
+            nama: Some(display_name),
             grup: Some("ADMINISTRATOR".to_string()),
             pc_kode: None,
             shutdown_timer: Some(0),
@@ -383,14 +398,15 @@ impl ApiService {
         Ok(StatusResponse {
             status: "admin".to_string(),
             sisa_waktu: Some(0),
-            nama: Some(self.emergency_user.clone()),
-            grup: Some("SUPER ADMIN (EMERGENCY)".to_string()),
+            nama: Some("SYSTEM".to_string()),
+            grup: Some("SYSTEM".to_string()),
             pc_kode: None,
             shutdown_timer: Some(0),
             command: None,
             message: None,
         })
     }
+
 
     async fn post_request<T: serde::de::DeserializeOwned>(&self, endpoint: &str, payload: serde_json::Value) -> Result<T, String> {
         let url = format!("{}/{}", self.server_url, endpoint);
