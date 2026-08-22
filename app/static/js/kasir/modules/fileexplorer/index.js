@@ -248,12 +248,29 @@ const FileExplorer = {
                 if (status) status.textContent = 'Tersimpan';
                 if (saveBtn) saveBtn.disabled = true;
 
+                // Mobile view switch: hide list, show editor
+                const leftPanel = document.getElementById('fe-left-panel');
+                const rightPanel = document.getElementById('fe-right-panel');
+                if (leftPanel && rightPanel && window.innerWidth < 768) {
+                    leftPanel.classList.add('hidden');
+                    rightPanel.classList.remove('hidden');
+                }
+
                 Toast.success('Berkas berhasil dimuat');
             } else {
                 Toast.error('Gagal memuat berkas: ' + (res.error || 'Terjadi kesalahan'));
             }
         } catch (err) {
             Toast.error('Gagal membaca berkas: ' + err.message);
+        }
+    },
+
+    backToTree() {
+        const leftPanel = document.getElementById('fe-left-panel');
+        const rightPanel = document.getElementById('fe-right-panel');
+        if (leftPanel && rightPanel) {
+            leftPanel.classList.remove('hidden');
+            rightPanel.classList.add('hidden');
         }
     },
 
