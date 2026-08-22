@@ -255,8 +255,19 @@ class ClientService:
             if norm_client_mac != norm_db_mac:
                 raise ValueError("Identitas PC tidak valid (MAC Mismatch)")
 
-        # Aktifkan admin mode di DB biar polling diterima
+        # Tutup sesi member/guest yang mungkin sedang aktif
+        existing = SesiRepository.get_aktif_by_pc(pc.id)
+        if existing:
+            existing.status = "selesai"
+            existing.selesai_pada = now_local()
+            db.session.commit()
+
+        # Buat sesi khusus emergency admin
+        import secrets
+        token = secrets.token_hex(32)
         pc.is_admin_mode = True
+        pc.last_activity = now_local()
+        SesiService.buka_admin(pc.id, token, admin_nama="SYSTEM")
         db.session.commit()
 
         write_log("EMERGENCY_LOGIN", f"PC {pc.kode} emergency login activated")
@@ -304,7 +315,9 @@ class ClientService:
         # Buat sesi khusus admin
         token = secrets.token_hex(32)
         pc.is_admin_mode = True # Aktifkan mode admin di DB
-        SesiService.buka_admin(pc.id, token)
+        pc.last_activity = now_local()
+        display_name = user.nama_lengkap or user.username
+        SesiService.buka_admin(pc.id, token, admin_nama=display_name)
         
         db.session.commit()
         write_log(
@@ -313,7 +326,17 @@ class ClientService:
             user=username,
             detail_json={"pc_kode": pc.kode, "ip_address": ip_address, "mac_address": mac_address, "admin_user": username}
         )
-        return {"success": True, "token_sesi": token}
+        return {
+            "success": True,
+            "token_sesi": token,
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "nama_lengkap": display_name,
+                "role": user.role
+            }
+        }
+
 
 
     # =========================================================================

@@ -49,6 +49,10 @@ export const Api = {
         return await invoke('get_client_warnet');
     },
 
+    async getAppVersion() {
+        return await invoke('get_app_version');
+    },
+
     // Listener Event dari Rust
     async onEvent(name, callback) {
         return await listen(name, (event) => callback(event.payload));

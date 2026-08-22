@@ -205,7 +205,8 @@ const App = {
             tutorials: 'Dokumentasi & Tutorial',
             analytics: 'Analytics Owner',
             plugins: 'Plugins & Ekstensi',
-            mikrotik: 'MikroTik Hotspot'
+            mikrotik: 'MikroTik Hotspot',
+            fileexplorer: 'File Explorer'
         };
  
         const titleEl = document.getElementById('page-title');
@@ -246,6 +247,8 @@ const App = {
             case 'plugins': if (typeof PluginsModule !== 'undefined') PluginsModule.init(); break;
             case 'mikrotik': if (typeof SettingsMikrotik !== 'undefined') SettingsMikrotik.init(); break;
             case 'tutorials': if (typeof Tutorials !== 'undefined') await Tutorials.load(); break;
+            case 'fileexplorer': if (typeof FileExplorer !== 'undefined') await FileExplorer.load(); break;
+            case 'remote_server': if (typeof VNCClient !== 'undefined') await VNCClient.load(); break;
         }
     },
  

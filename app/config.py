@@ -30,12 +30,16 @@ class Config:
     """
     
     SECRET_KEY = os.environ.get('SECRET_KEY')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///warnet.db')
+    import sys
+    if "pytest" in sys.modules or os.environ.get("FLASK_ENV") == "testing":
+        SQLALCHEMY_DATABASE_URI = "sqlite:///test_warnet.db"
+    else:
+        SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///warnet.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SESSION_PERMANENT = True
     PERMANENT_SESSION_LIFETIME = 86400  # 24 jam
     WTF_CSRF_TIME_LIMIT = None          # CSRF mengikuti umur session agar tidak kedaluwarsa sendiri
-    VERSION = "1.5.4"
+    VERSION = "1.5.5"
     VERSION_NAME = "Emerald"
 
     # Tambahan untuk kebutuhan aplikasi

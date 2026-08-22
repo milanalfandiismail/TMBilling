@@ -1,6 +1,7 @@
 # app/routes/vnc/vnc_routes.py
 from flask import Blueprint, jsonify, session
 from app.services import VNCService
+from app.services.settings.settings_service import SettingsService
 from app.utils.logger import write_log
 
 vnc_api_bp = Blueprint("vnc", __name__)
@@ -38,11 +39,15 @@ def start_vnc_proxy():
         detail_json={"listen_port": VNCService.LISTEN_PORT, "status": success, "message": msg}
     )
 
+    vnc_password = SettingsService.get("vnc_password", "")
+
     if not success:
-        return jsonify({"success": False, "error": msg}), 400
+        return jsonify({"success": False, "error": msg, "vnc_password": vnc_password}), 400
 
     return jsonify({
         "success": True,
         "message": msg,
-        "listen_port": VNCService.LISTEN_PORT
+        "listen_port": VNCService.LISTEN_PORT,
+        "vnc_password": vnc_password
     })
+

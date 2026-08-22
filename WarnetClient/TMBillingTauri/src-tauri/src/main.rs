@@ -50,6 +50,7 @@ fn main() {
             crate::commands::system_commands::force_shutdown,
             crate::commands::system_commands::get_external_bg,
             crate::commands::system_commands::get_client_warnet,
+            crate::commands::system_commands::get_app_version,
         ])
         .setup(|app| {
             crate::services::setup::setup_app(app)?;
