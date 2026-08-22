@@ -29,7 +29,7 @@ pub async fn login_process(
         crate::commands::window_commands::switch_to_overlay(window, app_handle);
         return Ok(LoginResponse {
             status: "success".to_string(),
-            member_name: "SUPER ADMIN".to_string(),
+            member_name: "SYSTEM".to_string(),
             group: "SYSTEM".to_string(),
             remaining_seconds: 999999, // Unlimited
         });

@@ -256,6 +256,30 @@ const API = {
     uptime: {
         daily: (date) => API.request(`/api/v1/kasir/uptime/daily${date ? '?date=' + date : ''}`),
         range: (start, end) => API.request(`/api/v1/kasir/uptime/range?start=${start}&end=${end}`)
+    },
+
+    // 📁 FILE EXPLORER
+    fileexplorer: {
+        getRoots: () => API.request('/api/v1/kasir/fileexplorer/roots'),
+        setRoots: (roots) => API.request('/api/v1/kasir/fileexplorer/roots', { method: 'POST', body: JSON.stringify({ roots }) }),
+        list: (path = '') => API.request('/api/v1/kasir/fileexplorer/list' + (path ? `?path=${encodeURIComponent(path)}` : '')),
+        read: (path) => API.request(`/api/v1/kasir/fileexplorer/read?path=${encodeURIComponent(path)}`),
+        save: (path, content, expectedMtime = null, force = false) => API.request('/api/v1/kasir/fileexplorer/save', {
+            method: 'POST',
+            body: JSON.stringify({ path, content, expected_mtime: expectedMtime, force })
+        }),
+        create: (parentPath, name, isDir = false) => API.request('/api/v1/kasir/fileexplorer/create', {
+            method: 'POST',
+            body: JSON.stringify({ parent_path: parentPath, name, is_dir: isDir })
+        }),
+        rename: (path, newName) => API.request('/api/v1/kasir/fileexplorer/rename', {
+            method: 'POST',
+            body: JSON.stringify({ path, new_name: newName })
+        }),
+        delete: (path) => API.request('/api/v1/kasir/fileexplorer/delete', {
+            method: 'POST',
+            body: JSON.stringify({ path })
+        })
     }
 
 };

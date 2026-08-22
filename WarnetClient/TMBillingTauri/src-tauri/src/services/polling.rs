@@ -34,7 +34,7 @@ pub fn start_polling_service(app: tauri::AppHandle) {
                             let dummy_status = crate::utils::api::StatusResponse {
                                 status: "admin".to_string(),
                                 sisa_waktu: Some(999999),
-                                nama: Some("SUPER ADMIN".to_string()),
+                                nama: Some("SYSTEM".to_string()),
                                 grup: Some("SYSTEM".to_string()),
                                 pc_kode: None,
                                 shutdown_timer: Some(0),

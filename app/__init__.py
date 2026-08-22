@@ -59,7 +59,8 @@ def _register_blueprints(app):
         maintenance_api_bp,
         uptime_api_bp,
         tv_public_api_bp,
-        tutorial_api_bp
+        tutorial_api_bp,
+        fileexplorer_api_bp
     )
 
     # ==========================================
@@ -96,6 +97,7 @@ def _register_blueprints(app):
     app.register_blueprint(maintenance_api_bp, url_prefix="/api/v1/kasir/maintenance")
     app.register_blueprint(uptime_api_bp, url_prefix="/api/v1/kasir/uptime")
     app.register_blueprint(tutorial_api_bp, url_prefix="/api/v1/kasir/tutorials")
+    app.register_blueprint(fileexplorer_api_bp, url_prefix="/api/v1/kasir/fileexplorer")
 
     # ==========================================
     # 3. PUBLIC APIs (/api/v1/public/...)

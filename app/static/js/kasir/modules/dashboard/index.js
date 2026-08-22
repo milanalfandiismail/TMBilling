@@ -32,8 +32,6 @@ const Dashboard = {
         try {
             const data = await API.dashboard.pcList();
             if (!data || !data.by_grup) throw new Error('Data format invalid - missing by_grup');
-            const groups = Object.keys(data.by_grup);
-            if (groups.length === 0) throw new Error('Tidak ada grup PC tersedia');
             this.lastData = data;
             this._render(data);
             this.updateTime();
