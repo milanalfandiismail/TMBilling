@@ -48,10 +48,16 @@ const VNCClient = {
 
         // 1. Panggil API backend untuk memastikan daemon websockify aktif
         let listenPort = 8081;
+        let serverVncPassword = '';
         try {
             const startRes = await API.request('/api/v1/kasir/vnc/start', { method: 'POST' });
-            if (startRes && startRes.listen_port) {
-                listenPort = startRes.listen_port;
+            if (startRes) {
+                if (startRes.listen_port) {
+                    listenPort = startRes.listen_port;
+                }
+                if (startRes.vnc_password) {
+                    serverVncPassword = startRes.vnc_password;
+                }
             }
         } catch (err) {
             badge.textContent = 'Gagal Start Service';
@@ -69,7 +75,7 @@ const VNCClient = {
             url = `ws://${window.location.hostname}:${listenPort}`;
         }
 
-        const vncPassword = pwdInput ? pwdInput.value : '';
+        const vncPassword = (pwdInput && pwdInput.value) ? pwdInput.value : serverVncPassword;
 
         badge.textContent = 'Menghubungkan...';
 
