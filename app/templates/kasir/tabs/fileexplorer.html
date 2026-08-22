@@ -122,3 +122,13 @@
         </div>
     </div>
 </div>
+
+<!-- Context Menu -->
+<div id="fe-context-menu" class="hidden fixed bg-[#0c0c0c] border border-[#1c1c1c] rounded-lg shadow-2xl py-1 z-50 min-w-[140px] text-xs text-neutral-300 font-medium select-none">
+    <button onclick="FileExplorer.contextRename()" class="w-full text-left px-3.5 py-2 hover:bg-[#171717] hover:text-white flex items-center gap-2">
+        <span>✏️</span> Ubah Nama
+    </button>
+    <button id="fe-context-delete-btn" onclick="FileExplorer.contextDelete()" class="w-full text-left px-3.5 py-2 hover:bg-red-950/40 hover:text-red-400 flex items-center gap-2 border-t border-[#1c1c1c]/50">
+        <span>🗑️</span> Hapus
+    </button>
+</div>

@@ -212,33 +212,25 @@ const FileExplorer = {
             leftDiv.innerHTML = `<span class="shrink-0">${icon}</span> <span class="whitespace-nowrap" title="${item.name}">${item.name}${sizeStr}</span>`;
             itemDiv.appendChild(leftDiv);
 
-            // Action Buttons (Rename / Delete)
-            const rightDiv = document.createElement('div');
-            rightDiv.className = 'opacity-0 group-hover:opacity-100 flex items-center gap-1.5 shrink-0 pl-2 transition-opacity';
-            
-            const renameBtn = document.createElement('button');
-            renameBtn.className = 'text-neutral-500 hover:text-neutral-300' ;
-            renameBtn.innerHTML = '✏️';
-            renameBtn.title = 'Ubah Nama';
-            renameBtn.onclick = (e) => {
-                e.stopPropagation();
-                this.renameItem(item.path);
+            // Context menu listener (right click on desktop / long press on mobile)
+            itemDiv.oncontextmenu = (e) => {
+                e.preventDefault();
+                this.showContextMenu(e, item);
             };
-            rightDiv.appendChild(renameBtn);
 
-            // Jangan izinkan hapus root folder dari daftar list
-            if (!this.roots.includes(item.path)) {
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'text-neutral-500 hover:text-red-400';
-                deleteBtn.innerHTML = '🗑️';
-                deleteBtn.title = 'Hapus';
-                deleteBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    this.deleteItem(item.path);
-                };
-                rightDiv.appendChild(deleteBtn);
-            }
+            // Option three-dots button (always visible on mobile, visible on hover on desktop)
+            const rightDiv = document.createElement('div');
+            rightDiv.className = 'flex items-center shrink-0 pl-2';
 
+            const menuBtn = document.createElement('button');
+            menuBtn.className = 'text-neutral-500 hover:text-neutral-300 p-1 text-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0';
+            menuBtn.innerHTML = '⋮';
+            menuBtn.title = 'Pilihan';
+            menuBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.showContextMenuFromButton(e, item);
+            };
+            rightDiv.appendChild(menuBtn);
             itemDiv.appendChild(rightDiv);
             container.appendChild(itemDiv);
         });
@@ -517,6 +509,85 @@ const FileExplorer = {
             }
         } catch (err) {
             Toast.error('Gagal memperbarui Allowed Roots: ' + err.message);
+        }
+    },
+
+    contextItem: null,
+
+    showContextMenu(e, item) {
+        const menu = document.getElementById('fe-context-menu');
+        if (!menu) return;
+
+        this.contextItem = item;
+
+        // Show menu
+        menu.classList.remove('hidden');
+
+        // Position menu
+        const x = e.clientX;
+        const y = e.clientY;
+
+        const menuWidth = 140;
+        const menuHeight = 80;
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+
+        let left = x;
+        let top = y;
+
+        if (x + menuWidth > windowWidth) {
+            left = windowWidth - menuWidth - 10;
+        }
+        if (y + menuHeight > windowHeight) {
+            top = windowHeight - menuHeight - 10;
+        }
+
+        menu.style.left = `${left}px`;
+        menu.style.top = `${top}px`;
+
+        // Hide delete action if it is a root folder
+        const deleteBtn = document.getElementById('fe-context-delete-btn');
+        if (deleteBtn) {
+            if (this.roots.includes(item.path)) {
+                deleteBtn.classList.add('hidden');
+            } else {
+                deleteBtn.classList.remove('hidden');
+            }
+        }
+
+        // Close menu when clicking elsewhere
+        const closeMenu = () => {
+            menu.classList.add('hidden');
+            document.removeEventListener('click', closeMenu);
+            document.removeEventListener('contextmenu', closeMenu);
+        };
+
+        // Add small delay to prevent immediate closing from the same click
+        setTimeout(() => {
+            document.addEventListener('click', closeMenu);
+            document.addEventListener('contextmenu', closeMenu);
+        }, 50);
+    },
+
+    showContextMenuFromButton(e, item) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const customEvent = {
+            clientX: rect.left,
+            clientY: rect.bottom + 5,
+            preventDefault: () => {}
+        };
+        this.showContextMenu(customEvent, item);
+    },
+
+    contextRename() {
+        if (this.contextItem) {
+            this.renameItem(this.contextItem.path);
+        }
+    },
+
+    contextDelete() {
+        if (this.contextItem) {
+            this.deleteItem(this.contextItem.path);
         }
     },
 
