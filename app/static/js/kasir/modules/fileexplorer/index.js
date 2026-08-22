@@ -85,7 +85,7 @@ const FileExplorer = {
         // Deteksi OS separator (Windows backslash vs Unix slash)
         const isWindows = this.currentPath.includes('\\');
         const separator = isWindows ? '\\' : '/';
-        const parts = this.currentPath.split(separator).filter(p => p !== '');
+        let parts = this.currentPath.split(separator).filter(p => p !== '');
         
         let pathAccumulator = isWindows ? '' : '/';
         
@@ -98,6 +98,11 @@ const FileExplorer = {
             driveSpan.textContent = drive;
             driveSpan.onclick = () => this.openDirectory(drive);
             container.appendChild(driveSpan);
+
+            // Filter out drive letter from parts to prevent double render
+            if (parts.length > 0 && parts[0].match(/^[a-zA-Z]:$/)) {
+                parts.shift();
+            }
         }
 
         parts.forEach((part, index) => {
