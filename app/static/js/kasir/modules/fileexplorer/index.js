@@ -120,7 +120,7 @@ const FileExplorer = {
 
             const currentTarget = pathAccumulator;
             const partSpan = document.createElement('span');
-            partSpan.className = 'hover:text-white cursor-pointer truncate max-w-[120px] inline-block align-middle';
+            partSpan.className = 'hover:text-white cursor-pointer whitespace-nowrap inline-block align-middle';
             partSpan.textContent = part;
             partSpan.onclick = () => this.openDirectory(currentTarget);
             container.appendChild(partSpan);
@@ -171,7 +171,7 @@ const FileExplorer = {
             // Name and Icon Container
             const leftDiv = document.createElement('div');
             leftDiv.className = 'flex items-center gap-2 min-w-0 flex-1';
-            leftDiv.innerHTML = `<span class="shrink-0">${icon}</span> <span class="truncate" title="${item.name}">${item.name}${sizeStr}</span>`;
+            leftDiv.innerHTML = `<span class="shrink-0">${icon}</span> <span class="whitespace-nowrap" title="${item.name}">${item.name}${sizeStr}</span>`;
             itemDiv.appendChild(leftDiv);
 
             // Action Buttons (Rename / Delete)
