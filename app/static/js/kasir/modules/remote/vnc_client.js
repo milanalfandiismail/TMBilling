@@ -3,8 +3,15 @@
 const VNCClient = {
     rfb: null,
     scaleFactor: true,
-
     RFBClass: null,
+    
+    // Sticky modifiers state
+    modifiers: {
+        Ctrl: false,
+        Alt: false,
+        Win: false,
+        Shift: false
+    },
 
     async getRFB() {
         if (this.RFBClass) return this.RFBClass;
@@ -128,6 +135,12 @@ const VNCClient = {
                 placeholder.classList.remove('hidden');
                 connectBtn.classList.remove('hidden');
                 disconnectBtn.classList.add('hidden');
+                
+                // Sembunyikan panel mobile saat terputus
+                document.getElementById('vnc-virtual-keyboard').classList.add('hidden');
+                const optPanel = document.getElementById('vnc-options-panel');
+                if (optPanel) optPanel.classList.add('hidden');
+
                 if (e.detail.clean) {
                     Toast.info('Koneksi VNC ditutup');
                 } else {
@@ -172,6 +185,130 @@ const VNCClient = {
         } else {
             document.exitFullscreen();
         }
+    },
+
+    // Mobile Virtual Keyboard Toggle
+    toggleVirtualKeyboard() {
+        const kb = document.getElementById('vnc-virtual-keyboard');
+        if (!kb) return;
+        if (kb.classList.contains('hidden')) {
+            kb.classList.remove('hidden');
+            // Pastikan scroll container focus
+            setTimeout(() => {
+                const helper = document.getElementById('vnc-text-helper');
+                if (helper) helper.focus();
+            }, 50);
+        } else {
+            kb.classList.add('hidden');
+        }
+    },
+
+    // Mobile Options Panel Toggle
+    toggleMobileOptions() {
+        const panel = document.getElementById('vnc-options-panel');
+        if (!panel) return;
+        panel.classList.toggle('hidden');
+    },
+
+    // Send text helper
+    sendTextHelper() {
+        const input = document.getElementById('vnc-text-helper');
+        if (!input || !this.rfb) return;
+        const text = input.value;
+        if (!text) return;
+
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            const keysym = char.charCodeAt(0);
+            this.rfb.sendKey(keysym, null, true);
+            this.rfb.sendKey(keysym, null, false);
+        }
+        input.value = '';
+        this.releaseModifiers();
+        Toast.success('Teks berhasil dikirim');
+    },
+
+    // Send special keys
+    sendSpecialKey(keysym) {
+        if (!this.rfb) return;
+        this.rfb.sendKey(keysym, null, true);
+        this.rfb.sendKey(keysym, null, false);
+        this.releaseModifiers();
+    },
+
+    // Toggle Modifier Sticky Key
+    toggleModifier(modKey) {
+        if (!this.rfb) return;
+        const active = !this.modifiers[modKey];
+        this.modifiers[modKey] = active;
+
+        let keysym;
+        if (modKey === 'Ctrl') keysym = 0xffe3;
+        else if (modKey === 'Alt') keysym = 0xffe9;
+        else if (modKey === 'Win') keysym = 0xffeb;
+        else if (modKey === 'Shift') keysym = 0xffe1;
+
+        this.rfb.sendKey(keysym, null, active);
+
+        // Update button UI highlight
+        const btn = document.getElementById(`vnc-key-${modKey.toLowerCase()}`);
+        if (btn) {
+            if (active) {
+                btn.className = 'flex-1 py-1.5 bg-[#e5e5e5] border border-white text-black text-[10px] font-bold rounded transition-colors';
+            } else {
+                btn.className = 'flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors';
+            }
+        }
+    },
+
+    // Force release all active modifiers
+    releaseModifiers() {
+        if (!this.rfb) return;
+        const keys = { 'Ctrl': 0xffe3, 'Alt': 0xffe9, 'Win': 0xffeb, 'Shift': 0xffe1 };
+        for (const [key, keysym] of Object.entries(keys)) {
+            if (this.modifiers[key]) {
+                this.rfb.sendKey(keysym, null, false);
+                this.modifiers[key] = false;
+                const btn = document.getElementById(`vnc-key-${key.toLowerCase()}`);
+                if (btn) {
+                    btn.className = 'flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors';
+                }
+            }
+        }
+    },
+
+    // Send CAD
+    sendCtrlAltDel() {
+        if (!this.rfb) return;
+        this.rfb.sendCtrlAltDel();
+        this.releaseModifiers();
+    },
+
+    // Send Shortcut Preset
+    sendShortcutPreset(preset) {
+        if (!this.rfb) return;
+        if (preset === 'Win+R') {
+            this.rfb.sendKey(0xffeb, null, true); // Win
+            this.rfb.sendKey('r'.charCodeAt(0), null, true); // R
+            this.rfb.sendKey('r'.charCodeAt(0), null, false);
+            this.rfb.sendKey(0xffeb, null, false);
+        } else if (preset === 'Win+D') {
+            this.rfb.sendKey(0xffeb, null, true); // Win
+            this.rfb.sendKey('d'.charCodeAt(0), null, true); // D
+            this.rfb.sendKey('d'.charCodeAt(0), null, false);
+            this.rfb.sendKey(0xffeb, null, false);
+        } else if (preset === 'Alt+Tab') {
+            this.rfb.sendKey(0xffe9, null, true); // Alt
+            this.rfb.sendKey(0xff09, null, true); // Tab
+            this.rfb.sendKey(0xff09, null, false);
+            this.rfb.sendKey(0xffe9, null, false);
+        } else if (preset === 'Alt+F4') {
+            this.rfb.sendKey(0xffe9, null, true); // Alt
+            this.rfb.sendKey(0xffbe, null, true); // F4 (0xffbe is F4)
+            this.rfb.sendKey(0xffbe, null, false);
+            this.rfb.sendKey(0xffe9, null, false);
+        }
+        this.releaseModifiers();
     },
 
     async load() {

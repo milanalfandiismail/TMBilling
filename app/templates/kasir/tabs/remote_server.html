@@ -1,50 +1,74 @@
 <!-- ===== TAB: REMOTE SERVER (VNC) ===== -->
-<div id="tab-remote_server" class="tab-content hidden w-full h-[calc(100vh-210px)] md:h-[calc(100vh-200px)]">
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-5 flex flex-col h-full space-y-4 overflow-hidden">
+<div id="tab-remote_server" class="tab-content hidden w-full h-[calc(100dvh-200px)] md:h-[calc(100vh-200px)] flex flex-col min-h-0">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-4 md:p-5 flex flex-col h-full space-y-3 overflow-hidden">
         
-        <!-- Header Toolbar matching Pengaturan & MikroTik tab styling -->
-        <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#1c1c1c] shrink-0">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
-                    <span class="text-xl">📡</span>
+        <!-- Header Toolbar adaptif -->
+        <div class="flex flex-col gap-3 pb-3 border-b border-[#1c1c1c] shrink-0">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
+                        <span class="text-xl">📡</span>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider truncate">Remote Control</h3>
+                        <p class="text-[9px] lg:text-base text-neutral-500 mt-0.5 truncate hidden sm:block">Pemantauan & kendali jarak jauh layar server utama</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Remote Control Server</h3>
-                    <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Pemantauan dan kendali jarak jauh layar server kasir secara realtime</p>
-                </div>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-2.5">
-                <span id="vnc-status-badge" class="px-3 py-2 rounded text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700">
-                    Terputus
-                </span>
                 
+                <!-- Status & Action Buttons Utama -->
                 <div class="flex items-center gap-2">
-                    <input type="password" id="vnc-password-input" placeholder="Password TightVNC"
-                        class="w-36 md:w-44 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono">
-                    <button onclick="VNCClient.saveGlobalPassword()" id="vnc-save-pw-btn"
-                        class="px-3 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-1.5"
-                        title="Simpan Password ke Database">
-                        <span>💾</span> Simpan PW
+                    <span id="vnc-status-badge" class="px-2 py-1 md:px-3 md:py-2 rounded text-[10px] md:text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700">
+                        Terputus
+                    </span>
+                    
+                    <button onclick="VNCClient.connect()" id="vnc-connect-btn"
+                        class="px-3 py-1.5 md:px-4 md:py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs md:text-sm font-bold rounded transition-colors flex items-center gap-1">
+                        <span>▶</span> <span class="hidden sm:inline">Hubungkan</span>
+                    </button>
+                    <button onclick="VNCClient.disconnect()" id="vnc-disconnect-btn"
+                        class="px-3 py-1.5 md:px-4 md:py-2 bg-red-600/80 hover:bg-red-500 text-white text-xs md:text-sm font-bold rounded transition-colors hidden flex items-center gap-1">
+                        <span>⏹</span> <span class="hidden sm:inline">Putuskan</span>
+                    </button>
+                    
+                    <!-- Mobile Toggle Buttons -->
+                    <button onclick="VNCClient.toggleVirtualKeyboard()" id="vnc-toggle-kb-btn"
+                        class="md:hidden px-3 py-1.5 bg-[#171717] border border-[#262626] text-neutral-300 text-xs font-bold rounded transition-colors"
+                        title="Tampilkan Keyboard Virtual">
+                        ⌨️
+                    </button>
+                    <button onclick="VNCClient.toggleMobileOptions()" id="vnc-toggle-options-btn"
+                        class="md:hidden px-3 py-1.5 bg-[#171717] border border-[#262626] text-neutral-300 text-xs font-bold rounded transition-colors"
+                        title="Tampilkan Pengaturan VNC">
+                        ⚙️
                     </button>
                 </div>
+            </div>
 
-                <button onclick="VNCClient.connect()" id="vnc-connect-btn"
-                    class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-1.5">
-                    <span>▶</span> Hubungkan
-                </button>
-                <button onclick="VNCClient.disconnect()" id="vnc-disconnect-btn"
-                    class="px-4 py-2 bg-red-600/80 hover:bg-red-500 text-white text-xs lg:text-base font-bold rounded transition-colors hidden flex items-center gap-1.5">
-                    <span>⏹</span> Putuskan
-                </button>
-                <button onclick="VNCClient.toggleScale()" id="vnc-scale-btn"
-                    class="px-3 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors">
-                    📐 Scaling On
-                </button>
-                <button onclick="VNCClient.toggleFullscreen()"
-                    class="px-3 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors">
-                    ⛶ Fullscreen
-                </button>
+            <!-- Desktop-only Controls & Mobile Collapsible Options Panel -->
+            <div id="vnc-options-panel" class="hidden md:flex flex-wrap items-center justify-between gap-3 bg-[#070707] md:bg-transparent p-3 md:p-0 rounded-lg md:rounded-none border border-[#1c1c1c] md:border-none">
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <!-- Password Field Group -->
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <input type="password" id="vnc-password-input" placeholder="Password TightVNC"
+                            class="flex-1 sm:flex-none w-full sm:w-44 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono">
+                        <button onclick="VNCClient.saveGlobalPassword()" id="vnc-save-pw-btn"
+                            class="px-3 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-1.5 shrink-0"
+                            title="Simpan Password ke Database">
+                            <span>💾</span> Simpan PW
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                    <button onclick="VNCClient.toggleScale()" id="vnc-scale-btn"
+                        class="flex-1 md:flex-none px-3 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors whitespace-nowrap">
+                        📐 Scaling On
+                    </button>
+                    <button onclick="VNCClient.toggleFullscreen()"
+                        class="flex-1 md:flex-none px-3 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors whitespace-nowrap">
+                        ⛶ Fullscreen
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -62,7 +86,7 @@
             class="relative w-full flex-1 min-h-0 bg-[#050505] rounded border border-[#1c1c1c] overflow-hidden flex items-center justify-center">
             <div id="vnc-screen" class="w-full h-full overflow-hidden flex items-center justify-center"></div>
             <div id="vnc-placeholder"
-                class="absolute inset-0 flex flex-col items-center justify-center bg-[#070707] text-neutral-500 space-y-3 z-10">
+                class="absolute inset-0 flex flex-col items-center justify-center bg-[#070707] text-neutral-500 space-y-3 z-10 p-4 text-center">
                 <svg class="w-12 h-12 stroke-neutral-700" fill="none" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -70,5 +94,71 @@
                 <p class="text-xs lg:text-base font-semibold">Klik "Hubungkan" untuk memulai Sesi Remote VNC Server</p>
             </div>
         </div>
+
+        <!-- Virtual Quick Keyboard & Text Input Helper Dock (Mobile Only) -->
+        <div id="vnc-virtual-keyboard" class="hidden md:hidden bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-2.5 space-y-2 shrink-0">
+            <!-- Text Input Helper Row -->
+            <div class="flex items-center gap-1.5">
+                <input type="text" id="vnc-text-helper" placeholder="Ketik teks untuk dikirim ke VNC..."
+                    class="flex-1 px-2.5 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500">
+                <button onclick="VNCClient.sendTextHelper()"
+                    class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded transition-colors shrink-0">
+                    Kirim
+                </button>
+            </div>
+
+            <!-- Modifier & Sticky Keys -->
+            <div class="flex flex-wrap items-center gap-1">
+                <button id="vnc-key-ctrl" onclick="VNCClient.toggleModifier('Ctrl')"
+                    class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">
+                    Ctrl
+                </button>
+                <button id="vnc-key-alt" onclick="VNCClient.toggleModifier('Alt')"
+                    class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">
+                    Alt
+                </button>
+                <button id="vnc-key-win" onclick="VNCClient.toggleModifier('Win')"
+                    class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">
+                    Win
+                </button>
+                <button id="vnc-key-shift" onclick="VNCClient.toggleModifier('Shift')"
+                    class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">
+                    Shift
+                </button>
+                <button onclick="VNCClient.sendCtrlAltDel()"
+                    class="px-2 py-1.5 bg-red-950/40 hover:bg-red-900/40 border border-red-900/60 text-red-400 text-[10px] font-bold rounded transition-colors">
+                    CAD
+                </button>
+            </div>
+
+            <!-- Standard Essential Keys -->
+            <div class="flex flex-wrap items-center gap-1">
+                <button onclick="VNCClient.sendSpecialKey(0xff1b)" class="flex-1 py-1 bg-[#171717] border border-[#262626] text-neutral-300 text-[10px] rounded">Esc</button>
+                <button onclick="VNCClient.sendSpecialKey(0xff09)" class="flex-1 py-1 bg-[#171717] border border-[#262626] text-neutral-300 text-[10px] rounded">Tab</button>
+                <button onclick="VNCClient.sendSpecialKey(0xff0d)" class="flex-1 py-1 bg-[#171717] border border-[#262626] text-neutral-300 text-[10px] rounded">Enter</button>
+                <button onclick="VNCClient.sendSpecialKey(0xff08)" class="flex-1 py-1 bg-[#171717] border border-[#262626] text-neutral-300 text-[10px] rounded">Bksp</button>
+                <button onclick="VNCClient.sendSpecialKey(0xffff)" class="flex-1 py-1 bg-[#171717] border border-[#262626] text-neutral-300 text-[10px] rounded">Del</button>
+                <button onclick="VNCClient.sendSpecialKey(0x0020)" class="flex-2 py-1 bg-[#171717] border border-[#262626] text-neutral-300 text-[10px] rounded">Space</button>
+            </div>
+
+            <!-- Short Presets & Direction Arrows -->
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1">
+                    <button onclick="VNCClient.sendShortcutPreset('Win+R')" class="px-2 py-1 bg-[#121212] border border-[#222] text-neutral-400 text-[9px] rounded">Win+R</button>
+                    <button onclick="VNCClient.sendShortcutPreset('Win+D')" class="px-2 py-1 bg-[#121212] border border-[#222] text-neutral-400 text-[9px] rounded">Win+D</button>
+                    <button onclick="VNCClient.sendShortcutPreset('Alt+Tab')" class="px-2 py-1 bg-[#121212] border border-[#222] text-neutral-400 text-[9px] rounded">Alt+Tab</button>
+                    <button onclick="VNCClient.sendShortcutPreset('Alt+F4')" class="px-2 py-1 bg-[#121212] border border-[#222] text-neutral-400 text-[9px] rounded">Alt+F4</button>
+                </div>
+                <div class="grid grid-cols-3 gap-0.5 w-24 shrink-0">
+                    <div></div>
+                    <button onclick="VNCClient.sendSpecialKey(0xff52)" class="py-1 bg-[#1c1c1c] text-neutral-300 text-center rounded text-[10px]">▲</button>
+                    <div></div>
+                    <button onclick="VNCClient.sendSpecialKey(0xff51)" class="py-1 bg-[#1c1c1c] text-neutral-300 text-center rounded text-[10px]">◀</button>
+                    <button onclick="VNCClient.sendSpecialKey(0xff54)" class="py-1 bg-[#1c1c1c] text-neutral-300 text-center rounded text-[10px]">▼</button>
+                    <button onclick="VNCClient.sendSpecialKey(0xff53)" class="py-1 bg-[#1c1c1c] text-neutral-300 text-center rounded text-[10px]">▶</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
