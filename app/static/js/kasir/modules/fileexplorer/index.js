@@ -208,8 +208,8 @@ const FileExplorer = {
             
             // Name and Icon Container
             const leftDiv = document.createElement('div');
-            leftDiv.className = 'flex items-center gap-2 min-w-0 flex-1';
-            leftDiv.innerHTML = `<span class="shrink-0">${icon}</span> <span class="whitespace-nowrap" title="${item.name}">${item.name}${sizeStr}</span>`;
+            leftDiv.className = 'flex items-start gap-2 min-w-0 flex-1';
+            leftDiv.innerHTML = `<span class="shrink-0 mt-0.5">${icon}</span> <span class="break-all" title="${item.name}">${item.name}${sizeStr}</span>`;
             itemDiv.appendChild(leftDiv);
 
             // Context menu listener (right click on desktop / long press on mobile)
@@ -217,21 +217,6 @@ const FileExplorer = {
                 e.preventDefault();
                 this.showContextMenu(e, item);
             };
-
-            // Option three-dots button (always visible on mobile, visible on hover on desktop)
-            const rightDiv = document.createElement('div');
-            rightDiv.className = 'flex items-center shrink-0 pl-2';
-
-            const menuBtn = document.createElement('button');
-            menuBtn.className = 'text-neutral-500 hover:text-neutral-300 p-1 text-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0';
-            menuBtn.innerHTML = '⋮';
-            menuBtn.title = 'Pilihan';
-            menuBtn.onclick = (e) => {
-                e.stopPropagation();
-                this.showContextMenuFromButton(e, item);
-            };
-            rightDiv.appendChild(menuBtn);
-            itemDiv.appendChild(rightDiv);
             container.appendChild(itemDiv);
         });
     },
@@ -555,28 +540,16 @@ const FileExplorer = {
             }
         }
 
-        // Close menu when clicking elsewhere
-        const closeMenu = () => {
+        // Close menu when clicking elsewhere (not on contextmenu to allow re-open)
+        const closeMenu = (evt) => {
             menu.classList.add('hidden');
             document.removeEventListener('click', closeMenu);
-            document.removeEventListener('contextmenu', closeMenu);
         };
 
         // Add small delay to prevent immediate closing from the same click
         setTimeout(() => {
             document.addEventListener('click', closeMenu);
-            document.addEventListener('contextmenu', closeMenu);
         }, 50);
-    },
-
-    showContextMenuFromButton(e, item) {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const customEvent = {
-            clientX: rect.left,
-            clientY: rect.bottom + 5,
-            preventDefault: () => {}
-        };
-        this.showContextMenu(customEvent, item);
     },
 
     contextRename() {
