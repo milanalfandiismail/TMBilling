@@ -216,7 +216,7 @@ const DashboardDetailModal = {
             text.innerText = 'MENUNGGU...';
 
             let attempts = 0;
-            const maxAttempts = 8;
+            const maxAttempts = 15; // 15 attempts * 2 seconds = 30 seconds total timeout
             const interval = setInterval(async () => {
                 attempts++;
                 try {
