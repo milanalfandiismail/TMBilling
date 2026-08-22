@@ -44,14 +44,14 @@ const CompactGrid = {
                 var p = JSON.parse(s);
                 return { cols: p.c || 10, rows: p.r || 7 };
             }
-        } catch (e) {}
+        } catch (e) { }
         return { cols: 10, rows: 7 };
     },
 
     _setGridSize(grup, cols, rows) {
         try {
             localStorage.setItem('map_grid_' + grup, JSON.stringify({ c: cols, r: rows }));
-        } catch (e) {}
+        } catch (e) { }
     },
 
     toggleAutoSort(grupKey) {
@@ -74,7 +74,7 @@ const CompactGrid = {
         let cardOpacityClass = 'opacity-100';
         let statusIndicator = '○';
         let indicatorColorClass = 'text-neutral-500';
-        
+
         let activeAppName = '';
         let timerStr = '';
         let memberName = '';
@@ -87,7 +87,7 @@ const CompactGrid = {
             cardBorderClass = 'border';
             statusIndicator = '[!]';
             indicatorColorClass = 'text-red-500 animate-pulse';
-            
+
             timerStr = sesi ? Utils.formatMenit(sesi.sisa_menit) : '--:--';
             activeAppName = '⚠️ TERPUTUS';
             memberName = sesi ? (sesi.nama_guest || sesi.member_nama || 'Guest') : '';
@@ -221,9 +221,9 @@ const CompactGrid = {
                             <!-- Auto-Sort Toggle Button (hidden on mobile) -->
                             <button onclick="CompactGrid.toggleAutoSort('${grupKey}')" 
                                 class="px-2.5 py-1 rounded text-xs font-semibold border transition-all items-center gap-1.5 md:inline-flex hidden
-                                ${isAutoSort 
-                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
-                                : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700 text-neutral-300'}">
+                                ${isAutoSort
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                    : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700 text-neutral-300'}">
                                 🔄 Auto-Sort
                             </button>
                             
@@ -240,24 +240,24 @@ const CompactGrid = {
                         <!-- Auto-Sort Mobile Grid: 2 columns natural wrap -->
                         <div class="grid gap-2 grid-cols-2">
                             ${pcs.map(pc => {
-                                return `
+                        return `
                                     <div>
                                         ${this.renderCompactCard(pc)}
                                     </div>
                                 `;
-                            }).join('')}
+                    }).join('')}
                         </div>
                     ` : `
                         <!-- Auto-Sort Grid: flows naturally but scaled -->
                         <div class="auto-grid-wrapper overflow-hidden w-full" style="transition: height 0.15s ease-out;">
                             <div class="auto-grid-container grid gap-2 auto-rows-fr" data-cols="${Math.min(pcs.length, 10)}" style="grid-template-columns: repeat(${Math.min(pcs.length, 10)}, minmax(0, 1fr));">
                                 ${pcs.map(pc => {
-                                    return `
+                        return `
                                         <div>
                                             ${this.renderCompactCard(pc)}
                                         </div>
                                     `;
-                                }).join('')}
+                    }).join('')}
                             </div>
                         </div>
                     `) : `
@@ -265,12 +265,12 @@ const CompactGrid = {
                         <div class="manual-grid-wrapper overflow-hidden w-full" style="transition: height 0.15s ease-out;">
                             <div class="manual-grid-container grid gap-2 auto-rows-fr" data-cols="${cols}" data-rows="${rows}" style="grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, minmax(0, 1fr));">
                                 ${mapped.map(pc => {
-                                    return `
+                        return `
                                         <div style="grid-column: ${pc.pos_x + 1}; grid-row: ${pc.pos_y + 1};">
                                             ${this.renderCompactCard(pc)}
                                         </div>
                                     `;
-                                }).join('')}
+                    }).join('')}
                             </div>
                         </div>
                         
@@ -280,12 +280,12 @@ const CompactGrid = {
                             <span class="text-[10px] text-neutral-500 uppercase font-bold block mb-2">Belum Dipetakan:</span>
                             <div class="flex flex-wrap gap-2">
                                 ${unmapped.map(pc => {
-                                    return `
+                        return `
                                         <div class="w-[150px] shrink-0">
                                             ${this.renderCompactCard(pc)}
                                         </div>
                                     `;
-                                }).join('')}
+                    }).join('')}
                             </div>
                         </div>
                         ` : ''}
@@ -299,7 +299,7 @@ const CompactGrid = {
                     🖥️
                 </div>
                 <p class="text-xs lg:text-base font-bold uppercase tracking-wider text-neutral-400">Belum Ada Data PC</p>
-                <p class="text-[10px] lg:text-xs text-neutral-600 mt-1 text-center">Tambahkan unit PC dan grup di tab pengaturan untuk mulai memonitor</p>
+                <p class="text-[10px] lg:text-xs text-neutral-600 mt-1 text-center">Tambahkan unit PC dan grup di tab data master</p>
             </div>
         `;
 
@@ -314,24 +314,24 @@ const CompactGrid = {
         manualWrappers.forEach(wrapper => {
             const grid = wrapper.querySelector('.manual-grid-container');
             if (!grid) return;
-            
+
             const parent = wrapper.parentElement;
             if (!parent) return;
-            
+
             const containerWidth = parent.clientWidth;
             if (containerWidth === 0) return;
-            
+
             const cols = parseInt(grid.dataset.cols) || 10;
             const baseColWidth = 130;
             const gap = 8;
             const unscaledWidth = (cols * baseColWidth) + ((cols - 1) * gap);
-            
+
             if (containerWidth < unscaledWidth) {
                 const scale = containerWidth / unscaledWidth;
                 grid.style.width = unscaledWidth + 'px';
                 grid.style.transform = `scale(${scale})`;
                 grid.style.transformOrigin = 'top left';
-                
+
                 const unscaledHeight = grid.scrollHeight;
                 wrapper.style.height = (unscaledHeight * scale) + 'px';
             } else {
@@ -347,24 +347,24 @@ const CompactGrid = {
         autoWrappers.forEach(wrapper => {
             const grid = wrapper.querySelector('.auto-grid-container');
             if (!grid) return;
-            
+
             const parent = wrapper.parentElement;
             if (!parent) return;
-            
+
             const containerWidth = parent.clientWidth;
             if (containerWidth === 0) return;
-            
+
             const cols = parseInt(grid.dataset.cols) || 10;
             const baseColWidth = 130;
             const gap = 8;
             const unscaledWidth = (cols * baseColWidth) + ((cols - 1) * gap);
-            
+
             if (containerWidth < unscaledWidth) {
                 const scale = containerWidth / unscaledWidth;
                 grid.style.width = unscaledWidth + 'px';
                 grid.style.transform = `scale(${scale})`;
                 grid.style.transformOrigin = 'top left';
-                
+
                 const unscaledHeight = grid.scrollHeight;
                 wrapper.style.height = (unscaledHeight * scale) + 'px';
             } else {

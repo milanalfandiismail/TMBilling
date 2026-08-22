@@ -60,6 +60,13 @@ const App = {
             const info = await Api.getNetworkInfo();
             AppState.setNetworkInfo(info.ip, info.mac);
             UI.setNetworkInfo(info.ip, info.mac);
+
+            // Load app version dynamically from Cargo.toml
+            const version = await Api.getAppVersion();
+            const versionEl = document.getElementById('client-version-display');
+            if (versionEl) {
+                versionEl.innerText = `TMBilling v${version}`;
+            }
         } catch (err) {
             console.error("Gagal memuat info PC:", err);
         }

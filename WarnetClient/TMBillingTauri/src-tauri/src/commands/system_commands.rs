@@ -33,3 +33,8 @@ pub fn get_external_bg() -> Option<String> {
 pub async fn get_client_warnet(api: tauri::State<'_, crate::utils::api::ApiService>) -> Result<crate::utils::api::WarnetConfig, String> {
     api.get_warnet_config().await
 }
+
+#[tauri::command]
+pub fn get_app_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
