@@ -1,40 +1,48 @@
+<!-- ===== TAB: REMOTE SERVER (VNC) ===== -->
 <div id="tab-remote_server" class="tab-content hidden w-full h-[calc(100vh-210px)] md:h-[calc(100vh-200px)]">
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 md:p-4 flex flex-col h-full space-y-3 overflow-hidden">
-        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#1c1c1c] shrink-0">
-            <div>
-                <h3
-                    class="text-base lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
-                    <span>📡</span> Remote Control Server (VNC)
-                </h3>
-                <p class="text-xs text-neutral-400 mt-1">Pemantauan dan Kendali Jarak Jauh Layar PC Server Kasir</p>
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-5 flex flex-col h-full space-y-4 overflow-hidden">
+        
+        <!-- Header Toolbar matching Pengaturan & MikroTik tab styling -->
+        <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#1c1c1c] shrink-0">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
+                    <span class="text-xl">📡</span>
+                </div>
+                <div>
+                    <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Remote Control Server</h3>
+                    <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Pemantauan dan kendali jarak jauh layar server kasir secara realtime</p>
+                </div>
             </div>
-            <div class="flex items-center gap-2">
-                <span id="vnc-status-badge"
-                    class="px-2.5 py-1 rounded text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700">
+            
+            <div class="flex flex-wrap items-center gap-2.5">
+                <span id="vnc-status-badge" class="px-3 py-2 rounded text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700">
                     Terputus
                 </span>
-                <input type="password" id="vnc-password-input" placeholder="Password TightVNC"
-                    class="w-36 px-2.5 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
-                    style="background-color: #050505 !important; border-color: #1c1c1c !important;">
-                <button onclick="VNCClient.saveGlobalPassword()" id="vnc-save-pw-btn"
-                    class="px-2.5 py-1.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded transition-colors flex items-center gap-1"
-                    title="Simpan Password ke Server">
-                    💾 Simpan Password VNC
-                </button>
+                
+                <div class="flex items-center gap-2">
+                    <input type="password" id="vnc-password-input" placeholder="Password TightVNC"
+                        class="w-36 md:w-44 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono">
+                    <button onclick="VNCClient.saveGlobalPassword()" id="vnc-save-pw-btn"
+                        class="px-3 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-1.5"
+                        title="Simpan Password ke Database">
+                        <span>💾</span> Simpan PW
+                    </button>
+                </div>
+
                 <button onclick="VNCClient.connect()" id="vnc-connect-btn"
-                    class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded transition-colors flex items-center gap-1.5">
-                    ▶ Hubungkan
+                    class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-1.5">
+                    <span>▶</span> Hubungkan
                 </button>
                 <button onclick="VNCClient.disconnect()" id="vnc-disconnect-btn"
-                    class="px-3.5 py-1.5 bg-red-600/80 hover:bg-red-500 text-white text-xs font-bold rounded transition-colors hidden flex items-center gap-1.5">
-                    ⏹ Putuskan
+                    class="px-4 py-2 bg-red-600/80 hover:bg-red-500 text-white text-xs lg:text-base font-bold rounded transition-colors hidden flex items-center gap-1.5">
+                    <span>⏹</span> Putuskan
                 </button>
                 <button onclick="VNCClient.toggleScale()" id="vnc-scale-btn"
-                    class="px-3 py-1.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded transition-colors">
+                    class="px-3 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors">
                     📐 Scaling On
                 </button>
                 <button onclick="VNCClient.toggleFullscreen()"
-                    class="px-3 py-1.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded transition-colors">
+                    class="px-3 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors">
                     ⛶ Fullscreen
                 </button>
             </div>
@@ -51,7 +59,7 @@
             }
         </style>
         <div id="vnc-container"
-            class="relative w-full flex-1 min-h-0 bg-[#050505] rounded-lg border border-[#1a1a1a] overflow-hidden flex items-center justify-center">
+            class="relative w-full flex-1 min-h-0 bg-[#050505] rounded border border-[#1c1c1c] overflow-hidden flex items-center justify-center">
             <div id="vnc-screen" class="w-full h-full overflow-hidden flex items-center justify-center"></div>
             <div id="vnc-placeholder"
                 class="absolute inset-0 flex flex-col items-center justify-center bg-[#070707] text-neutral-500 space-y-3 z-10">
@@ -59,7 +67,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                <p class="text-xs font-semibold">Klik "Hubungkan" untuk memulai Sesi Remote VNC Server</p>
+                <p class="text-xs lg:text-base font-semibold">Klik "Hubungkan" untuk memulai Sesi Remote VNC Server</p>
             </div>
         </div>
     </div>
