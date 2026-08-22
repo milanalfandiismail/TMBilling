@@ -47,6 +47,12 @@ class PC(db.Model):
     # Relasi ke Sesi
     sesi_list = db.relationship('Sesi', back_populates='pc', lazy='dynamic')    
     
+    # Relasi ke Uptime Log dengan Cascade Delete
+    uptime_logs = db.relationship('PCUptimeLog', back_populates='pc', cascade='all, delete-orphan', lazy='dynamic')
+    
+    # Relasi ke Maintenance Tickets dengan Cascade Delete
+    maintenance_tickets = db.relationship('MaintenanceTicket', back_populates='pc', cascade='all, delete-orphan', lazy='dynamic')
+    
     zona = db.Column(db.String(50), default="reguler")
     last_activity = db.Column(db.DateTime, nullable=True)
     aktif = db.Column(db.Boolean, default=True)
@@ -90,8 +96,11 @@ class PC(db.Model):
         screenshot_time = None
         if has_screenshot:
             try:
+                from app.utils.timezone_utils import format_display
+                from datetime import timezone
                 mtime = os.path.getmtime(screenshot_path)
-                screenshot_time = datetime.fromtimestamp(mtime).strftime("%d/%m/%Y %H:%M:%S")
+                dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
+                screenshot_time = format_display(dt_utc)
             except Exception:
                 pass
 

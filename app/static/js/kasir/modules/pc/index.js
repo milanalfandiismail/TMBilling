@@ -123,14 +123,14 @@ const PC = {
     },
 
     async delete(id) {
-        const message = '<div class="text-center"><p class="text-xs lg:text-base text-neutral-400">Hapus PC ini? Data akan dihapus permanen.</p></div>';
+        const message = '<div class="text-center"><p class="text-xs lg:text-base text-neutral-300 font-semibold mb-1">Hapus PC ini secara permanen?</p><p class="text-[11px] lg:text-sm text-neutral-500">Seluruh data uptime log, hardware telemetry, proses, dan tiket perawatan unit ini akan dihapus bersih.</p></div>';
         Modal.confirm(message, async () => {
             try {
-                await API.pc.delete(id);
-                Toast.success('PC berhasil dihapus');
+                const res = await API.pc.delete(id);
+                Toast.success(res.message || 'PC berhasil dihapus');
                 this.load();
             } catch (err) {
-                Toast.error(err.message);
+                Toast.error(err.message || 'Gagal menghapus PC');
             }
         });
     },
