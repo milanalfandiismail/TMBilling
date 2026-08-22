@@ -292,9 +292,17 @@ const CompactGrid = {
                     `}
                 </div>
             `;
-        });
+        const emptyStateHtml = `
+            <div class="flex flex-col items-center justify-center py-24 text-neutral-500 w-full">
+                <div class="w-12 h-12 rounded-full bg-[#141414] border border-[#222] flex items-center justify-center mb-3 text-neutral-500 text-xl">
+                    🖥️
+                </div>
+                <p class="text-xs lg:text-base font-bold uppercase tracking-wider text-neutral-400">Belum Ada Data PC</p>
+                <p class="text-[10px] lg:text-xs text-neutral-600 mt-1 text-center">Tambahkan unit PC dan grup di tab pengaturan untuk mulai memonitor</p>
+            </div>
+        `;
 
-        container.innerHTML = html || '<div class="text-center py-20 text-neutral-500 text-sm">Data PC Tidak Tersedia</div>';
+        container.innerHTML = html || emptyStateHtml;
         Dashboard.attachEvents();
         this.adjustGridScale();
     },
