@@ -156,7 +156,14 @@ const FileExplorer = {
 
         this.items.forEach(item => {
             const itemDiv = document.createElement('div');
-            itemDiv.className = 'flex items-center justify-between group p-1.5 rounded hover:bg-[#121212] hover:text-neutral-200 cursor-pointer transition-all';
+            itemDiv.className = 'flex items-center justify-between group p-2 rounded hover:bg-[#121212] hover:text-neutral-200 cursor-pointer transition-all';
+            itemDiv.onclick = () => {
+                if (item.is_dir) {
+                    this.openDirectory(item.path);
+                } else {
+                    this.openFile(item.path);
+                }
+            };
             
             const icon = item.is_dir ? '📁' : '📄';
             const sizeStr = item.size !== null ? ` (${this.formatBytes(item.size)})` : '';
@@ -165,13 +172,6 @@ const FileExplorer = {
             const leftDiv = document.createElement('div');
             leftDiv.className = 'flex items-center gap-2 min-w-0 flex-1';
             leftDiv.innerHTML = `<span class="shrink-0">${icon}</span> <span class="truncate" title="${item.name}">${item.name}${sizeStr}</span>`;
-            leftDiv.onclick = () => {
-                if (item.is_dir) {
-                    this.openDirectory(item.path);
-                } else {
-                    this.openFile(item.path);
-                }
-            };
             itemDiv.appendChild(leftDiv);
 
             // Action Buttons (Rename / Delete)
