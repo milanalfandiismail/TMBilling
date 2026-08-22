@@ -115,19 +115,21 @@ class SesiService:
         return sesi
 
     @staticmethod
-    def buka_admin(pc_id, token_sesi):
+    def buka_admin(pc_id, token_sesi, admin_nama="ADMIN"):
         """Membuka sesi khusus admin untuk maintenance PC."""
         sesi_baru = Sesi(
             tipe="admin",
             pc_id=pc_id,
             status="aktif",
             is_admin=True,
+            nama_guest=admin_nama,
             token_sesi=token_sesi,
             waktu_mulai_sesi=now_local()
         )
         db.session.add(sesi_baru)
         db.session.commit()
         return sesi_baru
+
 
 
     # =========================================================================
@@ -324,6 +326,8 @@ class SesiService:
         count = 0
         now = now_local()
         for sesi in sesi_aktif:
+            if sesi.tipe == "admin":
+                continue
             # Lewati sesi jika PC terdeteksi offline (tidak sync > 120 detik) agar tidak ditutup normal
             if sesi.last_sync and (now - sesi.last_sync).total_seconds() > 120:
                 continue
@@ -334,6 +338,7 @@ class SesiService:
                 count += 1
         if count > 0: db.session.commit()
         return count
+
 
     @staticmethod
     def cleanup_inactive_admin_sessions():
