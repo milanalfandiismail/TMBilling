@@ -7,6 +7,7 @@ dan waktu terpakai (billing) untuk setiap PC per tanggal.
 """
 
 from app.models import db
+from app.utils.timezone_utils import format_display, display_in_tz
 
 
 class PCUptimeLog(db.Model):
@@ -36,13 +37,13 @@ class PCUptimeLog(db.Model):
     last_seen = db.Column(db.DateTime, nullable=True)
     
     # Relasi ke PC
-    pc = db.relationship("PC", backref=db.backref("uptime_logs", lazy="dynamic"))
+    pc = db.relationship("PC", back_populates="uptime_logs")
     
     def to_dict(self):
-        """Mengkonversi objek log uptime ke dictionary.
+        """Mengkonversi objek log uptime ke dictionary dengan konversi timezone display.
         
         Returns:
-            dict: Detail data uptime log.
+            dict: Detail data uptime log dengan waktu lokal sesuai setting timezone.
         """
         online_menit = round(self.total_online_seconds / 60, 1)
         billing_menit = round(self.total_billing_seconds / 60, 1)
@@ -54,6 +55,10 @@ class PCUptimeLog(db.Model):
                 utilisasi = 100.0
 
         grup_nama = self.pc.grup.nama if self.pc and self.pc.grup else "reguler"
+
+        first_seen_local = display_in_tz(self.first_seen) if self.first_seen else None
+        last_seen_local = display_in_tz(self.last_seen) if self.last_seen else None
+
         return {
             "id": self.id,
             "pc_id": self.pc_id,
@@ -64,7 +69,11 @@ class PCUptimeLog(db.Model):
             "total_billing_menit": billing_menit,
             "total_online_seconds": self.total_online_seconds,
             "total_billing_seconds": self.total_billing_seconds,
-            "first_seen": self.first_seen.isoformat() if self.first_seen else None,
-            "last_seen": self.last_seen.isoformat() if self.last_seen else None,
+            "first_seen": first_seen_local.isoformat() if first_seen_local else None,
+            "last_seen": last_seen_local.isoformat() if last_seen_local else None,
+            "first_seen_display": format_display(self.first_seen) if self.first_seen else "-",
+            "last_seen_display": format_display(self.last_seen) if self.last_seen else "-",
+            "first_seen_time": format_display(self.first_seen, fmt="%H:%M") if self.first_seen else "-",
+            "last_seen_time": format_display(self.last_seen, fmt="%H:%M") if self.last_seen else "-",
             "utilisasi_persen": utilisasi
         }

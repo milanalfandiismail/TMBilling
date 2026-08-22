@@ -28,7 +28,7 @@ class MaintenanceTicket(db.Model):
     resolved_by     = db.Column(db.String(50), nullable=True)         # username penanggung jawab
 
     # Relationship
-    pc = db.relationship("PC", backref=db.backref("maintenance_tickets", lazy="dynamic"))
+    pc = db.relationship("PC", back_populates="maintenance_tickets")
 
     def to_dict(self):
         return {

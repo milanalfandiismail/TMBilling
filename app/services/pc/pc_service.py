@@ -211,12 +211,62 @@ class PCService:
 
     @staticmethod
     def delete(pc_id, operator="system"):
-        """Hapus unit PC secara permanen dari sistem."""
+        """Hapus unit PC secara permanen dari sistem beserta seluruh dependensinya."""
+        import os
+        from flask import current_app
+        from app.models import PCUptimeLog, HardwareMonitor, PCProcess, MaintenanceTicket, Sesi
+
         pc = PCRepository.get_by_id(pc_id)
-        db.session.delete(pc)
-        db.session.commit()
-        write_log("HAPUS_PC", f"PC:{pc.kode} dihapus permanen", user=operator, detail_json={"kode": pc.kode})
-        return {"success": True, "message": f"PC {pc.kode} berhasil dihapus"}
+        if not pc:
+            raise ValueError("PC tidak ditemukan")
+
+        # 1. Proteksi Sesi Aktif
+        if pc.sesi_aktif:
+            raise ValueError(f"PC {pc.kode} tidak dapat dihapus karena sedang digunakan dalam sesi aktif. Harap selesaikan sesi terlebih dahulu.")
+
+        kode = pc.kode
+        try:
+            # 2. Detach sesi historis (Category B) agar histori keuangan tetap utuh
+            Sesi.query.filter_by(pc_id=pc.id).update({"pc_id": None})
+
+            # 3. Hapus seluruh data anak langsung (Category A)
+            PCUptimeLog.query.filter_by(pc_id=pc.id).delete()
+            HardwareMonitor.query.filter_by(pc_id=pc.id).delete()
+            PCProcess.query.filter_by(pc_id=pc.id).delete()
+            MaintenanceTicket.query.filter_by(pc_id=pc.id).delete()
+
+            # 4. Hapus entitas PC
+            db.session.delete(pc)
+            db.session.commit()
+
+            # 5. Cleanup In-Memory states (Non-fatal)
+            try:
+                from app.services.hardware.hardware_service import TELEMETRY_HISTORY
+                TELEMETRY_HISTORY.pop(pc_id, None)
+            except Exception:
+                pass
+
+            try:
+                from app.services.client.client_service import PENDING_COMMANDS
+                PENDING_COMMANDS.pop(pc_id, None)
+            except Exception:
+                pass
+
+            # 6. Cleanup screenshot file di filesystem jika ada
+            try:
+                screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{kode}.png")
+                if os.path.exists(screenshot_path):
+                    os.remove(screenshot_path)
+            except Exception:
+                pass
+
+            write_log("HAPUS_PC", f"PC:{kode} dihapus permanen beserta seluruh dependensinya", user=operator, detail_json={"kode": kode, "pc_id": pc_id})
+            return {"success": True, "message": f"PC {kode} berhasil dihapus"}
+
+        except Exception as e:
+            db.session.rollback()
+            write_log("HAPUS_PC_ERROR", f"Gagal menghapus PC {kode}: {str(e)}", user=operator)
+            raise e
 
     @staticmethod
     def update_position(pc_id, pos_x, pos_y):
