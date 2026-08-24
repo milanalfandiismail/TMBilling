@@ -10,8 +10,6 @@ const VNCClient = {
     shiftActive: false,
     zoomLevel: 1.0, // Zoom factor for pinch-to-zoom
     isPinchZooming: false, // Flag to separate pinch-zoom state from mouse click emulation
-    lastMouseX: 0,
-    lastMouseY: 0,
     
     // Sticky / Latching modifiers state
     modifiers: {
@@ -36,6 +34,25 @@ const VNCClient = {
             console.error('Gagal memuat modul noVNC RFB:', err);
             return null;
         }
+    },
+
+    // Helper untuk mengirimkan synthetic MouseEvent langsung ke canvas noVNC
+    dispatchCanvasMouse(type, clientX, clientY, button = 0, buttons = 0) {
+        const screen = document.getElementById('vnc-screen');
+        if (!screen) return;
+        const canvas = screen.querySelector('canvas');
+        if (!canvas) return;
+
+        const ev = new MouseEvent(type, {
+            clientX: clientX,
+            clientY: clientY,
+            button: button,
+            buttons: buttons,
+            bubbles: true,
+            cancelable: true,
+            view: window
+        });
+        canvas.dispatchEvent(ev);
     },
 
     async connect() {
@@ -117,6 +134,11 @@ const VNCClient = {
                 placeholder.classList.add('hidden');
                 connectBtn.classList.add('hidden');
                 disconnectBtn.classList.remove('hidden');
+
+                // Lepas gesture internal noVNC agar tidak mengganggu touch controller kita
+                if (this.rfb._gestures) {
+                    try { this.rfb._gestures.detach(); } catch(e) {}
+                }
 
                 // Terapkan mode tampilan, observer, dan touch controller
                 this.zoomLevel = 1.0;
@@ -350,15 +372,16 @@ const VNCClient = {
         }
     },
 
-    // Emulasi Touch Android Responsif (Mode Chrome Remote Desktop): Tap (Left Click), Double-Tap, Long-Press (Right Click), 1-Finger Pan
+    // Emulasi Touch Android Responsif (Chrome Remote Desktop Touch Mode)
+    // Menggunakan synthetic MouseEvent yang diteruskan ke noVNC canvas
     setupCanvasTouchEmulation() {
         const screen = document.getElementById('vnc-screen');
         if (!screen) return;
         const canvas = screen.querySelector('canvas');
         if (!canvas) return;
 
-        if (canvas.dataset.touchEmulationV3Attached) return;
-        canvas.dataset.touchEmulationV3Attached = 'true';
+        if (canvas.dataset.touchEmulationV4Attached) return;
+        canvas.dataset.touchEmulationV4Attached = 'true';
 
         let touchStartX = 0;
         let touchStartY = 0;
@@ -369,15 +392,12 @@ const VNCClient = {
         let initialScrollX = 0;
         let initialScrollY = 0;
 
-        // Gunakan Capture Phase agar mengontrol penuh sebelum noVNC internal handler
+        // Tangkap di Capture Phase untuk mengisolasi gestur sentuh dari handler noVNC
         canvas.addEventListener('touchstart', (e) => {
             // Multi-touch: Gestur Zoom (2 Jari)
             if (e.touches.length >= 2) {
                 if (longPressTimer) clearTimeout(longPressTimer);
                 this.isPinchZooming = true;
-                if (this.rfb) {
-                    this.rfb.sendMouseEvents(this.lastMouseX || 0, this.lastMouseY || 0, 0);
-                }
                 e.stopPropagation();
                 return;
             }
@@ -394,37 +414,23 @@ const VNCClient = {
                 initialScrollX = screen.scrollLeft;
                 initialScrollY = screen.scrollTop;
 
-                const rect = canvas.getBoundingClientRect();
-                const visualX = touch.clientX - rect.left;
-                const visualY = touch.clientY - rect.top;
-                const remoteW = this.remoteResolution.width || canvas.width;
-                const remoteH = this.remoteResolution.height || canvas.height;
-                const targetX = Math.round(visualX * (remoteW / rect.width));
-                const targetY = Math.round(visualY * (remoteH / rect.height));
-
-                this.lastMouseX = targetX;
-                this.lastMouseY = targetY;
-
-                // Langsung sinkronkan posisi kursor remote via sendMouseEvents(x, y, 0)
-                if (this.rfb) {
-                    this.rfb.sendMouseEvents(targetX, targetY, 0);
-                }
+                // Gerakkan posisi mouse hover secara instan ke koordinat tap
+                this.dispatchCanvasMouse('mousemove', touch.clientX, touch.clientY, 0, 0);
 
                 // Long-Press timer untuk Klik Kanan (500ms tanpa bergeser)
                 if (longPressTimer) clearTimeout(longPressTimer);
                 longPressTimer = setTimeout(() => {
                     isLongPress = true;
-                    if (this.rfb) {
-                        this.rfb.sendMouseEvents(targetX, targetY, 4); // Right click down
-                        setTimeout(() => {
-                            if (this.rfb) this.rfb.sendMouseEvents(targetX, targetY, 0); // Right click up
-                        }, 50);
+                    this.dispatchCanvasMouse('mousemove', touch.clientX, touch.clientY, 0, 0);
+                    this.dispatchCanvasMouse('mousedown', touch.clientX, touch.clientY, 2, 2); // Right click down
+                    setTimeout(() => {
+                        this.dispatchCanvasMouse('mouseup', touch.clientX, touch.clientY, 2, 0); // Right click up
+                    }, 50);
 
-                        if (navigator.vibrate) {
-                            try { navigator.vibrate(50); } catch(err) {}
-                        }
-                        Toast.info('Klik Kanan (Right-Click)');
+                    if (navigator.vibrate) {
+                        try { navigator.vibrate(50); } catch(err) {}
                     }
+                    Toast.info('Klik Kanan (Right-Click)');
                 }, 500);
 
                 e.stopPropagation();
@@ -444,7 +450,7 @@ const VNCClient = {
                 const dy = touch.clientY - touchStartY;
                 const dist = Math.hypot(dx, dy);
 
-                // Jika pergeseran jari > 8px, ini adalah gesture pan/scroll, bukan tap
+                // Jika pergeseran jari > 8px, batalkan long-press dan lakukan pan viewport
                 if (dist > 8) {
                     if (longPressTimer) {
                         clearTimeout(longPressTimer);
@@ -485,7 +491,7 @@ const VNCClient = {
                 return;
             }
 
-            if (e.changedTouches.length === 1 && this.rfb) {
+            if (e.changedTouches.length === 1) {
                 const touch = e.changedTouches[0];
                 const elapsed = Date.now() - touchStartTime;
                 const dx = touch.clientX - touchStartX;
@@ -494,23 +500,11 @@ const VNCClient = {
 
                 // Tap Cepat Responsif (< 400ms dan dist < 12px)
                 if (elapsed < 400 && dist < 12) {
-                    const rect = canvas.getBoundingClientRect();
-                    const visualX = touch.clientX - rect.left;
-                    const visualY = touch.clientY - rect.top;
-                    const remoteW = this.remoteResolution.width || canvas.width;
-                    const remoteH = this.remoteResolution.height || canvas.height;
-                    const targetX = Math.round(visualX * (remoteW / rect.width));
-                    const targetY = Math.round(visualY * (remoteH / rect.height));
-
-                    this.lastMouseX = targetX;
-                    this.lastMouseY = targetY;
-
-                    // Kirim Left Click Down + Left Click Up secara instan
-                    this.rfb.sendMouseEvents(targetX, targetY, 1);
+                    // Kirim Left Click Down + Left Click Up secara instan melalui dispatchCanvasMouse
+                    this.dispatchCanvasMouse('mousemove', touch.clientX, touch.clientY, 0, 0);
+                    this.dispatchCanvasMouse('mousedown', touch.clientX, touch.clientY, 0, 1);
                     setTimeout(() => {
-                        if (this.rfb) {
-                            this.rfb.sendMouseEvents(targetX, targetY, 0);
-                        }
+                        this.dispatchCanvasMouse('mouseup', touch.clientX, touch.clientY, 0, 0);
                     }, 35);
 
                     e.preventDefault();
@@ -527,8 +521,8 @@ const VNCClient = {
         const screen = document.getElementById('vnc-screen');
         if (!container || !screen) return;
 
-        if (container.dataset.pinchListenerV3Attached) return;
-        container.dataset.pinchListenerV3Attached = 'true';
+        if (container.dataset.pinchListenerV4Attached) return;
+        container.dataset.pinchListenerV4Attached = 'true';
 
         let touchStartDist = 0;
         let startZoom = 1.0;
