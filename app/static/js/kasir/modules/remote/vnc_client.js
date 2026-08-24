@@ -9,6 +9,9 @@ const VNCClient = {
     keyboardLayout: 'letters', // 'letters' | 'symbols'
     shiftActive: false,
     zoomLevel: 1.0, // Zoom factor for pinch-to-zoom
+    isPinchZooming: false, // Flag to separate pinch-zoom state from mouse click emulation
+    lastMouseX: 0,
+    lastMouseY: 0,
     
     // Sticky modifiers state
     modifiers: {
@@ -115,12 +118,15 @@ const VNCClient = {
                 connectBtn.classList.add('hidden');
                 disconnectBtn.classList.remove('hidden');
 
-                // Terapkan mode tampilan & observasi resize
+                // Terapkan mode tampilan, observer, gestur, dan CSS kursor mobile
                 this.zoomLevel = 1.0;
+                this.isPinchZooming = false;
+                this.injectMobileCursorCSS();
                 this.applyDisplayMode();
                 this.setupResizeObserver();
                 this.setupCanvasTouchEmulation();
                 this.setupPinchToZoom();
+                this.setupGlobalModifierHold();
 
                 // Focus kanvas
                 setTimeout(() => {
@@ -194,6 +200,19 @@ const VNCClient = {
         if (resBadge) resBadge.classList.add('hidden');
     },
 
+    // Suntikkan style CSS untuk menyembunyikan kursor remote pada mobile
+    injectMobileCursorCSS() {
+        if (document.getElementById('vnc-mobile-cursor-style')) return;
+        const style = document.createElement('style');
+        style.id = 'vnc-mobile-cursor-style';
+        style.textContent = `
+            .mobile-vnc-canvas canvas {
+                cursor: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+    },
+
     // Deteksi resolusi remote & rasio aspek
     updateResolutionInfo() {
         if (!this.rfb) return;
@@ -248,6 +267,15 @@ const VNCClient = {
 
         // Terapkan Zoom visual
         this.applyZoom();
+
+        // CSS kelas deteksi mobile cursor
+        if (screen) {
+            const canvas = screen.querySelector('canvas');
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile && canvas) {
+                canvas.classList.add('mobile-vnc-canvas');
+            }
+        }
 
         // Update teks HUD resolusi
         if (this.remoteResolution.width > 0 && resBadge) {
@@ -343,7 +371,7 @@ const VNCClient = {
         }
     },
 
-    // Emulasi Klik Layar Sentuh Lebih Responsif & Bebas Goyang
+    // Emulasi Klik Layar Sentuh Lebih Responsif & Anti-Goyang
     setupCanvasTouchEmulation() {
         const screen = document.getElementById('vnc-screen');
         if (!screen) return;
@@ -358,14 +386,45 @@ const VNCClient = {
         let touchStartTime = 0;
 
         canvas.addEventListener('touchstart', (e) => {
+            // Isolasi gestur pinch zoom dari trigger mouse event
+            if (e.touches.length >= 2) {
+                this.isPinchZooming = true;
+                if (this.rfb) {
+                    // Lepaskan penekanan mouse jika tersangkut sebelum masuk gestur zoom
+                    this.rfb.sendMouseEvents(this.lastMouseX || 0, this.lastMouseY || 0, 0);
+                }
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                return;
+            }
+
             if (e.touches.length === 1) {
+                this.isPinchZooming = false;
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
                 touchStartTime = Date.now();
             }
-        }, { passive: true });
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            // Blokir total mouse movement VNC jika sedang mencubit zoom
+            if (e.touches.length >= 2 || this.isPinchZooming) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                return;
+            }
+        }, { passive: false });
 
         canvas.addEventListener('touchend', (e) => {
+            if (this.isPinchZooming) {
+                if (e.touches.length === 0) {
+                    this.isPinchZooming = false;
+                }
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                return;
+            }
+
             if (e.changedTouches.length === 1 && this.rfb) {
                 const touchEndX = e.changedTouches[0].clientX;
                 const touchEndY = e.changedTouches[0].clientY;
@@ -374,7 +433,7 @@ const VNCClient = {
                 const dy = touchEndY - touchStartY;
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
-                // Sensitivitas wobble tap (15 piksel)
+                // Jika pergeseran jari kecil (< 15px) dan durasi ketukan singkat (< 300ms)
                 if (elapsed < 300 && dist < 15) {
                     const rect = canvas.getBoundingClientRect();
                     const visualX = touchEndX - rect.left;
@@ -385,6 +444,9 @@ const VNCClient = {
 
                     const targetX = Math.round(visualX * (remoteW / rect.width));
                     const targetY = Math.round(visualY * (remoteH / rect.height));
+
+                    this.lastMouseX = targetX;
+                    this.lastMouseY = targetY;
 
                     this.rfb.sendMousePositions(targetX, targetY);
 
@@ -402,59 +464,88 @@ const VNCClient = {
         }, { passive: false });
     },
 
-    // Pinch to Zoom pada Mobile
+    // Pinch to Zoom pada Mobile Terpusat di Titik Cubitan (Focal Point)
     setupPinchToZoom() {
         const container = document.getElementById('vnc-container');
-        if (!container) return;
+        const screen = document.getElementById('vnc-screen');
+        if (!container || !screen) return;
 
         if (container.dataset.pinchListenerAttached) return;
         container.dataset.pinchListenerAttached = 'true';
 
         let touchStartDist = 0;
         let startZoom = 1.0;
+        let initialFocalX = 0;
+        let initialFocalY = 0;
 
         container.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
+                this.isPinchZooming = true;
                 touchStartDist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
                 startZoom = this.zoomLevel;
+
+                // Titik tengah visual antara 2 jari
+                initialFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                initialFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
             }
         }, { passive: true });
 
         container.addEventListener('touchmove', (e) => {
             if (e.touches.length === 2 && touchStartDist > 0) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
                 const currentDist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
+                
+                const currentFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                const currentFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+                const canvas = screen.querySelector('canvas');
+                if (!canvas) return;
+
+                const rect = canvas.getBoundingClientRect();
+                // Proposional koordinat relatif cubitan terhadap kanvas
+                const relX = (currentFocalX - rect.left) / rect.width;
+                const relY = (currentFocalY - rect.top) / rect.height;
+
                 let newZoom = startZoom * (currentDist / touchStartDist);
-                // Limit zoom 1.0x s/d 3.0x
                 newZoom = Math.max(1.0, Math.min(3.0, newZoom));
                 this.zoomLevel = newZoom;
                 
-                // Atur class screen agar scrollbar muncul bila dizoom
-                const screen = document.getElementById('vnc-screen');
-                if (screen) {
-                    if (newZoom > 1.0) {
-                        screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
+                // Set class screen agar scrollbar muncul bila dizoom
+                if (newZoom > 1.0) {
+                    screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
+                } else {
+                    if (this.scaleFactor) {
+                        screen.className = 'w-full h-full overflow-hidden flex items-center justify-center';
                     } else {
-                        if (this.scaleFactor) {
-                            screen.className = 'w-full h-full overflow-hidden flex items-center justify-center';
-                        } else {
-                            screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
-                        }
+                        screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
                     }
                 }
 
                 this.applyZoom();
+
+                // Dapatkan bounding box baru setelah applyZoom diaplikasikan
+                const newRect = canvas.getBoundingClientRect();
+
+                // Scroll layar sehingga titik fokus pinch tetap diam di bawah jari (Focal Point Zoom)
+                screen.scrollLeft = (relX * newRect.width) - (currentFocalX - screen.getBoundingClientRect().left);
+                screen.scrollTop = (relY * newRect.height) - (currentFocalY - screen.getBoundingClientRect().top);
             }
-        }, { passive: true });
+        }, { passive: false });
 
         container.addEventListener('touchend', (e) => {
             if (e.touches.length < 2) {
                 touchStartDist = 0;
+                if (e.touches.length === 0) {
+                    this.isPinchZooming = false;
+                }
             }
         }, { passive: true });
     },
@@ -565,7 +656,7 @@ const VNCClient = {
         });
     },
 
-    // Mengikat event pointerdown & pointerup/pointerleave untuk emulasi tactile & instant response
+    // Mengikat event pointerdown & pointerup/pointerleave untuk emulasi tactile & instant hold response
     bindVirtualKeyEvents(btn, charOrKeyInfo) {
         let keysym;
         let isChar = false;
@@ -581,7 +672,6 @@ const VNCClient = {
                     e.preventDefault();
                     this.toggleKeyboardShift();
                 };
-                // Cegah double tap zoom default mobile
                 btn.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
                 return;
             }
@@ -596,11 +686,11 @@ const VNCClient = {
             e.preventDefault();
             if (!this.rfb) return;
 
-            // Efek visual langsung ketika ditekan ("tekan sampai berwarna")
+            // Highlight visual ketika ditekan ("tekan sampai berwarna")
             btn.classList.add('bg-neutral-200', 'text-black', 'border-white');
             btn.classList.remove('bg-[#141414]', 'text-neutral-200', 'border-[#222]', 'bg-[#222]');
 
-            // Kirim sinyal key down
+            // Kirim key down ke VNC host
             this.rfb.sendKey(keysym, null, true);
         };
 
@@ -608,7 +698,7 @@ const VNCClient = {
             e.preventDefault();
             if (!this.rfb) return;
 
-            // Kembalikan efek visual tombol ketika dilepas
+            // Kembalikan visual ke warna asal
             btn.classList.remove('bg-neutral-200', 'text-black', 'border-white');
             if (typeof charOrKeyInfo !== 'string' && charOrKeyInfo.style && charOrKeyInfo.style.includes('bg-[#222]')) {
                 btn.classList.add('bg-[#222]', 'text-neutral-200', 'border-[#222]');
@@ -616,10 +706,10 @@ const VNCClient = {
                 btn.classList.add('bg-[#141414]', 'text-neutral-200', 'border-[#222]');
             }
 
-            // Kirim sinyal key up
+            // Kirim key up ke VNC host
             this.rfb.sendKey(keysym, null, false);
 
-            // Auto-turn off Shift setelah karakter huruf dilepaskan
+            // Auto-turn off Shift jika mengetik huruf
             if (isChar && this.shiftActive && this.keyboardLayout === 'letters') {
                 this.shiftActive = false;
                 this.renderKeyboardKeys();
@@ -631,6 +721,48 @@ const VNCClient = {
         btn.addEventListener('pointerup', handleRelease);
         btn.addEventListener('pointerleave', handleRelease);
         btn.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+    },
+
+    // Mengikat modifier keys (Ctrl, Alt, Win) agar bertindak sebagai Hold secara global
+    setupGlobalModifierHold() {
+        const modifiersKeys = ['ctrl', 'alt', 'win'];
+        
+        modifiersKeys.forEach(modKey => {
+            const btn = document.getElementById(`vnc-key-${modKey}`);
+            if (!btn) return;
+
+            // Bersihkan listener lama
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+
+            let keysym;
+            if (modKey === 'ctrl') keysym = 0xffe3;
+            else if (modKey === 'alt') keysym = 0xffe9;
+            else if (modKey === 'win') keysym = 0xffeb;
+
+            const handlePress = (e) => {
+                e.preventDefault();
+                if (!this.rfb) return;
+                
+                this.modifiers[modKey.charAt(0).toUpperCase() + modKey.slice(1)] = true;
+                newBtn.className = 'flex-1 py-1.5 bg-[#e5e5e5] border border-white text-black text-[10px] font-bold rounded transition-colors';
+                this.rfb.sendKey(keysym, null, true);
+            };
+
+            const handleRelease = (e) => {
+                e.preventDefault();
+                if (!this.rfb) return;
+
+                this.modifiers[modKey.charAt(0).toUpperCase() + modKey.slice(1)] = false;
+                newBtn.className = 'flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors';
+                this.rfb.sendKey(keysym, null, false);
+            };
+
+            newBtn.addEventListener('pointerdown', handlePress);
+            newBtn.addEventListener('pointerup', handleRelease);
+            newBtn.addEventListener('pointerleave', handleRelease);
+            newBtn.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+        });
     },
 
     // Mobile Options Panel Toggle
@@ -646,31 +778,6 @@ const VNCClient = {
         this.rfb.sendKey(keysym, null, true);
         this.rfb.sendKey(keysym, null, false);
         this.releaseModifiers();
-    },
-
-    // Toggle Modifier Sticky Key
-    toggleModifier(modKey) {
-        if (!this.rfb) return;
-        const active = !this.modifiers[modKey];
-        this.modifiers[modKey] = active;
-
-        let keysym;
-        if (modKey === 'Ctrl') keysym = 0xffe3;
-        else if (modKey === 'Alt') keysym = 0xffe9;
-        else if (modKey === 'Win') keysym = 0xffeb;
-        else if (modKey === 'Shift') keysym = 0xffe1;
-
-        this.rfb.sendKey(keysym, null, active);
-
-        // Update button UI highlight
-        const btn = document.getElementById(`vnc-key-${modKey.toLowerCase()}`);
-        if (btn) {
-            if (active) {
-                btn.className = 'flex-1 py-1.5 bg-[#e5e5e5] border border-white text-black text-[10px] font-bold rounded transition-colors';
-            } else {
-                btn.className = 'flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors';
-            }
-        }
     },
 
     // Force release all active modifiers
