@@ -159,7 +159,7 @@ const Screenshot = {
 
         // Rebuild options
         select.innerHTML = '<option value="all">Semua Grup / Zona</option>';
-        [...groups].sort().forEach(grup => {
+        [...groups].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })).forEach(grup => {
             const opt = document.createElement('option');
             opt.value = grup;
             opt.textContent = grup.toUpperCase();
@@ -193,6 +193,9 @@ const Screenshot = {
         if (this.searchQuery) {
             data = data.filter(pc => pc.pc_kode.toLowerCase().includes(this.searchQuery));
         }
+
+        // Sort data naturally by pc_kode
+        data.sort((a, b) => (a.pc_kode || '').localeCompare(b.pc_kode || '', undefined, { numeric: true, sensitivity: 'base' }));
 
         const container = document.getElementById('screenshot-grid');
         if (!data || data.length === 0) {

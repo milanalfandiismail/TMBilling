@@ -55,6 +55,9 @@ const Monitor = {
             return;
         }
 
+        // Sort data naturally by pc_kode
+        data.sort((a, b) => (a.pc_kode || '').localeCompare(b.pc_kode || '', undefined, { numeric: true, sensitivity: 'base' }));
+
         let cardHtml = '';
         let tableRows = '';
 
