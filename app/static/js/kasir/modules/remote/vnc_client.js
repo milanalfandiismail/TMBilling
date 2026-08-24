@@ -38,16 +38,32 @@ const VNCClient = {
         }
     },
 
-    // Deteksi apakah user membuka dari HP / Layar Sentuh
+    // Deteksi apakah perangkat adalah Mobile murni (HP / Tablet) atau Desktop/Laptop PC
     isMobileDevice() {
-        return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+        const isMobileUA = /Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent);
+        const isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+        const isFine = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+
+        // Jika memiliki mouse fisik yang presisi (pointer: fine) dan bukan mobile browser UA -> Desktop
+        if (isFine && !isMobileUA) {
+            return false;
+        }
+
+        return isMobileUA || isCoarse;
     },
 
-    // Menonaktifkan layer kursor lokal noVNC jika di mobile
+    // Mengatur perilaku kursor: Sembunyikan di Mobile, Tampilkan normal di Desktop
     enforceMobileCursorBehavior() {
         const container = document.getElementById('vnc-container');
-        if (this.isMobileDevice()) {
+        const screen = document.getElementById('vnc-screen');
+        const canvas = screen ? screen.querySelector('canvas') : null;
+        const isMobile = this.isMobileDevice();
+
+        if (isMobile) {
+            // === MODE MOBILE / HP ===
             if (container) container.classList.add('vnc-mobile-mode');
+            if (canvas) canvas.style.cursor = 'none';
+
             if (this.rfb) {
                 this.rfb.showDotCursor = false;
                 this.rfb._refreshCursor = function() {};
@@ -64,7 +80,13 @@ const VNCClient = {
                 }
             }
         } else {
+            // === MODE DESKTOP / LAPTOP PC ===
             if (container) container.classList.remove('vnc-mobile-mode');
+            if (canvas) canvas.style.cursor = 'default';
+
+            if (this.rfb) {
+                this.rfb.showDotCursor = true;
+            }
         }
     },
 
@@ -164,12 +186,13 @@ const VNCClient = {
         try {
             screen.innerHTML = '';
             
+            const isMobile = this.isMobileDevice();
             this.rfb = new RFBClass(screen, url, {
                 credentials: { password: vncPassword },
                 scaleViewport: this.scaleFactor,
                 clipViewport: false,
                 dragViewport: false,
-                showDotCursor: false
+                showDotCursor: !isMobile
             });
 
             this.rfb.addEventListener('credentialsrequired', () => {
@@ -187,8 +210,8 @@ const VNCClient = {
                 connectBtn.classList.add('hidden');
                 disconnectBtn.classList.remove('hidden');
 
-                // Lepas gesture internal noVNC agar tidak mengganggu touch controller kita
-                if (this.rfb._gestures) {
+                // Lepas gesture internal noVNC agar tidak mengganggu touch controller kita di mobile
+                if (isMobile && this.rfb._gestures) {
                     try { this.rfb._gestures.detach(); } catch(e) {}
                 }
 
@@ -379,7 +402,7 @@ const VNCClient = {
             }
         }
 
-        // Terapkan perilaku kursor mobile
+        // Terapkan perilaku kursor
         this.enforceMobileCursorBehavior();
 
         // Terapkan transformasi zoom
