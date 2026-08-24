@@ -117,6 +117,7 @@ const VNCClient = {
                 // Terapkan mode tampilan & observasi resize
                 this.applyDisplayMode();
                 this.setupResizeObserver();
+                this.setupCanvasTouchEmulation();
 
                 // Focus kanvas
                 setTimeout(() => {
@@ -132,6 +133,7 @@ const VNCClient = {
             this.rfb.addEventListener('firstframe', () => {
                 this.updateResolutionInfo();
                 this.applyDisplayMode();
+                this.setupCanvasTouchEmulation();
             });
 
             this.rfb.addEventListener('desktopname', () => {
@@ -298,6 +300,68 @@ const VNCClient = {
         }
     },
 
+    // Emulasi Klik Layar Sentuh Lebih Responsif
+    setupCanvasTouchEmulation() {
+        const screen = document.getElementById('vnc-screen');
+        if (!screen) return;
+        const canvas = screen.querySelector('canvas');
+        if (!canvas) return;
+
+        // Hindari penumpukan listener
+        if (canvas.dataset.touchListenerAttached) return;
+        canvas.dataset.touchListenerAttached = 'true';
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                touchStartTime = Date.now();
+            }
+        }, { passive: true });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (e.changedTouches.length === 1 && this.rfb) {
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
+                const elapsed = Date.now() - touchStartTime;
+                const dx = touchEndX - touchStartX;
+                const dy = touchEndY - touchStartY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                // Jika pergeseran jari kecil (< 15px) dan durasi ketukan singkat (< 300ms),
+                // asumsikan ini adalah ketukan murni (Tap) dan picu klik mouse kiri instan.
+                if (elapsed < 300 && dist < 15) {
+                    const rect = canvas.getBoundingClientRect();
+                    const visualX = touchEndX - rect.left;
+                    const visualY = touchEndY - rect.top;
+
+                    const remoteW = this.remoteResolution.width || canvas.width;
+                    const remoteH = this.remoteResolution.height || canvas.height;
+
+                    const targetX = Math.round(visualX * (remoteW / rect.width));
+                    const targetY = Math.round(visualY * (remoteH / rect.height));
+
+                    // Pindahkan kursor secara instan ke koordinat tap
+                    this.rfb.sendMousePositions(targetX, targetY);
+
+                    // Kirim sinyal klik (press down dan release up) secara tegas
+                    this.rfb.sendMouseEvents(targetX, targetY, 1);
+                    setTimeout(() => {
+                        if (this.rfb) {
+                            this.rfb.sendMouseEvents(targetX, targetY, 0);
+                        }
+                    }, 40);
+
+                    e.preventDefault(); // Mencegah double tap default browser zoom
+                }
+            }
+        }, { passive: false });
+    },
+
     // Mobile Virtual Keyboard Toggle
     toggleVirtualKeyboard() {
         const kb = document.getElementById('vnc-virtual-keyboard');
@@ -337,6 +401,7 @@ const VNCClient = {
 
     getLettersRows() {
         return [
+            ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
             ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
             ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
             [
@@ -425,7 +490,7 @@ const VNCClient = {
         this.rfb.sendKey(keysym, null, true);
         this.rfb.sendKey(keysym, null, false);
         
-        // Auto-turn off Shift after typing a letter
+        // Auto-turn off Shift setelah mengetik huruf kapital
         if (this.shiftActive && this.keyboardLayout === 'letters') {
             this.shiftActive = false;
             this.renderKeyboardKeys();
