@@ -1,9 +1,9 @@
 <!-- ===== TAB: REMOTE SERVER (VNC) ===== -->
-<div id="tab-remote_server" class="tab-content hidden w-full h-[calc(100dvh-200px)] md:h-[calc(100vh-200px)] flex flex-col min-h-0">
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-4 md:p-5 flex flex-col h-full space-y-3 overflow-hidden">
+<div id="tab-remote_server" class="tab-content hidden w-full h-[calc(100vh-140px)] flex flex-col min-h-0">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-3 md:p-4 flex flex-col h-full space-y-3 overflow-hidden">
         
         <!-- Header Toolbar adaptif -->
-        <div class="flex flex-col gap-3 pb-3 border-b border-[#1c1c1c] shrink-0">
+        <div class="flex flex-col gap-2.5 pb-2.5 border-b border-[#1c1c1c] shrink-0">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div class="flex items-center gap-3 min-w-0">
                     <div class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
@@ -16,17 +16,23 @@
                 </div>
                 
                 <!-- Status & Action Buttons Utama -->
-                <div class="flex flex-wrap items-center gap-2 mt-2 md:mt-0">
-                    <span id="vnc-status-badge" class="px-2 py-1 md:px-3 md:py-2 rounded text-[10px] md:text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700">
+                <div class="flex flex-wrap items-center gap-2 mt-1 md:mt-0">
+                    <!-- Status Badge -->
+                    <span id="vnc-status-badge" class="px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700">
                         Terputus
+                    </span>
+
+                    <!-- Resolution & Mode HUD Badge -->
+                    <span id="vnc-resolution-badge" class="hidden px-2 py-1 md:px-2.5 md:py-1.5 rounded text-[10px] md:text-xs font-mono font-semibold bg-[#141414] text-neutral-300 border border-[#262626]">
+                        —
                     </span>
                     
                     <button onclick="VNCClient.connect()" id="vnc-connect-btn"
-                        class="px-3 py-1.5 md:px-4 md:py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs md:text-sm font-bold rounded transition-colors flex items-center gap-1">
+                        class="px-3 py-1.5 md:px-4 md:py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs md:text-sm font-bold rounded transition-colors flex items-center gap-1">
                         <span>▶</span> <span class="hidden sm:inline">Hubungkan</span>
                     </button>
                     <button onclick="VNCClient.disconnect()" id="vnc-disconnect-btn"
-                        class="px-3 py-1.5 md:px-4 md:py-2 bg-red-600/80 hover:bg-red-500 text-white text-xs md:text-sm font-bold rounded transition-colors hidden flex items-center gap-1">
+                        class="px-3 py-1.5 md:px-4 md:py-1.5 bg-red-600/80 hover:bg-red-500 text-white text-xs md:text-sm font-bold rounded transition-colors hidden flex items-center gap-1">
                         <span>⏹</span> <span class="hidden sm:inline">Putuskan</span>
                     </button>
                     
@@ -50,9 +56,9 @@
                     <!-- Password Field Group -->
                     <div class="flex items-center gap-2 w-full sm:w-auto">
                         <input type="password" id="vnc-password-input" placeholder="Password TightVNC"
-                            class="flex-1 sm:flex-none w-full sm:w-44 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono">
+                            class="flex-1 sm:flex-none w-full sm:w-44 px-3 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-sm text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono">
                         <button onclick="VNCClient.saveGlobalPassword()" id="vnc-save-pw-btn"
-                            class="px-3 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-1.5 shrink-0"
+                            class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1.5 shrink-0"
                             title="Simpan Password ke Database">
                             <span>💾</span> Simpan PW
                         </button>
@@ -61,29 +67,21 @@
 
                 <div class="flex items-center gap-2 w-full md:w-auto justify-end">
                     <button onclick="VNCClient.toggleScale()" id="vnc-scale-btn"
-                        class="flex-1 md:flex-none px-3 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors whitespace-nowrap">
-                        📐 Scaling On
+                        class="flex-1 md:flex-none px-3 py-1.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-sm font-bold rounded transition-colors whitespace-nowrap flex items-center gap-1.5 justify-center"
+                        title="Ubah Mode Tampilan (Fit Layar / Ukuran Asli 1:1)">
+                        <span>📐</span> <span id="vnc-scale-label">Fit Layar</span>
                     </button>
-                    <button onclick="VNCClient.toggleFullscreen()"
-                        class="flex-1 md:flex-none px-3 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded transition-colors whitespace-nowrap">
-                        ⛶ Fullscreen
+                    <button onclick="VNCClient.toggleFullscreen()" id="vnc-fullscreen-btn"
+                        class="flex-1 md:flex-none px-3 py-1.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-sm font-bold rounded transition-colors whitespace-nowrap flex items-center gap-1.5 justify-center">
+                        <span>⛶</span> Fullscreen
                     </button>
                 </div>
             </div>
         </div>
 
         <!-- Canvas Container -->
-        <style>
-            #vnc-screen canvas {
-                max-width: 100% !important;
-                max-height: 100% !important;
-                object-fit: contain !important;
-                margin: auto;
-                display: block;
-            }
-        </style>
         <div id="vnc-container"
-            class="relative w-full flex-1 min-h-0 bg-[#050505] rounded border border-[#1c1c1c] overflow-hidden flex items-center justify-center">
+            class="relative w-full flex-1 min-h-0 bg-[#050505] rounded-lg border border-[#1c1c1c] overflow-hidden flex items-center justify-center select-none">
             <div id="vnc-screen" class="w-full h-full overflow-hidden flex items-center justify-center"></div>
             <div id="vnc-placeholder"
                 class="absolute inset-0 flex flex-col items-center justify-center bg-[#070707] text-neutral-500 space-y-3 z-10 p-4 text-center">
@@ -91,7 +89,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                <p class="text-xs lg:text-base font-semibold">Klik "Hubungkan" untuk memulai Sesi Remote VNC Server</p>
+                <p class="text-xs lg:text-base font-semibold text-neutral-400">Klik "Hubungkan" untuk memulai Sesi Remote VNC Server</p>
+                <p class="text-[10px] lg:text-xs text-neutral-600">Mendukung mode Scaling adaptif (Fit Layar) dan 1:1 Pixel Native dengan akurasi kursor penuh</p>
             </div>
         </div>
 
