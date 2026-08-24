@@ -6,7 +6,7 @@ const VNCClient = {
     RFBClass: null,
     resizeObserver: null,
     remoteResolution: { width: 0, height: 0 },
-    keyboardLayout: 'letters', // 'letters' | 'symbols'
+    keyboardLayout: 'letters', // 'letters' | 'symbols' | 'function'
     shiftActive: false,
     zoomLevel: 1.0, // Zoom factor for pinch-to-zoom
     isPinchZooming: false, // Flag to separate pinch-zoom state from mouse click emulation
@@ -214,6 +214,7 @@ const VNCClient = {
         style.textContent = `
             #vnc-screen, #vnc-screen *, #vnc-container, #vnc-container *, #vnc-screen canvas {
                 cursor: none !important;
+                touch-action: none !important;
             }
         `;
         document.head.appendChild(style);
@@ -273,6 +274,16 @@ const VNCClient = {
 
         // Terapkan Zoom visual
         this.applyZoom();
+
+        // Matikan kursor bawaan noVNC
+        if (screen) {
+            const canvas = screen.querySelector('canvas');
+            const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+            if (isTouch && canvas) {
+                canvas.style.setProperty('cursor', 'none', 'important');
+                canvas.style.touchAction = 'none';
+            }
+        }
 
         // Update teks HUD resolusi
         if (this.remoteResolution.width > 0 && resBadge) {
@@ -368,49 +379,50 @@ const VNCClient = {
         }
     },
 
-    // Emulasi Touch Android: Tap (Left Click), Double-Tap (Double Click), Long-Press (Right Click), 1-Finger Pan saat Zoom
+    // Emulasi Touch Android Responsif (Mode Chrome Remote Desktop): Tap (Left Click), Double-Tap, Long-Press (Right Click), 1-Finger Pan
     setupCanvasTouchEmulation() {
         const screen = document.getElementById('vnc-screen');
         if (!screen) return;
         const canvas = screen.querySelector('canvas');
         if (!canvas) return;
 
-        if (canvas.dataset.touchEmulationAttached) return;
-        canvas.dataset.touchEmulationAttached = 'true';
+        if (canvas.dataset.touchEmulationV2Attached) return;
+        canvas.dataset.touchEmulationV2Attached = 'true';
 
         let touchStartX = 0;
         let touchStartY = 0;
         let touchStartTime = 0;
         let longPressTimer = null;
-        let longPressFired = false;
-        let lastScrollLeft = 0;
-        let lastScrollTop = 0;
+        let isLongPress = false;
+        let isDragging = false;
+        let initialScrollX = 0;
+        let initialScrollY = 0;
 
+        // Gunakan Capture Phase agar mengontrol penuh sebelum noVNC internal handler
         canvas.addEventListener('touchstart', (e) => {
-            // Jika multi-touch (2 jari atau lebih -> Gestur Pinch Zoom)
+            // Multi-touch: Gestur Zoom (2 Jari)
             if (e.touches.length >= 2) {
-                if (longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
+                if (longPressTimer) clearTimeout(longPressTimer);
                 this.isPinchZooming = true;
                 if (this.rfb) {
                     this.rfb.sendMouseEvents(this.lastMouseX || 0, this.lastMouseY || 0, 0);
                 }
-                e.stopImmediatePropagation();
+                e.stopPropagation();
                 return;
             }
 
             if (e.touches.length === 1) {
                 this.isPinchZooming = false;
-                longPressFired = false;
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-                touchStartTime = Date.now();
-                lastScrollLeft = screen.scrollLeft;
-                lastScrollTop = screen.scrollTop;
+                isLongPress = false;
+                isDragging = false;
 
                 const touch = e.touches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+                touchStartTime = Date.now();
+                initialScrollX = screen.scrollLeft;
+                initialScrollY = screen.scrollTop;
+
                 const rect = canvas.getBoundingClientRect();
                 const visualX = touch.clientX - rect.left;
                 const visualY = touch.clientY - rect.top;
@@ -419,39 +431,40 @@ const VNCClient = {
                 const targetX = Math.round(visualX * (remoteW / rect.width));
                 const targetY = Math.round(visualY * (remoteH / rect.height));
 
-                // Timer Long Press -> Memicu Right Click (500ms tanpa bergeser)
+                this.lastMouseX = targetX;
+                this.lastMouseY = targetY;
+
+                // Langsung sinkronkan posisi kursor remote
+                if (this.rfb) {
+                    this.rfb.sendMousePositions(targetX, targetY);
+                }
+
+                // Long-Press timer untuk Klik Kanan (500ms tanpa bergeser)
                 if (longPressTimer) clearTimeout(longPressTimer);
                 longPressTimer = setTimeout(() => {
-                    longPressFired = true;
+                    isLongPress = true;
                     if (this.rfb) {
-                        this.lastMouseX = targetX;
-                        this.lastMouseY = targetY;
                         this.rfb.sendMousePositions(targetX, targetY);
-                        // Kirim Klik Kanan (mask 4)
-                        this.rfb.sendMouseEvents(targetX, targetY, 4);
+                        this.rfb.sendMouseEvents(targetX, targetY, 4); // Right click down
                         setTimeout(() => {
-                            if (this.rfb) {
-                                this.rfb.sendMouseEvents(targetX, targetY, 0);
-                            }
+                            if (this.rfb) this.rfb.sendMouseEvents(targetX, targetY, 0); // Right click up
                         }, 50);
 
-                        // Haptic feedback getaran di smartphone
                         if (navigator.vibrate) {
                             try { navigator.vibrate(50); } catch(err) {}
                         }
                         Toast.info('Klik Kanan (Right-Click)');
                     }
                 }, 500);
+
+                e.stopPropagation();
             }
-        }, { passive: false });
+        }, { capture: true, passive: false });
 
         canvas.addEventListener('touchmove', (e) => {
             if (e.touches.length >= 2 || this.isPinchZooming) {
-                if (longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
-                e.stopImmediatePropagation();
+                if (longPressTimer) clearTimeout(longPressTimer);
+                e.stopPropagation();
                 return;
             }
 
@@ -461,20 +474,25 @@ const VNCClient = {
                 const dy = touch.clientY - touchStartY;
                 const dist = Math.hypot(dx, dy);
 
-                // Jika jari bergeser > 10px, batalkan long-press
-                if (dist > 10 && longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
+                // Jika pergeseran jari > 8px, ini adalah gesture pan/scroll, bukan tap
+                if (dist > 8) {
+                    if (longPressTimer) {
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                    }
+                    isDragging = true;
+
+                    // Jika sedang zoom in (> 1.0x) atau mode 1:1, geser scroll layar (Pan Viewport)
+                    if (this.zoomLevel > 1.0 || !this.scaleFactor) {
+                        screen.scrollLeft = initialScrollX - dx;
+                        screen.scrollTop = initialScrollY - dy;
+                        e.preventDefault();
+                    }
                 }
 
-                // Jika sedang zoom in (> 1.0x) atau mode 1:1, geser scroll layar (Pan Viewport)
-                if (dist > 10 && (this.zoomLevel > 1.0 || !this.scaleFactor)) {
-                    screen.scrollLeft = lastScrollLeft - dx;
-                    screen.scrollTop = lastScrollTop - dy;
-                    e.preventDefault();
-                }
+                e.stopPropagation();
             }
-        }, { passive: false });
+        }, { capture: true, passive: false });
 
         canvas.addEventListener('touchend', (e) => {
             if (longPressTimer) {
@@ -486,12 +504,13 @@ const VNCClient = {
                 if (e.touches.length === 0) {
                     this.isPinchZooming = false;
                 }
-                e.stopImmediatePropagation();
+                e.stopPropagation();
                 return;
             }
 
-            // Jika long-press sudah memicu klik kanan, abaikan tap left-click
-            if (longPressFired) {
+            // Jika sudah memicu Long-Press atau sedang dragging pan, batalkan tap left-click
+            if (isLongPress || isDragging) {
+                e.stopPropagation();
                 e.preventDefault();
                 return;
             }
@@ -503,8 +522,8 @@ const VNCClient = {
                 const dy = touch.clientY - touchStartY;
                 const dist = Math.hypot(dx, dy);
 
-                // Tap instan (durasi < 450ms dan pergeseran jari < 15px)
-                if (elapsed < 450 && dist < 15) {
+                // Tap Cepat Responsif (< 400ms dan dist < 12px)
+                if (elapsed < 400 && dist < 12) {
                     const rect = canvas.getBoundingClientRect();
                     const visualX = touch.clientX - rect.left;
                     const visualY = touch.clientY - rect.top;
@@ -516,19 +535,21 @@ const VNCClient = {
                     this.lastMouseX = targetX;
                     this.lastMouseY = targetY;
 
-                    // Pindahkan kursor dan kirim Left Click (mask 1)
+                    // Kirim posisi + Left Click Down + Left Click Up secara instan
                     this.rfb.sendMousePositions(targetX, targetY);
                     this.rfb.sendMouseEvents(targetX, targetY, 1);
                     setTimeout(() => {
                         if (this.rfb) {
                             this.rfb.sendMouseEvents(targetX, targetY, 0);
                         }
-                    }, 40);
+                    }, 35);
 
                     e.preventDefault();
                 }
+
+                e.stopPropagation();
             }
-        }, { passive: false });
+        }, { capture: true, passive: false });
     },
 
     // Pinch to Zoom Terpusat pada Titik Cubitan Jari (Focal Point)
@@ -537,8 +558,8 @@ const VNCClient = {
         const screen = document.getElementById('vnc-screen');
         if (!container || !screen) return;
 
-        if (container.dataset.pinchListenerAttached) return;
-        container.dataset.pinchListenerAttached = 'true';
+        if (container.dataset.pinchListenerV2Attached) return;
+        container.dataset.pinchListenerV2Attached = 'true';
 
         let touchStartDist = 0;
         let startZoom = 1.0;
@@ -556,13 +577,15 @@ const VNCClient = {
 
                 initialFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
                 initialFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                e.stopPropagation();
             }
-        }, { passive: true });
+        }, { capture: true, passive: false });
 
         container.addEventListener('touchmove', (e) => {
             if (e.touches.length === 2 && touchStartDist > 0) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                e.stopPropagation();
 
                 const currentDist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
@@ -599,7 +622,7 @@ const VNCClient = {
                 screen.scrollLeft = (relX * newRect.width) - (currentFocalX - screen.getBoundingClientRect().left);
                 screen.scrollTop = (relY * newRect.height) - (currentFocalY - screen.getBoundingClientRect().top);
             }
-        }, { passive: false });
+        }, { capture: true, passive: false });
 
         container.addEventListener('touchend', (e) => {
             if (e.touches.length < 2) {
@@ -608,7 +631,7 @@ const VNCClient = {
                     this.isPinchZooming = false;
                 }
             }
-        }, { passive: true });
+        }, { capture: true, passive: false });
     },
 
     // Mobile Virtual Keyboard Toggle
