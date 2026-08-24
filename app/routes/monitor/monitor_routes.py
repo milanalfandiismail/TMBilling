@@ -7,6 +7,7 @@ dari C# Hardware Monitor Agent dan menampilkan data metrik
 hardware semua PC di dashboard kasir.
 """
 from flask import Blueprint, request, jsonify, session
+import re
 from app.services import HardwareService
 from app.utils.logger import write_log
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
@@ -14,6 +15,11 @@ from app.routes.client.client_routes import api_key_required
 
 monitor_api_bp = Blueprint("monitor", __name__)
 monitor_kasir_bp = Blueprint("monitor_kasir", __name__)
+
+def natural_sort_key(s):
+    """Helper untuk natural alphanumeric sorting (misal: TM-1, TM-2, TM-10)."""
+    return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s or '')]
+
 
 @monitor_api_bp.route("/all", methods=["GET"])
 def get_all_hardware():
@@ -25,10 +31,14 @@ def get_all_hardware():
             m_dict = m.to_dict()
             m_dict["pc_kode"] = m.pc.kode if m.pc else "Unknown"
             m_dict["pc_nama"] = m.pc.nama if m.pc else "Unknown"
+            m_dict["pc_grup_id"] = m.pc.grup_id if m.pc else 0
+            m_dict["pc_grup_nama"] = m.pc.grup.nama if (m.pc and m.pc.grup) else "Unknown"
             # Evaluasi warning status secara real-time in-memory
             m_dict["health"] = HardwareService.check_pc_warning(m.pc_id, m_dict)
             result.append(m_dict)
             
+        # Urutkan hasil secara natural berdasarkan grup dan kode PC
+        result.sort(key=lambda item: (item.get("pc_grup_id") or 0, natural_sort_key(item.get("pc_kode", ""))))
         return jsonify({"success": True, "data": result}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -235,9 +245,11 @@ def get_all_screenshot_status():
         from datetime import datetime, timezone
 
         pcs = PCRepository.get_all()
+        # Urutkan daftar PC secara natural berdasarkan grup dan kode PC
+        pcs_sorted = sorted(pcs, key=lambda pc: (pc.grup_id or 0, natural_sort_key(pc.kode)))
         result = []
 
-        for pc in pcs:
+        for pc in pcs_sorted:
             screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{pc.kode}.png")
             if os.path.exists(screenshot_path):
                 mtime = os.path.getmtime(screenshot_path)

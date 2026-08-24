@@ -47,4 +47,23 @@
         white-space: nowrap;
         animation: marquee 35s linear infinite;
     }
+
+    /* Mobile touch mode: hide cursor only on touch devices */
+    @media (pointer: coarse) {
+        .vnc-mobile-mode,
+        .vnc-mobile-mode *,
+        .vnc-mobile-mode canvas {
+            cursor: none !important;
+        }
+    }
+
+    /* Desktop mode: always guarantee visible mouse pointer on desktop/laptop */
+    @media (pointer: fine) {
+        #vnc-container,
+        #vnc-screen,
+        #vnc-screen canvas {
+            cursor: default !important;
+        }
+    }
 }
+

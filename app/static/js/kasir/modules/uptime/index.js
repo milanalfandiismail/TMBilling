@@ -128,6 +128,9 @@ const UptimeTracker = {
 
         const report = data.report || [];
         
+        // Sort report naturally by PC code
+        report.sort((a, b) => (a.pc_kode || '').localeCompare(b.pc_kode || '', undefined, { numeric: true, sensitivity: 'base' }));
+        
         if (report.length === 0) {
             tbody.innerHTML = `
                 <tr>
@@ -161,9 +164,9 @@ const UptimeTracker = {
             }
 
             html += `
-                <tr class="hover:bg-[#111]/30 transition-colors">
+                <tr class="hover:bg-[#171717]/30 transition-colors">
                     <td class="px-6 py-3.5 font-bold font-mono text-neutral-100">${item.pc_kode}</td>
-                    <td class="px-6 py-3.5"><span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-[#222] bg-[#111] text-neutral-400">${item.grup || 'Reguler'}</span></td>
+                    <td class="px-6 py-3.5"><span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-[#262626] bg-[#171717] text-neutral-400">${item.grup || 'Reguler'}</span></td>
                     <td class="px-6 py-3.5 font-mono text-neutral-500">${item.first_seen_time || this.formatTimeOnly(item.first_seen)}</td>
                     <td class="px-6 py-3.5 font-mono text-neutral-500">${item.last_seen_time || this.formatTimeOnly(item.last_seen)}</td>
                     <td class="px-6 py-3.5 font-bold font-mono text-neutral-300">${Utils.formatMenit(onlineMin)}</td>
@@ -201,6 +204,9 @@ const UptimeTracker = {
 
         const pcs = data.pcs || [];
         
+        // Sort pcs naturally by PC code
+        pcs.sort((a, b) => (a.pc_kode || '').localeCompare(b.pc_kode || '', undefined, { numeric: true, sensitivity: 'base' }));
+        
         if (pcs.length === 0) {
             tbody.innerHTML = `
                 <tr>
@@ -230,9 +236,9 @@ const UptimeTracker = {
             }
 
             html += `
-                <tr class="hover:bg-[#111]/30 transition-colors">
+                <tr class="hover:bg-[#171717]/30 transition-colors">
                     <td class="px-6 py-3.5 font-bold font-mono text-neutral-100">${item.pc_kode}</td>
-                    <td class="px-6 py-3.5"><span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-[#222] bg-[#111] text-neutral-400">${item.grup || 'Reguler'}</span></td>
+                    <td class="px-6 py-3.5"><span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-[#262626] bg-[#171717] text-neutral-400">${item.grup || 'Reguler'}</span></td>
                     <td class="px-6 py-3.5 font-semibold text-neutral-300">${item.hari_aktif} Hari</td>
                     <td class="px-6 py-3.5 font-mono text-neutral-500">${Utils.formatMenit(avgOnlinePerHari)} / hari</td>
                     <td class="px-6 py-3.5 font-bold font-mono text-neutral-300">${Utils.formatMenit(onlineMin)}</td>

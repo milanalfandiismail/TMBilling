@@ -76,8 +76,14 @@ class UptimeService:
             list: List dictionary berisi laporan uptime per PC.
         """
         try:
+            import re
+            def natural_sort_key(s):
+                return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s or '')]
+
             logs = PCUptimeLog.query.filter_by(tanggal=tanggal).all()
-            return [log.to_dict() for log in logs]
+            # Urutkan berdasarkan grup_id dan kode PC secara natural
+            logs_sorted = sorted(logs, key=lambda log: (log.pc.grup_id if (log.pc and log.pc.grup_id) else 0, natural_sort_key(log.pc.kode if log.pc else "")))
+            return [log.to_dict() for log in logs_sorted]
         except Exception as e:
             write_log("UPTIME_SERVICE_ERROR", f"Gagal mengambil laporan harian {tanggal}: {str(e)}")
             return []
@@ -108,11 +114,13 @@ class UptimeService:
             for log in logs:
                 pc_kode = log.pc.kode if log.pc else f"PC-ID-{log.pc_id}"
                 grup_nama = log.pc.grup.nama if log.pc and log.pc.grup else "reguler"
+                grup_id = log.pc.grup_id if log.pc else 0
                 
                 if pc_kode not in pc_stats:
                     pc_stats[pc_kode] = {
                         "pc_kode": pc_kode,
                         "grup": grup_nama,
+                        "pc_grup_id": grup_id,
                         "total_online_seconds": 0,
                         "total_billing_seconds": 0,
                         "hari_aktif": 0
@@ -139,19 +147,19 @@ class UptimeService:
                 pc_list.append({
                     "pc_kode": stat["pc_kode"],
                     "grup": stat["grup"],
+                    "pc_grup_id": stat["pc_grup_id"],
                     "total_online_menit": online_menit,
                     "total_billing_menit": billing_menit,
                     "utilisasi_persen": utilisasi,
                     "hari_aktif": stat["hari_aktif"]
                 })
 
-            # Urutkan secara natural/alphabetical berdasarkan kode PC
+            # Urutkan secara natural/alphabetical berdasarkan grup_id dan kode PC
             import re
-            def natural_sort_key(item):
-                return [int(text) if text.isdigit() else text.lower()
-                        for text in re.split(r'(\d+)', item["pc_kode"])]
+            def natural_sort_key(s):
+                return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s or '')]
             
-            pc_list = sorted(pc_list, key=natural_sort_key)
+            pc_list = sorted(pc_list, key=lambda item: (item.get("pc_grup_id") or 0, natural_sort_key(item["pc_kode"])))
 
             # Hitung rata-rata utilisasi keseluruhan
             avg_utilisasi = 0.0
