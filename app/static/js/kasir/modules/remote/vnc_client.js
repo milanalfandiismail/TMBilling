@@ -100,8 +100,7 @@ const VNCClient = {
                 credentials: { password: vncPassword },
                 scaleViewport: this.scaleFactor,
                 clipViewport: false,
-                dragViewport: false,
-                showDotCursor: false
+                dragViewport: false
             });
 
             this.rfb.addEventListener('credentialsrequired', () => {
@@ -119,10 +118,9 @@ const VNCClient = {
                 connectBtn.classList.add('hidden');
                 disconnectBtn.classList.remove('hidden');
 
-                // Terapkan mode tampilan, observer, gestur, dan sembunyikan kursor mobile
+                // Terapkan mode tampilan, observer, dan touch controller
                 this.zoomLevel = 1.0;
                 this.isPinchZooming = false;
-                this.injectMobileCursorCSS();
                 this.applyDisplayMode();
                 this.setupResizeObserver();
                 this.setupCanvasTouchEmulation();
@@ -203,23 +201,6 @@ const VNCClient = {
         if (resBadge) resBadge.classList.add('hidden');
     },
 
-    // Suntikkan style CSS untuk menyembunyikan kursor remote pada mobile secara total
-    injectMobileCursorCSS() {
-        const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-        if (!isTouch) return;
-
-        if (document.getElementById('vnc-mobile-cursor-style')) return;
-        const style = document.createElement('style');
-        style.id = 'vnc-mobile-cursor-style';
-        style.textContent = `
-            #vnc-screen, #vnc-screen *, #vnc-container, #vnc-container *, #vnc-screen canvas {
-                cursor: none !important;
-                touch-action: none !important;
-            }
-        `;
-        document.head.appendChild(style);
-    },
-
     // Deteksi resolusi remote & rasio aspek
     updateResolutionInfo() {
         if (!this.rfb) return;
@@ -274,16 +255,6 @@ const VNCClient = {
 
         // Terapkan Zoom visual
         this.applyZoom();
-
-        // Matikan kursor bawaan noVNC
-        if (screen) {
-            const canvas = screen.querySelector('canvas');
-            const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-            if (isTouch && canvas) {
-                canvas.style.setProperty('cursor', 'none', 'important');
-                canvas.style.touchAction = 'none';
-            }
-        }
 
         // Update teks HUD resolusi
         if (this.remoteResolution.width > 0 && resBadge) {
@@ -386,8 +357,8 @@ const VNCClient = {
         const canvas = screen.querySelector('canvas');
         if (!canvas) return;
 
-        if (canvas.dataset.touchEmulationV2Attached) return;
-        canvas.dataset.touchEmulationV2Attached = 'true';
+        if (canvas.dataset.touchEmulationV3Attached) return;
+        canvas.dataset.touchEmulationV3Attached = 'true';
 
         let touchStartX = 0;
         let touchStartY = 0;
@@ -434,9 +405,9 @@ const VNCClient = {
                 this.lastMouseX = targetX;
                 this.lastMouseY = targetY;
 
-                // Langsung sinkronkan posisi kursor remote
+                // Langsung sinkronkan posisi kursor remote via sendMouseEvents(x, y, 0)
                 if (this.rfb) {
-                    this.rfb.sendMousePositions(targetX, targetY);
+                    this.rfb.sendMouseEvents(targetX, targetY, 0);
                 }
 
                 // Long-Press timer untuk Klik Kanan (500ms tanpa bergeser)
@@ -444,7 +415,6 @@ const VNCClient = {
                 longPressTimer = setTimeout(() => {
                     isLongPress = true;
                     if (this.rfb) {
-                        this.rfb.sendMousePositions(targetX, targetY);
                         this.rfb.sendMouseEvents(targetX, targetY, 4); // Right click down
                         setTimeout(() => {
                             if (this.rfb) this.rfb.sendMouseEvents(targetX, targetY, 0); // Right click up
@@ -535,8 +505,7 @@ const VNCClient = {
                     this.lastMouseX = targetX;
                     this.lastMouseY = targetY;
 
-                    // Kirim posisi + Left Click Down + Left Click Up secara instan
-                    this.rfb.sendMousePositions(targetX, targetY);
+                    // Kirim Left Click Down + Left Click Up secara instan
                     this.rfb.sendMouseEvents(targetX, targetY, 1);
                     setTimeout(() => {
                         if (this.rfb) {
@@ -558,8 +527,8 @@ const VNCClient = {
         const screen = document.getElementById('vnc-screen');
         if (!container || !screen) return;
 
-        if (container.dataset.pinchListenerV2Attached) return;
-        container.dataset.pinchListenerV2Attached = 'true';
+        if (container.dataset.pinchListenerV3Attached) return;
+        container.dataset.pinchListenerV3Attached = 'true';
 
         let touchStartDist = 0;
         let startZoom = 1.0;
