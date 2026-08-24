@@ -2,8 +2,10 @@
 
 const VNCClient = {
     rfb: null,
-    scaleFactor: true,
+    scaleFactor: true, // true = Fit to Viewport, false = 1:1 Native Resolution
     RFBClass: null,
+    resizeObserver: null,
+    remoteResolution: { width: 0, height: 0 },
     
     // Sticky modifiers state
     modifiers: {
@@ -41,12 +43,12 @@ const VNCClient = {
         if (!screen) return;
 
         badge.textContent = 'Memuat Modul VNC...';
-        badge.className = 'px-2.5 py-1 rounded text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30';
+        badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30';
 
         const RFBClass = await this.getRFB();
         if (!RFBClass) {
             badge.textContent = 'Gagal Load Module';
-            badge.className = 'px-2.5 py-1 rounded text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
+            badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
             Toast.error('Gagal memuat modul noVNC. Pastikan PC terhubung ke internet untuk mengunduh library rfb.js');
             return;
         }
@@ -68,13 +70,12 @@ const VNCClient = {
             }
         } catch (err) {
             badge.textContent = 'Gagal Start Service';
-            badge.className = 'px-2.5 py-1 rounded text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
+            badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
             Toast.error('Gagal memulai service VNC: ' + err.message);
             return;
         }
 
         // 2. Tentukan WebSocket URL
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         let url;
         if (window.location.protocol === 'https:') {
             url = `wss://${window.location.host}/ws/vnc`;
@@ -87,9 +88,13 @@ const VNCClient = {
         badge.textContent = 'Menghubungkan...';
 
         try {
+            screen.innerHTML = '';
+            
             this.rfb = new RFBClass(screen, url, {
                 credentials: { password: vncPassword },
-                scaleViewport: this.scaleFactor
+                scaleViewport: this.scaleFactor,
+                clipViewport: false,
+                dragViewport: true
             });
 
             this.rfb.addEventListener('credentialsrequired', () => {
@@ -102,46 +107,56 @@ const VNCClient = {
 
             this.rfb.addEventListener('connect', () => {
                 badge.textContent = 'Terhubung';
-                badge.className = 'px-2.5 py-1 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
                 placeholder.classList.add('hidden');
                 connectBtn.classList.add('hidden');
                 disconnectBtn.classList.remove('hidden');
 
-                // Trigger resize & scale recalculation setelah DOM placeholder hidden
+                // Terapkan mode tampilan & observasi resize
+                this.applyDisplayMode();
+                this.setupResizeObserver();
+
+                // Focus kanvas
                 setTimeout(() => {
                     if (this.rfb) {
-                        this.rfb.scaleViewport = this.scaleFactor;
                         try { this.rfb.focus(); } catch(e) {}
                     }
-                    window.dispatchEvent(new Event('resize'));
                 }, 50);
 
                 Toast.success('Koneksi VNC Server Terhubung');
             });
 
-            // Pastikan saat frame pertama diterima, scaling langsung dipaksa update
-            if (typeof this.rfb.addEventListener === 'function') {
-                this.rfb.addEventListener('firstframe', () => {
-                    if (this.rfb) {
-                        this.rfb.scaleViewport = this.scaleFactor;
-                    }
-                    window.dispatchEvent(new Event('resize'));
-                });
-            }
+            // Tangkap resolusi dari frame pertama
+            this.rfb.addEventListener('firstframe', () => {
+                this.updateResolutionInfo();
+                this.applyDisplayMode();
+            });
+
+            this.rfb.addEventListener('desktopname', () => {
+                this.updateResolutionInfo();
+            });
 
             this.rfb.addEventListener('disconnect', (e) => {
                 badge.textContent = 'Terputus';
-                badge.className = 'px-2.5 py-1 rounded text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700';
+                badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700';
                 placeholder.classList.remove('hidden');
                 connectBtn.classList.remove('hidden');
                 disconnectBtn.classList.add('hidden');
                 
-                // Sembunyikan panel mobile saat terputus
+                // Reset HUD resolusi & panel mobile
+                const resBadge = document.getElementById('vnc-resolution-badge');
+                if (resBadge) resBadge.classList.add('hidden');
+
                 document.getElementById('vnc-virtual-keyboard').classList.add('hidden');
                 const optPanel = document.getElementById('vnc-options-panel');
                 if (optPanel) optPanel.classList.add('hidden');
 
-                if (e.detail.clean) {
+                if (this.resizeObserver) {
+                    this.resizeObserver.disconnect();
+                    this.resizeObserver = null;
+                }
+
+                if (e.detail && e.detail.clean) {
                     Toast.info('Koneksi VNC ditutup');
                 } else {
                     Toast.error('Koneksi VNC terputus (Cek apakah TightVNC Server aktif di 127.0.0.1:5900)');
@@ -150,40 +165,134 @@ const VNCClient = {
 
         } catch (err) {
             badge.textContent = 'Gagal Koneksi';
-            badge.className = 'px-2.5 py-1 rounded text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
+            badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
             Toast.error('Gagal memulai VNC Client: ' + err.message);
         }
     },
 
     disconnect() {
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+            this.resizeObserver = null;
+        }
         if (this.rfb) {
             this.rfb.disconnect();
             this.rfb = null;
         }
         const screen = document.getElementById('vnc-screen');
         if (screen) screen.innerHTML = '';
+        
+        const resBadge = document.getElementById('vnc-resolution-badge');
+        if (resBadge) resBadge.classList.add('hidden');
+    },
+
+    // Deteksi resolusi remote & rasio aspek
+    updateResolutionInfo() {
+        if (!this.rfb) return;
+        const w = this.rfb._fbWidth || (this.rfb._display ? this.rfb._display._fbWidth : 0);
+        const h = this.rfb._fbHeight || (this.rfb._display ? this.rfb._display._fbHeight : 0);
+
+        if (w > 0 && h > 0) {
+            this.remoteResolution = { width: w, height: h };
+            const resBadge = document.getElementById('vnc-resolution-badge');
+            if (resBadge) {
+                const modeText = this.scaleFactor ? 'FIT' : '1:1';
+                resBadge.textContent = `${w} × ${h} (${modeText})`;
+                resBadge.classList.remove('hidden');
+            }
+        }
+    },
+
+    // Terapkan mode tampilan: Scaling ON (Fit) vs Scaling OFF (1:1 Native)
+    applyDisplayMode() {
+        const screen = document.getElementById('vnc-screen');
+        const scaleLabel = document.getElementById('vnc-scale-label');
+        const scaleBtn = document.getElementById('vnc-scale-btn');
+        const resBadge = document.getElementById('vnc-resolution-badge');
+
+        if (this.scaleFactor) {
+            // Mode 1: SCALING ON (Fit to Viewport)
+            // Memenuhi kontainer secara proporsional dengan aspect ratio terkunci
+            if (screen) {
+                screen.className = 'w-full h-full overflow-hidden flex items-center justify-center';
+            }
+            if (scaleLabel) scaleLabel.textContent = 'Fit Layar';
+            if (scaleBtn) {
+                scaleBtn.className = 'flex-1 md:flex-none px-3 py-1.5 bg-emerald-950/40 border border-emerald-800/60 hover:bg-emerald-900/40 text-emerald-400 text-xs lg:text-sm font-bold rounded transition-colors whitespace-nowrap flex items-center gap-1.5 justify-center';
+            }
+            if (this.rfb) {
+                this.rfb.scaleViewport = true;
+            }
+        } else {
+            // Mode 2: SCALING OFF (1:1 Native Resolution)
+            // Resolusi asli 100% dengan scrollable viewport jika melebihi ukuran layar
+            if (screen) {
+                screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
+            }
+            if (scaleLabel) scaleLabel.textContent = '1:1 Asli';
+            if (scaleBtn) {
+                scaleBtn.className = 'flex-1 md:flex-none px-3 py-1.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-sm font-bold rounded transition-colors whitespace-nowrap flex items-center gap-1.5 justify-center';
+            }
+            if (this.rfb) {
+                this.rfb.scaleViewport = false;
+            }
+        }
+
+        // Update teks HUD resolusi
+        if (this.remoteResolution.width > 0 && resBadge) {
+            const modeText = this.scaleFactor ? 'FIT' : '1:1';
+            resBadge.textContent = `${this.remoteResolution.width} × ${this.remoteResolution.height} (${modeText})`;
+        }
+
+        // Pemicu resize event agar noVNC kanvas langsung sinkron
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+            if (this.rfb) {
+                try { this.rfb.focus(); } catch (e) {}
+            }
+        }, 30);
     },
 
     toggleScale() {
         this.scaleFactor = !this.scaleFactor;
-        const scaleBtn = document.getElementById('vnc-scale-btn');
-        if (scaleBtn) {
-            scaleBtn.textContent = this.scaleFactor ? '📐 Scaling On' : '📐 Scaling Off';
+        this.applyDisplayMode();
+    },
+
+    // Observer untuk mendeteksi perubahan ukuran kontainer secara real-time
+    setupResizeObserver() {
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
         }
-        if (this.rfb) {
-            this.rfb.scaleViewport = this.scaleFactor;
-        }
+        const container = document.getElementById('vnc-container');
+        if (!container || typeof ResizeObserver === 'undefined') return;
+
+        let resizeTimeout;
+        this.resizeObserver = new ResizeObserver(() => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (this.rfb && this.scaleFactor) {
+                    this.rfb.scaleViewport = true;
+                }
+                window.dispatchEvent(new Event('resize'));
+            }, 50);
+        });
+
+        this.resizeObserver.observe(container);
     },
 
     toggleFullscreen() {
         const container = document.getElementById('vnc-container');
         if (!container) return;
         if (!document.fullscreenElement) {
-            container.requestFullscreen().catch(err => {
+            container.requestFullscreen().then(() => {
+                setTimeout(() => this.applyDisplayMode(), 100);
+            }).catch(err => {
                 Toast.error('Gagal fullscreen: ' + err.message);
             });
         } else {
-            document.exitFullscreen();
+            document.exitFullscreen().then(() => {
+                setTimeout(() => this.applyDisplayMode(), 100);
+            });
         }
     },
 
@@ -193,7 +302,6 @@ const VNCClient = {
         if (!kb) return;
         if (kb.classList.contains('hidden')) {
             kb.classList.remove('hidden');
-            // Pastikan scroll container focus
             setTimeout(() => {
                 const helper = document.getElementById('vnc-text-helper');
                 if (helper) helper.focus();
