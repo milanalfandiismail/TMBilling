@@ -8,6 +8,7 @@ const VNCClient = {
     remoteResolution: { width: 0, height: 0 },
     keyboardLayout: 'letters', // 'letters' | 'symbols'
     shiftActive: false,
+    zoomLevel: 1.0, // Zoom factor for pinch-to-zoom
     
     // Sticky modifiers state
     modifiers: {
@@ -115,9 +116,11 @@ const VNCClient = {
                 disconnectBtn.classList.remove('hidden');
 
                 // Terapkan mode tampilan & observasi resize
+                this.zoomLevel = 1.0;
                 this.applyDisplayMode();
                 this.setupResizeObserver();
                 this.setupCanvasTouchEmulation();
+                this.setupPinchToZoom();
 
                 // Focus kanvas
                 setTimeout(() => {
@@ -134,6 +137,7 @@ const VNCClient = {
                 this.updateResolutionInfo();
                 this.applyDisplayMode();
                 this.setupCanvasTouchEmulation();
+                this.setupPinchToZoom();
             });
 
             this.rfb.addEventListener('desktopname', () => {
@@ -216,9 +220,10 @@ const VNCClient = {
 
         if (this.scaleFactor) {
             // Mode 1: SCALING ON (Fit to Viewport)
-            // Memenuhi kontainer secara proporsional dengan aspect ratio terkunci
-            if (screen) {
-                screen.className = 'w-full h-full overflow-hidden flex items-center justify-center';
+            if (this.zoomLevel > 1.0) {
+                if (screen) screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
+            } else {
+                if (screen) screen.className = 'w-full h-full overflow-hidden flex items-center justify-center';
             }
             if (scaleLabel) scaleLabel.textContent = 'Fit Layar';
             if (scaleBtn) {
@@ -229,7 +234,6 @@ const VNCClient = {
             }
         } else {
             // Mode 2: SCALING OFF (1:1 Native Resolution)
-            // Resolusi asli 100% dengan scrollable viewport jika melebihi ukuran layar
             if (screen) {
                 screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
             }
@@ -241,6 +245,9 @@ const VNCClient = {
                 this.rfb.scaleViewport = false;
             }
         }
+
+        // Terapkan Zoom visual
+        this.applyZoom();
 
         // Update teks HUD resolusi
         if (this.remoteResolution.width > 0 && resBadge) {
@@ -257,8 +264,43 @@ const VNCClient = {
         }, 30);
     },
 
+    // Mengalkulasi ukuran kanvas berdasarkan zoom level
+    applyZoom() {
+        const screen = document.getElementById('vnc-screen');
+        if (!screen) return;
+        const canvas = screen.querySelector('canvas');
+        if (!canvas || !this.remoteResolution.width) return;
+
+        let originalWidth, originalHeight;
+        if (this.scaleFactor) {
+            const container = document.getElementById('vnc-container');
+            const contW = container.clientWidth;
+            const contH = container.clientHeight;
+            const remoteRatio = this.remoteResolution.width / this.remoteResolution.height;
+            const containerRatio = contW / contH;
+
+            if (remoteRatio > containerRatio) {
+                originalWidth = contW;
+                originalHeight = contW / remoteRatio;
+            } else {
+                originalWidth = contH * remoteRatio;
+                originalHeight = contH;
+            }
+        } else {
+            originalWidth = this.remoteResolution.width;
+            originalHeight = this.remoteResolution.height;
+        }
+
+        const zoomedW = Math.round(originalWidth * this.zoomLevel);
+        const zoomedH = Math.round(originalHeight * this.zoomLevel);
+
+        canvas.style.width = zoomedW + 'px';
+        canvas.style.height = zoomedH + 'px';
+    },
+
     toggleScale() {
         this.scaleFactor = !this.scaleFactor;
+        this.zoomLevel = 1.0;
         this.applyDisplayMode();
     },
 
@@ -277,6 +319,7 @@ const VNCClient = {
                 if (this.rfb && this.scaleFactor) {
                     this.rfb.scaleViewport = true;
                 }
+                this.applyZoom();
                 window.dispatchEvent(new Event('resize'));
             }, 50);
         });
@@ -300,14 +343,13 @@ const VNCClient = {
         }
     },
 
-    // Emulasi Klik Layar Sentuh Lebih Responsif
+    // Emulasi Klik Layar Sentuh Lebih Responsif & Bebas Goyang
     setupCanvasTouchEmulation() {
         const screen = document.getElementById('vnc-screen');
         if (!screen) return;
         const canvas = screen.querySelector('canvas');
         if (!canvas) return;
 
-        // Hindari penumpukan listener
         if (canvas.dataset.touchListenerAttached) return;
         canvas.dataset.touchListenerAttached = 'true';
 
@@ -332,8 +374,7 @@ const VNCClient = {
                 const dy = touchEndY - touchStartY;
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
-                // Jika pergeseran jari kecil (< 15px) dan durasi ketukan singkat (< 300ms),
-                // asumsikan ini adalah ketukan murni (Tap) dan picu klik mouse kiri instan.
+                // Sensitivitas wobble tap (15 piksel)
                 if (elapsed < 300 && dist < 15) {
                     const rect = canvas.getBoundingClientRect();
                     const visualX = touchEndX - rect.left;
@@ -345,10 +386,9 @@ const VNCClient = {
                     const targetX = Math.round(visualX * (remoteW / rect.width));
                     const targetY = Math.round(visualY * (remoteH / rect.height));
 
-                    // Pindahkan kursor secara instan ke koordinat tap
                     this.rfb.sendMousePositions(targetX, targetY);
 
-                    // Kirim sinyal klik (press down dan release up) secara tegas
+                    // Kirim Left Click mousedown & mouseup
                     this.rfb.sendMouseEvents(targetX, targetY, 1);
                     setTimeout(() => {
                         if (this.rfb) {
@@ -356,10 +396,67 @@ const VNCClient = {
                         }
                     }, 40);
 
-                    e.preventDefault(); // Mencegah double tap default browser zoom
+                    e.preventDefault();
                 }
             }
         }, { passive: false });
+    },
+
+    // Pinch to Zoom pada Mobile
+    setupPinchToZoom() {
+        const container = document.getElementById('vnc-container');
+        if (!container) return;
+
+        if (container.dataset.pinchListenerAttached) return;
+        container.dataset.pinchListenerAttached = 'true';
+
+        let touchStartDist = 0;
+        let startZoom = 1.0;
+
+        container.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                touchStartDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                startZoom = this.zoomLevel;
+            }
+        }, { passive: true });
+
+        container.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && touchStartDist > 0) {
+                const currentDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                let newZoom = startZoom * (currentDist / touchStartDist);
+                // Limit zoom 1.0x s/d 3.0x
+                newZoom = Math.max(1.0, Math.min(3.0, newZoom));
+                this.zoomLevel = newZoom;
+                
+                // Atur class screen agar scrollbar muncul bila dizoom
+                const screen = document.getElementById('vnc-screen');
+                if (screen) {
+                    if (newZoom > 1.0) {
+                        screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
+                    } else {
+                        if (this.scaleFactor) {
+                            screen.className = 'w-full h-full overflow-hidden flex items-center justify-center';
+                        } else {
+                            screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
+                        }
+                    }
+                }
+
+                this.applyZoom();
+            }
+        }, { passive: true });
+
+        container.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) {
+                touchStartDist = 0;
+            }
+        }, { passive: true });
     },
 
     // Mobile Virtual Keyboard Toggle
@@ -405,15 +502,15 @@ const VNCClient = {
             ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
             ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
             [
-                { label: '⇧', action: 'shift', style: 'bg-neutral-800 border-neutral-700 min-w-[36px]' },
+                { label: '⇧', action: 'shift', style: 'bg-[#222] border-neutral-700 min-w-[36px]' },
                 'z', 'x', 'c', 'v', 'b', 'n', 'm',
-                { label: '⌫', action: 'backspace', style: 'bg-neutral-800 border-neutral-700 min-w-[36px]' }
+                { label: '⌫', action: 'backspace', style: 'bg-[#222] border-neutral-700 min-w-[36px]' }
             ],
             [
-                { label: 'Esc', action: 'esc', style: 'bg-neutral-800 border-neutral-700' },
-                { label: 'Tab', action: 'tab', style: 'bg-neutral-800 border-neutral-700' },
+                { label: 'Esc', action: 'esc', style: 'bg-[#222] border-neutral-700' },
+                { label: 'Tab', action: 'tab', style: 'bg-[#222] border-neutral-700' },
                 { label: 'Spasi', action: 'space', style: 'flex-[2.5]' },
-                { label: 'Enter', action: 'enter', style: 'bg-neutral-800 border-neutral-700' }
+                { label: 'Enter', action: 'enter', style: 'bg-[#222] border-neutral-700' }
             ]
         ];
     },
@@ -425,10 +522,10 @@ const VNCClient = {
             ['[', ']', '{', '}', '#', '%', '^', '*', '+', '='],
             ['_', '\\', '|', '~', '<', '>', ',', '.', '?', '!'],
             [
-                { label: 'Esc', action: 'esc', style: 'bg-neutral-800 border-neutral-700' },
-                { label: '⌫', action: 'backspace', style: 'bg-neutral-800 border-neutral-700' },
+                { label: 'Esc', action: 'esc', style: 'bg-[#222] border-neutral-700' },
+                { label: '⌫', action: 'backspace', style: 'bg-[#222] border-neutral-700' },
                 { label: 'Spasi', action: 'space', style: 'flex-[2.5]' },
-                { label: 'Enter', action: 'enter', style: 'bg-neutral-800 border-neutral-700' }
+                { label: 'Enter', action: 'enter', style: 'bg-[#222] border-neutral-700' }
             ]
         ];
     },
@@ -447,32 +544,16 @@ const VNCClient = {
             row.forEach(key => {
                 const btn = document.createElement('button');
                 let label;
-                let btnClass = 'py-2 px-1 rounded text-neutral-200 bg-[#141414] hover:bg-[#222] border border-[#222] transition-colors text-xs text-center flex-1 active:scale-[0.98] select-none touch-manipulation font-semibold';
+                let btnClass = 'py-2 px-1 rounded text-neutral-200 bg-[#141414] border border-[#222] transition-colors text-xs text-center flex-1 select-none touch-manipulation font-semibold active:scale-[0.98]';
 
                 if (typeof key === 'string') {
                     const displayChar = this.shiftActive && this.keyboardLayout === 'letters' ? key.toUpperCase() : key;
                     label = displayChar;
-                    btn.onclick = () => this.sendKeyChar(displayChar);
+                    this.bindVirtualKeyEvents(btn, key);
                 } else {
                     label = key.label;
                     if (key.style) btnClass += ' ' + key.style;
-                    
-                    if (key.action === 'shift') {
-                        if (this.shiftActive) {
-                            btnClass = btnClass.replace('bg-neutral-800', 'bg-neutral-200 text-black border-white');
-                        }
-                        btn.onclick = () => this.toggleKeyboardShift();
-                    } else if (key.action === 'backspace') {
-                        btn.onclick = () => this.sendSpecialKey(0xff08);
-                    } else if (key.action === 'tab') {
-                        btn.onclick = () => this.sendSpecialKey(0xff09);
-                    } else if (key.action === 'space') {
-                        btn.onclick = () => this.sendSpecialKey(0x0020);
-                    } else if (key.action === 'enter') {
-                        btn.onclick = () => this.sendSpecialKey(0xff0d);
-                    } else if (key.action === 'esc') {
-                        btn.onclick = () => this.sendSpecialKey(0xff1b);
-                    }
+                    this.bindVirtualKeyEvents(btn, key);
                 }
 
                 btn.className = btnClass;
@@ -484,18 +565,72 @@ const VNCClient = {
         });
     },
 
-    sendKeyChar(char) {
-        if (!this.rfb) return;
-        const keysym = char.charCodeAt(0);
-        this.rfb.sendKey(keysym, null, true);
-        this.rfb.sendKey(keysym, null, false);
-        
-        // Auto-turn off Shift setelah mengetik huruf kapital
-        if (this.shiftActive && this.keyboardLayout === 'letters') {
-            this.shiftActive = false;
-            this.renderKeyboardKeys();
+    // Mengikat event pointerdown & pointerup/pointerleave untuk emulasi tactile & instant response
+    bindVirtualKeyEvents(btn, charOrKeyInfo) {
+        let keysym;
+        let isChar = false;
+        let charVal = '';
+
+        if (typeof charOrKeyInfo === 'string') {
+            isChar = true;
+            charVal = this.shiftActive && this.keyboardLayout === 'letters' ? charOrKeyInfo.toUpperCase() : charOrKeyInfo;
+            keysym = charVal.charCodeAt(0);
+        } else {
+            if (charOrKeyInfo.action === 'shift') {
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    this.toggleKeyboardShift();
+                };
+                // Cegah double tap zoom default mobile
+                btn.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+                return;
+            }
+            if (charOrKeyInfo.action === 'backspace') keysym = 0xff08;
+            else if (charOrKeyInfo.action === 'tab') keysym = 0xff09;
+            else if (charOrKeyInfo.action === 'space') keysym = 0x0020;
+            else if (charOrKeyInfo.action === 'enter') keysym = 0xff0d;
+            else if (charOrKeyInfo.action === 'esc') keysym = 0xff1b;
         }
-        this.releaseModifiers();
+
+        const handlePress = (e) => {
+            e.preventDefault();
+            if (!this.rfb) return;
+
+            // Efek visual langsung ketika ditekan ("tekan sampai berwarna")
+            btn.classList.add('bg-neutral-200', 'text-black', 'border-white');
+            btn.classList.remove('bg-[#141414]', 'text-neutral-200', 'border-[#222]', 'bg-[#222]');
+
+            // Kirim sinyal key down
+            this.rfb.sendKey(keysym, null, true);
+        };
+
+        const handleRelease = (e) => {
+            e.preventDefault();
+            if (!this.rfb) return;
+
+            // Kembalikan efek visual tombol ketika dilepas
+            btn.classList.remove('bg-neutral-200', 'text-black', 'border-white');
+            if (typeof charOrKeyInfo !== 'string' && charOrKeyInfo.style && charOrKeyInfo.style.includes('bg-[#222]')) {
+                btn.classList.add('bg-[#222]', 'text-neutral-200', 'border-[#222]');
+            } else {
+                btn.classList.add('bg-[#141414]', 'text-neutral-200', 'border-[#222]');
+            }
+
+            // Kirim sinyal key up
+            this.rfb.sendKey(keysym, null, false);
+
+            // Auto-turn off Shift setelah karakter huruf dilepaskan
+            if (isChar && this.shiftActive && this.keyboardLayout === 'letters') {
+                this.shiftActive = false;
+                this.renderKeyboardKeys();
+            }
+            this.releaseModifiers();
+        };
+
+        btn.addEventListener('pointerdown', handlePress);
+        btn.addEventListener('pointerup', handleRelease);
+        btn.addEventListener('pointerleave', handleRelease);
+        btn.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
     },
 
     // Mobile Options Panel Toggle
