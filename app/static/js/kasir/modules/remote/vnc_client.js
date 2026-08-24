@@ -38,16 +38,35 @@ const VNCClient = {
         }
     },
 
-    // Helper untuk mengirimkan synthetic MouseEvent langsung ke canvas noVNC
+    // Helper untuk mengirimkan synthetic MouseEvent langsung ke canvas noVNC dengan kompensasi Zoom & Pan
     dispatchCanvasMouse(type, clientX, clientY, button = 0, buttons = 0) {
         const screen = document.getElementById('vnc-screen');
         if (!screen) return;
         const canvas = screen.querySelector('canvas');
         if (!canvas) return;
 
+        const rect = canvas.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+
+        // Hitung persentase relatif (0.0 sampai 1.0) pada bounding box yang terlihat di layar
+        const relX = (clientX - rect.left) / rect.width;
+        const relY = (clientY - rect.top) / rect.height;
+
+        // Clamp agar tidak keluar dari area kanvas
+        const clampedRelX = Math.max(0, Math.min(1, relX));
+        const clampedRelY = Math.max(0, Math.min(1, relY));
+
+        // Dapatkan ukuran dasar (unscaled) kanvas noVNC
+        const baseW = canvas.offsetWidth || (rect.width / (this.zoomLevel || 1.0));
+        const baseH = canvas.offsetHeight || (rect.height / (this.zoomLevel || 1.0));
+
+        // Hitung koordinat client sintetis yang dipahami noVNC clientToElement
+        const syntheticClientX = rect.left + (clampedRelX * baseW);
+        const syntheticClientY = rect.top + (clampedRelY * baseH);
+
         const ev = new MouseEvent(type, {
-            clientX: clientX,
-            clientY: clientY,
+            clientX: syntheticClientX,
+            clientY: syntheticClientY,
             button: button,
             buttons: buttons,
             bubbles: true,
@@ -520,7 +539,8 @@ const VNCClient = {
                 const dy = touch.clientY - touchStartY;
                 const dist = Math.hypot(dx, dy);
 
-                if (dist > 8) {
+                // Gunakan threshold 15px untuk anti-wobble
+                if (dist > 15) {
                     if (longPressTimer) {
                         clearTimeout(longPressTimer);
                         longPressTimer = null;
@@ -580,8 +600,8 @@ const VNCClient = {
                 const dy = touch.clientY - touchStartY;
                 const dist = Math.hypot(dx, dy);
 
-                // Tap Cepat (< 400ms dan dist < 12px) -> Left Click
-                if (elapsed < 400 && dist < 12) {
+                // Tap Cepat (< 450ms dan dist < 15px) -> Left Click Akurat
+                if (elapsed < 450 && dist < 15) {
                     this.dispatchCanvasMouse('mousemove', touch.clientX, touch.clientY, 0, 0);
                     this.dispatchCanvasMouse('mousedown', touch.clientX, touch.clientY, 0, 1);
                     setTimeout(() => {
