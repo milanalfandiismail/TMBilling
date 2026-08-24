@@ -47,5 +47,10 @@
         white-space: nowrap;
         animation: marquee 35s linear infinite;
     }
+
+    /* Mobile-only VNC cursor hiding */
+    .vnc-mobile-mode, .vnc-mobile-mode *, .vnc-mobile-mode canvas {
+        cursor: none !important;
+    }
 }
 

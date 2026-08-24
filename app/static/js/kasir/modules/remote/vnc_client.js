@@ -38,6 +38,36 @@ const VNCClient = {
         }
     },
 
+    // Deteksi apakah user membuka dari HP / Layar Sentuh
+    isMobileDevice() {
+        return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    },
+
+    // Menonaktifkan layer kursor lokal noVNC jika di mobile
+    enforceMobileCursorBehavior() {
+        const container = document.getElementById('vnc-container');
+        if (this.isMobileDevice()) {
+            if (container) container.classList.add('vnc-mobile-mode');
+            if (this.rfb) {
+                this.rfb.showDotCursor = false;
+                this.rfb._refreshCursor = function() {};
+                if (this.rfb._cursor) {
+                    try {
+                        this.rfb._cursor.detach();
+                        this.rfb._cursor.show = function() {};
+                        this.rfb._cursor.change = function() {};
+                        this.rfb._cursor.move = function() {};
+                        if (this.rfb._cursor._canvas) {
+                            this.rfb._cursor._canvas.style.display = 'none';
+                        }
+                    } catch(e) {}
+                }
+            }
+        } else {
+            if (container) container.classList.remove('vnc-mobile-mode');
+        }
+    },
+
     // Helper untuk mengirimkan synthetic MouseEvent langsung ke canvas noVNC dengan kompensasi Zoom & Pan
     dispatchCanvasMouse(type, clientX, clientY, button = 0, buttons = 0) {
         const screen = document.getElementById('vnc-screen');
@@ -138,7 +168,8 @@ const VNCClient = {
                 credentials: { password: vncPassword },
                 scaleViewport: this.scaleFactor,
                 clipViewport: false,
-                dragViewport: false
+                dragViewport: false,
+                showDotCursor: false
             });
 
             this.rfb.addEventListener('credentialsrequired', () => {
@@ -161,11 +192,12 @@ const VNCClient = {
                     try { this.rfb._gestures.detach(); } catch(e) {}
                 }
 
-                // Terapkan mode tampilan, observer, dan touch controller terpadu
+                // Terapkan mode tampilan, observer, cursor behavior, dan touch controller terpadu
                 this.zoomLevel = 1.0;
                 this.panX = 0;
                 this.panY = 0;
                 this.isPinchZooming = false;
+                this.enforceMobileCursorBehavior();
                 this.applyDisplayMode();
                 this.setupResizeObserver();
                 this.setupCanvasTouchEmulation();
@@ -183,6 +215,7 @@ const VNCClient = {
             // Tangkap resolusi dari frame pertama
             this.rfb.addEventListener('firstframe', () => {
                 this.updateResolutionInfo();
+                this.enforceMobileCursorBehavior();
                 this.applyDisplayMode();
                 this.setupCanvasTouchEmulation();
             });
@@ -345,6 +378,9 @@ const VNCClient = {
                 this.rfb.scaleViewport = false;
             }
         }
+
+        // Terapkan perilaku kursor mobile
+        this.enforceMobileCursorBehavior();
 
         // Terapkan transformasi zoom
         this.applyTransform(false);
