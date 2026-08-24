@@ -140,13 +140,12 @@ const VNCClient = {
                     try { this.rfb._gestures.detach(); } catch(e) {}
                 }
 
-                // Terapkan mode tampilan, observer, dan touch controller
+                // Terapkan mode tampilan, observer, dan touch controller terpadu
                 this.zoomLevel = 1.0;
                 this.isPinchZooming = false;
                 this.applyDisplayMode();
                 this.setupResizeObserver();
                 this.setupCanvasTouchEmulation();
-                this.setupPinchToZoom();
 
                 // Focus kanvas
                 setTimeout(() => {
@@ -163,7 +162,6 @@ const VNCClient = {
                 this.updateResolutionInfo();
                 this.applyDisplayMode();
                 this.setupCanvasTouchEmulation();
-                this.setupPinchToZoom();
             });
 
             this.rfb.addEventListener('desktopname', () => {
@@ -300,31 +298,35 @@ const VNCClient = {
         const canvas = screen.querySelector('canvas');
         if (!canvas || !this.remoteResolution.width) return;
 
-        let originalWidth, originalHeight;
+        const container = document.getElementById('vnc-container');
+        const contW = container.clientWidth || window.innerWidth;
+        const contH = container.clientHeight || (window.innerHeight - 100);
+
+        let baseW, baseH;
         if (this.scaleFactor) {
-            const container = document.getElementById('vnc-container');
-            const contW = container.clientWidth;
-            const contH = container.clientHeight;
             const remoteRatio = this.remoteResolution.width / this.remoteResolution.height;
             const containerRatio = contW / contH;
 
             if (remoteRatio > containerRatio) {
-                originalWidth = contW;
-                originalHeight = contW / remoteRatio;
+                baseW = contW;
+                baseH = contW / remoteRatio;
             } else {
-                originalWidth = contH * remoteRatio;
-                originalHeight = contH;
+                baseW = contH * remoteRatio;
+                baseH = contH;
             }
         } else {
-            originalWidth = this.remoteResolution.width;
-            originalHeight = this.remoteResolution.height;
+            baseW = this.remoteResolution.width;
+            baseH = this.remoteResolution.height;
         }
 
-        const zoomedW = Math.round(originalWidth * this.zoomLevel);
-        const zoomedH = Math.round(originalHeight * this.zoomLevel);
+        const zoomedW = Math.round(baseW * this.zoomLevel);
+        const zoomedH = Math.round(baseH * this.zoomLevel);
 
         canvas.style.width = zoomedW + 'px';
         canvas.style.height = zoomedH + 'px';
+        canvas.style.maxWidth = 'none';
+        canvas.style.maxHeight = 'none';
+        canvas.style.flexShrink = '0';
     },
 
     toggleScale() {
@@ -372,16 +374,16 @@ const VNCClient = {
         }
     },
 
-    // Emulasi Touch Android Responsif (Chrome Remote Desktop Touch Mode)
-    // Menggunakan synthetic MouseEvent yang diteruskan ke noVNC canvas
+    // Unified Mobile Touch Handler (Chrome Remote Desktop Style)
+    // Mengintegrasikan 1-Finger Tap/Drag/Long-Press & 2-Finger Pinch to Zoom
     setupCanvasTouchEmulation() {
         const screen = document.getElementById('vnc-screen');
         if (!screen) return;
         const canvas = screen.querySelector('canvas');
         if (!canvas) return;
 
-        if (canvas.dataset.touchEmulationV4Attached) return;
-        canvas.dataset.touchEmulationV4Attached = 'true';
+        if (canvas.dataset.touchEmulationUnifiedAttached) return;
+        canvas.dataset.touchEmulationUnifiedAttached = 'true';
 
         let touchStartX = 0;
         let touchStartY = 0;
@@ -392,16 +394,33 @@ const VNCClient = {
         let initialScrollX = 0;
         let initialScrollY = 0;
 
-        // Tangkap di Capture Phase untuk mengisolasi gestur sentuh dari handler noVNC
+        // Variabel untuk 2-Finger Pinch Zoom
+        let touchStartDist = 0;
+        let startZoom = 1.0;
+        let initialFocalX = 0;
+        let initialFocalY = 0;
+
+        // 1. TOUCHSTART
         canvas.addEventListener('touchstart', (e) => {
-            // Multi-touch: Gestur Zoom (2 Jari)
+            // Mode 2 Jari: Mulai Pinch to Zoom
             if (e.touches.length >= 2) {
                 if (longPressTimer) clearTimeout(longPressTimer);
                 this.isPinchZooming = true;
+                touchStartDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                startZoom = this.zoomLevel;
+
+                initialFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                initialFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+                e.preventDefault();
                 e.stopPropagation();
                 return;
             }
 
+            // Mode 1 Jari: Tap / Pan / Long-Press
             if (e.touches.length === 1) {
                 this.isPinchZooming = false;
                 isLongPress = false;
@@ -414,10 +433,10 @@ const VNCClient = {
                 initialScrollX = screen.scrollLeft;
                 initialScrollY = screen.scrollTop;
 
-                // Gerakkan posisi mouse hover secara instan ke koordinat tap
+                // Gerakkan kursor ke posisi sentuhan
                 this.dispatchCanvasMouse('mousemove', touch.clientX, touch.clientY, 0, 0);
 
-                // Long-Press timer untuk Klik Kanan (500ms tanpa bergeser)
+                // Long-Press timer untuk Klik Kanan (500ms)
                 if (longPressTimer) clearTimeout(longPressTimer);
                 longPressTimer = setTimeout(() => {
                     isLongPress = true;
@@ -437,20 +456,60 @@ const VNCClient = {
             }
         }, { capture: true, passive: false });
 
+        // 2. TOUCHMOVE
         canvas.addEventListener('touchmove', (e) => {
-            if (e.touches.length >= 2 || this.isPinchZooming) {
+            // Mode 2 Jari: Eksekusi Pinch to Zoom
+            if (e.touches.length >= 2) {
                 if (longPressTimer) clearTimeout(longPressTimer);
+                this.isPinchZooming = true;
+                e.preventDefault();
                 e.stopPropagation();
+
+                if (touchStartDist > 0) {
+                    const currentDist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    const currentFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    const currentFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+                    const rect = canvas.getBoundingClientRect();
+                    const relX = (currentFocalX - rect.left) / rect.width;
+                    const relY = (currentFocalY - rect.top) / rect.height;
+
+                    let newZoom = startZoom * (currentDist / touchStartDist);
+                    newZoom = Math.max(1.0, Math.min(4.0, newZoom));
+                    this.zoomLevel = newZoom;
+
+                    if (newZoom > 1.0) {
+                        screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
+                    } else {
+                        if (this.scaleFactor) {
+                            screen.className = 'w-full h-full overflow-hidden flex items-center justify-center';
+                        } else {
+                            screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
+                        }
+                    }
+
+                    this.applyZoom();
+
+                    const newRect = canvas.getBoundingClientRect();
+                    screen.scrollLeft = (relX * newRect.width) - (currentFocalX - screen.getBoundingClientRect().left);
+                    screen.scrollTop = (relY * newRect.height) - (currentFocalY - screen.getBoundingClientRect().top);
+                }
                 return;
             }
 
+            // Mode 1 Jari: Panning Viewport
             if (e.touches.length === 1) {
+                if (this.isPinchZooming) return;
+
                 const touch = e.touches[0];
                 const dx = touch.clientX - touchStartX;
                 const dy = touch.clientY - touchStartY;
                 const dist = Math.hypot(dx, dy);
 
-                // Jika pergeseran jari > 8px, batalkan long-press dan lakukan pan viewport
+                // Pergeseran > 8px = pan/scroll
                 if (dist > 8) {
                     if (longPressTimer) {
                         clearTimeout(longPressTimer);
@@ -458,7 +517,6 @@ const VNCClient = {
                     }
                     isDragging = true;
 
-                    // Jika sedang zoom in (> 1.0x) atau mode 1:1, geser scroll layar (Pan Viewport)
                     if (this.zoomLevel > 1.0 || !this.scaleFactor) {
                         screen.scrollLeft = initialScrollX - dx;
                         screen.scrollTop = initialScrollY - dy;
@@ -470,21 +528,26 @@ const VNCClient = {
             }
         }, { capture: true, passive: false });
 
+        // 3. TOUCHEND
         canvas.addEventListener('touchend', (e) => {
             if (longPressTimer) {
                 clearTimeout(longPressTimer);
                 longPressTimer = null;
             }
 
+            if (e.touches.length < 2) {
+                touchStartDist = 0;
+            }
+
             if (this.isPinchZooming) {
                 if (e.touches.length === 0) {
                     this.isPinchZooming = false;
                 }
+                e.preventDefault();
                 e.stopPropagation();
                 return;
             }
 
-            // Jika sudah memicu Long-Press atau sedang dragging pan, batalkan tap left-click
             if (isLongPress || isDragging) {
                 e.stopPropagation();
                 e.preventDefault();
@@ -500,7 +563,6 @@ const VNCClient = {
 
                 // Tap Cepat Responsif (< 400ms dan dist < 12px)
                 if (elapsed < 400 && dist < 12) {
-                    // Kirim Left Click Down + Left Click Up secara instan melalui dispatchCanvasMouse
                     this.dispatchCanvasMouse('mousemove', touch.clientX, touch.clientY, 0, 0);
                     this.dispatchCanvasMouse('mousedown', touch.clientX, touch.clientY, 0, 1);
                     setTimeout(() => {
@@ -511,88 +573,6 @@ const VNCClient = {
                 }
 
                 e.stopPropagation();
-            }
-        }, { capture: true, passive: false });
-    },
-
-    // Pinch to Zoom Terpusat pada Titik Cubitan Jari (Focal Point)
-    setupPinchToZoom() {
-        const container = document.getElementById('vnc-container');
-        const screen = document.getElementById('vnc-screen');
-        if (!container || !screen) return;
-
-        if (container.dataset.pinchListenerV4Attached) return;
-        container.dataset.pinchListenerV4Attached = 'true';
-
-        let touchStartDist = 0;
-        let startZoom = 1.0;
-        let initialFocalX = 0;
-        let initialFocalY = 0;
-
-        container.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 2) {
-                this.isPinchZooming = true;
-                touchStartDist = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                startZoom = this.zoomLevel;
-
-                initialFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-                initialFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-                e.stopPropagation();
-            }
-        }, { capture: true, passive: false });
-
-        container.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 2 && touchStartDist > 0) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                e.stopPropagation();
-
-                const currentDist = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                
-                const currentFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-                const currentFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-
-                const canvas = screen.querySelector('canvas');
-                if (!canvas) return;
-
-                const rect = canvas.getBoundingClientRect();
-                const relX = (currentFocalX - rect.left) / rect.width;
-                const relY = (currentFocalY - rect.top) / rect.height;
-
-                let newZoom = startZoom * (currentDist / touchStartDist);
-                newZoom = Math.max(1.0, Math.min(3.5, newZoom));
-                this.zoomLevel = newZoom;
-                
-                if (newZoom > 1.0) {
-                    screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
-                } else {
-                    if (this.scaleFactor) {
-                        screen.className = 'w-full h-full overflow-hidden flex items-center justify-center';
-                    } else {
-                        screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
-                    }
-                }
-
-                this.applyZoom();
-
-                const newRect = canvas.getBoundingClientRect();
-                screen.scrollLeft = (relX * newRect.width) - (currentFocalX - screen.getBoundingClientRect().left);
-                screen.scrollTop = (relY * newRect.height) - (currentFocalY - screen.getBoundingClientRect().top);
-            }
-        }, { capture: true, passive: false });
-
-        container.addEventListener('touchend', (e) => {
-            if (e.touches.length < 2) {
-                touchStartDist = 0;
-                if (e.touches.length === 0) {
-                    this.isPinchZooming = false;
-                }
             }
         }, { capture: true, passive: false });
     },
