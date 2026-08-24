@@ -94,67 +94,62 @@
             </div>
         </div>
 
-        <!-- Virtual Quick Keyboard & Text Input Helper Dock (Mobile Only) -->
-        <div id="vnc-virtual-keyboard" class="hidden md:hidden bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-2.5 space-y-2 shrink-0">
-            <!-- Text Input Helper Row -->
-            <div class="flex items-center gap-1.5">
-                <input type="text" id="vnc-text-helper" placeholder="Ketik teks untuk dikirim ke VNC..."
-                    class="flex-1 px-2.5 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500">
-                <button onclick="VNCClient.sendTextHelper()"
-                    class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded transition-colors shrink-0">
-                    Kirim
-                </button>
-            </div>
-
-            <!-- Modifier & Sticky Keys -->
-            <div class="flex flex-wrap items-center gap-1">
-                <button id="vnc-key-ctrl" onclick="VNCClient.toggleModifier('Ctrl')"
-                    class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">
-                    Ctrl
-                </button>
-                <button id="vnc-key-alt" onclick="VNCClient.toggleModifier('Alt')"
-                    class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">
-                    Alt
-                </button>
-                <button id="vnc-key-win" onclick="VNCClient.toggleModifier('Win')"
-                    class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">
-                    Win
-                </button>
-                <button id="vnc-key-shift" onclick="VNCClient.toggleModifier('Shift')"
-                    class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">
-                    Shift
-                </button>
-                <button onclick="VNCClient.sendCtrlAltDel()"
-                    class="px-2 py-1.5 bg-red-950/40 hover:bg-red-900/40 border border-red-900/60 text-red-400 text-[10px] font-bold rounded transition-colors">
-                    CAD
-                </button>
-            </div>
-
-            <!-- Standard Essential Keys -->
-            <div class="flex flex-wrap items-center gap-1">
-                <button onclick="VNCClient.sendSpecialKey(0xff1b)" class="flex-1 py-1 bg-[#171717] border border-[#262626] text-neutral-300 text-[10px] rounded">Esc</button>
-                <button onclick="VNCClient.sendSpecialKey(0xff09)" class="flex-1 py-1 bg-[#171717] border border-[#262626] text-neutral-300 text-[10px] rounded">Tab</button>
-                <button onclick="VNCClient.sendSpecialKey(0xff0d)" class="flex-1 py-1 bg-[#171717] border border-[#262626] text-neutral-300 text-[10px] rounded">Enter</button>
-                <button onclick="VNCClient.sendSpecialKey(0xff08)" class="flex-1 py-1 bg-[#171717] border border-[#262626] text-neutral-300 text-[10px] rounded">Bksp</button>
-                <button onclick="VNCClient.sendSpecialKey(0xffff)" class="flex-1 py-1 bg-[#171717] border border-[#262626] text-neutral-300 text-[10px] rounded">Del</button>
-                <button onclick="VNCClient.sendSpecialKey(0x0020)" class="flex-2 py-1 bg-[#171717] border border-[#262626] text-neutral-300 text-[10px] rounded">Space</button>
-            </div>
-
-            <!-- Short Presets & Direction Arrows -->
-            <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center gap-1">
-                    <button onclick="VNCClient.sendShortcutPreset('Win+R')" class="px-2 py-1 bg-[#121212] border border-[#222] text-neutral-400 text-[9px] rounded">Win+R</button>
-                    <button onclick="VNCClient.sendShortcutPreset('Win+D')" class="px-2 py-1 bg-[#121212] border border-[#222] text-neutral-400 text-[9px] rounded">Win+D</button>
-                    <button onclick="VNCClient.sendShortcutPreset('Alt+Tab')" class="px-2 py-1 bg-[#121212] border border-[#222] text-neutral-400 text-[9px] rounded">Alt+Tab</button>
-                    <button onclick="VNCClient.sendShortcutPreset('Alt+F4')" class="px-2 py-1 bg-[#121212] border border-[#222] text-neutral-400 text-[9px] rounded">Alt+F4</button>
+        <!-- Virtual QWERTY Keyboard Dock (Mobile Only) -->
+        <div id="vnc-virtual-keyboard" class="hidden md:hidden bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-2 md:p-2.5 space-y-2 shrink-0 select-none">
+            <!-- Header Tab Selector & Tutup -->
+            <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-1.5">
+                <div class="flex items-center gap-1.5">
+                    <button onclick="VNCClient.switchKeyboardLayout('letters')" id="vnc-kb-tab-letters"
+                        class="px-3 py-1 text-[10px] font-bold rounded bg-neutral-200 text-black transition-colors">
+                        Abc
+                    </button>
+                    <button onclick="VNCClient.switchKeyboardLayout('symbols')" id="vnc-kb-tab-symbols"
+                        class="px-3 py-1 text-[10px] font-bold rounded bg-[#171717] border border-[#262626] text-neutral-400 hover:bg-[#222] transition-colors">
+                        123 / Simbol
+                    </button>
                 </div>
-                <div class="grid grid-cols-3 gap-0.5 w-24 shrink-0">
-                    <div></div>
-                    <button onclick="VNCClient.sendSpecialKey(0xff52)" class="py-1 bg-[#1c1c1c] text-neutral-300 text-center rounded text-[10px]">▲</button>
-                    <div></div>
-                    <button onclick="VNCClient.sendSpecialKey(0xff51)" class="py-1 bg-[#1c1c1c] text-neutral-300 text-center rounded text-[10px]">◀</button>
-                    <button onclick="VNCClient.sendSpecialKey(0xff54)" class="py-1 bg-[#1c1c1c] text-neutral-300 text-center rounded text-[10px]">▼</button>
-                    <button onclick="VNCClient.sendSpecialKey(0xff53)" class="py-1 bg-[#1c1c1c] text-neutral-300 text-center rounded text-[10px]">▶</button>
+                <div class="flex items-center gap-1">
+                    <button onclick="VNCClient.sendCtrlAltDel()"
+                        class="px-2 py-1 bg-red-950/40 hover:bg-red-900/40 border border-red-900/60 text-red-400 text-[10px] font-bold rounded transition-colors">
+                        CAD
+                    </button>
+                    <button onclick="VNCClient.toggleVirtualKeyboard()"
+                        class="px-2.5 py-1 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-[10px] font-bold rounded transition-colors">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic Keys Layout Grid (Rendered by JS) -->
+            <div id="vnc-kb-keys-grid" class="flex flex-col gap-1 w-full font-mono"></div>
+
+            <!-- Persistent Modifiers & Directional Controls -->
+            <div class="flex items-center justify-between gap-3 border-t border-[#1c1c1c] pt-2">
+                <div class="flex items-center gap-1 flex-1">
+                    <button id="vnc-key-ctrl" onclick="VNCClient.toggleModifier('Ctrl')"
+                        class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">
+                        Ctrl
+                    </button>
+                    <button id="vnc-key-alt" onclick="VNCClient.toggleModifier('Alt')"
+                        class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">
+                        Alt
+                    </button>
+                    <button id="vnc-key-win" onclick="VNCClient.toggleModifier('Win')"
+                        class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">
+                        Win
+                    </button>
+                </div>
+
+                <!-- Short Shortcuts & Arrow Keys -->
+                <div class="flex items-center gap-2 shrink-0">
+                    <div class="flex items-center gap-0.5">
+                        <button onclick="VNCClient.sendSpecialKey(0xff51)" class="w-8 py-1.5 bg-[#1c1c1c] hover:bg-[#252525] text-neutral-300 text-center rounded text-xs">◀</button>
+                        <div class="flex flex-col gap-0.5">
+                            <button onclick="VNCClient.sendSpecialKey(0xff52)" class="w-8 py-1 bg-[#1c1c1c] hover:bg-[#252525] text-neutral-300 text-center rounded text-[10px]">▲</button>
+                            <button onclick="VNCClient.sendSpecialKey(0xff54)" class="w-8 py-1 bg-[#1c1c1c] hover:bg-[#252525] text-neutral-300 text-center rounded text-[10px]">▼</button>
+                        </div>
+                        <button onclick="VNCClient.sendSpecialKey(0xff53)" class="w-8 py-1.5 bg-[#1c1c1c] hover:bg-[#252525] text-neutral-300 text-center rounded text-xs">▶</button>
+                    </div>
                 </div>
             </div>
         </div>

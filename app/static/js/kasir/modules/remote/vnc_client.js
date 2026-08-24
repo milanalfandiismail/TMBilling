@@ -6,6 +6,8 @@ const VNCClient = {
     RFBClass: null,
     resizeObserver: null,
     remoteResolution: { width: 0, height: 0 },
+    keyboardLayout: 'letters', // 'letters' | 'symbols'
+    shiftActive: false,
     
     // Sticky modifiers state
     modifiers: {
@@ -302,13 +304,133 @@ const VNCClient = {
         if (!kb) return;
         if (kb.classList.contains('hidden')) {
             kb.classList.remove('hidden');
-            setTimeout(() => {
-                const helper = document.getElementById('vnc-text-helper');
-                if (helper) helper.focus();
-            }, 50);
+            this.switchKeyboardLayout('letters');
         } else {
             kb.classList.add('hidden');
         }
+    },
+
+    // Switch Keyboard Layout & Render
+    switchKeyboardLayout(layout) {
+        this.keyboardLayout = layout;
+
+        const tabLetters = document.getElementById('vnc-kb-tab-letters');
+        const tabSymbols = document.getElementById('vnc-kb-tab-symbols');
+
+        if (tabLetters && tabSymbols) {
+            if (layout === 'letters') {
+                tabLetters.className = 'px-3 py-1 text-[10px] font-bold rounded bg-neutral-200 text-black transition-colors';
+                tabSymbols.className = 'px-3 py-1 text-[10px] font-bold rounded bg-[#171717] border border-[#262626] text-neutral-400 hover:bg-[#222] transition-colors';
+            } else {
+                tabLetters.className = 'px-3 py-1 text-[10px] font-bold rounded bg-[#171717] border border-[#262626] text-neutral-400 hover:bg-[#222] transition-colors';
+                tabSymbols.className = 'px-3 py-1 text-[10px] font-bold rounded bg-neutral-200 text-black transition-colors';
+            }
+        }
+
+        this.renderKeyboardKeys();
+    },
+
+    toggleKeyboardShift() {
+        this.shiftActive = !this.shiftActive;
+        this.renderKeyboardKeys();
+    },
+
+    getLettersRows() {
+        return [
+            ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+            ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+            [
+                { label: '⇧', action: 'shift', style: 'bg-neutral-800 border-neutral-700 min-w-[36px]' },
+                'z', 'x', 'c', 'v', 'b', 'n', 'm',
+                { label: '⌫', action: 'backspace', style: 'bg-neutral-800 border-neutral-700 min-w-[36px]' }
+            ],
+            [
+                { label: 'Esc', action: 'esc', style: 'bg-neutral-800 border-neutral-700' },
+                { label: 'Tab', action: 'tab', style: 'bg-neutral-800 border-neutral-700' },
+                { label: 'Spasi', action: 'space', style: 'flex-[2.5]' },
+                { label: 'Enter', action: 'enter', style: 'bg-neutral-800 border-neutral-700' }
+            ]
+        ];
+    },
+
+    getSymbolsRows() {
+        return [
+            ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+            ['-', '/', ':', ';', '(', ')', '$', '&', '@', '"'],
+            ['[', ']', '{', '}', '#', '%', '^', '*', '+', '='],
+            ['_', '\\', '|', '~', '<', '>', ',', '.', '?', '!'],
+            [
+                { label: 'Esc', action: 'esc', style: 'bg-neutral-800 border-neutral-700' },
+                { label: '⌫', action: 'backspace', style: 'bg-neutral-800 border-neutral-700' },
+                { label: 'Spasi', action: 'space', style: 'flex-[2.5]' },
+                { label: 'Enter', action: 'enter', style: 'bg-neutral-800 border-neutral-700' }
+            ]
+        ];
+    },
+
+    renderKeyboardKeys() {
+        const grid = document.getElementById('vnc-kb-keys-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        const rows = this.keyboardLayout === 'letters' ? this.getLettersRows() : this.getSymbolsRows();
+
+        rows.forEach(row => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'flex gap-1 justify-center w-full';
+
+            row.forEach(key => {
+                const btn = document.createElement('button');
+                let label;
+                let btnClass = 'py-2 px-1 rounded text-neutral-200 bg-[#141414] hover:bg-[#222] border border-[#222] transition-colors text-xs text-center flex-1 active:scale-[0.98] select-none touch-manipulation font-semibold';
+
+                if (typeof key === 'string') {
+                    const displayChar = this.shiftActive && this.keyboardLayout === 'letters' ? key.toUpperCase() : key;
+                    label = displayChar;
+                    btn.onclick = () => this.sendKeyChar(displayChar);
+                } else {
+                    label = key.label;
+                    if (key.style) btnClass += ' ' + key.style;
+                    
+                    if (key.action === 'shift') {
+                        if (this.shiftActive) {
+                            btnClass = btnClass.replace('bg-neutral-800', 'bg-neutral-200 text-black border-white');
+                        }
+                        btn.onclick = () => this.toggleKeyboardShift();
+                    } else if (key.action === 'backspace') {
+                        btn.onclick = () => this.sendSpecialKey(0xff08);
+                    } else if (key.action === 'tab') {
+                        btn.onclick = () => this.sendSpecialKey(0xff09);
+                    } else if (key.action === 'space') {
+                        btn.onclick = () => this.sendSpecialKey(0x0020);
+                    } else if (key.action === 'enter') {
+                        btn.onclick = () => this.sendSpecialKey(0xff0d);
+                    } else if (key.action === 'esc') {
+                        btn.onclick = () => this.sendSpecialKey(0xff1b);
+                    }
+                }
+
+                btn.className = btnClass;
+                btn.textContent = label;
+                rowDiv.appendChild(btn);
+            });
+
+            grid.appendChild(rowDiv);
+        });
+    },
+
+    sendKeyChar(char) {
+        if (!this.rfb) return;
+        const keysym = char.charCodeAt(0);
+        this.rfb.sendKey(keysym, null, true);
+        this.rfb.sendKey(keysym, null, false);
+        
+        // Auto-turn off Shift after typing a letter
+        if (this.shiftActive && this.keyboardLayout === 'letters') {
+            this.shiftActive = false;
+            this.renderKeyboardKeys();
+        }
+        this.releaseModifiers();
     },
 
     // Mobile Options Panel Toggle
@@ -316,24 +438,6 @@ const VNCClient = {
         const panel = document.getElementById('vnc-options-panel');
         if (!panel) return;
         panel.classList.toggle('hidden');
-    },
-
-    // Send text helper
-    sendTextHelper() {
-        const input = document.getElementById('vnc-text-helper');
-        if (!input || !this.rfb) return;
-        const text = input.value;
-        if (!text) return;
-
-        for (let i = 0; i < text.length; i++) {
-            const char = text[i];
-            const keysym = char.charCodeAt(0);
-            this.rfb.sendKey(keysym, null, true);
-            this.rfb.sendKey(keysym, null, false);
-        }
-        input.value = '';
-        this.releaseModifiers();
-        Toast.success('Teks berhasil dikirim');
     },
 
     // Send special keys
