@@ -205,6 +205,9 @@ const VNCClient = {
 
     // Suntikkan style CSS untuk menyembunyikan kursor remote pada mobile secara total
     injectMobileCursorCSS() {
+        const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+        if (!isTouch) return;
+
         if (document.getElementById('vnc-mobile-cursor-style')) return;
         const style = document.createElement('style');
         style.id = 'vnc-mobile-cursor-style';

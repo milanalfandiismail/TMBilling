@@ -36,11 +36,11 @@
                         <span>⏹</span> <span class="hidden sm:inline">Putuskan</span>
                     </button>
                     
-                    <!-- Mobile Toggle Buttons -->
+                    <!-- Toggle Keyboard Button -->
                     <button onclick="VNCClient.toggleVirtualKeyboard()" id="vnc-toggle-kb-btn"
-                        class="md:hidden px-3 py-1.5 bg-[#171717] border border-[#262626] text-neutral-300 text-xs font-bold rounded transition-colors"
-                        title="Tampilkan Keyboard Virtual">
-                        ⌨️
+                        class="px-2.5 py-1.5 md:px-3 md:py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs md:text-sm font-bold rounded transition-colors flex items-center gap-1.5"
+                        title="Tampilkan / Sembunyikan Keyboard Virtual">
+                        <span>⌨️</span> <span class="hidden sm:inline">Keyboard</span>
                     </button>
                     <button onclick="VNCClient.toggleMobileOptions()" id="vnc-toggle-options-btn"
                         class="md:hidden px-3 py-1.5 bg-[#171717] border border-[#262626] text-neutral-300 text-xs font-bold rounded transition-colors"
@@ -94,8 +94,8 @@
             </div>
         </div>
 
-        <!-- Virtual QWERTY Keyboard Dock (Mobile Only) -->
-        <div id="vnc-virtual-keyboard" class="hidden md:hidden bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-2 md:p-2.5 space-y-2 shrink-0 select-none">
+        <!-- Virtual QWERTY Keyboard Dock -->
+        <div id="vnc-virtual-keyboard" class="hidden bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-2 md:p-2.5 space-y-2 shrink-0 select-none">
             <!-- Header Tab Selector & Tutup -->
             <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-1.5">
                 <div class="flex items-center gap-1.5">
