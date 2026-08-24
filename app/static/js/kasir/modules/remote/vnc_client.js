@@ -91,7 +91,7 @@ const VNCClient = {
     },
 
     // Helper untuk mengirimkan synthetic MouseEvent langsung ke canvas noVNC dengan kompensasi Zoom & Pan
-    dispatchCanvasMouse(type, clientX, clientY, button = 0, buttons = 0) {
+    dispatchCanvasMouse(type, clientX, clientY, button = 0, buttons = 0, detail = 1) {
         const screen = document.getElementById('vnc-screen');
         if (!screen) return;
         const canvas = screen.querySelector('canvas');
@@ -121,6 +121,7 @@ const VNCClient = {
             clientY: syntheticClientY,
             button: button,
             buttons: buttons,
+            detail: detail,
             bubbles: true,
             cancelable: true,
             view: window
@@ -471,7 +472,7 @@ const VNCClient = {
     },
 
     // Unified Mobile Touch Handler (Chrome Remote Desktop Style)
-    // Mengintegrasikan 1-Finger Tap/Drag/Long-Press & 2-Finger Pinch to Zoom di dalam kanvas remote
+    // Mengintegrasikan Single Tap (Left Click), Double Tap (Double Click Windows App), Drag (Pan), dan 2-Finger Pinch Zoom
     setupCanvasTouchEmulation() {
         const container = document.getElementById('vnc-container');
         const screen = document.getElementById('vnc-screen');
@@ -486,6 +487,11 @@ const VNCClient = {
         let longPressTimer = null;
         let isLongPress = false;
         let isDragging = false;
+
+        // Variabel untuk Double Tap Tracking (Native Double Click Windows)
+        let lastTapTime = 0;
+        let lastTapX = 0;
+        let lastTapY = 0;
 
         // Variabel untuk 2-Finger Pinch Zoom
         let touchStartDist = 0;
@@ -654,18 +660,51 @@ const VNCClient = {
 
             if (e.changedTouches.length === 1) {
                 const touch = e.changedTouches[0];
-                const elapsed = Date.now() - touchStartTime;
+                const now = Date.now();
+                const elapsed = now - touchStartTime;
                 const dx = touch.clientX - touchStartX;
                 const dy = touch.clientY - touchStartY;
                 const dist = Math.hypot(dx, dy);
 
-                // Tap Cepat (< 450ms dan dist < 15px) -> Left Click Akurat
+                // Tap Cepat (< 450ms dan dist < 15px)
                 if (elapsed < 450 && dist < 15) {
-                    this.dispatchCanvasMouse('mousemove', touch.clientX, touch.clientY, 0, 0);
-                    this.dispatchCanvasMouse('mousedown', touch.clientX, touch.clientY, 0, 1);
-                    setTimeout(() => {
-                        this.dispatchCanvasMouse('mouseup', touch.clientX, touch.clientY, 0, 0);
-                    }, 35);
+                    const timeSinceLastTap = now - lastTapTime;
+                    const distFromLastTap = Math.hypot(touch.clientX - lastTapX, touch.clientY - lastTapY);
+
+                    // Deteksi Double Tap (Jeda < 400ms dan jarak < 30px)
+                    if (timeSinceLastTap < 400 && distFromLastTap < 30) {
+                        // === DOUBLE CLICK DETECTED (Membuka Aplikasi Windows) ===
+                        // Kunci titik klik persis di koordinat tap pertama agar tidak goyang (anti-jitter)
+                        const targetX = lastTapX;
+                        const targetY = lastTapY;
+
+                        this.dispatchCanvasMouse('mousemove', targetX, targetY, 0, 0);
+                        this.dispatchCanvasMouse('mousedown', targetX, targetY, 0, 1, 2);
+                        setTimeout(() => {
+                            this.dispatchCanvasMouse('mouseup', targetX, targetY, 0, 0, 2);
+                        }, 30);
+
+                        // Haptic feedback untuk double click
+                        if (navigator.vibrate) {
+                            try { navigator.vibrate([25, 35, 25]); } catch(err) {}
+                        }
+
+                        // Reset penanda tap
+                        lastTapTime = 0;
+                        lastTapX = 0;
+                        lastTapY = 0;
+                    } else {
+                        // === SINGLE CLICK (Left Click Biasa) ===
+                        lastTapTime = now;
+                        lastTapX = touch.clientX;
+                        lastTapY = touch.clientY;
+
+                        this.dispatchCanvasMouse('mousemove', touch.clientX, touch.clientY, 0, 0);
+                        this.dispatchCanvasMouse('mousedown', touch.clientX, touch.clientY, 0, 1, 1);
+                        setTimeout(() => {
+                            this.dispatchCanvasMouse('mouseup', touch.clientX, touch.clientY, 0, 0, 1);
+                        }, 30);
+                    }
 
                     e.preventDefault();
                 }
