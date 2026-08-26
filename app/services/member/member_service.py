@@ -193,9 +193,8 @@ class MemberService:
         if SesiRepository.get_aktif_by_member(member.id):
             raise ValueError("Member sedang bermain, tidak bisa dihapus")
         
-        db.session.delete(member)
-        db.session.commit()
-        
+        # Ambil data sebelum objek dihapus dari database
+        username = member.username
         detail_member = {
             "username": member.username,
             "nama_lengkap": member.nama_lengkap,
@@ -204,12 +203,22 @@ class MemberService:
             "no_hp": member.no_hp,
             "email": member.email
         }
-        write_log("DELETE_MEMBER", f"Member:{member.username} dihapus", user=operator, detail_json=detail_member)
+        
+        # Buat dummy object untuk mencegah error lazy load di background thread _sync_mikrotik
+        class DummyMember:
+            def __init__(self, username):
+                self.username = username
+        dummy_member = DummyMember(username)
+
+        db.session.delete(member)
+        db.session.commit()
+        
+        write_log("DELETE_MEMBER", f"Member:{username} dihapus", user=operator, detail_json=detail_member)
         
         # Sinkronisasi ke MikroTik
-        MemberService._sync_mikrotik("delete", member)
+        MemberService._sync_mikrotik("delete", dummy_member)
         
-        return member
+        return dummy_member
 
 
     # =========================================================================
