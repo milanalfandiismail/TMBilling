@@ -17,6 +17,7 @@ from app.utils.logger import write_log
 
 # Antrean instruksi perintah real-time per PC (Key: pc_id, Value: command_type)
 PENDING_COMMANDS = {}
+PENDING_VNC_COMMANDS = {}
 
 
 class ClientService:
@@ -26,6 +27,11 @@ class ClientService:
     def queue_command(pc_id, command_type):
         """Menambahkan perintah ke antrean PC."""
         PENDING_COMMANDS[pc_id] = command_type
+
+    @staticmethod
+    def queue_vnc_command(pc_id, command_type):
+        """Menambahkan perintah VNC ke antrean PC."""
+        PENDING_VNC_COMMANDS[pc_id] = command_type
 
     @staticmethod
     def _normalize_mac(mac):

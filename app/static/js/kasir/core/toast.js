@@ -4,7 +4,7 @@ const Toast = {
     init() {
         if (!this.container) {
             this.container = document.createElement('div');
-            this.container.className = 'fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none';
+            this.container.className = 'fixed bottom-6 right-6 z-[99999] flex flex-col gap-3 pointer-events-none';
             document.body.appendChild(this.container);
         }
     },
