@@ -273,6 +273,11 @@ fn execute_uninstall(plain_password: &str) {
         .creation_flags(CREATE_NO_WINDOW)
         .status();
 
+    let _ = Command::new("taskkill")
+        .args(["/F", "/IM", "tvnserver.exe"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .status();
+
     // Beri jeda tambahan 1.5 detik agar OS Windows melepaskan file lock setelah taskkill
     thread::sleep(Duration::from_millis(1500));
 

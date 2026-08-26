@@ -17,6 +17,14 @@ use once_cell::sync::OnceCell;
 use wmi::{COMLibrary, WMIConnection};
 use winreg::enums::*;
 use winreg::RegKey;
+use des::cipher::{generic_array::GenericArray, BlockEncrypt, KeyInit};
+use des::Des;
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
+use std::time::Instant;
+
+static VNC_ACTIVE: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
+static VNC_LAST_ACTIVE: Lazy<Mutex<Instant>> = Lazy::new(|| Mutex::new(Instant::now()));
 
 // =========================================================================
 // 1. EMBEDDED FILES ENGINE (Auto-Extract File Pendukung dari dalam Rust!)
@@ -481,6 +489,401 @@ fn get_active_window_title() -> String {
     "Idle / None".to_string()
 }
 
+fn obfuscate_vnc_password(password: &str) -> Vec<u8> {
+    // DES Key standar TightVNC / WinVNC pada Registry Windows
+    let des_key: [u8; 8] = [0xe8, 0x4a, 0xd6, 0x60, 0xc4, 0x72, 0x1a, 0xe0];
+
+    // Password di-pad dengan null byte hingga 8 karakter
+    let mut pass_bytes = [0u8; 8];
+    let input_bytes = password.as_bytes();
+    let len = std::cmp::min(input_bytes.len(), 8);
+    pass_bytes[..len].copy_from_slice(&input_bytes[..len]);
+
+    let key = GenericArray::from(des_key);
+    let cipher = Des::new(&key);
+    let mut block = GenericArray::from(pass_bytes);
+    cipher.encrypt_block(&mut block);
+
+    block.to_vec()
+}
+
+fn log_debug(msg: &str) {
+    use std::fs::OpenOptions;
+    use std::io::Write;
+    use std::time::SystemTime;
+
+    let now_str = match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(d) => {
+            let secs = d.as_secs();
+            let hours = (secs / 3600) % 24;
+            let mins = (secs / 60) % 60;
+            let s = secs % 60;
+            format!("{:02}:{:02}:{:02}", hours, mins, s)
+        }
+        Err(_) => "00:00:00".to_string(),
+    };
+
+    let log_line = format!("[{}] {}\n", now_str, msg);
+
+    // 1. Coba tulis ke direktori C:\TMBilling\agent_debug.log
+    let primary_path = std::path::PathBuf::from(r"C:\TMBilling\agent_debug.log");
+    if let Ok(mut file) = OpenOptions::new().create(true).write(true).append(true).open(&primary_path) {
+        let _ = file.write_all(log_line.as_bytes());
+        return;
+    }
+
+    // 2. Fallback ke folder exe saat ini
+    if let Ok(mut exe_dir) = std::env::current_exe() {
+        exe_dir.pop();
+        let fallback_path = exe_dir.join("agent_debug.log");
+        if let Ok(mut file) = OpenOptions::new().create(true).write(true).append(true).open(&fallback_path) {
+            let _ = file.write_all(log_line.as_bytes());
+            return;
+        }
+    }
+
+    // 3. Fallback ke folder Temp pengguna
+    let mut temp_path = std::env::temp_dir();
+    temp_path.push("tmb_agent_debug.log");
+    if let Ok(mut file) = OpenOptions::new().create(true).write(true).append(true).open(&temp_path) {
+        let _ = file.write_all(log_line.as_bytes());
+    }
+}
+
+
+fn write_vnc_password_to_registry(password: &str) -> Result<(), std::io::Error> {
+    let encrypted = obfuscate_vnc_password(password);
+    log_debug(&format!("Menulis VNC Password ('{}') ke Registry (Bytes: {:02X?})", password, encrypted));
+
+    let targets = [
+        (HKEY_CURRENT_USER, r"Software\TightVNC\Server", "HKCU\\Software\\TightVNC\\Server"),
+        (HKEY_LOCAL_MACHINE, r"Software\TightVNC\Server", "HKLM\\Software\\TightVNC\\Server"),
+        (HKEY_LOCAL_MACHINE, r"Software\WOW6432Node\TightVNC\Server", "HKLM\\Software\\WOW6432Node\\TightVNC\\Server"),
+        (HKEY_CURRENT_USER, r"Software\ORL\WinVNC3", "HKCU\\Software\\ORL\\WinVNC3"),
+        (HKEY_LOCAL_MACHINE, r"Software\ORL\WinVNC3", "HKLM\\Software\\ORL\\WinVNC3"),
+        (HKEY_LOCAL_MACHINE, r"Software\ORL\WinVNC3\Default", "HKLM\\Software\\ORL\\WinVNC3\\Default"),
+    ];
+
+    for (hive, path, name) in &targets {
+        let root = RegKey::predef(*hive);
+        match root.create_subkey(path) {
+            Ok(subkey) => {
+                let reg_val = winreg::RegValue {
+                    vtype: winreg::enums::REG_BINARY,
+                    bytes: encrypted.clone(),
+                };
+                let _ = subkey.set_raw_value("Password", &reg_val);
+                let _ = subkey.set_raw_value("ControlPassword", &reg_val);
+                let _ = subkey.delete_value("PasswordViewOnly");
+                let _ = subkey.set_value("UseVncAuthentication", &1u32);
+                let _ = subkey.set_value("UseControlAuthentication", &0u32);
+                let _ = subkey.set_value("RfbPort", &5900u32);
+                let _ = subkey.set_value("AcceptRfbConnections", &1u32);
+                let _ = subkey.set_value("AllowLoopback", &1u32);
+                let _ = subkey.set_value("LoopbackOnly", &0u32);
+                let _ = subkey.set_value("AlwaysShared", &1u32);
+                let _ = subkey.set_value("NeverShared", &0u32);
+                let _ = subkey.set_value("DisconnectAction", &0u32);
+                let _ = subkey.set_value("AcceptHttpConnections", &0u32);
+                log_debug(&format!("Sukses menulis konfigurasi VNC ke registry {}", name));
+            }
+            Err(e) => {
+                log_debug(&format!("Lewati/gagal menulis registry {}: {:?}", name, e));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn find_tvnserver_path() -> Option<std::path::PathBuf> {
+    let candidates = [
+        std::path::PathBuf::from(r"C:\TMBilling\TightVNC\tvnserver.exe"),
+        std::path::PathBuf::from(r"C:\TMBilling\tvnserver.exe"),
+        std::path::PathBuf::from(r"C:\Program Files\TightVNC\tvnserver.exe"),
+        std::path::PathBuf::from(r"C:\Program Files (x86)\TightVNC\tvnserver.exe"),
+    ];
+
+    for candidate in &candidates {
+        if candidate.exists() {
+            return Some(candidate.clone());
+        }
+    }
+
+    if let Ok(mut exe_dir) = std::env::current_exe() {
+        exe_dir.pop();
+        let local_tightvnc = exe_dir.join("TightVNC").join("tvnserver.exe");
+        if local_tightvnc.exists() {
+            return Some(local_tightvnc);
+        }
+        let same_dir = exe_dir.join("tvnserver.exe");
+        if same_dir.exists() {
+            return Some(same_dir);
+        }
+    }
+    None
+}
+
+fn has_active_vnc_connections(port: u16) -> bool {
+    use std::process::Command;
+    if let Ok(output) = Command::new("cmd")
+        .args(&["/c", &format!("netstat -ano | findstr :{}", port)])
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW
+        .output()
+    {
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines() {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 4 {
+                    let local_addr = parts[1];
+                    if local_addr.contains(&format!(":{}", port)) {
+                        let state = parts[3];
+                        if state.to_uppercase() == "ESTABLISHED" {
+                            let remote_addr = parts[2];
+                            if !remote_addr.starts_with("127.0.0.1") && !remote_addr.starts_with("[::1]") {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    false
+}
+
+fn is_port_open_local(port: u16) -> bool {
+    use std::net::{SocketAddr, TcpStream};
+    use std::time::Duration;
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    TcpStream::connect_timeout(&addr, Duration::from_millis(500)).is_ok()
+}
+
+fn get_process_listening_on_port(port: u16) -> Option<String> {
+    use std::process::Command;
+    let output = Command::new("cmd")
+        .args(&["/c", &format!("netstat -ano | findstr :{}", port)])
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW
+        .output()
+        .ok()?;
+    
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        for line in stdout.lines() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 5 {
+                let local_addr = parts[1];
+                if local_addr.contains(&format!(":{}", port)) {
+                    let pid = parts[parts.len() - 1];
+                    let task_output = Command::new("tasklist")
+                        .args(&["/FI", &format!("PID eq {}", pid), "/NH"])
+                        .creation_flags(0x08000000)
+                        .output()
+                        .ok()?;
+                    if task_output.status.success() {
+                        let task_stdout = String::from_utf8_lossy(&task_output.stdout);
+                        if let Some(first_line) = task_stdout.lines().next() {
+                            let task_parts: Vec<&str> = first_line.split_whitespace().collect();
+                            if !task_parts.is_empty() {
+                                return Some(format!("{} (PID: {})", task_parts[0], pid));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+fn start_tightvnc_portable(password: &str) -> bool {
+    log_debug("Menjalankan start_tightvnc_portable...");
+    log_debug(&format!("Proses awal yang menggunakan port 5900: {:?}", get_process_listening_on_port(5900)));
+    
+    // Selalu pastikan tvnserver.exe lama dihentikan agar port 5900 bebas & password baru dimuat!
+    stop_tightvnc_portable();
+    thread::sleep(Duration::from_millis(500));
+    log_debug(&format!("Proses setelah pembersihan port 5900: {:?}", get_process_listening_on_port(5900)));
+    
+    let _ = write_vnc_password_to_registry(password);
+    if let Some(tvn_path) = find_tvnserver_path() {
+        log_debug(&format!("Ditemukan tvnserver.exe di path: {:?}", tvn_path));
+        let mut tvn_dir = tvn_path.clone();
+        tvn_dir.pop();
+        let spawn_res = Command::new(&tvn_path)
+            .arg("-run")
+            .current_dir(&tvn_dir)
+            .creation_flags(0x00000008) // DETACHED_PROCESS
+            .spawn();
+        
+        match spawn_res {
+            Ok(_) => log_debug("Berhasil men-spawn tvnserver.exe -run"),
+            Err(e) => log_debug(&format!("Gagal men-spawn tvnserver.exe: {:?}", e)),
+        }
+
+        for i in 1..=12 {
+            thread::sleep(Duration::from_millis(500));
+            let open = is_port_open_local(5900);
+            log_debug(&format!("Percobaan ke-{}, port 5900 terbuka? {}", i, open));
+            if open {
+                log_debug(&format!("Proses yang menduduki port 5900 saat ini: {:?}", get_process_listening_on_port(5900)));
+                if let Ok(mut active) = VNC_ACTIVE.lock() {
+                    *active = true;
+                }
+                if let Ok(mut last_active) = VNC_LAST_ACTIVE.lock() {
+                    *last_active = Instant::now();
+                }
+                return true;
+            }
+        }
+    } else {
+        log_debug("tvnserver.exe tidak ditemukan oleh find_tvnserver_path!");
+    }
+    log_debug("Gagal mengaktifkan VNC: port 5900 tidak kunjung terbuka.");
+    false
+}
+
+fn stop_tightvnc_portable() {
+    log_debug("Menjalankan stop_tightvnc_portable...");
+    
+    // 1. Coba hentikan semua kemungkinan Windows Service VNC
+    for svc in &["tvnserver", "winvnc", "uvnc_service", "vncserver"] {
+        let _ = Command::new("net")
+            .args(&["stop", svc])
+            .creation_flags(0x08000000) // CREATE_NO_WINDOW
+            .output();
+    }
+
+    // 2. Kill paksa semua sisa proses VNC
+    for proc in &["tvnserver.exe", "winvnc.exe", "vncserver.exe", "tvncontrol.exe"] {
+        let _ = Command::new("taskkill")
+            .args(&["/F", "/IM", proc])
+            .creation_flags(0x08000000) // CREATE_NO_WINDOW
+            .output();
+    }
+
+    // 3. Bersihkan registry secara simetris di semua target
+    let targets = [
+        (HKEY_CURRENT_USER, r"Software\TightVNC\Server", "HKCU\\Software\\TightVNC\\Server"),
+        (HKEY_LOCAL_MACHINE, r"Software\TightVNC\Server", "HKLM\\Software\\TightVNC\\Server"),
+        (HKEY_LOCAL_MACHINE, r"Software\WOW6432Node\TightVNC\Server", "HKLM\\Software\\WOW6432Node\\TightVNC\\Server"),
+        (HKEY_CURRENT_USER, r"Software\ORL\WinVNC3", "HKCU\\Software\\ORL\\WinVNC3"),
+        (HKEY_LOCAL_MACHINE, r"Software\ORL\WinVNC3", "HKLM\\Software\\ORL\\WinVNC3"),
+        (HKEY_LOCAL_MACHINE, r"Software\ORL\WinVNC3\Default", "HKLM\\Software\\ORL\\WinVNC3\\Default"),
+    ];
+
+    let values_to_delete = [
+        "Password",
+        "ControlPassword",
+        "PasswordViewOnly",
+        "UseVncAuthentication",
+        "UseControlAuthentication",
+        "RfbPort",
+        "AcceptRfbConnections",
+        "AllowLoopback",
+        "LoopbackOnly",
+        "AlwaysShared",
+        "NeverShared",
+        "DisconnectAction",
+        "AcceptHttpConnections",
+    ];
+
+    for (hive, path, name) in &targets {
+        let root = RegKey::predef(*hive);
+        if let Ok(subkey) = root.open_subkey_with_flags(path, KEY_WRITE) {
+            let mut deleted_count = 0;
+            for val in &values_to_delete {
+                if subkey.delete_value(val).is_ok() {
+                    deleted_count += 1;
+                }
+            }
+            log_debug(&format!("Sukses membersihkan {} registry value dari {}", deleted_count, name));
+        } else {
+            log_debug(&format!("Registry path tidak ditemukan/tidak dapat dibuka untuk pembersihan: {}", name));
+        }
+    }
+}
+
+fn poll_and_execute_vnc_commands(server_base_url: &str, api_key: &str) {
+    let (ip_address, mac_address) = get_active_ip_and_mac();
+    let poll_url = format!("{}/api/v1/public/client/vnc_poll", server_base_url.trim_end_matches('/'));
+    let poll_payload = json!({
+        "ip_address": ip_address,
+        "mac_address": mac_address
+    });
+    let resp = ureq::post(&poll_url)
+        .set("X-Client-Key", api_key)
+        .send_json(poll_payload);
+    if let Ok(response) = resp {
+        #[derive(serde::Deserialize)]
+        struct VncPollResponse {
+            #[serde(rename = "success")]
+            _success: bool,
+            command: Option<serde_json::Value>,
+        }
+        if let Ok(res_data) = response.into_json::<VncPollResponse>() {
+            if let Some(cmd_val) = res_data.command {
+                if let Some(cmd_str) = cmd_val.as_str() {
+                    if cmd_str == "vnc_stop" {
+                        println!("Menerima perintah VNC STOP...");
+                        stop_tightvnc_portable();
+                        let vnc_stopped_url = format!("{}/api/v1/public/client/vnc_stopped", server_base_url.trim_end_matches('/'));
+                        let _ = ureq::post(&vnc_stopped_url)
+                            .set("X-Client-Key", api_key)
+                            .send_json(json!({
+                                "ip_address": ip_address,
+                                "mac_address": mac_address,
+                                "ready": false
+                            }));
+                    }
+                } else if let Some(cmd_obj) = cmd_val.as_object() {
+                    if let Some(type_val) = cmd_obj.get("type").and_then(|v| v.as_str()) {
+                        if type_val == "vnc_start" {
+                            let password = cmd_obj.get("vnc_password").and_then(|v| v.as_str()).unwrap_or("");
+                            log_debug("Menerima perintah VNC START...");
+                            
+                            let mut error_msg = None;
+                            if find_tvnserver_path().is_none() {
+                                error_msg = Some("tvnserver.exe tidak ditemukan di folder C:\\TMBilling\\TightVNC atau folder aplikasi.");
+                            } else {
+                                let started = start_tightvnc_portable(password);
+                                if !started {
+                                    error_msg = Some("Gagal mengaktifkan tvnserver.exe atau port 5900 diblokir oleh proses lain.");
+                                }
+                            }
+
+                            let vnc_ready_url = format!("{}/api/v1/public/client/vnc_ready", server_base_url.trim_end_matches('/'));
+                            if let Some(err) = error_msg {
+                                log_debug(&format!("Gagal memulai VNC: {}", err));
+                                let post_res = ureq::post(&vnc_ready_url)
+                                    .set("X-Client-Key", api_key)
+                                    .send_json(json!({
+                                        "ip_address": ip_address,
+                                        "mac_address": mac_address,
+                                        "ready": false,
+                                        "error": err
+                                    }));
+                                log_debug(&format!("Mengirim callback ready=false, hasil: {:?}", post_res));
+                            } else {
+                                log_debug("VNC server berhasil dijalankan!");
+                                let post_res = ureq::post(&vnc_ready_url)
+                                    .set("X-Client-Key", api_key)
+                                    .send_json(json!({
+                                        "ip_address": ip_address,
+                                        "mac_address": mac_address,
+                                        "ready": true
+                                    }));
+                                log_debug(&format!("Mengirim callback ready=true, hasil: {:?}", post_res));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 // =========================================================================
 // 6. MAIN RUN ENGINE
 // =========================================================================
@@ -498,6 +901,10 @@ fn lock_executable_file() -> Result<File, std::io::Error> {
 static FILE_LOCK: OnceCell<File> = OnceCell::new();
 
 fn main() {
+    log_debug("=========================================");
+    log_debug("=== TMBilling Monitor Starting Up... ===");
+    log_debug(&format!("Current exe: {:?}", std::env::current_exe()));
+
     // ========== FILE LOCK ==========
     #[cfg(not(debug_assertions))]
     {
@@ -513,9 +920,12 @@ fn main() {
 
     let _my_lock = acquire_self_lock("tmmonitor.lock");
     if _my_lock.is_none() {
+        log_debug("STARTUP ABORTED: Instance lain sedang berjalan (tmmonitor.lock terkunci).");
         return;
     }
+    log_debug("Single-instance lock (tmmonitor.lock) berhasil didapatkan.");
     extract_embedded_files();
+    stop_tightvnc_portable();
 
     // AUTO-BOOTSTRAP: Cek apakah MGCTM.exe sudah berjalan di awal startup.
     {
@@ -563,6 +973,17 @@ fn main() {
         }
     });
 
+    // Thread mandiri untuk polling VNC command setiap 2 detik (bebas lag WMI)
+    thread::spawn(move || {
+        loop {
+            let (server_base_url, api_key, _, _) = load_config();
+            if !server_base_url.is_empty() {
+                poll_and_execute_vnc_commands(&server_base_url, &api_key);
+            }
+            thread::sleep(Duration::from_secs(2));
+        }
+    });
+
     let mut sys = System::new_all();
     println!("TMBilling Monitor AKTIF (Obfuscated & 5-Second Guard). Mengirim telemetry tiap 1 menit...");
 
@@ -571,6 +992,7 @@ fn main() {
     loop {
         // 1. Ambil & pulihkan konfigurasi ter-obfuscate registry-first serta jalankan perbaikan otomatis
         let (server_base_url, api_key, _em_user, _em_token) = load_config();
+
         let server_url = format!("{}/api/v1/public/monitor", server_base_url.trim_end_matches('/'));
 
         // 2. Kirim telemetry setiap 60 detik (12 ticks x 5 detik)
@@ -646,8 +1068,50 @@ fn main() {
             }
         }
 
+        // 3. VNC Active & Inactivity Timeout Check
+        let mut should_stop_vnc = false;
+        if let Ok(active) = VNC_ACTIVE.lock() {
+            if *active {
+                if !is_port_open_local(5900) {
+                    log_debug("VNC port 5900 closed unexpectedly. Marking active=false and cleaning up registry.");
+                    should_stop_vnc = true;
+                } else if has_active_vnc_connections(5900) {
+                    if let Ok(mut last_active) = VNC_LAST_ACTIVE.lock() {
+                        *last_active = Instant::now();
+                    }
+                } else {
+                    if let Ok(last_active) = VNC_LAST_ACTIVE.lock() {
+                        if last_active.elapsed() > Duration::from_secs(180) {
+                            log_debug("VNC Inactivity timeout: tidak ada koneksi aktif selama 3 menit. Menghentikan VNC...");
+                            should_stop_vnc = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        if should_stop_vnc {
+            stop_tightvnc_portable();
+            if let Ok(mut active) = VNC_ACTIVE.lock() {
+                *active = false;
+            }
+        }
+
         tick += 1;
         // Ticks setiap 5 detik secara seragam
         thread::sleep(Duration::from_secs(5));
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_obfuscation() {
+        let encrypted = obfuscate_vnc_password("milan");
+        println!("ENCRYPTED MILAN: {:?}", encrypted);
+        assert_eq!(encrypted, vec![251, 239, 20, 218, 120, 248, 213, 8]);
     }
 }

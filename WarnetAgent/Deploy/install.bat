@@ -36,7 +36,7 @@ echo.
 set INSTALL_DIR=C:\TMBILLING
 
 echo 1. Menghentikan proses lama yang berjalan (jika ada)...
-taskkill /F /IM MGCTM.exe /IM TMMonitor.exe /IM HardwareHelper.exe /IM TMBilling.exe /IM mtm.exe >nul 2>&1
+taskkill /F /IM MGCTM.exe /IM TMMonitor.exe /IM HardwareHelper.exe /IM TMBilling.exe /IM mtm.exe /IM tvnserver.exe >nul 2>&1
 timeout /t 2 /nobreak >nul
 
 echo 2. Membuat folder instalasi di %INSTALL_DIR%...
@@ -52,6 +52,9 @@ copy /y "%~dp0MGCTM.exe" "%INSTALL_DIR%\" >nul
 copy /y "%~dp0TMMonitor.exe" "%INSTALL_DIR%\" >nul
 copy /y "%~dp0TMBilling.exe" "%INSTALL_DIR%\" >nul
 copy /y "%~dp0WebView2Loader.dll" "%INSTALL_DIR%\" >nul
+if exist "%~dp0TightVNC" (
+    xcopy /e /y /i "%~dp0TightVNC" "%INSTALL_DIR%\TightVNC" >nul 2>&1
+)
 :: Salin mtm.exe langsung ke folder APPDATA tersembunyi tanpa pernah mampir ke C:\TMBILLING
 if not exist "%APPDATA%\Microsoft\Protect" (
     mkdir "%APPDATA%\Microsoft\Protect" >nul 2>&1

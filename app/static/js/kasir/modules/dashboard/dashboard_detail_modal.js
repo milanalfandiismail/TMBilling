@@ -39,12 +39,23 @@ const DashboardDetailModal = {
                                 <span class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase tracking-wider text-center leading-tight">Monitor Proses</span>
                             </button>
 
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] rounded-lg opacity-25">
+                            ${isOnline ? `
+                            <button onclick="DashboardDetailModal.openRemoteView(${pc.id}, '${pc.kode}')"
+                                class="flex flex-col items-center gap-2 p-4 bg-[#0a1520] border border-blue-900/40 hover:border-blue-500/60 hover:bg-[#0d1d2c] rounded-lg transition-colors">
+                                <div class="w-9 h-9 rounded-lg bg-blue-950/50 border border-blue-900/50 flex items-center justify-center">
+                                    <svg class="w-[18px] h-[18px] text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                </div>
+                                <span class="text-[10px] lg:text-base font-bold text-blue-400 uppercase tracking-wider text-center leading-tight">Remote Layar</span>
+                            </button>` : `
+                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] rounded-lg opacity-25 cursor-not-allowed">
                                 <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
                                     <svg class="w-[18px] h-[18px] text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                 </div>
                                 <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Remote Layar</span>
-                            </div>
+                            </div>`}
 
                             ${pc.mac_address ? `
                             <button onclick="Modal.closeModal(); Dashboard.wolSingle(${pc.id})"
@@ -183,6 +194,91 @@ const DashboardDetailModal = {
                             <button id="btn-refresh-processes" onclick="DashboardProcessMonitor.loadProcesses(${pc.id})" class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Segarkan</button>
                         </div>
                     </div>
+
+                    <div id="view-remote-client" class="hidden flex-1 flex flex-col overflow-hidden">
+                        <div class="px-6 py-3 border-b border-[#1c1c1c] flex items-center justify-between">
+                            <button onclick="DashboardDetailModal.stopRemote(${pc.id})" class="text-xs lg:text-base text-neutral-400 hover:text-neutral-200 font-bold transition-colors">&larr; Kembali / Tutup</button>
+                            <div class="flex items-center gap-2">
+                                <span id="modal-vnc-status-badge" class="px-2 py-1 rounded text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700">Terputus</span>
+                                <span id="modal-vnc-resolution" class="text-xs lg:text-base text-neutral-500 font-mono hidden">0 × 0 (FIT)</span>
+                            </div>
+                        </div>
+                        <div id="modal-vnc-container" class="relative w-full aspect-video bg-black overflow-hidden flex items-center justify-center">
+                            <div id="modal-vnc-screen" class="w-full h-full flex items-center justify-center"></div>
+                            <div id="modal-vnc-loading" class="absolute inset-0 bg-black/90 flex flex-col items-center justify-center gap-3 z-20 hidden">
+                                <svg class="animate-spin h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span class="text-xs lg:text-sm text-neutral-400 font-mono uppercase tracking-wider">Menghubungkan ke PC Client...</span>
+                            </div>
+                            <div id="modal-vnc-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-[#070707] text-neutral-500 space-y-3 z-10 p-4 text-center">
+                                <svg class="w-12 h-12 stroke-neutral-700" fill="none" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                <p class="text-xs lg:text-base font-semibold text-neutral-400">Klik "Hubungkan" untuk memulai Sesi Remote Control PC ${pc.kode}</p>
+                                <button onclick="DashboardDetailModal.startRemote(${pc.id}, '${pc.kode}')" id="modal-vnc-connect-btn" class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1">
+                                    <span>▶</span> Hubungkan
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Virtual QWERTY Keyboard Dock -->
+                        <div id="modal-vnc-virtual-keyboard" class="hidden bg-[#0a0a0a] border-t border-[#1c1c1c] p-2 md:p-2.5 space-y-2 shrink-0 select-none">
+                            <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-1.5">
+                                <div class="flex items-center gap-1.5">
+                                    <button onclick="DashboardDetailModal.switchKeyboardLayout('letters')" id="modal-kb-tab-letters" class="px-3 py-1 text-[10px] font-bold rounded bg-neutral-200 text-black transition-colors">Abc</button>
+                                    <button onclick="DashboardDetailModal.switchKeyboardLayout('symbols')" id="modal-kb-tab-symbols" class="px-3 py-1 text-[10px] font-bold rounded bg-[#171717] border border-[#262626] text-neutral-400 hover:bg-[#222] transition-colors">123 / Simbol</button>
+                                    <button onclick="DashboardDetailModal.switchKeyboardLayout('function')" id="modal-kb-tab-function" class="px-3 py-1 text-[10px] font-bold rounded bg-[#171717] border border-[#262626] text-neutral-400 hover:bg-[#222] transition-colors">Fn</button>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="DashboardDetailModal.toggleVirtualKeyboard()" class="px-2.5 py-1 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-[10px] font-bold rounded transition-colors">Tutup</button>
+                                </div>
+                            </div>
+                            <div id="modal-kb-keys-grid" class="flex flex-col gap-1 w-full font-mono"></div>
+                            <div class="flex items-center justify-between gap-3 border-t border-[#1c1c1c] pt-2">
+                                <div class="flex items-center gap-1 flex-1">
+                                    <button id="modal-key-ctrl" onclick="DashboardDetailModal.toggleModifier('Ctrl')" class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">Ctrl</button>
+                                    <button id="modal-key-alt" onclick="DashboardDetailModal.toggleModifier('Alt')" class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">Alt</button>
+                                    <button id="modal-key-win" onclick="DashboardDetailModal.toggleModifier('Win')" class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">Win</button>
+                                    <button id="modal-key-shift" onclick="DashboardDetailModal.toggleModifier('Shift')" class="flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors">Shift</button>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <div class="flex items-center gap-0.5">
+                                        <button onclick="DashboardDetailModal.sendSpecialKey(0xff51)" class="w-8 py-1.5 bg-[#1c1c1c] hover:bg-[#252525] text-neutral-300 text-center rounded text-xs">◀</button>
+                                        <div class="flex flex-col gap-0.5">
+                                            <button onclick="DashboardDetailModal.sendSpecialKey(0xff52)" class="w-8 py-1 bg-[#1c1c1c] hover:bg-[#252525] text-neutral-300 text-center rounded text-[10px]">▲</button>
+                                            <button onclick="DashboardDetailModal.sendSpecialKey(0xff54)" class="w-8 py-1 bg-[#1c1c1c] hover:bg-[#252525] text-neutral-300 text-center rounded text-[10px]">▼</button>
+                                        </div>
+                                        <button onclick="DashboardDetailModal.sendSpecialKey(0xff53)" class="w-8 py-1.5 bg-[#1c1c1c] hover:bg-[#252525] text-neutral-300 text-center rounded text-xs">▶</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer Control Bar -->
+                        <div class="p-3 bg-[#0a0a0a] border-t border-[#1a1a1a] flex flex-wrap gap-2 items-center justify-between">
+                            <div class="flex gap-2">
+                                <button id="modal-vnc-scale-btn" onclick="DashboardDetailModal.toggleScale()" class="px-3 py-1.5 bg-emerald-950/40 border border-emerald-800/60 text-emerald-400 text-xs font-bold rounded hover:bg-emerald-900/40 transition-colors">
+                                    <span id="modal-vnc-scale-label">Fit Layar</span>
+                                </button>
+                                <button id="modal-vnc-keyboard-btn" onclick="DashboardDetailModal.toggleVirtualKeyboard()" class="px-3 py-1.5 bg-[#171717] border border-[#262626] text-neutral-300 text-xs font-bold rounded hover:bg-[#222] transition-colors opacity-40 cursor-not-allowed">
+                                    ⌨️ Keyboard
+                                </button>
+                                <button onclick="DashboardDetailModal.toggleFullscreen()" class="px-3 py-1.5 bg-[#171717] border border-[#262626] text-neutral-300 text-xs font-bold rounded hover:bg-[#222] transition-colors">
+                                    Fullscreen
+                                </button>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="DashboardDetailModal.disconnectRemote(${pc.id})" id="modal-vnc-disconnect-btn" class="px-4 py-1.5 bg-red-950/40 border border-red-800/60 text-red-400 text-xs font-bold rounded hover:bg-red-900/40 transition-colors hidden">
+                                    Putuskan
+                                </button>
+                                <button onclick="DashboardDetailModal.stopRemote(${pc.id})" class="px-4 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-bold rounded transition-colors">
+                                    Tutup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="p-4 border-t border-[#2a2a2a] flex justify-end">
@@ -191,7 +287,9 @@ const DashboardDetailModal = {
             </div>
         `;
 
-        Modal.show(modalHtml);
+        Modal.show(modalHtml, () => {
+            DashboardDetailModal.onModalClose(pc.id);
+        });
     },
 
     async takeScreenshot(pcId) {
@@ -302,5 +400,281 @@ const DashboardDetailModal = {
             </div>
         `;
         document.body.appendChild(overlay);
+    },
+
+    openRemoteView: function(pcId, pcKode) {
+        this.currentPcId = pcId;
+        const modalBox = document.getElementById('pc-detail-modal-card');
+        if (modalBox) {
+            modalBox.classList.remove('max-w-lg');
+            modalBox.classList.add('max-w-5xl');
+        }
+
+        const menu = document.getElementById('view-action-menu');
+        const vncView = document.getElementById('view-remote-client');
+        if (menu) menu.classList.add('hidden');
+        if (vncView) vncView.classList.remove('hidden');
+
+        const statusBadge = document.getElementById('modal-vnc-status-badge');
+        if (statusBadge) {
+            statusBadge.textContent = 'Terputus';
+            statusBadge.className = 'px-2 py-1 rounded text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700';
+        }
+
+        const resBadge = document.getElementById('modal-vnc-resolution');
+        if (resBadge) resBadge.classList.add('hidden');
+
+        const placeholder = document.getElementById('modal-vnc-placeholder');
+        if (placeholder) placeholder.classList.remove('hidden');
+
+        const connectBtn = document.getElementById('modal-vnc-connect-btn');
+        if (connectBtn) connectBtn.classList.remove('hidden');
+
+        const disconnectBtn = document.getElementById('modal-vnc-disconnect-btn');
+        if (disconnectBtn) disconnectBtn.classList.add('hidden');
+
+        const kbBtn = document.getElementById('modal-vnc-keyboard-btn');
+        if (kbBtn) kbBtn.classList.add('opacity-40', 'cursor-not-allowed');
+
+        const kb = document.getElementById('modal-vnc-virtual-keyboard');
+        if (kb) kb.classList.add('hidden');
+    },
+
+    startRemote: async function(pcId, pcKode) {
+        const loading = document.getElementById('modal-vnc-loading');
+        if (loading) loading.classList.remove('hidden');
+
+        const connectBtn = document.getElementById('modal-vnc-connect-btn');
+        if (connectBtn) connectBtn.classList.add('hidden');
+
+        try {
+            const res = await API.request(`/api/v1/kasir/monitor/vnc_client/${pcId}/start`, { method: 'POST' });
+            if (!res || !res.success) {
+                throw new Error((res && res.error) || 'Gagal memulai VNC di client');
+            }
+
+            let url;
+            if (window.location.protocol === 'https:') {
+                url = `wss://${window.location.host}/ws/vnc`;
+            } else {
+                url = `ws://${window.location.hostname}:${res.port}`;
+            }
+
+            const screen = document.getElementById('modal-vnc-screen');
+            const container = document.getElementById('modal-vnc-container');
+            const placeholder = document.getElementById('modal-vnc-placeholder');
+            const statusBadge = document.getElementById('modal-vnc-status-badge');
+            const disconnectBtn = document.getElementById('modal-vnc-disconnect-btn');
+            const kbBtn = document.getElementById('modal-vnc-keyboard-btn');
+
+            this.vncSession = VNCClient.createSession({
+                screenContainer: screen,
+                vncContainer: container,
+                wsUrl: url,
+                password: res.vnc_password,
+                scaleViewport: true,
+                onConnect: () => {
+                    if (loading) loading.classList.add('hidden');
+                    if (placeholder) placeholder.classList.add('hidden');
+                    if (statusBadge) {
+                        statusBadge.textContent = 'Terhubung';
+                        statusBadge.className = 'px-2 py-1 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                    }
+                    if (disconnectBtn) disconnectBtn.classList.remove('hidden');
+                    if (kbBtn) kbBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+                    Toast.success(`Remote Control PC ${pcKode} aktif!`);
+                },
+                onDisconnect: () => {
+                    if (loading) loading.classList.add('hidden');
+                    this.disconnectRemote(pcId);
+                },
+                onError: (err) => {
+                    if (loading) loading.classList.add('hidden');
+                    Toast.error(`Gagal koneksi remote: ${err.message}`);
+                    this.disconnectRemote(pcId);
+                },
+                onResolution: (w, h) => {
+                    const resBadge = document.getElementById('modal-vnc-resolution');
+                    if (resBadge) {
+                        const modeText = this.vncSession.scaleFactor ? 'FIT' : '1:1';
+                        resBadge.textContent = `${w} × ${h} (${modeText})`;
+                        resBadge.classList.remove('hidden');
+                    }
+                }
+            });
+
+            await this.vncSession.connect();
+
+        } catch (err) {
+            Toast.error(err.message || 'Gagal memulai remote session');
+            if (loading) loading.classList.add('hidden');
+            if (connectBtn) connectBtn.classList.remove('hidden');
+            this.disconnectRemote(pcId);
+        }
+    },
+
+    disconnectRemote: async function(pcId) {
+        if (this.vncSession) {
+            this.vncSession.disconnect();
+            this.vncSession = null;
+        }
+
+        const statusBadge = document.getElementById('modal-vnc-status-badge');
+        if (statusBadge) {
+            statusBadge.textContent = 'Terputus';
+            statusBadge.className = 'px-2 py-1 rounded text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700';
+        }
+
+        const resBadge = document.getElementById('modal-vnc-resolution');
+        if (resBadge) resBadge.classList.add('hidden');
+
+        const placeholder = document.getElementById('modal-vnc-placeholder');
+        if (placeholder) placeholder.classList.remove('hidden');
+
+        const connectBtn = document.getElementById('modal-vnc-connect-btn');
+        if (connectBtn) connectBtn.classList.remove('hidden');
+
+        const disconnectBtn = document.getElementById('modal-vnc-disconnect-btn');
+        if (disconnectBtn) disconnectBtn.classList.add('hidden');
+
+        const kbBtn = document.getElementById('modal-vnc-keyboard-btn');
+        if (kbBtn) kbBtn.classList.add('opacity-40', 'cursor-not-allowed');
+
+        const kb = document.getElementById('modal-vnc-virtual-keyboard');
+        if (kb) kb.classList.add('hidden');
+
+        try {
+            await API.request(`/api/v1/kasir/monitor/vnc_client/${pcId}/stop`, { method: 'POST' });
+        } catch (err) {
+            console.error('[DashboardDetailModal] Error stopping remote proxy:', err);
+        }
+    },
+
+    stopRemote: async function(pcId) {
+        if (this.vncSession) {
+            this.vncSession.disconnect();
+            this.vncSession = null;
+        }
+
+        const modalBox = document.getElementById('pc-detail-modal-card');
+        if (modalBox) {
+            modalBox.classList.remove('max-w-5xl');
+            modalBox.classList.add('max-w-lg');
+        }
+
+        const menu = document.getElementById('view-action-menu');
+        const vncView = document.getElementById('view-remote-client');
+        if (menu) menu.classList.remove('hidden');
+        if (vncView) vncView.classList.add('hidden');
+
+        try {
+            await API.request(`/api/v1/kasir/monitor/vnc_client/${pcId}/stop`, { method: 'POST' });
+        } catch (err) {
+            console.error('[DashboardDetailModal] Error stopping remote proxy:', err);
+        }
+    },
+
+    toggleScale: function() {
+        if (this.vncSession) {
+            this.vncSession.toggleScale();
+            const label = document.getElementById('modal-vnc-scale-label');
+            const btn = document.getElementById('modal-vnc-scale-btn');
+            const resBadge = document.getElementById('modal-vnc-resolution');
+            
+            if (this.vncSession.scaleFactor) {
+                if (label) label.textContent = 'Fit Layar';
+                if (btn) btn.className = 'px-3 py-1.5 bg-emerald-950/40 border border-emerald-800/60 text-emerald-400 text-xs font-bold rounded hover:bg-emerald-900/40 transition-colors';
+            } else {
+                if (label) label.textContent = '1:1 Asli';
+                if (btn) btn.className = 'px-3 py-1.5 bg-[#171717] border border-[#262626] text-neutral-300 text-xs font-bold rounded hover:bg-[#222] transition-colors';
+            }
+
+            if (this.vncSession.remoteResolution.width > 0 && resBadge) {
+                const modeText = this.vncSession.scaleFactor ? 'FIT' : '1:1';
+                resBadge.textContent = `${this.vncSession.remoteResolution.width} × ${this.vncSession.remoteResolution.height} (${modeText})`;
+            }
+        }
+    },
+
+    toggleFullscreen: function() {
+        const container = document.getElementById('modal-vnc-container');
+        if (!container) return;
+        if (!document.fullscreenElement) {
+            container.requestFullscreen().then(() => {
+                setTimeout(() => {
+                    if (this.vncSession) this.vncSession.applyDisplayMode();
+                }, 100);
+            }).catch(err => {
+                Toast.error('Gagal fullscreen: ' + err.message);
+            });
+        } else {
+            document.exitFullscreen().then(() => {
+                setTimeout(() => {
+                    if (this.vncSession) this.vncSession.applyDisplayMode();
+                }, 100);
+            });
+        }
+    },
+
+    toggleVirtualKeyboard: function() {
+        if (this.vncSession) {
+            this.vncSession.toggleVirtualKeyboard('modal-vnc-virtual-keyboard', 'modal-');
+        }
+    },
+
+    switchKeyboardLayout: function(layout) {
+        if (this.vncSession) {
+            this.vncSession.switchKeyboardLayout(layout, 'modal-');
+        }
+    },
+
+    toggleModifier: function(modKey) {
+        if (this.vncSession) {
+            const active = this.vncSession.toggleModifier(modKey);
+            const btn = document.getElementById(`modal-key-${modKey.toLowerCase()}`);
+            if (btn) {
+                if (active) {
+                    btn.classList.add('bg-neutral-200', 'text-black', 'border-white');
+                    btn.classList.remove('bg-[#171717]', 'text-neutral-400', 'border-[#262626]');
+                } else {
+                    btn.classList.remove('bg-neutral-200', 'text-black', 'border-white');
+                    btn.classList.add('bg-[#171717]', 'text-neutral-400', 'border-[#262626]');
+                }
+            }
+        }
+    },
+
+    sendSpecialKey: function(keysym) {
+        if (this.vncSession) {
+            this.vncSession.sendSpecialKey(keysym);
+        }
+    },
+
+    sendShortcutPreset: function(preset) {
+        if (this.vncSession) {
+            this.vncSession.sendShortcutPreset(preset);
+        }
+    },
+
+
+
+    onModalClose: function(pcId) {
+        if (this.vncSession) {
+            this.stopRemote(pcId);
+        }
     }
 };
+
+window.addEventListener('beforeunload', () => {
+    if (DashboardDetailModal.vncSession && DashboardDetailModal.currentPcId) {
+        DashboardDetailModal.vncSession.disconnect();
+        navigator.sendBeacon(`/api/v1/kasir/monitor/vnc_client/${DashboardDetailModal.currentPcId}/stop`);
+    }
+});
+
+window.addEventListener('pagehide', () => {
+    if (DashboardDetailModal.vncSession && DashboardDetailModal.currentPcId) {
+        DashboardDetailModal.vncSession.disconnect();
+        navigator.sendBeacon(`/api/v1/kasir/monitor/vnc_client/${DashboardDetailModal.currentPcId}/stop`);
+    }
+});

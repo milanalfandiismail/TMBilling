@@ -1,69 +1,49 @@
-// vnc_client.js — Client Remote Control VNC Server untuk TMBilling
+// vnc_client.js — Reusable VNC Session and Client Remote Control for TMBilling
 
-const VNCClient = {
-    rfb: null,
-    scaleFactor: true, // true = Fit to Viewport, false = 1:1 Native Resolution
-    RFBClass: null,
-    resizeObserver: null,
-    remoteResolution: { width: 0, height: 0 },
-    keyboardLayout: 'letters', // 'letters' | 'symbols' | 'function'
-    shiftActive: false,
-    zoomLevel: 1.0, // Zoom factor for GPU pinch-to-zoom (1.0x to 4.0x)
-    panX: 0,        // X translation offset when zoomed
-    panY: 0,        // Y translation offset when zoomed
-    isPinchZooming: false, // Flag to separate pinch-zoom state from mouse click emulation
-    
-    // Sticky / Latching modifiers state
-    modifiers: {
-        Ctrl: false,
-        Alt: false,
-        Win: false,
-        Shift: false
-    },
+class VNCSession {
+    constructor(options) {
+        this.options = Object.assign({
+            screenContainer: null, // DOM element for canvas mount
+            vncContainer: null,    // wrapper/container element
+            wsUrl: '',
+            password: '',
+            scaleViewport: true,
+            onConnect: () => {},
+            onDisconnect: () => {},
+            onError: () => {},
+            onResolution: () => {}
+        }, options);
 
-    async getRFB() {
-        if (this.RFBClass) return this.RFBClass;
-        if (window.RFB) {
-            this.RFBClass = window.RFB;
-            return this.RFBClass;
-        }
-        try {
-            const mod = await import('https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.js');
-            this.RFBClass = mod.default;
-            window.RFB = mod.default;
-            return this.RFBClass;
-        } catch (err) {
-            console.error('Gagal memuat modul noVNC RFB:', err);
-            return null;
-        }
-    },
+        this.rfb = null;
+        this.scaleFactor = this.options.scaleViewport;
+        this.zoomLevel = 1.0;
+        this.panX = 0;
+        this.panY = 0;
+        this.isPinchZooming = false;
+        this.modifiers = { Ctrl: false, Alt: false, Win: false, Shift: false };
+        this.remoteResolution = { width: 0, height: 0 };
+        this.resizeObserver = null;
+        this.keyboardLayout = 'letters';
+        this.shiftActive = false;
+    }
 
-    // Deteksi apakah perangkat adalah Mobile murni (HP / Tablet) atau Desktop/Laptop PC
     isMobileDevice() {
         const isMobileUA = /Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent);
         const isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
         const isFine = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
-
-        // Jika memiliki mouse fisik yang presisi (pointer: fine) dan bukan mobile browser UA -> Desktop
-        if (isFine && !isMobileUA) {
-            return false;
-        }
-
+        if (isFine && !isMobileUA) return false;
         return isMobileUA || isCoarse;
-    },
+    }
 
-    // Mengatur perilaku kursor: Sembunyikan di Mobile, Tampilkan normal di Desktop
     enforceMobileCursorBehavior() {
-        const container = document.getElementById('vnc-container');
-        const screen = document.getElementById('vnc-screen');
+        const container = this.options.vncContainer;
+        const screen = this.options.screenContainer;
         const canvas = screen ? screen.querySelector('canvas') : null;
         const isMobile = this.isMobileDevice();
 
         if (isMobile) {
-            // === MODE MOBILE / HP ===
             if (container) container.classList.add('vnc-mobile-mode');
             if (canvas) canvas.style.cursor = 'none';
-
             if (this.rfb) {
                 this.rfb.showDotCursor = false;
                 this.rfb._refreshCursor = function() {};
@@ -80,19 +60,16 @@ const VNCClient = {
                 }
             }
         } else {
-            // === MODE DESKTOP / LAPTOP PC ===
             if (container) container.classList.remove('vnc-mobile-mode');
             if (canvas) canvas.style.cursor = 'default';
-
             if (this.rfb) {
                 this.rfb.showDotCursor = true;
             }
         }
-    },
+    }
 
-    // Helper untuk mengirimkan synthetic MouseEvent langsung ke canvas noVNC dengan kompensasi Zoom & Pan
     dispatchCanvasMouse(type, clientX, clientY, button = 0, buttons = 0, detail = 1) {
-        const screen = document.getElementById('vnc-screen');
+        const screen = this.options.screenContainer;
         if (!screen) return;
         const canvas = screen.querySelector('canvas');
         if (!canvas) return;
@@ -100,19 +77,15 @@ const VNCClient = {
         const rect = canvas.getBoundingClientRect();
         if (rect.width <= 0 || rect.height <= 0) return;
 
-        // Hitung persentase relatif (0.0 sampai 1.0) pada bounding box yang terlihat di layar
         const relX = (clientX - rect.left) / rect.width;
         const relY = (clientY - rect.top) / rect.height;
 
-        // Clamp agar tidak keluar dari area kanvas
         const clampedRelX = Math.max(0, Math.min(1, relX));
         const clampedRelY = Math.max(0, Math.min(1, relY));
 
-        // Dapatkan ukuran dasar (unscaled) kanvas noVNC
         const baseW = canvas.offsetWidth || (rect.width / (this.zoomLevel || 1.0));
         const baseH = canvas.offsetHeight || (rect.height / (this.zoomLevel || 1.0));
 
-        // Hitung koordinat client sintetis yang dipahami noVNC clientToElement
         const syntheticClientX = rect.left + (clampedRelX * baseW);
         const syntheticClientY = rect.top + (clampedRelY * baseH);
 
@@ -127,69 +100,23 @@ const VNCClient = {
             view: window
         });
         canvas.dispatchEvent(ev);
-    },
+    }
 
     async connect() {
-        const screen = document.getElementById('vnc-screen');
-        const placeholder = document.getElementById('vnc-placeholder');
-        const badge = document.getElementById('vnc-status-badge');
-        const connectBtn = document.getElementById('vnc-connect-btn');
-        const disconnectBtn = document.getElementById('vnc-disconnect-btn');
-        const pwdInput = document.getElementById('vnc-password-input');
-
-        if (!screen) return;
-
-        badge.textContent = 'Memuat Modul VNC...';
-        badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30';
-
-        const RFBClass = await this.getRFB();
+        const RFBClass = await VNCClient.getRFB();
         if (!RFBClass) {
-            badge.textContent = 'Gagal Load Module';
-            badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
-            Toast.error('Gagal memuat modul noVNC. Pastikan PC terhubung ke internet untuk mengunduh library rfb.js');
+            this.options.onError(new Error('Gagal memuat modul noVNC'));
             return;
         }
 
-        badge.textContent = 'Menyiapkan Websockify...';
-
-        // 1. Panggil API backend untuk memastikan daemon websockify aktif
-        let listenPort = 8081;
-        let serverVncPassword = '';
+        const isMobile = this.isMobileDevice();
         try {
-            const startRes = await API.request('/api/v1/kasir/vnc/start', { method: 'POST' });
-            if (startRes) {
-                if (startRes.listen_port) {
-                    listenPort = startRes.listen_port;
-                }
-                if (startRes.vnc_password) {
-                    serverVncPassword = startRes.vnc_password;
-                }
+            if (this.options.screenContainer) {
+                this.options.screenContainer.innerHTML = '';
             }
-        } catch (err) {
-            badge.textContent = 'Gagal Start Service';
-            badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
-            Toast.error('Gagal memulai service VNC: ' + err.message);
-            return;
-        }
 
-        // 2. Tentukan WebSocket URL
-        let url;
-        if (window.location.protocol === 'https:') {
-            url = `wss://${window.location.host}/ws/vnc`;
-        } else {
-            url = `ws://${window.location.hostname}:${listenPort}`;
-        }
-
-        const vncPassword = (pwdInput && pwdInput.value) ? pwdInput.value : serverVncPassword;
-
-        badge.textContent = 'Menghubungkan...';
-
-        try {
-            screen.innerHTML = '';
-            
-            const isMobile = this.isMobileDevice();
-            this.rfb = new RFBClass(screen, url, {
-                credentials: { password: vncPassword },
+            this.rfb = new RFBClass(this.options.screenContainer, this.options.wsUrl, {
+                credentials: { password: this.options.password },
                 scaleViewport: this.scaleFactor,
                 clipViewport: false,
                 dragViewport: false,
@@ -197,26 +124,16 @@ const VNCClient = {
             });
 
             this.rfb.addEventListener('credentialsrequired', () => {
-                const pass = prompt('TightVNC meminta Password. Masukkan password VNC:');
+                const pass = prompt('TightVNC meminta Password:');
                 if (pass !== null) {
                     this.rfb.sendCredentials({ password: pass });
-                    if (pwdInput) pwdInput.value = pass;
                 }
             });
 
             this.rfb.addEventListener('connect', () => {
-                badge.textContent = 'Terhubung';
-                badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
-                placeholder.classList.add('hidden');
-                connectBtn.classList.add('hidden');
-                disconnectBtn.classList.remove('hidden');
-
-                // Lepas gesture internal noVNC agar tidak mengganggu touch controller kita di mobile
                 if (isMobile && this.rfb._gestures) {
                     try { this.rfb._gestures.detach(); } catch(e) {}
                 }
-
-                // Terapkan mode tampilan, observer, cursor behavior, dan touch controller terpadu
                 this.zoomLevel = 1.0;
                 this.panX = 0;
                 this.panY = 0;
@@ -226,22 +143,19 @@ const VNCClient = {
                 this.setupResizeObserver();
                 this.setupCanvasTouchEmulation();
 
-                // Focus kanvas
                 setTimeout(() => {
                     if (this.rfb) {
                         try { this.rfb.focus(); } catch(e) {}
                     }
                 }, 50);
 
-                Toast.success('Koneksi VNC Server Terhubung');
+                this.options.onConnect();
             });
 
-            // Tangkap resolusi dari frame pertama
             this.rfb.addEventListener('firstframe', () => {
                 this.updateResolutionInfo();
                 this.enforceMobileCursorBehavior();
                 this.applyDisplayMode();
-                this.setupCanvasTouchEmulation();
             });
 
             this.rfb.addEventListener('desktopname', () => {
@@ -249,40 +163,18 @@ const VNCClient = {
             });
 
             this.rfb.addEventListener('disconnect', (e) => {
-                badge.textContent = 'Terputus';
-                badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700';
-                placeholder.classList.remove('hidden');
-                connectBtn.classList.remove('hidden');
-                disconnectBtn.classList.add('hidden');
-                
-                // Reset HUD resolusi & panel mobile
-                const resBadge = document.getElementById('vnc-resolution-badge');
-                if (resBadge) resBadge.classList.add('hidden');
-
-                document.getElementById('vnc-virtual-keyboard').classList.add('hidden');
-                const optPanel = document.getElementById('vnc-options-panel');
-                if (optPanel) optPanel.classList.add('hidden');
-
                 if (this.resizeObserver) {
                     this.resizeObserver.disconnect();
                     this.resizeObserver = null;
                 }
-
                 this.releaseAllModifiers();
-
-                if (e.detail && e.detail.clean) {
-                    Toast.info('Koneksi VNC ditutup');
-                } else {
-                    Toast.error('Koneksi VNC terputus (Cek apakah TightVNC Server aktif di 127.0.0.1:5900)');
-                }
+                this.options.onDisconnect(e);
             });
 
         } catch (err) {
-            badge.textContent = 'Gagal Koneksi';
-            badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
-            Toast.error('Gagal memulai VNC Client: ' + err.message);
+            this.options.onError(err);
         }
-    },
+    }
 
     disconnect() {
         if (this.resizeObserver) {
@@ -294,34 +186,40 @@ const VNCClient = {
             this.rfb.disconnect();
             this.rfb = null;
         }
-        const screen = document.getElementById('vnc-screen');
-        if (screen) screen.innerHTML = '';
-        
-        const resBadge = document.getElementById('vnc-resolution-badge');
-        if (resBadge) resBadge.classList.add('hidden');
-    },
+        const container = this.options.vncContainer;
+        if (container) {
+            container.removeAttribute('data-unified-touch-attached');
+            const newContainer = container.cloneNode(true);
+            if (container.parentNode) {
+                container.parentNode.replaceChild(newContainer, container);
+            }
+            this.options.vncContainer = newContainer;
+            if (this.options.screenContainer) {
+                const screenId = this.options.screenContainer.id;
+                const newScreen = newContainer.querySelector(`#${screenId}`) || document.getElementById(screenId);
+                if (newScreen) {
+                    this.options.screenContainer = newScreen;
+                    newScreen.innerHTML = '';
+                }
+            }
+        } else if (this.options.screenContainer) {
+            this.options.screenContainer.innerHTML = '';
+        }
+    }
 
-    // Deteksi resolusi remote & rasio aspek
     updateResolutionInfo() {
         if (!this.rfb) return;
         const w = this.rfb._fbWidth || (this.rfb._display ? this.rfb._display._fbWidth : 0);
         const h = this.rfb._fbHeight || (this.rfb._display ? this.rfb._display._fbHeight : 0);
-
         if (w > 0 && h > 0) {
             this.remoteResolution = { width: w, height: h };
-            const resBadge = document.getElementById('vnc-resolution-badge');
-            if (resBadge) {
-                const modeText = this.scaleFactor ? 'FIT' : '1:1';
-                resBadge.textContent = `${w} × ${h} (${modeText})`;
-                resBadge.classList.remove('hidden');
-            }
+            this.options.onResolution(w, h);
         }
-    },
+    }
 
-    // Hitung batas pan agar canvas tidak melayang keluar batas saat di-zoom
     getPanBounds(zoom) {
-        const container = document.getElementById('vnc-container');
-        const screen = document.getElementById('vnc-screen');
+        const container = this.options.vncContainer;
+        const screen = this.options.screenContainer;
         if (!container || !screen) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
         const canvas = screen.querySelector('canvas');
         if (!canvas) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
@@ -337,17 +235,11 @@ const VNCClient = {
         const maxPanX = Math.max(0, (scaledW - contW) / 2);
         const maxPanY = Math.max(0, (scaledH - contH) / 2);
 
-        return {
-            minX: -maxPanX,
-            maxX: maxPanX,
-            minY: -maxPanY,
-            maxY: maxPanY
-        };
-    },
+        return { minX: -maxPanX, maxX: maxPanX, minY: -maxPanY, maxY: maxPanY };
+    }
 
-    // Terapkan transformasi hardware CSS untuk Zoom dan Pan yang 100% mulus (60fps)
     applyTransform(animate = false) {
-        const screen = document.getElementById('vnc-screen');
+        const screen = this.options.screenContainer;
         if (!screen) return;
         const canvas = screen.querySelector('canvas');
         if (!canvas) return;
@@ -370,59 +262,27 @@ const VNCClient = {
 
         canvas.style.transformOrigin = 'center center';
         canvas.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoomLevel})`;
-    },
+    }
 
-    // Terapkan mode tampilan: Scaling ON (Fit) vs Scaling OFF (1:1 Native)
     applyDisplayMode() {
-        const screen = document.getElementById('vnc-screen');
-        const scaleLabel = document.getElementById('vnc-scale-label');
-        const scaleBtn = document.getElementById('vnc-scale-btn');
-        const resBadge = document.getElementById('vnc-resolution-badge');
-
+        const screen = this.options.screenContainer;
         if (this.scaleFactor) {
-            // Mode 1: SCALING ON (Fit to Viewport)
             if (screen) screen.className = 'w-full h-full overflow-hidden flex items-center justify-center';
-            if (scaleLabel) scaleLabel.textContent = 'Fit Layar';
-            if (scaleBtn) {
-                scaleBtn.className = 'flex-1 md:flex-none px-3 py-1.5 bg-emerald-950/40 border border-emerald-800/60 hover:bg-emerald-900/40 text-emerald-400 text-xs lg:text-sm font-bold rounded transition-colors whitespace-nowrap flex items-center gap-1.5 justify-center';
-            }
-            if (this.rfb) {
-                this.rfb.scaleViewport = true;
-            }
+            if (this.rfb) this.rfb.scaleViewport = true;
         } else {
-            // Mode 2: SCALING OFF (1:1 Native Resolution)
-            if (screen) {
-                screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
-            }
-            if (scaleLabel) scaleLabel.textContent = '1:1 Asli';
-            if (scaleBtn) {
-                scaleBtn.className = 'flex-1 md:flex-none px-3 py-1.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-sm font-bold rounded transition-colors whitespace-nowrap flex items-center gap-1.5 justify-center';
-            }
-            if (this.rfb) {
-                this.rfb.scaleViewport = false;
-            }
+            if (screen) screen.className = 'w-full h-full overflow-auto block scrollbar-mono';
+            if (this.rfb) this.rfb.scaleViewport = false;
         }
-
-        // Terapkan perilaku kursor
         this.enforceMobileCursorBehavior();
-
-        // Terapkan transformasi zoom
         this.applyTransform(false);
 
-        // Update teks HUD resolusi
-        if (this.remoteResolution.width > 0 && resBadge) {
-            const modeText = this.scaleFactor ? 'FIT' : '1:1';
-            resBadge.textContent = `${this.remoteResolution.width} × ${this.remoteResolution.height} (${modeText})`;
-        }
-
-        // Pemicu resize event agar noVNC kanvas langsung sinkron
         setTimeout(() => {
             window.dispatchEvent(new Event('resize'));
             if (this.rfb) {
                 try { this.rfb.focus(); } catch (e) {}
             }
         }, 30);
-    },
+    }
 
     toggleScale() {
         this.scaleFactor = !this.scaleFactor;
@@ -430,14 +290,11 @@ const VNCClient = {
         this.panX = 0;
         this.panY = 0;
         this.applyDisplayMode();
-    },
+    }
 
-    // Observer untuk mendeteksi perubahan ukuran kontainer secara real-time
     setupResizeObserver() {
-        if (this.resizeObserver) {
-            this.resizeObserver.disconnect();
-        }
-        const container = document.getElementById('vnc-container');
+        if (this.resizeObserver) this.resizeObserver.disconnect();
+        const container = this.options.vncContainer;
         if (!container || typeof ResizeObserver === 'undefined') return;
 
         let resizeTimeout;
@@ -451,31 +308,12 @@ const VNCClient = {
                 window.dispatchEvent(new Event('resize'));
             }, 50);
         });
-
         this.resizeObserver.observe(container);
-    },
+    }
 
-    toggleFullscreen() {
-        const container = document.getElementById('vnc-container');
-        if (!container) return;
-        if (!document.fullscreenElement) {
-            container.requestFullscreen().then(() => {
-                setTimeout(() => this.applyDisplayMode(), 100);
-            }).catch(err => {
-                Toast.error('Gagal fullscreen: ' + err.message);
-            });
-        } else {
-            document.exitFullscreen().then(() => {
-                setTimeout(() => this.applyDisplayMode(), 100);
-            });
-        }
-    },
-
-    // Unified Mobile Touch Handler (Chrome Remote Desktop Style)
-    // Mengintegrasikan Single Tap (Left Click), Double Tap (Double Click Windows App), Drag (Pan), dan 2-Finger Pinch Zoom
     setupCanvasTouchEmulation() {
-        const container = document.getElementById('vnc-container');
-        const screen = document.getElementById('vnc-screen');
+        const container = this.options.vncContainer;
+        const screen = this.options.screenContainer;
         if (!container || !screen) return;
 
         if (container.dataset.unifiedTouchAttached) return;
@@ -488,12 +326,10 @@ const VNCClient = {
         let isLongPress = false;
         let isDragging = false;
 
-        // Variabel untuk Double Tap Tracking (Native Double Click Windows)
         let lastTapTime = 0;
         let lastTapX = 0;
         let lastTapY = 0;
 
-        // Variabel untuk 2-Finger Pinch Zoom
         let touchStartDist = 0;
         let startZoom = 1.0;
         let startPanX = 0;
@@ -501,12 +337,10 @@ const VNCClient = {
         let startMidX = 0;
         let startMidY = 0;
 
-        // 1. TOUCHSTART
         container.addEventListener('touchstart', (e) => {
             const canvas = screen.querySelector('canvas');
             if (!canvas) return;
 
-            // 2 JARI: PINCH TO ZOOM DI DALAM KANVAS REMOTE
             if (e.touches.length >= 2) {
                 if (longPressTimer) clearTimeout(longPressTimer);
                 this.isPinchZooming = true;
@@ -525,7 +359,6 @@ const VNCClient = {
                 return;
             }
 
-            // 1 JARI: TAP / PAN / LONG-PRESS
             if (e.touches.length === 1) {
                 this.isPinchZooming = false;
                 isLongPress = false;
@@ -538,10 +371,8 @@ const VNCClient = {
                 startPanX = this.panX;
                 startPanY = this.panY;
 
-                // Update posisi mouse hover
                 this.dispatchCanvasMouse('mousemove', touch.clientX, touch.clientY, 0, 0);
 
-                // Long-Press Timer (500ms) untuk Right Click
                 if (longPressTimer) clearTimeout(longPressTimer);
                 longPressTimer = setTimeout(() => {
                     isLongPress = true;
@@ -561,9 +392,7 @@ const VNCClient = {
             }
         }, { capture: true, passive: false });
 
-        // 2. TOUCHMOVE
         container.addEventListener('touchmove', (e) => {
-            // Mode 2 Jari: Eksekusi Pinch Zoom
             if (e.touches.length >= 2) {
                 if (longPressTimer) clearTimeout(longPressTimer);
                 this.isPinchZooming = true;
@@ -589,22 +418,18 @@ const VNCClient = {
                         this.panX = 0;
                         this.panY = 0;
                     }
-
                     this.applyTransform(false);
                 }
                 return;
             }
 
-            // Mode 1 Jari: Panning (Jika Sedang Zoom) atau Deteksi Gerakan
             if (e.touches.length === 1) {
                 if (this.isPinchZooming) return;
-
                 const touch = e.touches[0];
                 const dx = touch.clientX - touchStartX;
                 const dy = touch.clientY - touchStartY;
                 const dist = Math.hypot(dx, dy);
 
-                // Gunakan threshold 15px untuk anti-wobble
                 if (dist > 15) {
                     if (longPressTimer) {
                         clearTimeout(longPressTimer);
@@ -612,7 +437,6 @@ const VNCClient = {
                     }
                     isDragging = true;
 
-                    // Jika sedang di-zoom, geser kanvas secara langsung (Pan)
                     if (this.zoomLevel > 1.0) {
                         this.panX = startPanX + dx;
                         this.panY = startPanY + dy;
@@ -620,12 +444,10 @@ const VNCClient = {
                         e.preventDefault();
                     }
                 }
-
                 e.stopPropagation();
             }
         }, { capture: true, passive: false });
 
-        // 3. TOUCHEND
         container.addEventListener('touchend', (e) => {
             if (longPressTimer) {
                 clearTimeout(longPressTimer);
@@ -639,7 +461,6 @@ const VNCClient = {
             if (this.isPinchZooming) {
                 if (e.touches.length === 0) {
                     this.isPinchZooming = false;
-                    // Snap balik jika mendekati 1.0x
                     if (this.zoomLevel <= 1.05) {
                         this.zoomLevel = 1.0;
                         this.panX = 0;
@@ -666,35 +487,26 @@ const VNCClient = {
                 const dy = touch.clientY - touchStartY;
                 const dist = Math.hypot(dx, dy);
 
-                // Tap Cepat (< 450ms dan dist < 15px)
                 if (elapsed < 450 && dist < 15) {
                     const timeSinceLastTap = now - lastTapTime;
                     const distFromLastTap = Math.hypot(touch.clientX - lastTapX, touch.clientY - lastTapY);
 
-                    // Deteksi Double Tap (Jeda < 400ms dan jarak < 30px)
                     if (timeSinceLastTap < 400 && distFromLastTap < 30) {
-                        // === DOUBLE CLICK DETECTED (Membuka Aplikasi Windows) ===
-                        // Kunci titik klik persis di koordinat tap pertama agar tidak goyang (anti-jitter)
                         const targetX = lastTapX;
                         const targetY = lastTapY;
-
                         this.dispatchCanvasMouse('mousemove', targetX, targetY, 0, 0);
                         this.dispatchCanvasMouse('mousedown', targetX, targetY, 0, 1, 2);
                         setTimeout(() => {
                             this.dispatchCanvasMouse('mouseup', targetX, targetY, 0, 0, 2);
                         }, 30);
 
-                        // Haptic feedback untuk double click
                         if (navigator.vibrate) {
                             try { navigator.vibrate([25, 35, 25]); } catch(err) {}
                         }
-
-                        // Reset penanda tap
                         lastTapTime = 0;
                         lastTapX = 0;
                         lastTapY = 0;
                     } else {
-                        // === SINGLE CLICK (Left Click Biasa) ===
                         lastTapTime = now;
                         lastTapX = touch.clientX;
                         lastTapY = touch.clientY;
@@ -705,16 +517,480 @@ const VNCClient = {
                             this.dispatchCanvasMouse('mouseup', touch.clientX, touch.clientY, 0, 0, 1);
                         }, 30);
                     }
-
                     e.preventDefault();
                 }
-
                 e.stopPropagation();
             }
         }, { capture: true, passive: false });
+    }
+
+    sendKey(keysym, name, down) {
+        if (this.rfb) {
+            this.rfb.sendKey(keysym, name, down);
+        }
+    }
+
+    toggleModifier(modKey) {
+        if (!this.rfb) return;
+        const normalizedKey = modKey.charAt(0).toUpperCase() + modKey.slice(1).toLowerCase();
+        const active = !this.modifiers[normalizedKey];
+        this.modifiers[normalizedKey] = active;
+
+        let keysym;
+        if (normalizedKey === 'Ctrl') keysym = 0xffe3;
+        else if (normalizedKey === 'Alt') keysym = 0xffe9;
+        else if (normalizedKey === 'Win') keysym = 0xffeb;
+        else if (normalizedKey === 'Shift') keysym = 0xffe1;
+
+        this.rfb.sendKey(keysym, null, active);
+        return active;
+    }
+
+    releaseAllModifiers() {
+        if (!this.rfb) return;
+        const keys = { 'Ctrl': 0xffe3, 'Alt': 0xffe9, 'Win': 0xffeb, 'Shift': 0xffe1 };
+        for (const [key, keysym] of Object.entries(keys)) {
+            if (this.modifiers[key]) {
+                this.rfb.sendKey(keysym, null, false);
+                this.modifiers[key] = false;
+            }
+        }
+    }
+
+    focus() {
+        if (this.rfb) {
+            try { this.rfb.focus(); } catch(e) {}
+        }
+    }
+
+
+
+    getLettersRows() {
+        return [
+            ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+            ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+            ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+            [
+                { label: '⇧', action: 'shift', style: 'bg-[#222] border-neutral-700 min-w-[36px]' },
+                'z', 'x', 'c', 'v', 'b', 'n', 'm',
+                { label: '⌫', action: 'backspace', style: 'bg-[#222] border-neutral-700 min-w-[36px]' }
+            ],
+            [
+                { label: 'Esc', action: 'esc', style: 'bg-[#222] border-neutral-700' },
+                { label: 'Tab', action: 'tab', style: 'bg-[#222] border-neutral-700' },
+                { label: 'Spasi', action: 'space', style: 'flex-[2.5]' },
+                { label: 'Enter', action: 'enter', style: 'bg-[#222] border-neutral-700' }
+            ]
+        ];
+    }
+
+    getSymbolsRows() {
+        return [
+            ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+            ['-', '/', ':', ';', '(', ')', '$', '&', '@', '"'],
+            ['[', ']', '{', '}', '#', '%', '^', '*', '+', '='],
+            ['_', '\\', '|', '~', '<', '>', ',', '.', '?', '!'],
+            [
+                { label: 'Esc', action: 'esc', style: 'bg-[#222] border-neutral-700' },
+                { label: '⌫', action: 'backspace', style: 'bg-[#222] border-neutral-700' },
+                { label: 'Spasi', action: 'space', style: 'flex-[2.5]' },
+                { label: 'Enter', action: 'enter', style: 'bg-[#222] border-neutral-700' }
+            ]
+        ];
+    }
+
+    getFunctionRows() {
+        return [
+            [
+                { label: 'F1', keysym: 0xffbe },
+                { label: 'F2', keysym: 0xffbf },
+                { label: 'F3', keysym: 0xffc0 },
+                { label: 'F4', keysym: 0xffc1 },
+                { label: 'F5', keysym: 0xffc2 },
+                { label: 'F6', keysym: 0xffc3 }
+            ],
+            [
+                { label: 'F7', keysym: 0xffc4 },
+                { label: 'F8', keysym: 0xffc5 },
+                { label: 'F9', keysym: 0xffc6 },
+                { label: 'F10', keysym: 0xffc7 },
+                { label: 'F11', keysym: 0xffc8 },
+                { label: 'F12', keysym: 0xffc9 }
+            ],
+            [
+                { label: 'Esc', action: 'esc', style: 'bg-[#222] border-neutral-700' },
+                { label: 'Tab', action: 'tab', style: 'bg-[#222] border-neutral-700' },
+                { label: 'Del', keysym: 0xffff, style: 'bg-[#222] border-neutral-700 text-red-400 font-bold' },
+                { label: 'Home', keysym: 0xff50, style: 'bg-[#222] border-neutral-700' },
+                { label: 'End', keysym: 0xff57, style: 'bg-[#222] border-neutral-700' },
+                { label: 'PgUp', keysym: 0xff55, style: 'bg-[#222] border-neutral-700' },
+                { label: 'PgDn', keysym: 0xff56, style: 'bg-[#222] border-neutral-700' }
+            ],
+            [
+                { label: 'PrtSc', keysym: 0xff61, style: 'bg-[#222] border-neutral-700 text-[10px]' },
+                { label: 'Insert', keysym: 0xff63, style: 'bg-[#222] border-neutral-700 text-[10px]' },
+                { label: 'Spasi', action: 'space', style: 'flex-[2.5]' },
+                { label: 'Enter', action: 'enter', style: 'bg-[#222] border-neutral-700' }
+            ]
+        ];
+    }
+
+    toggleVirtualKeyboard(kbId, prefix = '') {
+        const kb = document.getElementById(kbId);
+        if (!kb) return;
+        if (kb.classList.contains('hidden')) {
+            kb.classList.remove('hidden');
+            this.switchKeyboardLayout('letters', prefix);
+        } else {
+            kb.classList.add('hidden');
+        }
+    }
+
+    switchKeyboardLayout(layout, prefix = '') {
+        this.keyboardLayout = layout;
+        const tabLetters = document.getElementById(`${prefix}kb-tab-letters`);
+        const tabSymbols = document.getElementById(`${prefix}kb-tab-symbols`);
+        const tabFunction = document.getElementById(`${prefix}kb-tab-function`);
+
+        const activeClass = 'px-3 py-1 text-[10px] font-bold rounded bg-neutral-200 text-black transition-colors';
+        const inactiveClass = 'px-3 py-1 text-[10px] font-bold rounded bg-[#171717] border border-[#262626] text-neutral-400 hover:bg-[#222] transition-colors';
+
+        if (tabLetters) tabLetters.className = layout === 'letters' ? activeClass : inactiveClass;
+        if (tabSymbols) tabSymbols.className = layout === 'symbols' ? activeClass : inactiveClass;
+        if (tabFunction) tabFunction.className = layout === 'function' ? activeClass : inactiveClass;
+
+        this.renderKeyboardKeys(`${prefix}kb-keys-grid`, prefix);
+    }
+
+    toggleKeyboardShift(gridId, prefix = '') {
+        this.shiftActive = !this.shiftActive;
+        this.renderKeyboardKeys(gridId, prefix);
+    }
+
+    renderKeyboardKeys(gridId, prefix = '') {
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        let rows;
+        if (this.keyboardLayout === 'letters') rows = this.getLettersRows();
+        else if (this.keyboardLayout === 'symbols') rows = this.getSymbolsRows();
+        else if (this.keyboardLayout === 'function') rows = this.getFunctionRows();
+        else rows = this.getLettersRows();
+
+        rows.forEach(row => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'flex gap-1 justify-center w-full';
+
+            row.forEach(key => {
+                const btn = document.createElement('button');
+                let label;
+                let btnClass = 'py-2 px-1 rounded text-neutral-200 bg-[#141414] border border-[#222] transition-colors text-xs text-center flex-1 select-none touch-manipulation font-semibold active:scale-[0.98]';
+
+                if (typeof key === 'string') {
+                    const displayChar = this.shiftActive && this.keyboardLayout === 'letters' ? key.toUpperCase() : key;
+                    label = displayChar;
+                    this.bindVirtualKeyEvents(btn, key, gridId, prefix);
+                } else {
+                    label = key.label;
+                    if (key.style) btnClass += ' ' + key.style;
+                    this.bindVirtualKeyEvents(btn, key, gridId, prefix);
+                }
+
+                btn.className = btnClass;
+                btn.textContent = label;
+                rowDiv.appendChild(btn);
+            });
+            grid.appendChild(rowDiv);
+        });
+    }
+
+    bindVirtualKeyEvents(btn, charOrKeyInfo, gridId, prefix = '') {
+        let keysym;
+        let isChar = false;
+        let charVal = '';
+
+        if (typeof charOrKeyInfo === 'string') {
+            isChar = true;
+            charVal = this.shiftActive && this.keyboardLayout === 'letters' ? charOrKeyInfo.toUpperCase() : charOrKeyInfo;
+            keysym = charVal.charCodeAt(0);
+        } else {
+            if (charOrKeyInfo.keysym) {
+                keysym = charOrKeyInfo.keysym;
+            } else if (charOrKeyInfo.action === 'shift') {
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    this.toggleKeyboardShift(gridId, prefix);
+                };
+                btn.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+                return;
+            } else if (charOrKeyInfo.action === 'backspace') keysym = 0xff08;
+            else if (charOrKeyInfo.action === 'tab') keysym = 0xff09;
+            else if (charOrKeyInfo.action === 'space') keysym = 0x0020;
+            else if (charOrKeyInfo.action === 'enter') keysym = 0xff0d;
+            else if (charOrKeyInfo.action === 'esc') keysym = 0xff1b;
+        }
+
+        const handlePress = (e) => {
+            e.preventDefault();
+            btn.classList.add('bg-neutral-200', 'text-black', 'border-white');
+            btn.classList.remove('bg-[#141414]', 'text-neutral-200', 'border-[#222]', 'bg-[#222]');
+            this.sendKey(keysym, null, true);
+        };
+
+        const handleRelease = (e) => {
+            e.preventDefault();
+            btn.classList.remove('bg-neutral-200', 'text-black', 'border-white');
+            if (typeof charOrKeyInfo !== 'string' && charOrKeyInfo.style && charOrKeyInfo.style.includes('bg-[#222]')) {
+                btn.classList.add('bg-[#222]', 'text-neutral-200', 'border-[#222]');
+            } else {
+                btn.classList.add('bg-[#141414]', 'text-neutral-200', 'border-[#222]');
+            }
+            this.sendKey(keysym, null, false);
+
+            if (isChar && this.shiftActive && this.keyboardLayout === 'letters') {
+                this.shiftActive = false;
+                this.renderKeyboardKeys(gridId, prefix);
+            }
+        };
+
+        btn.addEventListener('pointerdown', handlePress);
+        btn.addEventListener('pointerup', handleRelease);
+        btn.addEventListener('pointerleave', handleRelease);
+        btn.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+    }
+
+    sendShortcutPreset(preset) {
+        if (preset === 'Win+R') {
+            this.sendKey(0xffeb, null, true);
+            this.sendKey('r'.charCodeAt(0), null, true);
+            this.sendKey('r'.charCodeAt(0), null, false);
+            this.sendKey(0xffeb, null, false);
+        } else if (preset === 'Win+D') {
+            this.sendKey(0xffeb, null, true);
+            this.sendKey('d'.charCodeAt(0), null, true);
+            this.sendKey('d'.charCodeAt(0), null, false);
+            this.sendKey(0xffeb, null, false);
+        } else if (preset === 'Alt+Tab') {
+            this.sendKey(0xffe9, null, true);
+            this.sendKey(0xff09, null, true);
+            this.sendKey(0xff09, null, false);
+            this.sendKey(0xffe9, null, false);
+        } else if (preset === 'Alt+F4') {
+            this.sendKey(0xffe9, null, true);
+            this.sendKey(0xffbe, null, true);
+            this.sendKey(0xffbe, null, false);
+            this.sendKey(0xffe9, null, false);
+        }
+    }
+
+    sendSpecialKey(keysym) {
+        this.sendKey(keysym, null, true);
+        this.sendKey(keysym, null, false);
+    }
+}
+
+const VNCClient = {
+    rfb: null,
+    scaleFactor: true,
+    RFBClass: null,
+    session: null,
+    keyboardLayout: 'letters',
+    shiftActive: false,
+    remoteResolution: { width: 0, height: 0 },
+
+    async getRFB() {
+        if (this.RFBClass) return this.RFBClass;
+        if (window.RFB) {
+            this.RFBClass = window.RFB;
+            return this.RFBClass;
+        }
+        try {
+            const mod = await import('https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.js');
+            this.RFBClass = mod.default;
+            window.RFB = mod.default;
+            return this.RFBClass;
+        } catch (err) {
+            console.error('Gagal memuat modul noVNC RFB:', err);
+            return null;
+        }
     },
 
-    // Mobile Virtual Keyboard Toggle
+    // Dynamic Multi-Instance Session Factory
+    createSession(options) {
+        return new VNCSession(options);
+    },
+
+    // Backward compatibility for singleton Server Remote tab
+    async connect() {
+        const screen = document.getElementById('vnc-screen');
+        const container = document.getElementById('vnc-container');
+        const placeholder = document.getElementById('vnc-placeholder');
+        const badge = document.getElementById('vnc-status-badge');
+        const connectBtn = document.getElementById('vnc-connect-btn');
+        const disconnectBtn = document.getElementById('vnc-disconnect-btn');
+        const pwdInput = document.getElementById('vnc-password-input');
+
+        if (!screen) return;
+
+        badge.textContent = 'Memuat Modul VNC...';
+        badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30';
+
+        const RFBClass = await this.getRFB();
+        if (!RFBClass) {
+            badge.textContent = 'Gagal Load Module';
+            badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
+            Toast.error('Gagal memuat modul noVNC.');
+            return;
+        }
+
+        badge.textContent = 'Menyiapkan Websockify...';
+
+        let listenPort = 8081;
+        let serverVncPassword = '';
+        try {
+            const startRes = await API.request('/api/v1/kasir/vnc/start', { method: 'POST' });
+            if (startRes) {
+                if (startRes.listen_port) listenPort = startRes.listen_port;
+                if (startRes.vnc_password) serverVncPassword = startRes.vnc_password;
+            }
+        } catch (err) {
+            badge.textContent = 'Gagal Start Service';
+            badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
+            Toast.error('Gagal memulai service VNC: ' + err.message);
+            return;
+        }
+
+        let url;
+        if (window.location.protocol === 'https:') {
+            url = `wss://${window.location.host}/ws/vnc`;
+        } else {
+            url = `ws://${window.location.hostname}:${listenPort}`;
+        }
+
+        const vncPassword = (pwdInput && pwdInput.value) ? pwdInput.value : serverVncPassword;
+        badge.textContent = 'Menghubungkan...';
+
+        this.session = new VNCSession({
+            screenContainer: screen,
+            vncContainer: container,
+            wsUrl: url,
+            password: vncPassword,
+            scaleViewport: this.scaleFactor,
+            onConnect: () => {
+                this.rfb = this.session.rfb;
+                badge.textContent = 'Terhubung';
+                badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                if (placeholder) placeholder.classList.add('hidden');
+                if (connectBtn) connectBtn.classList.add('hidden');
+                if (disconnectBtn) disconnectBtn.classList.remove('hidden');
+                Toast.success('Koneksi VNC Server Terhubung');
+            },
+            onDisconnect: (e) => {
+                badge.textContent = 'Terputus';
+                badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700';
+                if (placeholder) placeholder.classList.remove('hidden');
+                if (connectBtn) connectBtn.classList.remove('hidden');
+                if (disconnectBtn) disconnectBtn.classList.add('hidden');
+
+                const resBadge = document.getElementById('vnc-resolution-badge');
+                if (resBadge) resBadge.classList.add('hidden');
+
+                const kb = document.getElementById('vnc-virtual-keyboard');
+                if (kb) kb.classList.add('hidden');
+                const optPanel = document.getElementById('vnc-options-panel');
+                if (optPanel) optPanel.classList.add('hidden');
+
+                if (e.detail && e.detail.clean) {
+                    Toast.info('Koneksi VNC ditutup');
+                } else {
+                    Toast.error('Koneksi VNC terputus (Cek apakah TightVNC Server aktif di 127.0.0.1:5900)');
+                }
+                this.session = null;
+                this.rfb = null;
+            },
+            onError: (err) => {
+                badge.textContent = 'Gagal Koneksi';
+                badge.className = 'px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30';
+                Toast.error('Gagal VNC: ' + err.message);
+                this.session = null;
+                this.rfb = null;
+            },
+            onResolution: (w, h) => {
+                this.remoteResolution = { width: w, height: h };
+                const resBadge = document.getElementById('vnc-resolution-badge');
+                if (resBadge) {
+                    const modeText = this.scaleFactor ? 'FIT' : '1:1';
+                    resBadge.textContent = `${w} × ${h} (${modeText})`;
+                    resBadge.classList.remove('hidden');
+                }
+            }
+        });
+
+        await this.session.connect();
+    },
+
+    disconnect() {
+        if (this.session) {
+            this.session.disconnect();
+            this.session = null;
+            this.rfb = null;
+        }
+    },
+
+    toggleScale() {
+        if (this.session) {
+            this.session.toggleScale();
+            this.scaleFactor = this.session.scaleFactor;
+            this.applyDisplayModeHUD();
+        }
+    },
+
+    applyDisplayModeHUD() {
+        const scaleLabel = document.getElementById('vnc-scale-label');
+        const scaleBtn = document.getElementById('vnc-scale-btn');
+        const resBadge = document.getElementById('vnc-resolution-badge');
+
+        if (this.scaleFactor) {
+            if (scaleLabel) scaleLabel.textContent = 'Fit Layar';
+            if (scaleBtn) {
+                scaleBtn.className = 'flex-1 md:flex-none px-3 py-1.5 bg-emerald-950/40 border border-emerald-800/60 hover:bg-emerald-900/40 text-emerald-400 text-xs lg:text-sm font-bold rounded transition-colors whitespace-nowrap flex items-center gap-1.5 justify-center';
+            }
+        } else {
+            if (scaleLabel) scaleLabel.textContent = '1:1 Asli';
+            if (scaleBtn) {
+                scaleBtn.className = 'flex-1 md:flex-none px-3 py-1.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:text-sm font-bold rounded transition-colors whitespace-nowrap flex items-center gap-1.5 justify-center';
+            }
+        }
+
+        if (this.remoteResolution.width > 0 && resBadge) {
+            const modeText = this.scaleFactor ? 'FIT' : '1:1';
+            resBadge.textContent = `${this.remoteResolution.width} × ${this.remoteResolution.height} (${modeText})`;
+        }
+    },
+
+    toggleFullscreen() {
+        const container = document.getElementById('vnc-container');
+        if (!container) return;
+        if (!document.fullscreenElement) {
+            container.requestFullscreen().then(() => {
+                setTimeout(() => {
+                    if (this.session) this.session.applyDisplayMode();
+                    this.applyDisplayModeHUD();
+                }, 100);
+            }).catch(err => {
+                Toast.error('Gagal fullscreen: ' + err.message);
+            });
+        } else {
+            document.exitFullscreen().then(() => {
+                setTimeout(() => {
+                    if (this.session) this.session.applyDisplayMode();
+                    this.applyDisplayModeHUD();
+                }, 100);
+            });
+        }
+    },
+
     toggleVirtualKeyboard() {
         const kb = document.getElementById('vnc-virtual-keyboard');
         if (!kb) return;
@@ -726,10 +1002,8 @@ const VNCClient = {
         }
     },
 
-    // Switch Keyboard Layout & Render
     switchKeyboardLayout(layout) {
         this.keyboardLayout = layout;
-
         const tabLetters = document.getElementById('vnc-kb-tab-letters');
         const tabSymbols = document.getElementById('vnc-kb-tab-symbols');
         const tabFunction = document.getElementById('vnc-kb-tab-function');
@@ -853,12 +1127,10 @@ const VNCClient = {
                 btn.textContent = label;
                 rowDiv.appendChild(btn);
             });
-
             grid.appendChild(rowDiv);
         });
     },
 
-    // Mengikat event pointerdown & pointerup/pointerleave untuk pengetikan instan
     bindVirtualKeyEvents(btn, charOrKeyInfo) {
         let keysym;
         let isChar = false;
@@ -887,32 +1159,23 @@ const VNCClient = {
 
         const handlePress = (e) => {
             e.preventDefault();
-            if (!this.rfb) return;
-
-            // Highlight visual ketika ditekan
+            if (!this.session) return;
             btn.classList.add('bg-neutral-200', 'text-black', 'border-white');
             btn.classList.remove('bg-[#141414]', 'text-neutral-200', 'border-[#222]', 'bg-[#222]');
-
-            // Kirim key down ke VNC host
-            this.rfb.sendKey(keysym, null, true);
+            this.session.sendKey(keysym, null, true);
         };
 
         const handleRelease = (e) => {
             e.preventDefault();
-            if (!this.rfb) return;
-
-            // Kembalikan visual ke warna asal
+            if (!this.session) return;
             btn.classList.remove('bg-neutral-200', 'text-black', 'border-white');
             if (typeof charOrKeyInfo !== 'string' && charOrKeyInfo.style && charOrKeyInfo.style.includes('bg-[#222]')) {
                 btn.classList.add('bg-[#222]', 'text-neutral-200', 'border-[#222]');
             } else {
                 btn.classList.add('bg-[#141414]', 'text-neutral-200', 'border-[#222]');
             }
+            this.session.sendKey(keysym, null, false);
 
-            // Kirim key up ke VNC host
-            this.rfb.sendKey(keysym, null, false);
-
-            // Auto-turn off Shift jika mengetik huruf kapital
             if (isChar && this.shiftActive && this.keyboardLayout === 'letters') {
                 this.shiftActive = false;
                 this.renderKeyboardKeys();
@@ -925,24 +1188,11 @@ const VNCClient = {
         btn.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
     },
 
-    // Toggle Sticky / Latching Modifier (Ctrl, Alt, Win, Shift)
-    // Modifier akan TETAP AKTIF (berwarna putih) sampai diketuk lagi untuk OFF
     toggleModifier(modKey) {
-        if (!this.rfb) return;
+        if (!this.session) return;
         const normalizedKey = modKey.charAt(0).toUpperCase() + modKey.slice(1).toLowerCase();
-        const active = !this.modifiers[normalizedKey];
-        this.modifiers[normalizedKey] = active;
+        const active = this.session.toggleModifier(modKey);
 
-        let keysym;
-        if (normalizedKey === 'Ctrl') keysym = 0xffe3;
-        else if (normalizedKey === 'Alt') keysym = 0xffe9;
-        else if (normalizedKey === 'Win') keysym = 0xffeb;
-        else if (normalizedKey === 'Shift') keysym = 0xffe1;
-
-        // Kirim status key down jika active, key up jika inactive
-        this.rfb.sendKey(keysym, null, active);
-
-        // Update styling visual tombol toggle
         const btn = document.getElementById(`vnc-key-${normalizedKey.toLowerCase()}`);
         if (btn) {
             if (active) {
@@ -953,65 +1203,55 @@ const VNCClient = {
         }
     },
 
-    // Force release all active modifiers (misal saat disconnect)
     releaseAllModifiers() {
-        if (!this.rfb) return;
-        const keys = { 'Ctrl': 0xffe3, 'Alt': 0xffe9, 'Win': 0xffeb, 'Shift': 0xffe1 };
-        for (const [key, keysym] of Object.entries(keys)) {
-            if (this.modifiers[key]) {
-                this.rfb.sendKey(keysym, null, false);
-                this.modifiers[key] = false;
+        if (this.session) {
+            this.session.releaseAllModifiers();
+            const keys = ['Ctrl', 'Alt', 'Win', 'Shift'];
+            keys.forEach(key => {
                 const btn = document.getElementById(`vnc-key-${key.toLowerCase()}`);
                 if (btn) {
                     btn.className = 'flex-1 py-1.5 bg-[#171717] border border-[#262626] text-neutral-400 text-[10px] font-bold rounded transition-colors';
                 }
-            }
+            });
         }
     },
 
-    // Mobile Options Panel Toggle
     toggleMobileOptions() {
         const panel = document.getElementById('vnc-options-panel');
-        if (!panel) return;
-        panel.classList.toggle('hidden');
+        if (panel) panel.classList.toggle('hidden');
     },
 
-    // Send special keys
     sendSpecialKey(keysym) {
-        if (!this.rfb) return;
-        this.rfb.sendKey(keysym, null, true);
-        this.rfb.sendKey(keysym, null, false);
+        if (this.session) {
+            this.session.sendKey(keysym, null, true);
+            this.session.sendKey(keysym, null, false);
+        }
     },
 
-    // Send CAD
-    sendCtrlAltDel() {
-        if (!this.rfb) return;
-        this.rfb.sendCtrlAltDel();
-    },
 
-    // Send Shortcut Preset
+
     sendShortcutPreset(preset) {
-        if (!this.rfb) return;
+        if (!this.session) return;
         if (preset === 'Win+R') {
-            this.rfb.sendKey(0xffeb, null, true); // Win
-            this.rfb.sendKey('r'.charCodeAt(0), null, true); // R
-            this.rfb.sendKey('r'.charCodeAt(0), null, false);
-            this.rfb.sendKey(0xffeb, null, false);
+            this.session.sendKey(0xffeb, null, true);
+            this.session.sendKey('r'.charCodeAt(0), null, true);
+            this.session.sendKey('r'.charCodeAt(0), null, false);
+            this.session.sendKey(0xffeb, null, false);
         } else if (preset === 'Win+D') {
-            this.rfb.sendKey(0xffeb, null, true); // Win
-            this.rfb.sendKey('d'.charCodeAt(0), null, true); // D
-            this.rfb.sendKey('d'.charCodeAt(0), null, false);
-            this.rfb.sendKey(0xffeb, null, false);
+            this.session.sendKey(0xffeb, null, true);
+            this.session.sendKey('d'.charCodeAt(0), null, true);
+            this.session.sendKey('d'.charCodeAt(0), null, false);
+            this.session.sendKey(0xffeb, null, false);
         } else if (preset === 'Alt+Tab') {
-            this.rfb.sendKey(0xffe9, null, true); // Alt
-            this.rfb.sendKey(0xff09, null, true); // Tab
-            this.rfb.sendKey(0xff09, null, false);
-            this.rfb.sendKey(0xffe9, null, false);
+            this.session.sendKey(0xffe9, null, true);
+            this.session.sendKey(0xff09, null, true);
+            this.session.sendKey(0xff09, null, false);
+            this.session.sendKey(0xffe9, null, false);
         } else if (preset === 'Alt+F4') {
-            this.rfb.sendKey(0xffe9, null, true); // Alt
-            this.rfb.sendKey(0xffbe, null, true); // F4 (0xffbe is F4)
-            this.rfb.sendKey(0xffbe, null, false);
-            this.rfb.sendKey(0xffe9, null, false);
+            this.session.sendKey(0xffe9, null, true);
+            this.session.sendKey(0xffbe, null, true);
+            this.session.sendKey(0xffbe, null, false);
+            this.session.sendKey(0xffe9, null, false);
         }
     },
 
@@ -1047,6 +1287,7 @@ const VNCClient = {
     }
 };
 
+window.VNCSession = VNCSession;
 window.VNCClient = VNCClient;
 
 document.addEventListener('DOMContentLoaded', () => {
