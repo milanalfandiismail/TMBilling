@@ -54,10 +54,10 @@ export const UI = {
     showAdminError(msg) {
         const errEl = document.getElementById('admin-error');
         const modalBox = document.querySelector('#admin-modal > div');
-        
+
         errEl.innerText = msg;
         errEl.classList.remove('hidden');
-        
+
         // Animasi Shake
         modalBox.classList.add('shake');
         setTimeout(() => modalBox.classList.remove('shake'), 400);
@@ -67,20 +67,20 @@ export const UI = {
     showToast(message, type = 'error') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
-        
+
         const bgColor = type === 'error' ? 'bg-red-950/10' : 'bg-emerald-950/10';
         const borderColor = type === 'error' ? 'border-red-500/20' : 'border-emerald-500/20';
         const textColor = type === 'error' ? 'text-red-400' : 'text-emerald-400';
-        
+
         toast.className = `toast ${bgColor} ${borderColor} ${textColor} border backdrop-blur-xl px-6 py-4 rounded-xl flex items-center gap-3 shadow-2xl`;
-        
+
         toast.innerHTML = `
             <div class="w-2 h-2 rounded-full ${type === 'error' ? 'bg-red-500' : 'bg-emerald-400'} animate-pulse"></div>
             <span class="text-[11px] font-bold tracking-wide">${message}</span>
         `;
-        
+
         container.appendChild(toast);
-        
+
         // Auto remove
         setTimeout(() => {
             toast.classList.add('toast-out');
@@ -103,7 +103,7 @@ export const UI = {
         if (seconds > 0) {
             statusEl.innerText = "Shutdown";
             statusEl.classList.add('animate-pulse');
-            
+
             const mins = Math.floor(seconds / 60);
             const secs = seconds % 60;
             countEl.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;

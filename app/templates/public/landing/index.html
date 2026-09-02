@@ -86,29 +86,18 @@
         </section>
 
         <!-- Rules Section (Aturan Warnet) -->
+        {% if warnet_rules and warnet_rules.strip() %}
         <section class="bg-[#0a0a0a] border border-[#1f1f1f] rounded-2xl p-6 md:p-8 space-y-6">
             <div>
                 <h3 class="text-lg md:text-xl font-bold text-neutral-100">Aturan &amp; Tata Tertib Warnet</h3>
-                <p class="text-xs text-neutral-500 font-mono mt-1 uppercase tracking-wider">Harap dipatuhi demi
-                    kenyamanan bersama</p>
+                <p class="text-xs text-neutral-500 font-mono mt-1 uppercase tracking-wider">Harap dipatuhi demi kenyamanan bersama</p>
             </div>
 
-            <ul class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-[#1f1f1f] pt-6">
-                {% for rule in warnet_rules.split('\n') %}
-                {% if rule.strip() %}
-                <li class="flex items-start gap-3 p-3 bg-[#111] border border-neutral-900 rounded-lg">
-                    <span
-                        class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-neutral-800 text-[10px] font-mono font-bold text-neutral-400 shrink-0 select-none">
-                        {{ loop.index }}
-                    </span>
-                    <span class="text-neutral-400 text-xs md:text-sm leading-relaxed">
-                        {{ rule.strip().split('.', 1)[-1].strip() if '.' in rule else rule.strip() }}
-                    </span>
-                </li>
-                {% endif %}
-                {% endfor %}
-            </ul>
+            <div class="border-t border-[#1f1f1f] pt-6 ck-content text-neutral-300 text-xs md:text-sm leading-relaxed space-y-3 font-normal">
+                {{ warnet_rules | safe }}
+            </div>
         </section>
+        {% endif %}
 
     </main>
 

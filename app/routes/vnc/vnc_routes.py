@@ -48,6 +48,7 @@ def start_vnc_proxy():
         "success": True,
         "message": msg,
         "listen_port": VNCService.LISTEN_PORT,
+        "token": "server",
         "vnc_password": vnc_password
     })
 

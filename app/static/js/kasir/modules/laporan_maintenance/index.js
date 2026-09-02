@@ -86,8 +86,8 @@ const LaporanMaintenance = {
                     <td class="py-2.5 px-3 font-bold text-neutral-100 font-mono">${t.pc_kode}</td>
                     <td class="py-2.5 px-3 font-mono text-[9px] lg:text-xs"><span class="px-2 py-0.5 rounded bg-neutral-800 text-neutral-400 font-bold uppercase tracking-wider">${t.kategori}</span></td>
                     <td class="py-2.5 px-3">
-                        <div class="font-bold text-neutral-200">${t.judul}</div>
-                        <div class="text-neutral-500 text-[10px] lg:text-[13px] mt-0.5">${t.resolusi || '-'}</div>
+                        <div class="font-bold text-neutral-200 break-words leading-snug max-w-xs sm:max-w-sm lg:max-w-md">${t.judul}</div>
+                        <div class="text-neutral-500 text-[10px] lg:text-[13px] mt-0.5 break-words leading-relaxed">${t.resolusi || '-'}</div>
                     </td>
                     <td class="py-2.5 px-3 text-right font-bold text-emerald-400 font-mono">${formatRupiah(t.biaya)}</td>
                 </tr>

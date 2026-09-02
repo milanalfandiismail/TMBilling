@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=JetBrains+Mono&display=swap');
 
 @layer base {
     * { 
@@ -61,20 +61,27 @@
         animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
     }
 
-    /* Custom Scrollbar */
+    /* Custom Scrollbar with High-Visibility Highlighting */
+    .scrollbar-thin {
+        scrollbar-width: thin;
+        scrollbar-color: #34d399 rgba(255, 255, 255, 0.05);
+    }
     .scrollbar-thin::-webkit-scrollbar {
-        width: 4px;
-        height: 4px;
+        width: 6px;
+        height: 6px;
     }
     .scrollbar-thin::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.01);
-    }
-    .scrollbar-thin::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.03);
         border-radius: 9999px;
     }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+        border-radius: 9999px;
+        box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+    }
     .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-        background: rgba(52, 211, 153, 0.3);
+        background: linear-gradient(180deg, #6ee7b7 0%, #34d399 100%);
+        box-shadow: 0 0 12px rgba(52, 211, 153, 0.7);
     }
 
     /* Premium Cyber Card */
@@ -122,6 +129,226 @@
     .premium-btn:active {
         transform: translateY(0);
     }
+
+    /* Rich Rules / Announcement HTML Styling (CKEditor output for Kiosk) */
+    #rules-container {
+        font-family: inherit;
+        color: #d1d5db;
+        line-height: 1.6;
+    }
+    #rules-container h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-top: 0.75rem;
+        margin-bottom: 0.35rem;
+        line-height: 1.3;
+    }
+    #rules-container h2 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #f3f4f6;
+        margin-top: 0.6rem;
+        margin-bottom: 0.3rem;
+        line-height: 1.3;
+    }
+    #rules-container h3 {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #e5e7eb;
+        margin-top: 0.5rem;
+        margin-bottom: 0.25rem;
+        line-height: 1.3;
+    }
+    #rules-container h4 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #e5e7eb;
+        margin-top: 0.4rem;
+        margin-bottom: 0.2rem;
+        line-height: 1.3;
+    }
+    #rules-container p {
+        margin-bottom: 0.4rem;
+        line-height: 1.55;
+    }
+    #rules-container strong, #rules-container b {
+        font-weight: 700;
+        color: inherit;
+    }
+    #rules-container em, #rules-container i {
+        font-style: italic;
+        color: inherit;
+    }
+    #rules-container u {
+        text-decoration: underline;
+        color: inherit;
+    }
+    #rules-container s, #rules-container strike, #rules-container del {
+        text-decoration: line-through;
+        color: inherit;
+    }
+    #rules-container ul {
+        list-style-type: disc !important;
+        padding-left: 1.25rem !important;
+        margin-bottom: 0.5rem;
+    }
+    #rules-container ol {
+        list-style-type: decimal !important;
+        padding-left: 1.25rem !important;
+        margin-bottom: 0.5rem;
+    }
+    #rules-container li {
+        margin-bottom: 0.25rem;
+        line-height: 1.45;
+        color: inherit;
+    }
+    #rules-container blockquote {
+        border-left: 3px solid #34d399;
+        padding-left: 0.75rem;
+        margin: 0.5rem 0;
+        color: #9ca3af;
+        font-style: italic;
+    }
+    #rules-container a {
+        color: #34d399;
+        text-decoration: underline;
+    }
+    #rules-container hr {
+        border: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin: 0.75rem 0;
+    }
+    #rules-container code {
+        background-color: rgba(255, 255, 255, 0.08);
+        padding: 0.15rem 0.35rem;
+        border-radius: 4px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+        color: #fbbf24;
+    }
+    #rules-container pre {
+        background-color: #0d0d0d;
+        border: 1px solid #262626;
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        margin: 0.5rem 0;
+        overflow-x: auto;
+    }
+    #rules-container pre code {
+        background-color: transparent;
+        padding: 0;
+        color: #e5e7eb;
+    }
+
+    /* CKEditor Font Size Classes */
+    #rules-container .text-tiny {
+        font-size: 0.7em !important;
+    }
+    #rules-container .text-small {
+        font-size: 0.85em !important;
+    }
+    #rules-container .text-big {
+        font-size: 1.4em !important;
+    }
+    #rules-container .text-huge {
+        font-size: 1.8em !important;
+    }
+
+    /* CKEditor Highlight / Markers */
+    #rules-container mark {
+        padding: 0.1em 0.25em;
+        border-radius: 3px;
+    }
+    #rules-container mark.marker-yellow {
+        background-color: #fef08a !important;
+        color: #1e1b4b !important;
+    }
+    #rules-container mark.marker-green {
+        background-color: #bbf7d0 !important;
+        color: #064e3b !important;
+    }
+    #rules-container mark.marker-pink {
+        background-color: #fbcfe8 !important;
+        color: #831843 !important;
+    }
+    #rules-container mark.marker-blue {
+        background-color: #bfdbfe !important;
+        color: #1e3a8a !important;
+    }
+    #rules-container mark.pen-red {
+        color: #ef4444 !important;
+        background-color: transparent !important;
+    }
+    #rules-container mark.pen-green {
+        color: #22c55e !important;
+        background-color: transparent !important;
+    }
+
+    /* CKEditor Checklist / Todo List */
+    #rules-container ul.todo-list {
+        list-style-type: none !important;
+        padding-left: 0.25rem !important;
+    }
+    #rules-container ul.todo-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    #rules-container ul.todo-list input[type="checkbox"] {
+        pointer-events: none;
+        accent-color: #34d399;
+        margin-top: 0.25rem;
+    }
+
+    /* Text Alignment Classes & Elements */
+    #rules-container .text-align-left,
+    #rules-container p.text-align-left,
+    #rules-container h1.text-align-left,
+    #rules-container h2.text-align-left,
+    #rules-container h3.text-align-left,
+    #rules-container div.text-align-left,
+    #rules-container [style*="text-align: left"],
+    #rules-container [style*="text-align:left"] {
+        text-align: left !important;
+    }
+    #rules-container .text-align-center,
+    #rules-container p.text-align-center,
+    #rules-container h1.text-align-center,
+    #rules-container h2.text-align-center,
+    #rules-container h3.text-align-center,
+    #rules-container div.text-align-center,
+    #rules-container [style*="text-align: center"],
+    #rules-container [style*="text-align:center"] {
+        text-align: center !important;
+    }
+    #rules-container .text-align-right,
+    #rules-container p.text-align-right,
+    #rules-container h1.text-align-right,
+    #rules-container h2.text-align-right,
+    #rules-container h3.text-align-right,
+    #rules-container div.text-align-right,
+    #rules-container [style*="text-align: right"],
+    #rules-container [style*="text-align:right"] {
+        text-align: right !important;
+    }
+    #rules-container .text-align-justify,
+    #rules-container p.text-align-justify,
+    #rules-container h1.text-align-justify,
+    #rules-container h2.text-align-justify,
+    #rules-container h3.text-align-justify,
+    #rules-container div.text-align-justify,
+    #rules-container [style*="text-align: justify"],
+    #rules-container [style*="text-align:justify"] {
+        text-align: justify !important;
+    }
+
+    /* CKEditor Indent Classes */
+    #rules-container .ck-indent-1 { padding-left: 1.5rem !important; }
+    #rules-container .ck-indent-2 { padding-left: 3rem !important; }
+    #rules-container .ck-indent-3 { padding-left: 4.5rem !important; }
+    #rules-container .ck-indent-4 { padding-left: 6rem !important; }
+    #rules-container .ck-indent-5 { padding-left: 7.5rem !important; }
 }
 
 @layer utilities {

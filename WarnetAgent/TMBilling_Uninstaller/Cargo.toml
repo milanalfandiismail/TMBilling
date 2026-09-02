@@ -1,6 +1,6 @@
 [package]
-name = "uninstaller"
-version = "1.5.7"
+name = "tmbilling_uninstaller"
+version = "1.5.8"
 edition = "2021"
 
 [[bin]]

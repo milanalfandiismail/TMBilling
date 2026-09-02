@@ -59,9 +59,9 @@ function renderPCs() {
     // Dapatkan semua grup unik yang relevan
     let groups = [];
     if (currentFilter === 'all') {
-        const uniqueGroups = [...new Set(allPCs.map(pc => pc.grup.toLowerCase().trim()))];
-        // Urutkan grup secara alfabetis agar konsisten (reguler -> vip -> vvip)
-        uniqueGroups.sort();
+        const uniqueGroups = [...new Set(allPCs.map(pc => (pc.grup || 'Reguler').toLowerCase().trim()))];
+        // Urutkan grup secara natural agar konsisten
+        uniqueGroups.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
         groups = uniqueGroups;
     } else {
         groups = [currentFilter];
@@ -71,8 +71,11 @@ function renderPCs() {
 
     groups.forEach(gName => {
         // Ambil PC untuk grup ini
-        const pcsInGroup = allPCs.filter(pc => pc.grup.toLowerCase().trim() === gName);
+        const pcsInGroup = allPCs.filter(pc => (pc.grup || 'Reguler').toLowerCase().trim() === gName);
         if (pcsInGroup.length === 0) return;
+
+        // Natural sort PC items (TM-1, TM-2, TM-3, TM-10, TM-20)
+        pcsInGroup.sort((a, b) => (a.kode || a.nama || '').localeCompare(b.kode || b.nama || '', undefined, { numeric: true, sensitivity: 'base' }));
 
         renderedCount += pcsInGroup.length;
 

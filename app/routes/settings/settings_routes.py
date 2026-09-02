@@ -94,6 +94,10 @@ def update_setting(key):
         
         if value is None:
             return jsonify({"error": "Nilai 'value' wajib diisi"}), 400
+
+        if key == "warnet_announcement":
+            from app.utils.helpers import sanitize_html
+            value = sanitize_html(str(value))
             
         old_val = SettingsService.get(key, "-")
         SettingsService.set(key, str(value))

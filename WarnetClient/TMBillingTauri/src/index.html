@@ -29,71 +29,57 @@
             <div
                 class="premium-cyber-card border border-[#2a2a2a] rounded-3xl p-5 lg:p-6 shadow-2xl flex flex-col justify-between flex-1 min-h-0 backdrop-blur-md bg-opacity-90">
                 <!-- Tab Header -->
-                <div class="flex gap-1 mb-4">
+                <div class="flex gap-2 mb-3">
                     <button id="tab-rules-btn"
-                        class="flex-1 px-3 py-1.5 bg-white/10 border border-white/10 text-[9px] font-bold rounded-lg text-white transition-all">Aturan
+                        class="flex-1 px-4 py-2 bg-white/10 border border-white/10 text-xs lg:text-sm font-bold rounded-xl text-white transition-all shadow-sm">Aturan
                         Warnet</button>
                     <button id="tab-packages-btn"
-                        class="flex-1 px-3 py-1.5 bg-white/5 border border-white/5 text-[9px] font-bold rounded-lg text-neutral-400 hover:text-white transition-all">Daftar
+                        class="flex-1 px-4 py-2 bg-white/5 border border-white/5 text-xs lg:text-sm font-bold rounded-xl text-neutral-400 hover:text-white hover:bg-white/10 transition-all">Daftar
                         Paket</button>
                 </div>
 
                 <!-- Tab Content: Rules Panel -->
                 <div id="panel-rules" class="flex-1 flex flex-col min-h-0">
-                    <header class="mb-3 space-y-1">
-                        <div class="flex items-center gap-2">
-                            <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
-                            <span class="text-[9px] font-bold tracking-widest text-accent uppercase">Informasi</span>
-                        </div>
-                        <h2 class="text-base font-extrabold tracking-tight text-white">Aturan Warnet</h2>
-                    </header>
-
                     <div id="rules-container"
-                        class="flex-1 overflow-y-auto text-[10px] lg:text-[11px] text-neutral-400 space-y-2 pr-2 scrollbar-thin leading-relaxed">
-                        <p class="text-neutral-500">Memuat aturan...</p>
+                        class="flex-1 overflow-y-auto text-xs lg:text-sm text-neutral-300 space-y-2.5 pr-2.5 scrollbar-thin leading-relaxed">
+                        <p class="text-neutral-500 text-xs lg:text-sm">Memuat aturan...</p>
                     </div>
 
                     <div id="rules-pagination"
-                        class="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-neutral-500 font-mono text-[9px]">
+                        class="mt-3 pt-3 border-t border-white/10 flex items-center justify-between font-mono text-xs lg:text-sm">
                         <button id="rules-prev-btn"
-                            class="hover:text-white transition-colors disabled:opacity-30 disabled:hover:text-neutral-500"
+                            class="px-3.5 py-1.5 bg-white/5 hover:bg-white/15 border border-white/10 hover:border-accent/40 text-neutral-300 hover:text-white rounded-xl transition-all font-bold disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1.5 shadow-sm"
                             disabled>&larr; Prev</button>
-                        <span id="rules-page-indicator">1 / 1</span>
+                        <span id="rules-page-indicator"
+                            class="px-3.5 py-1 bg-white/5 border border-accent/20 rounded-xl text-accent font-bold tracking-wider shadow-inner text-xs lg:text-sm">1 / 1</span>
                         <button id="rules-next-btn"
-                            class="hover:text-white transition-colors disabled:opacity-30 disabled:hover:text-neutral-500"
+                            class="px-3.5 py-1.5 bg-white/5 hover:bg-white/15 border border-white/10 hover:border-accent/40 text-neutral-300 hover:text-white rounded-xl transition-all font-bold disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1.5 shadow-sm"
                             disabled>Next &rarr;</button>
                     </div>
                 </div>
 
                 <!-- Tab Content: Packages Panel -->
                 <div id="panel-packages" class="flex-1 flex flex-col min-h-0 hidden">
-                    <header class="mb-3 space-y-1">
-                        <div class="flex items-center gap-2">
-                            <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
-                            <span class="text-[9px] font-bold tracking-widest text-accent uppercase">Informasi</span>
-                        </div>
-                        <h2 class="text-base font-extrabold tracking-tight text-white">Daftar Paket</h2>
-                    </header>
-
                     <!-- Group Tabs -->
-                    <div id="paket-tabs" class="flex gap-1 overflow-x-auto pb-1.5 scrollbar-thin mb-3">
+                    <div id="paket-tabs" class="flex gap-2 overflow-x-auto pb-2 scrollbar-thin mb-3">
                         <!-- Dynamic tabs go here -->
                     </div>
 
                     <!-- Packages List -->
-                    <div id="paket-list-container" class="flex-1 flex flex-col gap-1.5 justify-start">
-                        <p class="text-xs text-neutral-500">Memuat paket...</p>
+                    <div id="paket-list-container" class="flex-1 flex flex-col gap-2 justify-start overflow-y-auto pr-2.5 scrollbar-thin">
+                        <p class="text-xs lg:text-sm text-neutral-500">Memuat paket...</p>
                     </div>
 
                     <!-- Pagination Controls -->
                     <div id="paket-pagination"
-                        class="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-neutral-500 font-mono text-[9px]">
+                        class="mt-3 pt-3 border-t border-white/10 flex items-center justify-between font-mono text-xs lg:text-sm">
                         <button id="paket-prev-btn"
-                            class="hover:text-white transition-colors disabled:opacity-30 disabled:hover:text-neutral-500"
+                            class="px-3.5 py-1.5 bg-white/5 hover:bg-white/15 border border-white/10 hover:border-accent/40 text-neutral-300 hover:text-white rounded-xl transition-all font-bold disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1.5 shadow-sm"
                             disabled>&larr; Prev</button>
-                        <span id="paket-page-indicator">1 / 1</span>
+                        <span id="paket-page-indicator"
+                            class="px-3.5 py-1 bg-white/5 border border-accent/20 rounded-xl text-accent font-bold tracking-wider shadow-inner text-xs lg:text-sm">1 / 1</span>
                         <button id="paket-next-btn"
-                            class="hover:text-white transition-colors disabled:opacity-30 disabled:hover:text-neutral-500"
+                            class="px-3.5 py-1.5 bg-white/5 hover:bg-white/15 border border-white/10 hover:border-accent/40 text-neutral-300 hover:text-white rounded-xl transition-all font-bold disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1.5 shadow-sm"
                             disabled>Next &rarr;</button>
                     </div>
                 </div>
@@ -107,10 +93,10 @@
                 <header class="space-y-1 mb-4 xl:mb-5">
                     <div class="flex items-center gap-2 mb-2">
                         <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
-                        <span class="text-[9px] lg:text-[10px] font-bold tracking-widest text-accent uppercase">Sistem
+                        <span class="text-xs lg:text-sm font-bold tracking-widest text-accent uppercase">Sistem
                             Terkunci</span>
                     </div>
-                    <h2 class="text-xl lg:text-2xl xl:text-3xl font-extrabold tracking-tight text-white">Nama PC :
+                    <h2 class="text-2xl lg:text-3xl xl:text-4xl font-extrabold tracking-tight text-white">Nama PC :
                         <span class="text-accent pc-name-display">PC-01</span>
                     </h2>
                 </header>
@@ -121,7 +107,7 @@
                     <input type="password" id="password" placeholder="Password"
                         class="w-full bg-white/5 border border-[#2a2a2a] rounded-xl px-4 py-3 xl:px-5 xl:py-4 text-sm xl:text-base outline-none focus:border-accent focus:bg-white/10 transition-all text-white">
                     <button id="login-btn"
-                        class="w-full premium-btn text-black rounded-xl py-3 xl:py-4 mt-2 xl:mt-3 font-bold text-xs tracking-wider transition-all">Mulai
+                        class="w-full premium-btn text-black rounded-xl py-3.5 xl:py-4 mt-2 xl:mt-3 font-bold text-sm tracking-wider transition-all">Mulai
                         Sesi</button>
                 </div>
             </div>
@@ -133,31 +119,31 @@
                 class="premium-cyber-card border border-[#2a2a2a] rounded-3xl p-5 shadow-2xl backdrop-blur-md bg-opacity-90 flex-1 flex flex-col items-center justify-center">
                 <header class="flex items-center gap-2 mb-3 self-start">
                     <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
-                    <span class="text-[9px] font-bold tracking-widest text-accent uppercase">Pembayaran</span>
+                    <span class="text-xs lg:text-sm font-bold tracking-widest text-accent uppercase">Pembayaran</span>
                 </header>
                 <div class="flex-1 flex items-center justify-center w-full overflow-hidden">
                     <img id="kiosk-qris-img" src="" alt="QRIS Code" class="w-full h-full object-contain rounded-lg">
                 </div>
-                <p class="text-center text-[10px] text-neutral-500 mt-2 font-semibold">Scan Qris untuk bayar</p>
+                <p class="text-center text-xs lg:text-sm text-neutral-400 mt-2 font-semibold">Scan QRIS untuk bayar</p>
             </div>
         </div>
 
         <!-- div4: Footer Info (Baru) -->
         <div class="kiosk-footer order-4 lg:order-none lg:col-start-3 lg:row-start-3 flex flex-col z-10 justify-end h-full">
             <div class="premium-cyber-card border border-[#2a2a2a] rounded-3xl p-5 shadow-2xl backdrop-blur-md bg-opacity-90 flex flex-col justify-between h-full">
-                <div class="flex justify-between items-start text-neutral-500 font-mono text-[9px] lg:text-[10px] xl:text-[11px]">
+                <div class="flex justify-between items-start text-neutral-400 font-mono text-xs lg:text-sm">
                     <div class="space-y-1">
-                        <p>IP Address: <span id="ip-display" class="text-neutral-300">Memuat...</span></p>
-                        <p>Mac Address: <span id="mac-display" class="text-neutral-300">Memuat...</span></p>
+                        <p>IP Address: <span id="ip-display" class="text-neutral-200 font-semibold">Memuat...</span></p>
+                        <p>Mac Address: <span id="mac-display" class="text-neutral-200 font-semibold">Memuat...</span></p>
                     </div>
                     <div class="text-right text-accent font-bold">
-                        <p id="shutdown-status" class="tracking-wider text-[8px] lg:text-[9px] uppercase">Off</p>
-                        <p id="shutdown-countdown" class="text-xl lg:text-2xl xl:text-3xl text-white font-mono">--:--</p>
+                        <p id="shutdown-status" class="tracking-wider text-xs uppercase font-bold text-accent">Off</p>
+                        <p id="shutdown-countdown" class="text-2xl lg:text-3xl xl:text-4xl text-white font-mono font-black">--:--</p>
                     </div>
                 </div>
-                <div class="mt-4 pt-4 border-t border-white/5 flex justify-between items-center text-[9px] lg:text-[10px] text-neutral-500">
-                    <span class="font-bold tracking-wider uppercase text-neutral-600">Client Version</span>
-                    <span id="client-version-display" class="font-bold text-neutral-400">TMBilling v...</span>
+                <div class="mt-4 pt-4 border-t border-white/5 flex justify-between items-center text-xs lg:text-sm text-neutral-400 font-bold">
+                    <span class="font-bold tracking-wider uppercase text-neutral-500">Client Version</span>
+                    <span id="client-version-display" class="font-bold text-neutral-200">TMBilling v...</span>
                 </div>
             </div>
         </div>

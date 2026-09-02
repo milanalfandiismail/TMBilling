@@ -33,7 +33,7 @@ import {
     Undo
 } from 'ckeditor5';
 
-import 'ckeditor5/dist/ckeditor5.css';
+import 'ckeditor5/ckeditor5.css';
 
 ClassicEditor.builtinPlugins = [
     Essentials, Paragraph, Heading, Bold, Italic, Underline, Strikethrough,
@@ -65,7 +65,21 @@ ClassicEditor.defaultConfig = {
         contentToolbar: [
             'tableColumn', 'tableRow', 'mergeTableCells',
             'tableProperties', 'tableCellProperties'
-        ]
+        ],
+        tableProperties: {
+            defaultProperties: {
+                borderStyle: 'solid',
+                borderColor: '#525252',
+                borderWidth: '1px'
+            }
+        },
+        tableCellProperties: {
+            defaultProperties: {
+                borderStyle: 'solid',
+                borderColor: '#525252',
+                borderWidth: '1px'
+            }
+        }
     },
     language: 'en'
 };

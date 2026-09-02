@@ -30,7 +30,7 @@ class SettingsService:
         data = SettingsRepository.get_all()
         defaults = {
             "warnet_title": "TMBilling",
-            "warnet_announcement": "1. Jaga kebersihan dan ketertiban\n2. Dilarang membawa makanan dari luar\n3. Harap matikan PC setelah selesai bermain\n4. Hubungi kasir jika memerlukan bantuan",
+            "warnet_announcement": "",
             "warnet_address": "Jl. Merdeka No. 123, Kota",
             "warnet_phone": "0812-3456-7890",
             "warnet_footer": "Terima kasih, selamat bermain!",

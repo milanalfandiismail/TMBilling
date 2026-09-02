@@ -5,12 +5,11 @@
 Modul ini menangani CRUD PC, bulk creation, dan status summary.
 """
 
-from app.models import PC
+from app.models import PC, db, now_local
 from app.repositories import PCRepository
 from app.repositories import SesiRepository
 from app.repositories import GrupRepository
 from app.utils.logger import write_log
-from app.models import db
 
 
 class PCService:
@@ -291,6 +290,14 @@ class PCService:
             raise ValueError("PC tidak ditemukan")
         
         pc.is_admin_mode = False
+        
+        # Tutup sesi admin jika ada
+        from app.repositories import SesiRepository
+        sesi_aktif = SesiRepository.get_aktif_by_pc(pc.id)
+        if sesi_aktif and sesi_aktif.tipe == "admin":
+            sesi_aktif.status = "selesai"
+            sesi_aktif.selesai_pada = now_local()
+
         db.session.commit()
         write_log("RESET_ADMIN", f"Mode Admin PC {pc.kode} dimatikan paksa", user=operator, detail_json={"kode": pc.kode})
         return True
