@@ -1,105 +1,7 @@
 {% extends 'kasir/base.html' %}
 
 {% block content %}
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/ckeditor/ckeditor.css') }}?v=10">
-<script src="{{ url_for('static', filename='vendor/ckeditor/ckeditor.js') }}?v=10"></script>
-
 <style>
-/* CKEditor 5 Dark Theme overrides */
-.ck-editor {
-    width: 100% !important;
-}
-.ck-editor__main .ck-content {
-    background-color: #050505 !important;
-    color: #e5e5e5 !important;
-    border-color: #1c1c1c !important;
-    min-height: 200px;
-    max-height: 360px;
-    padding: 1.25rem !important;
-    overflow-y: auto !important;
-}
-.ck.ck-editor__top .ck-toolbar {
-    background-color: #0c0c0c !important;
-    border-color: #1c1c1c !important;
-    padding: 0.5rem !important;
-}
-.ck.ck-button {
-    color: #e5e5e5 !important;
-}
-.ck.ck-button:hover, .ck.ck-button:active {
-    background-color: #1c1c1c !important;
-    color: #fff !important;
-}
-.ck.ck-button.ck-on {
-    background-color: #262626 !important;
-    color: #fff !important;
-}
-/* Split button hover styling fix */
-.ck.ck-splitbutton {
-    border-radius: 4px !important;
-    overflow: hidden !important;
-}
-.ck.ck-splitbutton .ck-button:hover,
-.ck.ck-splitbutton__action:hover,
-.ck.ck-splitbutton__arrow:hover {
-    background-color: #1c1c1c !important;
-    color: #ffffff !important;
-}
-.ck.ck-splitbutton__action.ck-on,
-.ck.ck-splitbutton__arrow.ck-on {
-    background-color: #262626 !important;
-    color: #ffffff !important;
-}
-.ck.ck-splitbutton__arrow {
-    border-left: 1px solid #1c1c1c !important;
-}
-.ck.ck-splitbutton__arrow:hover {
-    background-color: #262626 !important;
-}
-
-.ck.ck-dropdown__panel {
-    background-color: #0c0c0c !important;
-    border-color: #1c1c1c !important;
-}
-.ck.ck-list {
-    background-color: #0c0c0c !important;
-}
-.ck.ck-list__item .ck-button:hover {
-    background-color: #1c1c1c !important;
-}
-.ck.ck-toolbar__separator {
-    background-color: #1c1c1c !important;
-}
-/* CKEditor 5 Floating Balloon & Popup Dark Theme */
-.ck.ck-balloon-panel {
-    background-color: #0c0c0c !important;
-    border: 1px solid #262626 !important;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8) !important;
-}
-.ck.ck-balloon-panel[class*="ck-balloon-panel_arrow"]::after {
-    border-bottom-color: #0c0c0c !important;
-    border-top-color: #0c0c0c !important;
-}
-.ck.ck-balloon-panel[class*="ck-balloon-panel_arrow"]::before {
-    border-bottom-color: #262626 !important;
-    border-top-color: #262626 !important;
-}
-.ck.ck-toolbar {
-    background-color: #0c0c0c !important;
-    border-color: #262626 !important;
-}
-.ck.ck-labeled-field-view, .ck.ck-input-text {
-    background-color: #050505 !important;
-    border-color: #262626 !important;
-    color: #ffffff !important;
-}
-.ck.ck-color-grid, .ck.ck-color-picker_grid {
-    background-color: #0c0c0c !important;
-}
-.ck.ck-form {
-    background-color: #0c0c0c !important;
-    color: #e5e5e5 !important;
-}
 /* Prose image display styles */
 .prose img {
     max-width: 100%;
@@ -133,22 +35,212 @@
     padding-left: 0 !important;
     text-align: left !important;
 }
-/* Table rendering styles */
-.prose table, .ck-content table {
-    width: 100% !important;
-    border-collapse: collapse !important;
-    margin: 1.5rem 0 !important;
-    font-size: 13px !important;
-    line-height: 1.5 !important;
-    border: 1px solid #3d3d3d !important;
-    border-radius: 8px !important;
-    overflow: hidden !important;
-}
-.prose th, .prose td, .ck-content th, .ck-content td {
-    border: 1px solid #3d3d3d !important;
-    padding: 0.75rem 1rem !important;
+/* CKEditor 5 Text Alignment Classes */
+.ck-content .text-align-left,
+.ck-content th.text-align-left,
+.ck-content td.text-align-left,
+.ck-content p.text-align-left,
+.prose .text-align-left,
+.prose th.text-align-left,
+.prose td.text-align-left,
+.prose p.text-align-left {
     text-align: left !important;
 }
+
+.ck-content .text-align-center,
+.ck-content th.text-align-center,
+.ck-content td.text-align-center,
+.ck-content p.text-align-center,
+.prose .text-align-center,
+.prose th.text-align-center,
+.prose td.text-align-center,
+.prose p.text-align-center {
+    text-align: center !important;
+}
+
+.ck-content .text-align-right,
+.ck-content th.text-align-right,
+.ck-content td.text-align-right,
+.ck-content p.text-align-right,
+.prose .text-align-right,
+.prose th.text-align-right,
+.prose td.text-align-right,
+.prose p.text-align-right {
+    text-align: right !important;
+}
+
+.ck-content .text-align-justify,
+.ck-content th.text-align-justify,
+.ck-content td.text-align-justify,
+.ck-content p.text-align-justify,
+.prose .text-align-justify,
+.prose th.text-align-justify,
+.prose td.text-align-justify,
+.prose p.text-align-justify {
+    text-align: justify !important;
+}
+
+/* Table rendering & alignment styles */
+.prose figure.table, .ck-content figure.table,
+.prose .table, .ck-content .table {
+    display: table;
+    margin: 1.5rem auto;
+    max-width: 100%;
+    clear: both;
+}
+
+.ck-content .table table,
+.ck-content figure.table table,
+.ck-content table,
+.prose .table table,
+.prose figure.table table,
+.prose table {
+    border-collapse: collapse;
+    font-size: 13px;
+    line-height: 1.5;
+    border: 1px solid #525252;
+    border-radius: 8px;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.ck-content .table table th,
+.ck-content .table table td,
+.ck-content figure.table table th,
+.ck-content figure.table table td,
+.ck-content th,
+.ck-content td,
+.prose .table table th,
+.prose .table table td,
+.prose th,
+.prose td {
+    border: 1px solid #525252;
+    padding: 0.75rem 1rem;
+    text-align: left;
+}
+
+/* Table Alignment: Left */
+.ck-content figure.table.table_align_left,
+.ck-content figure.table[style*="float:left"],
+.ck-content figure.table[style*="float: left"],
+.ck-content figure.table.text-align-left,
+.ck-content .text-align-left figure.table,
+.ck-content figure.table[style*="margin-right:auto"],
+.ck-content figure.table[style*="margin-right: auto"],
+.ck-content figure.table[style*="text-align:left"],
+.ck-content figure.table[style*="text-align: left"],
+.prose figure.table.table_align_left,
+.prose figure.table[style*="float:left"],
+.prose figure.table[style*="float: left"],
+.prose figure.table.text-align-left,
+.prose .text-align-left figure.table,
+.prose figure.table[style*="margin-right:auto"],
+.prose figure.table[style*="margin-right: auto"],
+.prose figure.table[style*="text-align:left"],
+.prose figure.table[style*="text-align: left"] {
+    margin-right: auto !important;
+    margin-left: 0 !important;
+    float: left !important;
+    clear: none;
+}
+
+/* Table Alignment: Right */
+.ck-content figure.table.table_align_right,
+.ck-content figure.table[style*="float:right"],
+.ck-content figure.table[style*="float: right"],
+.ck-content figure.table.text-align-right,
+.ck-content .text-align-right figure.table,
+.ck-content figure.table[style*="margin-left:auto"],
+.ck-content figure.table[style*="margin-left: auto"],
+.ck-content figure.table[style*="text-align:right"],
+.ck-content figure.table[style*="text-align: right"],
+.prose figure.table.table_align_right,
+.prose figure.table[style*="float:right"],
+.prose figure.table[style*="float: right"],
+.prose figure.table.text-align-right,
+.prose .text-align-right figure.table,
+.prose figure.table[style*="margin-left:auto"],
+.prose figure.table[style*="margin-left: auto"],
+.prose figure.table[style*="text-align:right"],
+.prose figure.table[style*="text-align: right"] {
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    float: right !important;
+    clear: none;
+}
+
+/* Table Alignment: Center */
+.ck-content figure.table,
+.ck-content figure.table.table_align_center,
+.ck-content figure.table.text-align-center,
+.ck-content figure.table[style*="float:none"],
+.ck-content figure.table[style*="float: none"],
+.ck-content figure.table[style*="margin:auto"],
+.ck-content figure.table[style*="margin: auto"],
+.ck-content figure.table[style*="margin: 0 auto"],
+.ck-content figure.table[style*="margin:0 auto"],
+.ck-content figure.table[style*="margin-left:auto;margin-right:auto"],
+.ck-content figure.table[style*="margin-left: auto; margin-right: auto"],
+.ck-content figure.table[style*="text-align:center"],
+.ck-content figure.table[style*="text-align: center"],
+.ck-content figure.table[align="center"],
+.ck-content .text-align-center figure.table,
+.ck-content [style*="text-align:center"] figure.table,
+.ck-content [style*="text-align: center"] figure.table,
+.ck-content .text-align-center .table,
+.ck-content [style*="text-align:center"] .table,
+.ck-content [style*="text-align: center"] .table,
+.prose figure.table,
+.prose figure.table.table_align_center,
+.prose figure.table.text-align-center,
+.prose figure.table[style*="float:none"],
+.prose figure.table[style*="float: none"],
+.prose figure.table[style*="margin:auto"],
+.prose figure.table[style*="margin: auto"],
+.prose figure.table[style*="margin: 0 auto"],
+.prose figure.table[style*="margin:0 auto"],
+.prose figure.table[style*="margin-left:auto;margin-right:auto"],
+.prose figure.table[style*="margin-left: auto; margin-right: auto"],
+.prose figure.table[style*="text-align:center"],
+.prose figure.table[style*="text-align: center"],
+.prose figure.table[align="center"],
+.prose .text-align-center figure.table,
+.prose [style*="text-align:center"] figure.table,
+.prose [style*="text-align: center"] figure.table,
+.prose .text-align-center .table,
+.prose [style*="text-align:center"] .table,
+.prose [style*="text-align: center"] .table {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    float: none !important;
+    clear: both;
+}
+
+.ck-content figure.table table,
+.ck-content figure.table.table_align_center table,
+.ck-content figure.table.text-align-center table,
+.ck-content figure.table[style*="text-align:center"] table,
+.ck-content figure.table[style*="text-align: center"] table,
+.ck-content figure.table[style*="margin:auto"] table,
+.ck-content figure.table[style*="margin: auto"] table,
+.ck-content .text-align-center figure.table table,
+.ck-content [style*="text-align:center"] figure.table table,
+.ck-content [style*="text-align: center"] figure.table table,
+.prose figure.table table,
+.prose figure.table.table_align_center table,
+.prose figure.table.text-align-center table,
+.prose figure.table[style*="text-align:center"] table,
+.prose figure.table[style*="text-align: center"] table,
+.prose figure.table[style*="margin:auto"] table,
+.prose figure.table[style*="margin: auto"] table,
+.prose .text-align-center figure.table table,
+.prose [style*="text-align:center"] figure.table table,
+.prose [style*="text-align: center"] figure.table table {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
 .prose th, .ck-content th {
     background-color: #1a1a1a !important;
     color: #ffffff !important;

@@ -83,12 +83,12 @@ class TVStaticSignage {
 
     updateClock() {
         const now = new Date();
-        
+
         // Format clock: HH:MM:SS
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const seconds = String(now.getSeconds()).padStart(2, '0');
-        
+
         const tzAbbr = (this.data && this.data.settings && this.data.settings.timezone_abbr) || 'WIB';
         document.getElementById('current-clock').innerText = `${hours}:${minutes}:${seconds} ${tzAbbr}`;
 
@@ -98,7 +98,7 @@ class TVStaticSignage {
             'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
             'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
         ];
-        
+
         const dayName = days[now.getDay()];
         const date = now.getDate();
         const monthName = months[now.getMonth()];
@@ -111,7 +111,7 @@ class TVStaticSignage {
         try {
             const res = await fetch('/api/v1/public/tv/data');
             const result = await res.json();
-            
+
             if (result.success) {
                 this.data = result.data;
                 this.renderAll();
@@ -169,8 +169,8 @@ class TVStaticSignage {
             pcGroups[g].push(pc);
         });
 
-        const pcGroupsList = Object.keys(pcGroups).sort();
-        
+        const pcGroupsList = Object.keys(pcGroups).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
         // Dynamically style grid columns matching group count on large screens
         if (window.innerWidth >= 1024) {
             rowContainer.style.gridTemplateColumns = `repeat(${pcGroupsList.length}, minmax(0, 1fr))`;
@@ -179,7 +179,8 @@ class TVStaticSignage {
         }
 
         rowContainer.innerHTML = pcGroupsList.map(g => {
-            const groupPcs = pcGroups[g];
+            const groupPcs = pcGroups[g] || [];
+            groupPcs.sort((a, b) => (a.kode || a.nama || '').localeCompare(b.kode || b.nama || '', undefined, { numeric: true, sensitivity: 'base' }));
             const groupColor = (this.data && this.data.grup_meta && this.data.grup_meta[g] && this.data.grup_meta[g].warna) || '#3b82f6';
 
             // Render individual PC Cards
@@ -204,7 +205,7 @@ class TVStaticSignage {
                     statusClass = '';
                     customStyle = `background-color: ${groupColor}10; border-color: ${groupColor}40; color: ${groupColor}; box-shadow: 0 0 15px ${groupColor}15;`;
                     subtitle = pc.sesi_detail ? pc.sesi_detail.nama : 'GUEST';
-                    
+
                     if (pc.sesi_detail && pc.sesi_detail.sisa_waktu_menit !== undefined) {
                         const mins = pc.sesi_detail.sisa_waktu_menit;
                         if (mins <= 0) {

@@ -39,7 +39,7 @@ class Config:
     SESSION_PERMANENT = True
     PERMANENT_SESSION_LIFETIME = 86400  # 24 jam
     WTF_CSRF_TIME_LIMIT = None          # CSRF mengikuti umur session agar tidak kedaluwarsa sendiri
-    VERSION = "1.5.7"
+    VERSION = "1.5.8"
     VERSION_NAME = "Emerald"
 
     # Tambahan untuk kebutuhan aplikasi

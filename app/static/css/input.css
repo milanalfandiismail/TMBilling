@@ -65,5 +65,166 @@
             cursor: default !important;
         }
     }
+
+    #vnc-screen,
+    #vnc-screen canvas {
+        background-color: transparent !important;
+    }
 }
+
+@layer components {
+    /* CKEditor 5 & Rich Content Styling */
+    .ck-content ol, .prose ol {
+        list-style-type: decimal !important;
+        padding-left: 2rem !important;
+        margin-top: 0.5rem !important;
+        margin-bottom: 1rem !important;
+    }
+    .ck-content ul, .prose ul {
+        list-style-type: disc !important;
+        padding-left: 2rem !important;
+        margin-top: 0.5rem !important;
+        margin-bottom: 1rem !important;
+    }
+    .ck-content li, .prose li {
+        margin-bottom: 0.25rem !important;
+        display: list-item !important;
+        line-height: 1.5 !important;
+    }
+    .ck-content h1, .ck-content h2, .ck-content h3, .ck-content h4, .ck-content h5, .ck-content h6,
+    .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        text-align: left !important;
+        font-weight: 700 !important;
+        margin-top: 1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    .ck-content h1, .prose h1 { font-size: 1.5rem !important; }
+    .ck-content h2, .prose h2 { font-size: 1.25rem !important; }
+    .ck-content h3, .prose h3 { font-size: 1.1rem !important; }
+    .ck-content h4, .prose h4 { font-size: 1rem !important; }
+
+    .ck-content blockquote, .prose blockquote {
+        border-left: 3px solid #10b981 !important;
+        padding-left: 1rem !important;
+        margin: 1rem 0 !important;
+        color: #a3a3a3 !important;
+        font-style: italic !important;
+    }
+
+    /* CKEditor 5 Text Alignment Classes */
+    .ck-content .text-align-left,
+    .ck-content th.text-align-left,
+    .ck-content td.text-align-left,
+    .ck-content p.text-align-left,
+    .ck-content div.text-align-left,
+    .prose .text-align-left,
+    .prose th.text-align-left,
+    .prose td.text-align-left,
+    .prose p.text-align-left {
+        text-align: left !important;
+    }
+
+    .ck-content .text-align-center,
+    .ck-content th.text-align-center,
+    .ck-content td.text-align-center,
+    .ck-content p.text-align-center,
+    .ck-content div.text-align-center,
+    .prose .text-align-center,
+    .prose th.text-align-center,
+    .prose td.text-align-center,
+    .prose p.text-align-center {
+        text-align: center !important;
+    }
+
+    .ck-content .text-align-right,
+    .ck-content th.text-align-right,
+    .ck-content td.text-align-right,
+    .ck-content p.text-align-right,
+    .ck-content div.text-align-right,
+    .prose .text-align-right,
+    .prose th.text-align-right,
+    .prose td.text-align-right,
+    .prose p.text-align-right {
+        text-align: right !important;
+    }
+
+    .ck-content .text-align-justify,
+    .ck-content th.text-align-justify,
+    .ck-content td.text-align-justify,
+    .ck-content p.text-align-justify,
+    .ck-content div.text-align-justify,
+    .prose .text-align-justify,
+    .prose th.text-align-justify,
+    .prose td.text-align-justify,
+    .prose p.text-align-justify {
+        text-align: justify !important;
+    }
+
+    /* CKEditor 5 Font Sizes */
+    .ck-content .text-tiny, .prose .text-tiny { font-size: 0.7em !important; }
+    .ck-content .text-small, .prose .text-small { font-size: 0.85em !important; }
+    .ck-content .text-big, .prose .text-big { font-size: 1.4em !important; }
+    .ck-content .text-huge, .prose .text-huge { font-size: 1.8em !important; }
+
+    /* CKEditor 5 Highlight Markers */
+    .ck-content mark, .prose mark {
+        padding: 0.1em 0.3em;
+        border-radius: 3px;
+    }
+    .ck-content mark.marker-yellow, .prose mark.marker-yellow { background-color: #fef08a !important; color: #1e1b4b !important; }
+    .ck-content mark.marker-green, .prose mark.marker-green { background-color: #bbf7d0 !important; color: #064e3b !important; }
+    .ck-content mark.marker-pink, .prose mark.marker-pink { background-color: #fbcfe8 !important; color: #831843 !important; }
+    .ck-content mark.marker-blue, .prose mark.marker-blue { background-color: #bfdbfe !important; color: #1e3a8a !important; }
+    .ck-content mark.pen-red, .prose mark.pen-red { color: #ef4444 !important; background-color: transparent !important; }
+    .ck-content mark.pen-green, .prose mark.pen-green { color: #22c55e !important; background-color: transparent !important; }
+
+    /* CKEditor 5 Todo / Checklist */
+    .ck-content ul.todo-list, .prose ul.todo-list {
+        list-style-type: none !important;
+        padding-left: 0.5rem !important;
+    }
+    .ck-content ul.todo-list li, .prose ul.todo-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    .ck-content ul.todo-list input[type="checkbox"], .prose ul.todo-list input[type="checkbox"] {
+        pointer-events: none;
+        accent-color: #10b981;
+        margin-top: 0.25rem;
+    }
+
+    /* CKEditor 5 Indent Classes */
+    .ck-content .ck-indent-1, .prose .ck-indent-1 { padding-left: 1.5rem !important; }
+    .ck-content .ck-indent-2, .prose .ck-indent-2 { padding-left: 3rem !important; }
+    .ck-content .ck-indent-3, .prose .ck-indent-3 { padding-left: 4.5rem !important; }
+    .ck-content .ck-indent-4, .prose .ck-indent-4 { padding-left: 6rem !important; }
+    .ck-content .ck-indent-5, .prose .ck-indent-5 { padding-left: 7.5rem !important; }
+
+    /* Generic Table Styling for Prose/Content */
+    .prose table, .ck-content table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin: 1rem 0;
+    }
+    .prose th, .prose td, .ck-content th, .ck-content td {
+        border: 1px solid #262626;
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+    }
+    .prose th, .ck-content th {
+        background-color: #141414;
+        color: #fbbf24;
+        font-weight: 600;
+    }
+    .ck-content a, .prose a {
+        color: #34d399 !important;
+        text-decoration: underline !important;
+    }
+}
+
+
 

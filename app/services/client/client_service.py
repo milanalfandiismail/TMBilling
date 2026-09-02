@@ -129,17 +129,10 @@ class ClientService:
             sesi = SesiRepository.get_aktif_by_pc(pc.id)
             
             # 🔥 STATUS ADMIN AUTHORITY
-            # Jika klien ngaku admin tapi di DB sudah dimatikan (oleh kasir),
+            # Jika klien ngaku admin/emergency tapi di DB sudah dimatikan (oleh kasir),
             # maka kita paksa klien untuk LOCK (kembali ke mode kiosk).
-            # PENGECUALIAN: role "emergency" selalu diizinkan tanpa soal is_admin_mode
-            res = None
-
-            # 🔥 STATUS ADMIN AUTHORITY
-            # Jika klien ngaku admin tapi di DB sudah dimatikan (oleh kasir),
-            # maka kita paksa klien untuk LOCK (kembali ke mode kiosk).
-            # PENGECUALIAN: role "emergency" selalu diizinkan tanpa soal is_admin_mode
-            if role == "admin" and not pc.is_admin_mode:
-                write_log("REMOTE_LOGOUT", f"PC {pc.kode} dipaksa logout admin oleh server")
+            if role in ["admin", "emergency"] and not pc.is_admin_mode:
+                write_log("REMOTE_LOGOUT", f"PC {pc.kode} dipaksa logout admin ({role}) oleh server")
                 res = {
                     "status": "kosong",
                     "pc_kode": pc.kode,
@@ -147,9 +140,9 @@ class ClientService:
                 }
 
             else:
-                # Sebaliknya, jika klien bukan admin tapi di DB tercatat admin, 
+                # Sebaliknya, jika klien bukan admin/emergency tapi di DB tercatat admin, 
                 # maka sync status DB agar dashboard kasir akurat.
-                if role != "admin" and pc.is_admin_mode:
+                if role not in ["admin", "emergency"] and pc.is_admin_mode:
                     pc.is_admin_mode = False
                     db.session.commit()
 

@@ -13,6 +13,7 @@ const DashboardDetailModal = {
 
         const isOnline = pc.status !== 'offline';
         const sesi = pc.sesi_detail;
+        const isAdminMode = pc.is_admin_mode || (sesi?.tipe === 'admin');
 
         const modalHtml = `
             <div id="pc-detail-modal-card" class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-in transition-all duration-300">
@@ -144,7 +145,17 @@ const DashboardDetailModal = {
                                 <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Shutdown PC</span>
                             </div>`}
 
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0a0a0a] border border-dashed border-[#1a1a1a] rounded-lg opacity-20"><span class="text-[9px] lg:text-base text-neutral-700 uppercase tracking-widest mt-4">—</span></div>
+                            ${isAdminMode ? `
+                            <button onclick="Modal.closeModal(); Dashboard.logoutAdmin(${pc.id}, ${sesi ? sesi.id : 'null'})"
+                                class="flex flex-col items-center gap-2 p-4 bg-[#1f150a] border border-amber-900/50 hover:border-amber-500/70 hover:bg-[#2a1d0e] rounded-lg transition-colors">
+                                <div class="w-9 h-9 rounded-lg bg-amber-950/60 border border-amber-900/60 flex items-center justify-center">
+                                    <svg class="w-[18px] h-[18px] text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                    </svg>
+                                </div>
+                                <span class="text-[10px] lg:text-base font-bold text-amber-400 uppercase tracking-wider text-center leading-tight">Logout Admin</span>
+                            </button>` : `
+                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0a0a0a] border border-dashed border-[#1a1a1a] rounded-lg opacity-20"><span class="text-[9px] lg:text-base text-neutral-700 uppercase tracking-widest mt-4">—</span></div>`}
                         </div>
 
                         <div id="screenshot-preview-container" class="mt-4 p-4 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg">
@@ -453,11 +464,13 @@ const DashboardDetailModal = {
                 throw new Error((res && res.error) || 'Gagal memulai VNC di client');
             }
 
+            const token = res.token || `client_${pcId}`;
+            const port = res.port || 8081;
             let url;
             if (window.location.protocol === 'https:') {
-                url = `wss://${window.location.host}/ws/vnc`;
+                url = `wss://${window.location.host}/ws/vnc?token=${encodeURIComponent(token)}`;
             } else {
-                url = `ws://${window.location.hostname}:${res.port}`;
+                url = `ws://${window.location.hostname}:${port}/?token=${encodeURIComponent(token)}`;
             }
 
             const screen = document.getElementById('modal-vnc-screen');

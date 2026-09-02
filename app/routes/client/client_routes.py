@@ -145,7 +145,7 @@ def get_warnet_config():
         from app.services import PaketService
         
         title = SettingsService.get("warnet_title", "TMBilling")
-        announcement = SettingsService.get("warnet_announcement", "1. Jaga kebersihan dan ketertiban\n2. Dilarang membawa makanan dari luar\n3. Harap matikan PC setelah selesai bermain\n4. Hubungi kasir jika memerlukan bantuan")
+        announcement = SettingsService.get("warnet_announcement", "")
         qris_url = SettingsService.get("qris_image_url", "/static/uploads/qris/default_qris.png")
         
         paket = PaketService.get_all(aktif_only=True)

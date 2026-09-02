@@ -210,21 +210,19 @@ const Maintenance = {
             else if (t.status === 'SELESAI') statusClass = 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/30';
             else if (t.status === 'DITOLAK') statusClass = 'bg-red-950/40 text-red-400 border border-red-900/30';
 
-            let actionButtons = '';
+            let actionButtons = `
+                <button onclick="Maintenance.openDetailModal(${t.id})" class="px-3.5 py-1.5 bg-[#171717] border border-[#262626] text-neutral-300 rounded-lg hover:bg-neutral-100 hover:text-black text-xs lg:text-sm font-bold transition-colors" title="Lihat Detail Lengkap">Detail</button>
+            `;
             const isAdmin = !(window.App && App.user && App.user.role === 'kasir');
 
             if (t.status === 'BARU') {
-                actionButtons = `
+                actionButtons += `
                     <button onclick="Maintenance.changeStatus(${t.id}, 'DIPROSES')" class="px-3.5 py-1.5 bg-blue-600/20 border border-blue-600/30 text-blue-400 rounded-lg hover:bg-blue-600/30 text-xs lg:text-sm font-bold transition-colors">Proses</button>
                     <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="px-3.5 py-1.5 bg-red-600/20 border border-red-600/30 text-red-400 rounded-lg hover:bg-red-600/30 text-xs lg:text-sm font-bold transition-colors">Tolak</button>
                 `;
             } else if (t.status === 'DIPROSES') {
-                actionButtons = `
+                actionButtons += `
                     <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="px-3.5 py-1.5 bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 rounded-lg hover:bg-emerald-600/30 text-xs lg:text-sm font-bold transition-colors">Selesaikan</button>
-                `;
-            } else {
-                actionButtons = `
-                    <button onclick="Maintenance.openDetailModal(${t.id})" class="px-3.5 py-1.5 bg-[#171717] border border-[#262626] text-neutral-300 rounded-lg hover:bg-neutral-100 hover:text-black text-xs lg:text-sm font-bold transition-colors">Detail</button>
                 `;
             }
 
@@ -241,8 +239,9 @@ const Maintenance = {
                     <td class="py-3 px-4">
                         <span class="px-2.5 py-0.5 rounded text-[9px] lg:text-xs font-bold ${prioritasClass}">${t.prioritas}</span>
                     </td>
-                    <td class="py-3 px-4 text-neutral-200">
-                        <div class="truncate max-w-[200px]" title="${t.judul}">${t.judul}</div>
+                    <td class="py-3 px-4 text-neutral-200 cursor-pointer group" onclick="Maintenance.openDetailModal(${t.id})" title="Klik untuk melihat detail masalah">
+                        <div class="font-bold text-neutral-100 group-hover:text-white group-hover:underline transition-colors break-words leading-snug max-w-xs sm:max-w-sm lg:max-w-md">${t.judul}</div>
+                        ${t.deskripsi ? `<div class="text-[10px] lg:text-xs text-neutral-400 break-words mt-1 leading-relaxed line-clamp-2">${t.deskripsi}</div>` : ''}
                     </td>
                     <td class="py-3 px-4 text-neutral-500 font-mono text-[9px] lg:text-xs">
                         <div class="font-bold">${t.reporter}</div>
@@ -317,6 +316,18 @@ const Maintenance = {
 
     openUpdateModal(ticketId, currentStatus) {
         document.getElementById('maint-update-id').value = ticketId;
+        const ticket = this.tickets.find(t => t.id === ticketId);
+        if (ticket) {
+            const infoPC = document.getElementById('maint-update-info-pc');
+            const infoKategori = document.getElementById('maint-update-info-kategori');
+            const infoJudul = document.getElementById('maint-update-info-judul');
+            const infoDeskripsi = document.getElementById('maint-update-info-deskripsi');
+            if (infoPC) infoPC.innerText = ticket.pc_kode || 'PC';
+            if (infoKategori) infoKategori.innerText = ticket.kategori || 'GENERAL';
+            if (infoJudul) infoJudul.innerText = ticket.judul || '-';
+            if (infoDeskripsi) infoDeskripsi.innerText = ticket.deskripsi || 'Tidak ada deskripsi tambahan.';
+        }
+
         const statusSelect = document.getElementById('maint-update-status');
         
         if (currentStatus === 'BARU') {
@@ -396,7 +407,12 @@ const Maintenance = {
             document.getElementById('maint-detail-prioritas').innerText = ticket.prioritas;
             document.getElementById('maint-detail-reporter').innerText = ticket.reporter;
             document.getElementById('maint-detail-created').innerText = ticket.created_at;
-            document.getElementById('maint-detail-deskripsi').innerText = ticket.deskripsi || '-';
+            
+            const elJudul = document.getElementById('maint-detail-judul');
+            if (elJudul) elJudul.innerText = ticket.judul || '-';
+            
+            const elDeskripsi = document.getElementById('maint-detail-deskripsi');
+            if (elDeskripsi) elDeskripsi.innerText = ticket.deskripsi || '-';
             
             const statusEl = document.getElementById('maint-detail-status');
             statusEl.innerText = ticket.status;

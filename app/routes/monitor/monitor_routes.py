@@ -312,6 +312,7 @@ def start_vnc_client(pc_id):
                 "success": True,
                 "message": "Remote control sudah aktif",
                 "port": active_proxy["port"],
+                "token": active_proxy.get("token"),
                 "vnc_password": vnc_password,
                 "pc_kode": pc.kode
             }), 200
@@ -331,17 +332,18 @@ def start_vnc_client(pc_id):
             return jsonify({"success": False, "error": f"PC {pc.kode} gagal mengaktifkan VNC: {error_msg}"}), 408
             
         # Jalankan proxy server
-        success, msg, port = VNCClientProxyService.start_proxy(pc.id, pc.ip_address)
+        success, msg, port, token = VNCClientProxyService.start_proxy(pc.id, pc.ip_address)
         if not success:
             return jsonify({"success": False, "error": f"Gagal mengaktifkan proxy server: {msg}"}), 500
             
         operator = session.get("kasir_username", "admin")
-        write_log("VNC_CLIENT_START", f"Proxy VNC client PC {pc.kode} dimulai pada port {port}", user=operator, detail_json={"pc_kode": pc.kode, "port": port})
+        write_log("VNC_CLIENT_START", f"Proxy VNC client PC {pc.kode} dimulai pada port {port}", user=operator, detail_json={"pc_kode": pc.kode, "port": port, "token": token})
         
         return jsonify({
             "success": True,
             "message": "Remote control berhasil disiapkan",
             "port": port,
+            "token": token,
             "vnc_password": vnc_password,
             "pc_kode": pc.kode
         }), 200

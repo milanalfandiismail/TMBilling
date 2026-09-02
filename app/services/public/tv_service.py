@@ -98,11 +98,7 @@ class TVSignageService:
             slide_duration = 15
 
         tv_slides_enabled = SettingsService.get("tv_slides_enabled", "1,2,3,4")
-        
-        warnet_rules = SettingsService.get(
-            "warnet_announcement",
-            "1. Jaga kebersihan dan ketertiban\n2. Dilarang membuka situs ilegal, pornografi, atau SARA\n3. Dilarang membawa makanan dari luar\n4. Hubungi petugas kasir jika ada kendala\n5. Log out sebelum meninggalkan PC Anda"
-        )
+        warnet_rules = SettingsService.get("warnet_announcement", "")
 
         tv_timezone = SettingsService.get("timezone", "Asia/Jakarta")
         tz_abbr = "WIB"
@@ -119,7 +115,8 @@ class TVSignageService:
             "running_text": tv_running_text,
             "slide_duration": slide_duration,
             "slides_enabled": [int(x.strip()) for x in tv_slides_enabled.split(",") if x.strip().isdigit()],
-            "warnet_rules": [r.strip() for r in warnet_rules.split("\n") if r.strip()],
+            "warnet_rules": [r.strip() for r in warnet_rules.split("\n") if r.strip()] if "<" not in warnet_rules else [],
+            "warnet_rules_html": warnet_rules,
             "timezone_abbr": tz_abbr,
             "warnet_title": tv_warnet_title
         }

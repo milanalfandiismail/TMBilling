@@ -77,3 +77,97 @@ def format_rupiah(nominal):
         nominal = 0
     formatted = f"{int(nominal):,}".replace(",", ".")
     return f"Rp{formatted}"
+
+
+from html.parser import HTMLParser
+
+
+class SafeHTMLParser(HTMLParser):
+    """Parser untuk memfilter HTML dan mencegah XSS."""
+    ALLOWED_TAGS = {
+        'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li',
+        'blockquote', 'pre', 'code', 'a', 'span', 'div', 'hr',
+        'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td',
+        'img', 'figure', 'figcaption'
+    }
+
+    ALLOWED_ATTRS = {
+        'a': {'href', 'target', 'rel', 'title', 'class'},
+        'img': {'src', 'alt', 'title', 'width', 'height', 'class', 'style'},
+        '*': {'class', 'style', 'id', 'align'}
+    }
+
+    DISALLOWED_PROTOCOLS = ('javascript:', 'data:text/html', 'vbscript:')
+    DANGEROUS_TAGS = {'script', 'style', 'iframe', 'embed', 'object', 'applet', 'form', 'input', 'button', 'select', 'textarea'}
+
+    def __init__(self):
+        super().__init__()
+        self.result = []
+        self.in_dangerous_tag = False
+
+    def handle_starttag(self, tag, attrs):
+        tag_lower = tag.lower()
+        if tag_lower in self.DANGEROUS_TAGS:
+            self.in_dangerous_tag = True
+            return
+        if self.in_dangerous_tag:
+            return
+        if tag_lower in self.ALLOWED_TAGS:
+            cleaned_attrs = []
+            for attr_name, attr_val in attrs:
+                attr_name_lower = attr_name.lower()
+                if attr_name_lower.startswith('on'):
+                    continue
+                tag_allowed = self.ALLOWED_ATTRS.get(tag_lower, set()) | self.ALLOWED_ATTRS.get('*', set())
+                if attr_name_lower in tag_allowed:
+                    if attr_name_lower in ('href', 'src'):
+                        attr_val_clean = (attr_val or '').strip().lower()
+                        if any(attr_val_clean.startswith(proto) for proto in self.DISALLOWED_PROTOCOLS):
+                            continue
+                    if attr_name_lower == 'style':
+                        style_clean = (attr_val or '').lower()
+                        if any(danger in style_clean for danger in ('expression', 'behavior', 'javascript:', '-moz-binding', 'url(')):
+                            continue
+                    cleaned_attrs.append((attr_name, attr_val))
+
+            attrs_str = "".join(f' {k}="{v}"' for k, v in cleaned_attrs) if cleaned_attrs else ""
+            if tag_lower in ('br', 'hr', 'img'):
+                self.result.append(f"<{tag_lower}{attrs_str} />")
+            else:
+                self.result.append(f"<{tag_lower}{attrs_str}>")
+
+    def handle_endtag(self, tag):
+        tag_lower = tag.lower()
+        if tag_lower in self.DANGEROUS_TAGS:
+            self.in_dangerous_tag = False
+            return
+        if self.in_dangerous_tag:
+            return
+        if tag_lower in self.ALLOWED_TAGS and tag_lower not in ('br', 'hr', 'img'):
+            self.result.append(f"</{tag_lower}>")
+
+    def handle_data(self, data):
+        if not self.in_dangerous_tag:
+            self.result.append(data)
+
+    def handle_entityref(self, name):
+        if not self.in_dangerous_tag:
+            self.result.append(f"&{name};")
+
+    def handle_charref(self, name):
+        if not self.in_dangerous_tag:
+            self.result.append(f"&#{name};")
+
+
+def sanitize_html(html_content):
+    """Membersihkan string HTML dari tag dan atribut berbahaya (XSS Protection)."""
+    if not html_content or not isinstance(html_content, str):
+        return "" if html_content is None else str(html_content)
+
+    if "<" not in html_content and ">" not in html_content:
+        return html_content
+
+    parser = SafeHTMLParser()
+    parser.feed(html_content)
+    return "".join(parser.result)

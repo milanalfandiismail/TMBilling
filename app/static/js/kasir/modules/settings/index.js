@@ -1,5 +1,67 @@
 const Settings = {
     currentSubTab: 'general',
+    ckeditorAnnouncementInstance: null,
+
+    async initCKEditor() {
+        if (typeof ckeditor5 !== 'undefined') {
+            window.ClassicEditor = ckeditor5.ClassicEditor;
+        }
+        if (typeof ClassicEditor === 'undefined') return;
+
+        const editorEl = document.querySelector('#warnet-announcement-editor');
+        if (!editorEl || this.ckeditorAnnouncementInstance) return;
+
+        try {
+            const plugins = typeof ckeditor5 !== 'undefined' ? [
+                ckeditor5.Essentials, ckeditor5.Paragraph, ckeditor5.Heading,
+                ckeditor5.Bold, ckeditor5.Italic, ckeditor5.Underline, ckeditor5.Strikethrough,
+                ckeditor5.Alignment, ckeditor5.FontColor, ckeditor5.FontBackgroundColor,
+                ckeditor5.FontSize, ckeditor5.FontFamily, ckeditor5.Highlight,
+                ckeditor5.Link, ckeditor5.List, ckeditor5.TodoList,
+                ckeditor5.Indent, ckeditor5.IndentBlock, ckeditor5.BlockQuote, ckeditor5.CodeBlock,
+                ckeditor5.Undo
+            ] : [];
+
+            this.ckeditorAnnouncementInstance = await ClassicEditor.create(editorEl, {
+                plugins: plugins,
+                toolbar: {
+                    items: [
+                        'heading', '|',
+                        'bold', 'italic', 'underline', 'strikethrough', 'highlight', '|',
+                        'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
+                        'alignment', 'link', 'bulletedList', 'numberedList', 'outdent', 'indent', '|',
+                        'blockQuote', '|',
+                        'undo', 'redo'
+                    ],
+                    shouldNotGroupWhenFull: true
+                },
+                placeholder: 'Tulis aturan atau pengumuman warnet di sini...',
+                fontSize: {
+                    options: [10, 12, 14, 'default', 18, 20, 24, 28, 32, 36, 48, 64],
+                    supportAllValues: true
+                },
+                fontFamily: {
+                    options: [
+                        'default',
+                        'Space Grotesk, sans-serif',
+                        'Inter, sans-serif',
+                        'Roboto, sans-serif',
+                        'Arial, Helvetica, sans-serif',
+                        'Courier New, Courier, monospace',
+                        'Impact, sans-serif'
+                    ],
+                    supportAllValues: true
+                }
+            });
+
+            const initialVal = document.getElementById('warnet-announcement-input')?.value || '';
+            if (initialVal && this.ckeditorAnnouncementInstance) {
+                this.ckeditorAnnouncementInstance.setData(initialVal);
+            }
+        } catch (e) {
+            console.error('Gagal inisialisasi CKEditor di Settings:', e);
+        }
+    },
 
     async load(preserveSubTab = false) {
         // Tampilkan sub-tab default (Umum & Kiosk) segera agar halaman tidak kosong
@@ -9,6 +71,7 @@ const Settings = {
         this.switchSubTab(this.currentSubTab);
 
         try {
+            await this.initCKEditor();
             const res = await API.settings.getAll();
             if (res && res.success && res.settings) {
                 const timerInput = document.getElementById('shutdown-timer');
@@ -46,9 +109,13 @@ const Settings = {
                 if (footerInput && res.settings.warnet_footer !== undefined) {
                     footerInput.value = res.settings.warnet_footer;
                 }
+                const announcementVal = res.settings.warnet_announcement !== undefined ? res.settings.warnet_announcement : '';
                 const announcementInput = document.getElementById('warnet-announcement-input');
-                if (announcementInput && res.settings.warnet_announcement !== undefined) {
-                    announcementInput.value = res.settings.warnet_announcement;
+                if (announcementInput) {
+                    announcementInput.value = announcementVal;
+                }
+                if (this.ckeditorAnnouncementInstance) {
+                    this.ckeditorAnnouncementInstance.setData(announcementVal);
                 }
                 const qrisPreview = document.getElementById('settings-qris-preview');
                 if (qrisPreview && res.settings.qris_image_url !== undefined) {
@@ -125,26 +192,26 @@ const Settings = {
                 const sEnabled = document.getElementById('scheduler-screenshot-enabled');
                 const sVal = document.getElementById('scheduler-screenshot-value');
                 const sUnit = document.getElementById('scheduler-screenshot-unit');
-                
+
                 if (bVal && res.settings.auto_backup_value !== undefined) bVal.value = res.settings.auto_backup_value;
                 if (bUnit && res.settings.auto_backup_unit !== undefined) bUnit.value = res.settings.auto_backup_unit;
                 if (cVal && res.settings.auto_cleanup_value !== undefined) cVal.value = res.settings.auto_cleanup_value;
                 if (cUnit && res.settings.auto_cleanup_unit !== undefined) cUnit.value = res.settings.auto_cleanup_unit;
-                
+
                 if (sEnabled && res.settings.screenshot_auto_enabled !== undefined) {
                     sEnabled.checked = (res.settings.screenshot_auto_enabled === "1" || res.settings.screenshot_auto_enabled === "true");
                 }
                 if (sVal && res.settings.screenshot_auto_value !== undefined) sVal.value = res.settings.screenshot_auto_value;
                 if (sUnit && res.settings.screenshot_auto_unit !== undefined) sUnit.value = res.settings.screenshot_auto_unit;
-                
+
                 // Set initial disabled state
                 const sCfg = document.getElementById('scheduler-screenshot-config');
-                if(sEnabled && sCfg) {
+                if (sEnabled && sCfg) {
                     const toggleDisabled = () => {
                         const checked = sEnabled.checked;
                         sVal.disabled = !checked;
                         sUnit.disabled = !checked;
-                        if(checked) {
+                        if (checked) {
                             sCfg.classList.remove('opacity-50');
                         } else {
                             sCfg.classList.add('opacity-50');
@@ -156,7 +223,7 @@ const Settings = {
                 this._updateSchedulerPreview();
 
                 // Bind live preview update
-                ['scheduler-backup-value','scheduler-backup-unit','scheduler-cleanup-value','scheduler-cleanup-unit', 'scheduler-screenshot-enabled', 'scheduler-screenshot-value', 'scheduler-screenshot-unit'].forEach(id => {
+                ['scheduler-backup-value', 'scheduler-backup-unit', 'scheduler-cleanup-value', 'scheduler-cleanup-unit', 'scheduler-screenshot-enabled', 'scheduler-screenshot-value', 'scheduler-screenshot-unit'].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.addEventListener('change', () => this._updateSchedulerPreview());
                 });
@@ -208,7 +275,7 @@ const Settings = {
     renderPaymentMethods() {
         const listEl = document.getElementById('payment-methods-list');
         if (!listEl) return;
-        
+
         if (!this.currentPaymentMethods || this.currentPaymentMethods.length === 0) {
             listEl.innerHTML = `<li class="px-4 py-3 text-sm text-neutral-500 text-center italic">Belum ada metode pembayaran</li>`;
             return;
@@ -229,12 +296,12 @@ const Settings = {
     addPaymentMethod() {
         const inputEl = document.getElementById('new-payment-method-input');
         if (!inputEl) return;
-        
+
         const val = inputEl.value.trim();
         if (!val) return;
-        
+
         if (!this.currentPaymentMethods) this.currentPaymentMethods = [];
-        
+
         // Cek duplikat (case insensitive)
         const exists = this.currentPaymentMethods.some(m => m.toLowerCase() === val.toLowerCase());
         if (exists) {
@@ -249,12 +316,12 @@ const Settings = {
 
     removePaymentMethod(index) {
         if (!this.currentPaymentMethods) return;
-        
+
         if (this.currentPaymentMethods[index].toLowerCase() === 'tunai') {
             Toast.error('Metode Tunai adalah metode dasar dan tidak dapat dihapus');
             return;
         }
-        
+
         this.currentPaymentMethods.splice(index, 1);
         this.renderPaymentMethods();
     },
@@ -378,7 +445,7 @@ const Settings = {
                     tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-neutral-500">Tidak ada berkas backup di server.</td></tr>`;
                     return;
                 }
-                
+
                 tbody.innerHTML = res.backups.map(b => `
                     <tr class="border-b border-[#1c1c1c] hover:bg-[#070707] transition-colors">
                         <td class="py-3 pr-2 text-neutral-200 text-xs lg:text-base font-bold">${b.filename}</td>
@@ -506,7 +573,7 @@ const Settings = {
     previewQRIS(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 const preview = document.getElementById('settings-qris-preview');
                 if (preview) preview.src = e.target.result;
             };
@@ -535,19 +602,19 @@ const Settings = {
         if (!select) return;
 
         const zones = [
-            {value: 'Asia/Jakarta', label: 'WIB (UTC+7) — Jakarta, Sumatra, Jawa'},
-            {value: 'Asia/Makassar', label: 'WITA (UTC+8) — Makassar, Bali, Sulawesi'},
-            {value: 'Asia/Jayapura', label: 'WIT (UTC+9) — Jayapura, Maluku, Papua'},
-            {value: 'Asia/Kuala_Lumpur', label: 'MYT (UTC+8) — Malaysia'},
-            {value: 'Asia/Singapore', label: 'SGT (UTC+8) — Singapore'},
-            {value: 'Asia/Ho_Chi_Minh', label: 'ICT (UTC+7) — Vietnam'},
-            {value: 'Asia/Bangkok', label: 'ICT (UTC+7) — Thailand'},
-            {value: 'Asia/Manila', label: 'PHT (UTC+8) — Philippines'},
-            {value: 'Europe/London', label: 'GMT/BST (UTC+0/1) — UK'},
-            {value: 'Europe/Berlin', label: 'CET/CEST (UTC+1/2) — Germany'},
-            {value: 'America/New_York', label: 'EST/EDT (UTC-5/4) — New York'},
-            {value: 'Asia/Tokyo', label: 'JST (UTC+9) — Japan'},
-            {value: 'Australia/Sydney', label: 'AEST/AEDT (UTC+10/11) — Sydney'},
+            { value: 'Asia/Jakarta', label: 'WIB (UTC+7) — Jakarta, Sumatra, Jawa' },
+            { value: 'Asia/Makassar', label: 'WITA (UTC+8) — Makassar, Bali, Sulawesi' },
+            { value: 'Asia/Jayapura', label: 'WIT (UTC+9) — Jayapura, Maluku, Papua' },
+            { value: 'Asia/Kuala_Lumpur', label: 'MYT (UTC+8) — Malaysia' },
+            { value: 'Asia/Singapore', label: 'SGT (UTC+8) — Singapore' },
+            { value: 'Asia/Ho_Chi_Minh', label: 'ICT (UTC+7) — Vietnam' },
+            { value: 'Asia/Bangkok', label: 'ICT (UTC+7) — Thailand' },
+            { value: 'Asia/Manila', label: 'PHT (UTC+8) — Philippines' },
+            { value: 'Europe/London', label: 'GMT/BST (UTC+0/1) — UK' },
+            { value: 'Europe/Berlin', label: 'CET/CEST (UTC+1/2) — Germany' },
+            { value: 'America/New_York', label: 'EST/EDT (UTC-5/4) — New York' },
+            { value: 'Asia/Tokyo', label: 'JST (UTC+9) — Japan' },
+            { value: 'Australia/Sydney', label: 'AEST/AEDT (UTC+10/11) — Sydney' },
         ];
 
         select.innerHTML = zones.map(z =>
@@ -580,10 +647,10 @@ const Settings = {
         const sEnabled = document.getElementById('scheduler-screenshot-enabled')?.checked || false;
         const sVal = document.getElementById('scheduler-screenshot-value')?.value || '60';
         const sUnit = document.getElementById('scheduler-screenshot-unit')?.value || 'detik';
-        
+
         document.getElementById('scheduler-backup-preview').innerHTML = `Backup otomatis setiap <strong class="text-neutral-300">${bVal} ${bUnit}</strong>`;
         document.getElementById('scheduler-cleanup-preview').innerHTML = `Hapus log lebih dari <strong class="text-neutral-300">${cVal} ${cUnit}</strong>`;
-        
+
         const previewEl = document.getElementById('scheduler-screenshot-preview');
         if (previewEl) {
             if (sEnabled) {
@@ -658,11 +725,13 @@ const Settings = {
     },
 
     async saveKioskSettings() {
-        const title = document.getElementById('warnet-title-input').value;
-        const address = document.getElementById('warnet-address-input').value;
-        const phone = document.getElementById('warnet-phone-input').value;
-        const footer = document.getElementById('warnet-footer-input').value;
-        const announcement = document.getElementById('warnet-announcement-input').value;
+        const title = document.getElementById('warnet-title-input')?.value || '';
+        const address = document.getElementById('warnet-address-input')?.value || '';
+        const phone = document.getElementById('warnet-phone-input')?.value || '';
+        const footer = document.getElementById('warnet-footer-input')?.value || '';
+        const announcement = this.ckeditorAnnouncementInstance
+            ? this.ckeditorAnnouncementInstance.getData()
+            : (document.getElementById('warnet-announcement-input')?.value || '');
         const qrisFileInput = document.getElementById('qris-file-input');
 
         Toast.success('Menyimpan pengaturan Kiosk...');
@@ -696,23 +765,23 @@ const Settings = {
                 method: 'PUT',
                 body: JSON.stringify({ value: announcement })
             });
-            
+
             // 3. Upload QRIS jika ada file yang dipilih
             if (qrisFileInput.files && qrisFileInput.files[0]) {
                 const formData = new FormData();
                 formData.append('qris_image', qrisFileInput.files[0]);
-                
+
                 const uploadRes = await API.request('/api/v1/kasir/settings/qris', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 if (uploadRes.qris_url) {
                     const preview = document.getElementById('settings-qris-preview');
                     if (preview) preview.src = uploadRes.qris_url;
                 }
             }
-            
+
             Toast.success('Pengaturan Kiosk berhasil disimpan');
             await this.load(true); // Refresh data
         } catch (err) {
@@ -723,7 +792,7 @@ const Settings = {
     async saveTVSignageSettings() {
         const runningText = document.getElementById('tv-running-text').value;
         const slideDuration = document.getElementById('tv-slide-duration').value;
-        
+
         const enabledSlides = [];
         for (let i = 1; i <= 4; i++) {
             const cb = document.getElementById(`tv-slide-${i}`);
@@ -941,7 +1010,7 @@ const Settings = {
         if (!url || url === '-') return;
         try {
             new QRCode(c, { text: url, width: 140, height: 140, colorDark: '#000000', colorLight: '#ffffff' });
-        } catch (e) {}
+        } catch (e) { }
     },
 
     async _wlRefreshList() {
@@ -962,7 +1031,7 @@ const Settings = {
                     <td class="py-2.5 text-right"><button onclick="Settings._wlRemove('${this._esc(e.ip)}')" class="text-red-400 hover:text-red-300 text-xs px-2">🗑</button></td>
                 </tr>`;
             }).join('');
-        } catch (e) {}
+        } catch (e) { }
     },
 
     async _wlAddIp() {
@@ -982,9 +1051,9 @@ const Settings = {
 
     async _wlRemove(ip) {
         if (!confirm(`Hapus ${ip}?`)) return;
-        try { 
-            await this._wlFetch('DELETE', `/api/v1/kasir/settings/ip-whitelist/${ip}`); 
-            await this._wlRefreshList(); 
+        try {
+            await this._wlFetch('DELETE', `/api/v1/kasir/settings/ip-whitelist/${ip}`);
+            await this._wlRefreshList();
             if (typeof Toast !== 'undefined') Toast.info('IP Whitelist berhasil dihapus');
         } catch (e) {
             if (typeof Toast !== 'undefined') Toast.error('Gagal menghapus IP Whitelist');
@@ -992,8 +1061,8 @@ const Settings = {
     },
 
     async _wlToggle(enabled) {
-        try { 
-            await this._wlFetch('POST', '/api/v1/kasir/settings/ip-whitelist/toggle', { enabled }); 
+        try {
+            await this._wlFetch('POST', '/api/v1/kasir/settings/ip-whitelist/toggle', { enabled });
             if (typeof Toast !== 'undefined') {
                 if (enabled) {
                     Toast.success('Whitelist IP diaktifkan');
@@ -1001,8 +1070,8 @@ const Settings = {
                     Toast.info('Whitelist IP dinonaktifkan');
                 }
             }
-        } catch (e) { 
-            document.getElementById('wlToggle').checked = !enabled; 
+        } catch (e) {
+            document.getElementById('wlToggle').checked = !enabled;
             if (typeof Toast !== 'undefined') Toast.error('Gagal mengubah status Whitelist IP');
         }
     },
@@ -1013,14 +1082,14 @@ const Settings = {
             const data = await this._wlFetch('POST', '/api/v1/kasir/settings/ip-whitelist/regenerate-token');
             alert('Token baru: ' + data.token);
             await this._loadWhitelistStatus();
-        } catch (e) {}
+        } catch (e) { }
     },
 
     async _wlSavePublicUrl() {
         const url = document.getElementById('wlPublicUrl').value.trim();
-        try { 
-            await this._wlFetch('POST', '/api/v1/kasir/settings/app-public-url', { url }); 
-            await this._loadWhitelistStatus(); 
+        try {
+            await this._wlFetch('POST', '/api/v1/kasir/settings/app-public-url', { url });
+            await this._loadWhitelistStatus();
             if (typeof Toast !== 'undefined') Toast.success('URL Publik berhasil disimpan');
         } catch (e) {
             if (typeof Toast !== 'undefined') Toast.error('Gagal menyimpan URL Publik');
@@ -1118,7 +1187,7 @@ const Settings = {
                     const dl = s.download;
                     const downloadedMb = (dl.downloaded_bytes / 1048576).toFixed(1);
                     const totalMb = dl.total_bytes > 0 ? (dl.total_bytes / 1048576).toFixed(1) : '?';
-                    
+
                     badge.textContent = `🟡 Mengunduh cloudflared (${dl.percent}%)...`;
                     badge.className = 'px-3 py-1 rounded text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30';
 

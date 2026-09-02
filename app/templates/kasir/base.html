@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ warnet_title }} - Kasir{% endblock %}</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=157">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=158">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
@@ -76,11 +76,213 @@
         .fixed.inset-0 > div {
             animation: modal-in 0.18s ease-out;
         }
-    </style>    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=157">
+
+        /* CKEditor 5 Dark Theme Overrides */
+        .ck-editor {
+            width: 100% !important;
+        }
+        .ck-editor__main .ck-content {
+            background-color: #050505 !important;
+            color: #e5e5e5 !important;
+            border-color: #1c1c1c !important;
+            min-height: 180px;
+            padding: 1.25rem !important;
+            overflow-y: auto !important;
+            line-height: 1.6 !important;
+        }
+        /* Restore list numbering and bullets in CKEditor */
+        .ck-content ol, .prose ol {
+            list-style-type: decimal !important;
+            padding-left: 2rem !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 1rem !important;
+        }
+        .ck-content ul, .prose ul {
+            list-style-type: disc !important;
+            padding-left: 2rem !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 1rem !important;
+        }
+        .ck-content li, .prose li {
+            margin-bottom: 0.25rem !important;
+            display: list-item !important;
+            line-height: 1.5 !important;
+        }
+        /* Ensure headings in CKEditor are aligned cleanly to the left */
+        .ck-content h1, .ck-content h2, .ck-content h3, .ck-content h4, .ck-content h5, .ck-content h6,
+        .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+            margin-left: 0 !important;
+            padding-left: 0 !important;
+            text-align: left !important;
+            font-weight: 700 !important;
+            margin-top: 1rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        .ck-content h1, .prose h1 { font-size: 1.5rem !important; }
+        .ck-content h2, .prose h2 { font-size: 1.25rem !important; }
+        .ck-content h3, .prose h3 { font-size: 1.1rem !important; }
+        .ck-content h4, .prose h4 { font-size: 1rem !important; }
+
+        .ck-content blockquote, .prose blockquote {
+            border-left: 3px solid #10b981 !important;
+            padding-left: 1rem !important;
+            margin: 1rem 0 !important;
+            color: #a3a3a3 !important;
+            font-style: italic !important;
+        }
+
+        /* CKEditor 5 Text Alignment Classes */
+        .ck-content .text-align-left,
+        .ck-content th.text-align-left,
+        .ck-content td.text-align-left,
+        .ck-content p.text-align-left,
+        .ck-content div.text-align-left,
+        .prose .text-align-left,
+        .prose th.text-align-left,
+        .prose td.text-align-left,
+        .prose p.text-align-left {
+            text-align: left !important;
+        }
+
+        .ck-content .text-align-center,
+        .ck-content th.text-align-center,
+        .ck-content td.text-align-center,
+        .ck-content p.text-align-center,
+        .ck-content div.text-align-center,
+        .prose .text-align-center,
+        .prose th.text-align-center,
+        .prose td.text-align-center,
+        .prose p.text-align-center {
+            text-align: center !important;
+        }
+
+        .ck-content .text-align-right,
+        .ck-content th.text-align-right,
+        .ck-content td.text-align-right,
+        .ck-content p.text-align-right,
+        .ck-content div.text-align-right,
+        .prose .text-align-right,
+        .prose th.text-align-right,
+        .prose td.text-align-right,
+        .prose p.text-align-right {
+            text-align: right !important;
+        }
+
+        .ck-content .text-align-justify,
+        .ck-content th.text-align-justify,
+        .ck-content td.text-align-justify,
+        .ck-content p.text-align-justify,
+        .ck-content div.text-align-justify,
+        .prose .text-align-justify,
+        .prose th.text-align-justify,
+        .prose td.text-align-justify,
+        .prose p.text-align-justify {
+            text-align: justify !important;
+        }
+
+        /* Generic Table Styling for Prose/Content */
+        .prose table, .ck-content table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin: 1rem 0;
+        }
+        .prose th, .prose td, .ck-content th, .ck-content td {
+            border: 1px solid #262626;
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+        }
+        .prose th, .ck-content th {
+            background-color: #141414;
+            color: #fbbf24;
+            font-weight: 600;
+        }
+        .ck-content a, .prose a {
+            color: #34d399 !important;
+            text-decoration: underline !important;
+        }
+        .ck.ck-editor__top .ck-toolbar {
+            background-color: #0c0c0c !important;
+            border-color: #1c1c1c !important;
+            padding: 0.5rem !important;
+        }
+        .ck.ck-button {
+            color: #e5e5e5 !important;
+        }
+        .ck.ck-button:hover, .ck.ck-button:active {
+            background-color: #1c1c1c !important;
+            color: #fff !important;
+        }
+        .ck.ck-button.ck-on {
+            background-color: #262626 !important;
+            color: #fff !important;
+        }
+        .ck.ck-splitbutton {
+            border-radius: 4px !important;
+            overflow: hidden !important;
+        }
+        .ck.ck-splitbutton .ck-button:hover,
+        .ck.ck-splitbutton__action:hover,
+        .ck.ck-splitbutton__arrow:hover {
+            background-color: #1c1c1c !important;
+            color: #ffffff !important;
+        }
+        .ck.ck-splitbutton__action.ck-on,
+        .ck.ck-splitbutton__arrow.ck-on {
+            background-color: #262626 !important;
+            color: #ffffff !important;
+        }
+        .ck.ck-dropdown__panel {
+            background-color: #0c0c0c !important;
+            border-color: #1c1c1c !important;
+        }
+        .ck.ck-list {
+            background-color: #0c0c0c !important;
+        }
+        .ck.ck-list__item .ck-button:hover {
+            background-color: #1c1c1c !important;
+        }
+        .ck.ck-toolbar__separator {
+            background-color: #1c1c1c !important;
+        }
+        /* CKEditor 5 Floating Balloon & Popup Dark Theme */
+        .ck.ck-balloon-panel {
+            background-color: #0c0c0c !important;
+            border: 1px solid #262626 !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8) !important;
+        }
+        .ck.ck-balloon-panel[class*="ck-balloon-panel_arrow"]::after {
+            border-bottom-color: #0c0c0c !important;
+            border-top-color: #0c0c0c !important;
+        }
+        .ck.ck-balloon-panel[class*="ck-balloon-panel_arrow"]::before {
+            border-bottom-color: #262626 !important;
+            border-top-color: #262626 !important;
+        }
+        .ck.ck-toolbar {
+            background-color: #0c0c0c !important;
+            border-color: #262626 !important;
+        }
+        .ck.ck-labeled-field-view, .ck.ck-input-text {
+            background-color: #050505 !important;
+            border-color: #262626 !important;
+            color: #ffffff !important;
+        }
+        .ck.ck-color-grid, .ck.ck-color-picker_grid {
+            background-color: #0c0c0c !important;
+        }
+        .ck.ck-form {
+            background-color: #0c0c0c !important;
+            color: #e5e5e5 !important;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=158">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/ckeditor/ckeditor.css') }}?v=159">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css">
+    <script src="{{ url_for('static', filename='vendor/ckeditor/ckeditor.js') }}?v=159"></script>
     
     {% block head %}{% endblock %}
 </head>
@@ -90,77 +292,77 @@
     {% block content %}{% endblock %}
 
     <!-- ===== SCRIPTS ===== -->
-    <script src="{{ url_for('static', filename='js/kasir/core/api.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/core/utils.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/core/toast.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/core/modal.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/api.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/utils.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/toast.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/modal.js') }}?v=158"></script>
     
     <!-- Components -->
-    <script src="{{ url_for('static', filename='js/kasir/components/modal-buka.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/components/modal-tambah.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/components/modal-confirm-tambah.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/components/modal-buka.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/components/modal-tambah.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/components/modal-confirm-tambah.js') }}?v=158"></script>
     
     <!-- Modules / Subfolders -->
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/sidebar.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/remote/vnc_client.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_compact.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/map_view.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_process_monitor.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_detail_modal.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/server_monitor/server_monitor.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/index.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/sidebar.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/remote/vnc_client.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_compact.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/map_view.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_process_monitor.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_detail_modal.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/server_monitor/server_monitor.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/index.js') }}?v=158"></script>
 
 
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/grup/index.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/grup/index.js') }}?v=158"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_grid.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_modal.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/pc/index.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_grid.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_modal.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/pc/index.js') }}?v=158"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_table.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_modal.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/paket/index.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_table.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_modal.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/paket/index.js') }}?v=158"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_table.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_modal.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_refill.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/index.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_table.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_modal.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_refill.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/index.js') }}?v=158"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/laporan/index.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/laporan_menu/index.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/log/index.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/monitor/index.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/hardware_checker/index.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/maintenance/index.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/laporan_maintenance/index.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/screenshot/index.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/blackout/index.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/settings/index.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/tutorials/index.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/settings/plugins.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/settings/migration.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/mikrotik/index.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/laporan/index.js') }}?v=159"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/laporan_menu/index.js') }}?v=159"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/log/index.js') }}?v=159"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/monitor/index.js') }}?v=159"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/hardware_checker/index.js') }}?v=159"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/maintenance/index.js') }}?v=159"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/laporan_maintenance/index.js') }}?v=159"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/screenshot/index.js') }}?v=159"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/blackout/index.js') }}?v=159"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/settings/index.js') }}?v=163"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/tutorials/index.js') }}?v=162"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/settings/plugins.js') }}?v=159"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/settings/migration.js') }}?v=159"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/mikrotik/index.js') }}?v=159"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/struk/struk_preview.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/struk/index.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/struk/struk_preview.js') }}?v=159"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/struk/index.js') }}?v=159"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/shift/index.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/shift/index.js') }}?v=159"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/user/index.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/menu/index.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/tournament/index.js') }}?v=157"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/game/index.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/user/index.js') }}?v=159"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/menu/index.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/tournament/index.js') }}?v=158"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/game/index.js') }}?v=158"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/uptime/index.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/uptime/index.js') }}?v=158"></script>
     
     <!-- Owner Analytics -->
-    <script src="{{ url_for('static', filename='js/kasir/modules/owner/analytics.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/owner/analytics.js') }}?v=158"></script>
     
     <!-- File Explorer -->
-    <script src="{{ url_for('static', filename='js/kasir/modules/fileexplorer/index.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/fileexplorer/index.js') }}?v=158"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/app.js') }}?v=157"></script>
+    <script src="{{ url_for('static', filename='js/kasir/app.js') }}?v=158"></script>
     {% block scripts %}{% endblock %}
 </body>
 

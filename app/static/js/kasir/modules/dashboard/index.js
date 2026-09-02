@@ -427,26 +427,19 @@ const Dashboard = {
     },
 
     async logoutAdmin(pcId, sesiId = null) {
-        Modal.confirm('<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Paksa Logout Admin?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Akses bypass administrator pada unit ini akan dicabut.</p></div>', async () => {
+        Modal.confirm('<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Tutup Sesi Admin?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Akses mode admin pada PC ini akan dicabut dan PC dikunci kembali ke mode Kiosk.</p></div>', async () => {
             try {
                 if (sesiId) {
                     await API.sesi.tutup(sesiId);
-                } else {
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-                    const res = await fetch(`/api/v1/kasir/pc/reset-admin/${pcId}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-Token': csrfToken
-                        }
-                    });
-                    const json = await res.json();
-                    if (!json.success) throw new Error(json.error || 'Gagal reset admin');
                 }
-                Toast.success('Admin berhasil dilogout');
+                const res = await API.request(`/api/v1/kasir/pc/reset-admin/${pcId}`, {
+                    method: 'POST'
+                });
+                if (res && res.error) throw new Error(res.error);
+                Toast.success('Sesi admin berhasil ditutup & PC dikunci');
                 this.load();
             } catch (err) {
-                Toast.error(err.message);
+                Toast.error(err.message || 'Gagal menutup sesi admin');
             }
         });
     },
@@ -490,6 +483,15 @@ const Dashboard = {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 <span>Buka Sesi</span>
+            </button>` : ''}
+
+            ${isAdminMode ? `
+            <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-amber-400 hover:bg-amber-950/40 hover:text-amber-300 transition-colors text-left font-mono"
+                    onclick="Dashboard.closeContextMenu(); Dashboard.logoutAdmin(${pcId}, ${pc.sesi_detail ? pc.sesi_detail.id : 'null'})">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                <span>Logout Sesi Admin</span>
             </button>` : ''}
 
             ${hasSesi ? `

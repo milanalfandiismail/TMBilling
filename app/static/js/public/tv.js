@@ -19,7 +19,7 @@ class TVSignage {
 
         // Initial fetch
         await this.fetchData();
-        
+
         // Start polling background data
         setInterval(() => this.fetchData(), 10000);
 
@@ -30,12 +30,12 @@ class TVSignage {
 
     updateClock() {
         const now = new Date();
-        
+
         // Format clock: HH:MM:SS
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const seconds = String(now.getSeconds()).padStart(2, '0');
-        
+
         const tzAbbr = (this.data && this.data.settings && this.data.settings.timezone_abbr) || 'WIB';
         document.getElementById('current-clock').innerText = `${hours}:${minutes}:${seconds} ${tzAbbr}`;
 
@@ -45,7 +45,7 @@ class TVSignage {
             'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
             'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
         ];
-        
+
         const dayName = days[now.getDay()];
         const date = now.getDate();
         const monthName = months[now.getMonth()];
@@ -58,7 +58,7 @@ class TVSignage {
         try {
             const res = await fetch('/api/v1/public/tv/data');
             const result = await res.json();
-            
+
             if (result.success) {
                 this.data = result.data;
                 this.renderAll();
@@ -110,7 +110,7 @@ class TVSignage {
         // 3. Update dynamic configurations & slide listing
         if (this.data.settings) {
             this.slideDuration = (this.data.settings.slide_duration || 15) * 1000;
-            
+
             // Extract PC groups
             const pcs = this.data.pc_list || [];
             const pcGroupsMap = {};
@@ -133,15 +133,15 @@ class TVSignage {
                 promoGroupsMap[g].push(p);
             });
             const promoGroupsList = Object.keys(promoGroupsMap).sort();
-            const promoSlideIds = promos.length > 0 
+            const promoSlideIds = promos.length > 0
                 ? promoGroupsList.map(g => `slide-promos-${g.toLowerCase().replace(/[^a-z0-9]/g, '-')}`)
                 : ['slide-promos-empty'];
 
             // Adjust active slides based on config
             const enabledIndices = this.data.settings.slides_enabled || [1, 3, 4];
-            
+
             const newActiveSlides = [];
-            
+
             if (enabledIndices.includes(1)) {
                 newActiveSlides.push(...pcSlideIds);
             }
@@ -151,7 +151,7 @@ class TVSignage {
             if (enabledIndices.includes(4)) {
                 newActiveSlides.push('slide-rules');
             }
-            
+
             if (newActiveSlides.length === 0) {
                 newActiveSlides.push('slide-pc-empty');
             }
@@ -171,7 +171,7 @@ class TVSignage {
 
                 this.activeSlides = newActiveSlides;
                 this.currentSlideIndex = 0;
-                
+
                 // Show first slide in new list
                 const firstSlideId = this.activeSlides[0];
                 if (firstSlideId) {
@@ -216,14 +216,15 @@ class TVSignage {
             pcGroups[g].push(pc);
         });
 
-        const pcGroupNames = Object.keys(pcGroups).sort();
+        const pcGroupNames = Object.keys(pcGroups).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
         // Calculate if we need to show/activate the first one (fallback)
         const isCurrentActive = (id) => this.activeSlides[this.currentSlideIndex] === id;
 
         container.innerHTML = pcGroupNames.map(g => {
             const slideId = `slide-pc-${g.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
-            const groupPcs = pcGroups[g];
+            const groupPcs = pcGroups[g] || [];
+            groupPcs.sort((a, b) => (a.kode || a.nama || '').localeCompare(b.kode || b.nama || '', undefined, { numeric: true, sensitivity: 'base' }));
             const groupColor = (this.data && this.data.grup_meta && this.data.grup_meta[g] && this.data.grup_meta[g].warna) || '#3b82f6';
 
             const gridHtml = groupPcs.map(pc => {
@@ -248,7 +249,7 @@ class TVSignage {
                     statusClass = '';
                     customStyle = `background-color: ${groupColor}10; border-color: ${groupColor}40; color: ${groupColor}; box-shadow: 0 0 15px ${groupColor}15;`;
                     subtitle = pc.sesi_detail ? pc.sesi_detail.nama : 'GUEST';
-                    
+
                     if (pc.sesi_detail && pc.sesi_detail.sisa_waktu_menit !== undefined) {
                         const mins = pc.sesi_detail.sisa_waktu_menit;
                         if (mins <= 0) {

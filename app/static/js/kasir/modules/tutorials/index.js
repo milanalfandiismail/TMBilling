@@ -270,7 +270,6 @@ const Tutorials = {
                             ckeditor5.FontSize, ckeditor5.FontFamily, ckeditor5.Highlight,
                             ckeditor5.Link, ckeditor5.List, ckeditor5.TodoList,
                             ckeditor5.Indent, ckeditor5.IndentBlock, ckeditor5.BlockQuote, ckeditor5.CodeBlock,
-                            ckeditor5.Table, ckeditor5.TableToolbar, ckeditor5.TableProperties, ckeditor5.TableCellProperties,
                             ckeditor5.Image, ckeditor5.ImageToolbar, ckeditor5.ImageCaption, ckeditor5.ImageStyle,
                             ckeditor5.ImageUpload, ckeditor5.ImageResize, ckeditor5.Undo,
                             CustomUploadAdapterPlugin
@@ -284,7 +283,7 @@ const Tutorials = {
                                     'bold', 'italic', 'underline', 'strikethrough', 'highlight', '|',
                                     'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
                                     'alignment', 'link', 'bulletedList', 'numberedList', 'todoList', 'outdent', 'indent', '|',
-                                    'blockQuote', 'codeBlock', 'insertTable', 'imageUpload', '|',
+                                    'blockQuote', 'codeBlock', 'imageUpload', '|',
                                     'undo', 'redo'
                                 ],
                                 shouldNotGroupWhenFull: true
@@ -320,12 +319,6 @@ const Tutorials = {
                                     'imageTextAlternative',
                                     '|',
                                     'resizeImage'
-                                ]
-                            },
-                            table: {
-                                contentToolbar: [
-                                    'tableColumn', 'tableRow', 'mergeTableCells',
-                                    'tableProperties', 'tableCellProperties'
                                 ]
                             }
                         });

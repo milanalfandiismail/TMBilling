@@ -14,6 +14,66 @@ class VNCService:
     LISTEN_PORT = 8081
     VNC_HOST = '127.0.0.1'
     VNC_PORT = 5900
+    TOKEN_FILE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "instance", "vnc_tokens.cfg")
+    _token_lock = threading.Lock()
+
+    @classmethod
+    def ensure_default_tokens(cls):
+        """Memastikan file token ada dan setidaknya memiliki token server default."""
+        with cls._token_lock:
+            dir_name = os.path.dirname(cls.TOKEN_FILE_PATH)
+            if dir_name:
+                os.makedirs(dir_name, exist_ok=True)
+            
+            # Jika file tidak ada atau kosong, buat default server token
+            if not os.path.exists(cls.TOKEN_FILE_PATH) or os.path.getsize(cls.TOKEN_FILE_PATH) == 0:
+                with open(cls.TOKEN_FILE_PATH, "w") as f:
+                    f.write("server: 127.0.0.1:5900\n")
+                logger.info(f"Membuat token file default di: {cls.TOKEN_FILE_PATH}")
+
+    @classmethod
+    def set_token(cls, token, host, port):
+        """Menambahkan atau memperbarui token target secara thread-safe."""
+        cls.ensure_default_tokens()
+        with cls._token_lock:
+            targets = {}
+            if os.path.exists(cls.TOKEN_FILE_PATH):
+                with open(cls.TOKEN_FILE_PATH, "r") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#"):
+                            if ":" in line:
+                                parts = line.split(":", 1)
+                                targets[parts[0].strip()] = parts[1].strip()
+
+            targets[token.strip()] = f"{host}:{port}"
+
+            with open(cls.TOKEN_FILE_PATH, "w") as f:
+                for t, target in targets.items():
+                    f.write(f"{t}: {target}\n")
+            logger.info(f"Token VNC diperbarui: {token} -> {host}:{port}")
+
+    @classmethod
+    def remove_token(cls, token):
+        """Menghapus token target secara thread-safe."""
+        cls.ensure_default_tokens()
+        with cls._token_lock:
+            targets = {}
+            if os.path.exists(cls.TOKEN_FILE_PATH):
+                with open(cls.TOKEN_FILE_PATH, "r") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#"):
+                            if ":" in line:
+                                parts = line.split(":", 1)
+                                targets[parts[0].strip()] = parts[1].strip()
+
+            if token.strip() in targets:
+                targets.pop(token.strip())
+                with open(cls.TOKEN_FILE_PATH, "w") as f:
+                    for t, target in targets.items():
+                        f.write(f"{t}: {target}\n")
+                logger.info(f"Token VNC dihapus: {token}")
 
     @classmethod
     def is_port_open(cls, host, port):
@@ -39,16 +99,20 @@ class VNCService:
         if cls.is_websockify_active():
             return True, "Websockify sudah aktif"
 
-        if not cls.is_vnc_server_active():
-            return False, "VNC Server (TightVNC) tidak terdeteksi pada 127.0.0.1:5900. Pastikan TightVNC Server sudah berjalan dan mengizinkan Loopback (127.0.0.1)."
+        cls.ensure_default_tokens()
 
         try:
             import importlib.util
             if importlib.util.find_spec("websockify") is None:
                 return False, "Modul Python 'websockify' belum terinstal. Silakan jalankan 'pip install websockify' di PC Server."
 
-            # Perintah untuk menjalankan websockify proxy: 0.0.0.0:8081 -> 127.0.0.1:5900
-            cmd = [sys.executable, "-m", "websockify", f"0.0.0.0:{cls.LISTEN_PORT}", f"{cls.VNC_HOST}:{cls.VNC_PORT}"]
+            # Perintah untuk menjalankan websockify proxy dengan TokenFile
+            cmd = [
+                sys.executable, "-m", "websockify",
+                "--token-plugin=TokenFile",
+                f"--token-source={cls.TOKEN_FILE_PATH}",
+                f"0.0.0.0:{cls.LISTEN_PORT}"
+            ]
             cls._process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -64,7 +128,7 @@ class VNCService:
                 err_msg = err.decode('utf-8', errors='ignore').strip()
                 return False, f"Proses websockify gagal berjalan: {err_msg or 'Unknown error'}"
 
-            logger.info(f"Proses Websockify berhasil dijalankan pada port {cls.LISTEN_PORT}")
+            logger.info(f"Proses Websockify dengan TokenFile berhasil dijalankan pada port {cls.LISTEN_PORT}")
             return True, "Websockify berhasil dinyalakan"
         except Exception as e:
             logger.error(f"Gagal menjalankan Websockify: {e}")
@@ -75,7 +139,7 @@ class VNCClientProxyService:
     PORT_RANGE_START = 8090
     PORT_RANGE_END = 8150
     
-    _active_proxies = {}  # pc_id -> {port, client_ip, process, started_at}
+    _active_proxies = {}  # pc_id -> {port, client_ip, token, started_at}
     _proxies_lock = threading.Lock()
     
     _vnc_events = {}
@@ -84,51 +148,33 @@ class VNCClientProxyService:
     
     @classmethod
     def allocate_port(cls):
-        with cls._proxies_lock:
-            used_ports = {info["port"] for info in cls._active_proxies.values()}
-            for port in range(cls.PORT_RANGE_START, cls.PORT_RANGE_END + 1):
-                if port not in used_ports:
-                    # Double-check if the port is open in the system
-                    if not VNCService.is_port_open('127.0.0.1', port):
-                        return port
-            return None
+        # Deprecated: We now route all traffic via Port 8081 using Token Multiplexing
+        return VNCService.LISTEN_PORT
 
     @classmethod
     def start_proxy(cls, pc_id, client_ip):
-        port = cls.allocate_port()
-        if port is None:
-            return False, "Port pool websockify penuh", None
+        success, msg = VNCService.ensure_websockify_running()
+        if not success:
+            return False, f"Gagal mengaktifkan daemon websockify terpusat: {msg}", None, None
             
         try:
-            # Perintah untuk menjalankan websockify proxy: 0.0.0.0:port -> client_ip:5900
-            cmd = [sys.executable, "-m", "websockify", f"0.0.0.0:{port}", f"{client_ip}:5900"]
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-            )
-            time.sleep(0.2)
+            token = f"client_{pc_id}"
+            # Daftarkan token target client_ip:5900
+            VNCService.set_token(token, client_ip, 5900)
             
-            # Cek jika proses langsung mati
-            if process.poll() is not None:
-                _, err = process.communicate()
-                err_msg = err.decode('utf-8', errors='ignore').strip()
-                return False, f"Proses websockify client gagal berjalan: {err_msg or 'Unknown error'}", None
-                
             with cls._proxies_lock:
                 cls._active_proxies[pc_id] = {
-                    "port": port,
+                    "port": VNCService.LISTEN_PORT,
                     "client_ip": client_ip,
-                    "process": process,
+                    "token": token,
                     "started_at": time.time()
                 }
                 
-            logger.info(f"Proses Websockify client {pc_id} ({client_ip}) berhasil dijalankan pada port {port}")
-            return True, "Proxy websockify client berhasil dinyalakan", port
+            logger.info(f"Token websockify untuk client {pc_id} ({client_ip}) berhasil didaftarkan: {token}")
+            return True, "Proxy websockify client berhasil dinyalakan", VNCService.LISTEN_PORT, token
         except Exception as e:
-            logger.error(f"Gagal menjalankan Websockify client: {e}")
-            return False, f"Gagal menjalankan Websockify client: {str(e)}", None
+            logger.error(f"Gagal mendaftarkan token websockify client: {e}")
+            return False, f"Gagal mendaftarkan token websockify client: {str(e)}", None, None
 
     @classmethod
     def stop_proxy(cls, pc_id):
@@ -144,13 +190,9 @@ class VNCClientProxyService:
                 pass
             return True, "Proxy tidak aktif"
             
-        process = proxy.get("process")
-        if process:
-            try:
-                process.terminate()
-                process.wait(timeout=1.0)
-            except Exception as e:
-                logger.warning(f"Gagal mematikan proses websockify client {pc_id}: {e}")
+        token = proxy.get("token")
+        if token:
+            VNCService.remove_token(token)
 
         try:
             from app.services import ClientService
@@ -158,7 +200,7 @@ class VNCClientProxyService:
         except Exception as e:
             logger.error(f"Gagal mengantrekan vnc_stop untuk PC {pc_id}: {e}")
                 
-        logger.info(f"Proxy websockify client {pc_id} dihentikan dan port {proxy['port']} dibebaskan")
+        logger.info(f"Proxy websockify client {pc_id} dihentikan dan token {token} dibebaskan")
         return True, "Proxy websockify client berhasil dihentikan"
 
     @classmethod

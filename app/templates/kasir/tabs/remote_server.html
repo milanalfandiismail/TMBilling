@@ -51,12 +51,12 @@
             </div>
 
             <!-- Desktop-only Controls & Mobile Collapsible Options Panel -->
-            <div id="vnc-options-panel" class="hidden md:flex flex-wrap items-center justify-between gap-3 bg-[#070707] md:bg-transparent p-3 md:p-0 rounded-lg md:rounded-none border border-[#1c1c1c] md:border-none">
+            <div id="vnc-options-panel" class="hidden md:flex flex-wrap items-center justify-between gap-3 bg-[#0c0c0c] md:bg-transparent p-3 md:p-0 rounded-lg md:rounded-none border border-[#1c1c1c] md:border-none">
                 <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
                     <!-- Password Field Group -->
                     <div class="flex items-center gap-2 w-full sm:w-auto">
                         <input type="password" id="vnc-password-input" placeholder="Password TightVNC"
-                            class="flex-1 sm:flex-none w-full sm:w-44 px-3 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-sm text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono">
+                            class="flex-1 sm:flex-none w-full sm:w-44 px-3 py-1.5 bg-[#111] border border-[#1c1c1c] rounded text-xs lg:text-sm text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono">
                         <button onclick="VNCClient.saveGlobalPassword()" id="vnc-save-pw-btn"
                             class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1.5 shrink-0"
                             title="Simpan Password ke Database">
@@ -81,10 +81,10 @@
 
         <!-- Canvas Container -->
         <div id="vnc-container"
-            class="relative w-full flex-1 min-h-0 bg-[#050505] rounded-lg border border-[#1c1c1c] overflow-hidden flex items-center justify-center select-none">
-            <div id="vnc-screen" class="w-full h-full overflow-hidden flex items-center justify-center"></div>
+            class="relative w-full flex-1 min-h-0 bg-[#0c0c0c] rounded-lg border border-[#1c1c1c] overflow-hidden flex items-center justify-center select-none">
+            <div id="vnc-screen" class="w-full h-full overflow-hidden flex items-center justify-center bg-transparent"></div>
             <div id="vnc-placeholder"
-                class="absolute inset-0 flex flex-col items-center justify-center bg-[#070707] text-neutral-500 space-y-3 z-10 p-4 text-center">
+                class="absolute inset-0 flex flex-col items-center justify-center bg-[#0c0c0c] text-neutral-500 space-y-3 z-10 p-4 text-center">
                 <svg class="w-12 h-12 stroke-neutral-700" fill="none" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />

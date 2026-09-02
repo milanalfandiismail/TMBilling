@@ -124,15 +124,7 @@ def _register_public_routes(app):
     def index():
         """Render public warnet homepage (landing page)."""
         from app.services import SettingsService
-        # Ambil aturan warnet dari database dengan fallback jika tidak diset
-        default_rules = (
-            "1. Jaga ketertiban, ketenangan, dan kebersihan di area warnet.\n"
-            "2. Dilarang membuka situs ilegal, pornografi, atau SARA.\n"
-            "3. Dilarang membawa makanan dan minuman dari luar area warnet.\n"
-            "4. Laporkan setiap kendala hardware/software langsung ke petugas kasir.\n"
-            "5. Harap log out akun member sebelum meninggalkan komputer Anda."
-        )
-        warnet_rules = SettingsService.get("warnet_announcement", default_rules)
+        warnet_rules = SettingsService.get("warnet_announcement", "")
         return render_template("public/landing/index.html", warnet_rules=warnet_rules)
 
     @app.route("/livepc")

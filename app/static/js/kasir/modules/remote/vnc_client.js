@@ -102,6 +102,39 @@ class VNCSession {
         canvas.dispatchEvent(ev);
     }
 
+    dispatchCanvasWheel(clientX, clientY, deltaY) {
+        const screen = this.options.screenContainer;
+        if (!screen) return;
+        const canvas = screen.querySelector('canvas');
+        if (!canvas) return;
+
+        const rect = canvas.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+
+        const relX = (clientX - rect.left) / rect.width;
+        const relY = (clientY - rect.top) / rect.height;
+
+        const clampedRelX = Math.max(0, Math.min(1, relX));
+        const clampedRelY = Math.max(0, Math.min(1, relY));
+
+        const baseW = canvas.offsetWidth || (rect.width / (this.zoomLevel || 1.0));
+        const baseH = canvas.offsetHeight || (rect.height / (this.zoomLevel || 1.0));
+
+        const syntheticClientX = rect.left + (clampedRelX * baseW);
+        const syntheticClientY = rect.top + (clampedRelY * baseH);
+
+        const ev = new WheelEvent('wheel', {
+            clientX: syntheticClientX,
+            clientY: syntheticClientY,
+            deltaY: deltaY,
+            deltaMode: 0,
+            bubbles: true,
+            cancelable: true,
+            view: window
+        });
+        canvas.dispatchEvent(ev);
+    }
+
     async connect() {
         const RFBClass = await VNCClient.getRFB();
         if (!RFBClass) {
@@ -122,6 +155,9 @@ class VNCSession {
                 dragViewport: false,
                 showDotCursor: !isMobile
             });
+            try {
+                this.rfb.background = 'transparent';
+            } catch(e) {}
 
             this.rfb.addEventListener('credentialsrequired', () => {
                 const pass = prompt('TightVNC meminta Password:');
@@ -322,6 +358,8 @@ class VNCSession {
         let touchStartX = 0;
         let touchStartY = 0;
         let touchStartTime = 0;
+        let lastScrollTouchY = 0;
+        let isScrolling = false;
         let longPressTimer = null;
         let isLongPress = false;
         let isDragging = false;
@@ -363,10 +401,12 @@ class VNCSession {
                 this.isPinchZooming = false;
                 isLongPress = false;
                 isDragging = false;
+                isScrolling = false;
 
                 const touch = e.touches[0];
                 touchStartX = touch.clientX;
                 touchStartY = touch.clientY;
+                lastScrollTouchY = touch.clientY;
                 touchStartTime = Date.now();
                 startPanX = this.panX;
                 startPanY = this.panY;
@@ -430,19 +470,25 @@ class VNCSession {
                 const dy = touch.clientY - touchStartY;
                 const dist = Math.hypot(dx, dy);
 
-                if (dist > 15) {
+                if (dist > 12) {
                     if (longPressTimer) {
                         clearTimeout(longPressTimer);
                         longPressTimer = null;
                     }
                     isDragging = true;
 
-                    if (this.zoomLevel > 1.0) {
-                        this.panX = startPanX + dx;
-                        this.panY = startPanY + dy;
-                        this.applyTransform(false);
-                        e.preventDefault();
+                    // 1-finger vertical sweep gesture for mouse wheel scroll (berlaku di semua zoom level)
+                    const scrollDy = touch.clientY - lastScrollTouchY;
+                    if (Math.abs(scrollDy) >= 15) {
+                        isScrolling = true;
+                        // Jari sapu ke atas (scrollDy < 0) -> scroll halaman ke bawah (deltaY > 0)
+                        // Jari sapu ke bawah (scrollDy > 0) -> scroll halaman ke atas (deltaY < 0)
+                        const deltaY = scrollDy < 0 ? 100 : -100;
+                        this.dispatchCanvasWheel(touch.clientX, touch.clientY, deltaY);
+                        lastScrollTouchY = touch.clientY;
                     }
+
+                    e.preventDefault();
                 }
                 e.stopPropagation();
             }
@@ -473,7 +519,7 @@ class VNCSession {
                 return;
             }
 
-            if (isLongPress || isDragging) {
+            if (isLongPress || isDragging || isScrolling) {
                 e.stopPropagation();
                 e.preventDefault();
                 return;
@@ -861,11 +907,12 @@ const VNCClient = {
             return;
         }
 
+        const token = (startRes && startRes.token) || 'server';
         let url;
         if (window.location.protocol === 'https:') {
-            url = `wss://${window.location.host}/ws/vnc`;
+            url = `wss://${window.location.host}/ws/vnc?token=${encodeURIComponent(token)}`;
         } else {
-            url = `ws://${window.location.hostname}:${listenPort}`;
+            url = `ws://${window.location.hostname}:${listenPort}/?token=${encodeURIComponent(token)}`;
         }
 
         const vncPassword = (pwdInput && pwdInput.value) ? pwdInput.value : serverVncPassword;
