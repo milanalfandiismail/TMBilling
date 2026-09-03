@@ -299,8 +299,9 @@ def create_app():
     migrate.init_app(app, db, render_as_batch=True)
 
     # IP Whitelist middleware — proteksi dashboard /kasir dan /api/v1/kasir/*
-    from app.middleware import check_ip_whitelist
+    from app.middleware import check_ip_whitelist, handle_branch_proxy_relay
     app.before_request(check_ip_whitelist)
+    app.before_request(handle_branch_proxy_relay)
 
     os.makedirs("logs", exist_ok=True)
 
