@@ -263,6 +263,17 @@ def _init_app_context(app):
         except Exception as e:
             app.logger.error(f"Gagal membuat admin default saat bootstrap: {e}")
 
+        # Self-healing bootstrap: Buat tabel 'cabang' otomatis jika belum ada (Non-destructive)
+        try:
+            from sqlalchemy import inspect
+            from app.models.branch import Branch
+            inspector = inspect(db.engine)
+            if not inspector.has_table('cabang'):
+                Branch.__table__.create(db.engine)
+                app.logger.info("✅ [TMBilling] Tabel 'cabang' berhasil dibuat secara otomatis.")
+        except Exception as e:
+            app.logger.warning(f"Pengecekan bootstrap tabel cabang: {e}")
+
 def create_app():
     """Membuat dan mengkonfigurasi instance aplikasi Flask.
     
