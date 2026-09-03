@@ -7,6 +7,14 @@ const API = {
             const method = (options.method || 'GET').toUpperCase();
             const headers = { ...options.headers };
 
+            // Injeksi X-Branch-ID jika sedang memilih cabang remote
+            const activeBranchId = localStorage.getItem('active_branch_id');
+            if (activeBranchId && activeBranchId !== '0' && !headers['X-Branch-ID']) {
+                if (!url.includes('/api/v1/kasir/branch/') && !url.includes('/api/v1/kasir/auth/')) {
+                    headers['X-Branch-ID'] = activeBranchId;
+                }
+            }
+
             if (!(options.body instanceof FormData)) {
                 headers['Content-Type'] = 'application/json';
             }
@@ -29,6 +37,13 @@ const API = {
             let data;
             try { data = JSON.parse(txt); } catch (e) { data = { error: txt }; }
             if (!res.ok) {
+                // Jika cabang remote offline, jangan redirect login, tapi beri peringatan
+                if (data && data.is_branch_offline) {
+                    if (window.Toast) {
+                        window.Toast.show(data.error || "Cabang sedang offline", "error");
+                    }
+                    return data;
+                }
                 // Session expired atau IP block — redirect ke login (kecuali endpoint auth)
                 if ((res.status === 401 || res.status === 403) && !url.includes('/api/v1/kasir/auth/login') && !url.includes('/api/v1/kasir/auth/check')) {
                     window.location.href = '/kasir/login';
@@ -280,6 +295,17 @@ const API = {
             method: 'POST',
             body: JSON.stringify({ path })
         })
+    },
+
+    // 🏢 MULTI-CABANG (BRANCH MANAGEMENT)
+    branch: {
+        list: (includeKey = false) => API.request(`/api/v1/kasir/branch/list?include_key=${includeKey ? 1 : 0}`),
+        add: (data) => API.request('/api/v1/kasir/branch/add', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id, data) => API.request(`/api/v1/kasir/branch/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        delete: (id) => API.request(`/api/v1/kasir/branch/${id}`, { method: 'DELETE' }),
+        test: (url, apiKey) => API.request('/api/v1/kasir/branch/test', { method: 'POST', body: JSON.stringify({ url, api_key: apiKey }) }),
+        myKey: () => API.request('/api/v1/kasir/branch/my-key'),
+        regenerateKey: () => API.request('/api/v1/kasir/branch/my-key/regenerate', { method: 'POST' })
     }
 
 };

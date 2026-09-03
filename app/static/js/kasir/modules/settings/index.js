@@ -870,6 +870,14 @@ const Settings = {
             }
         }
 
+        // Multi-Cabang & API — init module
+        if (this.currentSubTab === 'branch') {
+            if (typeof BranchManager !== 'undefined') {
+                BranchManager.loadMyBranchKey();
+                BranchManager.renderBranchesSettingsTable();
+            }
+        }
+
 
     },
 
