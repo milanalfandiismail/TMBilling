@@ -60,7 +60,8 @@ def _register_blueprints(app):
         uptime_api_bp,
         tv_public_api_bp,
         tutorial_api_bp,
-        fileexplorer_api_bp
+        fileexplorer_api_bp,
+        branch_api_bp
     )
 
     # ==========================================
@@ -98,6 +99,7 @@ def _register_blueprints(app):
     app.register_blueprint(uptime_api_bp, url_prefix="/api/v1/kasir/uptime")
     app.register_blueprint(tutorial_api_bp, url_prefix="/api/v1/kasir/tutorials")
     app.register_blueprint(fileexplorer_api_bp, url_prefix="/api/v1/kasir/fileexplorer")
+    app.register_blueprint(branch_api_bp, url_prefix="/api/v1/kasir/branch")
 
     # ==========================================
     # 3. PUBLIC APIs (/api/v1/public/...)
@@ -117,6 +119,7 @@ def _register_blueprints(app):
     csrf.exempt(shift_api_bp)
     csrf.exempt(server_monitor_bp)
     csrf.exempt(tutorial_api_bp)
+    csrf.exempt(branch_api_bp)
 
 def _register_public_routes(app):
     """Mendaftarkan route publik."""
