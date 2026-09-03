@@ -45,9 +45,21 @@ def login_required(f):
 
 
 def admin_required(f):
-    """Decorator khusus Admin. Wajib pasang @login_required sebelumnya."""
+    """Decorator khusus Admin. Mendukung Sesi Admin & Bearer API Key Lintas Cabang."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # 1. Jika belum dievaluasi oleh login_required, cek Bearer header di sini
+        if not hasattr(g, "is_branch_api_call"):
+            auth_header = request.headers.get("Authorization")
+            if auth_header and auth_header.startswith("Bearer "):
+                token = auth_header.split(" ", 1)[1].strip()
+                from app.services.settings.settings_service import SettingsService
+                local_key = SettingsService.get_or_create_branch_api_key()
+                if local_key and secrets.compare_digest(token, local_key):
+                    g.is_branch_api_call = True
+                else:
+                    return jsonify({"error": "Kunci API Cabang tidak valid"}), 403
+
         # Request dari branch API otomatis memiliki hak akses admin lintas cabang
         if getattr(g, "is_branch_api_call", False):
             return f(*args, **kwargs)

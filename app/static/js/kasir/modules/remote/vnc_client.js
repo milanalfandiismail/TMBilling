@@ -867,6 +867,34 @@ const VNCClient = {
         return new VNCSession(options);
     },
 
+    resolveWebSocketUrl(token, defaultPort = 8081) {
+        // Cek apakah sedang memilih cabang remote
+        const activeBranchId = localStorage.getItem('active_branch_id');
+        if (activeBranchId && activeBranchId !== '0' && typeof BranchManager !== 'undefined' && BranchManager.branches) {
+            const branch = BranchManager.branches.find(b => String(b.id) === String(activeBranchId));
+            if (branch && branch.url) {
+                try {
+                    const u = new URL(branch.url);
+                    if (u.protocol === 'https:') {
+                        return `wss://${u.host}/ws/vnc?token=${encodeURIComponent(token)}`;
+                    } else {
+                        const port = u.port || defaultPort;
+                        return `ws://${u.hostname}:${port}/?token=${encodeURIComponent(token)}`;
+                    }
+                } catch (e) {
+                    console.warn('[VNC] Gagal parse URL remote branch:', e);
+                }
+            }
+        }
+
+        // Default: Host lokal saat ini
+        if (window.location.protocol === 'https:') {
+            return `wss://${window.location.host}/ws/vnc?token=${encodeURIComponent(token)}`;
+        } else {
+            return `ws://${window.location.hostname}:${defaultPort}/?token=${encodeURIComponent(token)}`;
+        }
+    },
+
     // Backward compatibility for singleton Server Remote tab
     async connect() {
         const screen = document.getElementById('vnc-screen');
@@ -908,12 +936,7 @@ const VNCClient = {
         }
 
         const token = (startRes && startRes.token) || 'server';
-        let url;
-        if (window.location.protocol === 'https:') {
-            url = `wss://${window.location.host}/ws/vnc?token=${encodeURIComponent(token)}`;
-        } else {
-            url = `ws://${window.location.hostname}:${listenPort}/?token=${encodeURIComponent(token)}`;
-        }
+        const url = this.resolveWebSocketUrl(token, listenPort);
 
         const vncPassword = (pwdInput && pwdInput.value) ? pwdInput.value : serverVncPassword;
         badge.textContent = 'Menghubungkan...';

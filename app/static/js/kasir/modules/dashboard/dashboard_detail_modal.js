@@ -466,12 +466,11 @@ const DashboardDetailModal = {
 
             const token = res.token || `client_${pcId}`;
             const port = res.port || 8081;
-            let url;
-            if (window.location.protocol === 'https:') {
-                url = `wss://${window.location.host}/ws/vnc?token=${encodeURIComponent(token)}`;
-            } else {
-                url = `ws://${window.location.hostname}:${port}/?token=${encodeURIComponent(token)}`;
-            }
+            let url = (typeof VNCClient !== 'undefined' && VNCClient.resolveWebSocketUrl)
+                ? VNCClient.resolveWebSocketUrl(token, port)
+                : (window.location.protocol === 'https:'
+                    ? `wss://${window.location.host}/ws/vnc?token=${encodeURIComponent(token)}`
+                    : `ws://${window.location.hostname}:${port}/?token=${encodeURIComponent(token)}`);
 
             const screen = document.getElementById('modal-vnc-screen');
             const container = document.getElementById('modal-vnc-container');

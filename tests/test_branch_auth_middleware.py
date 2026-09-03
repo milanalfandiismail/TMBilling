@@ -31,3 +31,9 @@ def test_endpoint_denied_with_invalid_bearer_token(client_app):
     headers = {"Authorization": "Bearer tmb_sec_salah_total_99999"}
     res = client_app.get('/api/v1/kasir/dashboard/pc', headers=headers)
     assert res.status_code == 403
+
+def test_vnc_status_allowed_with_bearer_token(client_app):
+    headers = {"Authorization": "Bearer tmb_sec_valid_token_12345"}
+    res = client_app.get('/api/v1/kasir/vnc/status', headers=headers)
+    assert res.status_code == 200
+    assert res.get_json()["success"] is True
