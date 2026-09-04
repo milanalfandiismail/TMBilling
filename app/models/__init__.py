@@ -40,10 +40,12 @@ from app.models.maintenance.maintenance import MaintenanceTicket
 from app.models.pc.pc_uptime import PCUptimeLog
 from app.models.tutorial.tutorial_model import SystemTutorial
 from app.models.branch.branch import Branch
+from app.models.branch.branch_inbound import BranchInbound
 
 __all__ = [
     'db', 'now_local', 'Grup', 'Paket', 'Member', 'PC', 'Sesi', 'Transaksi', 
     'User', 'Settings', 'MikroTikConfig', 'HardwareMonitor', 'PCProcess', 'MenuItem', 'TransaksiMenu',
     'Turnamen', 'TurnamenTahap', 'TurnamenTim', 'TurnamenMatch',
-    'ShiftRecord', 'Game', 'GameKategori', 'MaintenanceTicket', 'PCUptimeLog', 'SystemTutorial', 'Branch'
+    'ShiftRecord', 'Game', 'GameKategori', 'MaintenanceTicket', 'PCUptimeLog', 'SystemTutorial', 'Branch',
+    'BranchInbound'
 ]
