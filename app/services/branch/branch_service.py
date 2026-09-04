@@ -32,8 +32,9 @@ class BranchService:
 
         from flask import session, has_request_context
         from app.services.settings.settings_service import SettingsService
+        from app.services.branch.branch_proxy_service import BranchProxyService
         origin_branch_title = (SettingsService.get("warnet_title") or "TMBilling").strip()
-        origin_mac = (SettingsService.get_hardware_mac() or "").strip()
+        origin_mac = BranchProxyService.get_server_mac_address()
         current_op = "admin"
         if has_request_context():
             current_op = session.get("kasir_username") or "admin"
