@@ -3,6 +3,7 @@
 
 import time
 import requests
+import json
 from datetime import datetime
 from app.models import db, now_local
 from app.models.branch import Branch
@@ -187,3 +188,185 @@ class BranchService:
         except Exception as e:
             db.session.rollback()
             return False, f"Gagal menghapus cabang: {str(e)}"
+
+    # =========================================================================
+    # MANAJEMEN AKUN KASIR REMOTE (OPERATOR CABANG)
+    # =========================================================================
+
+    @staticmethod
+    def get_hidden_operators() -> set:
+        """Mengambil set nama operator remote yang diarsipkan/disembunyikan."""
+        from app.services.settings.settings_service import SettingsService
+        try:
+            val = SettingsService.get("hidden_remote_operators", "[]")
+            return set(json.loads(val))
+        except Exception:
+            return set()
+
+    @staticmethod
+    def set_hidden_operators(hidden_set: set):
+        """Menyimpan set nama operator remote yang diarsipkan/disembunyikan."""
+        from app.services.settings.settings_service import SettingsService
+        SettingsService.set("hidden_remote_operators", json.dumps(sorted(list(hidden_set))))
+
+    @staticmethod
+    def get_remote_operators() -> list[dict]:
+        """Mengambil daftar seluruh operator remote dengan statistik aktivitasnya."""
+        from app.models.transaksi.transaksi import Transaksi
+        from app.models.menu.menu import TransaksiMenu
+        from sqlalchemy import func
+
+        hidden_set = BranchService.get_hidden_operators()
+        operator_map = {}
+
+        # 1. Agregasi dari Transaksi Billing
+        billing_stats = db.session.query(
+            Transaksi.operator,
+            func.count(Transaksi.id).label("total_trx"),
+            func.sum(Transaksi.jumlah).label("total_nominal"),
+            func.max(Transaksi.dibuat_pada).label("last_active")
+        ).filter(
+            Transaksi.operator.isnot(None),
+            Transaksi.operator.like("%(Remote:%")
+        ).group_by(Transaksi.operator).all()
+
+        for op, cnt, nominal, last_act in billing_stats:
+            if op not in operator_map:
+                operator_map[op] = {
+                    "operator": op,
+                    "total_transaksi": 0,
+                    "total_nominal": 0,
+                    "terakhir_aktif": None
+                }
+            operator_map[op]["total_transaksi"] += (cnt or 0)
+            operator_map[op]["total_nominal"] += (nominal or 0)
+            if last_act and (not operator_map[op]["terakhir_aktif"] or last_act > operator_map[op]["terakhir_aktif"]):
+                operator_map[op]["terakhir_aktif"] = last_act
+
+        # 2. Agregasi dari Transaksi Menu (Kantin)
+        menu_stats = db.session.query(
+            TransaksiMenu.operator,
+            func.count(TransaksiMenu.id).label("total_trx"),
+            func.sum(TransaksiMenu.total_harga).label("total_nominal"),
+            func.max(TransaksiMenu.tanggal).label("last_active")
+        ).filter(
+            TransaksiMenu.operator.isnot(None),
+            TransaksiMenu.operator.like("%(Remote:%")
+        ).group_by(TransaksiMenu.operator).all()
+
+        for op, cnt, nominal, last_act in menu_stats:
+            if op not in operator_map:
+                operator_map[op] = {
+                    "operator": op,
+                    "total_transaksi": 0,
+                    "total_nominal": 0,
+                    "terakhir_aktif": None
+                }
+            operator_map[op]["total_transaksi"] += (cnt or 0)
+            operator_map[op]["total_nominal"] += (nominal or 0)
+            if last_act and (not operator_map[op]["terakhir_aktif"] or last_act > operator_map[op]["terakhir_aktif"]):
+                operator_map[op]["terakhir_aktif"] = last_act
+
+        # 3. Masukkan juga cabang terdaftar jika belum ada di record transaksi
+        try:
+            branches = Branch.query.filter_by(aktif=True).all()
+            for b in branches:
+                if b.nama:
+                    default_op = f"admin (Remote: {b.nama})"
+                    if default_op not in operator_map:
+                        operator_map[default_op] = {
+                            "operator": default_op,
+                            "total_transaksi": 0,
+                            "total_nominal": 0,
+                            "terakhir_aktif": None
+                        }
+        except Exception:
+            pass
+
+        results = []
+        for op, data in operator_map.items():
+            username = op
+            branch_name = "-"
+            if "(Remote:" in op:
+                parts = op.split("(Remote:")
+                username = parts[0].strip()
+                branch_name = parts[1].rstrip(")").strip()
+
+            from app.utils.timezone_utils import format_display
+            last_active_str = format_display(data["terakhir_aktif"]) if data["terakhir_aktif"] else "-"
+
+            results.append({
+                "operator": op,
+                "username": username,
+                "branch_name": branch_name,
+                "total_transaksi": data["total_transaksi"],
+                "total_nominal": data["total_nominal"],
+                "terakhir_aktif": last_active_str,
+                "is_hidden": op in hidden_set
+            })
+
+        # Sort: yang aktif terlebih dahulu, lalu berdasarkan jumlah transaksi
+        results.sort(key=lambda x: (not x["is_hidden"], x["total_transaksi"]), reverse=True)
+        return results
+
+    @staticmethod
+    def hide_remote_operator(operator_name: str, admin_operator: str = "admin") -> tuple[bool, str]:
+        """Menonaktifkan / mengarsipkan operator remote dari dropdown aktif."""
+        if not operator_name:
+            return False, "Nama operator tidak valid"
+        hidden = BranchService.get_hidden_operators()
+        hidden.add(operator_name)
+        BranchService.set_hidden_operators(hidden)
+        write_log("REMOTE_OPERATOR_ARCHIVED", f"Akun kasir remote '{operator_name}' dinonaktifkan oleh admin", user=admin_operator)
+        return True, f"Operator '{operator_name}' berhasil dinonaktifkan"
+
+    @staticmethod
+    def restore_remote_operator(operator_name: str, admin_operator: str = "admin") -> tuple[bool, str]:
+        """Mengaktifkan kembali operator remote dari arsip ke dropdown aktif."""
+        if not operator_name:
+            return False, "Nama operator tidak valid"
+        hidden = BranchService.get_hidden_operators()
+        if operator_name in hidden:
+            hidden.remove(operator_name)
+            BranchService.set_hidden_operators(hidden)
+        write_log("REMOTE_OPERATOR_RESTORED", f"Akun kasir remote '{operator_name}' diaktifkan kembali oleh admin", user=admin_operator)
+        return True, f"Operator '{operator_name}' berhasil diaktifkan kembali"
+
+    @staticmethod
+    def delete_remote_operator(operator_name: str, admin_operator: str = "admin") -> tuple[bool, str]:
+        """Menghapus permanen identitas operator remote (reset operator & user_id ke NULL).
+        Data keuangan, no nota, dll tetap 100% utuh dengan fallback nama kasir 'Kasir Lama'.
+        String operator benar-benar terhapus tuntas dan tidak disimpan di mana pun lagi.
+        """
+        if not operator_name:
+            return False, "Nama operator tidak valid"
+
+        from app.models.transaksi.transaksi import Transaksi
+        from app.models.menu.menu import TransaksiMenu
+
+        try:
+            # 1. Reset kolom operator dan user_id di transaksi billing
+            Transaksi.query.filter_by(operator=operator_name).update({
+                "operator": None,
+                "user_id": None
+            }, synchronize_session=False)
+
+            # 2. Reset kolom operator dan kasir_id di transaksi menu (kantin)
+            TransaksiMenu.query.filter_by(operator=operator_name).update({
+                "operator": None,
+                "kasir_id": None
+            }, synchronize_session=False)
+
+            # 3. Bersihkan juga dari hidden_operators jika sebelumnya ada
+            hidden = BranchService.get_hidden_operators()
+            if operator_name in hidden:
+                hidden.remove(operator_name)
+                BranchService.set_hidden_operators(hidden)
+
+            db.session.commit()
+            write_log("REMOTE_OPERATOR_DELETED", f"Akun kasir remote '{operator_name}' dihapus permanen oleh admin (identitas di-reset ke 'Kasir Lama')", user=admin_operator)
+            return True, f"Operator '{operator_name}' berhasil dihapus permanen"
+
+        except Exception as e:
+            db.session.rollback()
+            return False, f"Gagal menghapus operator remote: {str(e)}"

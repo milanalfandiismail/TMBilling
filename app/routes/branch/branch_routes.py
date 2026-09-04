@@ -1,7 +1,7 @@
 # app/routes/branch/branch_routes.py
 """Routes API untuk manajemen koneksi cabang warnet (Multi-Cabang)."""
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from app.middleware.auth import login_required, admin_required
 from app.services.branch.branch_service import BranchService
 from app.services.settings.settings_service import SettingsService
@@ -133,3 +133,57 @@ def test_branch_connection():
         "success": True,
         "data": result
     }), 200
+
+
+@branch_api_bp.route("/operators", methods=["GET"])
+@login_required
+@admin_required
+def get_remote_operators():
+    """Mengambil daftar akun kasir remote yang tercatat di sistem."""
+    data = BranchService.get_remote_operators()
+    return jsonify({
+        "success": True,
+        "data": data
+    }), 200
+
+
+@branch_api_bp.route("/operators/hide", methods=["POST"])
+@login_required
+@admin_required
+def hide_remote_operator():
+    """Menonaktifkan / mengarsipkan operator remote dari dropdown kasir aktif."""
+    payload = request.get_json() or {}
+    operator_name = payload.get("operator", "")
+    admin_op = session.get("kasir_username", "admin")
+    ok, msg = BranchService.hide_remote_operator(operator_name, admin_operator=admin_op)
+    if not ok:
+        return jsonify({"success": False, "error": msg}), 400
+    return jsonify({"success": True, "message": msg}), 200
+
+
+@branch_api_bp.route("/operators/restore", methods=["POST"])
+@login_required
+@admin_required
+def restore_remote_operator():
+    """Mengaktifkan kembali operator remote dari arsip ke dropdown kasir aktif."""
+    payload = request.get_json() or {}
+    operator_name = payload.get("operator", "")
+    admin_op = session.get("kasir_username", "admin")
+    ok, msg = BranchService.restore_remote_operator(operator_name, admin_operator=admin_op)
+    if not ok:
+        return jsonify({"success": False, "error": msg}), 400
+    return jsonify({"success": True, "message": msg}), 200
+
+
+@branch_api_bp.route("/operators/delete", methods=["POST"])
+@login_required
+@admin_required
+def delete_remote_operator():
+    """Menghapus permanen identitas kasir remote (reset operator & user_id ke NULL / 'Kasir Lama')."""
+    payload = request.get_json() or {}
+    operator_name = payload.get("operator", "")
+    admin_op = session.get("kasir_username", "admin")
+    ok, msg = BranchService.delete_remote_operator(operator_name, admin_operator=admin_op)
+    if not ok:
+        return jsonify({"success": False, "error": msg}), 400
+    return jsonify({"success": True, "message": msg}), 200
