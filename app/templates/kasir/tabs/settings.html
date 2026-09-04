@@ -72,6 +72,18 @@
                             placeholder="Contoh: TM2026QWERTY-api-key">
                     </div>
                 </div>
+                <!-- Highlighted Security Warning Box -->
+                <div class="mt-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded flex items-start gap-3">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-400 text-base mt-0.5 shrink-0"></i>
+                    <div class="space-y-0.5">
+                        <p class="text-xs lg:text-sm font-bold text-amber-300 uppercase tracking-wider">
+                            Peringatan Keamanan Kunci Rahasia
+                        </p>
+                        <p class="text-[11px] lg:text-xs text-amber-200/80 leading-relaxed">
+                            Kunci ini digunakan untuk otentikasi koneksi antar sistem dan klien. <strong class="text-amber-300 font-semibold">Jangan pernah menyebarkan kunci ini kepada pihak yang tidak dikenal atau tidak dipercaya!</strong>
+                        </p>
+                    </div>
+                </div>
                 <div class="flex justify-end mt-4">
                     <button onclick="Settings.saveClientApiKey()"
                         class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">Simpan

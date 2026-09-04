@@ -20,6 +20,18 @@
                 </div>
             </div>
         </div>
+        <!-- Highlighted Security Warning Box -->
+        <div class="mt-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded flex items-start gap-3">
+            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-base mt-0.5 shrink-0"></i>
+            <div class="space-y-0.5">
+                <p class="text-xs lg:text-sm font-bold text-amber-300 uppercase tracking-wider">
+                    Peringatan Keamanan Kunci Rahasia
+                </p>
+                <p class="text-[11px] lg:text-xs text-amber-200/80 leading-relaxed">
+                    Kunci API ini memberikan otorisasi penuh untuk mengakses dan mengontrol server warnet ini dari jarak jauh. <strong class="text-amber-300 font-semibold">Jangan pernah membagikan atau menyebarkan kunci ini kepada pihak yang tidak dikenal atau tidak dipercaya!</strong>
+                </p>
+            </div>
+        </div>
         <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-[#1c1c1c]">
             <button type="button" id="btn-regen-my-branch-key" onclick="BranchManager.regenerateMyBranchKey()"
                 class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-1.5">
