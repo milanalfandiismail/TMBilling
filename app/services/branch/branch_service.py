@@ -41,6 +41,20 @@ class BranchService:
             resp = requests.get(target_endpoint, headers=headers, timeout=timeout)
             latency_ms = int((time.time() - start_time) * 1000)
 
+            # Jika status 404/405, coba fallback ke endpoint root /settings/
+            if resp.status_code in (404, 405):
+                fallback_endpoint = f"{clean_url}/api/v1/kasir/settings/"
+                resp = requests.get(fallback_endpoint, headers=headers, timeout=timeout)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    settings_dict = data.get("settings", {}) if isinstance(data, dict) else {}
+                    warnet_title = settings_dict.get("warnet_title", "Cabang Remote")
+                    return True, {
+                        "online": True,
+                        "latency_ms": latency_ms,
+                        "warnet_title": warnet_title
+                    }
+
             if resp.status_code == 200:
                 data = resp.json()
                 warnet_title = "Cabang Remote"

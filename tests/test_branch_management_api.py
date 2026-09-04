@@ -91,3 +91,12 @@ def test_add_branch_with_auto_detect_name(mock_get, auth_client):
     # Confirm list is empty
     res_list2 = client.get('/api/v1/kasir/branch/list')
     assert len(res_list2.get_json()["data"]) == 0
+
+def test_get_setting_key_endpoint(auth_client):
+    client, _ = auth_client
+    res = client.get('/api/v1/kasir/settings/warnet_title')
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["success"] is True
+    assert data["key"] == "warnet_title"
+    assert data["value"] == "TMBilling"
