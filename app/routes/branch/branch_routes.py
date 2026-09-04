@@ -9,6 +9,20 @@ from app.services.settings.settings_service import SettingsService
 branch_api_bp = Blueprint("branch_api", __name__)
 
 
+@branch_api_bp.before_request
+def enforce_admin_permission():
+    """Validasi server-side mutlak: Seluruh endpoint multi-cabang hanya untuk Admin/Owner."""
+    # Izinkan jika request membawa Bearer token antar cabang (akan diverifikasi oleh auth middleware)
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        return None
+
+    if not session.get("kasir_id"):
+        return jsonify({"success": False, "error": "Silakan login terlebih dahulu"}), 401
+    if session.get("kasir_role") != "admin":
+        return jsonify({"success": False, "error": "Akses Ditolak: Hanya Admin yang memiliki izin kelola multi-cabang"}), 403
+
+
 @branch_api_bp.route("/my-key", methods=["GET"])
 @login_required
 @admin_required
