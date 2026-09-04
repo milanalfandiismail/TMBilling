@@ -543,6 +543,15 @@ const Menu = {
         const cb = document.getElementById("menu-stok-unlimited");
         const stok = (cb && cb.checked) ? "-1" : (document.getElementById("menu-stok-input").value || "0");
 
+        if (!nama) {
+            Toast.error("Nama menu tidak boleh kosong!");
+            return;
+        }
+        if (!harga || isNaN(Number(harga)) || Number(harga) < 0) {
+            Toast.error("Harga harus berupa angka valid!");
+            return;
+        }
+
         const formData = new FormData();
         formData.append("nama", nama);
         formData.append("harga", harga);
@@ -567,7 +576,8 @@ const Menu = {
                 Toast.error(res.error || "Gagal menyimpan menu");
             }
         } catch (error) {
-            Toast.error("Gagal menyimpan menu: error koneksi");
+            console.error('[MenuModule] Error submitForm:', error);
+            Toast.error("Gagal menyimpan menu: " + (error.message || "terjadi kesalahan"));
         }
     },
 

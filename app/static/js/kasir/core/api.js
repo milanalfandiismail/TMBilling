@@ -15,7 +15,9 @@ const API = {
                 }
             }
 
-            if (!(options.body instanceof FormData)) {
+            const isFormData = (typeof FormData !== 'undefined' && options.body instanceof FormData) ||
+                (options.body && typeof options.body.append === 'function');
+            if (!isFormData && !headers['Content-Type']) {
                 headers['Content-Type'] = 'application/json';
             }
 

@@ -35,7 +35,8 @@ class MenuService:
         'hapus permanen' dulu sebelum buat menu dengan nama sama.
         """
         try:
-            nama = data.get("nama", "").strip()
+            raw_nama = data.get("nama")
+            nama = raw_nama.strip() if isinstance(raw_nama, str) else ""
             if not nama:
                 raise ValueError("Nama menu tidak boleh kosong")
 
@@ -95,7 +96,8 @@ class MenuService:
             if not menu:
                 raise ValueError("Menu tidak ditemukan")
 
-            nama = data.get("nama", "").strip()
+            raw_nama = data.get("nama")
+            nama = raw_nama.strip() if isinstance(raw_nama, str) else ""
             if nama and nama != menu.nama:
                 existing = MenuRepository.get_by_name(nama)
                 if existing:
