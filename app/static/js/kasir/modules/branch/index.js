@@ -31,14 +31,16 @@ const BranchManager = {
         const dropdownContainer = document.getElementById('branch-selector-container');
         if (!dropdownContainer) return;
 
-        // Ambil nama warnet lokal dari elemen atau settings
-        const brandTitleElem = document.getElementById('navbar-brand-title');
-        if (brandTitleElem && brandTitleElem.textContent.trim()) {
-            this.localWarnetTitle = brandTitleElem.textContent.trim();
+        // Ambil nama warnet lokal dari elemen brand sidebar
+        const brandTitleElem = document.getElementById('sidebar-brand-title');
+        if (brandTitleElem) {
+            const def = brandTitleElem.getAttribute('data-default-title') || brandTitleElem.textContent.trim();
+            if (def) this.localWarnetTitle = def;
         }
 
         await this.loadBranches();
         this.renderNavbarDropdown();
+        this.updateBrandAndSidebarVisibility();
         this.removeActiveBranchBanner();
         this.bindNavbarEvents();
 
@@ -158,10 +160,74 @@ const BranchManager = {
         if (btnManage) {
             btnManage.addEventListener('click', () => {
                 this.toggleDropdown(false);
+                if (this.activeBranchId !== '0') {
+                    // Jika sedang di cabang remote dan ingin mengelola cabang, kembalikan dulu ke Cabang Lokal
+                    this.switchBranch('0');
+                }
                 if (window.App && App.switchTab) {
                     App.switchTab('branch');
                 }
             });
+        }
+    },
+
+    updateBrandAndSidebarVisibility() {
+        const titleEl = document.getElementById('sidebar-brand-title');
+        const subTitleEl = document.getElementById('sidebar-brand-subtitle');
+        const badgeContainer = document.getElementById('sidebar-brand-badge-container');
+        const badgeText = document.getElementById('sidebar-brand-badge-text');
+        const branchSection = document.getElementById('sidebar-branch-section');
+
+        const defaultTitle = (titleEl && titleEl.getAttribute('data-default-title')) || this.localWarnetTitle || 'TMBilling';
+        const defaultSubtitle = (subTitleEl && subTitleEl.getAttribute('data-default-subtitle')) || 'Kasir Panel';
+
+        if (this.activeBranchId === '0') {
+            // MODE CABANG LOKAL
+            if (titleEl) {
+                titleEl.textContent = defaultTitle;
+                titleEl.title = defaultTitle;
+            }
+            if (subTitleEl) {
+                subTitleEl.textContent = defaultSubtitle;
+                subTitleEl.className = 'text-[10px] text-neutral-500 leading-tight mt-0.5';
+            }
+            if (badgeContainer) {
+                badgeContainer.className = 'w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 transition-all';
+            }
+            if (badgeText) {
+                badgeText.className = 'text-[#050505] font-black text-sm';
+                badgeText.textContent = defaultTitle.slice(0, 2).toUpperCase() || 'TM';
+            }
+            if (branchSection) {
+                branchSection.classList.remove('hidden');
+            }
+            document.title = `${defaultTitle} - Kasir`;
+        } else {
+            // MODE CABANG REMOTE
+            let branchName = this.activeBranchName || 'Cabang Remote';
+            const b = this.branches.find(x => String(x.id) === String(this.activeBranchId));
+            if (b && b.nama) branchName = b.nama;
+
+            if (titleEl) {
+                titleEl.textContent = branchName;
+                titleEl.title = `${branchName} (Remote)`;
+            }
+            if (subTitleEl) {
+                subTitleEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-emerald-400 font-bold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Cabang Remote</span>`;
+                subTitleEl.className = 'text-[10px] leading-tight mt-0.5';
+            }
+            if (badgeContainer) {
+                badgeContainer.className = 'w-8 h-8 rounded-lg bg-emerald-500 text-black flex items-center justify-center shrink-0 shadow-lg shadow-emerald-950/40 transition-all';
+            }
+            if (badgeText) {
+                badgeText.className = 'text-black font-black text-sm uppercase';
+                badgeText.textContent = branchName.replace(/[^a-zA-Z0-9]/g, '').slice(0, 2).toUpperCase() || 'RM';
+            }
+            // Sembunyikan menu sidebar Multi Cabang saat sedang di cabang remote!
+            if (branchSection) {
+                branchSection.classList.add('hidden');
+            }
+            document.title = `${branchName} - Kasir Panel`;
         }
     },
 
@@ -222,10 +288,18 @@ const BranchManager = {
         sessionStorage.setItem('active_branch_name', branchName);
 
         this.renderNavbarDropdown();
+        this.updateBrandAndSidebarVisibility();
         this.removeActiveBranchBanner();
 
         if (window.Toast) {
             window.Toast.show(`Beralih ke ${branchName}`, "info");
+        }
+
+        // Jika beralih ke cabang remote dan sedang membuka tab manajemen cabang, otomatis alihkan ke Dashboard
+        if (this.activeBranchId !== '0') {
+            if (window.App && ['branch', 'branch_inbound', 'branch_kasir'].includes(App.currentTab)) {
+                App.switchTab('dash');
+            }
         }
 
         // =====================================================================

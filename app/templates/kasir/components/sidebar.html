@@ -3,13 +3,13 @@
     class="fixed lg:relative top-0 left-0 z-40 w-64 h-[100dvh] lg:h-screen bg-[#0a0a0a] border-r border-[#171717] flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0 shrink-0">
     <div class="flex items-center justify-between px-4 h-14 border-b border-[#171717] shrink-0">
         <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0">
-                <span class="text-[#050505] font-black text-sm">TM</span>
+            <div id="sidebar-brand-badge-container" class="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 transition-all">
+                <span id="sidebar-brand-badge-text" class="text-[#050505] font-black text-sm">TM</span>
             </div>
             <div class="min-w-0">
-                <h1 class="text-base font-extrabold text-neutral-100 leading-none truncate w-full"
-                    title="{{ warnet_title }}">{{ warnet_title }}</h1>
-                <p class="text-[10px] text-neutral-500 leading-tight mt-0.5">Kasir Panel</p>
+                <h1 id="sidebar-brand-title" class="text-base font-extrabold text-neutral-100 leading-none truncate w-full"
+                    data-default-title="{{ warnet_title }}" title="{{ warnet_title }}">{{ warnet_title }}</h1>
+                <p id="sidebar-brand-subtitle" class="text-[10px] text-neutral-500 leading-tight mt-0.5" data-default-subtitle="Kasir Panel">Kasir Panel</p>
             </div>
         </div>
         <button id="sidebar-toggle-btn" onclick="Dashboard.toggleSidebar()"
@@ -234,7 +234,7 @@
 
         {% if session.get('kasir_role') == 'admin' %}
         <!-- Multi Cabang -->
-        <div class="space-y-1">
+        <div id="sidebar-branch-section" class="space-y-1">
             <button onclick="Sidebar.toggleDropdown('branch')" id="sidebar-tab-branch"
                 class="w-full flex items-center justify-between px-3 py-2 rounded text-[13px] font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
                 <div class="flex items-center gap-3">

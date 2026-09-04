@@ -103,6 +103,18 @@ const App = {
             subTab = null;
         }
 
+        // Jika sedang mengontrol cabang remote, proteksi tab konfigurasi multi-cabang
+        if (typeof BranchManager !== 'undefined' && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0') {
+            if (['branch', 'branch_inbound', 'branch_kasir'].includes(tab)) {
+                if (window.Toast) {
+                    window.Toast.show('Pengaturan Multi Cabang hanya dapat diakses pada Cabang Lokal', 'info');
+                }
+                tab = 'dash';
+                mainTab = 'dash';
+                subTab = null;
+            }
+        }
+
         document.querySelectorAll('.tab-btn').forEach(btn => {
             const onClick = btn.getAttribute('onclick') || '';
             const dataTab = btn.getAttribute('data-tab') || '';
