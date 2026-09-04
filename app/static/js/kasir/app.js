@@ -208,8 +208,8 @@ const App = {
             analytics: 'Analytics Owner',            plugins: 'Plugins & Ekstensi',
             mikrotik: 'MikroTik Hotspot',
             fileexplorer: 'File Explorer',
-            branch: 'Multi Cabang',
-            branch_kasir: 'Akun Kasir Cabang (Remote)'
+            branch: 'Multi Cabang: Koneksi Cabang',
+            branch_kasir: 'Multi Cabang: Akun Kasir Cabang'
         };
 
         const titleEl = document.getElementById('page-title');

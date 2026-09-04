@@ -397,13 +397,13 @@ const BranchManager = {
                     <td class="py-3 px-3">${statusBadge}</td>
                     <td class="py-3 px-3 text-right">
                         <div class="flex items-center justify-end gap-2">
-                            <button type="button" onclick="BranchManager.testExistingBranch(${branch.id})" class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 hover:text-white rounded text-[10px] lg:text-xs font-semibold transition-colors">
+                            <button type="button" onclick="BranchManager.testExistingBranch(${branch.id})" class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 hover:text-white rounded text-xs lg:text-sm font-bold transition-colors">
                                 Tes
                             </button>
-                            <button type="button" onclick="BranchManager.editBranch(${branch.id})" class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 hover:text-white rounded text-[10px] lg:text-xs font-semibold transition-colors">
+                            <button type="button" onclick="BranchManager.editBranch(${branch.id})" class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 hover:text-white rounded text-xs lg:text-sm font-bold transition-colors">
                                 Edit
                             </button>
-                            <button type="button" onclick="BranchManager.deleteBranch(${branch.id})" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded text-[10px] lg:text-xs font-semibold transition-colors">
+                            <button type="button" onclick="BranchManager.deleteBranch(${branch.id})" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded text-xs lg:text-sm font-bold transition-colors">
                                 Hapus
                             </button>
                         </div>
@@ -713,24 +713,38 @@ const BranchManager = {
         this.currentOperatorSubTab = tab;
         const btnActive = document.getElementById('btn-subtab-op-active');
         const btnArchived = document.getElementById('btn-subtab-op-archived');
+        const badgeActive = document.getElementById('badge-count-op-active');
+        const badgeArchived = document.getElementById('badge-count-op-archived');
         const titleEl = document.getElementById('op-table-title');
         const descEl = document.getElementById('op-table-desc');
 
         if (tab === 'active') {
             if (btnActive) {
-                btnActive.className = 'px-4 py-2 rounded text-xs lg:text-sm font-bold transition-all bg-neutral-100 text-black flex items-center gap-2';
+                btnActive.className = 'px-4 py-2 bg-neutral-100 text-black text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2';
             }
             if (btnArchived) {
-                btnArchived.className = 'px-4 py-2 rounded text-xs lg:text-sm font-bold transition-all bg-transparent text-neutral-400 hover:text-neutral-200 border border-transparent hover:border-[#1c1c1c] flex items-center gap-2';
+                btnArchived.className = 'px-4 py-2 bg-transparent text-neutral-400 hover:text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2';
+            }
+            if (badgeActive) {
+                badgeActive.className = 'px-1.5 py-0.5 text-[10px] rounded-full bg-black/20 text-black font-mono font-bold';
+            }
+            if (badgeArchived) {
+                badgeArchived.className = 'px-1.5 py-0.5 text-[10px] rounded-full bg-neutral-800 text-neutral-300 font-mono font-bold';
             }
             if (titleEl) titleEl.textContent = 'Daftar Akun Kasir Aktif';
             if (descEl) descEl.textContent = 'Akun yang tampil di dropdown filter laporan billing dan kantin.';
         } else {
             if (btnActive) {
-                btnActive.className = 'px-4 py-2 rounded text-xs lg:text-sm font-bold transition-all bg-transparent text-neutral-400 hover:text-neutral-200 border border-transparent hover:border-[#1c1c1c] flex items-center gap-2';
+                btnActive.className = 'px-4 py-2 bg-transparent text-neutral-400 hover:text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2';
             }
             if (btnArchived) {
-                btnArchived.className = 'px-4 py-2 rounded text-xs lg:text-sm font-bold transition-all bg-neutral-100 text-black flex items-center gap-2';
+                btnArchived.className = 'px-4 py-2 bg-neutral-100 text-black text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2';
+            }
+            if (badgeActive) {
+                badgeActive.className = 'px-1.5 py-0.5 text-[10px] rounded-full bg-neutral-800 text-neutral-300 font-mono font-bold';
+            }
+            if (badgeArchived) {
+                badgeArchived.className = 'px-1.5 py-0.5 text-[10px] rounded-full bg-black/20 text-black font-mono font-bold';
             }
             if (titleEl) titleEl.textContent = 'Daftar Akun Kasir Diarsipkan / Nonaktif';
             if (descEl) descEl.textContent = 'Akun yang disembunyikan dari dropdown filter laporan billing dan kantin. Riwayat dan log masa lalu tetap aman 100%.';
@@ -764,7 +778,7 @@ const BranchManager = {
         if (filtered.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="9" class="py-8 text-center text-xs text-neutral-500">
+                    <td colspan="9" class="py-8 text-center text-xs lg:text-base text-neutral-500">
                         ${query ? 'Tidak ada akun kasir yang cocok dengan pencarian.' : (isArchivedTab ? 'Belum ada akun kasir remote yang diarsipkan.' : 'Belum ada akun kasir remote yang tercatat di transaksi.')}
                     </td>
                 </tr>
@@ -785,13 +799,13 @@ const BranchManager = {
             const actionButtons = isArchivedTab ? `
                 <div class="flex items-center justify-end gap-2">
                     <button type="button" onclick="BranchManager.restoreRemoteOperator('${encodedOp}')"
-                        class="px-2.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded transition-colors flex items-center gap-1.5"
+                        class="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1.5"
                         title="Aktifkan kembali ke dropdown laporan">
                         <i class="fa-solid fa-rotate-left text-[10px]"></i>
                         <span>Aktifkan</span>
                     </button>
                     <button type="button" onclick="BranchManager.openDeleteOperatorModal('${encodedOp}')"
-                        class="px-2.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-bold rounded transition-colors flex items-center gap-1.5"
+                        class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1.5"
                         title="Hapus permanen identitas kasir">
                         <i class="fa-solid fa-trash text-[10px]"></i>
                         <span>Hapus</span>
@@ -800,13 +814,13 @@ const BranchManager = {
             ` : `
                 <div class="flex items-center justify-end gap-2">
                     <button type="button" onclick="BranchManager.hideRemoteOperator('${encodedOp}')"
-                        class="px-2.5 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 text-xs font-bold rounded transition-colors flex items-center gap-1.5"
+                        class="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1.5"
                         title="Sembunyikan dari dropdown filter laporan aktif">
                         <i class="fa-solid fa-eye-slash text-[10px]"></i>
                         <span>Nonaktifkan</span>
                     </button>
                     <button type="button" onclick="BranchManager.openDeleteOperatorModal('${encodedOp}')"
-                        class="px-2.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-bold rounded transition-colors flex items-center gap-1.5"
+                        class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1.5"
                         title="Hapus permanen identitas kasir">
                         <i class="fa-solid fa-trash text-[10px]"></i>
                         <span>Hapus</span>
@@ -815,33 +829,33 @@ const BranchManager = {
             `;
 
             const statusBadge = op.is_hidden ?
-                `<span class="px-2 py-0.5 text-[10px] rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold uppercase tracking-wider">Diarsipkan</span>` :
-                `<span class="px-2 py-0.5 text-[10px] rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase tracking-wider">Aktif</span>`;
+                `<span class="px-2 py-0.5 text-[10px] lg:text-xs rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold uppercase tracking-wider">Diarsipkan</span>` :
+                `<span class="px-2 py-0.5 text-[10px] lg:text-xs rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase tracking-wider">Aktif</span>`;
 
             return `
-                <tr class="border-b border-[#141414] hover:bg-white/[0.02] transition-colors">
-                    <td class="py-3 px-3 text-neutral-500">${index + 1}</td>
+                <tr class="border-b border-[#1c1c1c] hover:bg-white/[0.02] transition-colors text-xs lg:text-base">
+                    <td class="py-3 px-3 text-neutral-500 font-mono">${index + 1}</td>
                     <td class="py-3 px-3 font-semibold text-neutral-200">
                         <div class="flex items-center gap-2">
                             <span class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-[11px] text-neutral-400 shrink-0">👤</span>
-                            <span class="font-mono text-xs">${this.escapeHtml(op.operator)}</span>
+                            <span class="font-mono text-xs lg:text-sm">${this.escapeHtml(op.operator)}</span>
                         </div>
                     </td>
-                    <td class="py-3 px-3 text-neutral-300 font-mono text-xs">${this.escapeHtml(op.username)}</td>
+                    <td class="py-3 px-3 text-neutral-300 font-mono text-xs lg:text-sm">${this.escapeHtml(op.username)}</td>
                     <td class="py-3 px-3 text-neutral-300">
-                        <span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[11px] font-bold">
+                        <span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[11px] lg:text-xs font-bold font-mono">
                             ${this.escapeHtml(op.branch_name)}
                         </span>
                     </td>
                     <td class="py-3 px-3 text-center">
-                        <span class="px-2 py-0.5 rounded bg-[#171717] border border-[#262626] text-neutral-300 font-mono text-xs font-bold">
+                        <span class="px-2 py-0.5 rounded bg-[#171717] border border-[#262626] text-neutral-300 font-mono text-xs lg:text-sm font-bold">
                             ${op.total_transaksi}
                         </span>
                     </td>
-                    <td class="py-3 px-3 text-right font-bold text-emerald-400 font-mono text-xs">
+                    <td class="py-3 px-3 text-right font-bold text-emerald-400 font-mono text-xs lg:text-sm">
                         ${formatMoney(op.total_nominal)}
                     </td>
-                    <td class="py-3 px-3 text-neutral-400 text-xs font-mono">${op.terakhir_aktif || '-'}</td>
+                    <td class="py-3 px-3 text-neutral-400 text-xs lg:text-sm font-mono">${op.terakhir_aktif || '-'}</td>
                     <td class="py-3 px-3 text-center">${statusBadge}</td>
                     <td class="py-3 px-3 text-right">${actionButtons}</td>
                 </tr>
