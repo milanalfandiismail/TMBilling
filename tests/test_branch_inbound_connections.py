@@ -161,3 +161,75 @@ def test_middleware_inbound_recording_and_blocking(app_instance):
     assert "diblokir" in res_blocked.get_json()["error"].lower()
 
 
+def test_inbound_api_endpoints_crud_and_rbac(app_instance):
+    """Memastikan proteksi RBAC dan operasi CRUD endpoint API inbound branch."""
+    from app.models import User
+    from app.services.branch.branch_inbound_service import BranchInboundService
+
+    with app_instance.app_context():
+        # Setup admin dan kasir user
+        admin = User(username="admin_inbound", role="admin", aktif=True)
+        admin.set_password("pass123")
+        kasir = User(username="kasir_inbound", role="kasir", aktif=True)
+        kasir.set_password("pass123")
+        db.session.add_all([admin, kasir])
+        db.session.commit()
+        admin_id = admin.id
+        admin_username = admin.username
+        kasir_id = kasir.id
+        kasir_username = kasir.username
+
+        # Seed 1 inbound record
+        inbound = BranchInboundService.record_inbound_access(
+            origin_name="Cabang Sentral",
+            origin_mac="00:11:22:33:44:55",
+            origin_url="http://sentral.warnet",
+            operator="op_sentral"
+        )
+        inbound_id = inbound.id
+
+    client = app_instance.test_client()
+
+    # 1. Tes Akses Kasir Biasa -> Ditolak (403)
+    with client.session_transaction() as sess:
+        sess["kasir_id"] = kasir_id
+        sess["kasir_username"] = kasir_username
+        sess["kasir_role"] = "kasir"
+
+    res_kasir = client.get("/api/v1/kasir/branch/inbound")
+    assert res_kasir.status_code == 403
+
+    # 2. Tes Akses Admin -> Sukses (200)
+    with client.session_transaction() as sess:
+        sess["kasir_id"] = admin_id
+        sess["kasir_username"] = admin_username
+        sess["kasir_role"] = "admin"
+
+    res_list = client.get("/api/v1/kasir/branch/inbound")
+    assert res_list.status_code == 200
+    data = res_list.get_json()
+    assert data["success"] is True
+    assert len(data["data"]) == 1
+    assert data["data"][0]["nama"] == "Cabang Sentral"
+
+    # 3. Tes Block Endpoint
+    res_block = client.post(f"/api/v1/kasir/branch/inbound/{inbound_id}/block")
+    assert res_block.status_code == 200
+    assert res_block.get_json()["data"]["status"] == "diblokir"
+
+    # 4. Tes Unblock Endpoint
+    res_unblock = client.post(f"/api/v1/kasir/branch/inbound/{inbound_id}/unblock")
+    assert res_unblock.status_code == 200
+    assert res_unblock.get_json()["data"]["status"] == "aktif"
+
+    # 5. Tes Delete Endpoint
+    res_del = client.delete(f"/api/v1/kasir/branch/inbound/{inbound_id}")
+    assert res_del.status_code == 200
+    assert res_del.get_json()["success"] is True
+
+    # Pastikan list sekarang kosong
+    res_empty = client.get("/api/v1/kasir/branch/inbound")
+    assert len(res_empty.get_json()["data"]) == 0
+
+
+

@@ -187,3 +187,64 @@ def delete_remote_operator():
     if not ok:
         return jsonify({"success": False, "error": msg}), 400
     return jsonify({"success": True, "message": msg}), 200
+
+
+@branch_api_bp.route("/inbound", methods=["GET"])
+@login_required
+@admin_required
+def list_inbound_branches():
+    """Mengambil daftar riwayat koneksi cabang pengontrol yang masuk (Inbound)."""
+    from app.services.branch.branch_inbound_service import BranchInboundService
+    items = BranchInboundService.get_all_inbound()
+    return jsonify({
+        "success": True,
+        "data": items
+    }), 200
+
+
+@branch_api_bp.route("/inbound/<int:inbound_id>/block", methods=["POST"])
+@login_required
+@admin_required
+def block_inbound_branch(inbound_id):
+    """Memblokir akses server cabang pengontrol."""
+    from app.services.branch.branch_inbound_service import BranchInboundService
+    ok, res = BranchInboundService.toggle_block(inbound_id, block=True)
+    if not ok:
+        return jsonify({"success": False, "error": res}), 404
+    return jsonify({
+        "success": True,
+        "message": "Koneksi cabang berhasil diblokir",
+        "data": res
+    }), 200
+
+
+@branch_api_bp.route("/inbound/<int:inbound_id>/unblock", methods=["POST"])
+@login_required
+@admin_required
+def unblock_inbound_branch(inbound_id):
+    """Membuka blokir akses server cabang pengontrol."""
+    from app.services.branch.branch_inbound_service import BranchInboundService
+    ok, res = BranchInboundService.toggle_block(inbound_id, block=False)
+    if not ok:
+        return jsonify({"success": False, "error": res}), 404
+    return jsonify({
+        "success": True,
+        "message": "Blokir koneksi cabang berhasil dibuka",
+        "data": res
+    }), 200
+
+
+@branch_api_bp.route("/inbound/<int:inbound_id>", methods=["DELETE"])
+@login_required
+@admin_required
+def delete_inbound_branch(inbound_id):
+    """Menghapus riwayat koneksi cabang pengontrol."""
+    from app.services.branch.branch_inbound_service import BranchInboundService
+    ok, res = BranchInboundService.delete_inbound(inbound_id)
+    if not ok:
+        return jsonify({"success": False, "error": res}), 404
+    return jsonify({
+        "success": True,
+        "message": res
+    }), 200
+
