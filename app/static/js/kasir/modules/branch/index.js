@@ -253,21 +253,6 @@ const BranchManager = {
     // SETTINGS PANEL INTEGRATION
     // =========================================================================
     initSettingsPanel() {
-        const btnCopyKey = document.getElementById('btn-copy-my-branch-key');
-        if (btnCopyKey) {
-            btnCopyKey.addEventListener('click', () => this.copyMyBranchKey());
-        }
-
-        const btnRegenKey = document.getElementById('btn-regen-my-branch-key');
-        if (btnRegenKey) {
-            btnRegenKey.addEventListener('click', () => this.regenerateMyBranchKey());
-        }
-
-        const btnAddBranch = document.getElementById('btn-add-branch-modal');
-        if (btnAddBranch) {
-            btnAddBranch.addEventListener('click', () => this.openAddBranchModal());
-        }
-
         // Muat my key jika elemennya ada
         this.loadMyBranchKey();
         this.renderBranchesSettingsTable();
@@ -288,6 +273,10 @@ const BranchManager = {
     },
 
     async copyMyBranchKey() {
+        if (this._isCopying) return;
+        this._isCopying = true;
+        setTimeout(() => { this._isCopying = false; }, 600);
+
         const keyInput = document.getElementById('my-branch-api-key-input');
         if (!keyInput) return;
 
@@ -358,6 +347,10 @@ const BranchManager = {
     },
 
     async regenerateMyBranchKey() {
+        if (this._isRegenerating) return;
+        this._isRegenerating = true;
+        setTimeout(() => { this._isRegenerating = false; }, 800);
+
         if (!confirm("Peringatan: Membuat ulang API Key akan memutuskan koneksi dari server cabang lain yang menyimpan kunci lama ini. Lanjutkan?")) {
             return;
         }
