@@ -195,16 +195,17 @@ def _register_public_routes(app):
         """Render halaman daftar game (Game Launcher)."""
         return render_template("public/game/index.html")
 
-    @app.route("/tv/dynamic")
-    def public_tv_signage():
-        """Render public Smart TV Digital Signage view."""
-        return render_template("public/tv/index.html")
-
+    @app.route("/tv")
     @app.route("/tv/static")
     @app.route("/tv-static")
     def public_tv_static():
-        """Render public Smart TV Static Dashboard view."""
+        """Render public Smart TV Static Widescreen Dashboard view."""
         return render_template("public/tv/static.html")
+
+    @app.route("/tv/dynamic")
+    def public_tv_dynamic():
+        """Redirect legacy dynamic TV route to unified widescreen TV dashboard."""
+        return redirect("/tv")
 
 def _register_context_processors(app):
     """Mendaftarkan context processor untuk template jinja."""
