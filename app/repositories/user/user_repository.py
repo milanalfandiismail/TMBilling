@@ -51,6 +51,11 @@ class UserRepository:
         """Menghitung jumlah user dengan role 'admin' dan status aktif."""
         return User.query.filter_by(role='admin', aktif=True).count()
 
+    @staticmethod
+    def get_first_admin():
+        """Mengambil akun admin pertama yang aktif."""
+        return User.query.filter_by(role='admin', aktif=True).order_by(User.id.asc()).first()
+
     # =========================================================================
     # 2. OPERASI PENYIMPANAN (WRITE)
     # =========================================================================

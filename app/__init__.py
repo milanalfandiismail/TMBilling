@@ -21,7 +21,22 @@ from flask_wtf import CSRFProtect
 from app.models import db
 from app.config import Config
 
-csrf = CSRFProtect()
+class TMBillingCSRFProtect(CSRFProtect):
+    """Custom CSRFProtect yang membebaskan request server-to-server (Bearer API Key).
+    
+    Request API yang membawa header 'Authorization: Bearer ...' digunakan
+    untuk komunikasi multi-cabang antar server TMBilling dan diverifikasi
+    penuh oleh validasi API Key di middleware auth, sehingga tidak memerlukan
+    CSRF token browser session.
+    """
+    def protect(self):
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            return
+        super().protect()
+
+
+csrf = TMBillingCSRFProtect()
 migrate = Migrate()
 
 

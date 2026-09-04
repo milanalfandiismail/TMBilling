@@ -95,7 +95,7 @@ const App = {
             'settings', 'settings_general', 'settings_branch', 'settings_payment', 'settings_kiosk', 'settings_tv', 
             'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup', 
             'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'whitelist_ip',
-            'mikrotik', 'analytics', 'plugins', 'plugin-spa'
+            'mikrotik', 'analytics', 'plugins', 'plugin-spa', 'branch'
         ];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');
@@ -203,12 +203,12 @@ const App = {
             settings_scheduler: 'Auto Scheduler',
             settings_migration: 'Migrasi & Update',
             tutorials: 'Dokumentasi & Tutorial',
-            analytics: 'Analytics Owner',
-            plugins: 'Plugins & Ekstensi',
+            analytics: 'Analytics Owner',            plugins: 'Plugins & Ekstensi',
             mikrotik: 'MikroTik Hotspot',
-            fileexplorer: 'File Explorer'
+            fileexplorer: 'File Explorer',
+            branch: 'Multi Cabang'
         };
- 
+
         const titleEl = document.getElementById('page-title');
         if (titleEl) titleEl.innerText = titles[tab] || 'Panel';
     },
@@ -249,6 +249,13 @@ const App = {
             case 'tutorials': if (typeof Tutorials !== 'undefined') await Tutorials.load(); break;
             case 'fileexplorer': if (typeof FileExplorer !== 'undefined') await FileExplorer.load(); break;
             case 'remote_server': if (typeof VNCClient !== 'undefined') await VNCClient.load(); break;
+            case 'branch':
+                if (typeof BranchManager !== 'undefined') {
+                    await BranchManager.loadMyBranchKey();
+                    await BranchManager.loadBranches();
+                    BranchManager.renderBranchesSettingsTable();
+                }
+                break;
         }
     },
  

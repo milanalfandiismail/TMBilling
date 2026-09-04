@@ -48,17 +48,20 @@ def test_admin_sees_branch_selector_and_settings_tab(test_clients):
     # Memastikan script branch dimuat
     assert 'js/kasir/modules/branch/index.js' in html
 
-    # Memastikan subtab multi-cabang ada di pengaturan
-    assert 'id="subtab-branch"' in html
+    # Memastikan tab multi-cabang dan menu sidebar ada untuk admin
+    assert 'id="tab-branch"' in html
+    assert 'id="sidebar-tab-branch"' in html
     assert 'id="tab-btn-settings-branch"' in html
     assert 'id="modal-branch-title"' in html
     assert 'id="input-branch-id"' in html
 
-def test_kasir_does_not_see_branch_selector(test_clients):
+def test_kasir_does_not_see_branch_selector_or_tab(test_clients):
     _, client_kasir = test_clients
     res = client_kasir.get('/kasir/')
     assert res.status_code == 200
     html = res.get_data(as_text=True)
 
-    # Kasir biasa tidak boleh melihat dropdown switch cabang
+    # Kasir biasa tidak boleh melihat dropdown switch cabang, tab, maupun menu sidebar (Zero UI)
     assert 'id="branch-selector-container"' not in html
+    assert 'id="tab-branch"' not in html
+    assert 'id="sidebar-tab-branch"' not in html

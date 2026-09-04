@@ -14,6 +14,40 @@ def clear_kasir_session():
     session.pop("kasir_nama", None)
 
 
+def _apply_branch_relay_identity():
+    """Menyiapkan identitas operator remote dan disambiguasi nama cabang di session request."""
+    g.is_branch_api_call = True
+    remote_op = request.headers.get("X-Operator-Username", "admin")
+    origin_name = request.headers.get("X-Origin-Branch-Name", "Remote").strip()
+    origin_mac = request.headers.get("X-Origin-MAC", "").strip()
+
+    from app.services.settings.settings_service import SettingsService
+    local_title = SettingsService.get("warnet_title", "Cabang").strip()
+
+    # Cek apakah nama warnet pengirim sama dengan warnet lokal
+    is_name_conflict = (origin_name.lower() == local_title.lower())
+    if not is_name_conflict:
+        try:
+            from app.models.branch import Branch
+            if Branch.query.filter(Branch.nama.ilike(origin_name)).count() > 1:
+                is_name_conflict = True
+        except Exception:
+            pass
+
+    # Disambiguasi: Jika nama warnet sama/bentrok dan ada MAC address, sertakan tag MAC fisik
+    if is_name_conflict and origin_mac:
+        full_operator = f"{remote_op} (Remote: {origin_name} [MAC: {origin_mac}])"
+    else:
+        full_operator = f"{remote_op} (Remote: {origin_name})"
+
+    from app.repositories import UserRepository
+    first_admin = UserRepository.get_first_admin()
+    if first_admin:
+        session["kasir_id"] = first_admin.id
+    session["kasir_username"] = full_operator
+    session["kasir_role"] = "admin"
+
+
 def login_required(f):
     """Decorator untuk proteksi endpoint API JSON (Mendukung Sesi Kasir & Bearer API Key Lintas Cabang)."""
     @wraps(f)
@@ -25,7 +59,7 @@ def login_required(f):
             from app.services.settings.settings_service import SettingsService
             local_key = SettingsService.get_or_create_branch_api_key()
             if local_key and secrets.compare_digest(token, local_key):
-                g.is_branch_api_call = True
+                _apply_branch_relay_identity()
                 return f(*args, **kwargs)
             return jsonify({"error": "Kunci API Cabang tidak valid"}), 403
 
@@ -56,7 +90,7 @@ def admin_required(f):
                 from app.services.settings.settings_service import SettingsService
                 local_key = SettingsService.get_or_create_branch_api_key()
                 if local_key and secrets.compare_digest(token, local_key):
-                    g.is_branch_api_call = True
+                    _apply_branch_relay_identity()
                 else:
                     return jsonify({"error": "Kunci API Cabang tidak valid"}), 403
 

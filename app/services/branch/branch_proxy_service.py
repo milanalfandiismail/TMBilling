@@ -1,15 +1,27 @@
 # app/services/branch/branch_proxy_service.py
 """Service untuk relay reverse proxy server-to-server antar cabang warnet."""
 
+import uuid
 import requests
 from flask import request, jsonify, Response, session
 from app.models import db, now_local
 from app.models.branch import Branch
+from app.services.settings.settings_service import SettingsService
 from app.utils.logger import write_log
 
 
 class BranchProxyService:
     """Service untuk meneruskan request API kasir ke server cabang remote."""
+
+    @staticmethod
+    def get_server_mac_address() -> str:
+        """Mengambil MAC address fisik hardware server lokal sebagai identifier unik."""
+        try:
+            mac_num = uuid.getnode()
+            mac_hex = f"{mac_num:012X}"
+            return ":".join(mac_hex[i:i+2] for i in range(0, 12, 2))
+        except Exception:
+            return ""
 
     @staticmethod
     def should_relay(request_obj) -> int | None:
@@ -40,6 +52,13 @@ class BranchProxyService:
     @staticmethod
     def relay_request(branch_id: int, request_obj) -> Response:
         """Mem-forward request HTTP saat ini ke server cabang tujuan secara aman."""
+        # 100% Security: Hanya role admin yang diizinkan merelay ke cabang remote
+        if session.get("kasir_role") != "admin":
+            return jsonify({
+                "success": False,
+                "error": "Akses ditolak: Hanya Admin yang dapat mengontrol cabang lain"
+            }), 403
+
         branch = Branch.query.get(branch_id)
         if not branch or not branch.aktif:
             return jsonify({
@@ -51,11 +70,21 @@ class BranchProxyService:
         if request_obj.query_string:
             target_url += f"?{request_obj.query_string.decode('utf-8')}"
 
+        # Context operator & identitas server lokal
+        operator_username = session.get("kasir_username", "admin")
+        origin_branch_title = SettingsService.get("warnet_title", "Cabang")
+        origin_mac = BranchProxyService.get_server_mac_address()
+
         # Siapkan headers relay
         relay_headers = {
             "Authorization": f"Bearer {branch.api_key}",
-            "User-Agent": "TMBilling-Relay/1.6.0"
+            "User-Agent": "TMBilling-Relay/1.6.0",
+            "X-Operator-Username": operator_username,
+            "X-Origin-Branch-Name": origin_branch_title
         }
+        if origin_mac:
+            relay_headers["X-Origin-MAC"] = origin_mac
+
         if request_obj.content_type:
             relay_headers["Content-Type"] = request_obj.content_type
         if request_obj.headers.get("Accept"):

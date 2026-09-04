@@ -233,6 +233,19 @@
         {% endif %}
 
         {% if session.get('kasir_role') == 'admin' %}
+        <!-- Multi Cabang -->
+        <button onclick="App.switchTab('branch')" data-tab="branch" id="sidebar-tab-branch"
+            class="tab-btn w-full flex items-center gap-3 px-3 py-2 rounded text-[13px] font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                </path>
+            </svg>
+            <span>Multi Cabang</span>
+        </button>
+        {% endif %}
+
+        {% if session.get('kasir_role') == 'admin' %}
         <!-- 7. Pengaturan -->
         <div class="space-y-1">
             <button onclick="Sidebar.toggleDropdown('settings')"
@@ -256,7 +269,7 @@
                 <button onclick="App.switchTab('settings_general')" data-tab="settings_general"
                     class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">⚙️
                     Umum & Keamanan</button>
-                <button onclick="App.switchTab('settings_branch')" data-tab="settings_branch" id="tab-btn-settings-branch"
+                <button onclick="App.switchTab('branch')" data-tab="branch" id="tab-btn-settings-branch"
                     class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🏢
                     Multi-Cabang & API</button>
                 <button onclick="App.switchTab('settings_payment')" data-tab="settings_payment"

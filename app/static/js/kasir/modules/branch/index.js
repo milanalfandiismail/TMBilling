@@ -10,6 +10,12 @@ const BranchManager = {
     localWarnetTitle: 'Cabang Lokal',
 
     async init() {
+        // 100% Zero UI/UX & Security: Jika user login sebagai kasir, hentikan total modul ini
+        const userRole = document.body.getAttribute('data-kasir-role');
+        if (userRole !== 'admin') {
+            return;
+        }
+
         // Cek apakah elemen dropdown ada di DOM (hanya untuk role admin)
         const dropdownContainer = document.getElementById('branch-selector-container');
         if (!dropdownContainer) return;
@@ -136,14 +142,9 @@ const BranchManager = {
         if (btnManage) {
             btnManage.addEventListener('click', () => {
                 this.toggleDropdown(false);
-                // Buka tab pengaturan -> subtab multi-cabang
-                if (window.Navigation && Navigation.switchTab) {
-                    Navigation.switchTab('settings');
+                if (window.App && App.switchTab) {
+                    App.switchTab('branch');
                 }
-                setTimeout(() => {
-                    const branchTabBtn = document.getElementById('tab-btn-settings-branch');
-                    if (branchTabBtn) branchTabBtn.click();
-                }, 100);
             });
         }
     },
@@ -185,6 +186,14 @@ const BranchManager = {
     },
 
     async switchBranch(branchId) {
+        const userRole = document.body.getAttribute('data-kasir-role');
+        if (userRole !== 'admin') {
+            if (window.Toast) {
+                window.Toast.error('Akses Ditolak: Hanya Admin yang dapat berganti cabang!');
+            }
+            return;
+        }
+
         this.activeBranchId = String(branchId);
         localStorage.setItem('active_branch_id', this.activeBranchId);
 

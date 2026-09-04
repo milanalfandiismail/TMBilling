@@ -42,6 +42,9 @@
             {% include 'kasir/tabs/uptime.html' %}
             {% include 'kasir/tabs/remote_server.html' %}
             {% include 'kasir/tabs/fileexplorer.html' %}
+            {% if session.get('kasir_role') == 'admin' %}
+            {% include 'kasir/tabs/branch.html' %}
+            {% endif %}
             
             <div id="tab-plugin-spa" class="tab-content hidden w-full" style="height: calc(100vh - 140px);">
                 <iframe id="plugin-spa-iframe" class="w-full h-full rounded-xl bg-[#0d0d0d]" src="about:blank"></iframe>
