@@ -51,6 +51,8 @@ def test_admin_sees_branch_selector_and_settings_tab(test_clients):
     # Memastikan subtab multi-cabang ada di pengaturan
     assert 'id="subtab-branch"' in html
     assert 'id="tab-btn-settings-branch"' in html
+    assert 'id="modal-branch-title"' in html
+    assert 'id="input-branch-id"' in html
 
 def test_kasir_does_not_see_branch_selector(test_clients):
     _, client_kasir = test_clients

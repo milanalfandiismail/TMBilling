@@ -203,12 +203,33 @@ const BranchManager = {
             window.Toast.show(`Beralih ke ${branchName}`, "info");
         }
 
-        // Refresh data dashboard secara INSTAN tanpa menunggu delay polling 5 detik
-        if (typeof Dashboard !== 'undefined' && typeof Dashboard.load === 'function') {
-            await Dashboard.load();
-        }
-        if (typeof Monitor !== 'undefined' && typeof Monitor.load === 'function' && typeof App !== 'undefined' && App.currentTab === 'monitor') {
-            await Monitor.load();
+        // =====================================================================
+        // REFRESH SELURUH DATA SISTEM KASIR SECARA INSTAN (0s DELAY)
+        // =====================================================================
+        try {
+            // 1. Refresh Grup Sistem Global (opsi filter & dropdown di seluruh modal sinkron)
+            if (typeof Grup !== 'undefined' && typeof Grup.load === 'function') {
+                await Grup.load();
+            }
+
+            // 2. Selalu muat data Dashboard (PC, kartu statistik omzet/sesi, dan grup)
+            if (typeof Dashboard !== 'undefined' && typeof Dashboard.load === 'function') {
+                await Dashboard.load();
+            }
+
+            // 3. Muat ulang tab yang sedang aktif saat ini di layar pengguna
+            if (typeof App !== 'undefined' && App.currentTab) {
+                if (App.currentTab === 'settings' || App.currentTab.startsWith('settings_')) {
+                    // Jika sedang di tab pengaturan, jangan reload jika sedang di subtab cabang
+                    if (typeof Settings !== 'undefined' && Settings.currentSubTab && Settings.currentSubTab !== 'branch') {
+                        await Settings.load(true);
+                    }
+                } else if (App.currentTab !== 'dash' && typeof App.loadTab === 'function') {
+                    await App.loadTab(App.currentTab);
+                }
+            }
+        } catch (err) {
+            console.error('[BranchManager] Error saat sinkronisasi seluruh data cabang:', err);
         }
     },
 
@@ -364,6 +385,9 @@ const BranchManager = {
                             <button type="button" onclick="BranchManager.testExistingBranch(${branch.id})" class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 hover:text-white rounded text-[10px] lg:text-xs font-semibold transition-colors">
                                 Tes
                             </button>
+                            <button type="button" onclick="BranchManager.editBranch(${branch.id})" class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 hover:text-white rounded text-[10px] lg:text-xs font-semibold transition-colors">
+                                Edit
+                            </button>
                             <button type="button" onclick="BranchManager.deleteBranch(${branch.id})" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded text-[10px] lg:text-xs font-semibold transition-colors">
                                 Hapus
                             </button>
@@ -381,10 +405,68 @@ const BranchManager = {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
 
-        // Reset form
+        // Reset form ke mode Tambah
         document.getElementById('form-add-branch')?.reset();
+        const idInput = document.getElementById('input-branch-id');
+        if (idInput) idInput.value = '';
+
+        const title = document.getElementById('modal-branch-title');
+        if (title) title.textContent = 'Hubungkan Cabang Baru';
+
+        const btnSubmit = document.getElementById('btn-submit-branch');
+        if (btnSubmit) btnSubmit.textContent = 'Simpan Cabang';
+
+        const hint = document.getElementById('input-branch-key-hint');
+        if (hint) hint.textContent = 'Salin dari menu Pengaturan → Multi-Cabang di server warnet target.';
+
         const testResult = document.getElementById('branch-test-result');
         if (testResult) testResult.innerHTML = '';
+    },
+
+    async editBranch(branchId) {
+        const modal = document.getElementById('modal-add-branch');
+        if (!modal) return;
+
+        // Ambil data cabang termasuk API key dari server
+        let branch = null;
+        try {
+            const res = await API.branch.list(true);
+            if (res && res.success && res.data) {
+                branch = res.data.find(b => b.id === branchId);
+            }
+        } catch (err) {
+            console.error('[BranchManager] Gagal memuat data cabang untuk edit:', err);
+        }
+
+        if (!branch) {
+            branch = this.branches.find(b => b.id === branchId);
+        }
+
+        if (!branch) {
+            if (window.Toast) window.Toast.show("Data cabang tidak ditemukan", "error");
+            return;
+        }
+
+        const idInput = document.getElementById('input-branch-id');
+        const urlInput = document.getElementById('input-branch-url');
+        const keyInput = document.getElementById('input-branch-key');
+        const nameInput = document.getElementById('input-branch-nama');
+        const title = document.getElementById('modal-branch-title');
+        const btnSubmit = document.getElementById('btn-submit-branch');
+        const hint = document.getElementById('input-branch-key-hint');
+        const testResult = document.getElementById('branch-test-result');
+
+        if (idInput) idInput.value = branch.id;
+        if (urlInput) urlInput.value = branch.url || '';
+        if (keyInput) keyInput.value = branch.api_key || '';
+        if (nameInput) nameInput.value = branch.nama || '';
+        if (title) title.textContent = 'Edit Informasi Cabang';
+        if (btnSubmit) btnSubmit.textContent = 'Perbarui Cabang';
+        if (hint) hint.textContent = 'Perbarui URL, API Key, atau Nama cabang sesuai kebutuhan.';
+        if (testResult) testResult.innerHTML = '';
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
     },
 
     closeAddBranchModal() {
@@ -442,35 +524,72 @@ const BranchManager = {
         }
     },
 
-    async submitAddBranch(e) {
+    async submitBranchForm(e) {
         if (e) e.preventDefault();
+        const idInput = document.getElementById('input-branch-id');
         const urlInput = document.getElementById('input-branch-url');
         const keyInput = document.getElementById('input-branch-key');
         const nameInput = document.getElementById('input-branch-nama');
 
         if (!urlInput || !keyInput) return;
+
+        const branchId = idInput ? idInput.value.trim() : '';
+        const isEdit = Boolean(branchId);
         const payload = {
             url: urlInput.value.trim(),
             api_key: keyInput.value.trim(),
             nama: nameInput ? nameInput.value.trim() : ''
         };
 
+        const btnSubmit = document.getElementById('btn-submit-branch');
+        const originalText = btnSubmit ? btnSubmit.textContent : '';
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = isEdit ? 'Menyimpan Perubahan...' : 'Menyimpan Cabang...';
+        }
+
         try {
-            const res = await API.branch.add(payload);
+            let res;
+            if (isEdit) {
+                res = await API.branch.update(branchId, payload);
+            } else {
+                res = await API.branch.add(payload);
+            }
+
             if (res && res.success) {
+                const msg = isEdit ? "Informasi cabang berhasil diperbarui!" : "Cabang berhasil ditambahkan!";
                 if (window.Toast) {
-                    window.Toast.show("Cabang berhasil ditambahkan!", "success");
+                    window.Toast.show(msg, "success");
                 }
                 this.closeAddBranchModal();
                 await this.loadBranches();
+
+                // Jika cabang yang diedit sedang aktif di kontrol panel, perbarui namanya
+                if (isEdit && String(this.activeBranchId) === String(branchId)) {
+                    const updated = this.branches.find(b => String(b.id) === String(branchId));
+                    if (updated) {
+                        this.activeBranchName = updated.nama;
+                        localStorage.setItem('active_branch_name', updated.nama);
+                    }
+                }
+
                 this.renderNavbarDropdown();
                 this.renderBranchesSettingsTable();
             } else {
-                alert(res.error || "Gagal menambahkan cabang");
+                alert(res.error || (isEdit ? "Gagal memperbarui cabang" : "Gagal menambahkan cabang"));
             }
         } catch (err) {
             alert("Error: " + (err.message || err));
+        } finally {
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = originalText;
+            }
         }
+    },
+
+    submitAddBranch(e) {
+        return this.submitBranchForm(e);
     },
 
     async testExistingBranch(branchId) {
