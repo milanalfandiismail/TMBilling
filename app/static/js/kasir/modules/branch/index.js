@@ -289,18 +289,70 @@ const BranchManager = {
 
     async copyMyBranchKey() {
         const keyInput = document.getElementById('my-branch-api-key-input');
-        if (!keyInput || !keyInput.value) return;
+        if (!keyInput) return;
 
-        try {
-            await navigator.clipboard.writeText(keyInput.value);
+        let textToCopy = keyInput.value;
+        if (!textToCopy || textToCopy === '...') {
+            await this.loadMyBranchKey();
+            textToCopy = keyInput.value;
+        }
+
+        if (!textToCopy || textToCopy === '...') {
+            if (window.Toast) {
+                window.Toast.show("Kunci API belum termuat, silakan coba lagi.", "error");
+            }
+            return;
+        }
+
+        let copied = false;
+
+        // 1. Coba Modern Clipboard API jika didukung dan secure context
+        if (navigator.clipboard && window.isSecureContext) {
+            try {
+                await navigator.clipboard.writeText(textToCopy);
+                copied = true;
+            } catch (err) {
+                console.warn('[BranchManager] navigator.clipboard gagal, fallback ke textarea:', err);
+            }
+        }
+
+        // 2. Fallback universal untuk input bertipe password atau non-HTTPS/IP LAN
+        // (Browser memblokir copy langsung dari input[type=password], jadi gunakan textarea sementara)
+        if (!copied) {
+            try {
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = textToCopy;
+                tempTextArea.style.position = 'fixed';
+                tempTextArea.style.left = '-9999px';
+                tempTextArea.style.top = '-9999px';
+                tempTextArea.setAttribute('readonly', '');
+                document.body.appendChild(tempTextArea);
+                tempTextArea.focus();
+                tempTextArea.select();
+                tempTextArea.setSelectionRange(0, 99999);
+
+                copied = document.execCommand('copy');
+                document.body.removeChild(tempTextArea);
+            } catch (err) {
+                console.error('[BranchManager] Fallback textarea copy gagal:', err);
+            }
+        }
+
+        const btnCopy = document.getElementById('btn-copy-my-branch-key');
+        if (copied) {
+            if (btnCopy) {
+                const originalHtml = btnCopy.innerHTML;
+                btnCopy.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i><span class="text-emerald-400">Tersalin!</span>';
+                setTimeout(() => {
+                    btnCopy.innerHTML = originalHtml;
+                }, 2000);
+            }
             if (window.Toast) {
                 window.Toast.show("API Key berhasil disalin ke clipboard!", "success");
             }
-        } catch (err) {
-            keyInput.select();
-            document.execCommand('copy');
+        } else {
             if (window.Toast) {
-                window.Toast.show("API Key berhasil disalin!", "success");
+                window.Toast.show("Gagal menyalin otomatis, silakan buka ikon mata dan salin manual.", "error");
             }
         }
     },
