@@ -14,7 +14,7 @@
         {% include 'kasir/components/navbar.html' %}
 
         <div id="main-scroll" class="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto overflow-x-hidden scrollbar-mono">
-            <!-- Tabs Content -->
+            <!-- Tabs Content (Umum: Kasir & Admin) -->
             {% include 'kasir/tabs/dashboard.html' %}
             {% include 'kasir/tabs/pc.html' %}
             {% include 'kasir/tabs/paket.html' %}
@@ -22,35 +22,37 @@
             {% include 'kasir/tabs/grup.html' %}
             {% include 'kasir/tabs/laporan.html' %}
             {% include 'kasir/tabs/laporan_menu.html' %}
+            {% include 'kasir/tabs/struk.html' %}
+            {% include 'kasir/tabs/menu.html' %}
+            {% include 'kasir/tabs/tournament.html' %}
+            {% include 'kasir/tabs/game.html' %}
+            {% include 'kasir/tabs/laporan_maintenance.html' %}
+
+            <!-- Tabs Content (Khusus Admin - Server-Side Guarded) -->
+            {% if session.get('kasir_role') == 'admin' %}
+            {% include 'kasir/tabs/user.html' %}
             {% include 'kasir/tabs/log.html' %}
             {% include 'kasir/tabs/monitor.html' %}
             {% include 'kasir/server_monitor/server_statistic.html' %}
             {% include 'kasir/tabs/hardware_checker.html' %}
             {% include 'kasir/tabs/maintenance.html' %}
-            {% include 'kasir/tabs/laporan_maintenance.html' %}
             {% include 'kasir/tabs/screenshot.html' %}
-            {% include 'kasir/tabs/game.html' %}
             {% include 'kasir/tabs/blackout.html' %}
-            {% include 'kasir/tabs/user.html' %}
+            {% include 'kasir/tabs/remote_server.html' %}
+            {% include 'kasir/tabs/uptime.html' %}
+            {% include 'kasir/tabs/fileexplorer.html' %}
             {% include 'kasir/tabs/mikrotik.html' %}
             {% include 'kasir/tabs/settings.html' %}
             {% include 'kasir/settings/plugins.html' %}
-            {% include 'kasir/tabs/struk.html' %}
-            {% include 'kasir/tabs/menu.html' %}
-            {% include 'kasir/tabs/tournament.html' %}
             {% include 'kasir/tabs/analytics.html' %}
-            {% include 'kasir/tabs/uptime.html' %}
-            {% include 'kasir/tabs/remote_server.html' %}
-            {% include 'kasir/tabs/fileexplorer.html' %}
-            {% if session.get('kasir_role') == 'admin' %}
             {% include 'kasir/tabs/branch.html' %}
             {% include 'kasir/tabs/branch_inbound.html' %}
             {% include 'kasir/tabs/branch_kasir.html' %}
-            {% endif %}
             
             <div id="tab-plugin-spa" class="tab-content hidden w-full" style="height: calc(100vh - 140px);">
                 <iframe id="plugin-spa-iframe" class="w-full h-full rounded-xl bg-[#0d0d0d]" src="about:blank"></iframe>
             </div>
+            {% endif %}
             
             <!-- ===== MODALS ===== -->
             {% include 'kasir/components/modals.html' %}

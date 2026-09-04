@@ -20,6 +20,7 @@
     </div>
 </div>
 
+{% if session.get('kasir_role') == 'admin' %}
 <!-- ===== MODAL: BACKUP ===== -->
 <div id="modal-backup" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
     <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 max-w-md w-full animate-in">
@@ -56,3 +57,4 @@
         </div>
     </div>
 </div>
+{% endif %}
