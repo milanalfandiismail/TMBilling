@@ -54,6 +54,9 @@ class TransaksiMenu(db.Model):
     kembalian = db.Column(db.Integer, nullable=True, default=0)
     metode_pembayaran = db.Column(db.String(50), nullable=True)
 
+    # Operator riil (lokal atau remote: e.g. "admin (Remote: Milan Net)")
+    operator = db.Column(db.String(100), nullable=True)
+
     # Relasi
     menu = db.relationship("MenuItem", backref=db.backref("transaksi", lazy=True))
     kasir = db.relationship("User", backref=db.backref("transaksi_menu", lazy=True))
@@ -71,7 +74,8 @@ class TransaksiMenu(db.Model):
             "pc_kode": self.pc_kode,
             "tanggal": format_display(self.tanggal) if self.tanggal else None,
             "kasir_id": self.kasir_id,
-            "kasir_nama": self.kasir.username if self.kasir else "System",
+            "kasir_nama": self.operator or (self.kasir.username if self.kasir else "System"),
+            "operator": self.operator,
             "tunai": self.tunai,
             "kembalian": self.kembalian,
             "metode_pembayaran": self.metode_pembayaran,
