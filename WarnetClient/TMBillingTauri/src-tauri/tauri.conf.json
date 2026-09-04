@@ -1,6 +1,6 @@
 {
   "build": {
-    "beforeBuildCommand": "npx tailwindcss@3 -i src/css/input.css -o src/css/output.css --minify",
+    "beforeBuildCommand": "npm run build:css",
     "beforeDevCommand": "",
     "devPath": "../src",
     "distDir": "../src",
