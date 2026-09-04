@@ -8,6 +8,8 @@ const BranchManager = {
     activeBranchId: sessionStorage.getItem('active_branch_id') || '0',
     activeBranchName: sessionStorage.getItem('active_branch_name') || 'Lokal',
     localWarnetTitle: 'Cabang Lokal',
+    inboundBranches: [],
+    filterInboundQuery: '',
 
     async init() {
         // 100% Zero UI/UX & Security: Jika user login sebagai kasir, hentikan total modul ini
@@ -990,6 +992,215 @@ const BranchManager = {
             if (btn) {
                 btn.disabled = false;
                 btn.innerHTML = originalText;
+            }
+        }
+    },
+
+    // ==========================================
+    // 🔗 INBOUND BRANCHES (KONEKSI MASUK)
+    // ==========================================
+    async loadInboundBranches() {
+        const tbody = document.getElementById('inbound-branch-table-body');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-8 text-neutral-500 text-xs">
+                        <i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat daftar koneksi masuk...
+                    </td>
+                </tr>
+            `;
+        }
+
+        try {
+            const res = await API.branch.inboundList();
+            if (res && res.success) {
+                this.inboundBranches = res.data || [];
+            } else {
+                this.inboundBranches = [];
+            }
+        } catch (err) {
+            console.error('[BranchManager] Gagal memuat inbound branches:', err);
+            this.inboundBranches = [];
+        }
+
+        this.renderInboundTable();
+    },
+
+    filterInboundBySearch() {
+        const input = document.getElementById('filter-inbound-search');
+        this.filterInboundQuery = input ? input.value.trim().toLowerCase() : '';
+        this.renderInboundTable();
+    },
+
+    renderInboundTable() {
+        const tbody = document.getElementById('inbound-branch-table-body');
+        if (!tbody) return;
+
+        let filtered = this.inboundBranches || [];
+        if (this.filterInboundQuery) {
+            const q = this.filterInboundQuery;
+            filtered = filtered.filter(b => 
+                (b.nama && b.nama.toLowerCase().includes(q)) ||
+                (b.ip_address && b.ip_address.toLowerCase().includes(q)) ||
+                (b.mac_address && b.mac_address.toLowerCase().includes(q)) ||
+                (b.operator_terakhir && b.operator_terakhir.toLowerCase().includes(q))
+            );
+        }
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-8 text-neutral-500 text-xs font-mono">
+                        ${this.filterInboundQuery ? 'Tidak ada cabang yang cocok dengan pencarian.' : 'Belum ada cabang luar yang terhubung ke server ini.'}
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = filtered.map((b, idx) => {
+            const isBlocked = b.status === 'diblokir';
+            const statusBadge = isBlocked
+                ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                     <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                     Diblokir
+                   </span>`
+                : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                     Terhubung
+                   </span>`;
+
+            let lastActiveFormatted = '-';
+            if (b.terakhir_aktif) {
+                try {
+                    const d = new Date(b.terakhir_aktif);
+                    lastActiveFormatted = d.toLocaleString('id-ID', {
+                        day: '2-digit', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit', second: '2-digit'
+                    });
+                } catch (e) {
+                    lastActiveFormatted = b.terakhir_aktif;
+                }
+            }
+
+            const actionBlockBtn = isBlocked
+                ? `<button type="button" onclick="BranchManager.unblockInboundBranch(${b.id}, '${(b.nama || '').replace(/'/g, "\\'")}')"
+                     class="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded text-xs font-bold transition-colors inline-flex items-center gap-1">
+                     <i class="fa-solid fa-lock-open text-[10px]"></i>
+                     <span>Buka Blokir</span>
+                   </button>`
+                : `<button type="button" onclick="BranchManager.blockInboundBranch(${b.id}, '${(b.nama || '').replace(/'/g, "\\'")}')"
+                     class="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded text-xs font-bold transition-colors inline-flex items-center gap-1">
+                     <i class="fa-solid fa-ban text-[10px]"></i>
+                     <span>Blokir</span>
+                   </button>`;
+
+            const actionDeleteBtn = `
+                <button type="button" onclick="BranchManager.deleteInboundBranch(${b.id}, '${(b.nama || '').replace(/'/g, "\\'")}')"
+                  class="px-2.5 py-1 bg-[#171717] hover:bg-red-500/20 border border-[#262626] hover:border-red-500/30 text-neutral-400 hover:text-red-400 rounded text-xs font-bold transition-colors inline-flex items-center gap-1"
+                  title="Hapus riwayat">
+                  <i class="fa-solid fa-trash text-[10px]"></i>
+                </button>
+            `;
+
+            return `
+                <tr class="hover:bg-[#121212]/50 transition-colors">
+                    <td class="py-3 px-3 text-xs text-neutral-500 font-mono">${idx + 1}</td>
+                    <td class="py-3 px-3">
+                        <div class="text-xs font-bold text-neutral-200">${b.nama || '-'}</div>
+                        ${b.url ? `<div class="text-[10px] text-neutral-500 font-mono">${b.url}</div>` : ''}
+                    </td>
+                    <td class="py-3 px-3">
+                        <div class="font-mono text-[11px] text-neutral-300">${b.mac_address || '-'}</div>
+                        <div class="text-[10px] text-neutral-500 font-mono">${b.ip_address || '-'}</div>
+                    </td>
+                    <td class="py-3 px-3 text-xs text-neutral-300 font-mono">${b.operator_terakhir || '-'}</td>
+                    <td class="py-3 px-3 text-xs text-neutral-400 font-mono">${lastActiveFormatted}</td>
+                    <td class="py-3 px-3 text-center">
+                        <span class="inline-block px-2 py-0.5 rounded bg-neutral-900 border border-[#262626] font-mono text-[11px] text-neutral-300">
+                            ${b.total_request || 1}
+                        </span>
+                    </td>
+                    <td class="py-3 px-3">${statusBadge}</td>
+                    <td class="py-3 px-3 text-right">
+                        <div class="flex items-center justify-end gap-1.5">
+                            ${actionBlockBtn}
+                            ${actionDeleteBtn}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    },
+
+    async blockInboundBranch(id, nama) {
+        const confirmed = confirm(`Apakah Anda yakin ingin memblokir akses dari cabang '${nama}'?\n\nServer tersebut tidak akan dapat mengontrol atau mengambil data dari server ini lagi.`);
+        if (!confirmed) return;
+
+        try {
+            const res = await API.branch.inboundBlock(id);
+            if (res && res.success) {
+                if (window.Toast) {
+                    window.Toast.show(res.message || `Cabang '${nama}' berhasil diblokir`, 'success');
+                }
+                await this.loadInboundBranches();
+            } else {
+                if (window.Toast) {
+                    window.Toast.show(res.error || 'Gagal memblokir cabang', 'error');
+                }
+            }
+        } catch (err) {
+            console.error('[BranchManager] Error blocking inbound branch:', err);
+            if (window.Toast) {
+                window.Toast.show('Error: ' + (err.message || err), 'error');
+            }
+        }
+    },
+
+    async unblockInboundBranch(id, nama) {
+        const confirmed = confirm(`Buka blokir akses untuk cabang '${nama}'?`);
+        if (!confirmed) return;
+
+        try {
+            const res = await API.branch.inboundUnblock(id);
+            if (res && res.success) {
+                if (window.Toast) {
+                    window.Toast.show(res.message || `Blokir cabang '${nama}' berhasil dibuka`, 'success');
+                }
+                await this.loadInboundBranches();
+            } else {
+                if (window.Toast) {
+                    window.Toast.show(res.error || 'Gagal membuka blokir cabang', 'error');
+                }
+            }
+        } catch (err) {
+            console.error('[BranchManager] Error unblocking inbound branch:', err);
+            if (window.Toast) {
+                window.Toast.show('Error: ' + (err.message || err), 'error');
+            }
+        }
+    },
+
+    async deleteInboundBranch(id, nama) {
+        const confirmed = confirm(`Hapus riwayat koneksi masuk dari cabang '${nama}'?`);
+        if (!confirmed) return;
+
+        try {
+            const res = await API.branch.inboundDelete(id);
+            if (res && res.success) {
+                if (window.Toast) {
+                    window.Toast.show(res.message || `Riwayat cabang '${nama}' berhasil dihapus`, 'success');
+                }
+                await this.loadInboundBranches();
+            } else {
+                if (window.Toast) {
+                    window.Toast.show(res.error || 'Gagal menghapus riwayat cabang', 'error');
+                }
+            }
+        } catch (err) {
+            console.error('[BranchManager] Error deleting inbound branch:', err);
+            if (window.Toast) {
+                window.Toast.show('Error: ' + (err.message || err), 'error');
             }
         }
     }

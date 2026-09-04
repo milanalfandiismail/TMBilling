@@ -311,7 +311,11 @@ const API = {
         operators: () => API.request('/api/v1/kasir/branch/operators'),
         hideOperator: (operatorName) => API.request('/api/v1/kasir/branch/operators/hide', { method: 'POST', body: JSON.stringify({ operator: operatorName }) }),
         restoreOperator: (operatorName) => API.request('/api/v1/kasir/branch/operators/restore', { method: 'POST', body: JSON.stringify({ operator: operatorName }) }),
-        deleteOperator: (operatorName) => API.request('/api/v1/kasir/branch/operators/delete', { method: 'POST', body: JSON.stringify({ operator: operatorName }) })
+        deleteOperator: (operatorName) => API.request('/api/v1/kasir/branch/operators/delete', { method: 'POST', body: JSON.stringify({ operator: operatorName }) }),
+        inboundList: () => API.request('/api/v1/kasir/branch/inbound'),
+        inboundBlock: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}/block`, { method: 'POST' }),
+        inboundUnblock: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}/unblock`, { method: 'POST' }),
+        inboundDelete: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}`, { method: 'DELETE' })
     }
 
 };
