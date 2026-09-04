@@ -46,6 +46,7 @@ class PdfExportService:
             Paragraph("No. Nota", styles["table_header"]),
             Paragraph("Pelanggan", styles["table_header"]),
             Paragraph("PC", styles["table_header"]),
+            Paragraph("Kasir", styles["table_header"]),
             Paragraph("Keterangan", styles["table_header"]),
             Paragraph("Metode", styles["table_header"]),
             Paragraph("Jumlah", styles["table_header"])
@@ -58,6 +59,7 @@ class PdfExportService:
             no_nota = t.get("no_nota", "-")
             nama_p = t.get("nama_pelanggan", "-")
             pc = t.get("pc_kode", "-")
+            kasir_nama = t.get("kasir_nama", "-")
             ket = t.get("keterangan", "-")
             metode = t.get("metode_pembayaran", "Tunai") or "Tunai"
             jumlah_raw = t.get("jumlah", 0)
@@ -69,13 +71,14 @@ class PdfExportService:
                 Paragraph(no_nota, styles["table_cell_center"]),
                 Paragraph(nama_p, styles["table_cell"]),
                 Paragraph(pc, styles["table_cell_center"]),
+                Paragraph(kasir_nama, styles["table_cell_center"]),
                 Paragraph(ket, styles["table_cell"]),
                 Paragraph(metode, styles["table_cell_center"]),
                 Paragraph(jumlah, styles["table_cell_right"])
             ]
             table_data.append(row)
 
-        col_widths = [0.8 * cm, 2.5 * cm, 2.3 * cm, 3.2 * cm, 1.0 * cm, 4.5 * cm, 2.2 * cm, 2.5 * cm]
+        col_widths = [0.8 * cm, 2.0 * cm, 2.2 * cm, 2.7 * cm, 1.0 * cm, 2.5 * cm, 3.5 * cm, 1.8 * cm, 2.5 * cm]
         data_table = Table(table_data, colWidths=col_widths, repeatRows=1)
         PdfHelper.apply_standard_table_style(data_table, table_data)
         story.append(data_table)

@@ -131,7 +131,7 @@ class ReportService:
                     "total_harga": total_harga,
                     "pc_kode": first_item.pc_kode or "-",
                     "waktu": format_display(first_item.tanggal) if first_item.tanggal else "-",
-                    "kasir_nama": first_item.kasir.username if first_item.kasir else "System",
+                    "kasir_nama": first_item.operator or (first_item.kasir.username if first_item.kasir else "System"),
                     "tunai": first_item.tunai,
                     "kembalian": first_item.kembalian,
                     "metode_pembayaran": first_item.metode_pembayaran or "Tunai",
@@ -285,14 +285,37 @@ class ReportService:
 
     @staticmethod
     def get_kasir_list(kasir_id, kasir_role):
-        """Ambil daftar kasir sesuai role."""
+        """Ambil daftar kasir sesuai role, termasuk remote operator terdaftar."""
         if kasir_role == 'admin':
             users = UserRepository.get_all_active()
+            result = [{"id": str(u.id), "nama": f"{u.nama_lengkap or u.username} (Lokal)"} for u in users if u]
+
+            # Ambil remote operators yang ada di riwayat Transaksi & TransaksiMenu
+            remote_ops = set()
+            for op in TransaksiRepository.get_distinct_remote_operators():
+                if op:
+                    remote_ops.add(op)
+            for op in MenuRepository.get_distinct_remote_operators():
+                if op:
+                    remote_ops.add(op)
+
+            # Tambahkan juga cabang aktif dari database Branch
+            try:
+                from app.models.branch import Branch
+                branches = Branch.query.filter_by(is_active=True).all()
+                for b in branches:
+                    if b.nama_cabang:
+                        remote_ops.add(f"admin (Remote: {b.nama_cabang})")
+            except Exception:
+                pass
+
+            for op in sorted(remote_ops):
+                result.append({"id": f"operator:{op}", "nama": op})
+            return result
         else:
             user = UserRepository.get_by_id(kasir_id)
             users = [user] if user else []
-
-        return [{"id": u.id, "nama": u.nama_lengkap or u.username} for u in users if u]
+            return [{"id": str(u.id), "nama": u.nama_lengkap or u.username} for u in users if u]
 
     @staticmethod
     def get_pendapatan_kategori(tanggal, kategori, kasir_id=None, metode_pembayaran=None):
@@ -332,6 +355,7 @@ class ReportService:
                 "waktu": format_display(t.dibuat_pada),
                 "keterangan": t.keterangan,
                 "jenis": t.jenis or "",
+                "kasir_nama": t.operator or (t.user.nama_lengkap or t.user.username if t.user else "Kasir"),
                 "metode_pembayaran": t.metode_pembayaran or "Tunai"
             })
         return formatted

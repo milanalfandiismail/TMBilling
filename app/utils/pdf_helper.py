@@ -127,10 +127,16 @@ class PdfHelper:
             
         nama_kasir = "Semua Kasir"
         if kasir_id:
-            from app.repositories import UserRepository
-            u = UserRepository.get_by_id(kasir_id)
-            if u:
-                nama_kasir = u.nama_lengkap or u.username
+            kasir_str = str(kasir_id).strip()
+            if kasir_str.startswith("operator:"):
+                nama_kasir = kasir_str.split("operator:", 1)[1].strip()
+            elif "(Remote:" in kasir_str:
+                nama_kasir = kasir_str
+            elif kasir_str.isdigit():
+                from app.repositories import UserRepository
+                u = UserRepository.get_by_id(int(kasir_str))
+                if u:
+                    nama_kasir = f"{u.nama_lengkap or u.username} (Lokal)"
 
         meta_data = [
             [Paragraph(f"<b>Tanggal Laporan:</b> {tanggal}", styles["meta"]), Paragraph(f"<b>Kasir:</b> {nama_kasir}", styles["meta"])],
