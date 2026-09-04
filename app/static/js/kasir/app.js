@@ -94,8 +94,7 @@ const App = {
             'server_statistic', 'monitor', 'hardware_checker', 'uptime', 'maintenance', 'screenshot', 'blackout', 'remote_server',
             'settings', 'settings_general', 'settings_branch', 'settings_payment', 'settings_kiosk', 'settings_tv', 
             'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup', 
-            'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'whitelist_ip',
-            'mikrotik', 'analytics', 'plugins', 'plugin-spa', 'branch', 'branch_kasir'
+            'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'whitelist_ip',            'mikrotik', 'analytics', 'plugins', 'plugin-spa', 'branch', 'branch_inbound', 'branch_kasir'
         ];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');
@@ -154,6 +153,7 @@ const App = {
             plugins: 'plugins',
             'plugin-spa': 'plugins',
             branch: 'branch',
+            branch_inbound: 'branch',
             branch_kasir: 'branch'
         };
 
@@ -209,6 +209,7 @@ const App = {
             mikrotik: 'MikroTik Hotspot',
             fileexplorer: 'File Explorer',
             branch: 'Multi Cabang: Koneksi Cabang',
+            branch_inbound: 'Multi Cabang: List Koneksi Cabang',
             branch_kasir: 'Multi Cabang: Akun Kasir Cabang'
         };
 
@@ -257,6 +258,11 @@ const App = {
                     await BranchManager.loadMyBranchKey();
                     await BranchManager.loadBranches();
                     BranchManager.renderBranchesSettingsTable();
+                }
+                break;
+            case 'branch_inbound':
+                if (typeof BranchManager !== 'undefined') {
+                    await BranchManager.loadInboundBranches();
                 }
                 break;
             case 'branch_kasir':

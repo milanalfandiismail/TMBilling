@@ -1,0 +1,71 @@
+<!-- ==================== TAB: LIST KONEKSI CABANG (INBOUND) ==================== -->
+<div id="tab-branch_inbound" class="tab-content hidden space-y-6">
+    <!-- Card 1: Ringkasan & Status Keamanan Server Ini -->
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+        <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">
+            List Koneksi Cabang (Inbound Connections)
+        </h3>
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">
+                    Server Penerima & Keamanan Masuk
+                </p>
+                <p class="text-[9px] lg:text-base text-neutral-500 mt-1">
+                    Memantau secara transparan server cabang luar yang terhubung dan mengoperasikan server ini via Multi Cabang Control Panel.
+                </p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button type="button" onclick="BranchManager.loadInboundBranches()"
+                    class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-rotate text-xs"></i>
+                    <span>Segarkan Data</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Tabel Daftar Cabang Pengontrol -->
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">
+                    Cabang Luar Terhubung
+                </h3>
+                <p class="text-[9px] lg:text-base text-neutral-500 mt-1">
+                    Daftar server cabang yang pernah atau sedang mengirim permintaan remote control ke server ini.
+                </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Search Box -->
+                <input type="text" id="filter-inbound-search" oninput="BranchManager.filterInboundBySearch()"
+                    placeholder="Cari cabang / IP / operator..."
+                    class="w-48 sm:w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono placeholder:text-neutral-600">
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto w-full pt-2">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] lg:text-xs uppercase font-bold tracking-wider">
+                        <th class="py-3 px-3">No</th>
+                        <th class="py-3 px-3">Nama Cabang Pengontrol</th>
+                        <th class="py-3 px-3">Hardware (MAC) / IP</th>
+                        <th class="py-3 px-3">Operator Terakhir</th>
+                        <th class="py-3 px-3">Terakhir Mengakses</th>
+                        <th class="py-3 px-3 text-center">Total Akses</th>
+                        <th class="py-3 px-3">Status</th>
+                        <th class="py-3 px-3 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="inbound-branch-table-body" class="divide-y divide-[#171717]">
+                    <tr>
+                        <td colspan="8" class="text-center py-8 text-neutral-500 text-xs">
+                            <i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat daftar koneksi masuk...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

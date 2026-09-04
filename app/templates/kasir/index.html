@@ -44,6 +44,7 @@
             {% include 'kasir/tabs/fileexplorer.html' %}
             {% if session.get('kasir_role') == 'admin' %}
             {% include 'kasir/tabs/branch.html' %}
+            {% include 'kasir/tabs/branch_inbound.html' %}
             {% include 'kasir/tabs/branch_kasir.html' %}
             {% endif %}
             
