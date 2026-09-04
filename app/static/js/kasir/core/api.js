@@ -8,7 +8,7 @@ const API = {
             const headers = { ...options.headers };
 
             // Injeksi X-Branch-ID jika sedang memilih cabang remote
-            const activeBranchId = localStorage.getItem('active_branch_id');
+            const activeBranchId = sessionStorage.getItem('active_branch_id');
             if (activeBranchId && activeBranchId !== '0' && !headers['X-Branch-ID']) {
                 if (!url.includes('/api/v1/kasir/branch/') && !url.includes('/api/v1/kasir/auth/')) {
                     headers['X-Branch-ID'] = activeBranchId;

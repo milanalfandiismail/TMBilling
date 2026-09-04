@@ -869,7 +869,7 @@ const VNCClient = {
 
     resolveWebSocketUrl(token, defaultPort = 8081) {
         // Cek apakah sedang memilih cabang remote
-        const activeBranchId = localStorage.getItem('active_branch_id');
+        const activeBranchId = sessionStorage.getItem('active_branch_id');
         if (activeBranchId && activeBranchId !== '0' && typeof BranchManager !== 'undefined' && BranchManager.branches) {
             const branch = BranchManager.branches.find(b => String(b.id) === String(activeBranchId));
             if (branch && branch.url) {

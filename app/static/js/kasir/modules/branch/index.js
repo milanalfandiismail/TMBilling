@@ -5,8 +5,8 @@
 
 const BranchManager = {
     branches: [],
-    activeBranchId: localStorage.getItem('active_branch_id') || '0',
-    activeBranchName: localStorage.getItem('active_branch_name') || 'Lokal',
+    activeBranchId: sessionStorage.getItem('active_branch_id') || '0',
+    activeBranchName: sessionStorage.getItem('active_branch_name') || 'Lokal',
     localWarnetTitle: 'Cabang Lokal',
 
     async init() {
@@ -15,6 +15,12 @@ const BranchManager = {
         if (userRole !== 'admin') {
             return;
         }
+
+        // Bersihkan sisa localStorage lama agar default selalu cabang lokal saat browser ditutup
+        try {
+            localStorage.removeItem('active_branch_id');
+            localStorage.removeItem('active_branch_name');
+        } catch (e) {}
 
         // Cek apakah elemen dropdown ada di DOM (hanya untuk role admin)
         const dropdownContainer = document.getElementById('branch-selector-container');
@@ -64,8 +70,8 @@ const BranchManager = {
                 // Cabang tidak ditemukan lagi di list, reset ke lokal
                 this.activeBranchId = '0';
                 this.activeBranchName = this.localWarnetTitle;
-                localStorage.setItem('active_branch_id', '0');
-                localStorage.setItem('active_branch_name', this.localWarnetTitle);
+                sessionStorage.setItem('active_branch_id', '0');
+                sessionStorage.setItem('active_branch_name', this.localWarnetTitle);
             }
         }
 
@@ -195,7 +201,7 @@ const BranchManager = {
         }
 
         this.activeBranchId = String(branchId);
-        localStorage.setItem('active_branch_id', this.activeBranchId);
+        sessionStorage.setItem('active_branch_id', this.activeBranchId);
 
         let branchName = this.localWarnetTitle;
         if (this.activeBranchId !== '0') {
@@ -203,7 +209,7 @@ const BranchManager = {
             if (b) branchName = b.nama;
         }
         this.activeBranchName = branchName;
-        localStorage.setItem('active_branch_name', branchName);
+        sessionStorage.setItem('active_branch_name', branchName);
 
         this.renderNavbarDropdown();
         this.removeActiveBranchBanner();
@@ -578,7 +584,7 @@ const BranchManager = {
                     const updated = this.branches.find(b => String(b.id) === String(branchId));
                     if (updated) {
                         this.activeBranchName = updated.nama;
-                        localStorage.setItem('active_branch_name', updated.nama);
+                        sessionStorage.setItem('active_branch_name', updated.nama);
                     }
                 }
 
