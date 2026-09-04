@@ -35,8 +35,11 @@ class BranchProxyService:
         if not path.startswith("/api/v1/kasir/"):
             return None
 
-        # Jangan intercept route manajemen cabang itu sendiri atau auth login
-        if path.startswith("/api/v1/kasir/branch/") or path.startswith("/api/v1/kasir/auth/"):
+        # Jangan intercept route manajemen cabang itu sendiri, auth login, file explorer lokal, atau tutorial lokal
+        if (path.startswith("/api/v1/kasir/branch/") or 
+            path.startswith("/api/v1/kasir/auth/") or 
+            path.startswith("/api/v1/kasir/fileexplorer/") or
+            path.startswith("/api/v1/kasir/tutorials/")):
             return None
 
         branch_id_raw = request_obj.headers.get("X-Branch-ID")

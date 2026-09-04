@@ -350,7 +350,7 @@
 
         {% if session.get('kasir_role') == 'admin' %}
         <!-- File Explorer -->
-        <button onclick="App.switchTab('fileexplorer')" data-tab="fileexplorer"
+        <button onclick="App.switchTab('fileexplorer')" data-tab="fileexplorer" id="sidebar-fileexplorer-btn"
             class="tab-btn w-full flex items-center gap-3 px-3 py-2 rounded text-[13px] font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
@@ -396,7 +396,7 @@
         {% endif %}
 
         <!-- 10. Dokumentasi & Tutorial -->
-        <a href="/kasir/documentation"
+        <a href="/kasir/documentation" id="sidebar-documentation-btn"
             class="w-full flex items-center gap-3 px-3 py-2 rounded text-[13px] font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"

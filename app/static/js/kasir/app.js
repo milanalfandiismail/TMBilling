@@ -94,7 +94,8 @@ const App = {
             'server_statistic', 'monitor', 'hardware_checker', 'uptime', 'maintenance', 'screenshot', 'blackout', 'remote_server',
             'settings', 'settings_general', 'settings_branch', 'settings_payment', 'settings_kiosk', 'settings_tv', 
             'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup', 
-            'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'whitelist_ip',            'mikrotik', 'analytics', 'plugins', 'plugin-spa', 'branch', 'branch_inbound', 'branch_kasir'
+            'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'whitelist_ip',
+            'mikrotik', 'analytics', 'plugins', 'plugin-spa', 'fileexplorer', 'branch', 'branch_inbound', 'branch_kasir'
         ];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');
@@ -103,11 +104,17 @@ const App = {
             subTab = null;
         }
 
-        // Jika sedang mengontrol cabang remote, proteksi tab konfigurasi multi-cabang
+        // Jika sedang mengontrol cabang remote, proteksi tab konfigurasi multi-cabang, file explorer & tutorial
         if (typeof BranchManager !== 'undefined' && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0') {
-            if (['branch', 'branch_inbound', 'branch_kasir'].includes(tab)) {
+            if (['branch', 'branch_inbound', 'branch_kasir', 'fileexplorer', 'tutorials'].includes(tab)) {
                 if (window.Toast) {
-                    window.Toast.show('Pengaturan Multi Cabang hanya dapat diakses pada Cabang Lokal', 'info');
+                    let msg = 'Pengaturan Multi Cabang hanya dapat diakses pada Cabang Lokal';
+                    if (tab === 'fileexplorer') {
+                        msg = 'File Explorer hanya dapat diakses pada Cabang Lokal';
+                    } else if (tab === 'tutorials') {
+                        msg = 'Dokumentasi & Tutorial hanya dapat diakses pada Cabang Lokal';
+                    }
+                    window.Toast.show(msg, 'info');
                 }
                 tab = 'dash';
                 mainTab = 'dash';

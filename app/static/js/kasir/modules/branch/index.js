@@ -177,6 +177,8 @@ const BranchManager = {
         const badgeContainer = document.getElementById('sidebar-brand-badge-container');
         const badgeText = document.getElementById('sidebar-brand-badge-text');
         const branchSection = document.getElementById('sidebar-branch-section');
+        const fileExplorerBtn = document.getElementById('sidebar-fileexplorer-btn');
+        const documentationBtn = document.getElementById('sidebar-documentation-btn');
 
         const defaultTitle = (titleEl && titleEl.getAttribute('data-default-title')) || this.localWarnetTitle || 'TMBilling';
         const defaultSubtitle = (subTitleEl && subTitleEl.getAttribute('data-default-subtitle')) || 'Kasir Panel';
@@ -200,6 +202,14 @@ const BranchManager = {
             }
             if (branchSection) {
                 branchSection.classList.remove('hidden');
+            }
+            // Tampilkan kembali File Explorer saat di cabang lokal
+            if (fileExplorerBtn) {
+                fileExplorerBtn.classList.remove('hidden');
+            }
+            // Tampilkan kembali Dokumentasi & Tutorial saat di cabang lokal
+            if (documentationBtn) {
+                documentationBtn.classList.remove('hidden');
             }
             document.title = `${defaultTitle} - Kasir`;
         } else {
@@ -226,6 +236,14 @@ const BranchManager = {
             // Sembunyikan menu sidebar Multi Cabang saat sedang di cabang remote!
             if (branchSection) {
                 branchSection.classList.add('hidden');
+            }
+            // Sembunyikan File Explorer saat di cabang remote (filesystem lokal saja)
+            if (fileExplorerBtn) {
+                fileExplorerBtn.classList.add('hidden');
+            }
+            // Sembunyikan Dokumentasi & Tutorial saat di cabang remote
+            if (documentationBtn) {
+                documentationBtn.classList.add('hidden');
             }
             document.title = `${branchName} - Kasir Panel`;
         }
@@ -304,7 +322,7 @@ const BranchManager = {
 
         // Jika beralih ke cabang remote dan sedang membuka tab manajemen cabang, otomatis alihkan ke Dashboard
         if (this.activeBranchId !== '0') {
-            if (window.App && ['branch', 'branch_inbound', 'branch_kasir'].includes(App.currentTab)) {
+            if (window.App && ['branch', 'branch_inbound', 'branch_kasir', 'fileexplorer', 'tutorials'].includes(App.currentTab)) {
                 App.switchTab('dash');
             }
         }
