@@ -4,6 +4,21 @@ const LaporanMenu = {
     currentPage: 1,
     itemsPerPage: 12,
     allData: null,
+    currentMetodePembayaran: '',
+
+    resetFilters() {
+        this.currentDate = null;
+        this.currentPage = 1;
+        this.currentKasirId = '';
+        this.currentMetodePembayaran = '';
+        this.allData = null;
+        const tglSelect = document.getElementById('laporan-menu-tanggal-select');
+        if (tglSelect) tglSelect.innerHTML = '<option value="">-- Pilih Tanggal --</option>';
+        const kasirSelect = document.getElementById('laporan-menu-kasir-select');
+        if (kasirSelect) kasirSelect.innerHTML = '<option value="">Semua Kasir</option>';
+        const metodeSelect = document.getElementById('laporan-menu-metode-pembayaran-select');
+        if (metodeSelect) metodeSelect.innerHTML = '<option value="">Semua Metode</option>';
+    },
 
     async load() {
         await this.loadKasirList();

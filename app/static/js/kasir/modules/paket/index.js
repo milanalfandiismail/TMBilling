@@ -5,29 +5,40 @@ const Paket = {
     searchQuery: '',
     currentGrupId: '',
 
+    resetFilters() {
+        this.currentPage = 1;
+        this.searchQuery = '';
+        this.currentGrupId = '';
+        const searchInput = document.getElementById('paket-search-input');
+        if (searchInput) searchInput.value = '';
+        const filterSelect = document.getElementById('paket-grup-filter-select');
+        if (filterSelect) filterSelect.innerHTML = '<option value="">Semua Grup</option>';
+    },
+
     async load() {
         const area = document.getElementById('paket-table');
         if (area) area.innerHTML = '<div class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
         try {
+            const [grupResponse, data] = await Promise.all([
+                API.grup.list(),
+                API.paket.list({
+                    q: this.searchQuery || '',
+                    grup_id: this.currentGrupId || ''
+                })
+            ]);
+
+            const groups = grupResponse.grup || grupResponse.grup_list || [];
             const filterSelect = document.getElementById('paket-grup-filter-select');
-            if (filterSelect && filterSelect.options.length <= 1) {
-                const grupResponse = await API.grup.list();
-                const groups = grupResponse.grup || [];
-                
-                const addSelect = document.getElementById('inp-paket-grup');
-                if (addSelect) {
-                    addSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
-                }
-                
-                filterSelect.innerHTML = '<option value="">Semua Grup</option>' + groups.map(g => `<option value="${g.id}">${g.nama.toUpperCase()}</option>`).join('');
+            if (filterSelect) {
+                filterSelect.innerHTML = '<option value="">Semua Grup</option>' + groups.map(g => `<option value="${g.id}" ${String(this.currentGrupId) === String(g.id) ? 'selected' : ''}>${g.nama.toUpperCase()}</option>`).join('');
             }
 
-            const data = await API.paket.list({
-                q: this.searchQuery || '',
-                grup_id: this.currentGrupId || ''
-            });
-            
+            const addSelect = document.getElementById('inp-paket-grup');
+            if (addSelect) {
+                addSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+            }
+
             const list = data.paket || [];
             this.render(list, data);
         } catch (err) {

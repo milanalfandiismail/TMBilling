@@ -5,33 +5,45 @@ const PC = {
     searchQuery: '',
     currentGrupId: '',
 
+    resetFilters() {
+        this.currentPage = 1;
+        this.searchQuery = '';
+        this.currentGrupId = '';
+        const searchInput = document.getElementById('pc-search-input');
+        if (searchInput) searchInput.value = '';
+        const filterSelect = document.getElementById('pc-grup-filter-select');
+        if (filterSelect) filterSelect.innerHTML = '<option value="">Semua Grup</option>';
+    },
+
     async load() {
         const area = document.getElementById('pc-table');
         if (!area) return;
         area.innerHTML = '<div class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
         try {
+            const [grupResponse, data] = await Promise.all([
+                API.grup.list(),
+                API.pc.list({
+                    q: this.searchQuery || '',
+                    grup_id: this.currentGrupId || ''
+                })
+            ]);
+
+            const groups = grupResponse.grup || grupResponse.grup_list || [];
             const filterSelect = document.getElementById('pc-grup-filter-select');
-            if (filterSelect && filterSelect.options.length <= 1) {
-                const grupResponse = await API.grup.list();
-                const groups = grupResponse.grup || [];
-                
-                const addSelect = document.getElementById('inp-pc-grup');
-                if (addSelect) {
-                    addSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
-                }
-                const batchSelect = document.getElementById('inp-batch-grup');
-                if (batchSelect) {
-                    batchSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
-                }
-                
-                filterSelect.innerHTML = '<option value="">Semua Grup</option>' + groups.map(g => `<option value="${g.id}">${g.nama.toUpperCase()}</option>`).join('');
+            if (filterSelect) {
+                filterSelect.innerHTML = '<option value="">Semua Grup</option>' + groups.map(g => `<option value="${g.id}" ${String(this.currentGrupId) === String(g.id) ? 'selected' : ''}>${g.nama.toUpperCase()}</option>`).join('');
             }
 
-            const data = await API.pc.list({
-                q: this.searchQuery || '',
-                grup_id: this.currentGrupId || ''
-            });
+            const addSelect = document.getElementById('inp-pc-grup');
+            if (addSelect) {
+                addSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+            }
+            const batchSelect = document.getElementById('inp-batch-grup');
+            if (batchSelect) {
+                batchSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+            }
+
             this.render(data.grouped || {}, data);
         } catch (err) {
             Toast.error('Gagal memuat daftar PC');

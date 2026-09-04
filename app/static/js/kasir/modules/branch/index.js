@@ -66,12 +66,17 @@ const BranchManager = {
             if (activeBranch) {
                 displayName = activeBranch.nama;
                 isRemote = true;
-            } else {
-                // Cabang tidak ditemukan lagi di list, reset ke lokal
+            } else if (this.branches.length > 0) {
+                // Hanya reset ke lokal jika daftar cabang sudah selesai dimuat dan ID benar-benar tidak ditemukan
                 this.activeBranchId = '0';
                 this.activeBranchName = this.localWarnetTitle;
                 sessionStorage.setItem('active_branch_id', '0');
                 sessionStorage.setItem('active_branch_name', this.localWarnetTitle);
+            } else {
+                // Cabang masih dalam proses pengambilan data dari API, pertahankan nama dari cache
+                const cachedName = sessionStorage.getItem('active_branch_name');
+                if (cachedName) displayName = cachedName;
+                isRemote = true;
             }
         }
 
@@ -219,24 +224,35 @@ const BranchManager = {
         }
 
         // =====================================================================
-        // REFRESH SELURUH DATA SISTEM KASIR SECARA INSTAN (0s DELAY)
+        // REFRESH & RESET SELURUH DATA SISTEM KASIR SECARA MENYELURUH (0s DELAY)
         // =====================================================================
         try {
-            // 1. Refresh Grup Sistem Global (opsi filter & dropdown di seluruh modal sinkron)
+            // 1. Reset filter dan state modul-modul agar bersih dan tidak menyisakan data cabang lama
+            if (typeof PC !== 'undefined' && typeof PC.resetFilters === 'function') PC.resetFilters();
+            if (typeof Paket !== 'undefined' && typeof Paket.resetFilters === 'function') Paket.resetFilters();
+            if (typeof Member !== 'undefined' && typeof Member.resetFilters === 'function') Member.resetFilters();
+            if (typeof Menu !== 'undefined' && typeof Menu.resetState === 'function') Menu.resetState();
+            if (typeof Laporan !== 'undefined' && typeof Laporan.resetFilters === 'function') Laporan.resetFilters();
+            if (typeof LaporanMenu !== 'undefined' && typeof LaporanMenu.resetFilters === 'function') LaporanMenu.resetFilters();
+            if (typeof Struk !== 'undefined' && typeof Struk.resetState === 'function') Struk.resetState();
+
+            // 2. Refresh Grup Sistem Global (opsi filter & dropdown di seluruh modal sinkron)
             if (typeof Grup !== 'undefined' && typeof Grup.load === 'function') {
                 await Grup.load();
             }
 
-            // 2. Selalu muat data Dashboard (PC, kartu statistik omzet/sesi, dan grup)
-            if (typeof Dashboard !== 'undefined' && typeof Dashboard.load === 'function') {
-                await Dashboard.load();
+            // 3. Selalu muat data Dashboard (PC, kartu statistik omzet/sesi, dan grup) dengan grup bersih
+            if (typeof Dashboard !== 'undefined') {
+                Dashboard.activeGrup = 'semua';
+                if (typeof Dashboard.load === 'function') {
+                    await Dashboard.load();
+                }
             }
 
-            // 3. Muat ulang tab yang sedang aktif saat ini di layar pengguna
+            // 4. Muat ulang tab yang sedang aktif saat ini di layar pengguna
             if (typeof App !== 'undefined' && App.currentTab) {
                 if (App.currentTab === 'settings' || App.currentTab.startsWith('settings_')) {
-                    // Jika sedang di tab pengaturan, jangan reload jika sedang di subtab cabang
-                    if (typeof Settings !== 'undefined' && Settings.currentSubTab && Settings.currentSubTab !== 'branch') {
+                    if (typeof Settings !== 'undefined') {
                         await Settings.load(true);
                     }
                 } else if (App.currentTab !== 'dash' && typeof App.loadTab === 'function') {

@@ -4,6 +4,13 @@ const Menu = {
     items: [],
     cart: [], // Array of { menu: MenuItem, jumlah: number }
 
+    resetState() {
+        this.cart = [];
+        this.renderCart();
+        const searchInput = document.getElementById("menu-search-input");
+        if (searchInput) searchInput.value = "";
+    },
+
     async load() {
         try {
             await this.loadCatalog();

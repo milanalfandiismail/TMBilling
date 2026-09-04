@@ -2,6 +2,20 @@ const Laporan = {
     currentDate: null,
     currentPage: 1,
     currentKasirId: '',
+    currentMetodePembayaran: '',
+
+    resetFilters() {
+        this.currentDate = null;
+        this.currentPage = 1;
+        this.currentKasirId = '';
+        this.currentMetodePembayaran = '';
+        const tglSelect = document.getElementById('laporan-tanggal-select');
+        if (tglSelect) tglSelect.innerHTML = '<option value="">-- Pilih Tanggal --</option>';
+        const kasirSelect = document.getElementById('laporan-kasir-select');
+        if (kasirSelect) kasirSelect.innerHTML = '<option value="">Semua Kasir</option>';
+        const metodeSelect = document.getElementById('laporan-metode-pembayaran-select');
+        if (metodeSelect) metodeSelect.innerHTML = '<option value="">Semua Metode</option>';
+    },
 
     async load() {
         await this.loadKasirList();
