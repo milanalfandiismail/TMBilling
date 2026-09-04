@@ -10,6 +10,9 @@ const BranchManager = {
     localWarnetTitle: 'Cabang Lokal',
     inboundBranches: [],
     filterInboundQuery: '',
+    inboundSubTab: 'all',
+    pendingInboundId: null,
+    pendingInboundName: '',
 
     async init() {
         // 100% Zero UI/UX & Security: Jika user login sebagai kasir, hentikan total modul ini
@@ -363,26 +366,56 @@ const BranchManager = {
         }
     },
 
-    async regenerateMyBranchKey() {
-        if (this._isRegenerating) return;
-        this._isRegenerating = true;
-        setTimeout(() => { this._isRegenerating = false; }, 800);
+    regenerateMyBranchKey() {
+        this.openRegenKeyModal();
+    },
 
-        if (!confirm("Peringatan: Membuat ulang API Key akan memutuskan koneksi dari server cabang lain yang menyimpan kunci lama ini. Lanjutkan?")) {
-            return;
+    openRegenKeyModal() {
+        const modal = document.getElementById('modal-regen-branch-key');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
+    },
 
+    closeRegenKeyModal() {
+        const modal = document.getElementById('modal-regen-branch-key');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    },
+
+    async executeRegenerateKey() {
+        const btn = document.getElementById('btn-confirm-regen-key');
+        const origText = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> Memproses...';
+        }
         try {
             const res = await API.branch.regenerateKey();
             if (res && res.success && res.data) {
                 const keyInput = document.getElementById('my-branch-api-key-input');
                 if (keyInput) keyInput.value = res.data.api_key;
                 if (window.Toast) {
-                    window.Toast.show("API Key berhasil di-regenerate!", "success");
+                    window.Toast.show("Branch API Key berhasil dibuat ulang!", "success");
+                }
+                this.closeRegenKeyModal();
+            } else {
+                if (window.Toast) {
+                    window.Toast.show(res.error || "Gagal membuat ulang kunci", "error");
                 }
             }
         } catch (err) {
-            alert("Gagal regenerate key: " + (err.message || err));
+            if (window.Toast) {
+                window.Toast.show("Gagal regenerate key: " + (err.message || err), "error");
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
         }
     },
 
@@ -609,10 +642,14 @@ const BranchManager = {
                 this.renderNavbarDropdown();
                 this.renderBranchesSettingsTable();
             } else {
-                alert(res.error || (isEdit ? "Gagal memperbarui cabang" : "Gagal menambahkan cabang"));
+                if (window.Toast) {
+                    window.Toast.show(res.error || (isEdit ? "Gagal memperbarui cabang" : "Gagal menambahkan cabang"), "error");
+                }
             }
         } catch (err) {
-            alert("Error: " + (err.message || err));
+            if (window.Toast) {
+                window.Toast.show("Error: " + (err.message || err), "error");
+            }
         } finally {
             if (btnSubmit) {
                 btnSubmit.disabled = false;
@@ -659,10 +696,35 @@ const BranchManager = {
         }
     },
 
-    async deleteBranch(branchId) {
+    openDeleteBranchModal(branchId) {
         const branch = this.branches.find(b => b.id === branchId);
-        if (!confirm(`Hapus koneksi ke cabang '${branch ? branch.nama : branchId}'?`)) {
-            return;
+        this.pendingDeleteBranchId = branchId;
+        const nameEl = document.getElementById('modal-delete-branch-name');
+        if (nameEl) nameEl.textContent = branch ? branch.nama : `Cabang #${branchId}`;
+        const modal = document.getElementById('modal-delete-branch');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+    },
+
+    closeDeleteBranchModal() {
+        this.pendingDeleteBranchId = null;
+        const modal = document.getElementById('modal-delete-branch');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    },
+
+    async executeDeleteBranch() {
+        if (!this.pendingDeleteBranchId) return;
+        const branchId = this.pendingDeleteBranchId;
+        const btn = document.getElementById('btn-confirm-delete-branch');
+        const origText = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> Menghapus...';
         }
 
         try {
@@ -674,15 +736,29 @@ const BranchManager = {
                 if (String(this.activeBranchId) === String(branchId)) {
                     this.switchBranch('0');
                 }
+                this.closeDeleteBranchModal();
                 await this.loadBranches();
                 this.renderNavbarDropdown();
                 this.renderBranchesSettingsTable();
             } else {
-                alert(res.error || "Gagal menghapus cabang");
+                if (window.Toast) {
+                    window.Toast.show(res.error || "Gagal menghapus cabang", "error");
+                }
             }
         } catch (err) {
-            alert("Error: " + (err.message || err));
+            if (window.Toast) {
+                window.Toast.show("Error: " + (err.message || err), "error");
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
         }
+    },
+
+    deleteBranch(branchId) {
+        this.openDeleteBranchModal(branchId);
     },
 
     // ==================== MANAJEMEN AKUN KASIR CABANG (REMOTE) ====================
@@ -999,12 +1075,44 @@ const BranchManager = {
     // ==========================================
     // 🔗 INBOUND BRANCHES (KONEKSI MASUK)
     // ==========================================
+    switchInboundSubTab(subTab) {
+        this.inboundSubTab = subTab;
+        const tabs = ['all', 'active', 'blocked'];
+        tabs.forEach(t => {
+            const btn = document.getElementById(`btn-subtab-inbound-${t}`);
+            const badge = document.getElementById(`badge-count-inbound-${t}`);
+            if (!btn) return;
+            if (t === subTab) {
+                btn.className = 'px-4 py-2 bg-neutral-100 text-black text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2';
+                if (badge) badge.className = 'px-1.5 py-0.5 text-[10px] rounded-full bg-black/20 text-black font-mono font-bold';
+            } else {
+                btn.className = 'px-4 py-2 bg-transparent text-neutral-400 hover:text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2';
+                if (badge) badge.className = 'px-1.5 py-0.5 text-[10px] rounded-full bg-neutral-800 text-neutral-300 font-mono font-bold';
+            }
+        });
+        this.renderInboundTable();
+    },
+
+    updateInboundBadgeCounts() {
+        const all = this.inboundBranches.length;
+        const active = this.inboundBranches.filter(b => b.status === 'aktif').length;
+        const blocked = this.inboundBranches.filter(b => b.status === 'diblokir').length;
+
+        const elAll = document.getElementById('badge-count-inbound-all');
+        const elActive = document.getElementById('badge-count-inbound-active');
+        const elBlocked = document.getElementById('badge-count-inbound-blocked');
+
+        if (elAll) elAll.textContent = all;
+        if (elActive) elActive.textContent = active;
+        if (elBlocked) elBlocked.textContent = blocked;
+    },
+
     async loadInboundBranches() {
         const tbody = document.getElementById('inbound-branch-table-body');
         if (tbody) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center py-8 text-neutral-500 text-xs">
+                    <td colspan="8" class="text-center py-8 text-neutral-500 text-xs lg:text-base font-mono">
                         <i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat daftar koneksi masuk...
                     </td>
                 </tr>
@@ -1023,6 +1131,7 @@ const BranchManager = {
             this.inboundBranches = [];
         }
 
+        this.updateInboundBadgeCounts();
         this.renderInboundTable();
     },
 
@@ -1037,6 +1146,15 @@ const BranchManager = {
         if (!tbody) return;
 
         let filtered = this.inboundBranches || [];
+
+        // Filter berdasarkan subTab
+        if (this.inboundSubTab === 'active') {
+            filtered = filtered.filter(b => b.status === 'aktif');
+        } else if (this.inboundSubTab === 'blocked') {
+            filtered = filtered.filter(b => b.status === 'diblokir');
+        }
+
+        // Filter pencarian
         if (this.filterInboundQuery) {
             const q = this.filterInboundQuery;
             filtered = filtered.filter(b => 
@@ -1050,7 +1168,7 @@ const BranchManager = {
         if (filtered.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center py-8 text-neutral-500 text-xs font-mono">
+                    <td colspan="8" class="text-center py-8 text-neutral-500 text-xs lg:text-base font-mono">
                         ${this.filterInboundQuery ? 'Tidak ada cabang yang cocok dengan pencarian.' : 'Belum ada cabang luar yang terhubung ke server ini.'}
                     </td>
                 </tr>
@@ -1061,11 +1179,11 @@ const BranchManager = {
         tbody.innerHTML = filtered.map((b, idx) => {
             const isBlocked = b.status === 'diblokir';
             const statusBadge = isBlocked
-                ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] lg:text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20">
                      <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
                      Diblokir
                    </span>`
-                : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] lg:text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                      Terhubung
                    </span>`;
@@ -1083,47 +1201,51 @@ const BranchManager = {
                 }
             }
 
+            const safeName = (b.nama || '').replace(/'/g, "\\'");
+
             const actionBlockBtn = isBlocked
-                ? `<button type="button" onclick="BranchManager.unblockInboundBranch(${b.id}, '${(b.nama || '').replace(/'/g, "\\'")}')"
-                     class="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded text-xs font-bold transition-colors inline-flex items-center gap-1">
-                     <i class="fa-solid fa-lock-open text-[10px]"></i>
+                ? `<button type="button" onclick="BranchManager.openUnblockInboundModal(${b.id}, '${safeName}')"
+                     class="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded text-xs lg:text-sm font-bold transition-colors inline-flex items-center gap-1.5"
+                     title="Buka Blokir">
+                     <i class="fa-solid fa-lock-open text-[11px]"></i>
                      <span>Buka Blokir</span>
                    </button>`
-                : `<button type="button" onclick="BranchManager.blockInboundBranch(${b.id}, '${(b.nama || '').replace(/'/g, "\\'")}')"
-                     class="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded text-xs font-bold transition-colors inline-flex items-center gap-1">
-                     <i class="fa-solid fa-ban text-[10px]"></i>
+                : `<button type="button" onclick="BranchManager.openBlockInboundModal(${b.id}, '${safeName}')"
+                     class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded text-xs lg:text-sm font-bold transition-colors inline-flex items-center gap-1.5"
+                     title="Blokir Akses">
+                     <i class="fa-solid fa-ban text-[11px]"></i>
                      <span>Blokir</span>
                    </button>`;
 
             const actionDeleteBtn = `
-                <button type="button" onclick="BranchManager.deleteInboundBranch(${b.id}, '${(b.nama || '').replace(/'/g, "\\'")}')"
-                  class="px-2.5 py-1 bg-[#171717] hover:bg-red-500/20 border border-[#262626] hover:border-red-500/30 text-neutral-400 hover:text-red-400 rounded text-xs font-bold transition-colors inline-flex items-center gap-1"
+                <button type="button" onclick="BranchManager.openDeleteInboundModal(${b.id}, '${safeName}')"
+                  class="px-3 py-1.5 bg-[#171717] hover:bg-red-500/20 border border-[#262626] hover:border-red-500/30 text-neutral-400 hover:text-red-400 rounded text-xs lg:text-sm font-bold transition-colors inline-flex items-center gap-1"
                   title="Hapus riwayat">
-                  <i class="fa-solid fa-trash text-[10px]"></i>
+                  <i class="fa-solid fa-trash text-[11px]"></i>
                 </button>
             `;
 
             return `
-                <tr class="hover:bg-[#121212]/50 transition-colors">
-                    <td class="py-3 px-3 text-xs text-neutral-500 font-mono">${idx + 1}</td>
+                <tr class="border-b border-[#1c1c1c] hover:bg-white/[0.02] transition-colors">
+                    <td class="py-3 px-3 text-xs lg:text-base text-neutral-500 font-mono">${idx + 1}</td>
                     <td class="py-3 px-3">
-                        <div class="text-xs font-bold text-neutral-200">${b.nama || '-'}</div>
-                        ${b.url ? `<div class="text-[10px] text-neutral-500 font-mono">${b.url}</div>` : ''}
+                        <div class="text-xs lg:text-base font-bold text-neutral-200">${b.nama || '-'}</div>
+                        ${b.url ? `<div class="text-[10px] lg:text-xs text-neutral-500 font-mono mt-0.5">${b.url}</div>` : ''}
                     </td>
                     <td class="py-3 px-3">
-                        <div class="font-mono text-[11px] text-neutral-300">${b.mac_address || '-'}</div>
-                        <div class="text-[10px] text-neutral-500 font-mono">${b.ip_address || '-'}</div>
+                        <div class="font-mono text-xs lg:text-sm text-neutral-300">${b.mac_address || '-'}</div>
+                        <div class="text-[10px] lg:text-xs text-neutral-500 font-mono mt-0.5">${b.ip_address || '-'}</div>
                     </td>
-                    <td class="py-3 px-3 text-xs text-neutral-300 font-mono">${b.operator_terakhir || '-'}</td>
-                    <td class="py-3 px-3 text-xs text-neutral-400 font-mono">${lastActiveFormatted}</td>
+                    <td class="py-3 px-3 text-xs lg:text-sm text-neutral-300 font-mono">${b.operator_terakhir || '-'}</td>
+                    <td class="py-3 px-3 text-xs lg:text-sm text-neutral-400 font-mono">${lastActiveFormatted}</td>
                     <td class="py-3 px-3 text-center">
-                        <span class="inline-block px-2 py-0.5 rounded bg-neutral-900 border border-[#262626] font-mono text-[11px] text-neutral-300">
+                        <span class="inline-block px-2.5 py-1 rounded bg-neutral-900 border border-[#262626] font-mono text-xs lg:text-sm text-neutral-300">
                             ${b.total_request || 1}
                         </span>
                     </td>
-                    <td class="py-3 px-3">${statusBadge}</td>
+                    <td class="py-3 px-3 text-center">${statusBadge}</td>
                     <td class="py-3 px-3 text-right">
-                        <div class="flex items-center justify-end gap-1.5">
+                        <div class="flex items-center justify-end gap-2">
                             ${actionBlockBtn}
                             ${actionDeleteBtn}
                         </div>
@@ -1133,9 +1255,39 @@ const BranchManager = {
         }).join('');
     },
 
-    async blockInboundBranch(id, nama) {
-        const confirmed = confirm(`Apakah Anda yakin ingin memblokir akses dari cabang '${nama}'?\n\nServer tersebut tidak akan dapat mengontrol atau mengambil data dari server ini lagi.`);
-        if (!confirmed) return;
+    // Modal Handlers: Blokir
+    openBlockInboundModal(id, nama) {
+        this.pendingInboundId = id;
+        this.pendingInboundName = nama;
+        const nameEl = document.getElementById('modal-block-inbound-name');
+        if (nameEl) nameEl.textContent = nama;
+        const modal = document.getElementById('modal-block-inbound');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+    },
+
+    closeBlockInboundModal() {
+        this.pendingInboundId = null;
+        this.pendingInboundName = '';
+        const modal = document.getElementById('modal-block-inbound');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    },
+
+    async executeBlockInbound() {
+        if (!this.pendingInboundId) return;
+        const id = this.pendingInboundId;
+        const nama = this.pendingInboundName;
+        const btn = document.getElementById('btn-confirm-block-inbound');
+        const origText = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> Memproses...';
+        }
 
         try {
             const res = await API.branch.inboundBlock(id);
@@ -1143,6 +1295,7 @@ const BranchManager = {
                 if (window.Toast) {
                     window.Toast.show(res.message || `Cabang '${nama}' berhasil diblokir`, 'success');
                 }
+                this.closeBlockInboundModal();
                 await this.loadInboundBranches();
             } else {
                 if (window.Toast) {
@@ -1154,12 +1307,47 @@ const BranchManager = {
             if (window.Toast) {
                 window.Toast.show('Error: ' + (err.message || err), 'error');
             }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
         }
     },
 
-    async unblockInboundBranch(id, nama) {
-        const confirmed = confirm(`Buka blokir akses untuk cabang '${nama}'?`);
-        if (!confirmed) return;
+    // Modal Handlers: Buka Blokir
+    openUnblockInboundModal(id, nama) {
+        this.pendingInboundId = id;
+        this.pendingInboundName = nama;
+        const nameEl = document.getElementById('modal-unblock-inbound-name');
+        if (nameEl) nameEl.textContent = nama;
+        const modal = document.getElementById('modal-unblock-inbound');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+    },
+
+    closeUnblockInboundModal() {
+        this.pendingInboundId = null;
+        this.pendingInboundName = '';
+        const modal = document.getElementById('modal-unblock-inbound');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    },
+
+    async executeUnblockInbound() {
+        if (!this.pendingInboundId) return;
+        const id = this.pendingInboundId;
+        const nama = this.pendingInboundName;
+        const btn = document.getElementById('btn-confirm-unblock-inbound');
+        const origText = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> Memproses...';
+        }
 
         try {
             const res = await API.branch.inboundUnblock(id);
@@ -1167,6 +1355,7 @@ const BranchManager = {
                 if (window.Toast) {
                     window.Toast.show(res.message || `Blokir cabang '${nama}' berhasil dibuka`, 'success');
                 }
+                this.closeUnblockInboundModal();
                 await this.loadInboundBranches();
             } else {
                 if (window.Toast) {
@@ -1178,12 +1367,47 @@ const BranchManager = {
             if (window.Toast) {
                 window.Toast.show('Error: ' + (err.message || err), 'error');
             }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
         }
     },
 
-    async deleteInboundBranch(id, nama) {
-        const confirmed = confirm(`Hapus riwayat koneksi masuk dari cabang '${nama}'?`);
-        if (!confirmed) return;
+    // Modal Handlers: Hapus
+    openDeleteInboundModal(id, nama) {
+        this.pendingInboundId = id;
+        this.pendingInboundName = nama;
+        const nameEl = document.getElementById('modal-delete-inbound-name');
+        if (nameEl) nameEl.textContent = nama;
+        const modal = document.getElementById('modal-delete-inbound');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+    },
+
+    closeDeleteInboundModal() {
+        this.pendingInboundId = null;
+        this.pendingInboundName = '';
+        const modal = document.getElementById('modal-delete-inbound');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    },
+
+    async executeDeleteInbound() {
+        if (!this.pendingInboundId) return;
+        const id = this.pendingInboundId;
+        const nama = this.pendingInboundName;
+        const btn = document.getElementById('btn-confirm-delete-inbound');
+        const origText = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> Memproses...';
+        }
 
         try {
             const res = await API.branch.inboundDelete(id);
@@ -1191,6 +1415,7 @@ const BranchManager = {
                 if (window.Toast) {
                     window.Toast.show(res.message || `Riwayat cabang '${nama}' berhasil dihapus`, 'success');
                 }
+                this.closeDeleteInboundModal();
                 await this.loadInboundBranches();
             } else {
                 if (window.Toast) {
@@ -1201,6 +1426,11 @@ const BranchManager = {
             console.error('[BranchManager] Error deleting inbound branch:', err);
             if (window.Toast) {
                 window.Toast.show('Error: ' + (err.message || err), 'error');
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origText;
             }
         }
     }

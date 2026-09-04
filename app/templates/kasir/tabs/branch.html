@@ -124,4 +124,73 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal Konfirmasi Regenerate Branch API Key -->
+    <div id="modal-regen-branch-key" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl overflow-hidden p-6 space-y-4 animate-modal-in">
+            <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
+                <h3 class="text-xs lg:text-[22px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Regenerate API Key</span>
+                </h3>
+                <button type="button" onclick="BranchManager.closeRegenKeyModal()" class="text-neutral-500 hover:text-neutral-200 text-xl leading-none">&times;</button>
+            </div>
+            <div class="space-y-4 text-xs lg:text-base text-neutral-300">
+                <p>Apakah Anda yakin ingin membuat ulang <strong>Branch API Key Server Ini</strong>?</p>
+                <div class="p-4 bg-amber-950/20 border border-amber-800/30 rounded space-y-2 text-neutral-400 text-xs lg:text-sm">
+                    <p class="font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Dampak Kunci Baru
+                    </p>
+                    <ul class="list-disc list-inside space-y-1.5 text-neutral-300">
+                        <li>Server cabang lain yang menyimpan kunci lama akan <strong>seketika terputus</strong>.</li>
+                        <li>Anda harus memperbarui kunci baru ini di menu pengaturan cabang pada server-server cabang tersebut.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-4 border-t border-[#1c1c1c]">
+                <button type="button" onclick="BranchManager.closeRegenKeyModal()"
+                    class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors">
+                    Batal
+                </button>
+                <button type="button" id="btn-confirm-regen-key" onclick="BranchManager.executeRegenerateKey()"
+                    class="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-400 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-rotate text-xs"></i>
+                    <span>Ya, Buat Kunci Baru</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus Cabang Keluar (Outbound) -->
+    <div id="modal-delete-branch" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl overflow-hidden p-6 space-y-4 animate-modal-in">
+            <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
+                <h3 class="text-xs lg:text-[22px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-trash"></i>
+                    <span>Hapus Koneksi Cabang</span>
+                </h3>
+                <button type="button" onclick="BranchManager.closeDeleteBranchModal()" class="text-neutral-500 hover:text-neutral-200 text-xl leading-none">&times;</button>
+            </div>
+            <div class="space-y-4 text-xs lg:text-base text-neutral-300">
+                <p>Hapus koneksi server remote ke cabang:</p>
+                <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-100 font-mono font-bold break-all" id="modal-delete-branch-name">
+                    -
+                </div>
+                <p class="text-xs lg:text-sm text-neutral-400">
+                    Cabang ini tidak akan lagi tampil di switcher kontrol panel Anda. Data transaksi di server cabang tersebut tetap aman dan tidak terpengaruh.
+                </p>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-4 border-t border-[#1c1c1c]">
+                <button type="button" onclick="BranchManager.closeDeleteBranchModal()"
+                    class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors">
+                    Batal
+                </button>
+                <button type="button" id="btn-confirm-delete-branch" onclick="BranchManager.executeDeleteBranch()"
+                    class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-400 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-trash text-xs"></i>
+                    <span>Ya, Hapus Cabang</span>
+                </button>
+            </div>
+        </div>
+    </div>
 </div>

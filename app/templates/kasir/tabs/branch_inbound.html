@@ -3,24 +3,38 @@
     <!-- Card 1: Ringkasan & Status Keamanan Server Ini -->
     <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
         <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">
-            List Koneksi Cabang (Inbound Connections)
+            Status Proteksi Server (Inbound Security)
         </h3>
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                 <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">
-                    Server Penerima & Keamanan Masuk
+                    Otentikasi &amp; Akses Lintas Cabang
                 </p>
                 <p class="text-[9px] lg:text-base text-neutral-500 mt-1">
-                    Memantau secara transparan server cabang luar yang terhubung dan mengoperasikan server ini via Multi Cabang Control Panel.
+                    Server ini memantau dan memvalidasi setiap permintaan dari server cabang lain via Bearer API Key. Akses cabang yang diblokir otomatis ditolak seketika (HTTP 403).
                 </p>
             </div>
-            <div class="flex items-center gap-2 shrink-0">
-                <button type="button" onclick="BranchManager.loadInboundBranches()"
-                    class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
-                    <i class="fa-solid fa-rotate text-xs"></i>
-                    <span>Segarkan Data</span>
-                </button>
+            <div class="flex items-center gap-3 shrink-0">
+                <div class="px-4 py-2.5 bg-[#050505] border border-[#1c1c1c] rounded flex items-center gap-2.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <div>
+                        <div class="text-xs lg:text-sm font-bold text-neutral-200">Proteksi Aktif</div>
+                        <div class="text-[10px] text-neutral-500 font-mono">Bearer Auth Enforced</div>
+                    </div>
+                </div>
             </div>
+        </div>
+        <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-[#1c1c1c]">
+            <button type="button" onclick="BranchManager.loadInboundBranches()"
+                class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate text-xs"></i>
+                <span>Segarkan Data</span>
+            </button>
+            <button type="button" onclick="App.switchTab('branch')"
+                class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-1.5">
+                <i class="fa-solid fa-key text-xs"></i>
+                <span>Kunci API Server Ini</span>
+            </button>
         </div>
     </div>
 
@@ -28,14 +42,33 @@
     <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">
-                    Cabang Luar Terhubung
+                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider" id="inbound-table-title">
+                    Daftar Cabang Luar Terhubung
                 </h3>
-                <p class="text-[9px] lg:text-base text-neutral-500 mt-1">
-                    Daftar server cabang yang pernah atau sedang mengirim permintaan remote control ke server ini.
+                <p class="text-[9px] lg:text-base text-neutral-500 mt-1" id="inbound-table-desc">
+                    Riwayat cabang warnet lain yang pernah atau sedang mengirim permintaan remote control ke server ini.
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
+                <!-- Sub-Tab Filter Toggle Buttons -->
+                <div class="flex items-center gap-1.5 p-1 bg-[#050505] border border-[#1c1c1c] rounded">
+                    <button type="button" id="btn-subtab-inbound-all" onclick="BranchManager.switchInboundSubTab('all')"
+                        class="px-4 py-2 bg-neutral-100 text-black text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                        <span>Semua</span>
+                        <span id="badge-count-inbound-all" class="px-1.5 py-0.5 text-[10px] rounded-full bg-black/20 text-black font-mono font-bold">0</span>
+                    </button>
+                    <button type="button" id="btn-subtab-inbound-active" onclick="BranchManager.switchInboundSubTab('active')"
+                        class="px-4 py-2 bg-transparent text-neutral-400 hover:text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                        <span>Terhubung</span>
+                        <span id="badge-count-inbound-active" class="px-1.5 py-0.5 text-[10px] rounded-full bg-neutral-800 text-neutral-300 font-mono font-bold">0</span>
+                    </button>
+                    <button type="button" id="btn-subtab-inbound-blocked" onclick="BranchManager.switchInboundSubTab('blocked')"
+                        class="px-4 py-2 bg-transparent text-neutral-400 hover:text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                        <span>Diblokir</span>
+                        <span id="badge-count-inbound-blocked" class="px-1.5 py-0.5 text-[10px] rounded-full bg-neutral-800 text-neutral-300 font-mono font-bold">0</span>
+                    </button>
+                </div>
+
                 <!-- Search Box -->
                 <input type="text" id="filter-inbound-search" oninput="BranchManager.filterInboundBySearch()"
                     placeholder="Cari cabang / IP / operator..."
@@ -49,23 +82,135 @@
                 <thead>
                     <tr class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] lg:text-xs uppercase font-bold tracking-wider">
                         <th class="py-3 px-3">No</th>
-                        <th class="py-3 px-3">Nama Cabang Pengontrol</th>
+                        <th class="py-3 px-3">Cabang Pengontrol</th>
                         <th class="py-3 px-3">Hardware (MAC) / IP</th>
                         <th class="py-3 px-3">Operator Terakhir</th>
                         <th class="py-3 px-3">Terakhir Mengakses</th>
                         <th class="py-3 px-3 text-center">Total Akses</th>
-                        <th class="py-3 px-3">Status</th>
+                        <th class="py-3 px-3 text-center">Status</th>
                         <th class="py-3 px-3 text-right">Aksi</th>
                     </tr>
                 </thead>
-                <tbody id="inbound-branch-table-body" class="divide-y divide-[#171717]">
+                <tbody id="inbound-branch-table-body" class="text-neutral-300 text-xs lg:text-base font-mono">
                     <tr>
-                        <td colspan="8" class="text-center py-8 text-neutral-500 text-xs">
+                        <td colspan="8" class="text-center py-8 text-neutral-500 text-xs lg:text-base font-mono">
                             <i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat daftar koneksi masuk...
                         </td>
                     </tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Blokir Akses Cabang -->
+    <div id="modal-block-inbound" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl overflow-hidden p-6 space-y-4 animate-modal-in">
+            <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
+                <h3 class="text-xs lg:text-[22px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-ban"></i>
+                    <span>Blokir Akses Cabang</span>
+                </h3>
+                <button type="button" onclick="BranchManager.closeBlockInboundModal()" class="text-neutral-500 hover:text-neutral-200 text-xl leading-none">&times;</button>
+            </div>
+
+            <div class="space-y-4 text-xs lg:text-base text-neutral-300">
+                <p>Anda akan memblokir seluruh akses dari server cabang:</p>
+                <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-100 font-mono font-bold break-all" id="modal-block-inbound-name">
+                    -
+                </div>
+                <div class="p-4 bg-red-950/20 border border-red-800/30 rounded space-y-2 text-neutral-400 text-xs lg:text-sm">
+                    <p class="font-bold text-red-400 flex items-center gap-1.5 uppercase tracking-wider">
+                        <i class="fa-solid fa-shield-halved"></i> Dampak Pemblokiran
+                    </p>
+                    <ul class="list-disc list-inside space-y-1.5 text-neutral-300">
+                        <li>Server cabang tersebut <strong>langsung ditolak</strong> saat mengirim permintaan (HTTP 403 Forbidden).</li>
+                        <li>Operator remote di cabang tersebut tidak dapat lagi memantau, membuka sesi, atau membaca data lokal server ini.</li>
+                        <li>Anda dapat membuka kembali blokir ini kapan saja melalui menu ini.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-4 border-t border-[#1c1c1c]">
+                <button type="button" onclick="BranchManager.closeBlockInboundModal()"
+                    class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors">
+                    Batal
+                </button>
+                <button type="button" id="btn-confirm-block-inbound" onclick="BranchManager.executeBlockInbound()"
+                    class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-400 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-ban text-xs"></i>
+                    <span>Ya, Blokir Cabang</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Buka Blokir Akses Cabang -->
+    <div id="modal-unblock-inbound" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl overflow-hidden p-6 space-y-4 animate-modal-in">
+            <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
+                <h3 class="text-xs lg:text-[22px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-lock-open"></i>
+                    <span>Buka Blokir Cabang</span>
+                </h3>
+                <button type="button" onclick="BranchManager.closeUnblockInboundModal()" class="text-neutral-500 hover:text-neutral-200 text-xl leading-none">&times;</button>
+            </div>
+
+            <div class="space-y-4 text-xs lg:text-base text-neutral-300">
+                <p>Buka blokir akses untuk server cabang:</p>
+                <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-100 font-mono font-bold break-all" id="modal-unblock-inbound-name">
+                    -
+                </div>
+                <p class="text-xs lg:text-sm text-neutral-400">
+                    Setelah dibuka, server cabang ini akan dapat kembali terhubung dan mengoperasikan server ini sesuai otorisasi API Key yang sah.
+                </p>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-4 border-t border-[#1c1c1c]">
+                <button type="button" onclick="BranchManager.closeUnblockInboundModal()"
+                    class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors">
+                    Batal
+                </button>
+                <button type="button" id="btn-confirm-unblock-inbound" onclick="BranchManager.executeUnblockInbound()"
+                    class="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-400 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-lock-open text-xs"></i>
+                    <span>Buka Blokir</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus Riwayat Cabang Masuk -->
+    <div id="modal-delete-inbound" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl overflow-hidden p-6 space-y-4 animate-modal-in">
+            <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
+                <h3 class="text-xs lg:text-[22px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-trash"></i>
+                    <span>Hapus Riwayat Koneksi</span>
+                </h3>
+                <button type="button" onclick="BranchManager.closeDeleteInboundModal()" class="text-neutral-500 hover:text-neutral-200 text-xl leading-none">&times;</button>
+            </div>
+
+            <div class="space-y-4 text-xs lg:text-base text-neutral-300">
+                <p>Hapus catatan riwayat koneksi masuk dari server cabang:</p>
+                <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-100 font-mono font-bold break-all" id="modal-delete-inbound-name">
+                    -
+                </div>
+                <p class="text-xs lg:text-sm text-neutral-400">
+                    Catatan riwayat ini akan dihapus dari daftar. Jika server cabang tersebut menghubungkan diri kembali di masa mendatang dengan API Key yang valid, record baru akan otomatis dibuat.
+                </p>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-4 border-t border-[#1c1c1c]">
+                <button type="button" onclick="BranchManager.closeDeleteInboundModal()"
+                    class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors">
+                    Batal
+                </button>
+                <button type="button" id="btn-confirm-delete-inbound" onclick="BranchManager.executeDeleteInbound()"
+                    class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-400 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-trash text-xs"></i>
+                    <span>Hapus Riwayat</span>
+                </button>
+            </div>
         </div>
     </div>
 </div>
