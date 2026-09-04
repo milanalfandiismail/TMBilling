@@ -48,7 +48,7 @@ class BranchService:
                 if resp.status_code == 200:
                     data = resp.json()
                     settings_dict = data.get("settings", {}) if isinstance(data, dict) else {}
-                    warnet_title = settings_dict.get("warnet_title", "Cabang Remote")
+                    warnet_title = settings_dict.get("warnet_title", "TMBilling")
                     return True, {
                         "online": True,
                         "latency_ms": latency_ms,
@@ -57,7 +57,7 @@ class BranchService:
 
             if resp.status_code == 200:
                 data = resp.json()
-                warnet_title = "Cabang Remote"
+                warnet_title = "TMBilling"
                 if isinstance(data, dict):
                     if "data" in data and isinstance(data["data"], dict):
                         warnet_title = data["data"].get("warnet_title") or data["data"].get("value") or warnet_title

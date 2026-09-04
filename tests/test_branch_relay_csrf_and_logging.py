@@ -65,6 +65,7 @@ def test_relay_csrf_exemption_and_diff_name_logging(app_and_client):
     with app.app_context():
         local_key = SettingsService.get_or_create_branch_api_key()
         paket = Paket.query.first()
+        paket_id = paket.id
 
     # Kirim request POST buka guest TANPA header CSRF (seperti layaknya relay server-to-server)
     headers = {
@@ -77,7 +78,7 @@ def test_relay_csrf_exemption_and_diff_name_logging(app_and_client):
     payload = {
         "pc_kode": "PC-01",
         "nama_guest": "Pelanggan 1",
-        "paket_id": paket.id,
+        "paket_id": paket_id,
         "metode_pembayaran": "tunai"
     }
 
@@ -179,3 +180,124 @@ def test_backend_relay_kasir_role_guard(app_and_client):
             status_code = resp[1] if isinstance(resp, tuple) else resp.status_code
             # Karena port 9999 offline, response status adalah 503 (offline) bukan 403 (dilarang)
             assert status_code == 503
+
+
+def test_relay_logging_never_uses_literal_cabang(app_and_client):
+    """Memastikan bahwa header 'Cabang' atau tanpa header tidak pernah menghasilkan
+    'admin (Remote: Cabang)', melainkan menggunakan nama cabang terdaftar atau nama warnet asli.
+    """
+    app, client = app_and_client
+    with app.app_context():
+        local_key = SettingsService.get_or_create_branch_api_key()
+        paket = Paket.query.first()
+        paket_id = paket.id
+
+        # Daftarkan cabang Milan Net dengan IP 180.247.246.49
+        b = Branch(nama="Milan Net", url="http://180.247.246.49:5000", api_key="remote_key", aktif=True)
+        db.session.add(b)
+        db.session.commit()
+
+    import json
+    from app.utils.logger import read_logs
+
+    # Kasus 1: Request datang dari IP 180.247.246.49 dengan header 'Cabang' (legacy/placeholder)
+    headers = {
+        "Authorization": f"Bearer {local_key}",
+        "X-Operator-Username": "admin",
+        "X-Origin-Branch-Name": "Cabang",
+        "X-Forwarded-For": "180.247.246.49",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "pc_kode": "PC-01",
+        "nama_guest": "Pelanggan Cabang Test",
+        "paket_id": paket_id,
+        "metode_pembayaran": "tunai"
+    }
+    res = client.post("/api/v1/kasir/sesi/buka-guest", headers=headers, json=payload)
+    assert res.status_code in (200, 201)
+
+    logs = read_logs(limit=5)
+    log_entry = next(json.loads(line) for line in logs if "Pelanggan Cabang Test" in line)
+    # Harus mendeteksi 'Milan Net' dari IP, BUKAN 'Cabang'
+    assert "Cabang" not in log_entry["user"]
+    assert log_entry["user"] == "admin (Remote: Milan Net)"
+
+    # Kasus 2: Request dari IP antah berantah tanpa nama cabang
+    headers2 = {
+        "Authorization": f"Bearer {local_key}",
+        "X-Operator-Username": "admin",
+        "X-Origin-Branch-Name": "",
+        "X-Forwarded-For": "10.0.0.99",
+        "Content-Type": "application/json"
+    }
+    payload2 = {
+        "pc_kode": "PC-02",
+        "nama_guest": "Pelanggan Generic Test",
+        "paket_id": paket_id,
+        "metode_pembayaran": "tunai"
+    }
+    res2 = client.post("/api/v1/kasir/sesi/buka-guest", headers=headers2, json=payload2)
+    assert res2.status_code in (200, 201)
+
+    logs2 = read_logs(limit=5)
+    log_entry2 = next(json.loads(line) for line in logs2 if "Pelanggan Generic Test" in line)
+    # Harus fallback ke 'TMBilling', BUKAN 'Cabang' atau 'Remote'
+    assert "Cabang" not in log_entry2["user"]
+    assert log_entry2["user"] == "admin (Remote: TMBilling)"
+
+
+def test_branch_proxy_service_relay_headers_uses_warnet_title_not_cabang(app_and_client):
+    """Memastikan bahwa saat merelay request, header X-Origin-Branch-Name
+    berisi nama warnet asli atau default TMBilling, dan tidak pernah 'Cabang'.
+    """
+    from unittest.mock import patch, MagicMock
+    app, client = app_and_client
+
+    with app.app_context():
+        b = Branch(nama="Target Branch", url="http://192.168.1.50:5000", api_key="secret", aktif=True)
+        db.session.add(b)
+        db.session.commit()
+        branch_id = b.id
+
+        # Kasus A: warnet_title diatur ke 'Milan Net'
+        SettingsService.set("warnet_title", "Milan Net")
+
+        with patch("requests.request") as mock_req:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_resp.content = b'{"success": true}'
+            mock_resp.headers = {"Content-Type": "application/json"}
+            mock_req.return_value = mock_resp
+
+            with app.test_request_context("/api/v1/kasir/sesi/buka-guest", method="POST"):
+                session["kasir_role"] = "admin"
+                session["kasir_username"] = "admin"
+                from flask import request
+                resp = BranchProxyService.relay_request(branch_id, request)
+
+                call_headers = mock_req.call_args[1]["headers"]
+                assert call_headers["X-Origin-Branch-Name"] == "Milan Net"
+                assert "Cabang" not in call_headers["X-Origin-Branch-Name"]
+
+        # Kasus B: warnet_title kosong / None
+        SettingsService.set("warnet_title", "")
+
+        with patch("requests.request") as mock_req:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_resp.content = b'{"success": true}'
+            mock_resp.headers = {"Content-Type": "application/json"}
+            mock_req.return_value = mock_resp
+
+            with app.test_request_context("/api/v1/kasir/sesi/buka-guest", method="POST"):
+                session["kasir_role"] = "admin"
+                session["kasir_username"] = "admin"
+                from flask import request
+                resp = BranchProxyService.relay_request(branch_id, request)
+
+                call_headers = mock_req.call_args[1]["headers"]
+                assert call_headers["X-Origin-Branch-Name"] == "TMBilling"
+                assert "Cabang" not in call_headers["X-Origin-Branch-Name"]
+
+

@@ -18,11 +18,32 @@ def _apply_branch_relay_identity():
     """Menyiapkan identitas operator remote dan disambiguasi nama cabang di session request."""
     g.is_branch_api_call = True
     remote_op = request.headers.get("X-Operator-Username", "admin")
-    origin_name = request.headers.get("X-Origin-Branch-Name", "Remote").strip()
+    origin_name = request.headers.get("X-Origin-Branch-Name", "").strip()
     origin_mac = request.headers.get("X-Origin-MAC", "").strip()
 
     from app.services.settings.settings_service import SettingsService
-    local_title = SettingsService.get("warnet_title", "Cabang").strip()
+    local_title = (SettingsService.get("warnet_title") or "TMBilling").strip()
+    if not local_title or local_title.lower() == "cabang":
+        local_title = "TMBilling"
+
+    # Resolusi Nama Warnet Pengirim jika kosong atau hanya placeholder 'Cabang' / 'Remote'
+    if not origin_name or origin_name.lower() in ("cabang", "remote"):
+        sender_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
+        matched_branch_name = None
+        try:
+            from app.models.branch import Branch
+            if sender_ip and sender_ip not in ("127.0.0.1", "localhost", "::1"):
+                # Cari cabang terdaftar yang URL-nya mengandung sender_ip
+                matched = Branch.query.filter(Branch.url.contains(sender_ip), Branch.aktif == True).first()
+                if matched and matched.nama:
+                    matched_branch_name = matched.nama.strip()
+        except Exception:
+            pass
+
+        if matched_branch_name and matched_branch_name.lower() not in ("cabang", "remote"):
+            origin_name = matched_branch_name
+        else:
+            origin_name = "TMBilling"
 
     # Cek apakah nama warnet pengirim sama dengan warnet lokal
     is_name_conflict = (origin_name.lower() == local_title.lower())

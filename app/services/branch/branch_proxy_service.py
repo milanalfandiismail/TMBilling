@@ -71,8 +71,11 @@ class BranchProxyService:
             target_url += f"?{request_obj.query_string.decode('utf-8')}"
 
         # Context operator & identitas server lokal
-        operator_username = session.get("kasir_username", "admin")
-        origin_branch_title = SettingsService.get("warnet_title", "Cabang")
+        raw_operator = session.get("kasir_username", "admin")
+        operator_username = raw_operator.split(" (")[0].strip() if " (" in raw_operator else raw_operator
+        origin_branch_title = (SettingsService.get("warnet_title") or "TMBilling").strip()
+        if not origin_branch_title or origin_branch_title.lower() == "cabang":
+            origin_branch_title = "TMBilling"
         origin_mac = BranchProxyService.get_server_mac_address()
 
         # Siapkan headers relay
