@@ -22,7 +22,7 @@ const BranchManager = {
 
         await this.loadBranches();
         this.renderNavbarDropdown();
-        this.renderActiveBranchBanner();
+        this.removeActiveBranchBanner();
         this.bindNavbarEvents();
 
         // Inisialisasi tab settings jika berada di halaman settings
@@ -148,47 +148,9 @@ const BranchManager = {
         }
     },
 
-    renderActiveBranchBanner() {
-        let banner = document.getElementById('active-branch-banner');
-        if (this.activeBranchId === '0') {
-            if (banner) banner.remove();
-            return;
-        }
-
-        const activeBranch = this.branches.find(b => String(b.id) === String(this.activeBranchId));
-        const branchName = activeBranch ? activeBranch.nama : 'Cabang Remote';
-
-        if (!banner) {
-            banner = document.createElement('div');
-            banner.id = 'active-branch-banner';
-            banner.className = 'bg-gradient-to-r from-emerald-950/80 via-emerald-900/40 to-neutral-950/80 border-b border-emerald-500/30 px-4 py-2 flex items-center justify-between text-xs backdrop-blur-md shadow-md';
-            const mainContent = document.getElementById('main-content') || document.querySelector('main');
-            if (mainContent && mainContent.parentNode) {
-                mainContent.parentNode.insertBefore(banner, mainContent);
-            }
-        }
-
-        banner.innerHTML = `
-            <div class="flex items-center gap-2.5 text-emerald-300 font-medium">
-                <span class="flex h-2 w-2 relative">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <span>Mode Kontrol Terhubung: <strong class="text-white font-bold tracking-wide">${branchName}</strong></span>
-                <span class="hidden sm:inline text-emerald-400/60 font-mono text-[11px]">(Data & Billing dari Server Remote)</span>
-            </div>
-            <button type="button" id="btn-return-local-branch" class="px-2.5 py-1 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-neutral-200 hover:text-white transition-all text-xs font-semibold flex items-center gap-1.5 shadow-sm">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                <span>Kembali ke Lokal</span>
-            </button>
-        `;
-
-        const btnReturn = document.getElementById('btn-return-local-branch');
-        if (btnReturn) {
-            btnReturn.addEventListener('click', () => {
-                this.switchBranch('0');
-            });
-        }
+    removeActiveBranchBanner() {
+        const banner = document.getElementById('active-branch-banner');
+        if (banner) banner.remove();
     },
 
     bindNavbarEvents() {
@@ -235,17 +197,18 @@ const BranchManager = {
         localStorage.setItem('active_branch_name', branchName);
 
         this.renderNavbarDropdown();
-        this.renderActiveBranchBanner();
+        this.removeActiveBranchBanner();
 
         if (window.Toast) {
             window.Toast.show(`Beralih ke ${branchName}`, "info");
         }
 
-        // Trigger reload dashboard data
-        if (window.Dashboard && typeof Dashboard.loadData === 'function') {
-            Dashboard.loadData();
-        } else if (window.Dashboard && typeof Dashboard.init === 'function') {
-            Dashboard.init();
+        // Refresh data dashboard secara INSTAN tanpa menunggu delay polling 5 detik
+        if (typeof Dashboard !== 'undefined' && typeof Dashboard.load === 'function') {
+            await Dashboard.load();
+        }
+        if (typeof Monitor !== 'undefined' && typeof Monitor.load === 'function' && typeof App !== 'undefined' && App.currentTab === 'monitor') {
+            await Monitor.load();
         }
     },
 
