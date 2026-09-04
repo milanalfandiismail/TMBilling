@@ -221,9 +221,14 @@ class MenuService:
             if not cart_items or not isinstance(cart_items, list):
                 raise ValueError("Daftar belanjaan kosong atau tidak valid")
 
-            kasir = UserRepository.get_by_username(kasir_username)
+            base_kasir_username = kasir_username.split(" (")[0].strip() if " (" in kasir_username else kasir_username
+            kasir = UserRepository.get_by_username(base_kasir_username)
+            if not kasir:
+                kasir = UserRepository.get_first_admin()
             if not kasir:
                 raise ValueError("Kasir tidak valid")
+
+            real_operator = operator if (operator and operator != "system") else kasir_username
 
             today = datetime.now()
             date_str = today.strftime('%Y%m%d')
@@ -261,6 +266,7 @@ class MenuService:
                     total_harga=total,
                     pc_kode=pc_kode if pc_kode else None,
                     kasir_id=kasir.id,
+                    operator=real_operator,
                     tunai=tunai if tunai else None,
                     kembalian=kembalian if kembalian else None,
                     metode_pembayaran=metode_pembayaran

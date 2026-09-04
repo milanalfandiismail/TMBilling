@@ -107,7 +107,8 @@ class BlackoutService:
             member_id=member.id,
             jenis="blackout_refund",
             keterangan=f"Refund blackout: {saldo_kembali}m ke {member.username}",
-            user_id=TransaksiService.get_user_id(operator)
+            user_id=TransaksiService.get_user_id(operator),
+            operator=operator
         )
         db.session.add(sesi)
         db.session.add(transaksi)
@@ -198,7 +199,8 @@ class BlackoutService:
             member_id=sesi.member_id, 
             jenis="tutup_sesi", 
             keterangan=f"Blackout resolved: {label} ditutup tanpa kompensasi",
-            user_id=TransaksiService.get_user_id(operator)
+            user_id=TransaksiService.get_user_id(operator),
+            operator=operator
         )
         db.session.add(sesi)
         db.session.add(transaksi)
