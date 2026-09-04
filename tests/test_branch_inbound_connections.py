@@ -53,3 +53,72 @@ def test_branch_inbound_model_crud_and_to_dict(app_instance):
         assert d["status"] == "aktif"
         assert "pertama_terhubung" in d
         assert "terakhir_aktif" in d
+
+
+def test_branch_inbound_service_record_and_update(app_instance):
+    """Memastikan record_inbound_access membuat record baru atau memperbarui existing."""
+    from app.services.branch.branch_inbound_service import BranchInboundService
+
+    with app_instance.app_context():
+        # 1. Insert baru
+        rec1 = BranchInboundService.record_inbound_access(
+            origin_name="Cabang Delta",
+            origin_mac="AA:BB:CC:DD:EE:FF",
+            origin_url="http://delta.local",
+            operator="op_delta",
+            ip_address="10.0.0.5"
+        )
+        assert rec1.id is not None
+        assert rec1.nama == "Cabang Delta"
+        assert rec1.total_request == 1
+
+        # 2. Update existing via MAC
+        rec2 = BranchInboundService.record_inbound_access(
+            origin_name="Cabang Delta Renamed",
+            origin_mac="AA:BB:CC:DD:EE:FF",
+            origin_url="http://delta.local",
+            operator="op_new",
+            ip_address="10.0.0.6"
+        )
+        assert rec2.id == rec1.id
+        assert rec2.total_request == 2
+        assert rec2.operator_terakhir == "op_new"
+        assert rec2.ip_address == "10.0.0.6"
+
+
+def test_branch_inbound_service_block_unblock_delete(app_instance):
+    """Memastikan toggle_block, is_blocked, dan delete_inbound bekerja sesuai aturan."""
+    from app.services.branch.branch_inbound_service import BranchInboundService
+
+    with app_instance.app_context():
+        rec = BranchInboundService.record_inbound_access(
+            origin_name="Cabang Rogue",
+            origin_mac="11:22:33:44:55:66",
+            operator="hacker"
+        )
+        assert BranchInboundService.is_blocked("Cabang Rogue", "11:22:33:44:55:66") is False
+
+        # Blokir
+        ok, res = BranchInboundService.toggle_block(rec.id, block=True)
+        assert ok is True
+        assert res["status"] == "diblokir"
+        assert BranchInboundService.is_blocked("Cabang Rogue", "11:22:33:44:55:66") is True
+        assert BranchInboundService.is_blocked("Cabang Rogue", None) is True
+        assert BranchInboundService.is_blocked(None, "11:22:33:44:55:66") is True
+
+        # Unblock
+        ok, res = BranchInboundService.toggle_block(rec.id, block=False)
+        assert ok is True
+        assert res["status"] == "aktif"
+        assert BranchInboundService.is_blocked("Cabang Rogue", "11:22:33:44:55:66") is False
+
+        # Get all
+        all_inbound = BranchInboundService.get_all_inbound()
+        assert len(all_inbound) == 1
+        assert all_inbound[0]["nama"] == "Cabang Rogue"
+
+        # Delete
+        ok, msg = BranchInboundService.delete_inbound(rec.id)
+        assert ok is True
+        assert len(BranchInboundService.get_all_inbound()) == 0
+
