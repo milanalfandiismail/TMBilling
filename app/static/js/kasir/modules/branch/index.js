@@ -331,7 +331,7 @@ const BranchManager = {
         if (!this.branches || this.branches.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="px-4 py-8 text-center text-xs text-neutral-500">
+                    <td colspan="5" class="py-8 text-center text-xs text-neutral-500">
                         Belum ada cabang lain yang terhubung. Klik tombol <strong>+ Tambah Cabang</strong> untuk menghubungkan cabang baru.
                     </td>
                 </tr>
@@ -342,21 +342,21 @@ const BranchManager = {
         let html = '';
         this.branches.forEach((branch, idx) => {
             const statusBadge = branch.status_online
-                ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Online ${branch.latensi_ms ? `(${branch.latensi_ms}ms)` : ''}</span>`
-                : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20"><span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Offline</span>`;
+                ? `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] lg:text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Online ${branch.latensi_ms ? `(${branch.latensi_ms}ms)` : ''}</span>`
+                : `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] lg:text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20"><span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Offline</span>`;
 
             html += `
-                <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors text-xs">
-                    <td class="px-4 py-3 text-neutral-400 font-mono">${idx + 1}</td>
-                    <td class="px-4 py-3 font-semibold text-white">${branch.nama}</td>
-                    <td class="px-4 py-3 text-neutral-300 font-mono text-[11px] max-w-xs truncate">${branch.url}</td>
-                    <td class="px-4 py-3">${statusBadge}</td>
-                    <td class="px-4 py-3 text-right">
-                        <div class="flex items-center justify-end gap-1.5">
-                            <button type="button" onclick="BranchManager.testExistingBranch(${branch.id})" class="px-2 py-1 bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white rounded border border-white/10 transition-colors text-[11px]">
+                <tr class="border-b border-[#1c1c1c] hover:bg-white/[0.02] transition-colors text-xs lg:text-base">
+                    <td class="py-3 px-3 text-neutral-400 font-mono">${idx + 1}</td>
+                    <td class="py-3 px-3 font-semibold text-neutral-200 font-sans">${branch.nama}</td>
+                    <td class="py-3 px-3 text-neutral-400 font-mono text-xs lg:text-sm max-w-xs truncate">${branch.url}</td>
+                    <td class="py-3 px-3">${statusBadge}</td>
+                    <td class="py-3 px-3 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <button type="button" onclick="BranchManager.testExistingBranch(${branch.id})" class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 hover:text-white rounded text-[10px] lg:text-xs font-semibold transition-colors">
                                 Tes
                             </button>
-                            <button type="button" onclick="BranchManager.deleteBranch(${branch.id})" class="px-2 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded border border-red-500/20 transition-colors text-[11px]">
+                            <button type="button" onclick="BranchManager.deleteBranch(${branch.id})" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded text-[10px] lg:text-xs font-semibold transition-colors">
                                 Hapus
                             </button>
                         </div>
@@ -412,7 +412,7 @@ const BranchManager = {
             const res = await API.branch.test(url, apiKey);
             if (res && res.success && res.data && res.data.online) {
                 resultDiv.innerHTML = `
-                    <div class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-center justify-between">
+                    <div class="p-3 rounded bg-[#050505] border border-emerald-500/30 text-xs lg:text-sm text-emerald-400 flex items-center justify-between">
                         <span>Terhubung! Latensi: <strong>${res.data.latency_ms}ms</strong></span>
                         <span>Nama: <strong>${res.data.warnet_title}</strong></span>
                     </div>
@@ -422,10 +422,10 @@ const BranchManager = {
                     nameInput.value = res.data.warnet_title;
                 }
             } else {
-                resultDiv.innerHTML = `<span class="text-xs text-red-400">Gagal terhubung: ${res.error || 'Respon tidak valid'}</span>`;
+                resultDiv.innerHTML = `<div class="p-2.5 rounded bg-[#050505] border border-red-500/30 text-xs text-red-400">Gagal terhubung: ${res.error || 'Respon tidak valid'}</div>`;
             }
         } catch (err) {
-            resultDiv.innerHTML = `<span class="text-xs text-red-400">Error: ${err.message || err}</span>`;
+            resultDiv.innerHTML = `<div class="p-2.5 rounded bg-[#050505] border border-red-500/30 text-xs text-red-400">Error: ${err.message || err}</div>`;
         } finally {
             if (btnTest) {
                 btnTest.disabled = false;
