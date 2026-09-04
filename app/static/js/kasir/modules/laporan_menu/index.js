@@ -197,9 +197,9 @@ const LaporanMenu = {
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pemesanan</span>
                                         <span>${tm.pc_kode === 'Tempat' ? 'Makan di Tempat' : 'Take Away'}</span>
                                     </td>
-                                    <td class="px-4 py-3 text-neutral-500 flex lg:table-cell justify-between items-center">
+                                    <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir</span>
-                                        <span>${tm.kasir_nama || '-'}</span>
+                                        <span class="text-neutral-300 font-medium">${tm.kasir_nama || '-'}</span>
                                     </td>
                                     <td class="px-4 py-3 text-center flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
