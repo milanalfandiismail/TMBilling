@@ -15,11 +15,13 @@ def clear_kasir_session():
 
 
 def _apply_branch_relay_identity():
-    """Menyiapkan identitas operator remote dan disambiguasi nama cabang di session request."""
+    """Menyiapkan identitas operator remote, mencatat riwayat inbound, dan cek status blokir."""
     g.is_branch_api_call = True
     remote_op = request.headers.get("X-Operator-Username", "admin")
     origin_name = request.headers.get("X-Origin-Branch-Name", "").strip()
     origin_mac = request.headers.get("X-Origin-MAC", "").strip()
+    origin_url = request.headers.get("X-Origin-URL", "").strip()
+    sender_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
 
     from app.services.settings.settings_service import SettingsService
     local_title = (SettingsService.get("warnet_title") or "TMBilling").strip()
@@ -28,7 +30,6 @@ def _apply_branch_relay_identity():
 
     # Resolusi Nama Warnet Pengirim jika kosong atau hanya placeholder 'Cabang' / 'Remote'
     if not origin_name or origin_name.lower() in ("cabang", "remote"):
-        sender_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
         matched_branch_name = None
         try:
             from app.models.branch import Branch
@@ -44,6 +45,24 @@ def _apply_branch_relay_identity():
             origin_name = matched_branch_name
         else:
             origin_name = "TMBilling"
+
+    # Cek apakah cabang ini diblokir dari akses masuk
+    from app.services.branch.branch_inbound_service import BranchInboundService
+    if BranchInboundService.is_blocked(origin_name=origin_name, origin_mac=origin_mac):
+        g.is_branch_blocked = True
+        return
+
+    # Catat atau perbarui aktivitas koneksi inbound
+    try:
+        BranchInboundService.record_inbound_access(
+            origin_name=origin_name,
+            origin_mac=origin_mac,
+            origin_url=origin_url,
+            operator=remote_op,
+            ip_address=sender_ip
+        )
+    except Exception:
+        pass
 
     # Cek apakah nama warnet pengirim sama dengan warnet lokal
     is_name_conflict = (origin_name.lower() == local_title.lower())
@@ -81,6 +100,8 @@ def login_required(f):
             local_key = SettingsService.get_or_create_branch_api_key()
             if local_key and secrets.compare_digest(token, local_key):
                 _apply_branch_relay_identity()
+                if getattr(g, "is_branch_blocked", False):
+                    return jsonify({"error": "Akses cabang ditolak: Cabang Anda telah diblokir oleh server target."}), 403
                 return f(*args, **kwargs)
             return jsonify({"error": "Kunci API Cabang tidak valid"}), 403
 
@@ -112,8 +133,13 @@ def admin_required(f):
                 local_key = SettingsService.get_or_create_branch_api_key()
                 if local_key and secrets.compare_digest(token, local_key):
                     _apply_branch_relay_identity()
+                    if getattr(g, "is_branch_blocked", False):
+                        return jsonify({"error": "Akses cabang ditolak: Cabang Anda telah diblokir oleh server target."}), 403
                 else:
                     return jsonify({"error": "Kunci API Cabang tidak valid"}), 403
+
+        if getattr(g, "is_branch_blocked", False):
+            return jsonify({"error": "Akses cabang ditolak: Cabang Anda telah diblokir oleh server target."}), 403
 
         # Request dari branch API otomatis memiliki hak akses admin lintas cabang
         if getattr(g, "is_branch_api_call", False):

@@ -30,9 +30,20 @@ class BranchService:
         if not clean_url:
             return False, "URL cabang tidak boleh kosong"
 
+        from flask import session, has_request_context
+        from app.services.settings.settings_service import SettingsService
+        origin_branch_title = (SettingsService.get("warnet_title") or "TMBilling").strip()
+        origin_mac = (SettingsService.get_hardware_mac() or "").strip()
+        current_op = "admin"
+        if has_request_context():
+            current_op = session.get("kasir_username") or "admin"
+
         headers = {
             "Authorization": f"Bearer {api_key.strip()}",
-            "User-Agent": "TMBilling-MultiBranch/1.6.0"
+            "User-Agent": "TMBilling-MultiBranch/1.6.0",
+            "X-Origin-Branch-Name": origin_branch_title,
+            "X-Origin-MAC": origin_mac,
+            "X-Operator-Username": current_op
         }
 
         start_time = time.time()

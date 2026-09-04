@@ -122,3 +122,42 @@ def test_branch_inbound_service_block_unblock_delete(app_instance):
         assert ok is True
         assert len(BranchInboundService.get_all_inbound()) == 0
 
+
+def test_middleware_inbound_recording_and_blocking(app_instance):
+    """Memastikan middleware otomatis mencatat akses Bearer dan memblokir cabang berstatus diblokir."""
+    from app.services.settings.settings_service import SettingsService
+    from app.services.branch.branch_inbound_service import BranchInboundService
+
+    with app_instance.app_context():
+        SettingsService.set("branch_api_key", "tmb_sec_test_inbound_key_999")
+
+    client = app_instance.test_client()
+
+    # 1. Request normal dari Cabang Epsilon
+    headers = {
+        "Authorization": "Bearer tmb_sec_test_inbound_key_999",
+        "X-Origin-Branch-Name": "Cabang Epsilon",
+        "X-Origin-MAC": "EE:EE:EE:11:22:33",
+        "X-Origin-URL": "http://epsilon.warnet",
+        "X-Operator-Username": "kasir_eps",
+    }
+    res = client.get("/api/v1/kasir/dashboard/pc", headers=headers)
+    assert res.status_code == 200
+
+    with app_instance.app_context():
+        saved = BranchInbound.query.filter_by(mac_address="EE:EE:EE:11:22:33").first()
+        assert saved is not None
+        assert saved.nama == "Cabang Epsilon"
+        assert saved.operator_terakhir == "kasir_eps"
+        assert saved.url == "http://epsilon.warnet"
+        assert saved.total_request == 1
+
+        # 2. Blokir Cabang Epsilon
+        BranchInboundService.toggle_block(saved.id, block=True)
+
+    # 3. Request lagi setelah diblokir -> harus 403 Forbidden
+    res_blocked = client.get("/api/v1/kasir/dashboard/pc", headers=headers)
+    assert res_blocked.status_code == 403
+    assert "diblokir" in res_blocked.get_json()["error"].lower()
+
+
