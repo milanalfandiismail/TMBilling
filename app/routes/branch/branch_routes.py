@@ -248,3 +248,48 @@ def delete_inbound_branch(inbound_id):
         "message": res
     }), 200
 
+
+@branch_api_bp.route("/switch-context", methods=["POST"])
+@login_required
+@admin_required
+def switch_branch_context():
+    """Mengubah konteks aktif cabang yang dikontrol di server session secara aman."""
+    payload = request.get_json() or {}
+    branch_id_raw = payload.get("branch_id", 0)
+    try:
+        branch_id = int(branch_id_raw)
+    except (ValueError, TypeError):
+        branch_id = 0
+
+    if branch_id == 0:
+        session.pop("active_branch_id", None)
+        session.pop("active_branch_name", None)
+        return jsonify({
+            "success": True,
+            "data": {
+                "active_branch_id": 0,
+                "is_remote": False,
+                "branch_name": "Cabang Lokal"
+            }
+        }), 200
+
+    from app.models.branch import Branch
+    branch = Branch.query.get(branch_id)
+    if not branch or not branch.aktif:
+        return jsonify({
+            "success": False,
+            "error": "Cabang target tidak ditemukan atau tidak aktif"
+        }), 404
+
+    session["active_branch_id"] = branch.id
+    session["active_branch_name"] = branch.nama
+    return jsonify({
+        "success": True,
+        "data": {
+            "active_branch_id": branch.id,
+            "is_remote": True,
+            "branch_name": branch.nama
+        }
+    }), 200
+
+

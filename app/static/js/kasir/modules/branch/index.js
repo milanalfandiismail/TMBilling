@@ -291,6 +291,13 @@ const BranchManager = {
         this.updateBrandAndSidebarVisibility();
         this.removeActiveBranchBanner();
 
+        // Sinkronisasi status cabang aktif ke Server-Side Session (validasi penuh server-side)
+        try {
+            if (API.branch && API.branch.switchContext) {
+                API.branch.switchContext(this.activeBranchId).catch(e => console.warn('[BranchManager] Sync server context warn:', e));
+            }
+        } catch (e) {}
+
         if (window.Toast) {
             window.Toast.show(`Beralih ke ${branchName}`, "info");
         }

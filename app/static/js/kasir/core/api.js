@@ -315,7 +315,8 @@ const API = {
         inboundList: () => API.request('/api/v1/kasir/branch/inbound'),
         inboundBlock: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}/block`, { method: 'POST' }),
         inboundUnblock: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}/unblock`, { method: 'POST' }),
-        inboundDelete: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}`, { method: 'DELETE' })
+        inboundDelete: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}`, { method: 'DELETE' }),
+        switchContext: (branchId) => API.request('/api/v1/kasir/branch/switch-context', { method: 'POST', body: JSON.stringify({ branch_id: branchId }) })
     }
 
 };
