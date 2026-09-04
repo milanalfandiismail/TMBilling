@@ -48,10 +48,10 @@ def test_admin_sees_branch_selector_and_settings_tab(test_clients):
     # Memastikan script branch dimuat
     assert 'js/kasir/modules/branch/index.js' in html
 
-    # Memastikan tab multi-cabang dan menu sidebar ada untuk admin
+    # Memastikan tab multi-cabang dan menu sidebar utama ada untuk admin, tetapi submenu di pengaturan sudah dibersihkan
     assert 'id="tab-branch"' in html
     assert 'id="sidebar-tab-branch"' in html
-    assert 'id="tab-btn-settings-branch"' in html
+    assert 'id="tab-btn-settings-branch"' not in html
     assert 'id="modal-branch-title"' in html
     assert 'id="input-branch-id"' in html
 
