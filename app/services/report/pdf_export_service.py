@@ -55,13 +55,13 @@ class PdfExportService:
         table_data = [headers]
 
         for idx, t in enumerate(history_struk, 1):
-            waktu = t.get("waktu", "-")
-            no_nota = t.get("no_nota", "-")
-            nama_p = t.get("nama_pelanggan", "-")
-            pc = t.get("pc_kode", "-")
-            kasir_nama = t.get("kasir_nama", "-")
-            ket = t.get("keterangan", "-")
-            metode = t.get("metode_pembayaran", "Tunai") or "Tunai"
+            waktu = t.get("waktu") or "-"
+            no_nota = t.get("no_nota") or "-"
+            nama_p = t.get("nama_pelanggan") or "-"
+            pc = t.get("pc_kode") or "-"
+            kasir_nama = t.get("kasir_nama") or "-"
+            ket = t.get("keterangan") or "-"
+            metode = t.get("metode_pembayaran") or "Tunai"
             jumlah_raw = t.get("jumlah", 0)
             jumlah = f"Rp {jumlah_raw:,.0f}"
 

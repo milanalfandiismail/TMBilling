@@ -302,10 +302,10 @@ class ReportService:
             # Tambahkan juga cabang aktif dari database Branch
             try:
                 from app.models.branch import Branch
-                branches = Branch.query.filter_by(is_active=True).all()
+                branches = Branch.query.filter_by(aktif=True).all()
                 for b in branches:
-                    if b.nama_cabang:
-                        remote_ops.add(f"admin (Remote: {b.nama_cabang})")
+                    if b.nama:
+                        remote_ops.add(f"admin (Remote: {b.nama})")
             except Exception:
                 pass
 
