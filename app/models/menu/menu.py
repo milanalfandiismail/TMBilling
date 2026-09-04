@@ -47,7 +47,7 @@ class TransaksiMenu(db.Model):
     pc_kode = db.Column(db.String(20), nullable=True) # Penanda opsional PC pemesan
     tanggal = db.Column(db.DateTime, default=now_local)
     
-    kasir_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    kasir_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
 
     # Kolom pembayaran
     tunai = db.Column(db.Integer, nullable=True, default=0)
@@ -74,7 +74,7 @@ class TransaksiMenu(db.Model):
             "pc_kode": self.pc_kode,
             "tanggal": format_display(self.tanggal) if self.tanggal else None,
             "kasir_id": self.kasir_id,
-            "kasir_nama": self.operator or (self.kasir.username if self.kasir else "System"),
+            "kasir_nama": self.operator or (self.kasir.nama_lengkap or self.kasir.username if self.kasir else "Kasir Lama"),
             "operator": self.operator,
             "tunai": self.tunai,
             "kembalian": self.kembalian,

@@ -305,7 +305,11 @@ const API = {
         delete: (id) => API.request(`/api/v1/kasir/branch/${id}`, { method: 'DELETE' }),
         test: (url, apiKey) => API.request('/api/v1/kasir/branch/test', { method: 'POST', body: JSON.stringify({ url, api_key: apiKey }) }),
         myKey: () => API.request('/api/v1/kasir/branch/my-key'),
-        regenerateKey: () => API.request('/api/v1/kasir/branch/my-key/regenerate', { method: 'POST' })
+        regenerateKey: () => API.request('/api/v1/kasir/branch/my-key/regenerate', { method: 'POST' }),
+        operators: () => API.request('/api/v1/kasir/branch/operators'),
+        hideOperator: (operatorName) => API.request('/api/v1/kasir/branch/operators/hide', { method: 'POST', body: JSON.stringify({ operator: operatorName }) }),
+        restoreOperator: (operatorName) => API.request('/api/v1/kasir/branch/operators/restore', { method: 'POST', body: JSON.stringify({ operator: operatorName }) }),
+        deleteOperator: (operatorName) => API.request('/api/v1/kasir/branch/operators/delete', { method: 'POST', body: JSON.stringify({ operator: operatorName }) })
     }
 
 };

@@ -95,7 +95,7 @@ const App = {
             'settings', 'settings_general', 'settings_branch', 'settings_payment', 'settings_kiosk', 'settings_tv', 
             'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup', 
             'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'whitelist_ip',
-            'mikrotik', 'analytics', 'plugins', 'plugin-spa', 'branch'
+            'mikrotik', 'analytics', 'plugins', 'plugin-spa', 'branch', 'branch_kasir'
         ];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');
@@ -152,12 +152,14 @@ const App = {
             settings_migration: 'settings',
             analytics: 'analytics',
             plugins: 'plugins',
-            'plugin-spa': 'plugins'
+            'plugin-spa': 'plugins',
+            branch: 'branch',
+            branch_kasir: 'branch'
         };
 
         const activeSubmenu = tabToSubmenu[tab];
         
-        const submenus = ['operasional', 'master', 'staff', 'laporan', 'sistemlog', 'system', 'settings'];
+        const submenus = ['operasional', 'master', 'staff', 'laporan', 'sistemlog', 'system', 'settings', 'branch'];
         submenus.forEach(sub => {
             const submenuEl = document.getElementById(`${sub}-submenu`);
             const arrowEl = document.getElementById(`${sub}-arrow`);
@@ -206,7 +208,8 @@ const App = {
             analytics: 'Analytics Owner',            plugins: 'Plugins & Ekstensi',
             mikrotik: 'MikroTik Hotspot',
             fileexplorer: 'File Explorer',
-            branch: 'Multi Cabang'
+            branch: 'Multi Cabang',
+            branch_kasir: 'Akun Kasir Cabang (Remote)'
         };
 
         const titleEl = document.getElementById('page-title');
@@ -254,6 +257,11 @@ const App = {
                     await BranchManager.loadMyBranchKey();
                     await BranchManager.loadBranches();
                     BranchManager.renderBranchesSettingsTable();
+                }
+                break;
+            case 'branch_kasir':
+                if (typeof BranchManager !== 'undefined') {
+                    await BranchManager.loadRemoteOperators();
                 }
                 break;
         }

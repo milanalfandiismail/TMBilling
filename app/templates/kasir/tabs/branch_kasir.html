@@ -1,0 +1,120 @@
+<!-- ==================== TAB: AKUN KASIR CABANG (REMOTE) ==================== -->
+<div id="tab-branch_kasir" class="tab-content hidden space-y-6">
+    <!-- Header Tab -->
+    <div class="flex items-center justify-between pb-4 border-b border-[#171717]">
+        <div>
+            <h2 class="text-base font-bold text-neutral-100 flex items-center gap-2.5">
+                <span class="p-1.5 rounded-lg bg-neutral-900 border border-[#262626] text-neutral-300">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                        </path>
+                    </svg>
+                </span>
+                <span>Akun Kasir Cabang (Remote)</span>
+            </h2>
+            <p class="text-xs text-neutral-500 mt-0.5">Kelola akun kasir dari server cabang remote. Nonaktifkan akun untuk menyembunyikannya dari dropdown filter laporan, atau hapus permanen identitasnya.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <button type="button" onclick="BranchManager.loadRemoteOperators()"
+                class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs font-bold rounded transition-colors flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate text-[11px]"></i>
+                <span>Segarkan</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Toggle Tabs -->
+    <div class="flex items-center gap-2 border-b border-[#1c1c1c] pb-2">
+        <button type="button" id="btn-subtab-op-active" onclick="BranchManager.switchOperatorSubTab('active')"
+            class="px-4 py-2 rounded text-xs lg:text-sm font-bold transition-all bg-neutral-100 text-black flex items-center gap-2">
+            <span>Kasir Aktif</span>
+            <span id="badge-count-op-active" class="px-1.5 py-0.5 text-[10px] rounded-full bg-black/20 text-black font-mono">0</span>
+        </button>
+        <button type="button" id="btn-subtab-op-archived" onclick="BranchManager.switchOperatorSubTab('archived')"
+            class="px-4 py-2 rounded text-xs lg:text-sm font-bold transition-all bg-transparent text-neutral-400 hover:text-neutral-200 border border-transparent hover:border-[#1c1c1c] flex items-center gap-2">
+            <span>Diarsipkan / Nonaktif</span>
+            <span id="badge-count-op-archived" class="px-1.5 py-0.5 text-[10px] rounded-full bg-neutral-800 text-neutral-300 font-mono">0</span>
+        </button>
+    </div>
+
+    <!-- Card: Tabel Operator Remote -->
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h3 id="op-table-title" class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Daftar Akun Kasir Aktif</h3>
+                <p id="op-table-desc" class="text-[9px] lg:text-base text-neutral-500 mt-1">Akun yang tampil di dropdown filter laporan billing dan kantin.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="text" id="filter-remote-op-search" oninput="BranchManager.filterOperatorsBySearch()"
+                    placeholder="Cari kasir / cabang..."
+                    class="w-48 sm:w-64 px-3 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500">
+            </div>
+        </div>
+
+        <div class="overflow-x-auto w-full pt-2">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] lg:text-xs uppercase font-bold tracking-wider">
+                        <th class="py-2.5 px-3">No</th>
+                        <th class="py-2.5 px-3">Identitas Operator Remote</th>
+                        <th class="py-2.5 px-3">Username</th>
+                        <th class="py-2.5 px-3">Cabang Asal</th>
+                        <th class="py-2.5 px-3 text-center">Total Transaksi</th>
+                        <th class="py-2.5 px-3 text-right">Total Nominal</th>
+                        <th class="py-2.5 px-3">Terakhir Aktif</th>
+                        <th class="py-2.5 px-3 text-center">Status</th>
+                        <th class="py-2.5 px-3 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="branch-operators-tbody" class="text-neutral-300 text-xs lg:text-sm font-mono">
+                    <tr>
+                        <td colspan="9" class="py-8 text-center text-xs text-neutral-500">Memuat data akun kasir cabang...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus Operator Remote -->
+    <div id="modal-delete-remote-op" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl overflow-hidden p-6 space-y-4 animate-modal-in">
+            <div class="flex items-center justify-between pb-3 border-b border-[#1c1c1c]">
+                <h3 class="text-xs lg:text-[18px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Hapus Permanen Identitas Kasir</span>
+                </h3>
+                <button type="button" onclick="BranchManager.closeDeleteOperatorModal()" class="text-neutral-500 hover:text-neutral-200 text-xl leading-none">&times;</button>
+            </div>
+
+            <div class="space-y-3 text-xs lg:text-sm text-neutral-300">
+                <p>Anda akan menghapus identitas akun kasir remote:</p>
+                <div class="p-3 bg-[#171717] border border-[#262626] rounded text-neutral-100 font-mono font-bold break-all" id="modal-delete-op-name">
+                    -
+                </div>
+                <div class="p-3 bg-red-950/20 border border-red-800/30 rounded space-y-1.5 text-neutral-400 text-xs">
+                    <p class="font-bold text-red-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-info"></i> Kebijakan Integritas Transaksi:
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 pl-1 text-[11px] text-neutral-300">
+                        <li>Identitas kasir pada transaksi masa lalu akan otomatis di-reset menjadi <span class="font-bold text-neutral-100">"Kasir Lama"</span> (persis seperti akun lokal dihapus).</li>
+                        <li><span class="text-emerald-400 font-bold">100% Data Keuangan Utuh:</span> Nominal omzet, nomor nota, unit PC, dan log audit tidak berkurang sedikit pun.</li>
+                        <li>Nama kasir ini akan dibersihkan tuntas dan tidak disimpan di mana pun lagi.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-[#1c1c1c]">
+                <button type="button" onclick="BranchManager.closeDeleteOperatorModal()"
+                    class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs font-bold rounded transition-colors">
+                    Batal
+                </button>
+                <button type="button" id="btn-confirm-delete-op" onclick="BranchManager.executeDeleteRemoteOperator()"
+                    class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-400 text-xs font-bold rounded transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-trash text-xs"></i>
+                    <span>Ya, Hapus Permanen</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

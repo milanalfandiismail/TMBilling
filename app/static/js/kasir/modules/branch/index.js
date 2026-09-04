@@ -665,6 +665,303 @@ const BranchManager = {
         } catch (err) {
             alert("Error: " + (err.message || err));
         }
+    },
+
+    // ==================== MANAJEMEN AKUN KASIR CABANG (REMOTE) ====================
+    remoteOperators: [],
+    currentOperatorSubTab: 'active',
+    operatorToDelete: null,
+
+    async loadRemoteOperators() {
+        const tbody = document.getElementById('branch-operators-tbody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="py-8 text-center text-xs text-neutral-500">Memuat data akun kasir cabang...</td>
+                </tr>
+            `;
+        }
+
+        try {
+            const res = await API.branch.operators();
+            if (res && res.success) {
+                this.remoteOperators = res.data || [];
+            } else {
+                this.remoteOperators = [];
+            }
+        } catch (err) {
+            console.error('[BranchManager] Gagal memuat operator remote:', err);
+            this.remoteOperators = [];
+        }
+
+        this.updateOperatorBadges();
+        this.renderOperatorsTable();
+    },
+
+    updateOperatorBadges() {
+        const activeCount = this.remoteOperators.filter(op => !op.is_hidden).length;
+        const archivedCount = this.remoteOperators.filter(op => op.is_hidden).length;
+
+        const badgeActive = document.getElementById('badge-count-op-active');
+        const badgeArchived = document.getElementById('badge-count-op-archived');
+
+        if (badgeActive) badgeActive.textContent = activeCount;
+        if (badgeArchived) badgeArchived.textContent = archivedCount;
+    },
+
+    switchOperatorSubTab(tab) {
+        this.currentOperatorSubTab = tab;
+        const btnActive = document.getElementById('btn-subtab-op-active');
+        const btnArchived = document.getElementById('btn-subtab-op-archived');
+        const titleEl = document.getElementById('op-table-title');
+        const descEl = document.getElementById('op-table-desc');
+
+        if (tab === 'active') {
+            if (btnActive) {
+                btnActive.className = 'px-4 py-2 rounded text-xs lg:text-sm font-bold transition-all bg-neutral-100 text-black flex items-center gap-2';
+            }
+            if (btnArchived) {
+                btnArchived.className = 'px-4 py-2 rounded text-xs lg:text-sm font-bold transition-all bg-transparent text-neutral-400 hover:text-neutral-200 border border-transparent hover:border-[#1c1c1c] flex items-center gap-2';
+            }
+            if (titleEl) titleEl.textContent = 'Daftar Akun Kasir Aktif';
+            if (descEl) descEl.textContent = 'Akun yang tampil di dropdown filter laporan billing dan kantin.';
+        } else {
+            if (btnActive) {
+                btnActive.className = 'px-4 py-2 rounded text-xs lg:text-sm font-bold transition-all bg-transparent text-neutral-400 hover:text-neutral-200 border border-transparent hover:border-[#1c1c1c] flex items-center gap-2';
+            }
+            if (btnArchived) {
+                btnArchived.className = 'px-4 py-2 rounded text-xs lg:text-sm font-bold transition-all bg-neutral-100 text-black flex items-center gap-2';
+            }
+            if (titleEl) titleEl.textContent = 'Daftar Akun Kasir Diarsipkan / Nonaktif';
+            if (descEl) descEl.textContent = 'Akun yang disembunyikan dari dropdown filter laporan billing dan kantin. Riwayat dan log masa lalu tetap aman 100%.';
+        }
+
+        this.renderOperatorsTable();
+    },
+
+    filterOperatorsBySearch() {
+        this.renderOperatorsTable();
+    },
+
+    renderOperatorsTable() {
+        const tbody = document.getElementById('branch-operators-tbody');
+        if (!tbody) return;
+
+        const isArchivedTab = this.currentOperatorSubTab === 'archived';
+        let filtered = this.remoteOperators.filter(op => isArchivedTab ? op.is_hidden : !op.is_hidden);
+
+        const searchInput = document.getElementById('filter-remote-op-search');
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+        if (query) {
+            filtered = filtered.filter(op =>
+                (op.operator && op.operator.toLowerCase().includes(query)) ||
+                (op.username && op.username.toLowerCase().includes(query)) ||
+                (op.branch_name && op.branch_name.toLowerCase().includes(query))
+            );
+        }
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="py-8 text-center text-xs text-neutral-500">
+                        ${query ? 'Tidak ada akun kasir yang cocok dengan pencarian.' : (isArchivedTab ? 'Belum ada akun kasir remote yang diarsipkan.' : 'Belum ada akun kasir remote yang tercatat di transaksi.')}
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        const rows = filtered.map((op, index) => {
+            const formatMoney = (num) => {
+                if (window.Utils && typeof window.Utils.formatRupiah === 'function') {
+                    return window.Utils.formatRupiah(num || 0);
+                }
+                return 'Rp ' + Number(num || 0).toLocaleString('id-ID');
+            };
+
+            const encodedOp = encodeURIComponent(op.operator);
+
+            const actionButtons = isArchivedTab ? `
+                <div class="flex items-center justify-end gap-2">
+                    <button type="button" onclick="BranchManager.restoreRemoteOperator('${encodedOp}')"
+                        class="px-2.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded transition-colors flex items-center gap-1.5"
+                        title="Aktifkan kembali ke dropdown laporan">
+                        <i class="fa-solid fa-rotate-left text-[10px]"></i>
+                        <span>Aktifkan</span>
+                    </button>
+                    <button type="button" onclick="BranchManager.openDeleteOperatorModal('${encodedOp}')"
+                        class="px-2.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-bold rounded transition-colors flex items-center gap-1.5"
+                        title="Hapus permanen identitas kasir">
+                        <i class="fa-solid fa-trash text-[10px]"></i>
+                        <span>Hapus</span>
+                    </button>
+                </div>
+            ` : `
+                <div class="flex items-center justify-end gap-2">
+                    <button type="button" onclick="BranchManager.hideRemoteOperator('${encodedOp}')"
+                        class="px-2.5 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 text-xs font-bold rounded transition-colors flex items-center gap-1.5"
+                        title="Sembunyikan dari dropdown filter laporan aktif">
+                        <i class="fa-solid fa-eye-slash text-[10px]"></i>
+                        <span>Nonaktifkan</span>
+                    </button>
+                    <button type="button" onclick="BranchManager.openDeleteOperatorModal('${encodedOp}')"
+                        class="px-2.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-bold rounded transition-colors flex items-center gap-1.5"
+                        title="Hapus permanen identitas kasir">
+                        <i class="fa-solid fa-trash text-[10px]"></i>
+                        <span>Hapus</span>
+                    </button>
+                </div>
+            `;
+
+            const statusBadge = op.is_hidden ?
+                `<span class="px-2 py-0.5 text-[10px] rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold uppercase tracking-wider">Diarsipkan</span>` :
+                `<span class="px-2 py-0.5 text-[10px] rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase tracking-wider">Aktif</span>`;
+
+            return `
+                <tr class="border-b border-[#141414] hover:bg-white/[0.02] transition-colors">
+                    <td class="py-3 px-3 text-neutral-500">${index + 1}</td>
+                    <td class="py-3 px-3 font-semibold text-neutral-200">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-[11px] text-neutral-400 shrink-0">👤</span>
+                            <span class="font-mono text-xs">${this.escapeHtml(op.operator)}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-3 text-neutral-300 font-mono text-xs">${this.escapeHtml(op.username)}</td>
+                    <td class="py-3 px-3 text-neutral-300">
+                        <span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[11px] font-bold">
+                            ${this.escapeHtml(op.branch_name)}
+                        </span>
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                        <span class="px-2 py-0.5 rounded bg-[#171717] border border-[#262626] text-neutral-300 font-mono text-xs font-bold">
+                            ${op.total_transaksi}
+                        </span>
+                    </td>
+                    <td class="py-3 px-3 text-right font-bold text-emerald-400 font-mono text-xs">
+                        ${formatMoney(op.total_nominal)}
+                    </td>
+                    <td class="py-3 px-3 text-neutral-400 text-xs font-mono">${op.terakhir_aktif || '-'}</td>
+                    <td class="py-3 px-3 text-center">${statusBadge}</td>
+                    <td class="py-3 px-3 text-right">${actionButtons}</td>
+                </tr>
+            `;
+        }).join('');
+
+        tbody.innerHTML = rows;
+    },
+
+    escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    },
+
+    async hideRemoteOperator(encodedOp) {
+        const op = decodeURIComponent(encodedOp);
+        try {
+            const res = await API.branch.hideOperator(op);
+            if (res && res.success) {
+                if (window.Toast) {
+                    window.Toast.show(res.message || `Operator '${op}' berhasil dinonaktifkan`, 'success');
+                }
+                await this.loadRemoteOperators();
+            } else {
+                if (window.Toast) {
+                    window.Toast.show(res.error || 'Gagal menonaktifkan operator', 'error');
+                }
+            }
+        } catch (err) {
+            console.error('[BranchManager] Error hide operator:', err);
+            if (window.Toast) {
+                window.Toast.show('Error: ' + (err.message || err), 'error');
+            }
+        }
+    },
+
+    async restoreRemoteOperator(encodedOp) {
+        const op = decodeURIComponent(encodedOp);
+        try {
+            const res = await API.branch.restoreOperator(op);
+            if (res && res.success) {
+                if (window.Toast) {
+                    window.Toast.show(res.message || `Operator '${op}' berhasil diaktifkan kembali`, 'success');
+                }
+                await this.loadRemoteOperators();
+            } else {
+                if (window.Toast) {
+                    window.Toast.show(res.error || 'Gagal mengaktifkan operator', 'error');
+                }
+            }
+        } catch (err) {
+            console.error('[BranchManager] Error restore operator:', err);
+            if (window.Toast) {
+                window.Toast.show('Error: ' + (err.message || err), 'error');
+            }
+        }
+    },
+
+    openDeleteOperatorModal(encodedOp) {
+        const op = decodeURIComponent(encodedOp);
+        this.operatorToDelete = op;
+        const nameEl = document.getElementById('modal-delete-op-name');
+        if (nameEl) nameEl.textContent = op;
+
+        const modal = document.getElementById('modal-delete-remote-op');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+    },
+
+    closeDeleteOperatorModal() {
+        const modal = document.getElementById('modal-delete-remote-op');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+        this.operatorToDelete = null;
+    },
+
+    async executeDeleteRemoteOperator() {
+        if (!this.operatorToDelete) return;
+        const op = this.operatorToDelete;
+        const btn = document.getElementById('btn-confirm-delete-op');
+        const originalText = btn ? btn.innerHTML : '';
+
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span>Menghapus...</span>';
+        }
+
+        try {
+            const res = await API.branch.deleteOperator(op);
+            if (res && res.success) {
+                if (window.Toast) {
+                    window.Toast.show(res.message || `Operator '${op}' berhasil dihapus permanen`, 'success');
+                }
+                this.closeDeleteOperatorModal();
+                await this.loadRemoteOperators();
+            } else {
+                if (window.Toast) {
+                    window.Toast.show(res.error || 'Gagal menghapus operator', 'error');
+                }
+            }
+        } catch (err) {
+            console.error('[BranchManager] Error delete operator:', err);
+            if (window.Toast) {
+                window.Toast.show('Error: ' + (err.message || err), 'error');
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
     }
 };
 
