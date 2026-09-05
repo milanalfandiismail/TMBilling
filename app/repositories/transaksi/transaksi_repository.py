@@ -69,14 +69,44 @@ class TransaksiRepository:
         ).order_by(Transaksi.dibuat_pada.desc()).all()
 
     @staticmethod
+    def _apply_kasir_filter(query, kasir_id):
+        """Menerapkan filter kasir secara akurat (lokal vs remote operator)."""
+        if not kasir_id or str(kasir_id).strip().lower() in ["", "semua", "none"]:
+            return query
+        kasir_str = str(kasir_id).strip()
+        if kasir_str.startswith("operator:"):
+            target_op = kasir_str.split("operator:", 1)[1].strip()
+            return query.filter(Transaksi.operator == target_op)
+        if "(Remote:" in kasir_str:
+            return query.filter(Transaksi.operator == kasir_str)
+        if kasir_str.isdigit():
+            uid = int(kasir_str)
+            return query.filter(
+                Transaksi.user_id == uid,
+                db.or_(
+                    Transaksi.operator == None,
+                    Transaksi.operator == '',
+                    ~Transaksi.operator.like('%(Remote:%')
+                )
+            )
+        return query
+
+    @staticmethod
+    def get_distinct_remote_operators():
+        """Mengambil nama operator remote unik dari transaksi."""
+        results = db.session.query(Transaksi.operator).filter(
+            Transaksi.operator.like('%(Remote:%')
+        ).distinct().all()
+        return [r[0] for r in results if r[0]]
+
+    @staticmethod
     def get_all_by_tanggal_with_nota(tanggal, kasir_id=None):
         """Pusat query transaksi harian yang ada nomor notanya."""
         query = Transaksi.query.filter(
             db.func.date(Transaksi.dibuat_pada) == tanggal,
             Transaksi.no_nota != None
         )
-        if kasir_id:
-            query = query.filter(Transaksi.user_id == kasir_id)
+        query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
         return query.order_by(Transaksi.dibuat_pada.desc()).all()
 
     @staticmethod
@@ -91,8 +121,7 @@ class TransaksiRepository:
             func.date(Transaksi.dibuat_pada) == tanggal,
             Transaksi.no_nota != None
         )
-        if kasir_id:
-            query = query.filter(Transaksi.user_id == kasir_id)
+        query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
         if metode_pembayaran:
             if metode_pembayaran == "Tunai":
                 query = query.filter(
@@ -135,8 +164,7 @@ class TransaksiRepository:
             func.date(Transaksi.dibuat_pada) == tanggal,
             Transaksi.jumlah > 0
         )
-        if kasir_id:
-            query = query.filter(Transaksi.user_id == kasir_id)
+        query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
         if metode_pembayaran:
             if metode_pembayaran == "Tunai":
                 query = query.filter(
@@ -154,8 +182,7 @@ class TransaksiRepository:
             func.date(Transaksi.dibuat_pada) == tanggal,
             Transaksi.jenis == "refund_paket"
         )
-        if kasir_id:
-            query = query.filter(Transaksi.user_id == kasir_id)
+        query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
         if metode_pembayaran:
             if metode_pembayaran == "Tunai":
                 query = query.filter(
@@ -173,8 +200,7 @@ class TransaksiRepository:
         query = db.session.query(func.sum(Transaksi.jumlah)).filter(
             func.date(Transaksi.dibuat_pada) == tanggal
         )
-        if kasir_id:
-            query = query.filter(Transaksi.user_id == kasir_id)
+        query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
         return query.scalar() or 0
 
     @staticmethod
@@ -184,8 +210,7 @@ class TransaksiRepository:
             func.date(Transaksi.dibuat_pada) == tanggal,
             Transaksi.jenis.in_(jenis_list)
         )
-        if kasir_id:
-            query = query.filter(Transaksi.user_id == kasir_id)
+        query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
         if metode_pembayaran:
             if metode_pembayaran == "Tunai":
                 query = query.filter(

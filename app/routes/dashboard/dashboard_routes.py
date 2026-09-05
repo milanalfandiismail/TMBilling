@@ -26,6 +26,9 @@ dashboard_api_bp = Blueprint("dashboard_api", __name__)
 @login_required_html
 def dashboard():
     """Halaman utama dashboard monitoring PC kasir."""
+    # Server-side reset: Setiap kali halaman utama dimuat ulang / refresh, selalu reset konteks ke Cabang Lokal
+    session.pop("active_branch_id", None)
+    session.pop("active_branch_name", None)
     timezone = SettingsService.get("timezone", "Asia/Makassar")
     tz_label = get_tz_short_name(timezone)
     return render_template("kasir/index.html", user_timezone=timezone, user_timezone_label=tz_label)

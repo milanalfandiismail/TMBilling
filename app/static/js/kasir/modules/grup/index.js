@@ -160,15 +160,21 @@ const Grup = {
     },
 
     updateAllDropdowns(list) {
-        const options = list.map(g => `<option value="${g.nama}">GRUP: ${g.nama.toUpperCase()}</option>`).join('');
-        ['inp-pc-grup', 'inp-batch-grup', 'inp-paket-grup', 'inp-member-grup'].forEach(id => {
+        const modalOptions = list.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+        ['inp-pc-grup', 'inp-batch-grup', 'inp-paket-grup', 'inp-mem-grup', 'inp-member-grup'].forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.innerHTML = options;
+            if (el) el.innerHTML = modalOptions;
         });
-        const filterSelect = document.getElementById('member-grup-filter-select');
-        if (filterSelect) {
-            filterSelect.innerHTML = '<option value="">Semua Grup</option>' + options;
-        }
+
+        const filterOptions = '<option value="">Semua Grup</option>' + list.map(g => `<option value="${g.id}">${g.nama.toUpperCase()}</option>`).join('');
+        ['pc-grup-filter-select', 'paket-grup-filter-select', 'member-grup-filter-select'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                const currentVal = el.value;
+                el.innerHTML = filterOptions;
+                if (currentVal) el.value = currentVal;
+            }
+        });
     },
 
     render(list) {

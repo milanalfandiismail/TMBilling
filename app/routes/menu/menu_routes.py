@@ -61,22 +61,25 @@ def get_menu_list():
 def create_menu_item():
     """Membuat item menu baru beserta upload gambarnya."""
     try:
-        nama = request.form.get("nama")
-        harga = request.form.get("harga", 0)
-        stok = request.form.get("stok", 0)
-        
+        if request.is_json:
+            json_data = request.get_json(silent=True) or {}
+            nama = json_data.get("nama")
+            harga = json_data.get("harga", 0)
+            stok = json_data.get("stok", 0)
+            gambar_path = json_data.get("gambar_path")
+        else:
+            nama = request.form.get("nama")
+            harga = request.form.get("harga", 0)
+            stok = request.form.get("stok", 0)
+            file = request.files.get("gambar")
+            gambar_path = handle_image_upload(file) if file else None
+
         # Validasi manual tipe data
         try:
-            harga = int(harga)
-            stok = int(stok)
-        except ValueError:
+            harga = int(harga) if harga is not None else 0
+            stok = int(stok) if stok is not None else 0
+        except (ValueError, TypeError):
             return jsonify({"success": False, "error": "Harga dan stok harus berupa angka"}), 400
-
-        # Upload gambar
-        file = request.files.get("gambar")
-        gambar_path = None
-        if file:
-            gambar_path = handle_image_upload(file)
 
         operator = session.get("kasir_username", "system")
         menu = MenuService.create_menu({
@@ -100,17 +103,28 @@ def update_menu_item(menu_id):
     """Mengupdate item menu beserta upload gambar baru (jika ada)."""
     try:
         data = {}
-        if "nama" in request.form:
-            data["nama"] = request.form.get("nama")
-        if "harga" in request.form:
-            data["harga"] = int(request.form.get("harga", 0))
-        if "stok" in request.form:
-            data["stok"] = int(request.form.get("stok", 0))
+        if request.is_json:
+            json_data = request.get_json(silent=True) or {}
+            if "nama" in json_data:
+                data["nama"] = json_data.get("nama")
+            if "harga" in json_data:
+                data["harga"] = int(json_data.get("harga", 0))
+            if "stok" in json_data:
+                data["stok"] = int(json_data.get("stok", 0))
+            if "gambar_path" in json_data:
+                data["gambar_path"] = json_data.get("gambar_path")
+        else:
+            if "nama" in request.form:
+                data["nama"] = request.form.get("nama")
+            if "harga" in request.form:
+                data["harga"] = int(request.form.get("harga", 0))
+            if "stok" in request.form:
+                data["stok"] = int(request.form.get("stok", 0))
 
-        # Cek upload gambar baru
-        file = request.files.get("gambar")
-        if file:
-            data["gambar_path"] = handle_image_upload(file)
+            # Cek upload gambar baru
+            file = request.files.get("gambar")
+            if file:
+                data["gambar_path"] = handle_image_upload(file)
 
         operator = session.get("kasir_username", "system")
         menu = MenuService.update_menu(menu_id, data, operator=operator)

@@ -41,6 +41,10 @@ export const Api = {
         return await invoke('force_shutdown');
     },
 
+    async forceRestart() {
+        return await invoke('force_restart');
+    },
+
     async getExternalBg() {
         return await invoke('get_external_bg');
     },

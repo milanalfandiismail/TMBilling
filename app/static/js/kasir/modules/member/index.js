@@ -9,6 +9,16 @@ const Member = {
     totalRecords: 0,
     _currentPaketList: [],
 
+    resetFilters() {
+        this.currentPage = 1;
+        this.searchQuery = '';
+        this.currentGrupId = '';
+        const searchInput = document.getElementById('member-search-input');
+        if (searchInput) searchInput.value = '';
+        const filterSelect = document.getElementById('member-grup-filter-select');
+        if (filterSelect) filterSelect.innerHTML = '<option value="">Semua Grup</option>';
+    },
+
     async load() {
         const area = document.getElementById('member-table');
         if (area) area.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div></div>';
@@ -31,9 +41,9 @@ const Member = {
             const groups = grupData.grup || grupData || [];
 
             const filterSelect = document.getElementById('member-grup-filter-select');
-            if (filterSelect && filterSelect.options.length <= 1) {
+            if (filterSelect) {
                 filterSelect.innerHTML = '<option value="">Semua Grup</option>' +
-                    groups.map(g => `<option value="${g.id}" ${this.currentGrupId == g.id ? 'selected' : ''}>${g.nama.toUpperCase()}</option>`).join('');
+                    groups.map(g => `<option value="${g.id}" ${String(this.currentGrupId) === String(g.id) ? 'selected' : ''}>${g.nama.toUpperCase()}</option>`).join('');
             }
 
             const addGrupSelect = document.getElementById('inp-mem-grup');

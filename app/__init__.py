@@ -21,7 +21,22 @@ from flask_wtf import CSRFProtect
 from app.models import db
 from app.config import Config
 
-csrf = CSRFProtect()
+class TMBillingCSRFProtect(CSRFProtect):
+    """Custom CSRFProtect yang membebaskan request server-to-server (Bearer API Key).
+    
+    Request API yang membawa header 'Authorization: Bearer ...' digunakan
+    untuk komunikasi multi-cabang antar server TMBilling dan diverifikasi
+    penuh oleh validasi API Key di middleware auth, sehingga tidak memerlukan
+    CSRF token browser session.
+    """
+    def protect(self):
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            return
+        super().protect()
+
+
+csrf = TMBillingCSRFProtect()
 migrate = Migrate()
 
 
@@ -60,7 +75,9 @@ def _register_blueprints(app):
         uptime_api_bp,
         tv_public_api_bp,
         tutorial_api_bp,
-        fileexplorer_api_bp
+        fileexplorer_api_bp,
+        branch_api_bp,
+        notes_api_bp
     )
 
     # ==========================================
@@ -98,6 +115,8 @@ def _register_blueprints(app):
     app.register_blueprint(uptime_api_bp, url_prefix="/api/v1/kasir/uptime")
     app.register_blueprint(tutorial_api_bp, url_prefix="/api/v1/kasir/tutorials")
     app.register_blueprint(fileexplorer_api_bp, url_prefix="/api/v1/kasir/fileexplorer")
+    app.register_blueprint(branch_api_bp, url_prefix="/api/v1/kasir/branch")
+    app.register_blueprint(notes_api_bp, url_prefix="/api/v1/kasir/notes")
 
     # ==========================================
     # 3. PUBLIC APIs (/api/v1/public/...)
@@ -117,6 +136,7 @@ def _register_blueprints(app):
     csrf.exempt(shift_api_bp)
     csrf.exempt(server_monitor_bp)
     csrf.exempt(tutorial_api_bp)
+    csrf.exempt(branch_api_bp)
 
 def _register_public_routes(app):
     """Mendaftarkan route publik."""
@@ -177,16 +197,17 @@ def _register_public_routes(app):
         """Render halaman daftar game (Game Launcher)."""
         return render_template("public/game/index.html")
 
-    @app.route("/tv/dynamic")
-    def public_tv_signage():
-        """Render public Smart TV Digital Signage view."""
-        return render_template("public/tv/index.html")
-
+    @app.route("/tv")
     @app.route("/tv/static")
     @app.route("/tv-static")
     def public_tv_static():
-        """Render public Smart TV Static Dashboard view."""
+        """Render public Smart TV Static Widescreen Dashboard view."""
         return render_template("public/tv/static.html")
+
+    @app.route("/tv/dynamic")
+    def public_tv_dynamic():
+        """Redirect legacy dynamic TV route to unified widescreen TV dashboard."""
+        return redirect("/tv")
 
 def _register_context_processors(app):
     """Mendaftarkan context processor untuk template jinja."""
@@ -205,7 +226,7 @@ def _register_context_processors(app):
             plugin_menus = []
             
         from app.utils.timezone_utils import format_display
-        version = current_app.config.get("VERSION", "v1.5.0")
+        version = current_app.config.get("VERSION", "v1.6.0")
         return dict(warnet_title=title, plugin_menus=plugin_menus, version=version, format_display=format_display)
 
 def _init_app_context(app):
@@ -259,9 +280,20 @@ def _init_app_context(app):
                 admin.set_password("admin123")
                 db.session.add(admin)
                 db.session.commit()
-                print("✅ [TMBilling] Database kosong. Admin default otomatis dibuat (username: admin, password: admin123)")
+                print("[OK] [TMBilling] Database kosong. Admin default otomatis dibuat (username: admin, password: admin123)")
         except Exception as e:
             app.logger.error(f"Gagal membuat admin default saat bootstrap: {e}")
+
+        # Self-healing bootstrap: Buat tabel 'cabang' otomatis jika belum ada (Non-destructive)
+        try:
+            from sqlalchemy import inspect
+            from app.models.branch import Branch
+            inspector = inspect(db.engine)
+            if not inspector.has_table('cabang'):
+                Branch.__table__.create(db.engine)
+                app.logger.info("[OK] [TMBilling] Tabel 'cabang' berhasil dibuat secara otomatis.")
+        except Exception as e:
+            app.logger.warning(f"Pengecekan bootstrap tabel cabang: {e}")
 
 def create_app():
     """Membuat dan mengkonfigurasi instance aplikasi Flask.
@@ -285,8 +317,9 @@ def create_app():
     migrate.init_app(app, db, render_as_batch=True)
 
     # IP Whitelist middleware — proteksi dashboard /kasir dan /api/v1/kasir/*
-    from app.middleware import check_ip_whitelist
+    from app.middleware import check_ip_whitelist, handle_branch_proxy_relay
     app.before_request(check_ip_whitelist)
+    app.before_request(handle_branch_proxy_relay)
 
     os.makedirs("logs", exist_ok=True)
 

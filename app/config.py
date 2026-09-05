@@ -39,8 +39,8 @@ class Config:
     SESSION_PERMANENT = True
     PERMANENT_SESSION_LIFETIME = 86400  # 24 jam
     WTF_CSRF_TIME_LIMIT = None          # CSRF mengikuti umur session agar tidak kedaluwarsa sendiri
-    VERSION = "1.5.8"
-    VERSION_NAME = "Emerald"
+    VERSION = "1.6.0"
+    VERSION_NAME = "Multi-Branch Nexus"
 
     # Tambahan untuk kebutuhan aplikasi
     CLIENT_API_KEY = os.environ.get('CLIENT_API_KEY')

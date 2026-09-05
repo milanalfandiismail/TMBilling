@@ -90,19 +90,30 @@ if __name__ == "__main__":
         version = app.config.get("VERSION", "1.5.0")
         print(f"[v{version}] Background Tasks Started (Cleanup & Backup)")
     
+    # Port & Host configuration (bisa via env PORT/HOST atau CLI flag --port / -p)
+    import sys
+    server_port = int(os.environ.get("PORT", 7015))
+    server_host = os.environ.get("HOST", "0.0.0.0")
+    for i, arg in enumerate(sys.argv):
+        if arg in ("--port", "-p") and i + 1 < len(sys.argv):
+            try:
+                server_port = int(sys.argv[i + 1])
+            except ValueError:
+                pass
+
     # Mode produksi menggunakan Waitress jika DEBUG_MODE = False
     is_debug = app.config.get("DEBUG_MODE", False)
     if is_debug:
-        app.run(debug=True, host="0.0.0.0", port=7015)
+        app.run(debug=True, host=server_host, port=server_port)
     else:
         # Menjalankan server dalam mode produksi menggunakan Waitress (direkomendasikan untuk Windows)
         # Mengambil konfigurasi threads dari app.config (default: 8)
         threads_count = app.config.get("WAITRESS_THREADS", 8)
         from waitress import serve
         print("* [PRODUCTION] Menjalankan server TMBilling menggunakan WSGI Waitress...")
-        print("* [PRODUCTION] Alamat: http://0.0.0.0:7015")
+        print(f"* [PRODUCTION] Alamat: http://{server_host}:{server_port}")
         print(f"* [PRODUCTION] Threads (Workers): {threads_count}")
-        serve(app, host="0.0.0.0", port=7015, threads=threads_count)
+        serve(app, host=server_host, port=server_port, threads=threads_count)
 
 
 # ==============================================================================

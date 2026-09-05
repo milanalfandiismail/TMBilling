@@ -2,6 +2,20 @@ const Laporan = {
     currentDate: null,
     currentPage: 1,
     currentKasirId: '',
+    currentMetodePembayaran: '',
+
+    resetFilters() {
+        this.currentDate = null;
+        this.currentPage = 1;
+        this.currentKasirId = '';
+        this.currentMetodePembayaran = '';
+        const tglSelect = document.getElementById('laporan-tanggal-select');
+        if (tglSelect) tglSelect.innerHTML = '<option value="">-- Pilih Tanggal --</option>';
+        const kasirSelect = document.getElementById('laporan-kasir-select');
+        if (kasirSelect) kasirSelect.innerHTML = '<option value="">Semua Kasir</option>';
+        const metodeSelect = document.getElementById('laporan-metode-pembayaran-select');
+        if (metodeSelect) metodeSelect.innerHTML = '<option value="">Semua Metode</option>';
+    },
 
     async load() {
         await this.loadKasirList();
@@ -154,6 +168,7 @@ const Laporan = {
                                 <th class="px-4 py-3 text-left">Pelanggan</th>
                                 <th class="px-4 py-3 text-right">Jumlah</th>
                                 <th class="px-4 py-3 text-left">PC</th>
+                                <th class="px-4 py-3 text-left">Kasir</th>
                                 <th class="px-4 py-3 text-left">Metode</th>
                                 <th class="px-4 py-3 text-center">Aksi</th>
                             </tr>
@@ -180,6 +195,10 @@ const Laporan = {
                                     <td class="px-4 py-3 text-neutral-500 font-mono flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">PC</span>
                                         <span>${t.pc_kode || '-'}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir</span>
+                                        <span class="text-neutral-300 font-medium">${t.kasir_nama || '-'}</span>
                                     </td>
                                     <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Metode</span>

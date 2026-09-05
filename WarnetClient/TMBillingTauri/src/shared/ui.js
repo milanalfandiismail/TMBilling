@@ -123,5 +123,62 @@ export const UI = {
         } else {
             modal.classList.add('hidden');
         }
+    },
+
+    // Modal Konfirmasi Daya (Shutdown / Restart)
+    powerActionPending: null,
+
+    showPowerModal(type) {
+        const modal = document.getElementById('power-confirm-modal');
+        if (!modal) return;
+
+        this.powerActionPending = type;
+        const iconContainer = document.getElementById('power-modal-icon-container');
+        const iconSvg = document.getElementById('power-modal-icon');
+        const titleEl = document.getElementById('power-modal-title');
+        const descEl = document.getElementById('power-modal-desc');
+        const confirmBtn = document.getElementById('power-modal-confirm-btn');
+
+        if (type === 'shutdown') {
+            if (iconContainer) {
+                iconContainer.className = 'w-12 h-12 rounded-2xl flex items-center justify-center mb-3 bg-red-500/10 border border-red-500/20 text-red-400';
+            }
+            if (iconSvg) {
+                iconSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />';
+            }
+            if (titleEl) titleEl.innerText = 'Matikan Komputer?';
+            if (descEl) descEl.innerText = 'Komputer client akan dimatikan secara penuh. Pastikan tidak ada data yang belum disimpan.';
+            if (confirmBtn) {
+                confirmBtn.className = 'flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-red-950/50';
+                confirmBtn.innerText = 'Matikan PC';
+            }
+        } else if (type === 'restart') {
+            if (iconContainer) {
+                iconContainer.className = 'w-12 h-12 rounded-2xl flex items-center justify-center mb-3 bg-blue-500/10 border border-blue-500/20 text-blue-400';
+            }
+            if (iconSvg) {
+                iconSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />';
+            }
+            if (titleEl) titleEl.innerText = 'Restart Komputer?';
+            if (descEl) descEl.innerText = 'Komputer client akan dimuat ulang (reboot) sekarang.';
+            if (confirmBtn) {
+                confirmBtn.className = 'flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-blue-950/50';
+                confirmBtn.innerText = 'Restart PC';
+            }
+        }
+
+        modal.classList.remove('hidden');
+        if (confirmBtn) confirmBtn.focus();
+    },
+
+    togglePowerModal(show) {
+        const modal = document.getElementById('power-confirm-modal');
+        if (!modal) return;
+        if (show) {
+            modal.classList.remove('hidden');
+        } else {
+            modal.classList.add('hidden');
+            this.powerActionPending = null;
+        }
     }
 };

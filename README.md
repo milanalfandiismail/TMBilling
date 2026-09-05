@@ -1288,7 +1288,7 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more informa
 </p>
 
 <p align="center">
-  <sub>TMBilling v1.5.1</sub>
+  <sub>TMBilling v1.6.0</sub>
 </p>
 
 ---

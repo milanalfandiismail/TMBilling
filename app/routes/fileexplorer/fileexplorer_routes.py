@@ -8,10 +8,16 @@ fileexplorer_api_bp = Blueprint("fileexplorer", __name__)
 def admin_required():
     return session.get("kasir_role") == "admin"
 
+@fileexplorer_api_bp.before_request
+def enforce_admin_and_local():
+    if not admin_required():
+        return jsonify({"success": False, "error": "Akses Ditolak: Hanya Admin yang dapat mengakses File Explorer"}), 403
+    branch_id = request.headers.get("X-Branch-ID")
+    if branch_id and branch_id not in ("0", "null", "undefined", ""):
+        return jsonify({"success": False, "error": "File Explorer hanya tersedia untuk server cabang lokal"}), 400
+
 @fileexplorer_api_bp.route("/roots", methods=["GET"])
 def get_roots():
-    if not admin_required():
-        return jsonify({"success": False, "error": "Akses ditolak"}), 403
     roots = FileExplorerService.get_allowed_roots()
     return jsonify({"success": True, "roots": roots})
 

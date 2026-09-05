@@ -6,6 +6,25 @@ const Struk = {
     currentDate: null,
     currentSubTab: 'billing',
 
+    resetState() {
+        this.currentData = null;
+        this.currentPage = 1;
+        this.currentDate = null;
+        try {
+            localStorage.removeItem('lastStrukData');
+        } catch (e) {}
+        const printBtn = document.getElementById('btn-print-struk');
+        if (printBtn) printBtn.classList.add('hidden');
+        const previewContent = document.getElementById('struk-preview-content');
+        if (previewContent) {
+            previewContent.innerHTML = '<div class="text-center py-12 text-neutral-500 text-xs">Pilih transaksi dari daftar riwayat di samping untuk melihat struk</div>';
+        }
+        const historyContainer = document.getElementById('struk-history-list');
+        if (historyContainer) historyContainer.innerHTML = '';
+        const dateSelect = document.getElementById('struk-date-picker');
+        if (dateSelect) dateSelect.innerHTML = '<option value="">Memuat tanggal...</option>';
+    },
+
     async init() {
         await this.loadDateOptions();
         await this.loadHistory();
