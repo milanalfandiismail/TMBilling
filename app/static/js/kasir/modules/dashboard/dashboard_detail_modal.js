@@ -214,7 +214,7 @@ const DashboardDetailModal = {
                                 <span id="modal-vnc-resolution" class="text-xs lg:text-base text-neutral-500 font-mono hidden">0 × 0 (FIT)</span>
                             </div>
                         </div>
-                        <div id="modal-vnc-container" class="relative w-full aspect-video bg-black overflow-hidden flex items-center justify-center">
+                        <div id="modal-vnc-container" tabindex="0" class="relative w-full aspect-video bg-black overflow-hidden flex items-center justify-center outline-none focus:ring-1 focus:ring-neutral-700">
                             <div id="modal-vnc-screen" class="w-full h-full flex items-center justify-center"></div>
                             <div id="modal-vnc-loading" class="absolute inset-0 bg-black/90 flex flex-col items-center justify-center gap-3 z-20 hidden">
                                 <svg class="animate-spin h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24">
@@ -273,8 +273,25 @@ const DashboardDetailModal = {
                                 <span class="text-xs font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
                                     <span>📋</span> Clipboard Remote PC ${pc.kode}
                                 </span>
-                                <button onclick="DashboardDetailModal.toggleClipboardModal()" class="text-[10px] text-neutral-400 hover:text-neutral-200">✕ Tutup</button>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] text-neutral-400 hidden sm:inline">💡 Shortcut <b>Ctrl+C</b> & <b>Ctrl+V</b> aktif otomatis</span>
+                                    <button onclick="DashboardDetailModal.toggleClipboardModal()" class="text-[10px] text-neutral-400 hover:text-neutral-200">✕ Tutup</button>
+                                </div>
                             </div>
+
+                            <!-- Quick Action Bar (1-Click Direct Paste & Copy) -->
+                            <div class="flex flex-wrap items-center gap-2 p-1.5 bg-[#080808] border border-[#1c1c1c] rounded">
+                                <span class="text-[10px] font-semibold text-neutral-400 mr-1 flex items-center gap-1">
+                                    <span>⚡</span> Aksi Cepat:
+                                </span>
+                                <button onclick="DashboardDetailModal.pasteHostClipboardDirect()" class="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 text-black text-[11px] font-bold rounded transition-colors flex items-center gap-1 shadow-sm" title="Baca clipboard Host/HP dan langsung paste ke remote">
+                                    <span>📥</span> Tempel Cepat Host/HP ➔ PC
+                                </button>
+                                <button onclick="DashboardDetailModal.copyRemoteClipboardDirect()" class="px-2.5 py-1 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-[11px] font-semibold rounded transition-colors flex items-center gap-1" title="Salin teks dari remote ke clipboard Host/HP">
+                                    <span>📤</span> Salin Cepat PC ➔ Host/HP
+                                </button>
+                            </div>
+
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div class="space-y-1.5">
                                     <div class="flex items-center justify-between text-[10px] text-neutral-400 font-semibold">
@@ -808,6 +825,45 @@ const DashboardDetailModal = {
             Toast.info('Silakan salin teks manual dari kotak');
             if (recInput) recInput.focus();
         }
+    },
+
+    pasteHostClipboardDirect: async function() {
+        if (!this.vncSession) {
+            Toast.error('Remote PC belum terhubung');
+            return;
+        }
+        let text = '';
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            try {
+                text = await navigator.clipboard.readText();
+            } catch (e) {}
+        }
+        if (text) {
+            this.vncSession.handlePastedText(text);
+            const sendInput = document.getElementById('modal-vnc-clip-send');
+            if (sendInput) sendInput.value = text;
+        } else {
+            const sendInput = document.getElementById('modal-vnc-clip-send');
+            if (sendInput && sendInput.value) {
+                this.vncSession.handlePastedText(sendInput.value);
+            } else {
+                Toast.info('Gunakan Ctrl+V di dalam layar remote atau tempel manual di kotak input');
+                if (sendInput) sendInput.focus();
+            }
+        }
+    },
+
+    copyRemoteClipboardDirect: async function() {
+        if (!this.vncSession) {
+            Toast.error('Remote PC belum terhubung');
+            return;
+        }
+        const text = this.vncSession.getRemoteClipboard() || '';
+        if (!text) {
+            Toast.warning('Belum ada teks yang disalin dari remote PC (Gunakan Ctrl+C di remote)');
+            return;
+        }
+        await this.vncSession.copyTextToHost(text, true);
     },
 
     onModalClose: function(pcId) {
