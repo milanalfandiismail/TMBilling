@@ -271,7 +271,7 @@ const DashboardDetailModal = {
                         <div id="modal-vnc-clipboard-drawer" class="hidden p-3 bg-[#0a0a0a] border-t border-[#1c1c1c] space-y-2.5 select-text">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
-                                    <span>📋</span> Clipboard Remote PC ${pc.kode}
+                                    <span>📋</span> Clipboard Remote Host ${pc.kode}
                                 </span>
                                 <div class="flex items-center gap-2">
                                     <span class="text-[10px] text-neutral-400 hidden sm:inline">💡 Shortcut <b>Ctrl+C</b> & <b>Ctrl+V</b> aktif otomatis</span>
@@ -279,37 +279,24 @@ const DashboardDetailModal = {
                                 </div>
                             </div>
 
-                            <!-- Quick Action Bar (1-Click Direct Paste & Copy) -->
-                            <div class="flex flex-wrap items-center gap-2 p-1.5 bg-[#080808] border border-[#1c1c1c] rounded">
-                                <span class="text-[10px] font-semibold text-neutral-400 mr-1 flex items-center gap-1">
-                                    <span>⚡</span> Aksi Cepat:
-                                </span>
-                                <button onclick="DashboardDetailModal.pasteHostClipboardDirect()" class="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 text-black text-[11px] font-bold rounded transition-colors flex items-center gap-1 shadow-sm" title="Baca clipboard Host/HP dan langsung paste ke remote">
-                                    <span>📥</span> Tempel Cepat Host/HP ➔ PC
-                                </button>
-                                <button onclick="DashboardDetailModal.copyRemoteClipboardDirect()" class="px-2.5 py-1 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-[11px] font-semibold rounded transition-colors flex items-center gap-1" title="Salin teks dari remote ke clipboard Host/HP">
-                                    <span>📤</span> Salin Cepat PC ➔ Host/HP
-                                </button>
-                            </div>
-
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div class="space-y-1.5">
                                     <div class="flex items-center justify-between text-[10px] text-neutral-400 font-semibold">
-                                        <span>⬆️ Kirim ke PC (Host → VNC)</span>
+                                        <span>⬆️ Kirim ke Remote Host</span>
                                         <button onclick="DashboardDetailModal.pasteHostToInput()" class="text-emerald-400 hover:underline">Tempel dari Host</button>
                                     </div>
-                                    <textarea id="modal-vnc-clip-send" rows="2" placeholder="Teks untuk dikirim ke PC..." class="w-full p-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 font-mono resize-none focus:outline-none focus:border-neutral-500"></textarea>
-                                    <button onclick="DashboardDetailModal.sendClipboardToRemote()" class="w-full py-1 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors">
-                                        Kirim ke PC (Ctrl+V)
+                                    <textarea id="modal-vnc-clip-send" rows="2" placeholder="Ketik atau tempel teks untuk dikirim ke Remote Host..." class="w-full p-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 font-mono resize-none focus:outline-none focus:border-neutral-500"></textarea>
+                                    <button onclick="DashboardDetailModal.sendClipboardToRemote()" class="w-full py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors flex items-center justify-center gap-1.5">
+                                        <span>🚀</span> Kirim ke Remote Host
                                     </button>
                                 </div>
                                 <div class="space-y-1.5">
                                     <div class="flex items-center justify-between text-[10px] text-neutral-400 font-semibold">
-                                        <span>⬇️ Diterima dari PC (VNC → Host)</span>
+                                        <span>⬇️ Ambil dari Remote Host</span>
                                     </div>
-                                    <textarea id="modal-vnc-clip-rec" rows="2" readonly placeholder="Teks dari PC saat dicopy..." class="w-full p-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-emerald-400 font-mono resize-none focus:outline-none"></textarea>
-                                    <button onclick="DashboardDetailModal.copyReceivedToHost()" class="w-full py-1 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs font-bold rounded transition-colors">
-                                        Salin ke Clipboard HP/PC
+                                    <textarea id="modal-vnc-clip-rec" rows="2" readonly placeholder="Teks yang disalin di Remote Host..." class="w-full p-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-emerald-400 font-mono resize-none focus:outline-none"></textarea>
+                                    <button onclick="DashboardDetailModal.copyReceivedToHost()" class="w-full py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs font-bold rounded transition-colors flex items-center justify-center gap-1.5">
+                                        <span>📋</span> Ambil & Salin ke Clipboard Host/HP
                                     </button>
                                 </div>
                             </div>
@@ -777,53 +764,52 @@ const DashboardDetailModal = {
 
     sendClipboardToRemote: function() {
         if (!this.vncSession) {
-            Toast.error('Remote PC belum terhubung');
+            Toast.error('Remote belum terhubung');
             return;
         }
         const sendInput = document.getElementById('modal-vnc-clip-send');
         const text = sendInput ? sendInput.value : '';
         if (!text) {
             Toast.warning('Ketik atau tempel teks terlebih dahulu');
+            if (sendInput) sendInput.focus();
             return;
         }
-        const success = this.vncSession.sendClipboard(text);
-        if (success) {
-            Toast.success('Teks terkirim ke clipboard PC Klien (Ctrl+V di PC)');
-            const drawer = document.getElementById('modal-vnc-clipboard-drawer');
-            if (drawer) drawer.classList.add('hidden');
-        } else {
-            Toast.error('Gagal mengirim teks ke clipboard PC');
-        }
+        this.vncSession.handlePastedText(text);
+        Toast.success('Teks terkirim & ditempel di Remote Host');
+        const drawer = document.getElementById('modal-vnc-clipboard-drawer');
+        if (drawer) drawer.classList.add('hidden');
     },
 
     copyReceivedToHost: async function() {
-        const recInput = document.getElementById('modal-vnc-clip-rec');
-        const text = recInput ? recInput.value : (this.vncSession ? this.vncSession.getRemoteClipboard() : '');
-        if (!text) {
-            Toast.warning('Belum ada teks yang disalin dari remote PC');
+        if (!this.vncSession) {
+            Toast.error('Remote belum terhubung');
             return;
         }
-        let copied = false;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            try {
-                await navigator.clipboard.writeText(text);
-                copied = true;
-            } catch (e) {
-                console.warn('[VNC] navigator.clipboard.writeText gagal:', e);
-            }
+        const recInput = document.getElementById('modal-vnc-clip-rec');
+        let text = recInput ? recInput.value : (this.vncSession ? this.vncSession.getRemoteClipboard() : '');
+
+        if (!text && this.vncSession) {
+            Toast.info('Meminta seleksi teks dari Remote Host (Ctrl+C)...');
+            this.vncSession.sendCtrlKeySequence(0x0063, 'KeyC');
+            await new Promise(r => setTimeout(r, 200));
+            text = this.vncSession.getRemoteClipboard() || '';
+            if (recInput && text) recInput.value = text;
         }
-        if (!copied && recInput) {
-            recInput.select();
-            recInput.setSelectionRange(0, 99999);
-            try {
-                copied = document.execCommand('copy');
-            } catch (e) {}
+
+        if (!text) {
+            Toast.warning('Belum ada teks di remote. Pilih/sorot teks di remote terlebih dahulu, lalu klik tombol ini.');
+            return;
         }
+
+        const copied = await this.vncSession.copyTextToHost(text, false);
         if (copied) {
-            Toast.success('Teks berhasil disalin ke clipboard perangkat ini!');
+            Toast.success('📋 Teks dari Remote Host disalin ke clipboard Host! Silakan Paste (Ctrl+V / Klik Kanan).');
         } else {
-            Toast.info('Silakan salin teks manual dari kotak');
-            if (recInput) recInput.focus();
+            Toast.info('Silakan salin teks manual dari kotak.');
+            if (recInput) {
+                recInput.focus();
+                recInput.select();
+            }
         }
     },
 

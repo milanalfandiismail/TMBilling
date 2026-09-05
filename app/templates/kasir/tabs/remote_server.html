@@ -90,7 +90,7 @@
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#1c1c1c] pb-2">
                 <div class="flex items-center gap-2">
                     <span class="text-base">📋</span>
-                    <h4 class="text-xs lg:text-sm font-bold text-neutral-200 uppercase tracking-wider">Sinkronisasi Clipboard (Host ↔ VNC)</h4>
+                    <h4 class="text-xs lg:text-sm font-bold text-neutral-200 uppercase tracking-wider">Sinkronisasi Clipboard (Host ↔ Remote Host)</h4>
                     <span id="vnc-clipboard-status-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-800 text-neutral-400 border border-neutral-700">Tersinkronisasi</span>
                 </div>
                 <div class="flex items-center gap-2">
@@ -101,52 +101,39 @@
                 </div>
             </div>
 
-            <!-- Quick Action Bar (1-Click Direct Paste & Copy) -->
-            <div class="flex flex-wrap items-center gap-2 p-2 bg-[#080808] border border-[#1c1c1c] rounded-lg">
-                <span class="text-[11px] font-semibold text-neutral-400 mr-1 flex items-center gap-1">
-                    <span>⚡</span> Aksi Cepat:
-                </span>
-                <button onclick="VNCClient.pasteHostClipboardDirect()" class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors flex items-center gap-1.5 shadow-sm" title="Baca clipboard Host/HP dan langsung paste ke remote">
-                    <span>📥</span> Tempel Cepat Host/HP ➔ Remote
-                </button>
-                <button onclick="VNCClient.copyRemoteClipboardDirect()" class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs font-semibold rounded transition-colors flex items-center gap-1.5" title="Salin teks dari remote ke clipboard Host/HP">
-                    <span>📤</span> Salin Cepat Remote ➔ Host/HP
-                </button>
-            </div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <!-- Kolom 1: Kirim ke Remote (Host -> VNC) -->
+                <!-- Kolom 1: Kirim ke Remote Host -->
                 <div class="bg-[#080808] border border-[#1c1c1c] rounded-lg p-3 flex flex-col space-y-2">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
-                            <span>⬆️</span> Kirim ke Remote VNC
+                            <span>⬆️</span> Kirim ke Remote Host
                         </span>
                         <button onclick="VNCClient.pasteHostToInput()" class="px-2 py-0.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-400 text-[10px] font-semibold rounded transition-colors" title="Ambil teks dari clipboard host">
                             📋 Tempel dari Host
                         </button>
                     </div>
-                    <textarea id="vnc-clipboard-send-text" rows="3" placeholder="Ketik atau tempel teks di sini lalu klik 'Kirim ke VNC'..."
+                    <textarea id="vnc-clipboard-send-text" rows="3" placeholder="Ketik atau tempel teks di sini lalu klik 'Kirim ke Remote Host'..."
                         class="w-full p-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono resize-none"></textarea>
                     <div class="flex justify-end">
                         <button onclick="VNCClient.sendClipboardToRemote()" class="w-full sm:w-auto px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors flex items-center justify-center gap-1.5">
-                            <span>🚀</span> Kirim ke VNC (Ctrl+V di Remote)
+                            <span>🚀</span> Kirim ke Remote Host
                         </button>
                     </div>
                 </div>
 
-                <!-- Kolom 2: Terima dari Remote (VNC -> Host) -->
+                <!-- Kolom 2: Ambil dari Remote Host -->
                 <div class="bg-[#080808] border border-[#1c1c1c] rounded-lg p-3 flex flex-col space-y-2">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
-                            <span>⬇️</span> Diterima dari Remote VNC
+                            <span>⬇️</span> Ambil dari Remote Host
                         </span>
-                        <span class="text-[10px] text-neutral-500">Auto-sync saat salin di Remote</span>
+                        <span class="text-[10px] text-neutral-500">Auto-sync saat Ctrl+C di Remote</span>
                     </div>
-                    <textarea id="vnc-clipboard-received-text" rows="3" readonly placeholder="Teks yang Anda salin (Ctrl+C) di dalam remote VNC akan muncul di sini secara otomatis..."
+                    <textarea id="vnc-clipboard-received-text" rows="3" readonly placeholder="Teks yang Anda salin di Remote Host akan otomatis muncul di sini..."
                         class="w-full p-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-emerald-400 focus:outline-none font-mono resize-none"></textarea>
                     <div class="flex justify-end">
                         <button onclick="VNCClient.copyReceivedToHost()" class="w-full sm:w-auto px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 hover:text-white text-xs font-bold rounded transition-colors flex items-center justify-center gap-1.5">
-                            <span>📋</span> Salin ke Clipboard Perangkat Ini
+                            <span>📋</span> Ambil & Salin ke Clipboard Host/HP
                         </button>
                     </div>
                 </div>

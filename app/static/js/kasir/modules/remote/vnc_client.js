@@ -474,9 +474,10 @@ class VNCSession {
                 const ta = document.createElement('textarea');
                 ta.value = text;
                 ta.style.position = 'fixed';
-                ta.style.left = '-9999px';
-                ta.style.top = '-9999px';
-                ta.setAttribute('readonly', '');
+                ta.style.left = '0';
+                ta.style.top = '0';
+                ta.style.opacity = '0.01';
+                ta.style.pointerEvents = 'none';
                 document.body.appendChild(ta);
                 ta.focus();
                 ta.select();
@@ -1942,46 +1943,48 @@ const VNCClient = {
         const text = sendInput ? sendInput.value : '';
         if (!text) {
             Toast.warning('Ketik atau tempel teks terlebih dahulu');
+            if (sendInput) sendInput.focus();
             return;
         }
-        const success = this.session.sendClipboard(text);
-        if (success) {
-            Toast.success('Teks terkirim ke clipboard Remote VNC (Gunakan Ctrl+V di remote)');
-            const modal = document.getElementById('vnc-clipboard-modal');
-            if (modal) modal.classList.add('hidden');
-        } else {
-            Toast.error('Gagal mengirim teks ke clipboard remote');
-        }
+        // Kirim teks dan langsung paste ke remote host
+        this.session.handlePastedText(text);
+        Toast.success('Teks terkirim & ditempel ke Remote Host!');
+        const modal = document.getElementById('vnc-clipboard-modal');
+        if (modal) modal.classList.add('hidden');
     },
 
     async copyReceivedToHost() {
-        const recInput = document.getElementById('vnc-clipboard-received-text');
-        const text = recInput ? recInput.value : (this.session ? this.session.getRemoteClipboard() : '');
-        if (!text) {
-            Toast.warning('Belum ada teks yang disalin dari remote VNC');
+        if (!this.session) {
+            Toast.error('VNC belum terhubung');
             return;
         }
-        let copied = false;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            try {
-                await navigator.clipboard.writeText(text);
-                copied = true;
-            } catch (e) {
-                console.warn('[VNC] navigator.clipboard.writeText gagal:', e);
-            }
+        const recInput = document.getElementById('vnc-clipboard-received-text');
+        let text = recInput ? recInput.value : (this.session ? this.session.getRemoteClipboard() : '');
+
+        // Jika teks masih kosong, kirim sinyal Ctrl+C ke remote host untuk menyalin teks yang sedang aktif/diseleksi
+        if (!text) {
+            Toast.info('Meminta seleksi teks dari Remote Host (Ctrl+C)...');
+            this.session.sendCtrlKeySequence(0x0063, 'KeyC');
+            await new Promise(r => setTimeout(r, 200));
+            text = this.session.getRemoteClipboard() || this.lastReceivedClipboard || '';
+            if (recInput && text) recInput.value = text;
         }
-        if (!copied && recInput) {
-            recInput.select();
-            recInput.setSelectionRange(0, 99999);
-            try {
-                copied = document.execCommand('copy');
-            } catch (e) {}
+
+        if (!text) {
+            Toast.warning('Belum ada teks di remote. Pilih/sorot teks di remote terlebih dahulu, lalu klik tombol ini.');
+            return;
         }
+
+        const copied = await this.session.copyTextToHost(text, false);
         if (copied) {
-            Toast.success('Teks berhasil disalin ke clipboard perangkat ini!');
+            Toast.success('📋 Teks dari Remote Host disalin ke clipboard Host! Silakan Paste (Ctrl+V / Klik Kanan).');
+            if (recInput) recInput.value = text;
         } else {
             Toast.info('Silakan salin teks manual dari kotak di bawah');
-            if (recInput) recInput.focus();
+            if (recInput) {
+                recInput.focus();
+                recInput.select();
+            }
         }
     },
 
