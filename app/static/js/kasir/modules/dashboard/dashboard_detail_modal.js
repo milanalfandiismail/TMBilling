@@ -776,8 +776,6 @@ const DashboardDetailModal = {
         }
         this.vncSession.handlePastedText(text);
         Toast.success('Teks terkirim & ditempel di Remote Host');
-        const drawer = document.getElementById('modal-vnc-clipboard-drawer');
-        if (drawer) drawer.classList.add('hidden');
     },
 
     copyReceivedToHost: async function() {

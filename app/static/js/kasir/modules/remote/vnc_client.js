@@ -1949,8 +1949,6 @@ const VNCClient = {
         // Kirim teks dan langsung paste ke remote host
         this.session.handlePastedText(text);
         Toast.success('Teks terkirim & ditempel ke Remote Host!');
-        const modal = document.getElementById('vnc-clipboard-modal');
-        if (modal) modal.classList.add('hidden');
     },
 
     async copyReceivedToHost() {
