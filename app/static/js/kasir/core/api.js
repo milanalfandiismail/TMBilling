@@ -39,10 +39,13 @@ const API = {
             let data;
             try { data = JSON.parse(txt); } catch (e) { data = { error: txt }; }
             if (!res.ok) {
-                // Jika cabang remote offline, jangan redirect login, tapi beri peringatan
+                // Jika cabang remote offline, jangan redirect login, tapi beri peringatan & failover
                 if (data && data.is_branch_offline) {
                     if (window.Toast) {
                         window.Toast.show(data.error || "Cabang sedang offline", "error");
+                    }
+                    if (window.BranchManager && typeof window.BranchManager.handleActiveBranchDisconnect === 'function') {
+                        window.BranchManager.handleActiveBranchDisconnect();
                     }
                     return data;
                 }
@@ -306,6 +309,7 @@ const API = {
         update: (id, data) => API.request(`/api/v1/kasir/branch/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
         delete: (id) => API.request(`/api/v1/kasir/branch/${id}`, { method: 'DELETE' }),
         test: (url, apiKey) => API.request('/api/v1/kasir/branch/test', { method: 'POST', body: JSON.stringify({ url, api_key: apiKey }) }),
+        testBranch: (id) => API.request(`/api/v1/kasir/branch/${id}/test`, { method: 'POST' }),
         myKey: () => API.request('/api/v1/kasir/branch/my-key'),
         regenerateKey: () => API.request('/api/v1/kasir/branch/my-key/regenerate', { method: 'POST' }),
         operators: () => API.request('/api/v1/kasir/branch/operators'),

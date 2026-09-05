@@ -5,6 +5,8 @@ from flask import Blueprint, request, jsonify, session
 from app.middleware.auth import login_required, admin_required
 from app.services.branch.branch_service import BranchService
 from app.services.settings.settings_service import SettingsService
+from app.models import db, now_local
+from app.models.branch import Branch
 
 branch_api_bp = Blueprint("branch_api", __name__)
 
@@ -141,6 +143,39 @@ def test_branch_connection():
         return jsonify({
             "success": False,
             "error": result
+        }), 400
+
+    return jsonify({
+        "success": True,
+        "data": result
+    }), 200
+
+
+@branch_api_bp.route("/<int:branch_id>/test", methods=["POST"])
+@login_required
+@admin_required
+def test_saved_branch_connection(branch_id: int):
+    """Menguji koneksi cabang yang tersimpan dan memperbarui status_online & latensi di database."""
+    branch = Branch.query.get(branch_id)
+    if not branch:
+        return jsonify({"success": False, "error": "Cabang tidak ditemukan"}), 404
+
+    ok, result = BranchService.test_connection(url=branch.url, api_key=branch.api_key, timeout=4)
+    try:
+        branch.status_online = ok
+        branch.terakhir_dicek = now_local()
+        if ok and isinstance(result, dict) and "latency_ms" in result:
+            branch.latensi_ms = result["latency_ms"]
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    if not ok:
+        err_detail = result if isinstance(result, str) else "Gagal terhubung ke cabang target"
+        return jsonify({
+            "success": False,
+            "error": err_detail,
+            "data": {"online": False}
         }), 400
 
     return jsonify({
@@ -287,13 +322,31 @@ def switch_branch_context():
             }
         }), 200
 
-    from app.models.branch import Branch
     branch = Branch.query.get(branch_id)
     if not branch or not branch.aktif:
         return jsonify({
             "success": False,
             "error": "Cabang target tidak ditemukan atau tidak aktif"
         }), 404
+
+    # Verifikasi konektivitas langsung (Live Health-Check) sebelum mengizinkan pergantian cabang
+    ok, test_res = BranchService.test_connection(url=branch.url, api_key=branch.api_key, timeout=4)
+    try:
+        branch.status_online = ok
+        branch.terakhir_dicek = now_local()
+        if ok and isinstance(test_res, dict) and "latency_ms" in test_res:
+            branch.latensi_ms = test_res["latency_ms"]
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    if not ok:
+        err_detail = test_res if isinstance(test_res, str) else "Server cabang offline atau tidak dapat dijangkau"
+        return jsonify({
+            "success": False,
+            "is_offline": True,
+            "error": f"Cabang '{branch.nama}' tidak dapat terhubung ({err_detail}). Pergantian cabang dibatalkan."
+        }), 400
 
     session["active_branch_id"] = branch.id
     session["active_branch_name"] = branch.nama
