@@ -33,7 +33,7 @@ def client(app):
     with app.test_client() as client:
         yield client
 
-def test_note_service_crud_lifecycle():
+def test_note_service_crud_lifecycle(app):
     # 1. Create Note
     note = NoteService.create_note("Catatan Operasional Shift Pagi", "Uang kas kecil awal: Rp 200.000\nPC-04 keyboard dicek.")
     assert note is not None
@@ -156,7 +156,7 @@ def test_note_routes_authenticated(client):
     del_dup_res = client.delete(f'/api/v1/kasir/notes/{dup_filename}')
     assert del_dup_res.status_code == 200
 
-def test_note_service_pin_sorting_and_duplicate():
+def test_note_service_pin_sorting_and_duplicate(app):
     n1 = NoteService.create_note("Zebra Normal", "Konten zebra biasa")
     n2 = NoteService.create_note("Alpha Penting", "SOP penting warnet")
 
