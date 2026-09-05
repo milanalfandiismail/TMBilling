@@ -25,7 +25,70 @@ const Catatan = {
         });
     },
 
-    async loadNotes(preserveSelection = true) {
+    showMainLoading(show) {
+        const el = document.getElementById('notes-main-loading');
+        if (el) {
+            if (show) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+    },
+
+    showEditorLoading(show) {
+        const el = document.getElementById('notes-editor-loading');
+        if (el) {
+            if (show) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+    },
+
+    renderLoadingList() {
+        const container = document.getElementById('notes-list-container');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="space-y-2.5 animate-pulse">
+                <div class="p-3.5 rounded bg-[#080808] border border-[#1c1c1c] space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="h-4 bg-neutral-800 rounded w-1/2"></div>
+                        <div class="h-3 bg-neutral-800 rounded w-12"></div>
+                    </div>
+                    <div class="h-3 bg-neutral-800/60 rounded w-5/6"></div>
+                    <div class="h-3 bg-neutral-800/40 rounded w-2/3"></div>
+                    <div class="pt-1.5 border-t border-[#1c1c1c] flex justify-between">
+                        <div class="h-2.5 bg-neutral-800/50 rounded w-16"></div>
+                        <div class="h-2.5 bg-neutral-800/50 rounded w-12"></div>
+                    </div>
+                </div>
+                <div class="p-3.5 rounded bg-[#080808] border border-[#1c1c1c] space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="h-4 bg-neutral-800 rounded w-2/3"></div>
+                        <div class="h-3 bg-neutral-800 rounded w-10"></div>
+                    </div>
+                    <div class="h-3 bg-neutral-800/60 rounded w-4/5"></div>
+                    <div class="h-3 bg-neutral-800/40 rounded w-1/2"></div>
+                    <div class="pt-1.5 border-t border-[#1c1c1c] flex justify-between">
+                        <div class="h-2.5 bg-neutral-800/50 rounded w-20"></div>
+                    </div>
+                </div>
+                <div class="p-3.5 rounded bg-[#080808] border border-[#1c1c1c] space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="h-4 bg-neutral-800 rounded w-1/3"></div>
+                        <div class="h-3 bg-neutral-800 rounded w-12"></div>
+                    </div>
+                    <div class="h-3 bg-neutral-800/60 rounded w-3/4"></div>
+                    <div class="pt-1.5 border-t border-[#1c1c1c] flex justify-between">
+                        <div class="h-2.5 bg-neutral-800/50 rounded w-16"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    async loadNotes(preserveSelection = true, showFullOverlay = true) {
+        if (showFullOverlay) {
+            this.showMainLoading(true);
+        }
+        this.renderLoadingList();
+
         try {
             const res = await API.request('/api/v1/kasir/notes');
             if (res && res.success) {
@@ -34,7 +97,7 @@ const Catatan = {
 
                 if (this.notes.length > 0) {
                     if (!preserveSelection || !this.activeFilename || !this.notes.some(n => n.filename === this.activeFilename)) {
-                        this.selectNote(this.notes[0].filename);
+                        await this.selectNote(this.notes[0].filename);
                     }
                 } else {
                     this.renderEmptyEditor();
@@ -49,6 +112,13 @@ const Catatan = {
                         Gagal memuat catatan: ${err.message || 'Kesalahan jaringan'}
                     </div>
                 `;
+            }
+        } finally {
+            if (showFullOverlay) {
+                // Jeda halus 150ms agar render layout selesai sempurna sebelum overlay dihilangkan
+                setTimeout(() => {
+                    this.showMainLoading(false);
+                }, 150);
             }
         }
     },
@@ -201,6 +271,7 @@ const Catatan = {
 
         this.activeFilename = filename;
         this.setSaveStatus('Memuat...', 'bg-neutral-800 text-neutral-300 border-neutral-700');
+        this.showEditorLoading(true);
 
         try {
             const res = await API.request(`/api/v1/kasir/notes/${encodeURIComponent(filename)}`);
@@ -241,6 +312,8 @@ const Catatan = {
         } catch (err) {
             Toast.error('Gagal membuka catatan: ' + err.message);
             this.setSaveStatus('Gagal', 'bg-red-950/40 text-red-400 border-red-800/60');
+        } finally {
+            this.showEditorLoading(false);
         }
     },
 
@@ -276,6 +349,7 @@ const Catatan = {
 
     async createNewNote() {
         const defaultTitle = `Catatan ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}`;
+        this.showEditorLoading(true);
         try {
             const res = await API.request('/api/v1/kasir/notes', {
                 method: 'POST',
@@ -287,8 +361,8 @@ const Catatan = {
 
             if (res && res.success && res.note) {
                 Toast.success('Catatan baru berhasil dibuat');
-                await this.loadNotes(false);
-                this.selectNote(res.note.filename);
+                await this.loadNotes(false, false);
+                await this.selectNote(res.note.filename);
 
                 const titleInput = document.getElementById('note-title-input');
                 if (titleInput) {
@@ -298,6 +372,8 @@ const Catatan = {
             }
         } catch (err) {
             Toast.error('Gagal membuat catatan baru: ' + err.message);
+        } finally {
+            this.showEditorLoading(false);
         }
     },
 
@@ -307,6 +383,7 @@ const Catatan = {
             return;
         }
 
+        this.showEditorLoading(true);
         try {
             const res = await API.request(`/api/v1/kasir/notes/${encodeURIComponent(this.activeFilename)}/duplicate`, {
                 method: 'POST'
@@ -314,11 +391,13 @@ const Catatan = {
 
             if (res && res.success && res.note) {
                 Toast.success(`Salinan dibuat: "${res.note.title}"`);
-                await this.loadNotes(false);
-                this.selectNote(res.note.filename);
+                await this.loadNotes(false, false);
+                await this.selectNote(res.note.filename);
             }
         } catch (err) {
             Toast.error('Gagal menduplikasi catatan: ' + err.message);
+        } finally {
+            this.showEditorLoading(false);
         }
     },
 
