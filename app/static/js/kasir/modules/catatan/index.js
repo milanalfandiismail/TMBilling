@@ -83,10 +83,10 @@ const Catatan = {
 
         if (filtered.length === 0) {
             container.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-48 text-neutral-500 text-xs text-center p-4">
-                    <span class="text-2xl mb-1.5">${filterText ? '🔍' : '📝'}</span>
-                    <p class="font-semibold text-neutral-400">${filterText ? 'Catatan tidak ditemukan' : 'Belum ada catatan'}</p>
-                    <p class="text-[10px] text-neutral-600 mt-1">${filterText ? 'Klik tombol ✕ untuk mereset filter' : 'Klik tombol "+ Catatan Baru" di atas'}</p>
+                <div class="flex flex-col items-center justify-center h-48 text-neutral-500 text-xs text-center p-4 space-y-2">
+                    <i class="fa-solid ${filterText ? 'fa-magnifying-glass' : 'fa-note-sticky'} text-neutral-600 text-2xl mb-1"></i>
+                    <p class="text-xs lg:text-sm font-bold text-neutral-400 uppercase tracking-wider">${filterText ? 'Catatan Tidak Ditemukan' : 'Belum Ada Catatan'}</p>
+                    <p class="text-[9px] lg:text-xs text-neutral-500">${filterText ? 'Klik tombol ✕ untuk mereset filter' : 'Klik tombol "+ Catatan Baru" di atas'}</p>
                 </div>
             `;
             return;
@@ -96,33 +96,33 @@ const Catatan = {
             const isActive = note.filename === this.activeFilename;
             const isPinned = !!note.is_pinned;
             const activeClass = isActive 
-                ? 'bg-[#1a1a1a] border-neutral-600 text-white shadow-sm' 
-                : 'bg-[#080808] border-[#1c1c1c] text-neutral-300 hover:bg-[#121212] hover:border-[#262626]';
+                ? 'bg-[#171717] border-neutral-500 text-white shadow-sm' 
+                : 'bg-[#050505] border-[#1c1c1c] text-neutral-300 hover:bg-[#121212] hover:border-[#262626]';
 
             const previewText = note.preview ? note.preview.replace(/\n/g, ' ') : '(Catatan kosong)';
             const sizeKb = (note.size / 1024).toFixed(1);
 
             return `
                 <div onclick="Catatan.selectNote('${encodeURIComponent(note.filename)}')"
-                    class="p-2.5 rounded-lg border cursor-pointer transition-all ${activeClass} flex flex-col gap-1.5 relative group">
+                    class="p-3.5 rounded border cursor-pointer transition-colors ${activeClass} flex flex-col gap-2 relative group">
                     <div class="flex items-center justify-between gap-2">
-                        <div class="flex items-center gap-1.5 flex-1 min-w-0">
-                            ${isPinned ? '<span class="text-amber-400 text-xs shrink-0" title="Disematkan ke posisi paling atas">📌</span>' : ''}
-                            <h4 class="text-xs font-bold truncate flex-1 min-w-0 ${isPinned ? 'text-amber-200' : ''}">${this.escapeHtml(note.title)}</h4>
+                        <div class="flex items-center gap-2 flex-1 min-w-0">
+                            ${isPinned ? '<i class="fa-solid fa-thumbtack text-amber-400 text-xs shrink-0" title="Disematkan ke posisi paling atas"></i>' : ''}
+                            <h4 class="text-xs lg:text-sm font-bold truncate flex-1 min-w-0 ${isPinned ? 'text-amber-200' : 'text-neutral-200'}">${this.escapeHtml(note.title)}</h4>
                         </div>
-                        <div class="flex items-center gap-1 shrink-0">
-                            <span class="text-[9px] font-mono text-neutral-500">${sizeKb} KB</span>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <span class="text-[10px] lg:text-xs font-mono text-neutral-500">${sizeKb} KB</span>
                             <button onclick="event.stopPropagation(); Catatan.togglePinNote('${encodeURIComponent(note.filename)}')"
                                 class="p-1 rounded hover:bg-neutral-800 text-neutral-500 hover:text-amber-400 transition-colors shrink-0"
                                 title="${isPinned ? 'Lepas sematan' : 'Sematkan ke posisi atas'}">
-                                <span class="text-xs ${isPinned ? 'text-amber-400' : 'opacity-30 hover:opacity-100'}">📌</span>
+                                <i class="fa-solid fa-thumbtack text-xs ${isPinned ? 'text-amber-400' : 'opacity-25 hover:opacity-100'}"></i>
                             </button>
                         </div>
                     </div>
-                    <p class="text-[11px] text-neutral-400 line-clamp-2 leading-relaxed font-sans">${this.escapeHtml(previewText)}</p>
-                    <div class="flex items-center justify-between text-[9px] text-neutral-500 pt-1 border-t border-[#1a1a1a]/60">
-                        <span>🕒 ${note.updated_at || '-'}</span>
-                        ${isPinned ? '<span class="text-amber-400/80 font-bold uppercase text-[8px] tracking-wider">Disematkan</span>' : ''}
+                    <p class="text-xs text-neutral-400 line-clamp-2 leading-relaxed font-sans">${this.escapeHtml(previewText)}</p>
+                    <div class="flex items-center justify-between text-[10px] lg:text-xs text-neutral-500 pt-1.5 border-t border-[#1c1c1c]">
+                        <span class="flex items-center gap-1"><i class="fa-regular fa-clock text-[10px]"></i> ${note.updated_at || '-'}</span>
+                        ${isPinned ? '<span class="text-amber-400 font-bold uppercase text-[9px] tracking-wider">Disematkan</span>' : ''}
                     </div>
                 </div>
             `;
@@ -181,13 +181,13 @@ const Catatan = {
         const pinIcon = document.getElementById('btn-pin-icon');
         if (!pinBtn) return;
         if (isPinned) {
-            pinBtn.className = 'p-1.5 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-400 transition-colors shrink-0 flex items-center justify-center shadow-sm';
+            pinBtn.className = 'p-2.5 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-400 transition-colors shrink-0 flex items-center justify-center shadow-sm';
             pinBtn.title = 'Lepas sematan catatan ini';
-            if (pinIcon) pinIcon.className = 'text-sm drop-shadow';
+            if (pinIcon) pinIcon.className = 'fa-solid fa-thumbtack text-xs lg:text-sm text-amber-400';
         } else {
-            pinBtn.className = 'p-1.5 rounded bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-400 hover:text-amber-400 transition-colors shrink-0 flex items-center justify-center';
+            pinBtn.className = 'p-2.5 rounded bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-400 hover:text-amber-400 transition-colors shrink-0 flex items-center justify-center';
             pinBtn.title = 'Sematkan catatan ini ke posisi paling atas';
-            if (pinIcon) pinIcon.className = 'text-sm opacity-60 hover:opacity-100';
+            if (pinIcon) pinIcon.className = 'fa-solid fa-thumbtack text-xs lg:text-sm opacity-60 hover:opacity-100';
         }
         pinBtn.disabled = false;
     },
@@ -200,7 +200,7 @@ const Catatan = {
         }
 
         this.activeFilename = filename;
-        this.setSaveStatus('Memuat...', 'bg-amber-500/20 text-amber-400 border-amber-500/30');
+        this.setSaveStatus('Memuat...', 'bg-neutral-800 text-neutral-300 border-neutral-700');
 
         try {
             const res = await API.request(`/api/v1/kasir/notes/${encodeURIComponent(filename)}`);
@@ -240,7 +240,7 @@ const Catatan = {
             }
         } catch (err) {
             Toast.error('Gagal membuka catatan: ' + err.message);
-            this.setSaveStatus('Gagal', 'bg-red-500/20 text-red-400 border-red-500/30');
+            this.setSaveStatus('Gagal', 'bg-red-950/40 text-red-400 border-red-800/60');
         }
     },
 
@@ -327,7 +327,7 @@ const Catatan = {
         if (!titleInput) return;
         this.currentTitle = titleInput.value;
         this.isDirty = true;
-        this.setSaveStatus('Ada perubahan...', 'bg-amber-500/20 text-amber-400 border-amber-500/30');
+        this.setSaveStatus('Ada perubahan...', 'bg-amber-500/20 text-amber-300 border-amber-500/40');
         this.triggerAutoSave();
     },
 
@@ -337,7 +337,7 @@ const Catatan = {
         this.currentContent = contentEditor.value;
         this.isDirty = true;
         this.updateStats();
-        this.setSaveStatus('Mengetik...', 'bg-blue-500/20 text-blue-400 border-blue-500/30');
+        this.setSaveStatus('Mengetik...', 'bg-neutral-800 text-neutral-300 border-neutral-600');
         this.triggerAutoSave();
     },
 
@@ -365,7 +365,7 @@ const Catatan = {
             this.autoSaveTimer = null;
         }
 
-        this.setSaveStatus('Menyimpan...', 'bg-blue-500/20 text-blue-400 border-blue-500/30');
+        this.setSaveStatus('Menyimpan...', 'bg-neutral-800 text-neutral-200 border-neutral-600');
 
         try {
             const res = await API.request(`/api/v1/kasir/notes/${encodeURIComponent(this.activeFilename)}`, {
@@ -386,7 +386,7 @@ const Catatan = {
                 const fileSize = document.getElementById('note-file-size');
                 if (fileSize) fileSize.textContent = `${(res.note.size / 1024).toFixed(1)} KB`;
 
-                this.setSaveStatus('Tersimpan', 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30');
+                this.setSaveStatus('Tersimpan', 'bg-neutral-800 text-neutral-400 border-neutral-700');
                 if (manual) {
                     Toast.success('Catatan berhasil disimpan');
                 }
@@ -410,7 +410,7 @@ const Catatan = {
                 }, 3000);
             }
         } catch (err) {
-            this.setSaveStatus('Gagal simpan', 'bg-red-500/20 text-red-400 border-red-500/30');
+            this.setSaveStatus('Gagal simpan', 'bg-red-950/40 text-red-400 border-red-800/60');
             Toast.error('Gagal menyimpan catatan: ' + err.message);
         }
     },
@@ -424,7 +424,8 @@ const Catatan = {
         const modal = document.getElementById('notes-delete-modal');
         const filenameEl = document.getElementById('notes-delete-filename');
         if (filenameEl) {
-            filenameEl.textContent = `${this.currentTitle || this.activeFilename}.txt`;
+            const displayName = this.currentTitle ? (this.currentTitle.endsWith('.txt') ? this.currentTitle : `${this.currentTitle}.txt`) : (this.activeFilename || '');
+            filenameEl.textContent = displayName;
         }
         if (modal) modal.classList.remove('hidden');
     },
@@ -499,7 +500,7 @@ const Catatan = {
         const statusEl = document.getElementById('note-save-status');
         if (statusEl) {
             statusEl.textContent = text;
-            statusEl.className = `px-2.5 py-1 rounded text-[10px] md:text-xs font-semibold ${badgeClass}`;
+            statusEl.className = `px-3.5 py-1.5 rounded text-xs lg:text-base font-semibold border transition-colors ${badgeClass}`;
         }
     },
 
@@ -515,13 +516,13 @@ const Catatan = {
             // Tampilkan list
             sidebar.classList.remove('hidden');
             editor.classList.add('hidden');
-            if (toggleIcon) toggleIcon.textContent = '✏️';
+            if (toggleIcon) toggleIcon.className = 'fa-solid fa-pen-to-square text-xs';
             if (toggleText) toggleText.textContent = 'Editor';
         } else {
             // Tampilkan editor
             sidebar.classList.add('hidden');
             editor.classList.remove('hidden');
-            if (toggleIcon) toggleIcon.textContent = '📁';
+            if (toggleIcon) toggleIcon.className = 'fa-solid fa-folder text-xs';
             if (toggleText) toggleText.textContent = 'Daftar';
         }
     },
@@ -536,7 +537,7 @@ const Catatan = {
         if (sidebar && editor) {
             sidebar.classList.add('hidden');
             editor.classList.remove('hidden');
-            if (toggleIcon) toggleIcon.textContent = '📁';
+            if (toggleIcon) toggleIcon.className = 'fa-solid fa-folder text-xs';
             if (toggleText) toggleText.textContent = 'Daftar';
         }
     },

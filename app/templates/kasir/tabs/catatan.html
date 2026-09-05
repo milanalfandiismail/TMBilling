@@ -1,128 +1,136 @@
 <!-- ===== TAB: CATATAN (NOTEPAD .TXT) ===== -->
-<div id="tab-catatan" class="tab-content hidden w-full h-[calc(100vh-140px)] flex flex-col min-h-0 space-y-3 md:space-y-4">
+<div id="tab-catatan" class="tab-content hidden w-full h-[calc(100vh-140px)] flex flex-col min-h-0 space-y-6">
     
-    <!-- Top Header Card (Acuan: subtab-general) -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-        <div class="flex items-center gap-3 min-w-0">
-            <div class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
-                <span class="text-xl">📝</span>
-            </div>
-            <div class="min-w-0">
-                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider whitespace-nowrap">Catatan Kasir & Operasional</h3>
-                <p class="text-[9px] lg:text-base text-neutral-500 mt-0.5">Catatan fleksibel yang tersimpan sebagai berkas .txt asli di server</p>
-            </div>
+    <!-- Top Header Card (Acuan: subtab-general di settings.html) -->
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+        <div>
+            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Catatan Kasir & Operasional</h3>
+            <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Catatan fleksibel yang tersimpan sebagai berkas .txt asli di server</p>
         </div>
 
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-3 shrink-0">
             <!-- Mobile Toggle View Button -->
             <button id="notes-mobile-toggle-btn" onclick="Catatan.toggleMobileView()"
-                class="md:hidden px-3 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs font-bold rounded transition-colors flex items-center gap-1.5">
-                <span id="notes-mobile-toggle-icon">📁</span>
+                class="md:hidden px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                <i id="notes-mobile-toggle-icon" class="fa-solid fa-folder text-xs"></i>
                 <span id="notes-mobile-toggle-text">Daftar</span>
             </button>
 
             <!-- Create New Note Button -->
             <button onclick="Catatan.createNewNote()"
-                class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-1.5 shadow-sm">
-                <span>➕</span> Catatan Baru
+                class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-plus text-xs"></i> Catatan Baru
             </button>
         </div>
     </div>
 
     <!-- Main 2-Column Split Workspace -->
-    <div class="flex-1 flex flex-col md:flex-row gap-3 md:gap-4 min-h-0 overflow-hidden">
+    <div class="flex-1 flex flex-col md:flex-row gap-6 min-h-0 overflow-hidden">
         
         <!-- Panel Kiri: List Catatan & Pencarian -->
         <div id="notes-sidebar-panel"
-            class="w-full md:w-80 lg:w-96 flex flex-col bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 md:p-4 min-h-0 shrink-0">
+            class="w-full md:w-80 lg:w-96 flex flex-col bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 min-h-0 shrink-0 space-y-4">
             
+            <div>
+                <h4 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-1">Daftar Berkas</h4>
+                <p class="text-[9px] lg:text-base text-neutral-500">Pilih berkas catatan untuk diedit</p>
+            </div>
+
             <!-- Search Filter Bar -->
             <div class="relative shrink-0">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-xs text-neutral-500"></i>
                 <input type="text" id="notes-search-input" oninput="Catatan.filterNotes()" placeholder="Cari catatan (.txt)..."
-                    class="w-full pl-9 pr-8 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-neutral-500">
-                <span class="absolute left-3 top-2.5 text-xs text-neutral-500">🔍</span>
-                <button id="notes-search-clear-btn" onclick="Catatan.clearSearch()" class="hidden absolute right-2.5 top-2 text-xs text-neutral-500 hover:text-neutral-200 transition-colors" title="Bersihkan pencarian">✕</button>
+                    class="w-full pl-9 pr-8 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-neutral-500">
+                <button id="notes-search-clear-btn" onclick="Catatan.clearSearch()" class="hidden absolute right-3 top-2.5 text-xs text-neutral-500 hover:text-neutral-200 transition-colors" title="Bersihkan pencarian">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
 
-            <div class="flex items-center justify-between mt-3 pb-1 border-b border-[#1c1c1c] text-[10px] uppercase font-bold text-neutral-500 tracking-wider">
+            <div class="flex items-center justify-between text-xs lg:text-sm font-bold text-neutral-400 uppercase tracking-wider">
                 <span id="notes-count-badge">0 Catatan</span>
-                <span id="notes-filter-badge" class="text-neutral-600">Berkas .txt</span>
+                <span id="notes-filter-badge" class="font-mono text-neutral-500 text-xs">Berkas .txt</span>
             </div>
+
+            <div class="w-full h-px bg-[#1c1c1c]"></div>
 
             <!-- Notes List Scroll Container -->
-            <div id="notes-list-container" class="flex-1 overflow-y-auto space-y-1.5 scrollbar-thin mt-2 pr-1">
+            <div id="notes-list-container" class="flex-1 overflow-y-auto space-y-2.5 scrollbar-thin pr-1">
                 <!-- Injected by Catatan.renderList() -->
-                <div class="flex flex-col items-center justify-center h-48 text-neutral-600 text-xs">
-                    <span class="text-2xl mb-1">📄</span>
-                    <span>Memuat catatan...</span>
+                <div class="flex flex-col items-center justify-center h-48 text-neutral-500 text-xs space-y-2">
+                    <i class="fa-solid fa-spinner fa-spin text-neutral-400 text-lg"></i>
+                    <span class="text-neutral-400 font-medium">Memuat catatan...</span>
                 </div>
             </div>
         </div>
 
         <!-- Panel Kanan: Editor Teks Fleksibel (Notepad Asli) -->
         <div id="notes-editor-panel"
-            class="flex-1 flex flex-col bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 md:p-5 min-h-0 overflow-hidden">
+            class="flex-1 flex flex-col bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 min-h-0 overflow-hidden space-y-4">
             
             <!-- Active Note Header: Title & Save Status -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1c1c1c] shrink-0">
-                <div class="flex-1 flex items-center gap-2 min-w-0">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+                <div class="flex-1 flex items-center gap-2.5 min-w-0">
                     <button onclick="Catatan.togglePinCurrentNote()" id="btn-pin-note"
-                        class="p-1.5 rounded bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-400 hover:text-amber-400 transition-colors shrink-0 flex items-center justify-center"
+                        class="p-2.5 rounded bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-400 hover:text-amber-400 transition-colors shrink-0 flex items-center justify-center"
                         title="Sematkan catatan ini ke posisi paling atas">
-                        <span id="btn-pin-icon" class="text-sm">📌</span>
+                        <i id="btn-pin-icon" class="fa-solid fa-thumbtack text-xs lg:text-sm"></i>
                     </button>
                     <input type="text" id="note-title-input" oninput="Catatan.onTitleChange()" placeholder="Judul Catatan..."
-                        class="flex-1 bg-[#050505] border border-[#1c1c1c] rounded px-3 py-1.5 text-xs lg:text-base font-bold text-neutral-200 focus:outline-none focus:border-neutral-500 truncate">
-                    <span class="text-xs text-neutral-500 font-mono shrink-0">.txt</span>
+                        class="flex-1 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base font-bold text-neutral-200 focus:outline-none focus:border-neutral-500 tracking-wider truncate">
+                    <span class="px-2.5 py-2 rounded text-xs lg:text-base font-mono font-bold bg-[#050505] border border-[#1c1c1c] text-neutral-500 shrink-0">.txt</span>
                 </div>
 
-                <div class="flex items-center gap-2 shrink-0 justify-between sm:justify-end">
-                    <span id="note-save-status" class="px-2.5 py-1 rounded text-[10px] md:text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700">
+                <div class="flex items-center gap-3 shrink-0 justify-between sm:justify-end">
+                    <span id="note-save-status" class="px-3.5 py-1.5 rounded text-xs lg:text-base font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700">
                         Siap
                     </span>
-                    <span id="note-file-size" class="text-[10px] text-neutral-500 font-mono hidden sm:inline">0 B</span>
+                    <span id="note-file-size" class="text-xs lg:text-base text-neutral-500 font-mono hidden sm:inline">0 B</span>
                 </div>
             </div>
 
+            <div class="w-full h-px bg-[#1c1c1c]"></div>
+
             <!-- Editor Body: Textarea Luas Fleksibel -->
-            <div class="flex-1 min-h-0 flex flex-col mt-3 relative">
+            <div class="flex-1 min-h-0 flex flex-col relative">
                 <textarea id="note-content-editor" oninput="Catatan.onContentChange()" onkeydown="Catatan.handleEditorKeydown(event)"
                     placeholder="Mulai menulis catatan bebas di sini...&#10;&#10;Dukungan:&#10;• Simpan otomatis saat mengetik (Auto-save)&#10;• Tekan Ctrl+S untuk simpan instan&#10;• Format berkas .txt standar murni yang fleksibel"
-                    class="w-full flex-1 p-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-sm font-mono text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 resize-none overflow-y-auto scrollbar-thin leading-relaxed"></textarea>
+                    class="w-full flex-1 p-4 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base font-mono text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 resize-none overflow-y-auto scrollbar-thin leading-relaxed"></textarea>
             </div>
 
+            <div class="w-full h-px bg-[#1c1c1c]"></div>
+
             <!-- Footer Action Toolbar & Statistics -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[#1c1c1c] mt-3 shrink-0">
-                <div id="note-stats-text" class="text-[10px] lg:text-xs text-neutral-500 font-mono">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+                <div id="note-stats-text" class="text-xs lg:text-base text-neutral-500 font-mono">
                     0 kata • 0 karakter • 1 baris
                 </div>
 
-                <div class="flex items-center gap-2 justify-end">
+                <div class="flex items-center gap-2 flex-wrap justify-end">
                     <!-- Download .txt Button -->
                     <button onclick="Catatan.downloadCurrentNote()" id="btn-download-note"
-                        class="px-3 py-1.5 md:px-4 md:py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1.5"
-                        title="Unduh berkas .txt ke komputer/HP">
-                        <span>⬇️</span> <span class="hidden sm:inline">Unduh</span> .txt
+                        class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2"
+                        title="Unduh berkas .txt ke komputer">
+                        <i class="fa-solid fa-download text-xs"></i> <span class="hidden sm:inline">Unduh</span> .txt
                     </button>
 
                     <!-- Duplicate Note Button -->
                     <button onclick="Catatan.duplicateCurrentNote()" id="btn-duplicate-note"
-                        class="px-3 py-1.5 md:px-4 md:py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1.5"
+                        class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2"
                         title="Buat salinan instan dari catatan ini">
-                        <span>📋</span> <span class="hidden sm:inline">Duplikat</span>
+                        <i class="fa-solid fa-clone text-xs"></i> <span class="hidden sm:inline">Duplikat</span>
                     </button>
 
                     <!-- Delete Note Button -->
                     <button onclick="Catatan.openDeleteModal()" id="btn-delete-note"
-                        class="px-3 py-1.5 md:px-4 md:py-2 bg-red-950/40 hover:bg-red-900/40 border border-red-800/60 text-red-400 text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1.5"
+                        class="px-4 py-2 bg-red-950/40 hover:bg-red-900/40 border border-red-800/60 text-red-400 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2"
                         title="Hapus berkas catatan ini">
-                        <span>🗑️</span> <span class="hidden sm:inline">Hapus</span>
+                        <i class="fa-solid fa-trash text-xs"></i> <span class="hidden sm:inline">Hapus</span>
                     </button>
 
                     <!-- Manual Save Button -->
                     <button onclick="Catatan.saveCurrentNote(true)" id="btn-save-note"
-                        class="px-4 py-1.5 md:px-5 md:py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1.5 shadow-sm">
-                        <span>💾</span> Simpan
+                        class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
                     </button>
                 </div>
             </div>
@@ -131,22 +139,39 @@
 
     </div>
 
-    <!-- Modal Konfirmasi Hapus Interaktif -->
+    <!-- Modal Konfirmasi Hapus Interaktif (Acuan: subtab-general di settings.html) -->
     <div id="notes-delete-modal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
-            <div class="flex items-center gap-3 text-red-400">
-                <div class="w-10 h-10 rounded-full bg-red-950/40 border border-red-800/60 flex items-center justify-center shrink-0">
-                    <span class="text-xl">🗑️</span>
-                </div>
-                <div>
-                    <h4 class="text-sm font-bold text-neutral-100">Hapus Catatan?</h4>
-                    <p class="text-[11px] text-neutral-400 mt-0.5">Tindakan ini tidak dapat dibatalkan.</p>
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 max-w-md w-full space-y-6 shadow-2xl">
+            <div>
+                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-1">
+                    Hapus Catatan
+                </h3>
+                <p class="text-[9px] lg:text-base text-neutral-500">
+                    Tindakan ini tidak dapat dibatalkan. Berkas .txt akan dihapus permanen dari server.
+                </p>
+            </div>
+
+            <!-- Highlighted Danger Warning Box -->
+            <div class="p-3.5 bg-red-950/20 border border-red-800/40 rounded flex items-start gap-3">
+                <i class="fa-solid fa-triangle-exclamation text-red-400 text-base mt-0.5 shrink-0"></i>
+                <div class="space-y-0.5 min-w-0 flex-1">
+                    <p class="text-xs lg:text-sm font-bold text-red-300 uppercase tracking-wider">
+                        Konfirmasi Berkas
+                    </p>
+                    <p id="notes-delete-filename" class="text-xs lg:text-sm text-neutral-300 font-mono break-all pt-1">
+                    </p>
                 </div>
             </div>
-            <p id="notes-delete-filename" class="text-xs text-neutral-300 font-mono bg-[#050505] p-2.5 rounded border border-[#1c1c1c] truncate"></p>
-            <div class="flex justify-end gap-2 pt-1">
-                <button onclick="Catatan.closeDeleteModal()" class="px-3.5 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs font-bold rounded transition-colors">Batal</button>
-                <button onclick="Catatan.confirmDeleteNote()" class="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors">Hapus Berkas</button>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="Catatan.closeDeleteModal()"
+                    class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors">
+                    Batal
+                </button>
+                <button onclick="Catatan.confirmDeleteNote()"
+                    class="px-4 py-2 bg-red-950/40 hover:bg-red-900/40 border border-red-800/60 text-red-400 hover:bg-red-900/60 text-xs lg:text-base font-bold rounded transition-colors">
+                    Hapus Berkas
+                </button>
             </div>
         </div>
     </div>
