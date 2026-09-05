@@ -27,6 +27,7 @@
             {% include 'kasir/tabs/tournament.html' %}
             {% include 'kasir/tabs/game.html' %}
             {% include 'kasir/tabs/laporan_maintenance.html' %}
+            {% include 'kasir/tabs/catatan.html' %}
 
             <!-- Tabs Content (Khusus Admin - Server-Side Guarded) -->
             {% if session.get('kasir_role') == 'admin' %}

@@ -178,7 +178,7 @@ const App = {
 
         const activeSubmenu = tabToSubmenu[tab];
         
-        const submenus = ['operasional', 'master', 'staff', 'laporan', 'sistemlog', 'system', 'settings', 'branch'];
+        const submenus = ['operasional', 'master', 'staff', 'laporan', 'sistemlog', 'system', 'settings', 'branch', 'plugins'];
         submenus.forEach(sub => {
             const submenuEl = document.getElementById(`${sub}-submenu`);
             const arrowEl = document.getElementById(`${sub}-arrow`);
@@ -212,7 +212,7 @@ const App = {
             monitor: 'Hardware Monitor', hardware_checker: 'Hardware Checker', maintenance: 'Perawatan PC', laporan_maintenance: 'Laporan Perawatan', blackout: 'Blackout', screenshot: 'Screenshot Monitor',
             uptime: 'Uptime Tracker',
             user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat',
-            menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen',
+            menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen', catatan: 'Catatan',
             settings_general: 'Pengaturan Umum & Keamanan',
             settings_payment: 'Metode Pembayaran',
             settings_kiosk: 'Info Warnet & Kiosk',
@@ -266,6 +266,7 @@ const App = {
             case 'settings': if (typeof Settings !== 'undefined') await Settings.load(); break;
             case 'menu': if (typeof Menu !== 'undefined') await Menu.load(); break;
             case 'tournament': if (typeof Tournament !== 'undefined') await Tournament.load(); break;
+            case 'catatan': if (typeof Catatan !== 'undefined') await Catatan.loadNotes(); break;
             case 'analytics': if (typeof OwnerAnalytics !== 'undefined') await OwnerAnalytics.load(); break;
             case 'plugins': if (typeof PluginsModule !== 'undefined') PluginsModule.init(); break;
             case 'mikrotik': if (typeof SettingsMikrotik !== 'undefined') SettingsMikrotik.init(); break;

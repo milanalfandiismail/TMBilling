@@ -25,6 +25,8 @@ class VNCSession {
         this.resizeObserver = null;
         this.keyboardLayout = 'letters';
         this.shiftActive = false;
+        this.lastRemoteClipboard = '';
+        this.onClipboardCallback = this.options.onClipboard || null;
     }
 
     isMobileDevice() {
@@ -198,6 +200,18 @@ class VNCSession {
                 this.updateResolutionInfo();
             });
 
+            this.rfb.addEventListener('clipboard', (e) => {
+                const text = (e && e.detail && typeof e.detail.text === 'string') ? e.detail.text : '';
+                this.lastRemoteClipboard = text;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).catch(() => {});
+                }
+                if (typeof this.onClipboardCallback === 'function') {
+                    this.onClipboardCallback(text);
+                }
+                window.dispatchEvent(new CustomEvent('vnc-clipboard-received', { detail: { text, session: this } }));
+            });
+
             this.rfb.addEventListener('disconnect', (e) => {
                 if (this.resizeObserver) {
                     this.resizeObserver.disconnect();
@@ -251,6 +265,32 @@ class VNCSession {
             this.remoteResolution = { width: w, height: h };
             this.options.onResolution(w, h);
         }
+    }
+
+    sendClipboard(text) {
+        if (!this.rfb) return false;
+        try {
+            this.rfb.clipboardPasteFrom(text);
+            return true;
+        } catch (e) {
+            console.error('[VNC] Error sending clipboard to remote:', e);
+            return false;
+        }
+    }
+
+    getRemoteClipboard() {
+        return this.lastRemoteClipboard || '';
+    }
+
+    async readHostClipboard() {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            try {
+                return await navigator.clipboard.readText();
+            } catch (e) {
+                console.warn('[VNC] Clipboard readText error:', e);
+            }
+        }
+        return null;
     }
 
     getPanBounds(zoom) {
@@ -844,6 +884,7 @@ const VNCClient = {
     keyboardLayout: 'letters',
     shiftActive: false,
     remoteResolution: { width: 0, height: 0 },
+    lastReceivedClipboard: '',
 
     async getRFB() {
         if (this.RFBClass) return this.RFBClass;
@@ -994,6 +1035,21 @@ const VNCClient = {
                     resBadge.textContent = `${w} × ${h} (${modeText})`;
                     resBadge.classList.remove('hidden');
                 }
+            },
+            onClipboard: (text) => {
+                this.lastReceivedClipboard = text;
+                const recInput = document.getElementById('vnc-clipboard-received-text');
+                if (recInput) recInput.value = text;
+                const badge = document.getElementById('vnc-clipboard-status-badge');
+                if (badge) {
+                    badge.textContent = 'Teks Baru Diterima';
+                    badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                    setTimeout(() => {
+                        badge.textContent = 'Tersinkronisasi';
+                        badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-800 text-neutral-400 border border-neutral-700';
+                    }, 3000);
+                }
+                Toast.info('📋 Teks disalin dari Remote VNC');
             }
         });
 
@@ -1322,6 +1378,101 @@ const VNCClient = {
             this.session.sendKey(0xffbe, null, true);
             this.session.sendKey(0xffbe, null, false);
             this.session.sendKey(0xffe9, null, false);
+        }
+    },
+
+    toggleClipboardModal() {
+        const modal = document.getElementById('vnc-clipboard-modal');
+        if (!modal) return;
+        const isHidden = modal.classList.contains('hidden');
+        if (isHidden) {
+            modal.classList.remove('hidden');
+            const sendInput = document.getElementById('vnc-clipboard-send-text');
+            if (sendInput) {
+                sendInput.focus();
+                if (!sendInput.value && navigator.clipboard && navigator.clipboard.readText) {
+                    navigator.clipboard.readText().then(t => {
+                        if (t && !sendInput.value) sendInput.value = t;
+                    }).catch(() => {});
+                }
+            }
+            const recInput = document.getElementById('vnc-clipboard-received-text');
+            if (recInput && this.session) {
+                recInput.value = this.session.getRemoteClipboard() || this.lastReceivedClipboard || '';
+            }
+        } else {
+            modal.classList.add('hidden');
+        }
+    },
+
+    async pasteHostToInput() {
+        const sendInput = document.getElementById('vnc-clipboard-send-text');
+        if (!sendInput) return;
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            try {
+                const t = await navigator.clipboard.readText();
+                if (t) {
+                    sendInput.value = t;
+                    Toast.success('Teks diambil dari clipboard host');
+                    return;
+                }
+            } catch (e) {
+                console.warn('[VNC] Gagal membaca clipboard host:', e);
+            }
+        }
+        Toast.info('Gunakan Ctrl+V atau tahan dan tempel secara manual');
+        sendInput.focus();
+    },
+
+    sendClipboardToRemote() {
+        if (!this.session) {
+            Toast.error('VNC belum terhubung');
+            return;
+        }
+        const sendInput = document.getElementById('vnc-clipboard-send-text');
+        const text = sendInput ? sendInput.value : '';
+        if (!text) {
+            Toast.warning('Ketik atau tempel teks terlebih dahulu');
+            return;
+        }
+        const success = this.session.sendClipboard(text);
+        if (success) {
+            Toast.success('Teks terkirim ke clipboard Remote VNC (Gunakan Ctrl+V di remote)');
+            const modal = document.getElementById('vnc-clipboard-modal');
+            if (modal) modal.classList.add('hidden');
+        } else {
+            Toast.error('Gagal mengirim teks ke clipboard remote');
+        }
+    },
+
+    async copyReceivedToHost() {
+        const recInput = document.getElementById('vnc-clipboard-received-text');
+        const text = recInput ? recInput.value : (this.session ? this.session.getRemoteClipboard() : '');
+        if (!text) {
+            Toast.warning('Belum ada teks yang disalin dari remote VNC');
+            return;
+        }
+        let copied = false;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            try {
+                await navigator.clipboard.writeText(text);
+                copied = true;
+            } catch (e) {
+                console.warn('[VNC] navigator.clipboard.writeText gagal:', e);
+            }
+        }
+        if (!copied && recInput) {
+            recInput.select();
+            recInput.setSelectionRange(0, 99999);
+            try {
+                copied = document.execCommand('copy');
+            } catch (e) {}
+        }
+        if (copied) {
+            Toast.success('Teks berhasil disalin ke clipboard perangkat ini!');
+        } else {
+            Toast.info('Silakan salin teks manual dari kotak di bawah');
+            if (recInput) recInput.focus();
         }
     },
 

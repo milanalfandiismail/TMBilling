@@ -267,6 +267,37 @@ const DashboardDetailModal = {
                             </div>
                         </div>
 
+                        <!-- Modal VNC Clipboard Drawer -->
+                        <div id="modal-vnc-clipboard-drawer" class="hidden p-3 bg-[#0a0a0a] border-t border-[#1c1c1c] space-y-2.5 select-text">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span>📋</span> Clipboard Remote PC ${pc.kode}
+                                </span>
+                                <button onclick="DashboardDetailModal.toggleClipboardModal()" class="text-[10px] text-neutral-400 hover:text-neutral-200">✕ Tutup</button>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div class="space-y-1.5">
+                                    <div class="flex items-center justify-between text-[10px] text-neutral-400 font-semibold">
+                                        <span>⬆️ Kirim ke PC (Host → VNC)</span>
+                                        <button onclick="DashboardDetailModal.pasteHostToInput()" class="text-emerald-400 hover:underline">Tempel dari Host</button>
+                                    </div>
+                                    <textarea id="modal-vnc-clip-send" rows="2" placeholder="Teks untuk dikirim ke PC..." class="w-full p-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 font-mono resize-none focus:outline-none focus:border-neutral-500"></textarea>
+                                    <button onclick="DashboardDetailModal.sendClipboardToRemote()" class="w-full py-1 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors">
+                                        Kirim ke PC (Ctrl+V)
+                                    </button>
+                                </div>
+                                <div class="space-y-1.5">
+                                    <div class="flex items-center justify-between text-[10px] text-neutral-400 font-semibold">
+                                        <span>⬇️ Diterima dari PC (VNC → Host)</span>
+                                    </div>
+                                    <textarea id="modal-vnc-clip-rec" rows="2" readonly placeholder="Teks dari PC saat dicopy..." class="w-full p-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-emerald-400 font-mono resize-none focus:outline-none"></textarea>
+                                    <button onclick="DashboardDetailModal.copyReceivedToHost()" class="w-full py-1 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs font-bold rounded transition-colors">
+                                        Salin ke Clipboard HP/PC
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Footer Control Bar -->
                         <div class="p-3 bg-[#0a0a0a] border-t border-[#1a1a1a] flex flex-wrap gap-2 items-center justify-between">
                             <div class="flex gap-2">
@@ -275,6 +306,9 @@ const DashboardDetailModal = {
                                 </button>
                                 <button id="modal-vnc-keyboard-btn" onclick="DashboardDetailModal.toggleVirtualKeyboard()" class="px-3 py-1.5 bg-[#171717] border border-[#262626] text-neutral-300 text-xs font-bold rounded hover:bg-[#222] transition-colors opacity-40 cursor-not-allowed">
                                     ⌨️ Keyboard
+                                </button>
+                                <button id="modal-vnc-clip-btn" onclick="DashboardDetailModal.toggleClipboardModal()" class="px-3 py-1.5 bg-[#171717] border border-[#262626] text-neutral-300 text-xs font-bold rounded hover:bg-[#222] transition-colors opacity-40 cursor-not-allowed" title="Sinkronisasi Clipboard">
+                                    📋 Clipboard
                                 </button>
                                 <button onclick="DashboardDetailModal.toggleFullscreen()" class="px-3 py-1.5 bg-[#171717] border border-[#262626] text-neutral-300 text-xs font-bold rounded hover:bg-[#222] transition-colors">
                                     Fullscreen
@@ -478,6 +512,7 @@ const DashboardDetailModal = {
             const statusBadge = document.getElementById('modal-vnc-status-badge');
             const disconnectBtn = document.getElementById('modal-vnc-disconnect-btn');
             const kbBtn = document.getElementById('modal-vnc-keyboard-btn');
+            const clipBtn = document.getElementById('modal-vnc-clip-btn');
 
             this.vncSession = VNCClient.createSession({
                 screenContainer: screen,
@@ -494,6 +529,7 @@ const DashboardDetailModal = {
                     }
                     if (disconnectBtn) disconnectBtn.classList.remove('hidden');
                     if (kbBtn) kbBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+                    if (clipBtn) clipBtn.classList.remove('opacity-40', 'cursor-not-allowed');
                     Toast.success(`Remote Control PC ${pcKode} aktif!`);
                 },
                 onDisconnect: () => {
@@ -512,6 +548,11 @@ const DashboardDetailModal = {
                         resBadge.textContent = `${w} × ${h} (${modeText})`;
                         resBadge.classList.remove('hidden');
                     }
+                },
+                onClipboard: (text) => {
+                    const rec = document.getElementById('modal-vnc-clip-rec');
+                    if (rec) rec.value = text;
+                    Toast.info(`📋 Teks disalin dari Remote PC ${pcKode}`);
                 }
             });
 
@@ -552,8 +593,14 @@ const DashboardDetailModal = {
         const kbBtn = document.getElementById('modal-vnc-keyboard-btn');
         if (kbBtn) kbBtn.classList.add('opacity-40', 'cursor-not-allowed');
 
+        const clipBtn = document.getElementById('modal-vnc-clip-btn');
+        if (clipBtn) clipBtn.classList.add('opacity-40', 'cursor-not-allowed');
+
         const kb = document.getElementById('modal-vnc-virtual-keyboard');
         if (kb) kb.classList.add('hidden');
+
+        const clipDrawer = document.getElementById('modal-vnc-clipboard-drawer');
+        if (clipDrawer) clipDrawer.classList.add('hidden');
 
         try {
             await API.request(`/api/v1/kasir/monitor/vnc_client/${pcId}/stop`, { method: 'POST' });
@@ -668,7 +715,100 @@ const DashboardDetailModal = {
         }
     },
 
+    toggleClipboardModal: function() {
+        const drawer = document.getElementById('modal-vnc-clipboard-drawer');
+        if (!drawer) return;
+        const isHidden = drawer.classList.contains('hidden');
+        if (isHidden) {
+            drawer.classList.remove('hidden');
+            const sendInput = document.getElementById('modal-vnc-clip-send');
+            if (sendInput) {
+                sendInput.focus();
+                if (!sendInput.value && navigator.clipboard && navigator.clipboard.readText) {
+                    navigator.clipboard.readText().then(t => {
+                        if (t && !sendInput.value) sendInput.value = t;
+                    }).catch(() => {});
+                }
+            }
+            const recInput = document.getElementById('modal-vnc-clip-rec');
+            if (recInput && this.vncSession) {
+                recInput.value = this.vncSession.getRemoteClipboard() || '';
+            }
+        } else {
+            drawer.classList.add('hidden');
+        }
+    },
 
+    pasteHostToInput: async function() {
+        const sendInput = document.getElementById('modal-vnc-clip-send');
+        if (!sendInput) return;
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            try {
+                const t = await navigator.clipboard.readText();
+                if (t) {
+                    sendInput.value = t;
+                    Toast.success('Teks diambil dari clipboard host');
+                    return;
+                }
+            } catch (e) {
+                console.warn('[VNC] Gagal baca clipboard:', e);
+            }
+        }
+        Toast.info('Gunakan Ctrl+V atau tahan dan tempel secara manual');
+        sendInput.focus();
+    },
+
+    sendClipboardToRemote: function() {
+        if (!this.vncSession) {
+            Toast.error('Remote PC belum terhubung');
+            return;
+        }
+        const sendInput = document.getElementById('modal-vnc-clip-send');
+        const text = sendInput ? sendInput.value : '';
+        if (!text) {
+            Toast.warning('Ketik atau tempel teks terlebih dahulu');
+            return;
+        }
+        const success = this.vncSession.sendClipboard(text);
+        if (success) {
+            Toast.success('Teks terkirim ke clipboard PC Klien (Ctrl+V di PC)');
+            const drawer = document.getElementById('modal-vnc-clipboard-drawer');
+            if (drawer) drawer.classList.add('hidden');
+        } else {
+            Toast.error('Gagal mengirim teks ke clipboard PC');
+        }
+    },
+
+    copyReceivedToHost: async function() {
+        const recInput = document.getElementById('modal-vnc-clip-rec');
+        const text = recInput ? recInput.value : (this.vncSession ? this.vncSession.getRemoteClipboard() : '');
+        if (!text) {
+            Toast.warning('Belum ada teks yang disalin dari remote PC');
+            return;
+        }
+        let copied = false;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            try {
+                await navigator.clipboard.writeText(text);
+                copied = true;
+            } catch (e) {
+                console.warn('[VNC] navigator.clipboard.writeText gagal:', e);
+            }
+        }
+        if (!copied && recInput) {
+            recInput.select();
+            recInput.setSelectionRange(0, 99999);
+            try {
+                copied = document.execCommand('copy');
+            } catch (e) {}
+        }
+        if (copied) {
+            Toast.success('Teks berhasil disalin ke clipboard perangkat ini!');
+        } else {
+            Toast.info('Silakan salin teks manual dari kotak');
+            if (recInput) recInput.focus();
+        }
+    },
 
     onModalClose: function(pcId) {
         if (this.vncSession) {

@@ -1,0 +1,423 @@
+// app/static/js/kasir/modules/catatan/index.js
+// Modul Catatan Fleksibel (.txt) untuk Kasir dan Admin TMBilling
+
+const Catatan = {
+    notes: [],
+    activeFilename: null,
+    currentTitle: '',
+    currentContent: '',
+    isDirty: false,
+    autoSaveTimer: null,
+    autoSaveDelay: 1500, // 1.5 detik debounce auto-save
+    mobileViewMode: 'editor', // 'editor' | 'list'
+
+    async init() {
+        await this.loadNotes();
+        // Keyboard shortcut global Ctrl+S saat berada di tab catatan
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                const tabCatatan = document.getElementById('tab-catatan');
+                if (tabCatatan && !tabCatatan.classList.contains('hidden') && this.activeFilename) {
+                    e.preventDefault();
+                    this.saveCurrentNote(true);
+                }
+            }
+        });
+    },
+
+    async loadNotes(preserveSelection = true) {
+        try {
+            const res = await API.request('/api/v1/kasir/notes');
+            if (res && res.success) {
+                this.notes = res.notes || [];
+                this.renderList();
+
+                if (this.notes.length > 0) {
+                    if (!preserveSelection || !this.activeFilename || !this.notes.some(n => n.filename === this.activeFilename)) {
+                        this.selectNote(this.notes[0].filename);
+                    }
+                } else {
+                    this.renderEmptyEditor();
+                }
+            }
+        } catch (err) {
+            console.error('[Catatan] Gagal memuat catatan:', err);
+            const container = document.getElementById('notes-list-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="p-4 text-center text-xs text-red-400">
+                        Gagal memuat catatan: ${err.message || 'Kesalahan jaringan'}
+                    </div>
+                `;
+            }
+        }
+    },
+
+    renderList() {
+        const container = document.getElementById('notes-list-container');
+        const countBadge = document.getElementById('notes-count-badge');
+        if (!container) return;
+
+        const searchInput = document.getElementById('notes-search-input');
+        const filterText = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+        const filtered = this.notes.filter(n => {
+            if (!filterText) return true;
+            return n.title.toLowerCase().includes(filterText) || (n.preview && n.preview.toLowerCase().includes(filterText));
+        });
+
+        if (countBadge) {
+            countBadge.textContent = `${this.notes.length} Catatan`;
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-48 text-neutral-500 text-xs text-center p-4">
+                    <span class="text-2xl mb-1.5">${filterText ? '🔍' : '📝'}</span>
+                    <p class="font-semibold text-neutral-400">${filterText ? 'Catatan tidak ditemukan' : 'Belum ada catatan'}</p>
+                    <p class="text-[10px] text-neutral-600 mt-1">${filterText ? 'Coba kata kunci lain' : 'Klik tombol "+ Catatan Baru" di atas'}</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = filtered.map(note => {
+            const isActive = note.filename === this.activeFilename;
+            const activeClass = isActive 
+                ? 'bg-[#1a1a1a] border-neutral-600 text-white shadow-sm' 
+                : 'bg-[#080808] border-[#1c1c1c] text-neutral-300 hover:bg-[#121212] hover:border-[#262626]';
+
+            const previewText = note.preview ? note.preview.replace(/\n/g, ' ') : '(Catatan kosong)';
+            const sizeKb = (note.size / 1024).toFixed(1);
+
+            return `
+                <div onclick="Catatan.selectNote('${encodeURIComponent(note.filename)}')"
+                    class="p-2.5 rounded-lg border cursor-pointer transition-all ${activeClass} flex flex-col gap-1">
+                    <div class="flex items-center justify-between gap-2">
+                        <h4 class="text-xs font-bold truncate flex-1 min-w-0">${this.escapeHtml(note.title)}</h4>
+                        <span class="text-[9px] font-mono text-neutral-500 shrink-0">${sizeKb} KB</span>
+                    </div>
+                    <p class="text-[11px] text-neutral-400 line-clamp-2 leading-relaxed font-sans">${this.escapeHtml(previewText)}</p>
+                    <div class="flex items-center justify-between text-[9px] text-neutral-500 pt-1 border-t border-[#1a1a1a]/60">
+                        <span>🕒 ${note.updated_at || '-'}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    filterNotes() {
+        this.renderList();
+    },
+
+    async selectNote(encodedFilename) {
+        const filename = decodeURIComponent(encodedFilename);
+        if (this.isDirty && this.activeFilename && this.activeFilename !== filename) {
+            // Simpan catatan yang sedang aktif sebelum berganti
+            await this.saveCurrentNote(false);
+        }
+
+        this.activeFilename = filename;
+        this.setSaveStatus('Memuat...', 'bg-amber-500/20 text-amber-400 border-amber-500/30');
+
+        try {
+            const res = await API.request(`/api/v1/kasir/notes/${encodeURIComponent(filename)}`);
+            if (res && res.success && res.note) {
+                const note = res.note;
+                this.currentTitle = note.title;
+                this.currentContent = note.content;
+                this.isDirty = false;
+
+                const titleInput = document.getElementById('note-title-input');
+                const contentEditor = document.getElementById('note-content-editor');
+                const fileSize = document.getElementById('note-file-size');
+
+                if (titleInput) titleInput.value = note.title;
+                if (contentEditor) {
+                    contentEditor.value = note.content;
+                    contentEditor.disabled = false;
+                }
+                if (fileSize) fileSize.textContent = `${(note.size / 1024).toFixed(1)} KB`;
+
+                this.setSaveStatus('Tersimpan', 'bg-neutral-800 text-neutral-400 border-neutral-700');
+                this.updateStats();
+                this.renderList();
+
+                // Pada tampilan mobile, alihkan fokus ke editor
+                if (window.innerWidth < 768) {
+                    this.showEditorPanelMobile();
+                }
+            }
+        } catch (err) {
+            Toast.error('Gagal membuka catatan: ' + err.message);
+            this.setSaveStatus('Gagal', 'bg-red-500/20 text-red-400 border-red-500/30');
+        }
+    },
+
+    renderEmptyEditor() {
+        this.activeFilename = null;
+        this.currentTitle = '';
+        this.currentContent = '';
+        this.isDirty = false;
+
+        const titleInput = document.getElementById('note-title-input');
+        const contentEditor = document.getElementById('note-content-editor');
+        const fileSize = document.getElementById('note-file-size');
+
+        if (titleInput) titleInput.value = '';
+        if (contentEditor) {
+            contentEditor.value = '';
+            contentEditor.disabled = true;
+        }
+        if (fileSize) fileSize.textContent = '0 B';
+
+        this.setSaveStatus('Belum ada catatan', 'bg-neutral-800 text-neutral-500 border-neutral-700');
+        this.updateStats();
+    },
+
+    async createNewNote() {
+        const defaultTitle = `Catatan ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}`;
+        try {
+            const res = await API.request('/api/v1/kasir/notes', {
+                method: 'POST',
+                body: JSON.stringify({
+                    title: defaultTitle,
+                    content: ''
+                })
+            });
+
+            if (res && res.success && res.note) {
+                Toast.success('Catatan baru berhasil dibuat');
+                await this.loadNotes(false);
+                this.selectNote(res.note.filename);
+
+                const titleInput = document.getElementById('note-title-input');
+                if (titleInput) {
+                    titleInput.focus();
+                    titleInput.select();
+                }
+            }
+        } catch (err) {
+            Toast.error('Gagal membuat catatan baru: ' + err.message);
+        }
+    },
+
+    onTitleChange() {
+        const titleInput = document.getElementById('note-title-input');
+        if (!titleInput) return;
+        this.currentTitle = titleInput.value;
+        this.isDirty = true;
+        this.setSaveStatus('Ada perubahan...', 'bg-amber-500/20 text-amber-400 border-amber-500/30');
+        this.triggerAutoSave();
+    },
+
+    onContentChange() {
+        const contentEditor = document.getElementById('note-content-editor');
+        if (!contentEditor) return;
+        this.currentContent = contentEditor.value;
+        this.isDirty = true;
+        this.updateStats();
+        this.setSaveStatus('Mengetik...', 'bg-blue-500/20 text-blue-400 border-blue-500/30');
+        this.triggerAutoSave();
+    },
+
+    triggerAutoSave() {
+        if (this.autoSaveTimer) {
+            clearTimeout(this.autoSaveTimer);
+        }
+        this.autoSaveTimer = setTimeout(() => {
+            this.saveCurrentNote(false);
+        }, this.autoSaveDelay);
+    },
+
+    async saveCurrentNote(manual = false) {
+        if (!this.activeFilename) return;
+        if (!this.isDirty && !manual) return;
+
+        const titleInput = document.getElementById('note-title-input');
+        const contentEditor = document.getElementById('note-content-editor');
+
+        const title = titleInput ? titleInput.value.trim() : this.currentTitle;
+        const content = contentEditor ? contentEditor.value : this.currentContent;
+
+        if (this.autoSaveTimer) {
+            clearTimeout(this.autoSaveTimer);
+            this.autoSaveTimer = null;
+        }
+
+        this.setSaveStatus('Menyimpan...', 'bg-blue-500/20 text-blue-400 border-blue-500/30');
+
+        try {
+            const res = await API.request(`/api/v1/kasir/notes/${encodeURIComponent(this.activeFilename)}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    title: title || 'Catatan Tanpa Judul',
+                    content: content
+                })
+            });
+
+            if (res && res.success && res.note) {
+                this.isDirty = false;
+                const oldFilename = this.activeFilename;
+                this.activeFilename = res.note.filename;
+                this.currentTitle = res.note.title;
+                this.currentContent = res.note.content;
+
+                const fileSize = document.getElementById('note-file-size');
+                if (fileSize) fileSize.textContent = `${(res.note.size / 1024).toFixed(1)} KB`;
+
+                this.setSaveStatus('Tersimpan', 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30');
+                if (manual) {
+                    Toast.success('Catatan berhasil disimpan');
+                }
+
+                // Update info di array lokal tanpa re-render penuh jika hanya isi berubah
+                const existing = this.notes.find(n => n.filename === oldFilename);
+                if (existing) {
+                    existing.filename = res.note.filename;
+                    existing.title = res.note.title;
+                    existing.size = res.note.size;
+                    existing.preview = content.slice(0, 160).trim();
+                    existing.updated_at = res.note.updated_at;
+                }
+                this.renderList();
+
+                setTimeout(() => {
+                    if (!this.isDirty) {
+                        this.setSaveStatus('Tersimpan', 'bg-neutral-800 text-neutral-400 border-neutral-700');
+                    }
+                }, 3000);
+            }
+        } catch (err) {
+            this.setSaveStatus('Gagal simpan', 'bg-red-500/20 text-red-400 border-red-500/30');
+            Toast.error('Gagal menyimpan catatan: ' + err.message);
+        }
+    },
+
+    async deleteCurrentNote() {
+        if (!this.activeFilename) {
+            Toast.warning('Pilih catatan yang ingin dihapus');
+            return;
+        }
+
+        const title = this.currentTitle || this.activeFilename;
+        if (!confirm(`Apakah Anda yakin ingin menghapus catatan "${title}"? Tindakan ini tidak dapat dibatalkan.`)) {
+            return;
+        }
+
+        try {
+            const res = await API.request(`/api/v1/kasir/notes/${encodeURIComponent(this.activeFilename)}`, {
+                method: 'DELETE'
+            });
+
+            if (res && res.success) {
+                Toast.success(`Catatan "${title}" berhasil dihapus`);
+                this.activeFilename = null;
+                await this.loadNotes(false);
+            }
+        } catch (err) {
+            Toast.error('Gagal menghapus catatan: ' + err.message);
+        }
+    },
+
+    downloadCurrentNote() {
+        if (!this.activeFilename) {
+            Toast.warning('Pilih catatan terlebih dahulu');
+            return;
+        }
+        const downloadUrl = `/api/v1/kasir/notes/${encodeURIComponent(this.activeFilename)}/download`;
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = this.activeFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        Toast.info(`Mengunduh ${this.activeFilename}...`);
+    },
+
+    handleEditorKeydown(e) {
+        // Izinkan indentasi Tab pada textarea
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const textarea = e.target;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            textarea.value = textarea.value.substring(0, start) + "\t" + textarea.value.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + 1;
+            this.onContentChange();
+        }
+    },
+
+    updateStats() {
+        const statsEl = document.getElementById('note-stats-text');
+        if (!statsEl) return;
+
+        const text = this.currentContent || '';
+        const charCount = text.length;
+        const lineCount = text ? text.split('\n').length : 1;
+        const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+        const wordCount = words.length;
+
+        statsEl.textContent = `${wordCount} kata • ${charCount} karakter • ${lineCount} baris`;
+    },
+
+    setSaveStatus(text, badgeClass) {
+        const statusEl = document.getElementById('note-save-status');
+        if (statusEl) {
+            statusEl.textContent = text;
+            statusEl.className = `px-2.5 py-1 rounded text-[10px] md:text-xs font-semibold ${badgeClass}`;
+        }
+    },
+
+    toggleMobileView() {
+        const sidebar = document.getElementById('notes-sidebar-panel');
+        const editor = document.getElementById('notes-editor-panel');
+        const toggleIcon = document.getElementById('notes-mobile-toggle-icon');
+        const toggleText = document.getElementById('notes-mobile-toggle-text');
+
+        if (!sidebar || !editor) return;
+
+        if (sidebar.classList.contains('hidden')) {
+            // Tampilkan list
+            sidebar.classList.remove('hidden');
+            editor.classList.add('hidden');
+            if (toggleIcon) toggleIcon.textContent = '✏️';
+            if (toggleText) toggleText.textContent = 'Editor';
+        } else {
+            // Tampilkan editor
+            sidebar.classList.add('hidden');
+            editor.classList.remove('hidden');
+            if (toggleIcon) toggleIcon.textContent = '📁';
+            if (toggleText) toggleText.textContent = 'Daftar';
+        }
+    },
+
+    showEditorPanelMobile() {
+        if (window.innerWidth >= 768) return;
+        const sidebar = document.getElementById('notes-sidebar-panel');
+        const editor = document.getElementById('notes-editor-panel');
+        const toggleIcon = document.getElementById('notes-mobile-toggle-icon');
+        const toggleText = document.getElementById('notes-mobile-toggle-text');
+
+        if (sidebar && editor) {
+            sidebar.classList.add('hidden');
+            editor.classList.remove('hidden');
+            if (toggleIcon) toggleIcon.textContent = '📁';
+            if (toggleText) toggleText.textContent = 'Daftar';
+        }
+    },
+
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+};
+
+window.Catatan = Catatan;
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Siapkan modul Catatan
+    Catatan.init();
+});

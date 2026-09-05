@@ -54,6 +54,7 @@ from app.routes.public.tv_public_routes import tv_public_api_bp
 from app.routes.tutorial.tutorial_routes import tutorial_api_bp
 from app.routes.fileexplorer.fileexplorer_routes import fileexplorer_api_bp
 from app.routes.branch.branch_routes import branch_api_bp
+from app.routes.notes.note_routes import notes_api_bp
 
 __all__ = [
     'auth_api_bp', 'auth_kasir_api_bp', 'client_api_bp', 'dashboard_bp',
@@ -62,5 +63,6 @@ __all__ = [
     'user_api_bp', 'menu_api_bp', 'backup_api_bp', 'tournament_api_bp', 
     'member_portal_bp', 'shift_api_bp', 'migration_api_bp', 'plugin_api_bp', 'mikrotik_api_bp',
     'game_kasir_api_bp', 'game_public_api_bp', 'server_monitor_bp', 'vnc_api_bp', 'maintenance_api_bp',
-    'uptime_api_bp', 'tv_public_api_bp', 'tutorial_api_bp', 'fileexplorer_api_bp', 'branch_api_bp'
+    'uptime_api_bp', 'tv_public_api_bp', 'tutorial_api_bp', 'fileexplorer_api_bp', 'branch_api_bp',
+    'notes_api_bp'
 ]

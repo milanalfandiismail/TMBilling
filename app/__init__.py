@@ -76,7 +76,8 @@ def _register_blueprints(app):
         tv_public_api_bp,
         tutorial_api_bp,
         fileexplorer_api_bp,
-        branch_api_bp
+        branch_api_bp,
+        notes_api_bp
     )
 
     # ==========================================
@@ -115,6 +116,7 @@ def _register_blueprints(app):
     app.register_blueprint(tutorial_api_bp, url_prefix="/api/v1/kasir/tutorials")
     app.register_blueprint(fileexplorer_api_bp, url_prefix="/api/v1/kasir/fileexplorer")
     app.register_blueprint(branch_api_bp, url_prefix="/api/v1/kasir/branch")
+    app.register_blueprint(notes_api_bp, url_prefix="/api/v1/kasir/notes")
 
     # ==========================================
     # 3. PUBLIC APIs (/api/v1/public/...)
