@@ -126,17 +126,66 @@ def test_note_routes_authenticated(client):
     new_filename = put_res.get_json()['note']['filename']
     assert new_filename == "Daftar Belanja Kantin Minggu Ini.txt"
 
-    # 5. GET /api/v1/kasir/notes/<filename>/download
+    # 5. POST /api/v1/kasir/notes/<filename>/pin
+    pin_res = client.post(f'/api/v1/kasir/notes/{new_filename}/pin')
+    assert pin_res.status_code == 200
+    pin_json = pin_res.get_json()
+    assert pin_json['success'] is True
+    assert pin_json['result']['is_pinned'] is True
+
+    # 6. POST /api/v1/kasir/notes/<filename>/duplicate
+    dup_res = client.post(f'/api/v1/kasir/notes/{new_filename}/duplicate')
+    assert dup_res.status_code == 201
+    dup_json = dup_res.get_json()
+    assert dup_json['success'] is True
+    dup_filename = dup_json['note']['filename']
+    assert "(Salinan)" in dup_filename
+
+    # 7. GET /api/v1/kasir/notes/<filename>/download
     dl_res = client.get(f'/api/v1/kasir/notes/{new_filename}/download')
     assert dl_res.status_code == 200
     assert b"Teh Kotak" in dl_res.data
     assert "text/plain" in dl_res.content_type
     dl_res.close()
 
-    # 6. DELETE /api/v1/kasir/notes/<filename>
+    # 8. DELETE /api/v1/kasir/notes/<filename>
     del_res = client.delete(f'/api/v1/kasir/notes/{new_filename}')
     assert del_res.status_code == 200
     assert del_res.get_json()['success'] is True
+
+    del_dup_res = client.delete(f'/api/v1/kasir/notes/{dup_filename}')
+    assert del_dup_res.status_code == 200
+
+def test_note_service_pin_sorting_and_duplicate():
+    n1 = NoteService.create_note("Zebra Normal", "Konten zebra biasa")
+    n2 = NoteService.create_note("Alpha Penting", "SOP penting warnet")
+
+    # Awalnya Zebra lebih baru daripada Alpha karena dibuat setelahnya
+    notes_init = NoteService.list_notes()
+    assert notes_init[0]['filename'] == "Alpha Penting.txt" or notes_init[0]['filename'] == "Zebra Normal.txt"
+
+    # Pin Alpha Penting -> Harus selalu di index 0
+    pinned_res = NoteService.toggle_pin("Alpha Penting.txt")
+    assert pinned_res['is_pinned'] is True
+
+    notes_after_pin = NoteService.list_notes()
+    assert notes_after_pin[0]['filename'] == "Alpha Penting.txt"
+    assert notes_after_pin[0]['is_pinned'] is True
+
+    # Duplicate Alpha Penting
+    copy_note = NoteService.duplicate_note("Alpha Penting.txt")
+    assert "Alpha Penting (Salinan).txt" == copy_note['filename']
+    assert "SOP penting warnet" in copy_note['content']
+
+    # Search filter by content
+    searched = NoteService.list_notes(query="zebra biasa")
+    assert len(searched) == 1
+    assert searched[0]['filename'] == "Zebra Normal.txt"
+
+    # Cleanup
+    NoteService.delete_note("Zebra Normal.txt")
+    NoteService.delete_note("Alpha Penting.txt")
+    NoteService.delete_note(copy_note['filename'])
 
 def test_note_routes_unauthenticated(client):
     # Without session, should return 401

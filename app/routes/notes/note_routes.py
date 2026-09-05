@@ -17,9 +17,10 @@ def check_auth():
 
 @notes_api_bp.route("", methods=["GET"])
 def list_notes():
-    """Mengambil daftar seluruh berkas catatan."""
+    """Mengambil daftar seluruh berkas catatan dengan opsi filter pencarian."""
+    query = request.args.get("q")
     try:
-        notes = NoteService.list_notes()
+        notes = NoteService.list_notes(query=query)
         return jsonify({"success": True, "notes": notes})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -111,3 +112,43 @@ def download_note(filename):
         return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+@notes_api_bp.route("/<filename>/pin", methods=["POST"])
+def toggle_pin_note(filename):
+    """Menyematkan atau melepas sematan (pin/unpin) catatan."""
+    try:
+        result = NoteService.toggle_pin(filename)
+        operator = session.get("kasir_username", "system")
+        status_str = "menyematkan" if result['is_pinned'] else "melepas sematan"
+        write_log(
+            "NOTE_PIN_TOGGLED",
+            f"{status_str.capitalize()} catatan: {filename}",
+            user=operator
+        )
+        return jsonify({"success": True, "result": result})
+    except FileNotFoundError as e:
+        return jsonify({"success": False, "error": str(e)}), 404
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@notes_api_bp.route("/<filename>/duplicate", methods=["POST"])
+def duplicate_note(filename):
+    """Menduplikasi berkas catatan."""
+    try:
+        note = NoteService.duplicate_note(filename)
+        operator = session.get("kasir_username", "system")
+        write_log(
+            "NOTE_DUPLICATED",
+            f"Menduplikasi catatan {filename} -> {note['filename']}",
+            user=operator
+        )
+        return jsonify({"success": True, "note": note}), 201
+    except FileNotFoundError as e:
+        return jsonify({"success": False, "error": str(e)}), 404
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+

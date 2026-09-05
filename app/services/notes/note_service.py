@@ -2,6 +2,7 @@
 import os
 import re
 import time
+import json
 from datetime import datetime
 from flask import current_app
 
@@ -56,28 +57,102 @@ class NoteService:
         return target_path
 
     @classmethod
-    def list_notes(cls) -> list[dict]:
-        """Mengambil daftar seluruh berkas catatan .txt."""
+    def _get_pinned_file_path(cls) -> str:
+        """Mengambil path berkas metadata .pinned.json di folder notes."""
+        return os.path.join(cls.get_notes_dir(), '.pinned.json')
+
+    @classmethod
+    def _get_pinned_set(cls) -> set[str]:
+        """Membaca daftar nama berkas yang disematkan (pinned)."""
+        pinned_path = cls._get_pinned_file_path()
+        if not os.path.exists(pinned_path):
+            return set()
+        try:
+            with open(pinned_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return set(data)
+                elif isinstance(data, dict) and 'pinned' in data:
+                    return set(data['pinned'])
+        except Exception:
+            pass
+        return set()
+
+    @classmethod
+    def _save_pinned_set(cls, pinned_set: set[str]):
+        """Menyimpan daftar nama berkas yang disematkan ke .pinned.json."""
+        pinned_path = cls._get_pinned_file_path()
+        try:
+            with open(pinned_path, 'w', encoding='utf-8') as f:
+                json.dump(sorted(list(pinned_set)), f, indent=2)
+        except Exception:
+            pass
+
+    @classmethod
+    def toggle_pin(cls, filename: str) -> dict:
+        """Menyematkan atau melepas sematan (pin/unpin) pada berkas catatan."""
+        file_path = cls.validate_path(filename)
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Catatan '{filename}' tidak ditemukan")
+
+        clean_name = os.path.basename(file_path)
+        pinned = cls._get_pinned_set()
+        if clean_name in pinned:
+            pinned.remove(clean_name)
+            is_pinned = False
+        else:
+            pinned.add(clean_name)
+            is_pinned = True
+
+        cls._save_pinned_set(pinned)
+        return {
+            'filename': clean_name,
+            'is_pinned': is_pinned
+        }
+
+    @classmethod
+    def duplicate_note(cls, filename: str) -> dict:
+        """Membuat salinan dari catatan yang sudah ada."""
+        source_note = cls.get_note(filename)
+        source_title = source_note['title']
+        source_content = source_note['content']
+
+        copy_title = f"{source_title} (Salinan)"
+        return cls.create_note(copy_title, source_content)
+
+    @classmethod
+    def list_notes(cls, query: str = None) -> list[dict]:
+        """Mengambil daftar seluruh berkas catatan .txt dengan dukungan pencarian & prioritas pin."""
         notes_dir = cls.get_notes_dir()
         notes = []
 
         if not os.path.exists(notes_dir):
             return []
 
+        pinned_set = cls._get_pinned_set()
+        q = query.lower().strip() if query else None
+
         for entry in os.scandir(notes_dir):
             if entry.is_file() and entry.name.lower().endswith('.txt'):
                 try:
                     stat = entry.stat()
-                    # Baca baris pertama / preview isi
-                    preview = ""
+                    # Baca isi catatan untuk preview dan pencarian penuh
+                    full_content = ""
                     try:
                         with open(entry.path, 'r', encoding='utf-8', errors='replace') as f:
-                            preview = f.read(160).strip()
+                            full_content = f.read()
                     except Exception:
                         pass
 
+                    preview = full_content[:160].strip()
                     title = entry.name[:-4] if entry.name.lower().endswith('.txt') else entry.name
+
+                    # Jika ada query pencarian, cek apakah query ada di judul atau di seluruh isi konten
+                    if q and (q not in title.lower() and q not in full_content.lower()):
+                        continue
+
                     updated_dt = datetime.fromtimestamp(stat.st_mtime)
+                    is_pinned = entry.name in pinned_set
 
                     notes.append({
                         'filename': entry.name,
@@ -85,13 +160,14 @@ class NoteService:
                         'size': stat.st_size,
                         'updated_at': updated_dt.strftime('%Y-%m-%d %H:%M:%S'),
                         'updated_timestamp': stat.st_mtime,
-                        'preview': preview
+                        'preview': preview,
+                        'is_pinned': is_pinned
                     })
                 except Exception:
                     continue
 
-        # Urutkan berdasarkan waktu modifikasi terbaru
-        notes.sort(key=lambda x: x.get('updated_timestamp', 0), reverse=True)
+        # Urutkan: Pinned selalu di paling atas (is_pinned: True), lalu modifikasi terbaru
+        notes.sort(key=lambda x: (not x.get('is_pinned', False), -x.get('updated_timestamp', 0)))
         return notes
 
     @classmethod
@@ -108,6 +184,7 @@ class NoteService:
         real_name = os.path.basename(file_path)
         title = real_name[:-4] if real_name.lower().endswith('.txt') else real_name
         updated_dt = datetime.fromtimestamp(stat.st_mtime)
+        is_pinned = real_name in cls._get_pinned_set()
 
         return {
             'filename': real_name,
@@ -115,7 +192,8 @@ class NoteService:
             'content': content,
             'size': stat.st_size,
             'updated_at': updated_dt.strftime('%Y-%m-%d %H:%M:%S'),
-            'updated_timestamp': stat.st_mtime
+            'updated_timestamp': stat.st_mtime,
+            'is_pinned': is_pinned
         }
 
     @classmethod
@@ -161,6 +239,14 @@ class NoteService:
                 if not os.path.exists(candidate_path):
                     os.rename(file_path, candidate_path)
                     target_path = candidate_path
+
+                    # Update status pinned ke nama baru jika sebelumnya di-pin
+                    pinned = cls._get_pinned_set()
+                    if target_filename in pinned:
+                        pinned.remove(target_filename)
+                        pinned.add(desired_name)
+                        cls._save_pinned_set(pinned)
+
                     target_filename = desired_name
                 else:
                     # Nama target sudah dipakai file lain, pertahankan target path
@@ -173,10 +259,18 @@ class NoteService:
 
     @classmethod
     def delete_note(cls, filename: str) -> bool:
-        """Menghapus berkas catatan .txt."""
+        """Menghapus berkas catatan .txt dan membersihkan status pin."""
         file_path = cls.validate_path(filename)
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Catatan '{filename}' tidak ditemukan")
 
+        clean_name = os.path.basename(file_path)
         os.remove(file_path)
+
+        # Bersihkan dari daftar pinned jika ada
+        pinned = cls._get_pinned_set()
+        if clean_name in pinned:
+            pinned.remove(clean_name)
+            cls._save_pinned_set(pinned)
+
         return True
