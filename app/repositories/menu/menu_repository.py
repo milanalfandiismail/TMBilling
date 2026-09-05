@@ -79,19 +79,47 @@ class MenuRepository:
         return TransaksiMenu.query.filter(TransaksiMenu.no_nota.like(f"{prefix}%")).count()
 
     @staticmethod
+    def _apply_kasir_filter(query, kasir_id):
+        """Menerapkan filter kasir secara akurat (lokal vs remote operator)."""
+        if not kasir_id or str(kasir_id).strip().lower() in ["", "semua", "none"]:
+            return query
+        kasir_str = str(kasir_id).strip()
+        if kasir_str.startswith("operator:"):
+            target_op = kasir_str.split("operator:", 1)[1].strip()
+            return query.filter(TransaksiMenu.operator == target_op)
+        if "(Remote:" in kasir_str:
+            return query.filter(TransaksiMenu.operator == kasir_str)
+        if kasir_str.isdigit():
+            uid = int(kasir_str)
+            return query.filter(
+                TransaksiMenu.kasir_id == uid,
+                db.or_(
+                    TransaksiMenu.operator == None,
+                    TransaksiMenu.operator == '',
+                    ~TransaksiMenu.operator.like('%(Remote:%')
+                )
+            )
+        return query
+
+    @staticmethod
+    def get_distinct_remote_operators():
+        """Mengambil nama operator remote unik dari transaksi menu."""
+        results = db.session.query(TransaksiMenu.operator).filter(
+            TransaksiMenu.operator.like('%(Remote:%')
+        ).distinct().all()
+        return [r[0] for r in results if r[0]]
+
+    @staticmethod
     def get_total_pemasukan_by_date(date_obj, kasir_id=None, metode_pembayaran=None):
         """Menghitung total pendapatan F&B pada tanggal tertentu, opsional difilter kasir."""
         res = db.session.query(db.func.sum(TransaksiMenu.total_harga)).select_from(TransaksiMenu).filter(
             db.func.date(TransaksiMenu.tanggal) == date_obj
         )
-        if kasir_id:
-            res = res.filter(TransaksiMenu.kasir_id == kasir_id)
+        res = MenuRepository._apply_kasir_filter(res, kasir_id)
         if metode_pembayaran:
             if metode_pembayaran == "Tunai":
-                res = res.filter(
-                    (TransaksiMenu.metode_pembayaran.in_(["Tunai", "Cash"])) | 
-                    (TransaksiMenu.metode_pembayaran == None)
-                )
+                query_cond = (TransaksiMenu.metode_pembayaran.in_(["Tunai", "Cash"])) | (TransaksiMenu.metode_pembayaran == None)
+                res = res.filter(query_cond)
             else:
                 res = res.filter(TransaksiMenu.metode_pembayaran == metode_pembayaran)
         val = res.scalar()
@@ -101,8 +129,7 @@ class MenuRepository:
     def get_transactions_by_date(date_obj, kasir_id=None, metode_pembayaran=None):
         """Mendapatkan daftar transaksi F&B pada tanggal tertentu, opsional difilter kasir."""
         query = TransaksiMenu.query.filter(db.func.date(TransaksiMenu.tanggal) == date_obj)
-        if kasir_id:
-            query = query.filter(TransaksiMenu.kasir_id == kasir_id)
+        query = MenuRepository._apply_kasir_filter(query, kasir_id)
         if metode_pembayaran:
             if metode_pembayaran == "Tunai":
                 query = query.filter(
@@ -117,8 +144,7 @@ class MenuRepository:
     def get_transactions_by_date_paginated(date_obj, page, per_page, kasir_id=None, metode_pembayaran=None):
         """Mendapatkan daftar transaksi F&B dengan pagination pada tanggal tertentu."""
         query = TransaksiMenu.query.filter(db.func.date(TransaksiMenu.tanggal) == date_obj)
-        if kasir_id:
-            query = query.filter(TransaksiMenu.kasir_id == kasir_id)
+        query = MenuRepository._apply_kasir_filter(query, kasir_id)
         if metode_pembayaran:
             if metode_pembayaran == "Tunai":
                 query = query.filter(

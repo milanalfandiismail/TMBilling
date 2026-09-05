@@ -4,6 +4,21 @@ const LaporanMenu = {
     currentPage: 1,
     itemsPerPage: 12,
     allData: null,
+    currentMetodePembayaran: '',
+
+    resetFilters() {
+        this.currentDate = null;
+        this.currentPage = 1;
+        this.currentKasirId = '';
+        this.currentMetodePembayaran = '';
+        this.allData = null;
+        const tglSelect = document.getElementById('laporan-menu-tanggal-select');
+        if (tglSelect) tglSelect.innerHTML = '<option value="">-- Pilih Tanggal --</option>';
+        const kasirSelect = document.getElementById('laporan-menu-kasir-select');
+        if (kasirSelect) kasirSelect.innerHTML = '<option value="">Semua Kasir</option>';
+        const metodeSelect = document.getElementById('laporan-menu-metode-pembayaran-select');
+        if (metodeSelect) metodeSelect.innerHTML = '<option value="">Semua Metode</option>';
+    },
 
     async load() {
         await this.loadKasirList();
@@ -197,9 +212,9 @@ const LaporanMenu = {
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pemesanan</span>
                                         <span>${tm.pc_kode === 'Tempat' ? 'Makan di Tempat' : 'Take Away'}</span>
                                     </td>
-                                    <td class="px-4 py-3 text-neutral-500 flex lg:table-cell justify-between items-center">
+                                    <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir</span>
-                                        <span>${tm.kasir_nama || '-'}</span>
+                                        <span class="text-neutral-300 font-medium">${tm.kasir_nama || '-'}</span>
                                     </td>
                                     <td class="px-4 py-3 text-center flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>

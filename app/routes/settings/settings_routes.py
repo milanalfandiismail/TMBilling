@@ -83,11 +83,38 @@ def update_auto_shutdown():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@settings_api_bp.route("/<key>", methods=["PUT"])
+@settings_api_bp.route("/<key>", methods=["GET", "PUT"])
 @login_required
 @admin_required
-def update_setting(key):
-    """Update pengaturan secara individual (Generic Endpoint)."""
+def handle_setting(key):
+    """Ambil (GET) atau perbarui (PUT) pengaturan secara individual."""
+    if request.method == "GET":
+        try:
+            default_map = {
+                "warnet_title": "TMBilling",
+                "warnet_address": "Jl. Merdeka No. 123, Kota",
+                "warnet_phone": "0812-3456-7890",
+                "warnet_footer": "Terima kasih, selamat bermain!",
+            }
+            default_val = default_map.get(key, None)
+            val = SettingsService.get(key, default_val)
+            if val is None:
+                return jsonify({"success": False, "error": f"Setting '{key}' tidak ditemukan"}), 404
+            return jsonify({
+                "success": True,
+                "key": key,
+                "value": val,
+                key: val,
+                "data": {
+                    "key": key,
+                    "value": val,
+                    key: val
+                }
+            }), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    # Method PUT
     try:
         data = request.get_json() or {}
         value = data.get("value")

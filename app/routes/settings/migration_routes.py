@@ -74,7 +74,7 @@ def get_migration_status():
             "current": current_revision,
             "head": head_label,
             "needs_upgrade": needs_upgrade,
-            "app_version": current_app.config.get("VERSION", "v1.0"),
+            "app_version": current_app.config.get("VERSION", "v1.6.0"),
             "history": history_list,
         }), 200
 
@@ -82,7 +82,7 @@ def get_migration_status():
         return jsonify({
             "success": False,
             "error": f"Gagal membaca status migrasi: {str(e)}",
-            "app_version": current_app.config.get("VERSION", "v1.0"),
+            "app_version": current_app.config.get("VERSION", "v1.6.0"),
             "current": None,
             "head": None,
             "needs_upgrade": False,

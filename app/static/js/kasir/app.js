@@ -92,16 +92,34 @@ const App = {
         const kasirOnlyRestricted = [
             'user', 'log',
             'server_statistic', 'monitor', 'hardware_checker', 'uptime', 'maintenance', 'screenshot', 'blackout', 'remote_server',
-            'settings', 'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv', 
+            'settings', 'settings_general', 'settings_branch', 'settings_payment', 'settings_kiosk', 'settings_tv', 
             'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup', 
             'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'whitelist_ip',
-            'mikrotik', 'analytics', 'plugins', 'plugin-spa'
+            'mikrotik', 'analytics', 'plugins', 'plugin-spa', 'fileexplorer', 'branch', 'branch_inbound', 'branch_kasir'
         ];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');
             tab = 'dash';
             mainTab = 'dash';
             subTab = null;
+        }
+
+        // Jika sedang mengontrol cabang remote, proteksi tab konfigurasi multi-cabang, file explorer & tutorial
+        if (typeof BranchManager !== 'undefined' && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0') {
+            if (['branch', 'branch_inbound', 'branch_kasir', 'fileexplorer', 'tutorials'].includes(tab)) {
+                if (window.Toast) {
+                    let msg = 'Pengaturan Multi Cabang hanya dapat diakses pada Cabang Lokal';
+                    if (tab === 'fileexplorer') {
+                        msg = 'File Explorer hanya dapat diakses pada Cabang Lokal';
+                    } else if (tab === 'tutorials') {
+                        msg = 'Dokumentasi & Tutorial hanya dapat diakses pada Cabang Lokal';
+                    }
+                    window.Toast.show(msg, 'info');
+                }
+                tab = 'dash';
+                mainTab = 'dash';
+                subTab = null;
+            }
         }
 
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -152,12 +170,15 @@ const App = {
             settings_migration: 'settings',
             analytics: 'analytics',
             plugins: 'plugins',
-            'plugin-spa': 'plugins'
+            'plugin-spa': 'plugins',
+            branch: 'branch',
+            branch_inbound: 'branch',
+            branch_kasir: 'branch'
         };
 
         const activeSubmenu = tabToSubmenu[tab];
         
-        const submenus = ['operasional', 'master', 'staff', 'laporan', 'sistemlog', 'system', 'settings'];
+        const submenus = ['operasional', 'master', 'staff', 'laporan', 'sistemlog', 'system', 'settings', 'branch', 'plugins'];
         submenus.forEach(sub => {
             const submenuEl = document.getElementById(`${sub}-submenu`);
             const arrowEl = document.getElementById(`${sub}-arrow`);
@@ -191,7 +212,7 @@ const App = {
             monitor: 'Hardware Monitor', hardware_checker: 'Hardware Checker', maintenance: 'Perawatan PC', laporan_maintenance: 'Laporan Perawatan', blackout: 'Blackout', screenshot: 'Screenshot Monitor',
             uptime: 'Uptime Tracker',
             user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat',
-            menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen',
+            menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen', catatan: 'Catatan',
             settings_general: 'Pengaturan Umum & Keamanan',
             settings_payment: 'Metode Pembayaran',
             settings_kiosk: 'Info Warnet & Kiosk',
@@ -203,12 +224,14 @@ const App = {
             settings_scheduler: 'Auto Scheduler',
             settings_migration: 'Migrasi & Update',
             tutorials: 'Dokumentasi & Tutorial',
-            analytics: 'Analytics Owner',
-            plugins: 'Plugins & Ekstensi',
+            analytics: 'Analytics Owner',            plugins: 'Plugins & Ekstensi',
             mikrotik: 'MikroTik Hotspot',
-            fileexplorer: 'File Explorer'
+            fileexplorer: 'File Explorer',
+            branch: 'Multi Cabang: Koneksi Cabang',
+            branch_inbound: 'Multi Cabang: List Koneksi Cabang',
+            branch_kasir: 'Multi Cabang: Akun Kasir Cabang'
         };
- 
+
         const titleEl = document.getElementById('page-title');
         if (titleEl) titleEl.innerText = titles[tab] || 'Panel';
     },
@@ -243,12 +266,30 @@ const App = {
             case 'settings': if (typeof Settings !== 'undefined') await Settings.load(); break;
             case 'menu': if (typeof Menu !== 'undefined') await Menu.load(); break;
             case 'tournament': if (typeof Tournament !== 'undefined') await Tournament.load(); break;
+            case 'catatan': if (typeof Catatan !== 'undefined') await Catatan.loadNotes(); break;
             case 'analytics': if (typeof OwnerAnalytics !== 'undefined') await OwnerAnalytics.load(); break;
             case 'plugins': if (typeof PluginsModule !== 'undefined') PluginsModule.init(); break;
             case 'mikrotik': if (typeof SettingsMikrotik !== 'undefined') SettingsMikrotik.init(); break;
             case 'tutorials': if (typeof Tutorials !== 'undefined') await Tutorials.load(); break;
             case 'fileexplorer': if (typeof FileExplorer !== 'undefined') await FileExplorer.load(); break;
             case 'remote_server': if (typeof VNCClient !== 'undefined') await VNCClient.load(); break;
+            case 'branch':
+                if (typeof BranchManager !== 'undefined') {
+                    await BranchManager.loadMyBranchKey();
+                    await BranchManager.loadBranches();
+                    BranchManager.renderBranchesSettingsTable();
+                }
+                break;
+            case 'branch_inbound':
+                if (typeof BranchManager !== 'undefined') {
+                    await BranchManager.loadInboundBranches();
+                }
+                break;
+            case 'branch_kasir':
+                if (typeof BranchManager !== 'undefined') {
+                    await BranchManager.loadRemoteOperators();
+                }
+                break;
         }
     },
  

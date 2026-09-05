@@ -48,6 +48,7 @@ fn main() {
             crate::commands::auth_commands::login_process,
             crate::commands::auth_commands::logout_process,
             crate::commands::system_commands::force_shutdown,
+            crate::commands::system_commands::force_restart,
             crate::commands::system_commands::get_external_bg,
             crate::commands::system_commands::get_client_warnet,
             crate::commands::system_commands::get_app_version,

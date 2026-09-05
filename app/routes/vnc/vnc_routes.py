@@ -2,16 +2,15 @@
 from flask import Blueprint, jsonify, session
 from app.services import VNCService
 from app.services.settings.settings_service import SettingsService
+from app.middleware.auth import admin_required
 from app.utils.logger import write_log
 
 vnc_api_bp = Blueprint("vnc", __name__)
 
 @vnc_api_bp.route("/status", methods=["GET"])
+@admin_required
 def get_vnc_status():
     """Mengecek status VNC Server dan Websockify daemon."""
-    if session.get("kasir_role") != "admin":
-        return jsonify({"success": False, "error": "Akses ditolak"}), 403
-
     vnc_active = VNCService.is_vnc_server_active()
     ws_active = VNCService.is_websockify_active()
 
@@ -25,10 +24,9 @@ def get_vnc_status():
     })
 
 @vnc_api_bp.route("/start", methods=["POST"])
+@admin_required
 def start_vnc_proxy():
     """Menyalakan proxy Websockify jika VNC Server sudah aktif."""
-    if session.get("kasir_role") != "admin":
-        return jsonify({"success": False, "error": "Akses ditolak"}), 403
 
     success, msg = VNCService.ensure_websockify_running()
     operator = session.get("kasir_username", "admin")

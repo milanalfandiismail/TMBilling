@@ -81,3 +81,21 @@ class SettingsService:
         """Menyimpan atau memperbarui nilai pengaturan."""
         SettingsRepository.set(key, value)
         db.session.commit()
+
+    @staticmethod
+    def get_or_create_branch_api_key():
+        """Mengambil branch_api_key atau membuatnya secara otomatis jika belum ada."""
+        import secrets
+        key = SettingsService.get("branch_api_key")
+        if not key:
+            key = "tmb_sec_" + secrets.token_hex(24)
+            SettingsService.set("branch_api_key", key)
+        return key
+
+    @staticmethod
+    def regenerate_branch_api_key():
+        """Membuat ulang branch_api_key lokal dengan token acak baru."""
+        import secrets
+        key = "tmb_sec_" + secrets.token_hex(24)
+        SettingsService.set("branch_api_key", key)
+        return key

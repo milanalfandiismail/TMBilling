@@ -61,6 +61,9 @@ class Transaksi(db.Model):
     is_refunded = db.Column(db.Boolean, default=False)
     metode_pembayaran = db.Column(db.String(50), nullable=True)
 
+    # Operator riil (lokal atau remote: e.g. "admin (Remote: Milan Net)")
+    operator = db.Column(db.String(100), nullable=True)
+
     
     def to_dict(self):
         """Mengkonversi transaksi ke dictionary untuk API dan laporan.
@@ -76,7 +79,8 @@ class Transaksi(db.Model):
             "paket_id": self.paket_id,
             "paket_nama": self.paket.nama if self.paket else None,
             "user_id": self.user_id,
-            "kasir_nama": self.user.nama_lengkap or self.user.username if self.user else "Kasir Lama",
+            "kasir_nama": self.operator or (self.user.nama_lengkap or self.user.username if self.user else "Kasir Lama"),
+            "operator": self.operator,
             "jenis": self.jenis,
             "jenis_display": self._get_jenis_display(),
             "jumlah": self.jumlah,

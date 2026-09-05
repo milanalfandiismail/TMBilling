@@ -1,0 +1,208 @@
+<!-- ==================== TAB: MULTI CABANG (CONTROL PANEL) ==================== -->
+<div id="tab-branch" class="tab-content hidden space-y-6">
+    <!-- Card: Kunci API Server Ini -->
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+        <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Branch API Key Server Ini</h3>
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <p class="text-xs lg:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Kunci API Server Ini</p>
+                <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Gunakan kunci rahasia ini untuk menghubungkan cabang ini ke Control Panel di cabang lain.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="relative">
+                    <input type="password" id="my-branch-api-key-input" readonly
+                        class="w-64 sm:w-80 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 font-mono focus:outline-none focus:border-neutral-500 pr-10"
+                        value="...">
+                    <button type="button" onclick="const el = document.getElementById('my-branch-api-key-input'); el.type = el.type === 'password' ? 'text' : 'password';"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 text-xs" title="Tampilkan / Sembunyikan">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Highlighted Security Warning Box -->
+        <div class="mt-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded flex items-start gap-3">
+            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-base mt-0.5 shrink-0"></i>
+            <div class="space-y-0.5">
+                <p class="text-xs lg:text-sm font-bold text-amber-300 uppercase tracking-wider">
+                    Peringatan Keamanan Kunci Rahasia
+                </p>
+                <p class="text-[11px] lg:text-xs text-amber-200/80 leading-relaxed">
+                    Kunci API ini memberikan otorisasi penuh untuk mengakses dan mengontrol server warnet ini dari jarak jauh. <strong class="text-amber-300 font-semibold">Jangan pernah membagikan atau menyebarkan kunci ini kepada pihak yang tidak dikenal atau tidak dipercaya!</strong>
+                </p>
+            </div>
+        </div>
+        <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-[#1c1c1c]">
+            <button type="button" id="btn-regen-my-branch-key" onclick="BranchManager.regenerateMyBranchKey()"
+                class="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate"></i>
+                <span>Regenerate</span>
+            </button>
+            <button type="button" id="btn-copy-my-branch-key" onclick="BranchManager.copyMyBranchKey()"
+                class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-1.5">
+                <i class="fa-regular fa-copy"></i>
+                <span>Salin Kunci</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Card: Daftar Cabang yang Terhubung -->
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Cabang Terhubung (Control Panel)</h3>
+                <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Daftar server cabang warnet lain yang dapat Anda pantau dan operasikan dari sini.</p>
+            </div>
+            <button type="button" id="btn-add-branch-modal" onclick="BranchManager.openAddBranchModal()"
+                class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-plus text-xs"></i>
+                <span>Tambah Cabang</span>
+            </button>
+        </div>
+
+        <div class="overflow-x-auto w-full pt-2">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] lg:text-xs uppercase font-bold tracking-wider">
+                        <th class="py-2.5 px-3">No</th>
+                        <th class="py-2.5 px-3">Nama Cabang</th>
+                        <th class="py-2.5 px-3">Alamat URL Server</th>
+                        <th class="py-2.5 px-3">Status Koneksi</th>
+                        <th class="py-2.5 px-3 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="branch-settings-tbody" class="text-neutral-300 text-xs lg:text-base font-mono">
+                    <tr>
+                        <td colspan="5" class="py-6 text-center text-xs text-neutral-500">Memuat cabang...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Tambah / Edit Cabang -->
+    <div id="modal-add-branch" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl overflow-hidden p-6 space-y-4 animate-modal-in">
+            <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
+                <h3 id="modal-branch-title" class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Hubungkan Cabang Baru</h3>
+                <button type="button" onclick="BranchManager.closeAddBranchModal()" class="text-neutral-500 hover:text-neutral-200 text-xl leading-none">&times;</button>
+            </div>
+
+            <form id="form-add-branch" onsubmit="BranchManager.submitBranchForm(event)" class="space-y-4">
+                <input type="hidden" id="input-branch-id" value="">
+                <div>
+                    <label class="block text-xs lg:text-sm font-bold text-neutral-400 uppercase tracking-wider mb-1.5">URL Server Cabang <span class="text-red-400">*</span></label>
+                    <input type="url" id="input-branch-url" required
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500"
+                        placeholder="https://tm2billing.milannn.my.id">
+                    <p class="text-[9px] lg:text-xs text-neutral-500 mt-1">Bisa menggunakan Cloudflare Tunnel URL, domain publik, atau IP statis.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs lg:text-sm font-bold text-neutral-400 uppercase tracking-wider mb-1.5">Kunci API Cabang Target (API Key) <span class="text-red-400">*</span></label>
+                    <input type="text" id="input-branch-key" required
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 font-mono placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500"
+                        placeholder="tmb_sec_...">
+                    <p id="input-branch-key-hint" class="text-[9px] lg:text-xs text-neutral-500 mt-1">Salin dari menu Multi Cabang di server warnet target.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs lg:text-sm font-bold text-neutral-400 uppercase tracking-wider mb-1.5">Nama Cabang (Opsional)</label>
+                    <input type="text" id="input-branch-nama"
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500"
+                        placeholder="Otomatis diambil dari nama warnet jika dikosongkan">
+                </div>
+
+                <div class="pt-1">
+                    <button type="button" id="btn-test-branch-connection" onclick="BranchManager.testConnectionInModal()"
+                        class="px-3 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-1.5">
+                        <i class="fa-solid fa-satellite-dish"></i>
+                        <span>Tes &amp; Ambil Nama</span>
+                    </button>
+                </div>
+
+                <div id="branch-test-result"></div>
+
+                <div class="pt-3 border-t border-[#1c1c1c] flex items-center justify-end gap-2">
+                    <button type="button" onclick="BranchManager.closeAddBranchModal()"
+                        class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs lg:text-base font-semibold rounded transition-colors">
+                        Batal
+                    </button>
+                    <button type="submit" id="btn-submit-branch"
+                        class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">
+                        Simpan Cabang
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Regenerate Branch API Key -->
+    <div id="modal-regen-branch-key" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl overflow-hidden p-6 space-y-4 animate-modal-in">
+            <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
+                <h3 class="text-xs lg:text-[22px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Regenerate API Key</span>
+                </h3>
+                <button type="button" onclick="BranchManager.closeRegenKeyModal()" class="text-neutral-500 hover:text-neutral-200 text-xl leading-none">&times;</button>
+            </div>
+            <div class="space-y-4 text-xs lg:text-base text-neutral-300">
+                <p>Apakah Anda yakin ingin membuat ulang <strong>Branch API Key Server Ini</strong>?</p>
+                <div class="p-4 bg-amber-950/20 border border-amber-800/30 rounded space-y-2 text-neutral-400 text-xs lg:text-sm">
+                    <p class="font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Dampak Kunci Baru
+                    </p>
+                    <ul class="list-disc list-inside space-y-1.5 text-neutral-300">
+                        <li>Server cabang lain yang menyimpan kunci lama akan <strong>seketika terputus</strong>.</li>
+                        <li>Anda harus memperbarui kunci baru ini di menu pengaturan cabang pada server-server cabang tersebut.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-4 border-t border-[#1c1c1c]">
+                <button type="button" onclick="BranchManager.closeRegenKeyModal()"
+                    class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors">
+                    Batal
+                </button>
+                <button type="button" id="btn-confirm-regen-key" onclick="BranchManager.executeRegenerateKey()"
+                    class="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-400 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-rotate text-xs"></i>
+                    <span>Ya, Buat Kunci Baru</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus Cabang Keluar (Outbound) -->
+    <div id="modal-delete-branch" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl overflow-hidden p-6 space-y-4 animate-modal-in">
+            <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
+                <h3 class="text-xs lg:text-[22px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-trash"></i>
+                    <span>Hapus Koneksi Cabang</span>
+                </h3>
+                <button type="button" onclick="BranchManager.closeDeleteBranchModal()" class="text-neutral-500 hover:text-neutral-200 text-xl leading-none">&times;</button>
+            </div>
+            <div class="space-y-4 text-xs lg:text-base text-neutral-300">
+                <p>Hapus koneksi server remote ke cabang:</p>
+                <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-100 font-mono font-bold break-all" id="modal-delete-branch-name">
+                    -
+                </div>
+                <p class="text-xs lg:text-sm text-neutral-400">
+                    Cabang ini tidak akan lagi tampil di switcher kontrol panel Anda. Data transaksi di server cabang tersebut tetap aman dan tidak terpengaruh.
+                </p>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-4 border-t border-[#1c1c1c]">
+                <button type="button" onclick="BranchManager.closeDeleteBranchModal()"
+                    class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:text-base font-bold rounded transition-colors">
+                    Batal
+                </button>
+                <button type="button" id="btn-confirm-delete-branch" onclick="BranchManager.executeDeleteBranch()"
+                    class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-400 text-xs lg:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-trash text-xs"></i>
+                    <span>Ya, Hapus Cabang</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

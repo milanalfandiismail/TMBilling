@@ -203,13 +203,30 @@ class SesiRepository:
         Returns:
             int: Jumlah sesi yang sesuai.
         """
+        where_clauses = [
+            Transaksi.sesi_id.isnot(None),
+            func.date(Transaksi.dibuat_pada) == tanggal,
+        ]
+        kasir_str = str(kasir_id).strip()
+        if kasir_str.startswith("operator:"):
+            target_op = kasir_str.split("operator:", 1)[1].strip()
+            where_clauses.append(Transaksi.operator == target_op)
+        elif "(Remote:" in kasir_str:
+            where_clauses.append(Transaksi.operator == kasir_str)
+        elif kasir_str.isdigit():
+            uid = int(kasir_str)
+            where_clauses.append(Transaksi.user_id == uid)
+            where_clauses.append(
+                db.or_(
+                    Transaksi.operator == None,
+                    Transaksi.operator == '',
+                    ~Transaksi.operator.like('%(Remote:%')
+                )
+            )
+
         sesi_subq = (
             select(Transaksi.sesi_id)
-            .where(
-                Transaksi.user_id == kasir_id,
-                Transaksi.sesi_id.isnot(None),
-                func.date(Transaksi.dibuat_pada) == tanggal,
-            )
+            .where(*where_clauses)
             .distinct()
         )
         query = Sesi.query.filter(Sesi.id.in_(sesi_subq))

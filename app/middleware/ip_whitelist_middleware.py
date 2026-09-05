@@ -37,7 +37,7 @@ def check_ip_whitelist():
             return redirect(clean_url)
 
     # =========================================================================
-    # STEP 1: Auth exemption — login page, login endpoint, check, logout
+    # STEP 1: Auth exemption — login page, login endpoint, check, logout & Bearer Branch Relay
     # =========================================================================
     if request.path in ('/kasir/login',) \
        or request.path.startswith('/api/v1/kasir/auth/login') \
@@ -45,6 +45,15 @@ def check_ip_whitelist():
        or request.path.startswith('/api/v1/kasir/auth/logout') \
        or request.path == '/api/v1/kasir/settings/uninstall-token/client':
         return None
+
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+        import secrets
+        from app.services.settings.settings_service import SettingsService
+        local_key = SettingsService.get_or_create_branch_api_key()
+        if local_key and secrets.compare_digest(token, local_key):
+            return None
 
     # =========================================================================
     # STEP 2: Whitelist OFF? Allow everything

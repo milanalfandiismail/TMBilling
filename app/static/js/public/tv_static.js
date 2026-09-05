@@ -1,8 +1,37 @@
 // app/static/js/public/tv_static.js
 
+/**
+ * TV Static Signage Dashboard (Widescreen 16:9 No-Scale & No-Scroll)
+ * Dilengkapi Independent Conditional Cycling, Paginasi Batch Bebas Truncate,
+ * serta Harmonisasi Warna Status PC (100% konsisten dengan /public livepc).
+ */
 class TVStaticSignage {
     constructor() {
         this.data = null;
+
+        // State untuk Independent Playlists
+        this.promoPlaylist = [];
+        this.currentPromoIndex = 0;
+        this.promoTimer = null;
+
+        this.pcPlaylist = [];
+        this.currentPcIndex = 0;
+        this.pcTimer = null;
+
+        this.kantinPlaylist = [];
+        this.currentKantinIndex = 0;
+        this.kantinTimer = null;
+
+        const getLayoutKey = () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const wKey = w >= 1536 ? '2xl' : (w >= 1280 ? 'xl' : (w >= 1024 ? 'lg' : 'sm'));
+            const hKey = h < 850 ? 'low' : 'norm';
+            return `${wKey}-${hKey}`;
+        };
+
+        this.lastLayoutKey = getLayoutKey();
+
         this.init();
     }
 
@@ -13,86 +42,96 @@ class TVStaticSignage {
         this.fetchData();
         setInterval(() => this.fetchData(), 10000);
 
-        // Viewport scaling adjustment
-        this.adjustScale();
-        window.addEventListener('resize', () => this.adjustScale());
-    }
+        // Window resize listener untuk menyesuaikan kapasitas batch layar (lebar & tinggi)
+        window.addEventListener('resize', () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const wKey = w >= 1536 ? '2xl' : (w >= 1280 ? 'xl' : (w >= 1024 ? 'lg' : 'sm'));
+            const hKey = h < 850 ? 'low' : 'norm';
+            const currentKey = `${wKey}-${hKey}`;
 
-    adjustScale() {
-        const container = document.getElementById('tv-static-container');
-        if (!container) return;
-
-        const baseWidth = 1920;
-        const baseHeight = 1080;
-
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-
-        // If it is a TV/large screen (>= 1024px) AND the window is smaller than 1920x1080, scale it down to fit perfectly
-        if (windowWidth >= 1024 && (windowWidth < baseWidth || windowHeight < baseHeight)) {
-            const scaleX = windowWidth / baseWidth;
-            const scaleY = windowHeight / baseHeight;
-            const scale = Math.min(scaleX, scaleY);
-
-            container.style.transform = `scale(${scale})`;
-            container.style.transformOrigin = 'top left';
-            container.style.position = 'absolute';
-            container.style.width = `${baseWidth}px`;
-            container.style.height = `${baseHeight}px`;
-
-            // Centered alignment
-            const left = (windowWidth - (baseWidth * scale)) / 2;
-            const top = (windowHeight - (baseHeight * scale)) / 2;
-            container.style.left = `${left}px`;
-            container.style.top = `${top}px`;
-        } else {
-            // Reset to normal responsive if screen is mobile (< 1024px) or >= 1920x1080
-            container.style.transform = 'none';
-            container.style.width = '100%';
-            container.style.height = '100%';
-            container.style.position = 'relative';
-            container.style.left = '0';
-            container.style.top = '0';
-        }
-
-        // Always run PC grids scaling to ensure PC lists never overflow group cards
-        this.adjustPCGridsScale();
-    }
-
-    adjustPCGridsScale() {
-        const wrappers = document.querySelectorAll('.pc-grid-wrapper');
-        wrappers.forEach(wrapper => {
-            const grid = wrapper.querySelector('.pc-grid-container');
-            if (!grid) return;
-
-            // Reset styles first to measure natural dimensions
-            grid.style.transform = 'none';
-            grid.style.width = '100%';
-
-            const wrapperHeight = wrapper.clientHeight || 180;
-            const gridHeight = grid.scrollHeight;
-
-            if (gridHeight > wrapperHeight) {
-                const scale = wrapperHeight / gridHeight;
-                grid.style.transform = `scale(${scale})`;
-                grid.style.transformOrigin = 'top left';
-                grid.style.width = `${100 / scale}%`;
+            if (currentKey !== this.lastLayoutKey) {
+                this.lastLayoutKey = currentKey;
+                if (this.data) {
+                    this.buildAllPlaylists();
+                    this.renderAll();
+                }
             }
         });
+    }
+
+    /**
+     * Konfigurasi Kapasitas Batch Berdasarkan Breakpoints Standar Tailwind CSS & Tinggi Layar
+     * - 2xl (>= 1536px, Smart TV 1080p & 4K): 8 paket (2 kolom), 20 PC (5 kolom), 8 menu.
+     * - xl (1280px - 1535px, Monitor Lebar): 4 paket (1 kolom), 16 PC (4 kolom), 4 menu.
+     * - lg (1024px - 1279px, Monitor Kompak/1024p): 3/4 paket (1 kolom), 12 PC (3 kolom), 3/4 menu.
+     * - sm (< 1024px): 3/4 paket (1 kolom), 8 PC (2 kolom), 3/4 menu.
+     */
+    getBatchConfig() {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        const is2xl = w >= 1536;
+        const isXl = w >= 1280 && w < 1536;
+        const isLg = w >= 1024 && w < 1280;
+
+        const isLowHeight = h < 850;
+        const compactChunk = isLowHeight ? 3 : 4;
+
+        if (is2xl) {
+            return {
+                promoChunkSize: isLowHeight ? 6 : 8,
+                promoCols: 'grid-cols-2',
+                pcChunkSize: isLowHeight ? 15 : 20,
+                pcCols: 'grid-cols-5',
+                kantinChunkSize: isLowHeight ? 6 : 8,
+                kantinCols: 'grid-cols-2'
+            };
+        } else if (isXl) {
+            return {
+                promoChunkSize: compactChunk,
+                promoCols: 'grid-cols-1',
+                pcChunkSize: 16,
+                pcCols: 'grid-cols-4',
+                kantinChunkSize: compactChunk,
+                kantinCols: 'grid-cols-1'
+            };
+        } else if (isLg) {
+            return {
+                promoChunkSize: compactChunk,
+                promoCols: 'grid-cols-1',
+                pcChunkSize: 12,
+                pcCols: 'grid-cols-3',
+                kantinChunkSize: compactChunk,
+                kantinCols: 'grid-cols-1'
+            };
+        } else {
+            return {
+                promoChunkSize: compactChunk,
+                promoCols: 'grid-cols-1',
+                pcChunkSize: 8,
+                pcCols: 'grid-cols-2',
+                kantinChunkSize: compactChunk,
+                kantinCols: 'grid-cols-1'
+            };
+        }
     }
 
     updateClock() {
         const now = new Date();
 
-        // Format clock: HH:MM:SS
+        // Format jam: HH:MM:SS
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const seconds = String(now.getSeconds()).padStart(2, '0');
 
         const tzAbbr = (this.data && this.data.settings && this.data.settings.timezone_abbr) || 'WIB';
-        document.getElementById('current-clock').innerText = `${hours}:${minutes}:${seconds} ${tzAbbr}`;
+        const clockEl = document.getElementById('current-clock');
+        if (clockEl) {
+            clockEl.innerText = `${hours}:${minutes}:${seconds} ${tzAbbr}`;
+        }
 
-        // Format Date Indonesian: HARI, TGL BULAN THN
+        // Format Tanggal Indonesia: HARI, TGL BULAN THN
         const days = ['MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU'];
         const months = [
             'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
@@ -104,7 +143,10 @@ class TVStaticSignage {
         const monthName = months[now.getMonth()];
         const year = now.getFullYear();
 
-        document.getElementById('current-date').innerText = `${dayName}, ${date} ${monthName} ${year}`;
+        const dateEl = document.getElementById('current-date');
+        if (dateEl) {
+            dateEl.innerText = `${dayName}, ${date} ${monthName} ${year}`;
+        }
     }
 
     async fetchData() {
@@ -114,6 +156,7 @@ class TVStaticSignage {
 
             if (result.success) {
                 this.data = result.data;
+                this.buildAllPlaylists();
                 this.renderAll();
             }
         } catch (e) {
@@ -121,47 +164,86 @@ class TVStaticSignage {
         }
     }
 
-    renderAll() {
+    buildAllPlaylists() {
         if (!this.data) return;
+        const config = this.getBatchConfig();
 
-        // 1. Render Header Stats & Title
-        const occ = this.data.occupancy;
-        // PC Tersedia (kosong) / total_pc
-        document.getElementById('stat-occupancy').innerText = `${occ.pc_kosong} / ${occ.total_pc}`;
-        document.getElementById('stat-utilization').innerText = `${occ.utilisasi}%`;
+        // 1. Build Playlist Paket Billing
+        this.buildPromoPlaylist(config.promoChunkSize);
 
-        // Update Warnet Title and Logo
-        if (this.data.settings) {
-            const wName = this.data.settings.warnet_title || 'TMBilling';
-            const titleEl = document.getElementById('warnet-title');
-            if (titleEl) {
-                titleEl.innerText = wName;
-            }
-            const logoEl = document.getElementById('warnet-logo');
-            if (logoEl) {
-                logoEl.innerText = this.getInitials(wName);
-            }
-        }
+        // 2. Build Playlist PC Map
+        this.buildPcPlaylist(config.pcChunkSize);
 
-        // 2. Render Components
-        this.renderPCGrid();
-        this.renderPromos();
-        this.renderKantinMenu();
-        this.renderRules();
-        this.adjustScale();
+        // 3. Build Playlist Kantin Menu
+        this.buildKantinPlaylist(config.kantinChunkSize);
     }
 
-    renderPCGrid() {
-        const rowContainer = document.getElementById('pc-groups-row');
-        if (!rowContainer) return;
-
-        const pcs = this.data.pc_list || [];
-        if (pcs.length === 0) {
-            rowContainer.innerHTML = '<div class="col-span-full text-center text-neutral-500 py-6">Tidak ada unit PC terdaftar</div>';
+    buildPromoPlaylist(chunkSize) {
+        const promos = this.data.promos || [];
+        if (promos.length === 0) {
+            this.promoPlaylist = [];
             return;
         }
 
-        // Group PCs
+        // Kelompokkan paket berdasarkan grup
+        const promoGroups = {};
+        promos.forEach(p => {
+            const g = p.grup || 'Reguler';
+            if (!promoGroups[g]) promoGroups[g] = [];
+            promoGroups[g].push(p);
+        });
+
+        const groupNames = Object.keys(promoGroups).sort((a, b) =>
+            a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+        );
+
+        const playlist = [];
+        groupNames.forEach(g => {
+            const items = promoGroups[g] || [];
+            items.sort((a, b) => (a.durasi_menit || 0) - (b.durasi_menit || 0) || (a.harga || 0) - (b.harga || 0));
+
+            const groupColor = (this.data.grup_meta && this.data.grup_meta[g] && this.data.grup_meta[g].warna) || '#3b82f6';
+            const totalPages = Math.ceil(items.length / chunkSize);
+
+            for (let i = 0; i < totalPages; i++) {
+                const chunk = items.slice(i * chunkSize, (i + 1) * chunkSize);
+                playlist.push({
+                    groupName: g,
+                    groupColor,
+                    pageIndex: i + 1,
+                    totalPages,
+                    items: chunk
+                });
+            }
+        });
+
+        this.promoPlaylist = playlist;
+        if (this.currentPromoIndex >= this.promoPlaylist.length) {
+            this.currentPromoIndex = 0;
+        }
+    }
+
+    buildPcPlaylist(chunkSize) {
+        const pcs = this.data.pc_list || [];
+        if (pcs.length === 0) {
+            this.pcPlaylist = [];
+            return;
+        }
+
+        // Jika seluruh PC muat dalam 1 halaman batch, satukan langsung (100% statis tanpa cycle)
+        if (pcs.length <= chunkSize) {
+            this.pcPlaylist = [{
+                isAllSingleView: true,
+                groupName: 'Semua PC',
+                pageIndex: 1,
+                totalPages: 1,
+                pcs: pcs
+            }];
+            this.currentPcIndex = 0;
+            return;
+        }
+
+        // Kelompokkan PC berdasarkan grup
         const pcGroups = {};
         pcs.forEach(pc => {
             const g = pc.grup || 'Reguler';
@@ -169,25 +251,295 @@ class TVStaticSignage {
             pcGroups[g].push(pc);
         });
 
-        const pcGroupsList = Object.keys(pcGroups).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+        const groupNames = Object.keys(pcGroups).sort((a, b) =>
+            a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+        );
 
-        // Dynamically style grid columns matching group count on large screens
-        if (window.innerWidth >= 1024) {
-            rowContainer.style.gridTemplateColumns = `repeat(${pcGroupsList.length}, minmax(0, 1fr))`;
-        } else {
-            rowContainer.style.gridTemplateColumns = '';
+        const playlist = [];
+        groupNames.forEach(g => {
+            const groupPcs = pcGroups[g] || [];
+            groupPcs.sort((a, b) =>
+                (a.kode || a.nama || '').localeCompare(b.kode || b.nama || '', undefined, { numeric: true, sensitivity: 'base' })
+            );
+
+            const groupColor = (this.data.grup_meta && this.data.grup_meta[g] && this.data.grup_meta[g].warna) || '#3b82f6';
+            const totalPages = Math.ceil(groupPcs.length / chunkSize);
+
+            for (let i = 0; i < totalPages; i++) {
+                const chunk = groupPcs.slice(i * chunkSize, (i + 1) * chunkSize);
+                playlist.push({
+                    isAllSingleView: false,
+                    groupName: g,
+                    groupColor,
+                    pageIndex: i + 1,
+                    totalPages,
+                    pcs: chunk
+                });
+            }
+        });
+
+        this.pcPlaylist = playlist;
+        if (this.currentPcIndex >= this.pcPlaylist.length) {
+            this.currentPcIndex = 0;
+        }
+    }
+
+    buildKantinPlaylist(chunkSize) {
+        const items = this.data.menu_items || [];
+        if (items.length === 0) {
+            this.kantinPlaylist = [];
+            return;
         }
 
-        rowContainer.innerHTML = pcGroupsList.map(g => {
-            const groupPcs = pcGroups[g] || [];
-            groupPcs.sort((a, b) => (a.kode || a.nama || '').localeCompare(b.kode || b.nama || '', undefined, { numeric: true, sensitivity: 'base' }));
-            const groupColor = (this.data && this.data.grup_meta && this.data.grup_meta[g] && this.data.grup_meta[g].warna) || '#3b82f6';
+        const totalPages = Math.ceil(items.length / chunkSize);
+        const playlist = [];
 
-            // Render individual PC Cards
-            const pcCardsHtml = groupPcs.map(pc => {
-                let statusClass = '';
-                let customStyle = '';
-                let subtitle = 'Offline';
+        for (let i = 0; i < totalPages; i++) {
+            const chunk = items.slice(i * chunkSize, (i + 1) * chunkSize);
+            playlist.push({
+                pageIndex: i + 1,
+                totalPages,
+                items: chunk
+            });
+        }
+
+        this.kantinPlaylist = playlist;
+        if (this.currentKantinIndex >= this.kantinPlaylist.length) {
+            this.currentKantinIndex = 0;
+        }
+    }
+
+    renderAll() {
+        if (!this.data) return;
+
+        // 1. Render Header Stats & Running Text
+        const occ = this.data.occupancy || {};
+        const statOcc = document.getElementById('stat-occupancy');
+        if (statOcc) {
+            statOcc.innerText = `${occ.pc_kosong ?? '-'} / ${occ.total_pc ?? '-'}`;
+        }
+        const statOccSm = document.getElementById('stat-occupancy-sm');
+        if (statOccSm) {
+            statOccSm.innerText = `${occ.pc_kosong ?? '-'} / ${occ.total_pc ?? '-'}`;
+        }
+        const statUtil = document.getElementById('stat-utilization');
+        if (statUtil) {
+            statUtil.innerText = `${occ.utilisasi ?? 0}%`;
+        }
+
+        if (this.data.settings) {
+            const wName = this.data.settings.warnet_title || 'TMBilling';
+            const titleEl = document.getElementById('warnet-title');
+            if (titleEl) titleEl.innerText = wName;
+            const logoEl = document.getElementById('warnet-logo');
+            if (logoEl) logoEl.innerText = this.getInitials(wName);
+
+            const runningTextEl = document.getElementById('tv-running-text');
+            if (runningTextEl) {
+                const text = this.data.settings.running_text || 'Selamat datang di TMBilling! Nikmati koneksi internet ultra cepat, hardware gaming premium, dan kenyamanan terbaik.';
+                runningTextEl.innerText = text;
+            }
+        }
+
+        // Total PC & Promo badges
+        const totalPcBadge = document.getElementById('total-pc-badge');
+        if (totalPcBadge) {
+            totalPcBadge.innerText = `${(this.data.pc_list || []).length} PC`;
+        }
+        const promoCountBadge = document.getElementById('promo-count-badge');
+        if (promoCountBadge) {
+            promoCountBadge.innerText = `${(this.data.promos || []).length} Paket`;
+        }
+        const kantinCountBadge = document.getElementById('kantin-count-badge');
+        if (kantinCountBadge) {
+            kantinCountBadge.innerText = `${(this.data.menu_items || []).length} Menu`;
+        }
+
+        // 2. Render Komponen dengan Independent Cycling
+        this.handlePromoCycling();
+        this.handlePcCycling();
+        this.handleKantinCycling();
+    }
+
+    // ==========================================
+    // 🏷️ PAKET BILLING (Independent Cycling)
+    // ==========================================
+    handlePromoCycling() {
+        const pageBadge = document.getElementById('promo-page-badge');
+        const isCyclingNeeded = this.promoPlaylist.length > 1;
+
+        if (!isCyclingNeeded) {
+            // Statis Total: Hentikan timer jika ada, sembunyikan badge paginasi
+            if (this.promoTimer) {
+                clearInterval(this.promoTimer);
+                this.promoTimer = null;
+            }
+            if (pageBadge) pageBadge.classList.add('hidden');
+            this.renderPromoPage(0);
+        } else {
+            // Auto-Cycling: Tampilkan badge paginasi dan jalankan timer 7 detik jika belum jalan
+            if (pageBadge) pageBadge.classList.remove('hidden');
+            this.renderPromoPage(this.currentPromoIndex);
+
+            if (!this.promoTimer) {
+                this.promoTimer = setInterval(() => {
+                    this.currentPromoIndex = (this.currentPromoIndex + 1) % this.promoPlaylist.length;
+                    this.renderPromoPage(this.currentPromoIndex, true);
+                }, 7000);
+            }
+        }
+    }
+
+    renderPromoPage(pageIndex, withFade = false) {
+        const container = document.getElementById('promo-groups-row');
+        const headerTitle = document.getElementById('promo-header-title');
+        const pageBadge = document.getElementById('promo-page-badge');
+        if (!container) return;
+
+        if (this.promoPlaylist.length === 0) {
+            container.innerHTML = '<div class="flex items-center justify-center h-full text-neutral-500 py-8 text-xs font-medium">Tidak ada paket billing aktif</div>';
+            return;
+        }
+
+        const page = this.promoPlaylist[pageIndex] || this.promoPlaylist[0];
+        const config = this.getBatchConfig();
+
+        // Update header & badge
+        if (headerTitle) {
+            headerTitle.innerText = `Paket ${page.groupName.toUpperCase()}`;
+        }
+        if (pageBadge) {
+            if (page.totalPages > 1) {
+                pageBadge.innerText = `Hal ${page.pageIndex}/${page.totalPages}`;
+                pageBadge.style.color = page.groupColor;
+                pageBadge.style.borderColor = `${page.groupColor}40`;
+                pageBadge.style.backgroundColor = `${page.groupColor}15`;
+                pageBadge.classList.remove('hidden');
+            } else {
+                pageBadge.classList.add('hidden');
+            }
+        }
+
+        const renderHtml = () => {
+            const isSingleCol = config.promoCols === 'grid-cols-1';
+            const containerClass = isSingleCol 
+                ? 'flex flex-col gap-2 content-start overflow-hidden' 
+                : `grid ${config.promoCols} gap-2 content-start overflow-hidden`;
+
+            container.innerHTML = `
+                <div class="${containerClass}">
+                    ${page.items.map(p => {
+                        const priceFormatted = new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
+                            maximumFractionDigits: 0
+                        }).format(p.harga);
+
+                        const hours = Math.floor(p.durasi_menit / 60);
+                        const durationText = hours > 0 
+                            ? (p.durasi_menit % 60 > 0 ? `${hours}j ${p.durasi_menit % 60}m` : `${hours} Jam`)
+                            : `${p.durasi_menit} Menit`;
+
+                        // Batasi nama paket maksimal 20 huruf agar selalu 1 baris rapi
+                        const displayName = (p.nama && p.nama.length > 20) 
+                            ? p.nama.substring(0, 20).trim() + '...' 
+                            : (p.nama || '');
+
+                        return `
+                            <div class="h-14 bg-neutral-900/50 border border-neutral-800/80 rounded-xl px-3.5 py-2 flex items-center gap-2.5 shadow-sm transition-all hover:border-neutral-700">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0" style="background-color: ${page.groupColor}15; border: 1px solid ${page.groupColor}35;">
+                                    ⏱️
+                                </div>
+                                <div class="min-w-0 flex-1 flex flex-col justify-center pt-0.5">
+                                    <h4 class="text-xs sm:text-sm font-black text-neutral-100 leading-snug truncate" title="${p.nama}">${displayName}</h4>
+                                    <div class="flex items-center justify-between gap-2 mt-1">
+                                        <span class="text-[10px] text-neutral-400 leading-none font-semibold uppercase tracking-wider whitespace-nowrap">${durationText}</span>
+                                        <span class="text-xs sm:text-sm font-black mono text-emerald-400 leading-none whitespace-nowrap shrink-0">${priceFormatted}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        };
+
+        if (withFade) {
+            container.classList.add('opacity-0');
+            setTimeout(() => {
+                renderHtml();
+                container.classList.remove('opacity-0');
+            }, 150);
+        } else {
+            renderHtml();
+        }
+    }
+
+    // ==========================================
+    // 🖥️ STATUS KOMPUTER (Independent Cycling & Harmonized Colors)
+    // ==========================================
+    handlePcCycling() {
+        const pageBadge = document.getElementById('pc-page-badge');
+        const isCyclingNeeded = this.pcPlaylist.length > 1;
+
+        if (!isCyclingNeeded) {
+            // Statis Total: Hentikan timer jika ada, sembunyikan badge paginasi
+            if (this.pcTimer) {
+                clearInterval(this.pcTimer);
+                this.pcTimer = null;
+            }
+            if (pageBadge) pageBadge.classList.add('hidden');
+            this.renderPcPage(0);
+        } else {
+            // Auto-Cycling: Tampilkan badge paginasi dan jalankan timer 8 detik jika belum jalan
+            if (pageBadge) pageBadge.classList.remove('hidden');
+            this.renderPcPage(this.currentPcIndex);
+
+            if (!this.pcTimer) {
+                this.pcTimer = setInterval(() => {
+                    this.currentPcIndex = (this.currentPcIndex + 1) % this.pcPlaylist.length;
+                    this.renderPcPage(this.currentPcIndex, true);
+                }, 8000);
+            }
+        }
+    }
+
+    renderPcPage(pageIndex, withFade = false) {
+        const container = document.getElementById('pc-groups-row');
+        const headerTitle = document.getElementById('pc-header-title');
+        const pageBadge = document.getElementById('pc-page-badge');
+        if (!container) return;
+
+        if (this.pcPlaylist.length === 0) {
+            container.innerHTML = '<div class="flex items-center justify-center h-full text-neutral-500 py-12 text-sm font-semibold">Tidak ada unit PC terdaftar</div>';
+            return;
+        }
+
+        const page = this.pcPlaylist[pageIndex] || this.pcPlaylist[0];
+        const config = this.getBatchConfig();
+
+        // Update header & badge
+        if (headerTitle) {
+            headerTitle.innerText = 'Status Komputer';
+        }
+
+        if (pageBadge) {
+            if (page.totalPages > 1) {
+                pageBadge.innerText = `${page.groupName.toUpperCase()} (${page.pageIndex}/${page.totalPages})`;
+                pageBadge.style.color = page.groupColor || '#3b82f6';
+                pageBadge.style.borderColor = `${page.groupColor || '#3b82f6'}40`;
+                pageBadge.style.backgroundColor = `${page.groupColor || '#3b82f6'}15`;
+                pageBadge.classList.remove('hidden');
+            } else {
+                pageBadge.classList.add('hidden');
+            }
+        }
+
+        const renderHtml = () => {
+            // Render kartu-kartu PC dengan warna status 100% selaras dengan /public livepc
+            const pcCardsHtml = page.pcs.map(pc => {
+                let cardClass = '';
+                let statusPill = '';
                 let durationText = '';
 
                 const status = pc.status || 'offline';
@@ -195,16 +547,17 @@ class TVStaticSignage {
 
                 if (status === 'kosong') {
                     if (isOnline) {
-                        statusClass = 'bg-emerald-950/20 border-emerald-800/40 text-emerald-400 glow-green';
-                        subtitle = 'READY';
+                        // KOSONG (Hijau Emerald Glowing - Identik dengan /public livepc)
+                        cardClass = 'bg-emerald-950/20 border-emerald-800/40 glow-green text-emerald-400';
+                        statusPill = `<span class="px-1.5 sm:px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[9px] sm:text-[10px] font-black tracking-wider uppercase whitespace-nowrap">KOSONG</span>`;
                     } else {
-                        statusClass = 'bg-[#141414] border-neutral-900 text-neutral-600 opacity-50';
-                        subtitle = 'OFFLINE';
+                        // OFFLINE (Abu-abu Redup - Identik dengan /public livepc)
+                        cardClass = 'bg-[#0d0d0d] border-neutral-900/90 text-neutral-600 opacity-60';
+                        statusPill = `<span class="px-1 sm:px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-600 text-[9px] font-bold uppercase whitespace-nowrap">OFFLINE</span>`;
                     }
                 } else if (status === 'terpakai') {
-                    statusClass = '';
-                    customStyle = `background-color: ${groupColor}10; border-color: ${groupColor}40; color: ${groupColor}; box-shadow: 0 0 15px ${groupColor}15;`;
-                    subtitle = pc.sesi_detail ? pc.sesi_detail.nama : 'GUEST';
+                    // TERPAKAI (Merah Rose Glowing - 100% SAMA DENGAN /public livepc)
+                    cardClass = 'bg-rose-950/20 border-rose-500/30 glow-rose text-rose-300';
 
                     if (pc.sesi_detail && pc.sesi_detail.sisa_waktu_menit !== undefined) {
                         const mins = pc.sesi_detail.sisa_waktu_menit;
@@ -215,180 +568,161 @@ class TVStaticSignage {
                         } else {
                             const h = Math.floor(mins / 60);
                             const m = mins % 60;
-                            durationText = h > 0 ? `${h}j` : `${m}m`;
+                            durationText = h > 0 ? `${h}j ${m}m` : `${m}m`;
                         }
+                    } else {
+                        durationText = 'Terpakai';
                     }
+
+                    statusPill = `<span class="px-1.5 sm:px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-tight whitespace-nowrap">${durationText}</span>`;
                 } else if (status === 'admin') {
-                    statusClass = 'bg-amber-950/20 border-amber-800/40 text-amber-400 glow-yellow';
-                    subtitle = 'ADMIN';
+                    // ADMIN (Kuning Amber Glowing - Identik dengan /public livepc)
+                    cardClass = 'bg-amber-950/20 border-amber-800/40 glow-yellow text-amber-300';
+                    statusPill = `<span class="px-1.5 sm:px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[9px] sm:text-[10px] font-black uppercase whitespace-nowrap">ADMIN</span>`;
                 } else {
-                    statusClass = 'bg-[#141414] border-neutral-900 text-neutral-600 opacity-50';
-                    subtitle = 'OFFLINE';
+                    // OFFLINE
+                    cardClass = 'bg-[#0d0d0d] border-neutral-900/90 text-neutral-600 opacity-60';
+                    statusPill = `<span class="px-1 sm:px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-600 text-[9px] font-bold uppercase whitespace-nowrap">OFFLINE</span>`;
                 }
 
-                const styleAttr = customStyle ? `style="${customStyle}"` : '';
-
                 return `
-                    <div class="border rounded-lg p-2 flex flex-col justify-between h-14 transition-all ${statusClass}" ${styleAttr}>
-                        <div class="flex justify-between items-start leading-none">
-                            <span class="text-xs sm:text-sm font-black tracking-tight">${pc.kode}</span>
-                            ${durationText ? `<span class="text-[9px] font-black uppercase tracking-wider mono bg-neutral-900/60 px-1 py-0.2 rounded" style="color: ${groupColor}; border: 1px solid ${groupColor}25;">${durationText}</span>` : ''}
-                        </div>
-                        <div class="text-[9px] sm:text-[10px] font-extrabold uppercase truncate text-neutral-400 leading-none">
-                            ${subtitle}
+                    <div class="h-11 min-h-[44px] border rounded-xl px-2.5 sm:px-3 py-1.5 flex items-center justify-between gap-1.5 sm:gap-2 transition-all shadow-sm ${cardClass}">
+                        <span class="font-black text-xs sm:text-sm font-mono tracking-tight text-neutral-100 truncate min-w-0 flex-1">${pc.kode}</span>
+                        <div class="shrink-0">
+                            ${statusPill}
                         </div>
                     </div>
                 `;
             }).join('');
 
-            return `
-                <div class="bg-neutral-950/20 border border-neutral-900 rounded-2xl p-3 flex flex-col justify-start min-h-0" style="border-color: ${groupColor}20;">
-                    <div class="flex justify-between items-center mb-2 pb-1.5 border-b border-neutral-900 shrink-0">
-                        <span class="text-sm font-black uppercase tracking-wider" style="color: ${groupColor};">${g.toUpperCase()} ZONE</span>
-                        <span class="text-xs font-mono font-bold text-neutral-500">${groupPcs.length} PC</span>
-                    </div>
-                    <div class="pc-grid-wrapper overflow-hidden w-full relative h-[180px]">
-                        <div class="grid grid-cols-5 gap-1.5 content-start pc-grid-container origin-top-left">
-                            ${pcCardsHtml}
-                        </div>
-                    </div>
+            container.innerHTML = `
+                <div class="grid ${config.pcCols} gap-2.5 content-start overflow-hidden">
+                    ${pcCardsHtml}
                 </div>
             `;
-        }).join('');
-    }
+        };
 
-    renderPromos() {
-        const rowContainer = document.getElementById('promo-groups-row');
-        if (!rowContainer) return;
-
-        const promos = this.data.promos || [];
-        if (promos.length === 0) {
-            rowContainer.innerHTML = '<div class="col-span-full text-center text-neutral-500 py-6">Tidak ada paket promo aktif</div>';
-            return;
-        }
-
-        // Group packages
-        const promosMap = {};
-        promos.forEach(p => {
-            const g = p.grup || 'Reguler';
-            if (!promosMap[g]) promosMap[g] = [];
-            promosMap[g].push(p);
-        });
-
-        const promosList = Object.keys(promosMap).sort();
-
-        // Dynamically style grid columns matching group count on large screens
-        if (window.innerWidth >= 1024) {
-            rowContainer.style.gridTemplateColumns = `repeat(${promosList.length}, minmax(0, 1fr))`;
+        if (withFade) {
+            container.classList.add('opacity-0');
+            setTimeout(() => {
+                renderHtml();
+                container.classList.remove('opacity-0');
+            }, 150);
         } else {
-            rowContainer.style.gridTemplateColumns = '';
+            renderHtml();
         }
-
-        rowContainer.innerHTML = promosList.map(g => {
-            const groupPackages = promosMap[g];
-            const groupColor = (this.data && this.data.grup_meta && this.data.grup_meta[g] && this.data.grup_meta[g].warna) || '#3b82f6';
-
-            // Render individual promo cards
-            const promoCardsHtml = groupPackages.map(p => {
-                const priceFormatted = new Intl.NumberFormat('id-ID', {
-                    style: 'currency',
-                    currency: 'IDR',
-                    maximumFractionDigits: 0
-                }).format(p.harga);
-
-                const hours = Math.floor(p.durasi_menit / 60);
-                const durationText = hours > 0 ? `${hours} Jam` : `${p.durasi_menit} Menit`;
-
-                return `
-                    <div class="bg-neutral-950/40 border border-neutral-900/50 rounded-xl p-3 flex flex-col justify-between h-20 transition-all hover:border-neutral-800" style="border-color: ${groupColor}20;">
-                        <div>
-                            <h4 class="text-xs font-black text-neutral-200 line-clamp-1 leading-tight">${p.nama}</h4>
-                        </div>
-                        <div class="border-t border-neutral-900/50 pt-1 flex justify-between items-end shrink-0">
-                            <div>
-                                <p class="text-[8px] text-neutral-500 uppercase font-bold tracking-wider leading-none">Durasi</p>
-                                <p class="text-[10px] font-black text-neutral-300 leading-none mt-0.5">${durationText}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-[8px] text-neutral-500 uppercase font-bold tracking-wider leading-none">Harga</p>
-                                <p class="text-[10px] font-black mono leading-none mt-0.5" style="color: ${groupColor};">${priceFormatted}</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            return `
-                <div class="bg-neutral-950/20 border border-neutral-900 rounded-2xl p-3 flex flex-col justify-start min-h-0" style="border-color: ${groupColor}20;">
-                    <div class="flex justify-between items-center mb-2 pb-1.5 border-b border-neutral-900 shrink-0">
-                        <span class="text-sm font-black uppercase tracking-wider" style="color: ${groupColor};">${g.toUpperCase()} PAKET</span>
-                        <span class="text-xs font-mono font-bold text-neutral-500">${groupPackages.length} Paket</span>
-                    </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 content-start">
-                        ${promoCardsHtml}
-                    </div>
-                </div>
-            `;
-        }).join('');
     }
 
-    renderKantinMenu() {
-        const menuList = document.getElementById('kantin-menu-list');
-        if (!menuList) return;
+    // ==========================================
+    // 🍔 KANTIN & F&B (Independent Cycling)
+    // ==========================================
+    handleKantinCycling() {
+        const pageBadge = document.getElementById('kantin-page-badge');
+        const isCyclingNeeded = this.kantinPlaylist.length > 1;
 
-        const items = this.data.menu_items || [];
-        if (items.length === 0) {
-            menuList.innerHTML = '<div class="text-center text-neutral-500 py-12 text-xs">Menu makanan kosong</div>';
+        if (!isCyclingNeeded) {
+            // Statis Total: Hentikan timer jika ada, sembunyikan badge paginasi
+            if (this.kantinTimer) {
+                clearInterval(this.kantinTimer);
+                this.kantinTimer = null;
+            }
+            if (pageBadge) pageBadge.classList.add('hidden');
+            this.renderKantinPage(0);
+        } else {
+            // Auto-Cycling: Tampilkan badge paginasi dan jalankan timer 7 detik jika belum jalan
+            if (pageBadge) pageBadge.classList.remove('hidden');
+            this.renderKantinPage(this.currentKantinIndex);
+
+            if (!this.kantinTimer) {
+                this.kantinTimer = setInterval(() => {
+                    this.currentKantinIndex = (this.currentKantinIndex + 1) % this.kantinPlaylist.length;
+                    this.renderKantinPage(this.currentKantinIndex, true);
+                }, 7000);
+            }
+        }
+    }
+
+    renderKantinPage(pageIndex, withFade = false) {
+        const container = document.getElementById('kantin-menu-list');
+        const pageBadge = document.getElementById('kantin-page-badge');
+        if (!container) return;
+
+        if (this.kantinPlaylist.length === 0) {
+            container.innerHTML = '<div class="flex items-center justify-center h-full text-neutral-500 py-8 text-xs font-medium">Menu kantin belum tersedia</div>';
             return;
         }
 
-        menuList.innerHTML = items.map(item => {
-            const priceFormatted = new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                maximumFractionDigits: 0
-            }).format(item.harga);
+        const page = this.kantinPlaylist[pageIndex] || this.kantinPlaylist[0];
+        const config = this.getBatchConfig();
 
-            const stockText = item.stok < 0 ? 'Unlimited' : `Stok: ${item.stok}`;
-            const stockColor = item.stok === 0 ? 'text-red-500 font-bold' : 'text-neutral-500';
-
-            return `
-                <div class="bg-neutral-900/40 border border-neutral-900 rounded-xl p-2.5 flex items-center justify-between gap-3 transition-all">
-                    <div class="flex items-center gap-3 min-w-0">
-                        ${item.gambar_path ? `
-                            <img src="${item.gambar_path}" class="w-10 h-10 rounded-lg object-cover border border-neutral-800" onerror="this.style.display='none'">
-                        ` : `
-                            <div class="w-10 h-10 rounded-lg bg-neutral-800 flex items-center justify-center text-lg shrink-0">🍔</div>
-                        `}
-                        <div class="min-w-0">
-                            <h4 class="text-sm font-bold text-neutral-200 truncate leading-snug">${item.nama}</h4>
-                            <p class="text-[10px] sm:text-xs ${stockColor} mt-0.5 leading-none">${stockText}</p>
-                        </div>
-                    </div>
-                    <div class="text-right shrink-0">
-                        <span class="text-sm font-black text-neutral-100 mono">${priceFormatted}</span>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    renderRules() {
-        const rulesList = document.getElementById('rules-list');
-        if (!rulesList) return;
-
-        const rules = (this.data.settings && this.data.settings.warnet_rules) || [];
-        if (rules.length === 0) {
-            rulesList.innerHTML = '<li class="text-neutral-500">Tidak ada pengumuman tertulis</li>';
-            return;
+        const headerTitle = document.getElementById('kantin-header-title');
+        if (headerTitle) {
+            headerTitle.innerText = 'Kantin & F&B';
         }
 
-        rulesList.innerHTML = rules.map(rule => {
-            return `<li class="flex items-start gap-3">
-                <span class="w-2 h-2 rounded-full bg-neutral-600 mt-2 shrink-0"></span>
-                <span>${rule}</span>
-            </li>`;
-        }).join('');
+        if (pageBadge) {
+            if (page.totalPages > 1) {
+                pageBadge.innerText = `Hal ${page.pageIndex}/${page.totalPages}`;
+                pageBadge.classList.remove('hidden');
+            } else {
+                pageBadge.classList.add('hidden');
+            }
+        }
+
+        const renderHtml = () => {
+            const isSingleCol = config.kantinCols === 'grid-cols-1';
+            const containerClass = isSingleCol 
+                ? 'flex flex-col gap-2 content-start overflow-hidden' 
+                : `grid ${config.kantinCols} gap-2 content-start overflow-hidden`;
+
+            container.innerHTML = `
+                <div class="${containerClass}">
+                    ${page.items.map(item => {
+                        const priceFormatted = new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
+                            maximumFractionDigits: 0
+                        }).format(item.harga);
+
+                        const isOutOfStock = item.stok === 0;
+                        const stockText = item.stok < 0 ? 'Ready' : (isOutOfStock ? 'Habis' : `Stok ${item.stok}`);
+                        const stockClass = isOutOfStock ? 'text-rose-400 font-bold' : 'text-neutral-400';
+
+                        // Batasi nama menu maksimal 20 huruf agar selalu 1 baris rapi
+                        const displayName = (item.nama && item.nama.length > 20) 
+                            ? item.nama.substring(0, 20).trim() + '...' 
+                            : (item.nama || '');
+
+                        return `
+                            <div class="h-14 bg-neutral-900/50 border border-neutral-800/80 rounded-xl px-3.5 py-2 flex items-center gap-2.5 shadow-sm transition-all hover:border-neutral-700">
+                                ${item.gambar_path ? `
+                                    <img src="${item.gambar_path}" class="w-8 h-8 rounded-lg object-cover border border-neutral-800 shrink-0" onerror="this.style.display='none'">
+                                ` : `
+                                    <div class="w-8 h-8 rounded-lg bg-neutral-800/80 flex items-center justify-center text-sm shrink-0">🍔</div>
+                                `}
+                                <div class="min-w-0 flex-1 flex flex-col justify-center pt-0.5">
+                                    <h4 class="text-xs sm:text-sm font-black text-neutral-100 leading-snug truncate" title="${item.nama}">${displayName}</h4>
+                                    <div class="flex items-center justify-between gap-2 mt-1">
+                                        <span class="text-[10px] ${stockClass} leading-none font-semibold whitespace-nowrap">${stockText}</span>
+                                        <span class="text-xs sm:text-sm font-black text-amber-300 mono leading-none whitespace-nowrap shrink-0">${priceFormatted}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        };
+
+        if (withFade) {
+            container.classList.add('opacity-0');
+            setTimeout(() => {
+                renderHtml();
+                container.classList.remove('opacity-0');
+            }, 150);
+        } else {
+            renderHtml();
+        }
     }
 
     getInitials(name) {
@@ -401,7 +735,7 @@ class TVStaticSignage {
     }
 }
 
-// Instantiate TV Static Signage display when DOM is ready
+// Inisialisasi TV Static Signage saat DOM siap
 document.addEventListener('DOMContentLoaded', () => {
     window.tvStaticSignage = new TVStaticSignage();
 });

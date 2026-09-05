@@ -249,7 +249,8 @@ class MemberService:
             keterangan=f"Beli paket '{paket.nama}' x{qty} oleh {member.username}",
             no_nota=TransaksiService.generate_nota(),
             user_id=TransaksiService.get_user_id(operator),
-            metode_pembayaran=metode_pembayaran
+            metode_pembayaran=metode_pembayaran,
+            operator=operator
         )
         db.session.add(transaksi)
         db.session.commit()
@@ -320,7 +321,8 @@ class MemberService:
             menit=-(durasi),
             keterangan=f"Refund paket '{transaksi.paket.nama if transaksi.paket else '?'}'",
             no_nota=TransaksiService.generate_nota(),
-            user_id=TransaksiService.get_user_id(operator)
+            user_id=TransaksiService.get_user_id(operator),
+            operator=operator
         )
         db.session.add(transaksi_refund)
         db.session.commit()

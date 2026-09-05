@@ -141,6 +141,25 @@
                         <p id="shutdown-countdown" class="text-2xl lg:text-3xl xl:text-4xl text-white font-mono font-black">--:--</p>
                     </div>
                 </div>
+
+                <!-- Tombol Aksi Daya: Restart & Shutdown -->
+                <div class="flex items-center gap-2.5 my-auto pt-3">
+                    <button id="kiosk-restart-btn" type="button" title="Restart PC"
+                        class="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-white/5 hover:bg-white/10 active:scale-[0.98] border border-white/10 hover:border-blue-500/40 text-neutral-300 hover:text-white rounded-xl text-xs font-bold transition-all shadow-sm group">
+                        <svg class="w-3.5 h-3.5 text-blue-400 group-hover:rotate-180 transition-transform duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span>Restart</span>
+                    </button>
+                    <button id="kiosk-shutdown-btn" type="button" title="Matikan PC"
+                        class="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-red-500/10 hover:bg-red-500/20 active:scale-[0.98] border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 rounded-xl text-xs font-bold transition-all shadow-sm group">
+                        <svg class="w-3.5 h-3.5 text-red-400 group-hover:scale-110 transition-transform duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <span>Shutdown</span>
+                    </button>
+                </div>
+
                 <div class="mt-4 pt-4 border-t border-white/5 flex justify-between items-center text-xs lg:text-sm text-neutral-400 font-bold">
                     <span class="font-bold tracking-wider uppercase text-neutral-500">Client Version</span>
                     <span id="client-version-display" class="font-bold text-neutral-200">TMBilling v...</span>
@@ -177,6 +196,29 @@
                     class="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider text-neutral-400 transition-all">Batal</button>
                 <button id="admin-login-confirm-btn"
                     class="flex-1 bg-white hover:bg-neutral-200 text-black py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all">Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. MODAL KONFIRMASI DAYA (SHUTDOWN / RESTART) -->
+    <div id="power-confirm-modal"
+        class="hidden fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+        <div class="w-[340px] bg-card border border-[#2a2a2a] rounded-2xl p-6 shadow-2xl space-y-5 text-center">
+            <header class="flex flex-col items-center">
+                <div id="power-modal-icon-container" class="w-12 h-12 rounded-2xl flex items-center justify-center mb-3">
+                    <svg id="power-modal-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <!-- Dynamic Icon -->
+                    </svg>
+                </div>
+                <h2 id="power-modal-title" class="text-lg font-bold text-white">Konfirmasi Daya</h2>
+                <p id="power-modal-desc" class="text-xs text-neutral-400 mt-1 font-medium leading-relaxed">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+            </header>
+
+            <div class="flex gap-2.5 pt-2">
+                <button id="power-modal-cancel-btn" type="button"
+                    class="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] py-3 rounded-xl text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition-all">Batal</button>
+                <button id="power-modal-confirm-btn" type="button"
+                    class="flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all font-bold">Lanjutkan</button>
             </div>
         </div>
     </div>

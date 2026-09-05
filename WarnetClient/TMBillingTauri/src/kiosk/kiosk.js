@@ -34,6 +34,51 @@ export const Kiosk = {
         // Info tabs
         document.getElementById('tab-rules-btn').addEventListener('click', () => this.switchInfoTab('rules'));
         document.getElementById('tab-packages-btn').addEventListener('click', () => this.switchInfoTab('packages'));
+
+        // Power actions (Restart & Shutdown)
+        const restartBtn = document.getElementById('kiosk-restart-btn');
+        if (restartBtn) {
+            restartBtn.addEventListener('click', () => UI.showPowerModal('restart'));
+        }
+
+        const shutdownBtn = document.getElementById('kiosk-shutdown-btn');
+        if (shutdownBtn) {
+            shutdownBtn.addEventListener('click', () => UI.showPowerModal('shutdown'));
+        }
+
+        const powerCancelBtn = document.getElementById('power-modal-cancel-btn');
+        if (powerCancelBtn) {
+            powerCancelBtn.addEventListener('click', () => UI.togglePowerModal(false));
+        }
+
+        const powerConfirmBtn = document.getElementById('power-modal-confirm-btn');
+        if (powerConfirmBtn) {
+            powerConfirmBtn.addEventListener('click', async () => {
+                const action = UI.powerActionPending;
+                UI.togglePowerModal(false);
+                if (action === 'shutdown') {
+                    UI.showToast('Mematikan PC...', 'error');
+                    await Api.forceShutdown();
+                } else if (action === 'restart') {
+                    UI.showToast('Me-restart PC...', 'error');
+                    await Api.forceRestart();
+                }
+            });
+        }
+
+        const powerModal = document.getElementById('power-confirm-modal');
+        if (powerModal) {
+            powerModal.addEventListener('click', (e) => {
+                if (e.target === powerModal) UI.togglePowerModal(false);
+            });
+        }
+
+        // Global keydown for Escape closing modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                UI.togglePowerModal(false);
+            }
+        });
     },
 
     /**

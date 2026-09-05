@@ -14,6 +14,19 @@ pub fn force_shutdown() {
 }
 
 #[tauri::command]
+pub fn force_restart() {
+    println!("DUMMY/REAL: PC is restarting now!");
+    
+    // Perintah Windows untuk restart instan
+    #[cfg(target_os = "windows")]
+    {
+        let _ = Command::new("shutdown")
+            .args(["/r", "/t", "0", "/f"])
+            .spawn();
+    }
+}
+
+#[tauri::command]
 pub fn get_external_bg() -> Option<String> {
     use std::env;
 

@@ -54,7 +54,8 @@ class SesiService:
             menit=paket.durasi_menit, keterangan=f"Guest '{nama_guest}' di {pc_kode}",
             no_nota=TransaksiService.generate_nota(),
             user_id=TransaksiService.get_user_id(operator),
-            metode_pembayaran=metode_pembayaran
+            metode_pembayaran=metode_pembayaran,
+            operator=operator
         )
         
         # Simpan secara atomik di Service Layer
@@ -157,7 +158,8 @@ class SesiService:
                 keterangan=f"Tambah waktu member {sesi.member.username} x{qty}",
                 no_nota=TransaksiService.generate_nota(),
                 user_id=TransaksiService.get_user_id(operator),
-                metode_pembayaran=metode_pembayaran
+                metode_pembayaran=metode_pembayaran,
+                operator=operator
             )
             db.session.add(transaksi)
             db.session.commit()
@@ -181,7 +183,8 @@ class SesiService:
                 keterangan=f"Tambah waktu guest {sesi.nama_guest} x{qty}",
                 no_nota=TransaksiService.generate_nota(),
                 user_id=TransaksiService.get_user_id(operator),
-                metode_pembayaran=metode_pembayaran
+                metode_pembayaran=metode_pembayaran,
+                operator=operator
             )
             db.session.add(transaksi)
             db.session.commit()
@@ -238,7 +241,8 @@ class SesiService:
             transaksi = Transaksi(
                 sesi_id=sesi.id, member_id=sesi.member_id,
                 jenis="tutup_sesi", keterangan=f"Sesi {sesi.tipe} ditutup oleh {operator}",
-                user_id=TransaksiService.get_user_id(operator)
+                user_id=TransaksiService.get_user_id(operator),
+                operator=operator
             )
             db.session.add(transaksi)
             
@@ -300,7 +304,8 @@ class SesiService:
         transaksi = Transaksi(
             sesi_id=sesi_baru.id, member_id=sesi.member_id,
             jenis="pindah_pc", keterangan=f"Pindah dari {pc_lama_kode} ke {pc_baru.kode}",
-            user_id=TransaksiService.get_user_id(operator)
+            user_id=TransaksiService.get_user_id(operator),
+            operator=operator
         )
         db.session.add(transaksi)
         db.session.commit()
@@ -454,7 +459,8 @@ class SesiService:
             menit=-(durasi_dikurangi),
             keterangan=f"Refund paket guest '{transaksi.paket.nama if transaksi.paket else '?'}'",
             no_nota=TransaksiService.generate_nota(),
-            user_id=TransaksiService.get_user_id(operator)
+            user_id=TransaksiService.get_user_id(operator),
+            operator=operator
         )
         db.session.add(transaksi_refund)
         db.session.commit()
