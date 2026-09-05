@@ -226,7 +226,7 @@ def _register_context_processors(app):
             plugin_menus = []
             
         from app.utils.timezone_utils import format_display
-        version = current_app.config.get("VERSION", "v1.5.0")
+        version = current_app.config.get("VERSION", "v1.6.0")
         return dict(warnet_title=title, plugin_menus=plugin_menus, version=version, format_display=format_display)
 
 def _init_app_context(app):
