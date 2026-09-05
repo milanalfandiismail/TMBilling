@@ -3,6 +3,7 @@
 
 const Catatan = {
     notes: [],
+    notesCache: {},
     activeFilename: null,
     currentTitle: '',
     currentContent: '',
@@ -10,9 +11,10 @@ const Catatan = {
     autoSaveTimer: null,
     autoSaveDelay: 1500, // 1.5 detik debounce auto-save
     mobileViewMode: 'editor', // 'editor' | 'list'
+    isLoaded: false,
+    isLoading: false,
 
     async init() {
-        await this.loadNotes();
         // Keyboard shortcut global Ctrl+S saat berada di tab catatan
         window.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
@@ -25,69 +27,18 @@ const Catatan = {
         });
     },
 
-    showMainLoading(show) {
-        const el = document.getElementById('notes-main-loading');
-        if (el) {
-            if (show) el.classList.remove('hidden');
-            else el.classList.add('hidden');
+    async loadNotes(forceReload = false) {
+        // Jika sudah selesai dirender komprehensif dan bukan force reload, langsung tampilkan tanpa fetch/render ulang
+        if (this.isLoaded && !forceReload) {
+            return;
         }
-    },
 
-    showEditorLoading(show) {
-        const el = document.getElementById('notes-editor-loading');
-        if (el) {
-            if (show) el.classList.remove('hidden');
-            else el.classList.add('hidden');
-        }
-    },
+        const loadingEl = document.getElementById('catatan-loading');
+        const contentEl = document.getElementById('catatan-content');
 
-    renderLoadingList() {
-        const container = document.getElementById('notes-list-container');
-        if (!container) return;
-        container.innerHTML = `
-            <div class="space-y-2.5 animate-pulse">
-                <div class="p-3.5 rounded bg-[#080808] border border-[#1c1c1c] space-y-2">
-                    <div class="flex items-center justify-between">
-                        <div class="h-4 bg-neutral-800 rounded w-1/2"></div>
-                        <div class="h-3 bg-neutral-800 rounded w-12"></div>
-                    </div>
-                    <div class="h-3 bg-neutral-800/60 rounded w-5/6"></div>
-                    <div class="h-3 bg-neutral-800/40 rounded w-2/3"></div>
-                    <div class="pt-1.5 border-t border-[#1c1c1c] flex justify-between">
-                        <div class="h-2.5 bg-neutral-800/50 rounded w-16"></div>
-                        <div class="h-2.5 bg-neutral-800/50 rounded w-12"></div>
-                    </div>
-                </div>
-                <div class="p-3.5 rounded bg-[#080808] border border-[#1c1c1c] space-y-2">
-                    <div class="flex items-center justify-between">
-                        <div class="h-4 bg-neutral-800 rounded w-2/3"></div>
-                        <div class="h-3 bg-neutral-800 rounded w-10"></div>
-                    </div>
-                    <div class="h-3 bg-neutral-800/60 rounded w-4/5"></div>
-                    <div class="h-3 bg-neutral-800/40 rounded w-1/2"></div>
-                    <div class="pt-1.5 border-t border-[#1c1c1c] flex justify-between">
-                        <div class="h-2.5 bg-neutral-800/50 rounded w-20"></div>
-                    </div>
-                </div>
-                <div class="p-3.5 rounded bg-[#080808] border border-[#1c1c1c] space-y-2">
-                    <div class="flex items-center justify-between">
-                        <div class="h-4 bg-neutral-800 rounded w-1/3"></div>
-                        <div class="h-3 bg-neutral-800 rounded w-12"></div>
-                    </div>
-                    <div class="h-3 bg-neutral-800/60 rounded w-3/4"></div>
-                    <div class="pt-1.5 border-t border-[#1c1c1c] flex justify-between">
-                        <div class="h-2.5 bg-neutral-800/50 rounded w-16"></div>
-                    </div>
-                </div>
-            </div>
-        `;
-    },
-
-    async loadNotes(preserveSelection = true, showFullOverlay = true) {
-        if (showFullOverlay) {
-            this.showMainLoading(true);
-        }
-        this.renderLoadingList();
+        if (loadingEl) loadingEl.classList.remove('hidden');
+        if (contentEl) contentEl.classList.add('hidden');
+        this.isLoading = true;
 
         try {
             const res = await API.request('/api/v1/kasir/notes');
@@ -96,30 +47,29 @@ const Catatan = {
                 this.renderList();
 
                 if (this.notes.length > 0) {
-                    if (!preserveSelection || !this.activeFilename || !this.notes.some(n => n.filename === this.activeFilename)) {
-                        await this.selectNote(this.notes[0].filename);
-                    }
+                    const firstFilename = (!this.activeFilename || !this.notes.some(n => n.filename === this.activeFilename))
+                        ? this.notes[0].filename
+                        : this.activeFilename;
+                    await this.selectNote(firstFilename);
                 } else {
                     this.renderEmptyEditor();
                 }
             }
+
+            // Tunggu seluruh FontAwesome icon font dan layout browser selesai di-paint 100%
+            if (document.fonts && document.fonts.ready) {
+                await document.fonts.ready;
+            }
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+            this.isLoaded = true;
         } catch (err) {
             console.error('[Catatan] Gagal memuat catatan:', err);
-            const container = document.getElementById('notes-list-container');
-            if (container) {
-                container.innerHTML = `
-                    <div class="p-4 text-center text-xs text-red-400">
-                        Gagal memuat catatan: ${err.message || 'Kesalahan jaringan'}
-                    </div>
-                `;
-            }
+            Toast.error('Gagal memuat catatan: ' + (err.message || 'Kesalahan jaringan'));
         } finally {
-            if (showFullOverlay) {
-                // Jeda halus 150ms agar render layout selesai sempurna sebelum overlay dihilangkan
-                setTimeout(() => {
-                    this.showMainLoading(false);
-                }, 150);
-            }
+            this.isLoading = false;
+            if (loadingEl) loadingEl.classList.add('hidden');
+            if (contentEl) contentEl.classList.remove('hidden');
         }
     },
 
@@ -232,6 +182,10 @@ const Catatan = {
                 if (note) {
                     note.is_pinned = isPinned;
                 }
+                if (this.notesCache[filename]) {
+                    this.notesCache[filename].is_pinned = isPinned;
+                }
+
                 // Urutkan: Pinned selalu di atas, lalu timestamp terbaru
                 this.notes.sort((a, b) => (b.is_pinned ? 1 : 0) - (a.is_pinned ? 1 : 0) || (b.updated_timestamp - a.updated_timestamp));
 
@@ -239,7 +193,7 @@ const Catatan = {
                     this.updatePinButtonState(isPinned);
                 }
                 this.renderList();
-                Toast.success(isPinned ? '📌 Catatan disematkan ke posisi teratas' : 'Sematan catatan dilepas');
+                Toast.success(isPinned ? 'Catatan disematkan ke posisi teratas' : 'Sematan catatan dilepas');
             }
         } catch (err) {
             Toast.error('Gagal mengubah status sematan: ' + err.message);
@@ -265,43 +219,26 @@ const Catatan = {
     async selectNote(encodedFilename) {
         const filename = decodeURIComponent(encodedFilename);
         if (this.isDirty && this.activeFilename && this.activeFilename !== filename) {
-            // Simpan catatan yang sedang aktif sebelum berganti
             await this.saveCurrentNote(false);
         }
 
         this.activeFilename = filename;
+
+        // Jika data sudah di-cache, terapkan langsung tanpa jeda network
+        if (this.notesCache[filename]) {
+            this.applyNoteToEditor(this.notesCache[filename]);
+            this.renderList();
+            return;
+        }
+
         this.setSaveStatus('Memuat...', 'bg-neutral-800 text-neutral-300 border-neutral-700');
-        this.showEditorLoading(true);
 
         try {
             const res = await API.request(`/api/v1/kasir/notes/${encodeURIComponent(filename)}`);
             if (res && res.success && res.note) {
                 const note = res.note;
-                this.currentTitle = note.title;
-                this.currentContent = note.content;
-                this.isDirty = false;
-
-                const titleInput = document.getElementById('note-title-input');
-                const contentEditor = document.getElementById('note-content-editor');
-                const fileSize = document.getElementById('note-file-size');
-
-                if (titleInput) titleInput.value = note.title;
-                if (contentEditor) {
-                    contentEditor.value = note.content;
-                    contentEditor.disabled = false;
-                }
-                if (fileSize) fileSize.textContent = `${(note.size / 1024).toFixed(1)} KB`;
-
-                const dupBtn = document.getElementById('btn-duplicate-note');
-                const delBtn = document.getElementById('btn-delete-note');
-                const dlBtn = document.getElementById('btn-download-note');
-                if (dupBtn) dupBtn.disabled = false;
-                if (delBtn) delBtn.disabled = false;
-                if (dlBtn) dlBtn.disabled = false;
-                this.updatePinButtonState(!!note.is_pinned);
-
-                this.setSaveStatus('Tersimpan', 'bg-neutral-800 text-neutral-400 border-neutral-700');
-                this.updateStats();
+                this.notesCache[filename] = note;
+                this.applyNoteToEditor(note);
                 this.renderList();
 
                 // Pada tampilan mobile, alihkan fokus ke editor
@@ -312,9 +249,35 @@ const Catatan = {
         } catch (err) {
             Toast.error('Gagal membuka catatan: ' + err.message);
             this.setSaveStatus('Gagal', 'bg-red-950/40 text-red-400 border-red-800/60');
-        } finally {
-            this.showEditorLoading(false);
         }
+    },
+
+    applyNoteToEditor(note) {
+        this.currentTitle = note.title;
+        this.currentContent = note.content;
+        this.isDirty = false;
+
+        const titleInput = document.getElementById('note-title-input');
+        const contentEditor = document.getElementById('note-content-editor');
+        const fileSize = document.getElementById('note-file-size');
+
+        if (titleInput) titleInput.value = note.title;
+        if (contentEditor) {
+            contentEditor.value = note.content;
+            contentEditor.disabled = false;
+        }
+        if (fileSize) fileSize.textContent = `${(note.size / 1024).toFixed(1)} KB`;
+
+        const dupBtn = document.getElementById('btn-duplicate-note');
+        const delBtn = document.getElementById('btn-delete-note');
+        const dlBtn = document.getElementById('btn-download-note');
+        if (dupBtn) dupBtn.disabled = false;
+        if (delBtn) delBtn.disabled = false;
+        if (dlBtn) dlBtn.disabled = false;
+        this.updatePinButtonState(!!note.is_pinned);
+
+        this.setSaveStatus('Tersimpan', 'bg-neutral-800 text-neutral-400 border-neutral-700');
+        this.updateStats();
     },
 
     renderEmptyEditor() {
@@ -349,7 +312,6 @@ const Catatan = {
 
     async createNewNote() {
         const defaultTitle = `Catatan ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}`;
-        this.showEditorLoading(true);
         try {
             const res = await API.request('/api/v1/kasir/notes', {
                 method: 'POST',
@@ -361,7 +323,8 @@ const Catatan = {
 
             if (res && res.success && res.note) {
                 Toast.success('Catatan baru berhasil dibuat');
-                await this.loadNotes(false, false);
+                this.notesCache[res.note.filename] = res.note;
+                await this.loadNotes(true);
                 await this.selectNote(res.note.filename);
 
                 const titleInput = document.getElementById('note-title-input');
@@ -372,8 +335,6 @@ const Catatan = {
             }
         } catch (err) {
             Toast.error('Gagal membuat catatan baru: ' + err.message);
-        } finally {
-            this.showEditorLoading(false);
         }
     },
 
@@ -383,7 +344,6 @@ const Catatan = {
             return;
         }
 
-        this.showEditorLoading(true);
         try {
             const res = await API.request(`/api/v1/kasir/notes/${encodeURIComponent(this.activeFilename)}/duplicate`, {
                 method: 'POST'
@@ -391,13 +351,12 @@ const Catatan = {
 
             if (res && res.success && res.note) {
                 Toast.success(`Salinan dibuat: "${res.note.title}"`);
-                await this.loadNotes(false, false);
+                this.notesCache[res.note.filename] = res.note;
+                await this.loadNotes(true);
                 await this.selectNote(res.note.filename);
             }
         } catch (err) {
             Toast.error('Gagal menduplikasi catatan: ' + err.message);
-        } finally {
-            this.showEditorLoading(false);
         }
     },
 
@@ -462,6 +421,12 @@ const Catatan = {
                 this.currentTitle = res.note.title;
                 this.currentContent = res.note.content;
 
+                // Perbarui cache lokal
+                if (oldFilename !== res.note.filename) {
+                    delete this.notesCache[oldFilename];
+                }
+                this.notesCache[res.note.filename] = res.note;
+
                 const fileSize = document.getElementById('note-file-size');
                 if (fileSize) fileSize.textContent = `${(res.note.size / 1024).toFixed(1)} KB`;
 
@@ -517,17 +482,19 @@ const Catatan = {
     async confirmDeleteNote() {
         if (!this.activeFilename) return;
         const title = this.currentTitle || this.activeFilename;
+        const filenameToDelete = this.activeFilename;
         this.closeDeleteModal();
 
         try {
-            const res = await API.request(`/api/v1/kasir/notes/${encodeURIComponent(this.activeFilename)}`, {
+            const res = await API.request(`/api/v1/kasir/notes/${encodeURIComponent(filenameToDelete)}`, {
                 method: 'DELETE'
             });
 
             if (res && res.success) {
                 Toast.success(`Catatan "${title}" berhasil dihapus`);
+                delete this.notesCache[filenameToDelete];
                 this.activeFilename = null;
-                await this.loadNotes(false);
+                await this.loadNotes(true);
             }
         } catch (err) {
             Toast.error('Gagal menghapus catatan: ' + err.message);
@@ -632,6 +599,6 @@ const Catatan = {
 window.Catatan = Catatan;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Siapkan modul Catatan
+    // Siapkan listener event keyboard dan shortcut
     Catatan.init();
 });

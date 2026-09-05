@@ -266,7 +266,7 @@ const App = {
             case 'settings': if (typeof Settings !== 'undefined') await Settings.load(); break;
             case 'menu': if (typeof Menu !== 'undefined') await Menu.load(); break;
             case 'tournament': if (typeof Tournament !== 'undefined') await Tournament.load(); break;
-            case 'catatan': if (typeof Catatan !== 'undefined') await Catatan.loadNotes(true, true); break;
+            case 'catatan': if (typeof Catatan !== 'undefined') await Catatan.loadNotes(); break;
             case 'analytics': if (typeof OwnerAnalytics !== 'undefined') await OwnerAnalytics.load(); break;
             case 'plugins': if (typeof PluginsModule !== 'undefined') PluginsModule.init(); break;
             case 'mikrotik': if (typeof SettingsMikrotik !== 'undefined') SettingsMikrotik.init(); break;
