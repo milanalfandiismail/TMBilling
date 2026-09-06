@@ -298,17 +298,6 @@ class ReportService:
             for op in MenuRepository.get_distinct_remote_operators():
                 if op:
                     remote_ops.add(op)
-
-            # Tambahkan juga cabang aktif dari database Branch
-            try:
-                from app.models.branch import Branch
-                branches = Branch.query.filter_by(aktif=True).all()
-                for b in branches:
-                    if b.nama:
-                        remote_ops.add(f"admin (Remote: {b.nama})")
-            except Exception:
-                pass
-
             hidden_ops = set()
             try:
                 from app.services.branch.branch_service import BranchService

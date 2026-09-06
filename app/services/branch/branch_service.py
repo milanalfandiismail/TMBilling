@@ -279,22 +279,6 @@ class BranchService:
             if last_act and (not operator_map[op]["terakhir_aktif"] or last_act > operator_map[op]["terakhir_aktif"]):
                 operator_map[op]["terakhir_aktif"] = last_act
 
-        # 3. Masukkan juga cabang terdaftar jika belum ada di record transaksi
-        try:
-            branches = Branch.query.filter_by(aktif=True).all()
-            for b in branches:
-                if b.nama:
-                    default_op = f"admin (Remote: {b.nama})"
-                    if default_op not in operator_map:
-                        operator_map[default_op] = {
-                            "operator": default_op,
-                            "total_transaksi": 0,
-                            "total_nominal": 0,
-                            "terakhir_aktif": None
-                        }
-        except Exception:
-            pass
-
         results = []
         for op, data in operator_map.items():
             username = op
