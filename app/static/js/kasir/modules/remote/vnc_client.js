@@ -37,6 +37,8 @@ class VNCSession {
         this._pasteSeqId = 0;
         this._currentPasteSeqId = 0;
         this._lastHandledPasteSeqId = 0;
+        this._isRemoteFileFolder = false;
+        this._potentialCopyTimer = null;
     }
 
     isMobileDevice() {
@@ -215,20 +217,24 @@ class VNCSession {
                 const text = (e && e.detail && typeof e.detail.text === 'string') ? e.detail.text : '';
                 this.lastRemoteClipboard = text;
 
-                // JANGAN panggil this.copyTextToHost(text, true) secara otomatis saat remote meng-copy!
-                // Alasan:
-                // 1. Operasi di remote (terutama file, folder, atau teks internal remote) tidak boleh membajak
-                //    clipboard host kasir dan tidak boleh memunculkan toast/pop-up yang mengganggu.
-                // 2. Pada koneksi non-HTTPS/HTTP, copyTextToHost membuat elemen <textarea> buatan yang mencuri fokus
-                //    (focus stealing) dari canvas VNC, merusak alur tombol modifier (Ctrl/Shift) di remote.
-                // Teks yang diterima disimpan di memori dan disinkronkan ke kotak input panel agar kasir
-                // dapat menyalinnya secara manual jika memang diperlukan.
+                // Batalkan status copy file/folder karena remote terbukti mengirimkan teks clipboard
+                if (this._potentialCopyTimer) {
+                    clearTimeout(this._potentialCopyTimer);
+                    this._potentialCopyTimer = null;
+                }
+                this._isRemoteFileFolder = false;
+
+                // Sinkronkan teks dari remote langsung ke clipboard host kasir
+                if (text) {
+                    this.copyTextToHost(text, false);
+                }
+
                 const recInput = document.getElementById('vnc-clipboard-received-text');
                 if (recInput) recInput.value = text;
 
                 const badge = document.getElementById('vnc-clipboard-status-badge');
                 if (badge && text) {
-                    badge.textContent = 'Teks Tersedia di Panel';
+                    badge.textContent = 'Tersinkronisasi';
                     badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-800 text-emerald-400 border border-emerald-700/50';
                 }
 
@@ -593,24 +599,20 @@ class VNCSession {
 
             const key = e.key ? e.key.toLowerCase() : '';
             const isV = key === 'v' || e.code === 'KeyV';
+            const isC = key === 'c' || e.code === 'KeyC';
+            const isX = key === 'x' || e.code === 'KeyX';
 
-            if (isV && (e.shiftKey || e.altKey)) {
-                // Shortcut eksplisit: Ctrl+Shift+V / Alt+V untuk menempel teks dari clipboard host ke remote
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                this.pasteHostClipboardToRemote();
-                return;
-            }
-
-            if (isV) {
-                // KRUSIAL UNTUK FILE & FOLDER REMOTE:
-                // Jangan intersep Ctrl+V biasa di layar remote!
-                // Biarkan noVNC meneruskan sinyal Ctrl+V asli ke sistem operasi Windows di remote,
-                // sehingga file, folder, teks, atau objek yang disalin di dalam remote dapat di-paste
-                // secara native tanpa tertimpa/dihapus oleh clipboard teks host.
-                return;
-            } else if (key === 'c' || e.code === 'KeyC') {
+            if (isC || isX) {
                 this.lastCtrlCTime = Date.now();
+                this._isRemoteFileFolder = false;
+                if (this._potentialCopyTimer) clearTimeout(this._potentialCopyTimer);
+
+                // Jika remote tidak mengirimkan teks clipboard dalam 200ms,
+                // berarti yang disalin di Windows Explorer remote adalah file/folder
+                this._potentialCopyTimer = setTimeout(() => {
+                    this._isRemoteFileFolder = true;
+                }, 200);
+
                 // Safety release: jika event keyup Ctrl terlewat saat operasi copy di browser/OS,
                 // pastikan modifier Ctrl dilepaskan di remote HANYA jika fisik Ctrl tidak lagi ditekan
                 setTimeout(() => {
@@ -621,8 +623,62 @@ class VNCSession {
                         } catch (err) { }
                     }
                 }, 250);
+            } else if (isV) {
+                const isExplicitHostPaste = e.shiftKey || e.altKey;
+
+                // Jika user baru saja menyalin file/folder di remote (bukan teks):
+                // Biarkan Ctrl+V diteruskan secara native ke OS remote agar file/folder di-paste!
+                if (!isExplicitHostPaste && this._isRemoteFileFolder) {
+                    this._isRemoteFileFolder = false;
+                    return;
+                }
+
+                this._isRemoteFileFolder = false;
+
+                // Intersep Ctrl+V untuk menempelkan teks dari host ke remote secara otomatis
+                e.stopImmediatePropagation();
+
+                const actionId = ++this._pasteSeqId;
+                this._currentPasteSeqId = actionId;
+
+                // Siapkan bridgeEl agar siap menangkap paste secara native
+                if (this.bridgeEl) {
+                    this.bridgeEl.value = '';
+                    try {
+                        this.bridgeEl.focus();
+                        this.bridgeEl.select();
+                    } catch (err) { }
+                }
+
+                // Cadangan timeout 35ms: HANYA dieksekusi jika bridge paste TIDAK tertangkap oleh event paste native
+                setTimeout(async () => {
+                    if (this._lastHandledPasteSeqId === actionId) {
+                        return;
+                    }
+                    this._lastHandledPasteSeqId = actionId;
+
+                    let text = this.bridgeEl ? this.bridgeEl.value : '';
+                    if (this.bridgeEl) {
+                        this.bridgeEl.value = '';
+                        try { this.bridgeEl.blur(); } catch (e) { }
+                    }
+                    if (this.rfb) {
+                        try { this.rfb.focus(); } catch (e) { }
+                    }
+                    if (!text && navigator.clipboard && navigator.clipboard.readText) {
+                        try {
+                            text = await navigator.clipboard.readText();
+                        } catch (err) { }
+                    }
+                    if (text) {
+                        this.handlePastedText(text);
+                    } else {
+                        this.executePasteSequence();
+                    }
+                }, 35);
+                return;
             } else {
-                // Untuk shortcut Ctrl lainnya (seperti Ctrl+A, Ctrl+Z, Ctrl+X, dll.):
+                // Untuk shortcut Ctrl lainnya (seperti Ctrl+A, Ctrl+Z, dll.):
                 // Pastikan remote menerima sinyal Ctrl aktif dan kembalikan fokus ke canvas jika perlu
                 if (this.rfb) {
                     try {
@@ -682,15 +738,18 @@ class VNCSession {
         };
         window.addEventListener('keyup', this._boundKeyUp, true);
 
-        // Native paste event on window (HANYA jika dipicu secara terarah ke bridgeEl)
+        // Native paste event on window (menangkap paste jika canvas/container/bridge aktif)
         this._boundWindowPaste = (e) => {
             if (!this.rfb) return;
+            const cont = this.options.vncContainer;
+            if (!cont || cont.offsetParent === null) return;
+
             const activeEl = document.activeElement;
-            // JANGAN intersep jika paste terjadi di layar canvas/container remote!
-            // Operasi paste di remote ditangani secara native oleh sistem remote.
-            if (!this.bridgeEl || activeEl !== this.bridgeEl) {
-                return;
-            }
+            const isOtherUIInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') && activeEl !== this.bridgeEl;
+            if (isOtherUIInput) return;
+
+            // Jika sedang menempel file/folder di remote, biarkan native
+            if (this._isRemoteFileFolder) return;
 
             let text = '';
             if (e.clipboardData) {
@@ -719,9 +778,20 @@ class VNCSession {
         };
         window.addEventListener('paste', this._boundWindowPaste, true);
 
+        // Reset flag copy remote saat window host mendapatkan fokus kembali dari luar
+        this._boundWindowFocus = () => {
+            this._isRemoteFileFolder = false;
+        };
+        window.addEventListener('focus', this._boundWindowFocus);
+
         // Lepas modifier jika window browser kehilangan fokus (alt-tab, switch window, etc.)
         this._boundWindowBlur = () => {
             this._isPhysicalCtrlDown = false;
+            this._isRemoteFileFolder = false;
+            if (this._potentialCopyTimer) {
+                clearTimeout(this._potentialCopyTimer);
+                this._potentialCopyTimer = null;
+            }
             if (!this.modifiers['Ctrl'] && this.rfb) {
                 try {
                     this.rfb.sendKey(0xffe3, 'ControlLeft', false);
@@ -734,6 +804,11 @@ class VNCSession {
 
     teardownClipboardShortcuts() {
         this._isPhysicalCtrlDown = false;
+        if (this._potentialCopyTimer) {
+            clearTimeout(this._potentialCopyTimer);
+            this._potentialCopyTimer = null;
+        }
+        this._isRemoteFileFolder = false;
         const container = this.options.vncContainer;
         if (this._boundKeyDown) {
             window.removeEventListener('keydown', this._boundKeyDown, true);
@@ -747,10 +822,9 @@ class VNCSession {
             window.removeEventListener('paste', this._boundWindowPaste, true);
             this._boundWindowPaste = null;
         }
-        if (this._boundPreSync) {
-            window.removeEventListener('focus', this._boundPreSync);
-            if (container) container.removeEventListener('pointerdown', this._boundPreSync);
-            this._boundPreSync = null;
+        if (this._boundWindowFocus) {
+            window.removeEventListener('focus', this._boundWindowFocus);
+            this._boundWindowFocus = null;
         }
         if (this._boundWindowBlur) {
             window.removeEventListener('blur', this._boundWindowBlur);
@@ -1523,12 +1597,15 @@ const VNCClient = {
                 if (recInput) recInput.value = text;
                 const badge = document.getElementById('vnc-clipboard-status-badge');
                 if (badge && text) {
-                    badge.textContent = 'Teks Tersedia di Panel';
-                    badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-800 text-emerald-400 border border-emerald-700/50';
+                    badge.textContent = 'Tersinkronisasi';
+                    badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
                     setTimeout(() => {
                         badge.textContent = 'Tersinkronisasi';
                         badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-800 text-neutral-400 border border-neutral-700';
                     }, 3000);
+                }
+                if (text && text.trim()) {
+                    Toast.info('📋 Teks disalin dari Remote VNC');
                 }
             }
         });
