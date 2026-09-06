@@ -52,7 +52,7 @@ def get_migration_status():
         # Dapatkan current revision yang ter-aplikasi
         current_revision = _get_current_revision()
 
-        needs_upgrade = current_revision != head_label if (current_revision and head_label) else False
+        needs_upgrade = (current_revision != head_label) if head_label else False
 
         # History
         history_list = []
@@ -163,11 +163,65 @@ def upload_update():
             _auto_backup_before_migration()
 
             try:
-                from flask_migrate import upgrade
+                from flask_migrate import upgrade, stamp
+                from sqlalchemy import inspect, text
+                from app import db
+
+                inspector = inspect(db.engine)
+                current_rev = _get_current_revision()
+
+                # Kasus Cerdas: Jika database sudah ada data (misal tabel transaksi ada)
+                # namun alembic_version masih kosong / None (karena database dibuat tanpa tracking Alembic):
+                # Stamp dulu ke revisi sebelum HEAD (e8f9a0b1c2d3) agar Alembic tidak mencoba
+                # menjalankan migrasi dari nol, lalu upgrade ke HEAD untuk memasang kolom operator!
+                if current_rev is None and inspector.has_table('transaksi'):
+                    try:
+                        stamp(directory=migrations_dir, revision='e8f9a0b1c2d3')
+                        write_log("DATABASE_MIGRATION_STAMP", "Alembic di-stamp ke e8f9a0b1c2d3 sebelum upgrade", user=operator)
+                    except Exception as stamp_err:
+                        current_app.logger.warning(f"Alembic auto-stamp warning: {stamp_err}")
+
                 upgrade(directory=migrations_dir)
                 write_log("DATABASE_MIGRATION_UPGRADE", "Skema database auto-upgrade ke HEAD setelah update", user=operator)
             except Exception as e:
                 write_log("DATABASE_MIGRATION_ERROR", f"Auto-upgrade gagal: {str(e)}", user=operator)
+
+            # Safety Net: Pastikan kolom 'operator' dan tabel baru benar-benar ada di SQLite
+            try:
+                from sqlalchemy import inspect, text
+                from app import db
+                inspector = inspect(db.engine)
+
+                db.create_all()
+
+                if inspector.has_table('transaksi'):
+                    cols = [c['name'] for c in inspector.get_columns('transaksi')]
+                    if 'operator' not in cols:
+                        with db.engine.connect() as conn:
+                            conn.execute(text("ALTER TABLE transaksi ADD COLUMN operator VARCHAR(100)"))
+                            conn.commit()
+
+                if inspector.has_table('transaksi_menu'):
+                    cols = [c['name'] for c in inspector.get_columns('transaksi_menu')]
+                    if 'operator' not in cols:
+                        with db.engine.connect() as conn:
+                            conn.execute(text("ALTER TABLE transaksi_menu ADD COLUMN operator VARCHAR(100)"))
+                            conn.commit()
+
+                if not inspector.has_table('cabang'):
+                    from app.models.branch import Branch
+                    Branch.__table__.create(db.engine)
+
+                if not inspector.has_table('cabang_inbound'):
+                    from app.models.branch import BranchInbound
+                    BranchInbound.__table__.create(db.engine)
+
+                # Pastikan alembic_version tercatat HEAD
+                from flask_migrate import stamp
+                stamp(directory=migrations_dir, revision='head')
+
+            except Exception as fix_err:
+                write_log("DATABASE_MIGRATION_SAFETY_ERROR", f"Safety sync gagal: {str(fix_err)}", user=operator)
 
         # Hapus file temp
         os.remove(temp_path)
