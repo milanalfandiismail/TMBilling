@@ -8,10 +8,10 @@ class VNCSession {
             wsUrl: '',
             password: '',
             scaleViewport: true,
-            onConnect: () => {},
-            onDisconnect: () => {},
-            onError: () => {},
-            onResolution: () => {}
+            onConnect: () => { },
+            onDisconnect: () => { },
+            onError: () => { },
+            onResolution: () => { }
         }, options);
 
         this.rfb = null;
@@ -58,17 +58,17 @@ class VNCSession {
             if (canvas) canvas.style.cursor = 'none';
             if (this.rfb) {
                 this.rfb.showDotCursor = false;
-                this.rfb._refreshCursor = function() {};
+                this.rfb._refreshCursor = function () { };
                 if (this.rfb._cursor) {
                     try {
                         this.rfb._cursor.detach();
-                        this.rfb._cursor.show = function() {};
-                        this.rfb._cursor.change = function() {};
-                        this.rfb._cursor.move = function() {};
+                        this.rfb._cursor.show = function () { };
+                        this.rfb._cursor.change = function () { };
+                        this.rfb._cursor.move = function () { };
                         if (this.rfb._cursor._canvas) {
                             this.rfb._cursor._canvas.style.display = 'none';
                         }
-                    } catch(e) {}
+                    } catch (e) { }
                 }
             }
         } else {
@@ -169,7 +169,7 @@ class VNCSession {
             });
             try {
                 this.rfb.background = 'transparent';
-            } catch(e) {}
+            } catch (e) { }
 
             this.rfb.addEventListener('credentialsrequired', () => {
                 const pass = prompt('TightVNC meminta Password:');
@@ -180,7 +180,7 @@ class VNCSession {
 
             this.rfb.addEventListener('connect', () => {
                 if (isMobile && this.rfb._gestures) {
-                    try { this.rfb._gestures.detach(); } catch(e) {}
+                    try { this.rfb._gestures.detach(); } catch (e) { }
                 }
                 this.zoomLevel = 1.0;
                 this.panX = 0;
@@ -194,7 +194,7 @@ class VNCSession {
 
                 setTimeout(() => {
                     if (this.rfb) {
-                        try { this.rfb.focus(); } catch(e) {}
+                        try { this.rfb.focus(); } catch (e) { }
                     }
                 }, 50);
 
@@ -228,7 +228,7 @@ class VNCSession {
                             try {
                                 this.rfb.sendKey(0xffe3, 'ControlLeft', false);
                                 this.rfb.sendKey(0xffe4, 'ControlRight', false);
-                            } catch(e) {}
+                            } catch (e) { }
                         }
                     }, 50);
                 }
@@ -324,9 +324,9 @@ class VNCSession {
 
         // Kembalikan fokus ke canvas segera jika bridgeEl sempat tersentuh
         if (this.bridgeEl && document.activeElement === this.bridgeEl) {
-            try { this.bridgeEl.blur(); } catch (e) {}
+            try { this.bridgeEl.blur(); } catch (e) { }
         }
-        try { this.rfb.focus(); } catch (e) {}
+        try { this.rfb.focus(); } catch (e) { }
 
         // Jeda singkat 35ms agar paket ClientCutText tiba di TightVNC server via WebSocket sebelum tombol ditekan
         setTimeout(() => {
@@ -486,9 +486,9 @@ class VNCSession {
 
                 // Kembalikan fokus ke canvas agar browser mengirimkan event keyup ke noVNC
                 if (this.rfb) {
-                    try { this.rfb.focus(); } catch(e) {}
+                    try { this.rfb.focus(); } catch (e) { }
                 } else if (activeBefore && typeof activeBefore.focus === 'function') {
-                    try { activeBefore.focus(); } catch(e) {}
+                    try { activeBefore.focus(); } catch (e) { }
                 }
             } catch (e) {
                 console.warn('[VNC] execCommand copy fallback failed:', e);
@@ -533,10 +533,10 @@ class VNCSession {
                 }
                 if (this.bridgeEl) {
                     this.bridgeEl.value = '';
-                    try { this.bridgeEl.blur(); } catch(err) {}
+                    try { this.bridgeEl.blur(); } catch (err) { }
                 }
                 if (this.rfb) {
-                    try { this.rfb.focus(); } catch(err) {}
+                    try { this.rfb.focus(); } catch (err) { }
                 }
                 if (text) {
                     e.preventDefault();
@@ -567,7 +567,7 @@ class VNCSession {
                 if (this.rfb && !this.modifiers['Ctrl']) {
                     try {
                         this.rfb.sendKey(0xffe3, 'ControlLeft', true);
-                    } catch(err) {}
+                    } catch (err) { }
                 }
             }
 
@@ -591,7 +591,7 @@ class VNCSession {
                     try {
                         this.bridgeEl.focus();
                         this.bridgeEl.select();
-                    } catch(err) {}
+                    } catch (err) { }
                 }
 
                 // Cadangan timeout 35ms: HANYA dieksekusi jika bridge paste TIDAK tertangkap oleh event paste native
@@ -605,15 +605,15 @@ class VNCSession {
                     let text = this.bridgeEl ? this.bridgeEl.value : '';
                     if (this.bridgeEl) {
                         this.bridgeEl.value = '';
-                        try { this.bridgeEl.blur(); } catch(e) {}
+                        try { this.bridgeEl.blur(); } catch (e) { }
                     }
                     if (this.rfb) {
-                        try { this.rfb.focus(); } catch(e) {}
+                        try { this.rfb.focus(); } catch (e) { }
                     }
                     if (!text && navigator.clipboard && navigator.clipboard.readText) {
                         try {
                             text = await navigator.clipboard.readText();
-                        } catch (err) {}
+                        } catch (err) { }
                     }
                     if (text) {
                         this.handlePastedText(text);
@@ -630,7 +630,7 @@ class VNCSession {
                         try {
                             this.rfb.sendKey(0xffe3, 'ControlLeft', false);
                             this.rfb.sendKey(0xffe4, 'ControlRight', false);
-                        } catch(err) {}
+                        } catch (err) { }
                     }
                 }, 250);
             } else {
@@ -639,11 +639,11 @@ class VNCSession {
                 if (this.rfb) {
                     try {
                         this.rfb.sendKey(0xffe3, 'ControlLeft', true);
-                    } catch(err) {}
+                    } catch (err) { }
                 }
                 if (this.bridgeEl && document.activeElement === this.bridgeEl) {
-                    try { this.bridgeEl.blur(); } catch(e) {}
-                    try { this.rfb.focus(); } catch(e) {}
+                    try { this.bridgeEl.blur(); } catch (e) { }
+                    try { this.rfb.focus(); } catch (e) { }
                 }
             }
         };
@@ -667,28 +667,28 @@ class VNCSession {
                     try {
                         this.rfb.sendKey(0xffe3, 'ControlLeft', false);
                         this.rfb.sendKey(0xffe4, 'ControlRight', false);
-                    } catch(err) {}
+                    } catch (err) { }
                 }
             } else if (key === 'alt' || code === 'AltLeft' || code === 'AltRight') {
                 if (!this.modifiers['Alt']) {
                     try {
                         this.rfb.sendKey(0xffe9, 'AltLeft', false);
                         this.rfb.sendKey(0xffea, 'AltRight', false);
-                    } catch(err) {}
+                    } catch (err) { }
                 }
             } else if (key === 'shift' || code === 'ShiftLeft' || code === 'ShiftRight') {
                 if (!this.modifiers['Shift']) {
                     try {
                         this.rfb.sendKey(0xffe1, 'ShiftLeft', false);
                         this.rfb.sendKey(0xffe2, 'ShiftRight', false);
-                    } catch(err) {}
+                    } catch (err) { }
                 }
             } else if (key === 'meta' || code === 'MetaLeft' || code === 'MetaRight') {
                 if (!this.modifiers['Win']) {
                     try {
                         this.rfb.sendKey(0xffeb, 'MetaLeft', false);
                         this.rfb.sendKey(0xffec, 'MetaRight', false);
-                    } catch(err) {}
+                    } catch (err) { }
                 }
             }
         };
@@ -713,10 +713,10 @@ class VNCSession {
             }
             if (this.bridgeEl) {
                 this.bridgeEl.value = '';
-                try { this.bridgeEl.blur(); } catch(err) {}
+                try { this.bridgeEl.blur(); } catch (err) { }
             }
             if (this.rfb) {
-                try { this.rfb.focus(); } catch(err) {}
+                try { this.rfb.focus(); } catch (err) { }
             }
 
             if (text) {
@@ -743,7 +743,7 @@ class VNCSession {
                         this._lastSentHostText = text;
                         this.sendClipboard(text);
                     }
-                } catch (e) {}
+                } catch (e) { }
             }
         };
         window.addEventListener('focus', this._boundPreSync);
@@ -756,7 +756,7 @@ class VNCSession {
                 try {
                     this.rfb.sendKey(0xffe3, 'ControlLeft', false);
                     this.rfb.sendKey(0xffe4, 'ControlRight', false);
-                } catch(e) {}
+                } catch (e) { }
             }
         };
         window.addEventListener('blur', this._boundWindowBlur);
@@ -860,7 +860,7 @@ class VNCSession {
         setTimeout(() => {
             window.dispatchEvent(new Event('resize'));
             if (this.rfb) {
-                try { this.rfb.focus(); } catch (e) {}
+                try { this.rfb.focus(); } catch (e) { }
             }
         }, 30);
     }
@@ -968,7 +968,7 @@ class VNCSession {
                     }, 50);
 
                     if (navigator.vibrate) {
-                        try { navigator.vibrate(50); } catch(err) {}
+                        try { navigator.vibrate(50); } catch (err) { }
                     }
                     Toast.info('Klik Kanan (Right-Click)');
                 }, 500);
@@ -1092,7 +1092,7 @@ class VNCSession {
                         }, 30);
 
                         if (navigator.vibrate) {
-                            try { navigator.vibrate([25, 35, 25]); } catch(err) {}
+                            try { navigator.vibrate([25, 35, 25]); } catch (err) { }
                         }
                         lastTapTime = 0;
                         lastTapX = 0;
@@ -1150,12 +1150,12 @@ class VNCSession {
         try {
             this.rfb.sendKey(0xffe3, 'ControlLeft', false);
             this.rfb.sendKey(0xffe4, 'ControlRight', false);
-        } catch(e) {}
+        } catch (e) { }
     }
 
     focus() {
         if (this.rfb) {
-            try { this.rfb.focus(); } catch(e) {}
+            try { this.rfb.focus(); } catch (e) { }
         }
     }
 
@@ -1904,7 +1904,7 @@ const VNCClient = {
                 if (!sendInput.value && navigator.clipboard && navigator.clipboard.readText) {
                     navigator.clipboard.readText().then(t => {
                         if (t && !sendInput.value) sendInput.value = t;
-                    }).catch(() => {});
+                    }).catch(() => { });
                 }
             }
             const recInput = document.getElementById('vnc-clipboard-received-text');
@@ -1996,7 +1996,7 @@ const VNCClient = {
         if (navigator.clipboard && navigator.clipboard.readText) {
             try {
                 text = await navigator.clipboard.readText();
-            } catch (e) {}
+            } catch (e) { }
         }
         if (text) {
             this.session.handlePastedText(text);
