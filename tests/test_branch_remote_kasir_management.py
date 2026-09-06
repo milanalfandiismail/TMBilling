@@ -277,3 +277,27 @@ def test_branch_operator_api_endpoints_rbac(app_instance, test_setup):
     res_admin_del = client.post("/api/v1/kasir/branch/operators/delete", json={"operator": "operator_test (Remote: Test)"})
     assert res_admin_del.status_code == 200
     assert res_admin_del.get_json()["success"] is True
+
+
+def test_outbound_branch_does_not_create_remote_operator_or_pollute_dropdown(app_instance, test_setup):
+    """Memverifikasi bahwa mendaftarkan koneksi cabang baru (outbound)
+    TIDAK secara otomatis membuat operator remote kosong dan TIDAK menyusupkan
+    nama cabang ke dropdown filter laporan kasir lokal.
+    """
+    with app_instance.app_context():
+        # Daftarkan cabang baru di database lokal
+        new_branch = Branch(nama="TM-Esports Samarinda", url="https://samarinda.local", api_key="secret-key-999", aktif=True)
+        db.session.add(new_branch)
+        db.session.commit()
+
+        # 1. Cek di daftar Akun Kasir Remote: TIDAK boleh ada 'admin (Remote: TM-Esports Samarinda)'
+        operators = BranchService.get_remote_operators()
+        op_names = [op["operator"] for op in operators]
+        assert "admin (Remote: TM-Esports Samarinda)" not in op_names
+        assert not any("Samarinda" in name for name in op_names)
+
+        # 2. Cek di dropdown filter kasir laporan: TIDAK boleh ada 'TM-Esports Samarinda'
+        kasir_list = ReportService.get_kasir_list(kasir_id=test_setup["admin"].id, kasir_role="admin")
+        labels = [k["nama"] for k in kasir_list]
+        assert not any("Samarinda" in l for l in labels)
+
