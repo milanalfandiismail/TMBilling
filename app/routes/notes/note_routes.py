@@ -12,6 +12,23 @@ def is_authenticated():
 
 @notes_api_bp.before_request
 def check_auth():
+    # 1. Cek otentikasi via Bearer Token (Akses Lintas Cabang / Multi-Branch)
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+        from app.services.settings.settings_service import SettingsService
+        from app.middleware.auth import _apply_branch_relay_identity
+        import secrets
+        from flask import g
+        local_key = SettingsService.get_or_create_branch_api_key()
+        if local_key and secrets.compare_digest(token, local_key):
+            _apply_branch_relay_identity()
+            if getattr(g, "is_branch_blocked", False):
+                return jsonify({"success": False, "error": "Akses cabang ditolak: Cabang Anda telah diblokir."}), 403
+            return None
+        return jsonify({"success": False, "error": "Kunci API Cabang tidak valid"}), 403
+
+    # 2. Cek session lokal kasir / admin
     if not is_authenticated():
         return jsonify({"success": False, "error": "Akses Ditolak: Harap login terlebih dahulu"}), 401
 
