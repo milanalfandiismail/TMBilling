@@ -1,7 +1,8 @@
 # app/routes/branch/branch_routes.py
 """Routes API untuk manajemen koneksi cabang warnet (Multi-Cabang)."""
 
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify, session, Response
+import requests
 from app.middleware.auth import login_required, admin_required
 from app.services.branch.branch_service import BranchService
 from app.services.settings.settings_service import SettingsService
@@ -17,6 +18,12 @@ def enforce_admin_permission():
     # Izinkan jika request membawa Bearer token antar cabang (akan diverifikasi oleh auth middleware)
     auth_header = request.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
+        return None
+
+    # Endpoint media proxy dapat diakses oleh kasir maupun admin yang sudah login
+    if request.path and "/media/" in request.path:
+        if not session.get("kasir_id"):
+            return jsonify({"success": False, "error": "Silakan login terlebih dahulu"}), 401
         return None
 
     if not session.get("kasir_id"):
@@ -358,5 +365,41 @@ def switch_branch_context():
             "branch_name": branch.nama
         }
     }), 200
+
+
+@branch_api_bp.route("/<int:branch_id>/media/<path:filename>", methods=["GET"])
+def proxy_branch_media(branch_id: int, filename: str):
+    """Proxy file media statis (screenshot, QRIS, menu) dari server cabang remote."""
+    kasir_id = session.get("kasir_id")
+    auth_header = request.headers.get("Authorization", "")
+    if not kasir_id and not auth_header.startswith("Bearer "):
+        return jsonify({"success": False, "error": "Silakan login terlebih dahulu"}), 401
+
+    branch = Branch.query.get(branch_id)
+    if not branch or not branch.aktif:
+        return jsonify({"success": False, "error": "Cabang target tidak ditemukan atau tidak aktif"}), 404
+
+    target_url = f"{branch.url.rstrip('/')}/static/{filename}"
+    if request.query_string:
+        target_url += f"?{request.query_string.decode('utf-8')}"
+
+    try:
+        resp = requests.get(
+            target_url,
+            headers={
+                "Authorization": f"Bearer {branch.api_key}",
+                "User-Agent": "TMBilling-Relay/1.6.0"
+            },
+            timeout=6,
+            stream=True
+        )
+        content_type = resp.headers.get("Content-Type", "image/png")
+        if resp.status_code != 200:
+            return Response(resp.content, status=resp.status_code, content_type=content_type)
+
+        return Response(resp.iter_content(chunk_size=8192), status=200, content_type=content_type)
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Gagal mengambil berkas media dari cabang remote: {str(e)}"}), 502
+
 
 
