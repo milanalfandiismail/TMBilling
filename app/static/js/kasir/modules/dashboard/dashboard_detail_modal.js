@@ -166,7 +166,7 @@ const DashboardDetailModal = {
                                 </span>
                             </div>
                             <div class="relative w-full aspect-video rounded-lg overflow-hidden border border-[#1a1a1a] bg-black/60 flex items-center justify-center group">
-                                <img id="screenshot-img" src="${pc.screenshot_url ? pc.screenshot_url + '?t=' + Date.now() : ''}" 
+                                <img id="screenshot-img" src="${pc.screenshot_url && window.API ? API.resolveMediaUrl(pc.screenshot_url) + '?t=' + Date.now() : (pc.screenshot_url ? pc.screenshot_url + '?t=' + Date.now() : '')}" 
                                     class="w-full h-full object-cover cursor-pointer transition-opacity duration-200 hover:opacity-90 ${pc.screenshot_url ? '' : 'hidden'}" 
                                     onclick="DashboardDetailModal.viewFullscreen(this)" />
                                 <div id="screenshot-placeholder" class="text-neutral-600 text-xs lg:text-base font-mono ${pc.screenshot_url ? 'hidden' : ''}">Tidak ada gambar</div>
@@ -378,7 +378,8 @@ const DashboardDetailModal = {
                             clearInterval(interval);
                             if (timeSpan) timeSpan.innerText = statusData.screenshot_time;
                             if (img) {
-                                img.src = statusData.screenshot_url + '?t=' + Date.now();
+                                const resolvedUrl = window.API ? API.resolveMediaUrl(statusData.screenshot_url) : statusData.screenshot_url;
+                                img.src = resolvedUrl + '?t=' + Date.now();
                                 img.classList.remove('hidden');
                             }
                             if (placeholder) placeholder.classList.add('hidden');

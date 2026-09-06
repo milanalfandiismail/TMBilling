@@ -321,6 +321,19 @@ const API = {
         inboundUnblock: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}/unblock`, { method: 'POST' }),
         inboundDelete: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}`, { method: 'DELETE' }),
         switchContext: (branchId) => API.request('/api/v1/kasir/branch/switch-context', { method: 'POST', body: JSON.stringify({ branch_id: branchId }) })
+    },
+
+    resolveMediaUrl(url) {
+        if (!url || typeof url !== 'string') return '';
+        if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+        const activeBranchId = (window.BranchManager && window.BranchManager.activeBranchId) || sessionStorage.getItem('active_branch_id') || '0';
+        if (activeBranchId && activeBranchId !== '0') {
+            if (url.startsWith('/static/')) {
+                const relPath = url.substring('/static/'.length);
+                return `/api/v1/kasir/branch/${activeBranchId}/media/${relPath}`;
+            }
+        }
+        return url;
     }
 
 };
