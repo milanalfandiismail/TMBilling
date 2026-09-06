@@ -119,7 +119,7 @@ const Settings = {
                 }
                 const qrisPreview = document.getElementById('settings-qris-preview');
                 if (qrisPreview && res.settings.qris_image_url !== undefined) {
-                    qrisPreview.src = res.settings.qris_image_url;
+                    qrisPreview.src = window.API ? API.resolveMediaUrl(res.settings.qris_image_url) : res.settings.qris_image_url;
                 }
 
                 // Load TV Signage Settings
@@ -758,7 +758,7 @@ const Settings = {
 
                 if (uploadRes.qris_url) {
                     const preview = document.getElementById('settings-qris-preview');
-                    if (preview) preview.src = uploadRes.qris_url;
+                    if (preview) preview.src = window.API ? API.resolveMediaUrl(uploadRes.qris_url) : uploadRes.qris_url;
                 }
             }
 

@@ -205,7 +205,8 @@ const Screenshot = {
 
         container.innerHTML = data.map(pc => {
             const hasImage = !!pc.screenshot_url;
-            const imageUrl = hasImage ? `${pc.screenshot_url}?t=${new Date().getTime()}` : '';
+            const resolvedUrl = hasImage && window.API ? API.resolveMediaUrl(pc.screenshot_url) : (pc.screenshot_url || '');
+            const imageUrl = hasImage ? `${resolvedUrl}?t=${new Date().getTime()}` : '';
             
             return `
                 <div class="screenshot-card w-full h-full flex flex-col bg-[#121212] border border-[#1c1c1c] rounded overflow-hidden" data-pcid="${pc.pc_id}">
@@ -217,7 +218,7 @@ const Screenshot = {
                             </button>
                         </div>
                         
-                        <div class="relative w-full aspect-video bg-black flex flex-col items-center justify-center group cursor-pointer" onclick="Screenshot.openLightbox('${hasImage ? pc.screenshot_url : ''}', '${pc.pc_kode}')">
+                        <div class="relative w-full aspect-video bg-black flex flex-col items-center justify-center group cursor-pointer" onclick="Screenshot.openLightbox('${hasImage ? resolvedUrl : ''}', '${pc.pc_kode}')">
                         ${hasImage 
                             ? `<img src="${imageUrl}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" alt="Screenshot ${pc.pc_kode}">
                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
