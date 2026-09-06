@@ -557,7 +557,6 @@ const DashboardDetailModal = {
                 onClipboard: (text) => {
                     const rec = document.getElementById('modal-vnc-clip-rec');
                     if (rec) rec.value = text;
-                    Toast.info(`📋 Teks disalin dari Remote PC ${pcKode}`);
                 }
             });
 
