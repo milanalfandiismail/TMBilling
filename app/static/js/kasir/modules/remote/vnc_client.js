@@ -1473,8 +1473,9 @@ const VNCClient = {
 
         let listenPort = 8081;
         let serverVncPassword = '';
+        let startRes = null;
         try {
-            const startRes = await API.request('/api/v1/kasir/vnc/start', { method: 'POST' });
+            startRes = await API.request('/api/v1/kasir/vnc/start', { method: 'POST' });
             if (startRes) {
                 if (startRes.listen_port) listenPort = startRes.listen_port;
                 if (startRes.vnc_password) serverVncPassword = startRes.vnc_password;
