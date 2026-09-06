@@ -12,7 +12,6 @@ const Catatan = {
     mobileViewMode: 'editor', // 'editor' | 'list'
 
     async init() {
-        await this.loadNotes();
         // Keyboard shortcut global Ctrl+S saat berada di tab catatan
         window.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
