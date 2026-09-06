@@ -49,6 +49,17 @@ const API = {
                     }
                     return data;
                 }
+                // Jika request cabang remote ditolak (401/403 misal kunci API cabang berubah/tidak valid),
+                // JANGAN tendang session kasir lokal ke login! Lakukan failover kembali ke Cabang Lokal.
+                if ((res.status === 401 || res.status === 403) && activeBranchId && activeBranchId !== '0') {
+                    if (window.Toast) {
+                        window.Toast.show(data?.error || `Otentikasi ke cabang remote ditolak (HTTP ${res.status}). Kembali ke Cabang Lokal.`, "error");
+                    }
+                    if (window.BranchManager && typeof window.BranchManager.handleActiveBranchDisconnect === 'function') {
+                        window.BranchManager.handleActiveBranchDisconnect();
+                    }
+                    return data;
+                }
                 // Session expired atau IP block — redirect ke login (kecuali endpoint auth)
                 if ((res.status === 401 || res.status === 403) && !url.includes('/api/v1/kasir/auth/login') && !url.includes('/api/v1/kasir/auth/check')) {
                     window.location.href = '/kasir/login';
@@ -357,7 +368,8 @@ const API = {
             }
         };
         xhr.onerror = function () {
-            window.location.href = '/kasir/login';
+            // Hindari redirect ke login saat request dibatalkan browser pada proses reload/refresh
+            console.warn('[Session Polling] Jaringan terputus sementara atau request dibatalkan.');
         };
         xhr.send();
     }, 5000);
