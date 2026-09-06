@@ -284,16 +284,51 @@ def _init_app_context(app):
         except Exception as e:
             app.logger.error(f"Gagal membuat admin default saat bootstrap: {e}")
 
-        # Self-healing bootstrap: Buat tabel 'cabang' otomatis jika belum ada (Non-destructive)
+        # Self-healing database schema & migration bootstrap (Non-destructive)
         try:
-            from sqlalchemy import inspect
-            from app.models.branch import Branch
+            from sqlalchemy import inspect, text
             inspector = inspect(db.engine)
+
+            # Buat tabel 'cabang' otomatis jika belum ada
             if not inspector.has_table('cabang'):
+                from app.models.branch import Branch
                 Branch.__table__.create(db.engine)
                 app.logger.info("[OK] [TMBilling] Tabel 'cabang' berhasil dibuat secara otomatis.")
+
+            # Buat tabel 'cabang_inbound' otomatis jika belum ada
+            if not inspector.has_table('cabang_inbound'):
+                from app.models.branch import BranchInbound
+                BranchInbound.__table__.create(db.engine)
+                app.logger.info("[OK] [TMBilling] Tabel 'cabang_inbound' berhasil dibuat secara otomatis.")
+
+            # Fallback self-healing: Pastikan kolom 'operator' ada di 'transaksi' dan 'transaksi_menu'
+            if inspector.has_table('transaksi'):
+                transaksi_cols = [c['name'] for c in inspector.get_columns('transaksi')]
+                if 'operator' not in transaksi_cols:
+                    with db.engine.connect() as conn:
+                        conn.execute(text("ALTER TABLE transaksi ADD COLUMN operator VARCHAR(100)"))
+                        conn.commit()
+                    app.logger.info("[OK] [TMBilling] Kolom 'operator' berhasil ditambahkan ke tabel 'transaksi'.")
+
+            if inspector.has_table('transaksi_menu'):
+                menu_cols = [c['name'] for c in inspector.get_columns('transaksi_menu')]
+                if 'operator' not in menu_cols:
+                    with db.engine.connect() as conn:
+                        conn.execute(text("ALTER TABLE transaksi_menu ADD COLUMN operator VARCHAR(100)"))
+                        conn.commit()
+                    app.logger.info("[OK] [TMBilling] Kolom 'operator' berhasil ditambahkan ke tabel 'transaksi_menu'.")
+
+            # Sinkronisasi revisi Alembic jika tabel alembic_version ada
+            if inspector.has_table('alembic_version'):
+                try:
+                    from flask_migrate import upgrade
+                    migrations_dir = os.path.abspath(os.path.join(app.root_path, '..', 'migrations'))
+                    if os.path.exists(migrations_dir):
+                        upgrade(directory=migrations_dir)
+                except Exception as mig_err:
+                    app.logger.warning(f"Alembic auto-upgrade note: {mig_err}")
         except Exception as e:
-            app.logger.warning(f"Pengecekan bootstrap tabel cabang: {e}")
+            app.logger.warning(f"Pengecekan bootstrap skema database: {e}")
 
 def create_app():
     """Membuat dan mengkonfigurasi instance aplikasi Flask.
