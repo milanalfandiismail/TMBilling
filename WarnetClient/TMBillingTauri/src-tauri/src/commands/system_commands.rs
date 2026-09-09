@@ -51,3 +51,36 @@ pub async fn get_client_warnet(api: tauri::State<'_, crate::utils::api::ApiServi
 pub fn get_app_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
+
+#[tauri::command]
+pub fn open_control_panel_applet(applet: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+        let (program, args): (&str, Vec<&str>) = match applet.as_str() {
+            "mouse" => ("control.exe", vec!["main.cpl"]),
+            "sound" | "speaker" => ("control.exe", vec!["mmsys.cpl"]),
+            "volume" => ("sndvol.exe", vec![]),
+            "display" => ("control.exe", vec!["desk.cpl"]),
+            _ => return Err(format!("Applet tidak dikenal: {}", applet)),
+        };
+
+        let mut cmd = Command::new(program);
+        if !args.is_empty() {
+            cmd.args(&args);
+        }
+        cmd.creation_flags(CREATE_NO_WINDOW);
+
+        cmd.spawn()
+            .map_err(|e| format!("Gagal menjalankan {}: {}", program, e))?;
+
+        Ok(())
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        println!("Control panel applet {} hanya didukung di Windows", applet);
+        Ok(())
+    }
+}

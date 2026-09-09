@@ -57,6 +57,10 @@ export const Api = {
         return await invoke('get_app_version');
     },
 
+    async openControlPanel(applet) {
+        return await invoke('open_control_panel_applet', { applet });
+    },
+
     // Listener Event dari Rust
     async onEvent(name, callback) {
         return await listen(name, (event) => callback(event.payload));

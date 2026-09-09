@@ -15,6 +15,7 @@ export const Overlay = {
      */
     init() {
         this.bindEvents();
+        this.renderQris();
     },
 
     /**
@@ -22,14 +23,53 @@ export const Overlay = {
      */
     bindEvents() {
         // Logout button
-        document.getElementById('logout-btn').addEventListener('click', () => this.handleLogout());
+        document.getElementById('logout-btn')?.addEventListener('click', () => this.handleLogout());
 
         // Minimize button
-        document.getElementById('minimize-btn').addEventListener('click', () => Api.minimize());
+        document.getElementById('minimize-btn')?.addEventListener('click', () => Api.minimize());
 
         // Logout confirmation modal
-        document.getElementById('logout-cancel-btn').addEventListener('click', () => UI.toggleLogoutModal(false));
-        document.getElementById('logout-confirm-btn').addEventListener('click', () => this.confirmLogout());
+        document.getElementById('logout-cancel-btn')?.addEventListener('click', () => UI.toggleLogoutModal(false));
+        document.getElementById('logout-confirm-btn')?.addEventListener('click', () => this.confirmLogout());
+
+        // Control Panel Properties toolbar buttons
+        document.getElementById('btn-prop-mouse')?.addEventListener('click', () => Api.openControlPanel('mouse'));
+        document.getElementById('btn-prop-sound')?.addEventListener('click', () => Api.openControlPanel('sound'));
+        document.getElementById('btn-prop-volume')?.addEventListener('click', () => Api.openControlPanel('volume'));
+        document.getElementById('btn-prop-display')?.addEventListener('click', () => Api.openControlPanel('display'));
+    },
+
+    /**
+     * Render QRIS image from configuration
+     */
+    async renderQris() {
+        const qrisImg = document.getElementById('overlay-qris-img');
+        const fallbackEl = document.getElementById('overlay-qris-fallback');
+        if (!qrisImg) return;
+
+        let qrisUrl = AppState.warnetConfig?.qris_url || AppState.warnetConfig?.qrisUrl;
+
+        // If not yet available in AppState, fetch from API
+        if (!qrisUrl) {
+            try {
+                const config = await Api.getWarnetConfig();
+                if (config) {
+                    AppState.setWarnetConfig(config);
+                    qrisUrl = config.qris_url;
+                }
+            } catch (err) {
+                console.warn("Gagal memuat konfigurasi QRIS overlay:", err);
+            }
+        }
+
+        if (qrisUrl) {
+            qrisImg.src = qrisUrl;
+            qrisImg.classList.remove('hidden');
+            if (fallbackEl) fallbackEl.classList.add('hidden');
+        } else {
+            qrisImg.classList.add('hidden');
+            if (fallbackEl) fallbackEl.classList.remove('hidden');
+        }
     },
 
     /**

@@ -3,6 +3,25 @@ use std::sync::atomic::Ordering;
 use crate::state::GLOBAL_HOOK_ENABLED;
 use crate::utils::window_manager::set_taskbar_visibility;
 
+fn get_responsive_overlay_geometry(monitor: &tauri::Monitor) -> (LogicalSize<f64>, LogicalPosition<f64>) {
+    let screen_size = monitor.size();
+    let scale_factor = monitor.scale_factor();
+    let logical_screen = screen_size.to_logical::<f64>(scale_factor);
+
+    // Responsive: jika layar compact (misal 1366x768 / 1280x720) gunakan ukuran lebih ramping
+    let (width, height) = if logical_screen.height <= 800.0 {
+        (600.0, 500.0)
+    } else {
+        (680.0, 530.0)
+    };
+
+    // Posisikan pas di ujung kanan layar atas
+    let x = (logical_screen.width - width).max(0.0);
+    let y = 0.0;
+
+    (LogicalSize::new(width, height), LogicalPosition { x, y })
+}
+
 #[tauri::command]
 pub fn switch_to_overlay(window: Window, app_handle: AppHandle) {
     // 1. Matikan lock keyboard & munculkan taskbar
@@ -15,19 +34,16 @@ pub fn switch_to_overlay(window: Window, app_handle: AppHandle) {
 
     window.set_fullscreen(false).unwrap();
     window.set_always_on_top(true).unwrap();
-    window.set_size(LogicalSize::new(320.0, 400.0)).unwrap();
     window.set_decorations(false).unwrap();
     window.set_resizable(false).unwrap();
     
-    // 3. Pindah ke Pojok Kanan Atas
+    // 3. Pindah ke Pojok Kanan Atas Pas & Responsif
     if let Ok(Some(monitor)) = window.current_monitor() {
-        let screen_size = monitor.size();
-        let scale_factor = monitor.scale_factor();
-        let logical_screen = screen_size.to_logical::<f64>(scale_factor);
-        
-        let x = logical_screen.width - 330.0; // Width (320) + Padding (10)
-        let y = 10.0; // Padding atas
-        let _ = window.set_position(Position::Logical(LogicalPosition { x, y }));
+        let (size, pos) = get_responsive_overlay_geometry(&monitor);
+        let _ = window.set_size(size);
+        let _ = window.set_position(Position::Logical(pos));
+    } else {
+        let _ = window.set_size(LogicalSize::new(680.0, 530.0));
     }
 }
 
@@ -78,18 +94,16 @@ pub fn set_kiosk_lock(window: Window, enabled: bool) {
     } else {
         window.set_fullscreen(false).unwrap();
         window.set_always_on_top(true).unwrap();
-        window.set_size(LogicalSize::new(320.0, 400.0)).unwrap();
         window.set_decorations(false).unwrap();
         window.set_resizable(false).unwrap();
         
-        // Pindah ke Pojok Kanan Atas
+        // Pindah ke Pojok Kanan Atas Pas & Responsif
         if let Ok(Some(monitor)) = window.current_monitor() {
-            let screen_size = monitor.size();
-            let scale_factor = monitor.scale_factor();
-            let logical_screen = screen_size.to_logical::<f64>(scale_factor);
-            let x = logical_screen.width - 330.0;
-            let y = 10.0;
-            let _ = window.set_position(Position::Logical(LogicalPosition { x, y }));
+            let (size, pos) = get_responsive_overlay_geometry(&monitor);
+            let _ = window.set_size(size);
+            let _ = window.set_position(Position::Logical(pos));
+        } else {
+            let _ = window.set_size(LogicalSize::new(680.0, 530.0));
         }
     }
 }

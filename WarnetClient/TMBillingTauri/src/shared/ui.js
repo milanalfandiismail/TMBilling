@@ -18,8 +18,10 @@ export const UI = {
     },
 
     setOverlayData(data) {
-        document.getElementById('overlay-member-name').innerText = `: ${data.member_name}`;
-        document.getElementById('overlay-group').innerText = `: ${data.group}`;
+        const memberEl = document.getElementById('overlay-member-name');
+        const groupEl = document.getElementById('overlay-group');
+        if (memberEl) memberEl.innerText = `: ${data.member_name || '-'}`;
+        if (groupEl) groupEl.innerText = `: ${data.group || '-'}`;
         if (data.remaining_seconds !== undefined) {
             this.updateTime(data.remaining_seconds);
         }

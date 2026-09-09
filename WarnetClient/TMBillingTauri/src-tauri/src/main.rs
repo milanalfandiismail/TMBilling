@@ -52,6 +52,7 @@ fn main() {
             crate::commands::system_commands::get_external_bg,
             crate::commands::system_commands::get_client_warnet,
             crate::commands::system_commands::get_app_version,
+            crate::commands::system_commands::open_control_panel_applet,
         ])
         .setup(|app| {
             crate::services::setup::setup_app(app)?;
