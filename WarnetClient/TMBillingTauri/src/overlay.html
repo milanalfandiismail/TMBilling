@@ -14,7 +14,7 @@
                     <span class="text-[10px] font-bold text-accent uppercase tracking-wider">Properties</span>
                 </div>
 
-                <!-- Grid 2 Kolom untuk Tombol Control Panel -->
+                <!-- Grid 2 Kolom untuk Tombol Control Panel (3 Baris x 2 Kolom = 6 Tombol) -->
                 <div class="grid grid-cols-2 gap-2">
                     <!-- Mouse Properties -->
                     <button id="btn-prop-mouse" type="button" title="Mouse Properties (DPI & Pointer)"
@@ -24,6 +24,16 @@
                             <line x1="12" y1="7" x2="12" y2="11" stroke-width="2" stroke-linecap="round"/>
                         </svg>
                         <span class="text-[11px] font-semibold tracking-wide">Mouse</span>
+                    </button>
+
+                    <!-- Keyboard Properties -->
+                    <button id="btn-prop-keyboard" type="button" title="Keyboard Properties (Speed & Repeat Rate)"
+                        class="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/5 hover:bg-accent/20 border border-white/5 hover:border-accent/40 text-neutral-300 hover:text-accent transition-all text-xs font-bold group">
+                        <svg class="w-3.5 h-3.5 shrink-0 text-accent group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <rect x="2" y="5" width="20" height="14" rx="2" stroke-width="2"/>
+                            <path stroke-linecap="round" stroke-width="2" d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M8 15h8"/>
+                        </svg>
+                        <span class="text-[11px] font-semibold tracking-wide">Keyboard</span>
                     </button>
 
                     <!-- Sound Properties -->
@@ -53,6 +63,15 @@
                             <line x1="12" y1="17" x2="12" y2="21" stroke-width="2"/>
                         </svg>
                         <span class="text-[11px] font-semibold tracking-wide">Display</span>
+                    </button>
+
+                    <!-- Daftar Menu & Paket -->
+                    <button id="btn-prop-menu-paket" type="button" title="Daftar Paket Billing & Menu Kantin"
+                        class="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/5 hover:bg-accent/20 border border-white/5 hover:border-accent/40 text-neutral-300 hover:text-accent transition-all text-xs font-bold group">
+                        <svg class="w-3.5 h-3.5 shrink-0 text-accent group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                        </svg>
+                        <span class="text-[11px] font-semibold tracking-wide truncate">Menu & Paket</span>
                     </button>
                 </div>
             </div>
@@ -151,6 +170,55 @@
                         class="flex-1 bg-[#222] border border-[#333] hover:bg-[#2a2a2a] py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider text-neutral-300 transition-all">Tidak</button>
                     <button id="logout-confirm-btn" type="button"
                         class="flex-1 bg-red-650/10 hover:bg-red-600 border border-red-500/20 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider text-red-400 hover:text-white transition-all shadow-lg shadow-red-950/50">Ya</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. MODAL DAFTAR MENU & PAKET (ABSOLUTE PAS DI DALAM 1 CARD UTUH - 0MS ZERO FLICKER) -->
+        <div id="modal-menu-paket"
+            class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md rounded-2xl p-4 sm:p-5 animate-in fade-in duration-150">
+            <div class="w-full h-full bg-[#161616] border border-[#2a2a2a] rounded-2xl p-4 sm:p-5 shadow-2xl flex flex-col">
+                <!-- Header Modal dengan Tombol X -->
+                <div class="flex items-center justify-between pb-3 border-b border-[#262626]">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded-lg bg-accent/15 border border-accent/25 flex items-center justify-center text-accent shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-bold text-white tracking-wide">Daftar Menu & Paket</h2>
+                            <p class="text-[10px] text-neutral-400 font-medium">Katalog tarif billing & menu kantin (F&B)</p>
+                        </div>
+                    </div>
+                    <button id="btn-close-menu-paket" type="button" title="Tutup"
+                        class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-neutral-400 hover:text-white flex items-center justify-center transition-all cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Tabs: Paket Billing vs Menu Kantin -->
+                <div class="flex gap-2 pt-3 pb-2">
+                    <button id="tab-btn-paket" type="button"
+                        class="flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-accent text-white shadow-md shadow-accent/20 cursor-pointer">
+                        🏷️ Paket Billing
+                    </button>
+                    <button id="tab-btn-menu" type="button"
+                        class="flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border border-white/5 cursor-pointer">
+                        🍜 Menu Kantin (F&B)
+                    </button>
+                </div>
+
+                <!-- Content: Tab Paket Billing -->
+                <div id="tab-content-paket" class="flex-1 overflow-y-auto pr-1 space-y-2 mt-1.5 scrollbar-thin">
+                    <p class="text-xs text-neutral-500 py-6 text-center">Memuat daftar paket...</p>
+                </div>
+
+                <!-- Content: Tab Menu Kantin -->
+                <div id="tab-content-menu" class="hidden flex-1 overflow-y-auto pr-1 space-y-2 mt-1.5 scrollbar-thin">
+                    <p class="text-xs text-neutral-500 py-6 text-center">Memuat menu kantin...</p>
                 </div>
             </div>
         </div>

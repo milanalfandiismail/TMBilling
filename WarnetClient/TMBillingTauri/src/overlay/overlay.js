@@ -34,9 +34,16 @@ export const Overlay = {
 
         // Control Panel Properties toolbar buttons
         document.getElementById('btn-prop-mouse')?.addEventListener('click', () => Api.openControlPanel('mouse'));
+        document.getElementById('btn-prop-keyboard')?.addEventListener('click', () => Api.openControlPanel('keyboard'));
         document.getElementById('btn-prop-sound')?.addEventListener('click', () => Api.openControlPanel('sound'));
         document.getElementById('btn-prop-volume')?.addEventListener('click', () => Api.openControlPanel('volume'));
         document.getElementById('btn-prop-display')?.addEventListener('click', () => Api.openControlPanel('display'));
+
+        // Modal Menu & Paket
+        document.getElementById('btn-prop-menu-paket')?.addEventListener('click', () => this.openMenuPaketModal());
+        document.getElementById('btn-close-menu-paket')?.addEventListener('click', () => this.closeMenuPaketModal());
+        document.getElementById('tab-btn-paket')?.addEventListener('click', () => this.switchMenuPaketTab('paket'));
+        document.getElementById('tab-btn-menu')?.addEventListener('click', () => this.switchMenuPaketTab('menu'));
     },
 
     /**
@@ -114,6 +121,7 @@ export const Overlay = {
     resetState() {
         AppState.resetSession();
         AppState.resetShutdownTimer();
+        UI.resetOverlayUI();
     },
 
     /**
@@ -179,5 +187,177 @@ export const Overlay = {
     stopShutdownTimer() {
         AppState.resetShutdownTimer();
         UI.updateShutdownTimer(0);
+    },
+
+    /**
+     * Buka modal Menu & Paket (In-Card Modal Zero-Glitch)
+     */
+    async openMenuPaketModal() {
+        const modal = document.getElementById('modal-menu-paket');
+        if (!modal) return;
+
+        // 1. Pastikan data paket & menu siap dan ter-render duluan agar tidak ada delay visual
+        if (!AppState.allPackages?.length || !AppState.allMenus?.length) {
+            try {
+                const config = await Api.getWarnetConfig();
+                if (config) {
+                    AppState.allPackages = config.paket || [];
+                    AppState.allMenus = config.menu || [];
+                }
+            } catch (err) {
+                console.warn("Gagal memuat paket/menu warnet:", err);
+            }
+        }
+
+        this.renderPaketList();
+        this.renderMenuList();
+        this.switchMenuPaketTab('paket');
+
+        // 2. Tampilkan modal seketika di dalam card
+        modal.classList.remove('hidden');
+
+        // Bind Escape key sekali saja
+        if (!this._menuModalEventsBound) {
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    this.closeMenuPaketModal();
+                }
+            });
+            this._menuModalEventsBound = true;
+        }
+    },
+
+    /**
+     * Tutup modal Menu & Paket
+     */
+    closeMenuPaketModal() {
+        const modal = document.getElementById('modal-menu-paket');
+        if (modal) modal.classList.add('hidden');
+    },
+
+    /**
+     * Ganti tab aktif di modal Menu & Paket
+     */
+    switchMenuPaketTab(tab) {
+        const tabPaketBtn = document.getElementById('tab-btn-paket');
+        const tabMenuBtn = document.getElementById('tab-btn-menu');
+        const contentPaket = document.getElementById('tab-content-paket');
+        const contentMenu = document.getElementById('tab-content-menu');
+
+        const activeClasses = ['bg-accent', 'text-white', 'shadow-md', 'shadow-accent/20'];
+        const inactiveClasses = ['bg-white/5', 'text-neutral-400', 'hover:text-white', 'hover:bg-white/10', 'border', 'border-white/5'];
+
+        if (tab === 'paket') {
+            tabPaketBtn?.classList.remove(...inactiveClasses);
+            tabPaketBtn?.classList.add(...activeClasses);
+            tabMenuBtn?.classList.remove(...activeClasses);
+            tabMenuBtn?.classList.add(...inactiveClasses);
+
+            contentPaket?.classList.remove('hidden');
+            contentMenu?.classList.add('hidden');
+        } else {
+            tabMenuBtn?.classList.remove(...inactiveClasses);
+            tabMenuBtn?.classList.add(...activeClasses);
+            tabPaketBtn?.classList.remove(...activeClasses);
+            tabPaketBtn?.classList.add(...inactiveClasses);
+
+            contentMenu?.classList.remove('hidden');
+            contentPaket?.classList.add('hidden');
+        }
+    },
+
+    /**
+     * Render daftar paket billing (Grid 3 Kolom Lapang)
+     */
+    renderPaketList() {
+        const container = document.getElementById('tab-content-paket');
+        if (!container) return;
+
+        const packages = AppState.allPackages || [];
+        if (packages.length === 0) {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-16 text-neutral-500">
+                    <svg class="w-10 h-10 mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                    <p class="text-xs font-semibold">Tidak ada paket billing aktif saat ini</p>
+                </div>
+            `;
+            return;
+        }
+
+        const formatDuration = (menit) => {
+            if (!menit) return '-';
+            if (menit >= 60) {
+                const jam = menit / 60;
+                return jam % 1 === 0 ? `${jam} Jam` : `${jam.toFixed(1)} Jam`;
+            }
+            return `${menit} Menit`;
+        };
+
+        const formatRupiah = (val) => {
+            return `Rp ${Number(val || 0).toLocaleString('id-ID')}`;
+        };
+
+        container.innerHTML = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pb-2">
+                ${packages.map(p => `
+                    <div class="p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-accent/30 transition-all flex flex-col justify-between">
+                        <div class="flex items-start justify-between gap-1.5 mb-1.5">
+                            <span class="text-xs font-bold text-white leading-tight truncate" title="${p.nama || 'Paket'}">${p.nama || 'Paket'}</span>
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-neutral-300 shrink-0 uppercase tracking-wider">${p.grup || 'Reguler'}</span>
+                        </div>
+                        <div class="flex items-center justify-between mt-2 pt-1.5 border-t border-white/5">
+                            <span class="text-[10px] text-neutral-400 font-medium">⏱️ ${formatDuration(p.durasi_menit)}</span>
+                            <span class="text-xs font-black text-accent tracking-wide">${formatRupiah(p.harga)}</span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    },
+
+    /**
+     * Render daftar menu kantin (Status Ready Hardcode & Grid 3 Kolom Lapang)
+     */
+    renderMenuList() {
+        const container = document.getElementById('tab-content-menu');
+        if (!container) return;
+
+        const menus = AppState.allMenus || [];
+        if (menus.length === 0) {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-16 text-neutral-500">
+                    <svg class="w-10 h-10 mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                    </svg>
+                    <p class="text-xs font-semibold">Tidak ada menu kantin aktif saat ini</p>
+                </div>
+            `;
+            return;
+        }
+
+        const formatRupiah = (val) => {
+            return `Rp ${Number(val || 0).toLocaleString('id-ID')}`;
+        };
+
+        container.innerHTML = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pb-2">
+                ${menus.map(m => `
+                    <div class="p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-accent/30 transition-all flex flex-col justify-between">
+                        <div class="flex items-start justify-between gap-1.5 mb-1.5">
+                            <span class="text-xs font-bold text-white leading-tight truncate" title="${m.nama || 'Menu'}">${m.nama || 'Menu'}</span>
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 uppercase tracking-wider">
+                                Ready
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between mt-2 pt-1.5 border-t border-white/5">
+                            <span class="text-[10px] text-neutral-400 font-medium">🍽️ Kantin</span>
+                            <span class="text-xs font-black text-accent tracking-wide">${formatRupiah(m.harga)}</span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
     }
 };

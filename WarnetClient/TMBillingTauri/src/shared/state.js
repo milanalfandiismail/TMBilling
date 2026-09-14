@@ -47,6 +47,7 @@ export const AppState = {
     currentPackagePage: 1,
     totalPackagePages: 1,
     selectedGroup: 'Reguler',
+    allMenus: [],
 
     // Methods
     setSessionData(data) {

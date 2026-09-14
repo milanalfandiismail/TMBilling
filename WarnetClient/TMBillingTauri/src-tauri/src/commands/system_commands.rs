@@ -61,6 +61,7 @@ pub fn open_control_panel_applet(applet: String) -> Result<(), String> {
 
         let (program, args): (&str, Vec<&str>) = match applet.as_str() {
             "mouse" => ("control.exe", vec!["main.cpl"]),
+            "keyboard" => ("control.exe", vec!["keyboard"]),
             "sound" | "speaker" => ("control.exe", vec!["mmsys.cpl"]),
             "volume" => ("sndvol.exe", vec![]),
             "display" => ("control.exe", vec!["desk.cpl"]),

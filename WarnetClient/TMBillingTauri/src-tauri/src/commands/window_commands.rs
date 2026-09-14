@@ -107,5 +107,3 @@ pub fn set_kiosk_lock(window: Window, enabled: bool) {
         }
     }
 }
-
-

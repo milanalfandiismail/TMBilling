@@ -147,6 +147,7 @@ const App = {
                     remainingSeconds: data.remaining_seconds
                 });
 
+                UI.resetOverlayUI();
                 UI.setOverlayData(data);
                 UI.showScreen('billing-overlay');
                 await Api.switchToOverlay();

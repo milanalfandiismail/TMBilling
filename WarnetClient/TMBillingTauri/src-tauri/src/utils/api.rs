@@ -58,6 +58,8 @@ pub struct WarnetConfig {
     pub announcement: Option<String>,
     pub qris_url: Option<String>,
     pub paket: Vec<serde_json::Value>,
+    #[serde(default)]
+    pub menu: Vec<serde_json::Value>,
 }
 
 fn deobfuscate(hex_input: &str) -> String {
