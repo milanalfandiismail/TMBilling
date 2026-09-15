@@ -4,6 +4,12 @@ const Maintenance = {
     tickets: [],
     pcs: [],
 
+    resetState() {
+        this.tickets = [];
+        this.pcs = [];
+        this.pcSelectContext = '';
+    },
+
     async init() {
         await this.loadPCs();
         await this.load();

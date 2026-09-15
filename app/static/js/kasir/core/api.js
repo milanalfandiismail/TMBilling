@@ -237,9 +237,9 @@ const API = {
 
     // 🖥️ HARDWARE MONITOR
     monitor: {
-        all: () => API.request('/api/v1/public/monitor/all'),
-        delete: (id) => API.request(`/api/v1/public/monitor/${id}`, { method: 'DELETE' }),
-        processesKill: (pcId, processName) => API.request(`/api/v1/public/monitor/processes/${pcId}/kill`, {
+        all: () => API.request('/api/v1/kasir/monitor/all'),
+        delete: (id) => API.request(`/api/v1/kasir/monitor/${id}`, { method: 'DELETE' }),
+        processesKill: (pcId, processName) => API.request(`/api/v1/kasir/monitor/processes/${pcId}/kill`, {
             method: 'POST',
             body: JSON.stringify({ process_name: processName })
         })

@@ -7,6 +7,13 @@ const Screenshot = {
     filterGroup: 'all',
     searchTimeout: null,
 
+    resetState() {
+        this.cachedData = [];
+        this.searchQuery = '';
+        this.filterStatus = 'all';
+        this.filterGroup = 'all';
+    },
+
     init() {
         if(App.currentTab === 'screenshot') {
             this.bindEvents();

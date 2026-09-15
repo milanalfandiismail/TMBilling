@@ -78,3 +78,6 @@ Ketika melakukan perubahan pada class Tailwind di file HTML template (`.html`) a
   ```powershell
   npm run dev:css
   ```
+
+---
+*TMBilling v1.6.1*

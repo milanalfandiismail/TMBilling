@@ -224,8 +224,12 @@ const Member = {
                     try {
                         await API.member.tambahWaktu(memberId, { member_id: memberId, selections: selections }, 1, metodePembayaran);
                         Toast.success('Saldo ditambahkan');
-                        Modal.closeModal();
-                        this.load();
+                        if (typeof Member !== 'undefined' && typeof Member.load === 'function' && (typeof App === 'undefined' || App.currentTab === 'member')) {
+                            Member.load();
+                        }
+                        if (typeof Dashboard !== 'undefined' && typeof Dashboard.load === 'function' && typeof App !== 'undefined' && App.currentTab === 'dash') {
+                            Dashboard.load();
+                        }
                     } catch (err) {
                         Toast.error(err.message);
                     }

@@ -1,7 +1,7 @@
 # 📘 Product Requirement Document (PRD) — TMBilling Ecosystem
 
-> **Versi Dokumen**: v1.5.1  
-> **Status**: Living Document / Active Production  
+> **Versi Dokumen**: v1.6.1  
+> **Status**: Living Document / Active Production (v1.6.1 Released)  
 > **Target Audiens**: Software Architects, Core Developers, System Integrators, & Cybercafe Operators  
 
 ---
@@ -128,15 +128,17 @@
 Dokumen ini memproyeksikan rencana pembaruan fitur untuk versi-versi TMBilling mendatang:
 
 ```
-[v1.5.x] Present ──► [v1.6.0] Dynamic QRIS Payment ──► [v1.7.0] Mobile App Operator
-                                                            │
-                                                            ▼
-[v2.0.0] Silent Client Auto-Update ◄── [v1.8.0] Multi-Branch Cloud Sync
+[v1.5.x] Core & Hardware ──► [v1.6.0/v1.6.1] Multi-Branch & VNC ──► [v1.7.0] Mobile App Operator
+                                                                       │
+                                                                       ▼
+[v2.0.0] Silent Client Auto-Update ◄────── [v1.8.0] Cross-Branch Cloud Sync
 ```
 
-### 🔮 Release v1.6.0 — Automation Dynamic QRIS Payment
-*   **Integrasi Payment Gateway**: Mendukung pembayaran instan QRIS (via Midtrans / Xendit / Tripay) langsung pada Kiosk Client PC dan Portal Web Member.
-*   **Auto Top-Up**: Pelanggan dapat memilih paket billing di PC mereka, menscan QRIS dari aplikasi m-banking/e-wallet, dan waktu bermain bertambah secara otomatis tanpa perlu ke kasir.
+### ✅ Release v1.6.0 / v1.6.1 — Multi-Cabang, Remote VNC & Sentralisasi Versi (Completed)
+*   **Multi-Cabang (Central Control Panel)**: Manajemen beberapa cabang warnet via reverse-proxy relay API key di navbar kasir, lengkap dengan monitoring *Inbound Connections* dan isolasi state antar cabang.
+*   **Web VNC Remote Desktop**: Kendali visual layar PC client via canvas noVNC modern, adaptive scaling, dan mapping keyboard/mouse terintegrasi.
+*   **Sentralisasi Master Versioning**: Single Source of Truth versi di `app/config.py` dan dynamic asset cache-busting `?v={{ v_cache }}` otomatis.
+*   **Automated Dynamic QRIS Payment**: Integrasi pembayaran otomatis QRIS & Midtrans untuk top-up dan open bill mandiri.
 
 ### 🔮 Release v1.7.0 — Mobile Operator & Owner PWA App
 *   **Aplikasi Mobile PWA**: Aplikasi berbasis smartphone (Android/iOS) khusus untuk Kasir dan Owner.
@@ -144,7 +146,7 @@ Dokumen ini memproyeksikan rencana pembaruan fitur untuk versi-versi TMBilling m
 *   **Owner Real-time Dashboard**: Pemilik warnet dapat memantau grafik pendapatan harian, okupansi PC, dan suhu hardware secara langsung dari manapun.
 
 ### 🔮 Release v1.8.0 — Multi-Branch Cloud Synchronization
-*   **Manajemen Multi-Cabang**: Sinkronisasi data akun member dan laporan keuangan terpusat untuk pemilik warnet yang memiliki lebih dari satu lokasi cabang.
+*   **Manajemen Multi-Cabang Terpadu**: Sinkronisasi data akun member dan laporan keuangan terpusat untuk pemilik warnet yang memiliki lebih dari satu lokasi cabang.
 *   **Cross-Branch Member Login**: Member dapat menggunakan saldo waktu mereka di semua cabang warnet yang berada di bawah jaringan pemilik yang sama.
 
 ### 🔮 Release v2.0.0 — Background Client Silent Auto-Updater
@@ -153,4 +155,4 @@ Dokumen ini memproyeksikan rencana pembaruan fitur untuk versi-versi TMBilling m
 
 ---
 
-*TMBilling System Architecture & Requirements Specification*
+*TMBilling v1.6.1 System Architecture & Requirements Specification*

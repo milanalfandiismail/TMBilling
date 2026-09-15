@@ -164,7 +164,25 @@ graph TD
     P --> Q[Delayed self-delete + deep purge via cmd.exe]
 ```
 
-## 5. Entity Relationship
+## 5. Multi-Cabang Relay Sequence (v1.6.0+)
+
+```mermaid
+sequenceDiagram
+    participant Browser as Browser Kasir Utama
+    participant MainServer as Server Utama (Relay)
+    participant RemoteServer as Server Cabang Remote
+    participant RemoteDB as DB Cabang
+
+    Browser->>MainServer: GET /api/v1/kasir/branch/2/relay/dashboard/pc
+    MainServer->>MainServer: Lookup branch ID & API Key
+    MainServer->>RemoteServer: GET /api/v1/kasir/dashboard/pc (Bearer Token)
+    RemoteServer->>RemoteDB: Query PC status
+    RemoteDB-->>RemoteServer: pc_list
+    RemoteServer-->>MainServer: JSON Response
+    MainServer-->>Browser: JSON Response (Transparent Forward)
+```
+
+## 6. Entity Relationship
 
 ```mermaid
 erDiagram
@@ -174,13 +192,16 @@ erDiagram
     PC ||--o| HARDWARE_MONITOR : "di-monitor"
     PC ||--o{ PC_PROCESS : menjalankan
     PC ||--o{ SESI : digunakan
+    PC ||--o{ MAINTENANCE_TICKET : memiliki
+    PC ||--o{ PC_UPTIME_LOG : mencatat
     MEMBER ||--o{ SESI : memiliki
     MEMBER ||--o{ TRANSAKSI : melakukan
     SESI ||--o{ TRANSAKSI : mencatat
     SESI ||--o| PAKET : menggunakan
     TRANSAKSI ||--o| USER : "di-input"
     TRANSAKSI ||--o| PAKET : membeli
+    BRANCH ||--o{ INBOUND_CONNECTION : mencatat
 ```
 
 ---
-*TMBilling v1.5.1*
+*TMBilling v1.6.1*

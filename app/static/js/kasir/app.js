@@ -11,7 +11,8 @@ const App = {
             return;
         }
 
-        await this.loadTab('dash');
+        this.setupNavigation();
+        this.switchTab('dash');
         await Grup.load();
         // Shift Handover — under maintenance
         // if (typeof Shift !== 'undefined') Shift.load();
@@ -255,6 +256,12 @@ const App = {
             case 'log': await Log.load(); break;
             case 'grup': await Grup.load(); break;
             case 'monitor': if (typeof Monitor !== 'undefined') await Monitor.load(); break;
+            case 'server_statistic':
+                if (typeof ServerMonitor !== 'undefined') {
+                    ServerMonitor.fetchMetrics();
+                    ServerMonitor.checkLHMStatus();
+                }
+                break;
             case 'hardware_checker': if (typeof HardwareChecker !== 'undefined') await HardwareChecker.load(); break;
             case 'maintenance': if (typeof Maintenance !== 'undefined') await Maintenance.init(); break;
             case 'laporan_maintenance': if (typeof LaporanMaintenance !== 'undefined') await LaporanMaintenance.init(); break;

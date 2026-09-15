@@ -102,10 +102,11 @@ const BranchManager = {
         }
 
         // Render daftar item dropdown
+        const displayVersion = window.APP_VERSION || document.querySelector('meta[name="app-version"]')?.content || 'v1.6.1';
         let html = `
             <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-neutral-400 border-b border-white/5 flex items-center justify-between">
                 <span>Pilih Cabang</span>
-                <span class="text-[9px] bg-white/5 px-1.5 py-0.5 rounded text-neutral-400 font-mono">v1.6.0</span>
+                <span class="text-[9px] bg-white/5 px-1.5 py-0.5 rounded text-neutral-400 font-mono">${displayVersion}</span>
             </div>
             <div class="py-1 max-h-60 overflow-y-auto custom-scrollbar">
                 <button type="button" data-branch-id="0" class="branch-option-item w-full flex items-center justify-between px-3 py-2 text-xs text-left transition-colors ${this.activeBranchId === '0' ? 'bg-accent/15 text-accent font-bold' : 'text-neutral-300 hover:bg-white/5'}">
@@ -433,13 +434,17 @@ const BranchManager = {
             if (typeof Laporan !== 'undefined' && typeof Laporan.resetFilters === 'function') Laporan.resetFilters();
             if (typeof LaporanMenu !== 'undefined' && typeof LaporanMenu.resetFilters === 'function') LaporanMenu.resetFilters();
             if (typeof Struk !== 'undefined' && typeof Struk.resetState === 'function') Struk.resetState();
+            if (typeof Maintenance !== 'undefined' && typeof Maintenance.resetState === 'function') Maintenance.resetState();
+            if (typeof LaporanMaintenance !== 'undefined' && typeof LaporanMaintenance.resetState === 'function') LaporanMaintenance.resetState();
+            if (typeof Blackout !== 'undefined' && typeof Blackout.resetState === 'function') Blackout.resetState();
+            if (typeof Screenshot !== 'undefined' && typeof Screenshot.resetState === 'function') Screenshot.resetState();
 
             // 2. Refresh Grup Sistem Global (opsi filter & dropdown di seluruh modal sinkron)
             if (typeof Grup !== 'undefined' && typeof Grup.load === 'function') {
                 await Grup.load();
             }
 
-            // 3. Selalu muat data Dashboard (PC, kartu statistik omzet/sesi, dan grup) dengan grup bersih
+            // 3. Selalu muat data Dashboard (PC dan grup) dengan grup bersih
             if (typeof Dashboard !== 'undefined') {
                 Dashboard.activeGrup = 'semua';
                 if (typeof Dashboard.load === 'function') {
@@ -452,6 +457,11 @@ const BranchManager = {
                 if (App.currentTab === 'settings' || App.currentTab.startsWith('settings_')) {
                     if (typeof Settings !== 'undefined') {
                         await Settings.load(true);
+                    }
+                } else if (App.currentTab === 'server_statistic') {
+                    if (typeof ServerMonitor !== 'undefined') {
+                        await ServerMonitor.fetchMetrics();
+                        await ServerMonitor.checkLHMStatus();
                     }
                 } else if (App.currentTab !== 'dash' && typeof App.loadTab === 'function') {
                     await App.loadTab(App.currentTab);

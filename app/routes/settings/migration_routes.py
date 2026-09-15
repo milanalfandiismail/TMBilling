@@ -18,6 +18,7 @@ import subprocess
 import threading
 import json
 from flask import Blueprint, request, jsonify, session, current_app
+from app.config import Config
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.utils.logger import write_log
 
@@ -74,7 +75,7 @@ def get_migration_status():
             "current": current_revision,
             "head": head_label,
             "needs_upgrade": needs_upgrade,
-            "app_version": current_app.config.get("VERSION", "v1.6.0"),
+            "app_version": current_app.config.get("VERSION", Config.get_version_tag()),
             "history": history_list,
         }), 200
 
@@ -82,7 +83,7 @@ def get_migration_status():
         return jsonify({
             "success": False,
             "error": f"Gagal membaca status migrasi: {str(e)}",
-            "app_version": current_app.config.get("VERSION", "v1.6.0"),
+            "app_version": current_app.config.get("VERSION", Config.get_version_tag()),
             "current": None,
             "head": None,
             "needs_upgrade": False,

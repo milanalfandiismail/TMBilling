@@ -114,6 +114,80 @@ def delete_hardware_data(hardware_id):
         return jsonify({"success": True, "message": f"Data monitor PC {pc_kode} berhasil dibersihkan"}), 200
     except ValueError as val_e:
         return jsonify({"success": False, "error": str(val_e)}), 404
+@monitor_kasir_bp.route("/all", methods=["GET"])
+@login_required
+def get_all_hardware_kasir():
+    """Endpoint kasir untuk mengambil semua data hardware monitor beserta data PC (relayed via multi-branch)."""
+    try:
+        monitors = HardwareService.get_all_with_pc()
+        result = []
+        for m in monitors:
+            m_dict = m.to_dict()
+            m_dict["pc_kode"] = m.pc.kode if m.pc else "Unknown"
+            m_dict["pc_nama"] = m.pc.nama if m.pc else "Unknown"
+            m_dict["pc_grup_id"] = m.pc.grup_id if m.pc else 0
+            m_dict["pc_grup_nama"] = m.pc.grup.nama if (m.pc and m.pc.grup) else "Unknown"
+            m_dict["health"] = HardwareService.check_pc_warning(m.pc_id, m_dict)
+            result.append(m_dict)
+            
+        # Urutkan hasil secara natural berdasarkan grup dan kode PC
+        result.sort(key=lambda item: (item.get("pc_grup_id") or 0, natural_sort_key(item.get("pc_kode", ""))))
+        return jsonify({"success": True, "data": result}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@monitor_kasir_bp.route("/<int:hardware_id>", methods=["DELETE"])
+@login_required
+@admin_required
+def delete_hardware_data_kasir(hardware_id):
+    """Endpoint kasir untuk menghapus data hardware monitor tertentu."""
+    try:
+        pc_kode = HardwareService.delete_hardware(hardware_id, operator="kasir")
+        return jsonify({"success": True, "message": f"Data monitor PC {pc_kode} berhasil dibersihkan"}), 200
+    except ValueError as val_e:
+        return jsonify({"success": False, "error": str(val_e)}), 404
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@monitor_kasir_bp.route("/processes/<int:pc_id>", methods=["GET"])
+@login_required
+def get_pc_processes_kasir(pc_id):
+    """Endpoint kasir untuk mengambil daftar proses yang sedang berjalan di PC tertentu."""
+    try:
+        processes = HardwareService.get_processes_by_pc(pc_id)
+        return jsonify({
+            "success": True, 
+            "data": processes,
+            "count": len(processes)
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@monitor_kasir_bp.route("/processes/<int:pc_id>/kill", methods=["POST"])
+@login_required
+@admin_required
+def kill_pc_process_kasir(pc_id):
+    """Trigger request taskkill process ke client PC berdasarkan PC ID."""
+    try:
+        data = request.get_json() or {}
+        process_name = data.get("process_name")
+        if not process_name:
+            return jsonify({"success": False, "error": "Nama proses harus diisi"}), 400
+
+        from app.repositories import PCRepository
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+
+        from app.services.client.client_service import ClientService
+        ClientService.queue_command(pc.id, f"kill:{process_name}")
+
+        operator = session.get("kasir_username", "admin")
+        write_log("REMOTE_KILL", f"Perintah Kill Process '{process_name}' dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode, "process_name": process_name})
+        return jsonify({"success": True, "message": f"Perintah mengakhiri proses {process_name} berhasil dikirim ke {pc.kode}"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

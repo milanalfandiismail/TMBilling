@@ -4,6 +4,11 @@ const LaporanMaintenance = {
     reportData: null,
     pcs: [],
 
+    resetState() {
+        this.reportData = null;
+        this.pcs = [];
+    },
+
     async init() {
         if (typeof flatpickr !== 'undefined') {
             flatpickr(".flatpickr-date", {

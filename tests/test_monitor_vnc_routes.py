@@ -56,3 +56,20 @@ def test_vnc_status_endpoint(admin_client):
     data = res.get_json()
     assert data["success"] is True
     assert data["active"] is False
+
+def test_kasir_monitor_all_endpoint(admin_client):
+    client, pc_id = admin_client
+    res = client.get("/api/v1/kasir/monitor/all")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["success"] is True
+    assert isinstance(data["data"], list)
+
+def test_kasir_monitor_processes_endpoint(admin_client):
+    client, pc_id = admin_client
+    res = client.get(f"/api/v1/kasir/monitor/processes/{pc_id}")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["success"] is True
+    assert "data" in data
+

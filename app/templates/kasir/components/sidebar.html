@@ -26,7 +26,7 @@
 
         <!-- 1. Dashboard (Direct) -->
         <button onclick="App.switchTab('dash')" data-tab="dash"
-            class="tab-btn w-full flex items-center gap-3 px-3 py-2 rounded text-[13px] font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+            class="tab-btn w-full flex items-center gap-3 px-3 py-2 rounded text-[13px] font-bold bg-neutral-100 text-[#050505] transition-all text-left">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
                     d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
@@ -54,11 +54,15 @@
             </button>
             <div id="operasional-submenu" class="hidden pl-8 space-y-1">
                 <button onclick="App.switchTab('menu')" data-tab="menu"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🍔
-                    Kantin / POS F&B</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🍔</span>
+                    <span class="leading-tight">Kantin / POS F&B</span>
+                </button>
                 <button onclick="App.switchTab('tournament')" data-tab="tournament"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🏆
-                    Turnamen</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🏆</span>
+                    <span class="leading-tight">Turnamen</span>
+                </button>
             </div>
         </div>
 
@@ -81,20 +85,30 @@
             </button>
             <div id="master-submenu" class="hidden pl-8 space-y-1">
                 <button onclick="App.switchTab('member')" data-tab="member"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">👤
-                    Member</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">👤</span>
+                    <span class="leading-tight">Member</span>
+                </button>
                 <button onclick="App.switchTab('paket')" data-tab="paket"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">💳
-                    Paket Billing</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">💳</span>
+                    <span class="leading-tight">Paket Billing</span>
+                </button>
                 <button onclick="App.switchTab('pc')" data-tab="pc"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🖥️
-                    Unit PC</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🖥️</span>
+                    <span class="leading-tight">Unit PC</span>
+                </button>
                 <button onclick="App.switchTab('grup')" data-tab="grup"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🏷️
-                    Grup PC / Zona</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🏷️</span>
+                    <span class="leading-tight">Grup PC / Zona</span>
+                </button>
                 <button onclick="App.switchTab('game_management')" data-tab="game_management"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🎮
-                    Kelola Game</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🎮</span>
+                    <span class="leading-tight">Kelola Game</span>
+                </button>
             </div>
         </div>
 
@@ -118,8 +132,10 @@
             </button>
             <div id="staff-submenu" class="hidden pl-8 space-y-1">
                 <button onclick="App.switchTab('user')" data-tab="user"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🔑
-                    Akun Kasir & Admin</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🔑</span>
+                    <span class="leading-tight">Akun Kasir & Admin</span>
+                </button>
             </div>
         </div>
         {% endif %}
@@ -143,17 +159,25 @@
             </button>
             <div id="laporan-submenu" class="hidden pl-8 space-y-1">
                 <button onclick="App.switchTab('laporan')" data-tab="laporan"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">💵
-                    Laporan Billing</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">💵</span>
+                    <span class="leading-tight">Laporan Billing</span>
+                </button>
                 <button onclick="App.switchTab('laporan_menu')" data-tab="laporan_menu"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🍜
-                    Laporan Kantin</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🍜</span>
+                    <span class="leading-tight">Laporan Kantin</span>
+                </button>
                 <button onclick="App.switchTab('struk')" data-tab="struk"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🧾
-                    Riwayat & Struk</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🧾</span>
+                    <span class="leading-tight">Riwayat & Struk</span>
+                </button>
                 <button onclick="App.switchTab('laporan_maintenance')" data-tab="laporan_maintenance"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🛠️
-                    Laporan Perawatan</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🛠️</span>
+                    <span class="leading-tight">Laporan Perawatan</span>
+                </button>
             </div>
         </div>
 
@@ -177,8 +201,10 @@
             </button>
             <div id="sistemlog-submenu" class="hidden pl-8 space-y-1">
                 <button onclick="App.switchTab('log')" data-tab="log"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">📜
-                    Log Aktivitas</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">📜</span>
+                    <span class="leading-tight">Log Aktivitas</span>
+                </button>
             </div>
         </div>
         {% endif %}
@@ -203,30 +229,46 @@
             </button>
             <div id="system-submenu" class="hidden pl-8 space-y-1">
                 <button onclick="App.switchTab('server_statistic')" data-tab="server_statistic"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">📊
-                    Statistik Server</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">📊</span>
+                    <span class="leading-tight">Statistik Server</span>
+                </button>
                 <button onclick="App.switchTab('monitor')" data-tab="monitor"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🖥️
-                    Monitor Hardware</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🖥️</span>
+                    <span class="leading-tight">Monitor Hardware</span>
+                </button>
                 <button onclick="App.switchTab('hardware_checker')" data-tab="hardware_checker"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🛡️
-                    Hardware Checker</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🛡️</span>
+                    <span class="leading-tight">Hardware Checker</span>
+                </button>
                 <button onclick="App.switchTab('uptime')" data-tab="uptime"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🕐
-                    Pelacak Statistik PC</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🕐</span>
+                    <span class="leading-tight">Pelacak Statistik PC</span>
+                </button>
                 <button onclick="App.switchTab('maintenance')" data-tab="maintenance"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">📋
-                    Perawatan PC</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">📋</span>
+                    <span class="leading-tight">Perawatan PC</span>
+                </button>
                 <button onclick="App.switchTab('screenshot')" data-tab="screenshot"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">📷
-                    Monitor Screenshot</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">📷</span>
+                    <span class="leading-tight">Monitor Screenshot</span>
+                </button>
                 <button onclick="App.switchTab('blackout')" data-tab="blackout"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">⚡
-                    Pemulihan Mati Lampu</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">⚡</span>
+                    <span class="leading-tight">Pemulihan Mati Lampu</span>
+                </button>
                 {% if session.get('kasir_role') == 'admin' %}
                 <button onclick="App.switchTab('remote_server')" data-tab="remote_server"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">📡
-                    Kendali Jarak Jauh Server</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">📡</span>
+                    <span class="leading-tight">Kendali Jarak Jauh Server</span>
+                </button>
                 {% endif %}
             </div>
         </div>
@@ -252,14 +294,20 @@
             </button>
             <div id="branch-submenu" class="hidden pl-8 space-y-1">
                 <button onclick="App.switchTab('branch')" data-tab="branch"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🌐
-                    Koneksi Cabang</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🌐</span>
+                    <span class="leading-tight">Koneksi Cabang</span>
+                </button>
                 <button onclick="App.switchTab('branch_inbound')" data-tab="branch_inbound"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🔗
-                    List Koneksi Cabang</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🔗</span>
+                    <span class="leading-tight">List Koneksi Cabang</span>
+                </button>
                 <button onclick="App.switchTab('branch_kasir')" data-tab="branch_kasir"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">👤
-                    Akun Kasir Cabang</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">👤</span>
+                    <span class="leading-tight">Akun Kasir Cabang</span>
+                </button>
             </div>
         </div>
         {% endif %}
@@ -286,38 +334,60 @@
             </button>
             <div id="settings-submenu" class="hidden pl-8 space-y-1">
                 <button onclick="App.switchTab('settings_general')" data-tab="settings_general"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">⚙️
-                    Umum & Keamanan</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">⚙️</span>
+                    <span class="leading-tight">Umum & Keamanan</span>
+                </button>
                 <button onclick="App.switchTab('settings_payment')" data-tab="settings_payment"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">💳
-                    Metode Pembayaran</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">💳</span>
+                    <span class="leading-tight">Metode Pembayaran</span>
+                </button>
                 <button onclick="App.switchTab('settings_kiosk')" data-tab="settings_kiosk"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🖥️
-                    Info Warnet & Kiosk</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🖥️</span>
+                    <span class="leading-tight">Info Warnet & Kiosk</span>
+                </button>
                 <button onclick="App.switchTab('settings_tv')" data-tab="settings_tv"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">📺
-                    Tampilan TV</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">📺</span>
+                    <span class="leading-tight">Tampilan TV</span>
+                </button>
                 <button onclick="App.switchTab('whitelist_ip')" data-tab="whitelist_ip"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🛡️
-                    Whitelist IP</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🛡️</span>
+                    <span class="leading-tight">Whitelist IP</span>
+                </button>
                 <button onclick="App.switchTab('settings_cloudflare_tunnel')" data-tab="settings_cloudflare_tunnel"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🌐
-                    Cloudflare Tunnel</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🌐</span>
+                    <span class="leading-tight">Cloudflare Tunnel</span>
+                </button>
                 <button onclick="App.switchTab('settings_cloud_backup')" data-tab="settings_cloud_backup"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">☁️
-                    Cloud Backup</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">☁️</span>
+                    <span class="leading-tight">Cloud Backup</span>
+                </button>
                 <button onclick="App.switchTab('settings_local_backup')" data-tab="settings_local_backup"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">📂
-                    Berkas Backup Lokal</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">📂</span>
+                    <span class="leading-tight">Berkas Backup Lokal</span>
+                </button>
                 <button onclick="App.switchTab('settings_db_cleanup')" data-tab="settings_db_cleanup"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🧹
-                    Pembersihan Database</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🧹</span>
+                    <span class="leading-tight">Pembersihan Database</span>
+                </button>
                 <button onclick="App.switchTab('settings_scheduler')" data-tab="settings_scheduler"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🤖
-                    Penjadwalan Otomatis</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🤖</span>
+                    <span class="leading-tight">Penjadwalan Otomatis</span>
+                </button>
                 <button onclick="App.switchTab('settings_migration')" data-tab="settings_migration"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🗄️
-                    Migrasi & Update</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🗄️</span>
+                    <span class="leading-tight">Migrasi & Update</span>
+                </button>
             </div>
         </div>
         {% endif %}
@@ -343,14 +413,17 @@
             <div id="plugins-submenu" class="hidden pl-8 space-y-1">
                 {% if session.get('kasir_role') == 'admin' %}
                 <button onclick="App.switchTab('plugins')" data-tab="plugins"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">🧩
-                    Manajemen Plugins</button>
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">🧩</span>
+                    <span class="leading-tight">Manajemen Plugins</span>
+                </button>
                 {% endif %}
 
                 {% for menu in plugin_menus %}
                 <button onclick="App.openPluginSPA('{{ menu.url }}', '{{ menu.title }}')" data-tab="plugin-spa"
-                    class="tab-btn w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
-                    {{ menu.icon }} {{ menu.title }}
+                    class="tab-btn w-full flex items-start gap-2.5 px-3 py-1.5 rounded text-[13px] text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+                    <span class="shrink-0 text-sm leading-none mt-0.5">{{ menu.icon }}</span>
+                    <span class="leading-tight">{{ menu.title }}</span>
                 </button>
                 {% endfor %}
             </div>

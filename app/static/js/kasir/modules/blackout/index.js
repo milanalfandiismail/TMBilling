@@ -2,6 +2,11 @@ const Blackout = {
     currentDate: null,
     allData: [],
 
+    resetState() {
+        this.currentDate = null;
+        this.allData = [];
+    },
+
     async load() {
         await this.loadDates();
     },

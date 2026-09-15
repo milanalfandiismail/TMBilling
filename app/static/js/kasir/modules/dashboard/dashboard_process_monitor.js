@@ -61,8 +61,7 @@ const DashboardProcessMonitor = {
         if (container) container.innerHTML = '<tr><td colspan="2" class="px-6 py-10 text-center text-neutral-500 text-xs lg:text-base font-mono">Memuat...</td></tr>';
 
         try {
-            const res = await fetch(`/api/v1/public/monitor/processes/${pcId}`);
-            const json = await res.json();
+            const json = await API.request(`/api/v1/kasir/monitor/processes/${pcId}`);
 
             if (!json.success) throw new Error(json.error);
 

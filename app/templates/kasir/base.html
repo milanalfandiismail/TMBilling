@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ warnet_title }} - Kasir{% endblock %}</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=160">
+    <meta name="app-version" content="{{ version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v={{ v_cache }}">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
@@ -276,98 +277,102 @@
             color: #e5e5e5 !important;
         }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=160">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/ckeditor/ckeditor.css') }}?v=160">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v={{ v_cache }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/ckeditor/ckeditor.css') }}?v={{ v_cache }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css">
-    <script src="{{ url_for('static', filename='vendor/ckeditor/ckeditor.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='vendor/ckeditor/ckeditor.js') }}?v={{ v_cache }}"></script>
     
     {% block head %}{% endblock %}
 </head>
 
-<body class="bg-[#050505] text-neutral-200 font-space-grotesk antialiased flex h-[100dvh] lg:h-screen w-screen overflow-hidden" data-kasir-role="{{ session.get('kasir_role', '') }}">
+<body class="bg-[#050505] text-neutral-200 font-space-grotesk antialiased flex h-[100dvh] lg:h-screen w-screen overflow-hidden" data-kasir-role="{{ session.get('kasir_role', '') }}" data-app-version="{{ version }}">
 
     {% block content %}{% endblock %}
 
+    <script>
+        window.APP_VERSION = "{{ version }}";
+    </script>
+
     <!-- ===== SCRIPTS ===== -->
-    <script src="{{ url_for('static', filename='js/kasir/core/api.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/core/utils.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/core/toast.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/core/modal.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/api.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/utils.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/toast.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/core/modal.js') }}?v={{ v_cache }}"></script>
     
     <!-- Components -->
-    <script src="{{ url_for('static', filename='js/kasir/components/modal-buka.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/components/modal-tambah.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/components/modal-confirm-tambah.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/components/modal-buka.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/components/modal-tambah.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/components/modal-confirm-tambah.js') }}?v={{ v_cache }}"></script>
     
     <!-- Modules / Subfolders -->
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/sidebar.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/remote/vnc_client.js') }}?v=1601"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_compact.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/map_view.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_process_monitor.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_detail_modal.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/server_monitor/server_monitor.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/index.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/sidebar.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/remote/vnc_client.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_compact.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/map_view.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_process_monitor.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_detail_modal.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/server_monitor/server_monitor.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/index.js') }}?v={{ v_cache }}"></script>
 
 
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/grup/index.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/grup/index.js') }}?v={{ v_cache }}"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_grid.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_modal.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/pc/index.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_grid.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_modal.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/pc/index.js') }}?v={{ v_cache }}"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_table.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_modal.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/paket/index.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_table.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_modal.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/paket/index.js') }}?v={{ v_cache }}"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_table.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_modal.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_refill.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/index.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_table.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_modal.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_refill.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/member/index.js') }}?v={{ v_cache }}"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/laporan/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/laporan_menu/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/log/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/monitor/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/hardware_checker/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/maintenance/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/laporan_maintenance/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/screenshot/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/blackout/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/branch/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/settings/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/tutorials/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/settings/plugins.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/settings/migration.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/mikrotik/index.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/laporan/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/laporan_menu/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/log/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/monitor/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/hardware_checker/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/maintenance/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/laporan_maintenance/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/screenshot/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/blackout/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/branch/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/settings/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/tutorials/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/settings/plugins.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/settings/migration.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/mikrotik/index.js') }}?v={{ v_cache }}"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/struk/struk_preview.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/struk/index.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/struk/struk_preview.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/struk/index.js') }}?v={{ v_cache }}"></script>
     
     <!-- Shift Kasir dinonaktifkan sementara -->
-    <!-- <script src="{{ url_for('static', filename='js/kasir/modules/shift/index.js') }}?v=160"></script> -->
+    <!-- <script src="{{ url_for('static', filename='js/kasir/modules/shift/index.js') }}?v={{ v_cache }}"></script> -->
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/user/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/menu/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/tournament/index.js') }}?v=160"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/game/index.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/user/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/menu/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/tournament/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/game/index.js') }}?v={{ v_cache }}"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/modules/uptime/index.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/uptime/index.js') }}?v={{ v_cache }}"></script>
     
     <!-- Owner Analytics -->
-    <script src="{{ url_for('static', filename='js/kasir/modules/owner/analytics.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/owner/analytics.js') }}?v={{ v_cache }}"></script>
     
     <!-- File Explorer -->
-    <script src="{{ url_for('static', filename='js/kasir/modules/fileexplorer/index.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/fileexplorer/index.js') }}?v={{ v_cache }}"></script>
     
     <!-- Catatan Kasir & Operasional -->
-    <script src="{{ url_for('static', filename='js/kasir/modules/catatan/index.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/catatan/index.js') }}?v={{ v_cache }}"></script>
     
-    <script src="{{ url_for('static', filename='js/kasir/app.js') }}?v=160"></script>
+    <script src="{{ url_for('static', filename='js/kasir/app.js') }}?v={{ v_cache }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 
