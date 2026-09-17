@@ -85,8 +85,8 @@ const LaporanMenu = {
                 area.innerHTML = `
                     <div class="flex flex-col items-center justify-center py-16 text-neutral-500 bg-[#0c0c0c] border border-dashed border-[#1c1c1c] rounded">
                         <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
-                        <p class="text-xs lg:text-base font-bold uppercase tracking-wider text-neutral-300">Belum Ada Laporan</p>
-                        <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Belum ada transaksi hari ini</p>
+                        <p class="text-xs lg:max-xl:text-xs xl:text-base font-bold uppercase tracking-wider text-neutral-300">Belum Ada Laporan</p>
+                        <p class="text-[10px] lg:max-xl:text-[10px] xl:text-sm text-neutral-500 mt-1">Belum ada transaksi hari ini</p>
                     </div>`;
                 return;
             }
@@ -100,7 +100,7 @@ const LaporanMenu = {
             select.value = firstDate;
             await this.loadByDate(firstDate);
         } catch (err) {
-            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:text-base">Gagal memuat daftar tanggal laporan menu</div>';
+            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:max-xl:text-xs xl:text-base">Gagal memuat daftar tanggal laporan menu</div>';
         }
     },
 
@@ -125,7 +125,7 @@ const LaporanMenu = {
             this.allData = data;
             this.render();
         } catch (err) {
-            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:text-base">Gagal memuat data laporan menu</div>';
+            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:max-xl:text-xs xl:text-base">Gagal memuat data laporan menu</div>';
         }
     },
 
@@ -135,7 +135,7 @@ const LaporanMenu = {
 
         const data = this.allData;
         if (!data || data.error) {
-            area.innerHTML = '<div class="text-center py-10 text-neutral-500 text-xs lg:text-base">Tidak ada data</div>';
+            area.innerHTML = '<div class="text-center py-10 text-neutral-500 text-xs lg:max-xl:text-xs xl:text-base">Tidak ada data</div>';
             return;
         }
 
@@ -144,9 +144,9 @@ const LaporanMenu = {
         // Ringkasan card khusus Kantin
         html += `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 flex flex-col justify-between min-h-24">
-                    <span class="text-[10px] lg:text-base text-neutral-500 uppercase font-bold tracking-wider">Total Pendapatan Kantin & F&B</span>
-                    <span class="text-2xl font-bold text-green-400 font-mono mt-2">${Utils.formatRupiah(data.total_pendapatan_menu || 0)}</span>
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 lg:max-xl:p-4 xl:p-5 flex flex-col justify-between min-h-24">
+                    <span class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-bold tracking-wider leading-tight">Total Pendapatan Kantin & F&B</span>
+                    <span class="text-xl lg:max-xl:text-2xl xl:text-3xl font-bold text-green-400 font-mono mt-2">${Utils.formatRupiah(data.total_pendapatan_menu || 0)}</span>
                 </div>
             </div>`;
 
@@ -173,21 +173,21 @@ const LaporanMenu = {
                                     <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota & Waktu</span>
                                         <div class="flex flex-col text-left">
-                                            <span class="font-mono font-bold text-neutral-200">${tm.no_nota || '-'}</span>
+                                            <span class="font-mono font-bold text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base">${tm.no_nota || '-'}</span>
                                             <span class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 font-mono mt-0.5">${tm.waktu || '-'}</span>
                                         </div>
                                     </td>
                                     <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
                                         <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Item Menu</span>
                                         <div class="flex flex-col text-left">
-                                            <span class="font-semibold text-neutral-200">${tm.menu_nama || '-'}</span>
+                                            <span class="font-semibold text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base">${tm.menu_nama || '-'}</span>
                                             <span class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-400 mt-0.5">Jumlah: <strong class="font-mono text-neutral-300">${tm.jumlah || 0}</strong></span>
                                         </div>
                                     </td>
                                     <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
                                         <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Total & Bayar</span>
                                         <div class="flex flex-col text-right">
-                                            <span class="font-mono font-bold text-neutral-200">${Utils.formatRupiah(tm.total_harga || 0)}</span>
+                                            <span class="font-mono font-bold text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base">${Utils.formatRupiah(tm.total_harga || 0)}</span>
                                             <span class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 font-mono mt-0.5">
                                                 Bayar: ${tm.tunai ? Utils.formatRupiah(tm.tunai) : '-'} <span class="text-neutral-600">|</span> Kembali: <span class="text-emerald-400 font-bold">${tm.kembalian ? Utils.formatRupiah(tm.kembalian) : '-'}</span>
                                             </span>
@@ -203,7 +203,7 @@ const LaporanMenu = {
                                     <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
                                         <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir & Aksi</span>
                                         <div class="flex flex-col items-end gap-1">
-                                            <span class="text-neutral-300 font-medium text-xs lg:max-xl:text-xs xl:text-sm">${tm.kasir_nama || '-'}</span>
+                                            <span class="text-neutral-300 font-medium text-xs lg:max-xl:text-xs xl:text-base">${tm.kasir_nama || '-'}</span>
                                             <button onclick="LaporanMenu.printStruk(${tm.id})" class="px-2.5 py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold rounded transition-colors inline-flex items-center gap-1">
                                                 <span>Cetak</span>
                                             </button>
@@ -223,7 +223,7 @@ const LaporanMenu = {
                     </div>`;
             }
         } else {
-            html += '<div class="text-center py-10 text-neutral-500 text-xs lg:text-base">Tidak ada transaksi F&B pada tanggal ini</div>';
+            html += '<div class="text-center py-10 text-neutral-500 text-xs lg:max-xl:text-xs xl:text-base">Tidak ada transaksi F&B pada tanggal ini</div>';
         }
 
         area.innerHTML = html;
