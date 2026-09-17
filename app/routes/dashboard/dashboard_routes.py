@@ -77,7 +77,7 @@ def list_pc_api():
 @admin_required
 def server_metrics_api():
     """Endpoint API untuk memantau performa Server (CPU, RAM, Disk, NIC, GPU)."""
-    from app.services.dashboard.server_monitor_service import ServerMonitorService
+    from app.services.server_monitor.server_monitor_service import ServerMonitorService
     try:
         metrics = ServerMonitorService.get_metrics()
         return jsonify({"success": True, "data": metrics}), 200

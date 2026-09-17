@@ -42,6 +42,8 @@ laporan_tugas_akhir.md
 # Flask-specific
 instance/
 .webassets-cache
+app/tmp/
+tmp/
 
 # Environment variables and secrets
 .env

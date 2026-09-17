@@ -248,9 +248,9 @@ const CompactGrid = {
                     }).join('')}
                         </div>
                     ` : `
-                        <!-- Auto-Sort Grid: flows naturally but scaled -->
+                        <!-- Auto-Sort Grid: flows naturally in fixed 12 columns, leaves remaining slots empty -->
                         <div class="auto-grid-wrapper overflow-hidden w-full" style="transition: height 0.15s ease-out;">
-                            <div class="auto-grid-container grid gap-2 auto-rows-fr" data-cols="${Math.min(pcs.length, 12)}" style="grid-template-columns: repeat(${Math.min(pcs.length, 12)}, minmax(0, 1fr));">
+                            <div class="auto-grid-container grid gap-2 auto-rows-fr" data-cols="12" style="grid-template-columns: repeat(12, minmax(0, 1fr));">
                                 ${pcs.map(pc => {
                         return `
                                         <div>
