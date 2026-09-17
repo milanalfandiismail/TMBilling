@@ -159,55 +159,108 @@ const LaporanMenu = {
                 <div class="overflow-x-auto w-full">
                     <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
                         <thead class="hidden lg:table-header-group">
-                            <tr class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
-                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Nota & Waktu</th>
-                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Item Menu & Qty</th>
-                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-right">Total & Pembayaran</th>
-                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Metode & Pemesanan</th>
-                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-right">Kasir & Aksi</th>
+                            <!-- Compact / Laptop View Header (5 columns) -->
+                            <tr class="text-[10px] lg:max-xl:text-xs text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c] lg:max-xl:table-row xl:hidden">
+                                <th class="px-3 lg:max-xl:px-2.5 py-2.5 lg:max-xl:py-2 text-left">Nota & Waktu</th>
+                                <th class="px-3 lg:max-xl:px-2.5 py-2.5 lg:max-xl:py-2 text-left">Item Menu & Qty</th>
+                                <th class="px-3 lg:max-xl:px-2.5 py-2.5 lg:max-xl:py-2 text-right">Total & Pembayaran</th>
+                                <th class="px-3 lg:max-xl:px-2.5 py-2.5 lg:max-xl:py-2 text-left">Metode & Pemesanan</th>
+                                <th class="px-3 lg:max-xl:px-2.5 py-2.5 lg:max-xl:py-2 text-right">Kasir & Aksi</th>
+                            </tr>
+                            <!-- Desktop View Header (11 separated columns) -->
+                            <tr class="hidden xl:table-row text-base text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
+                                <th class="px-4 py-3 text-left">Waktu</th>
+                                <th class="px-4 py-3 text-left">Nota</th>
+                                <th class="px-4 py-3 text-left">Item Menu</th>
+                                <th class="px-4 py-3 text-center">Jumlah</th>
+                                <th class="px-4 py-3 text-right">Total Harga</th>
+                                <th class="px-4 py-3 text-right">Tunai</th>
+                                <th class="px-4 py-3 text-right">Kembalian</th>
+                                <th class="px-4 py-3 text-left">Metode</th>
+                                <th class="px-4 py-3 text-left">Pemesanan</th>
+                                <th class="px-4 py-3 text-left">Kasir</th>
+                                <th class="px-4 py-3 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] block lg:table-row-group">
                             ${menuList.map(tm => `
                                 <tr class="hover:bg-[#121212] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#2a2a2a] last:border-b-0 lg:border-b-0">
-                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota & Waktu</span>
+                                    <!-- Compact / Mobile Cells (5 items) -->
+                                    <td class="px-3 lg:max-xl:px-2.5 py-2.5 lg:max-xl:py-2 flex lg:max-xl:table-cell xl:hidden justify-between items-center">
+                                        <span class="text-[10px] lg:max-xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota & Waktu</span>
                                         <div class="flex flex-col text-left">
-                                            <span class="font-mono font-bold text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base">${tm.no_nota || '-'}</span>
-                                            <span class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 font-mono mt-0.5">${tm.waktu || '-'}</span>
+                                            <span class="font-mono font-bold text-neutral-200 text-xs lg:max-xl:text-xs">${tm.no_nota || '-'}</span>
+                                            <span class="text-[10px] lg:max-xl:text-[10px] text-neutral-500 font-mono mt-0.5">${tm.waktu || '-'}</span>
                                         </div>
                                     </td>
-                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Item Menu</span>
+                                    <td class="px-3 lg:max-xl:px-2.5 py-2.5 lg:max-xl:py-2 flex lg:max-xl:table-cell xl:hidden justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] lg:max-xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Item Menu</span>
                                         <div class="flex flex-col text-left">
-                                            <span class="font-semibold text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base">${tm.menu_nama || '-'}</span>
-                                            <span class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-400 mt-0.5">Jumlah: <strong class="font-mono text-neutral-300">${tm.jumlah || 0}</strong></span>
+                                            <span class="font-semibold text-neutral-200 text-xs lg:max-xl:text-xs">${tm.menu_nama || '-'}</span>
+                                            <span class="text-[10px] lg:max-xl:text-[10px] text-neutral-400 mt-0.5">Jumlah: <strong class="font-mono text-neutral-300">${tm.jumlah || 0}</strong></span>
                                         </div>
                                     </td>
-                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Total & Bayar</span>
+                                    <td class="px-3 lg:max-xl:px-2.5 py-2.5 lg:max-xl:py-2 flex lg:max-xl:table-cell xl:hidden justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] lg:max-xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Total & Bayar</span>
                                         <div class="flex flex-col text-right">
-                                            <span class="font-mono font-bold text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base">${Utils.formatRupiah(tm.total_harga || 0)}</span>
-                                            <span class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 font-mono mt-0.5">
+                                            <span class="font-mono font-bold text-neutral-200 text-xs lg:max-xl:text-xs">${Utils.formatRupiah(tm.total_harga || 0)}</span>
+                                            <span class="text-[10px] lg:max-xl:text-[10px] text-neutral-500 font-mono mt-0.5">
                                                 Bayar: ${tm.tunai ? Utils.formatRupiah(tm.tunai) : '-'} <span class="text-neutral-600">|</span> Kembali: <span class="text-emerald-400 font-bold">${tm.kembalian ? Utils.formatRupiah(tm.kembalian) : '-'}</span>
                                             </span>
                                         </div>
                                     </td>
-                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Metode & Pemesanan</span>
+                                    <td class="px-3 lg:max-xl:px-2.5 py-2.5 lg:max-xl:py-2 flex lg:max-xl:table-cell xl:hidden justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] lg:max-xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Metode & Pemesanan</span>
                                         <div class="flex flex-col items-start gap-1">
-                                            <span class="px-2 py-0.5 rounded text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold ${tm.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${tm.metode_pembayaran || 'Tunai'}</span>
-                                            <span class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-400">${tm.pc_kode === 'Tempat' ? 'Makan di Tempat' : 'Take Away'}</span>
+                                            <span class="px-2 py-0.5 rounded text-[10px] lg:max-xl:text-[10px] font-bold ${tm.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${tm.metode_pembayaran || 'Tunai'}</span>
+                                            <span class="text-[10px] lg:max-xl:text-[10px] text-neutral-400">${tm.pc_kode === 'Tempat' ? 'Makan di Tempat' : 'Take Away'}</span>
                                         </div>
                                     </td>
-                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir & Aksi</span>
+                                    <td class="px-3 lg:max-xl:px-2.5 py-2.5 lg:max-xl:py-2 flex lg:max-xl:table-cell xl:hidden justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] lg:max-xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir & Aksi</span>
                                         <div class="flex flex-col items-end gap-1">
-                                            <span class="text-neutral-300 font-medium text-xs lg:max-xl:text-xs xl:text-base">${tm.kasir_nama || '-'}</span>
-                                            <button onclick="LaporanMenu.printStruk(${tm.id})" class="px-2.5 py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold rounded transition-colors inline-flex items-center gap-1">
+                                            <span class="text-neutral-300 font-medium text-xs lg:max-xl:text-xs">${tm.kasir_nama || '-'}</span>
+                                            <button onclick="LaporanMenu.printStruk(${tm.id})" class="px-2.5 py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] lg:max-xl:text-[10px] font-bold rounded transition-colors inline-flex items-center gap-1">
                                                 <span>Cetak</span>
                                             </button>
                                         </div>
+                                    </td>
+
+                                    <!-- Separated Desktop (xl:) Cells (11 columns) -->
+                                    <td class="hidden xl:table-cell px-4 py-3 text-neutral-400 font-mono text-base">
+                                        ${tm.waktu || '-'}
+                                    </td>
+                                    <td class="hidden xl:table-cell px-4 py-3 font-mono font-bold text-neutral-200 text-base">
+                                        ${tm.no_nota || '-'}
+                                    </td>
+                                    <td class="hidden xl:table-cell px-4 py-3 font-semibold text-neutral-200 text-base">
+                                        ${tm.menu_nama || '-'}
+                                    </td>
+                                    <td class="hidden xl:table-cell px-4 py-3 text-center font-mono font-bold text-neutral-300 text-base">
+                                        ${tm.jumlah || 0}
+                                    </td>
+                                    <td class="hidden xl:table-cell px-4 py-3 text-right font-mono font-bold text-neutral-200 text-base">
+                                        ${Utils.formatRupiah(tm.total_harga || 0)}
+                                    </td>
+                                    <td class="hidden xl:table-cell px-4 py-3 text-right font-mono text-neutral-300 text-base">
+                                        ${tm.tunai ? Utils.formatRupiah(tm.tunai) : '-'}
+                                    </td>
+                                    <td class="hidden xl:table-cell px-4 py-3 text-right font-mono font-bold text-emerald-400 text-base">
+                                        ${tm.kembalian ? Utils.formatRupiah(tm.kembalian) : '-'}
+                                    </td>
+                                    <td class="hidden xl:table-cell px-4 py-3">
+                                        <span class="px-2.5 py-0.5 rounded text-xs font-bold ${tm.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${tm.metode_pembayaran || 'Tunai'}</span>
+                                    </td>
+                                    <td class="hidden xl:table-cell px-4 py-3 text-neutral-400 text-base">
+                                        ${tm.pc_kode === 'Tempat' ? 'Makan di Tempat' : 'Take Away'}
+                                    </td>
+                                    <td class="hidden xl:table-cell px-4 py-3 text-neutral-300 font-medium text-base">
+                                        ${tm.kasir_nama || '-'}
+                                    </td>
+                                    <td class="hidden xl:table-cell px-4 py-3 text-center">
+                                        <button onclick="LaporanMenu.printStruk(${tm.id})" class="px-3 py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-xs font-bold rounded transition-colors inline-flex items-center gap-1">
+                                            <span>Cetak</span>
+                                        </button>
                                     </td>
                                 </tr>`).join('')}
                         </tbody>

@@ -55,6 +55,7 @@ class PCUptimeLog(db.Model):
                 utilisasi = 100.0
 
         grup_nama = self.pc.grup.nama if self.pc and self.pc.grup else "reguler"
+        grup_warna = self.pc.grup.warna if self.pc and self.pc.grup and self.pc.grup.warna else "#888888"
 
         first_seen_local = display_in_tz(self.first_seen) if self.first_seen else None
         last_seen_local = display_in_tz(self.last_seen) if self.last_seen else None
@@ -64,6 +65,7 @@ class PCUptimeLog(db.Model):
             "pc_id": self.pc_id,
             "pc_kode": self.pc.kode if self.pc else "Unknown",
             "grup": grup_nama,
+            "grup_warna": grup_warna,
             "tanggal": self.tanggal.isoformat() if self.tanggal else None,
             "total_online_menit": online_menit,
             "total_billing_menit": billing_menit,

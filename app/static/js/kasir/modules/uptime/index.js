@@ -163,12 +163,14 @@ const UptimeTracker = {
                 badgeColor = 'text-amber-400 bg-amber-950/20 border-amber-900/30';
             }
 
+            const grupWarna = item.grup_warna || '#888888';
+
             html += `
                 <tr class="hover:bg-[#171717]/30 transition-colors border-b border-[#1c1c1c] last:border-b-0">
                     <td class="py-2.5 px-3">
                         <div class="flex flex-col">
                             <span class="font-bold font-mono text-neutral-100 text-xs lg:max-xl:text-xs xl:text-base">${item.pc_kode}</span>
-                            <span class="text-[9px] lg:max-xl:text-[9px] xl:text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-[#262626] bg-[#171717] text-neutral-400 inline-block w-fit mt-0.5">${item.grup || 'Reguler'}</span>
+                            <span class="text-[9px] lg:max-xl:text-[9px] xl:text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded inline-block w-fit mt-0.5" style="background-color: ${grupWarna}15; color: ${grupWarna}; border: 1px solid ${grupWarna}30;">${item.grup || 'Reguler'}</span>
                         </div>
                     </td>
                     <td class="py-2.5 px-3">
@@ -253,12 +255,14 @@ const UptimeTracker = {
                 badgeColor = 'text-amber-400 bg-amber-950/20 border-amber-900/30';
             }
 
+            const grupWarna = item.grup_warna || '#888888';
+
             html += `
                 <tr class="hover:bg-[#171717]/30 transition-colors border-b border-[#1c1c1c] last:border-b-0">
                     <td class="py-2.5 px-3">
                         <div class="flex flex-col">
                             <span class="font-bold font-mono text-neutral-100 text-xs lg:max-xl:text-xs xl:text-base">${item.pc_kode}</span>
-                            <span class="text-[9px] lg:max-xl:text-[9px] xl:text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-[#262626] bg-[#171717] text-neutral-400 inline-block w-fit mt-0.5">${item.grup || 'Reguler'}</span>
+                            <span class="text-[9px] lg:max-xl:text-[9px] xl:text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded inline-block w-fit mt-0.5" style="background-color: ${grupWarna}15; color: ${grupWarna}; border: 1px solid ${grupWarna}30;">${item.grup || 'Reguler'}</span>
                         </div>
                     </td>
                     <td class="py-2.5 px-3">
