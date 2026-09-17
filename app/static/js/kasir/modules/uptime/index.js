@@ -167,19 +167,19 @@ const UptimeTracker = {
                 <tr class="hover:bg-[#171717]/30 transition-colors border-b border-[#1c1c1c] last:border-b-0">
                     <td class="py-2.5 px-3">
                         <div class="flex flex-col">
-                            <span class="font-bold font-mono text-neutral-100 text-xs lg:max-xl:text-xs xl:text-sm">${item.pc_kode}</span>
-                            <span class="text-[9px] lg:max-xl:text-[9px] xl:text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-[#262626] bg-[#171717] text-neutral-400 inline-block w-fit mt-0.5">${item.grup || 'Reguler'}</span>
+                            <span class="font-bold font-mono text-neutral-100 text-xs lg:max-xl:text-xs xl:text-base">${item.pc_kode}</span>
+                            <span class="text-[9px] lg:max-xl:text-[9px] xl:text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-[#262626] bg-[#171717] text-neutral-400 inline-block w-fit mt-0.5">${item.grup || 'Reguler'}</span>
                         </div>
                     </td>
                     <td class="py-2.5 px-3">
                         <div class="flex flex-col">
-                            <span class="text-neutral-300 font-mono text-[10px] lg:max-xl:text-[10px] xl:text-xs">Mulai: <strong class="text-neutral-200">${item.first_seen_time || this.formatTimeOnly(item.first_seen)}</strong></span>
-                            <span class="text-neutral-500 font-mono text-[10px] lg:max-xl:text-[10px] xl:text-xs mt-0.5">Akhir: ${item.last_seen_time || this.formatTimeOnly(item.last_seen)}</span>
+                            <span class="text-neutral-300 font-mono text-[10px] lg:max-xl:text-[10px] xl:text-sm">Mulai: <strong class="text-neutral-200">${item.first_seen_time || this.formatTimeOnly(item.first_seen)}</strong></span>
+                            <span class="text-neutral-500 font-mono text-[10px] lg:max-xl:text-[10px] xl:text-sm mt-0.5">Akhir: ${item.last_seen_time || this.formatTimeOnly(item.last_seen)}</span>
                         </div>
                     </td>
                     <td class="py-2.5 px-3">
                         <div class="flex flex-col">
-                            <span class="font-bold font-mono text-neutral-200 text-xs lg:max-xl:text-xs xl:text-sm">Online: ${Utils.formatMenit(onlineMin)}</span>
+                            <span class="font-bold font-mono text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base">Online: ${Utils.formatMenit(onlineMin)}</span>
                             <span class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-400 font-mono mt-0.5">
                                 Billing: <strong class="text-emerald-400">${Utils.formatMenit(billingMin)}</strong> <span class="text-neutral-600">|</span> Idle: ${Utils.formatMenit(idleMin)}
                             </span>
@@ -187,10 +187,10 @@ const UptimeTracker = {
                     </td>
                     <td class="py-2.5 px-3 text-center">
                         <div class="flex flex-col items-center">
-                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] lg:max-xl:text-xs xl:text-xs font-bold border ${badgeColor}">
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] lg:max-xl:text-xs xl:text-sm font-bold border ${badgeColor}">
                                 ${utilization}%
                             </span>
-                            <span class="text-[9px] lg:max-xl:text-[9px] xl:text-[10px] text-neutral-500 font-mono mt-0.5">
+                            <span class="text-[9px] lg:max-xl:text-[9px] xl:text-xs text-neutral-500 font-mono mt-0.5">
                                 ${utilization >= 70 ? 'Tinggi' : (utilization >= 40 ? 'Sedang' : 'Rendah')}
                             </span>
                         </div>
@@ -257,19 +257,19 @@ const UptimeTracker = {
                 <tr class="hover:bg-[#171717]/30 transition-colors border-b border-[#1c1c1c] last:border-b-0">
                     <td class="py-2.5 px-3">
                         <div class="flex flex-col">
-                            <span class="font-bold font-mono text-neutral-100 text-xs lg:max-xl:text-xs xl:text-sm">${item.pc_kode}</span>
-                            <span class="text-[9px] lg:max-xl:text-[9px] xl:text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-[#262626] bg-[#171717] text-neutral-400 inline-block w-fit mt-0.5">${item.grup || 'Reguler'}</span>
+                            <span class="font-bold font-mono text-neutral-100 text-xs lg:max-xl:text-xs xl:text-base">${item.pc_kode}</span>
+                            <span class="text-[9px] lg:max-xl:text-[9px] xl:text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-[#262626] bg-[#171717] text-neutral-400 inline-block w-fit mt-0.5">${item.grup || 'Reguler'}</span>
                         </div>
                     </td>
                     <td class="py-2.5 px-3">
                         <div class="flex flex-col">
-                            <span class="text-neutral-200 font-semibold text-xs lg:max-xl:text-xs xl:text-sm">${item.hari_aktif} Hari Aktif</span>
+                            <span class="text-neutral-200 font-semibold text-xs lg:max-xl:text-xs xl:text-base">${item.hari_aktif} Hari Aktif</span>
                             <span class="text-neutral-500 font-mono text-[10px] lg:max-xl:text-[10px] xl:text-xs mt-0.5">Rata-rata: ${Utils.formatMenit(avgOnlinePerHari)}/hari</span>
                         </div>
                     </td>
                     <td class="py-2.5 px-3">
                         <div class="flex flex-col">
-                            <span class="font-bold font-mono text-neutral-200 text-xs lg:max-xl:text-xs xl:text-sm">Online: ${Utils.formatMenit(onlineMin)}</span>
+                            <span class="font-bold font-mono text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base">Online: ${Utils.formatMenit(onlineMin)}</span>
                             <span class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-400 font-mono mt-0.5">
                                 Billing: <strong class="text-emerald-400">${Utils.formatMenit(billingMin)}</strong> <span class="text-neutral-600">|</span> Idle: ${Utils.formatMenit(idleMin)}
                             </span>
@@ -277,10 +277,10 @@ const UptimeTracker = {
                     </td>
                     <td class="py-2.5 px-3 text-center">
                         <div class="flex flex-col items-center">
-                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] lg:max-xl:text-xs xl:text-xs font-bold border ${badgeColor}">
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] lg:max-xl:text-xs xl:text-sm font-bold border ${badgeColor}">
                                 ${utilization}%
                             </span>
-                            <span class="text-[9px] lg:max-xl:text-[9px] xl:text-[10px] text-neutral-500 font-mono mt-0.5">
+                            <span class="text-[9px] lg:max-xl:text-[9px] xl:text-xs text-neutral-500 font-mono mt-0.5">
                                 ${utilization >= 70 ? 'Tinggi' : (utilization >= 40 ? 'Sedang' : 'Rendah')}
                             </span>
                         </div>
