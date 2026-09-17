@@ -42,10 +42,10 @@ const CompactGrid = {
             var s = localStorage.getItem('map_grid_' + grup);
             if (s) {
                 var p = JSON.parse(s);
-                return { cols: p.c || 10, rows: p.r || 7 };
+                return { cols: p.c || 12, rows: p.r || 7 };
             }
         } catch (e) { }
-        return { cols: 10, rows: 7 };
+        return { cols: 12, rows: 7 };
     },
 
     _setGridSize(grup, cols, rows) {
@@ -145,7 +145,7 @@ const CompactGrid = {
         const timerFontSizeClass = timerStr.length > 8 ? 'text-[11px] lg:text-xs xl:text-sm' : 'text-xs lg:text-sm xl:text-base';
 
         return `
-            <div class="${cardBorderClass} ${cardBgClass} ${cardOpacityClass} rounded-xl p-2 sm:p-2.5 cursor-pointer transition-all hover:brightness-125 flex flex-col justify-between text-left min-h-[125px] lg:min-h-[130px] h-auto w-full shadow-lg" 
+            <div class="${cardBorderClass} ${cardBgClass} ${cardOpacityClass} rounded-xl p-2 sm:p-2.5 cursor-pointer transition-all hover:brightness-125 flex flex-col justify-between text-left min-h-[120px] lg:min-h-[125px] h-auto w-full shadow-lg" 
                  ${borderAttr}
                  onclick="event.preventDefault(); event.stopPropagation(); Dashboard.showContextMenu(event, ${pc.id})"
                  oncontextmenu="event.preventDefault(); event.stopPropagation(); Dashboard.showContextMenu(event, ${pc.id})">
@@ -250,7 +250,7 @@ const CompactGrid = {
                     ` : `
                         <!-- Auto-Sort Grid: flows naturally but scaled -->
                         <div class="auto-grid-wrapper overflow-hidden w-full" style="transition: height 0.15s ease-out;">
-                            <div class="auto-grid-container grid gap-2 auto-rows-fr" data-cols="${Math.min(pcs.length, 10)}" style="grid-template-columns: repeat(${Math.min(pcs.length, 10)}, minmax(0, 1fr));">
+                            <div class="auto-grid-container grid gap-2 auto-rows-fr" data-cols="${Math.min(pcs.length, 12)}" style="grid-template-columns: repeat(${Math.min(pcs.length, 12)}, minmax(0, 1fr));">
                                 ${pcs.map(pc => {
                         return `
                                         <div>
@@ -321,8 +321,8 @@ const CompactGrid = {
             const containerWidth = parent.clientWidth;
             if (containerWidth === 0) return;
 
-            const cols = parseInt(grid.dataset.cols) || 10;
-            const baseColWidth = 130;
+            const cols = parseInt(grid.dataset.cols) || 12;
+            const baseColWidth = 115;
             const gap = 8;
             const unscaledWidth = (cols * baseColWidth) + ((cols - 1) * gap);
 
@@ -354,8 +354,8 @@ const CompactGrid = {
             const containerWidth = parent.clientWidth;
             if (containerWidth === 0) return;
 
-            const cols = parseInt(grid.dataset.cols) || 10;
-            const baseColWidth = 130;
+            const cols = parseInt(grid.dataset.cols) || 12;
+            const baseColWidth = 115;
             const gap = 8;
             const unscaledWidth = (cols * baseColWidth) + ((cols - 1) * gap);
 
