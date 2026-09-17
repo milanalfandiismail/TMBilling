@@ -155,58 +155,58 @@ const Laporan = {
             </div>`;
 
         // Table transaksi Billing
-        html += `<h4 class="text-xs lg:text-base font-bold text-neutral-400 uppercase tracking-wider mb-3">Detail Pendapatan Billing</h4>`;
+        html += `<h4 class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-400 uppercase tracking-wider mb-3">Detail Pendapatan Billing</h4>`;
         const transaksiList = data.history_struk || [];
         if (transaksiList.length > 0) {
             html += `
-                <div class="overflow-x-hidden w-full mb-6">
-                    <table class="w-full text-xs lg:text-base block lg:table">
+                <div class="overflow-x-auto w-full mb-6">
+                    <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
                         <thead class="hidden lg:table-header-group">
-                            <tr class="text-[10px] lg:text-base text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
-                                <th class="px-4 py-3 text-left">Waktu</th>
-                                <th class="px-4 py-3 text-left">Nota</th>
-                                <th class="px-4 py-3 text-left">Pelanggan</th>
-                                <th class="px-4 py-3 text-right">Jumlah</th>
-                                <th class="px-4 py-3 text-left">PC</th>
-                                <th class="px-4 py-3 text-left">Kasir</th>
-                                <th class="px-4 py-3 text-left">Metode</th>
-                                <th class="px-4 py-3 text-center">Aksi</th>
+                            <tr class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
+                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Waktu</th>
+                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Nota</th>
+                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Pelanggan</th>
+                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-right">Jumlah</th>
+                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">PC</th>
+                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Kasir</th>
+                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Metode</th>
+                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] block lg:table-row-group">
                             ${transaksiList.map(t => `
                                 <tr class="hover:bg-[#121212] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#2a2a2a] last:border-b-0 lg:border-b-0">
-                                    <td class="px-4 py-3 text-neutral-400 font-mono flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Waktu</span>
+                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-neutral-400 font-mono flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Waktu</span>
                                         <span>${t.waktu || '-'}</span>
                                     </td>
-                                    <td class="px-4 py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota</span>
+                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota</span>
                                         <span class="font-mono text-neutral-300">${t.no_nota || '-'}</span>
                                     </td>
-                                    <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pelanggan</span>
+                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pelanggan</span>
                                         <span>${t.nama_pelanggan || '-'}</span>
                                     </td>
-                                    <td class="px-4 py-3 text-right font-mono font-bold text-neutral-200 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Jumlah</span>
+                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-right font-mono font-bold text-neutral-200 flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Jumlah</span>
                                         <span>${Utils.formatRupiah(t.jumlah || 0)}</span>
                                     </td>
-                                    <td class="px-4 py-3 text-neutral-500 font-mono flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">PC</span>
+                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-neutral-500 font-mono flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">PC</span>
                                         <span>${t.pc_kode || '-'}</span>
                                     </td>
-                                    <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir</span>
+                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir</span>
                                         <span class="text-neutral-300 font-medium">${t.kasir_nama || '-'}</span>
                                     </td>
-                                    <td class="px-4 py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Metode</span>
-                                        <span class="px-2.5 py-1 rounded text-[10px] lg:text-base font-bold ${t.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${t.metode_pembayaran || 'Tunai'}</span>
+                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Metode</span>
+                                        <span class="px-2.5 py-1 rounded text-[10px] lg:max-xl:text-xs xl:text-base font-bold ${t.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${t.metode_pembayaran || 'Tunai'}</span>
                                     </td>
-                                    <td class="px-4 py-3 text-center flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
-                                        <button onclick="Laporan.printStruk(${t.id})" class="px-2.5 py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] lg:text-base font-bold rounded transition-colors">Cetak</button>
+                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-center flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
+                                        <button onclick="Laporan.printStruk(${t.id})" class="px-2.5 py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Cetak</button>
                                     </td>
                                 </tr>`).join('')}
                         </tbody>
@@ -216,13 +216,13 @@ const Laporan = {
             if (data.pages && data.pages > 1) {
                 html += `
                     <div class="flex items-center justify-center gap-2 mt-2 mb-6">
-                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage - 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs lg:text-base font-bold rounded transition-colors ${this.currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage <= 1 ? 'disabled' : ''}>&larr;</button>
-                        <span class="px-4 py-1.5 text-xs lg:text-base text-neutral-200 font-mono">${this.currentPage} / ${data.pages}</span>
-                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage + 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs lg:text-base font-bold rounded transition-colors ${this.currentPage >= data.pages ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage >= data.pages ? 'disabled' : ''}>&rarr;</button>
+                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage - 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors ${this.currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage <= 1 ? 'disabled' : ''}>&larr;</button>
+                        <span class="px-4 py-1.5 text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 font-mono">${this.currentPage} / ${data.pages}</span>
+                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage + 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors ${this.currentPage >= data.pages ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage >= data.pages ? 'disabled' : ''}>&rarr;</button>
                     </div>`;
             }
         } else {
-            html += '<div class="text-center py-10 text-neutral-500 text-xs lg:text-base mb-6">Tidak ada transaksi billing di tanggal ini</div>';
+            html += '<div class="text-center py-10 text-neutral-500 text-xs lg:max-xl:text-xs xl:text-base mb-6">Tidak ada transaksi billing di tanggal ini</div>';
         }
 
         area.innerHTML = html;

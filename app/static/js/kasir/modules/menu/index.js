@@ -65,8 +65,8 @@ const Menu = {
                    </div>`;
 
             const btnHtml = isOutOfStock
-                ? `<button disabled class="w-full py-1.5 rounded bg-neutral-900 border border-[#1c1c1c] text-[10px] lg:text-base text-neutral-600 font-bold uppercase cursor-not-allowed">Stok Habis</button>`
-                : `<button onclick="Menu.addToCart(${m.id})" class="w-full py-1.5 rounded bg-neutral-100 hover:bg-white text-[#050505] text-[10px] lg:text-base font-bold uppercase transition-colors">Tambah</button>`;
+                ? `<button disabled class="w-full py-1.5 rounded bg-neutral-900 border border-[#1c1c1c] text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-600 font-bold uppercase cursor-not-allowed">Stok Habis</button>`
+                : `<button onclick="Menu.addToCart(${m.id})" class="w-full py-1.5 rounded bg-neutral-100 hover:bg-white text-[#050505] text-[10px] lg:max-xl:text-xs xl:text-base font-bold uppercase transition-colors">Tambah</button>`;
 
             const stokText = isUnlimited ? 'Unlimited' : `Stok: ${m.stok}`;
             const stokColor = isUnlimited ? 'text-green-500 font-bold' : (m.stok < 5 ? 'text-amber-500 font-bold' : 'text-neutral-500');
@@ -90,10 +90,10 @@ const Menu = {
                     <div class="space-y-2.5">
                         ${imgHtml}
                         <div>
-                            <h4 class="text-xs lg:text-base font-bold text-neutral-100 truncate">${m.nama}</h4>
+                            <h4 class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-100 truncate">${m.nama}</h4>
                             <div class="flex items-center justify-between mt-1">
-                                <span class="text-xs lg:text-base text-neutral-300 font-bold font-mono">${Utils.formatRupiah(m.harga)}</span>
-                                <span class="text-[9px] lg:text-base ${stokColor} font-mono">${stokText}</span>
+                                <span class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 font-bold font-mono">${Utils.formatRupiah(m.harga)}</span>
+                                <span class="text-[9px] lg:max-xl:text-xs xl:text-base ${stokColor} font-mono">${stokText}</span>
                             </div>
                         </div>
                     </div>
@@ -162,7 +162,7 @@ const Menu = {
         if (!container || !totalEl) return;
 
         if (this.cart.length === 0) {
-            container.innerHTML = `<div class="text-center py-10 text-neutral-600 text-xs lg:text-base">Keranjang masih kosong</div>`;
+            container.innerHTML = `<div class="text-center py-10 text-neutral-600 text-xs lg:max-xl:text-xs xl:text-base">Keranjang masih kosong</div>`;
             totalEl.textContent = "Rp0";
             return;
         }
@@ -175,23 +175,23 @@ const Menu = {
             return `
                 <div class="flex items-center justify-between gap-3 bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-2.5">
                     <div class="min-w-0 flex-1">
-                        <h5 class="text-xs lg:text-base font-bold text-neutral-200 truncate">${c.menu.nama}</h5>
-                        <span class="text-[10px] lg:text-base text-neutral-500 font-mono">${Utils.formatRupiah(c.menu.harga)}</span>
+                        <h5 class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-200 truncate">${c.menu.nama}</h5>
+                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-mono">${Utils.formatRupiah(c.menu.harga)}</span>
                     </div>
                     
                     <div class="flex items-center gap-1 shrink-0">
                         <button onclick="Menu.updateCartQty(${c.menu.id}, ${c.jumlah - 1})" 
-                            class="w-5 h-5 bg-[#161616] hover:bg-[#222] border border-[#262626] rounded flex items-center justify-center text-xs lg:text-base font-bold text-neutral-400 hover:text-white transition-colors">-</button>
+                            class="w-5 h-5 bg-[#161616] hover:bg-[#222] border border-[#262626] rounded flex items-center justify-center text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-400 hover:text-white transition-colors">-</button>
                         <input type="number" value="${c.jumlah}" 
                             onchange="Menu.updateCartQty(${c.menu.id}, this.value)"
-                            class="w-8 text-center text-xs lg:text-base font-mono font-bold py-0.5 bg-black border border-[#262626] rounded focus:outline-none">
+                            class="w-8 text-center text-xs lg:max-xl:text-xs xl:text-base font-mono font-bold py-0.5 bg-black border border-[#262626] rounded focus:outline-none">
                         <button onclick="Menu.updateCartQty(${c.menu.id}, ${c.jumlah + 1})" 
-                            class="w-5 h-5 bg-[#161616] hover:bg-[#222] border border-[#262626] rounded flex items-center justify-center text-xs lg:text-base font-bold text-neutral-400 hover:text-white transition-colors">+</button>
+                            class="w-5 h-5 bg-[#161616] hover:bg-[#222] border border-[#262626] rounded flex items-center justify-center text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-400 hover:text-white transition-colors">+</button>
                     </div>
 
                     <div class="text-right shrink-0">
-                        <div class="text-xs lg:text-base font-mono font-bold text-neutral-200">${Utils.formatRupiah(itemTotal)}</div>
-                        <button onclick="Menu.removeFromCart(${c.menu.id})" class="text-[9px] lg:text-base text-red-500 hover:text-red-400 font-semibold mt-0.5">Hapus</button>
+                        <div class="text-xs lg:max-xl:text-xs xl:text-base font-mono font-bold text-neutral-200">${Utils.formatRupiah(itemTotal)}</div>
+                        <button onclick="Menu.removeFromCart(${c.menu.id})" class="text-[9px] lg:max-xl:text-xs xl:text-base text-red-500 hover:text-red-400 font-semibold mt-0.5">Hapus</button>
                     </div>
                 </div>`;
         }).join('');

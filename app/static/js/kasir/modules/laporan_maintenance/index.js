@@ -56,7 +56,9 @@ const LaporanMaintenance = {
         const topPcEl = document.getElementById('report-maint-top-pc');
         if (this.reportData.pc_paling_sering_rusak && this.reportData.pc_paling_sering_rusak.length > 0) {
             const topList = this.reportData.pc_paling_sering_rusak.map(item => `${item.pc_kode} (${item.jumlah}x)`).join(', ');
-            topPcEl.innerText = topList;
+            topPcEl.innerHTML = this.reportData.pc_paling_sering_rusak.map(item => 
+                `<span class="inline-block px-1.5 py-0.5 rounded bg-neutral-900 border border-[#262626] font-mono text-neutral-200 text-[10px] mr-1 mb-1">${item.pc_kode} <strong class="text-amber-400">${item.jumlah}x</strong></span>`
+            ).join('');
             topPcEl.setAttribute('title', topList);
         } else {
             topPcEl.innerText = 'N/A';
@@ -77,7 +79,7 @@ const LaporanMaintenance = {
         if (listTiket.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="py-10 text-center text-neutral-500">Belum ada riwayat perbaikan pada periode ini.</td>
+                    <td colspan="3" class="py-10 text-center text-neutral-500">Belum ada riwayat perbaikan pada periode ini.</td>
                 </tr>
             `;
             return;
@@ -86,15 +88,25 @@ const LaporanMaintenance = {
         tbody.innerHTML = '';
         listTiket.forEach(t => {
             tbody.innerHTML += `
-                <tr class="hover:bg-[#121212] transition-colors">
-                    <td class="py-2.5 px-3 text-neutral-400 font-mono">${t.resolved_at || '-'}</td>
-                    <td class="py-2.5 px-3 font-bold text-neutral-100 font-mono">${t.pc_kode}</td>
-                    <td class="py-2.5 px-3 font-mono text-[9px] lg:text-xs"><span class="px-2 py-0.5 rounded bg-neutral-800 text-neutral-400 font-bold uppercase tracking-wider">${t.kategori}</span></td>
+                <tr class="hover:bg-[#121212] transition-colors border-b border-[#1f1f1f] last:border-b-0">
                     <td class="py-2.5 px-3">
-                        <div class="font-bold text-neutral-200 break-words leading-snug max-w-xs sm:max-w-sm lg:max-w-md">${t.judul}</div>
-                        <div class="text-neutral-500 text-[10px] lg:text-[13px] mt-0.5 break-words leading-relaxed">${t.resolusi || '-'}</div>
+                        <div class="flex flex-col">
+                            <span class="font-bold text-neutral-100 font-mono text-xs lg:max-xl:text-xs xl:text-sm">${t.pc_kode}</span>
+                            <span class="text-neutral-500 font-mono text-[10px] lg:max-xl:text-[10px] xl:text-xs mt-0.5">${t.resolved_at || '-'}</span>
+                        </div>
                     </td>
-                    <td class="py-2.5 px-3 text-right font-bold text-emerald-400 font-mono">${formatRupiah(t.biaya)}</td>
+                    <td class="py-2.5 px-3">
+                        <div class="flex flex-col items-start gap-1">
+                            <span class="px-2 py-0.5 rounded bg-neutral-800 text-neutral-300 font-bold uppercase tracking-wider text-[9px] lg:max-xl:text-[9px] xl:text-[10px]">${t.kategori}</span>
+                            <span class="font-bold text-emerald-400 font-mono text-xs lg:max-xl:text-xs xl:text-sm">${formatRupiah(t.biaya)}</span>
+                        </div>
+                    </td>
+                    <td class="py-2.5 px-3">
+                        <div class="flex flex-col">
+                            <div class="font-bold text-neutral-200 break-words leading-snug text-xs lg:max-xl:text-xs xl:text-sm">${t.judul}</div>
+                            <div class="text-neutral-400 text-[10px] lg:max-xl:text-[11px] xl:text-xs mt-0.5 break-words leading-relaxed">${t.resolusi || '-'}</div>
+                        </div>
+                    </td>
                 </tr>
             `;
         });

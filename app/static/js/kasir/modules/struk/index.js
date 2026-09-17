@@ -127,12 +127,12 @@ const Struk = {
                     <div onclick="Struk.cetak('${clickId}')" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3.5 cursor-pointer hover:border-neutral-400 transition-colors mb-2 hover-card-trigger">
                         <div class="flex items-center justify-between">
                             <div class="min-w-0 flex-1">
-                                <div class="text-sm font-bold text-neutral-200 lg:truncate break-words whitespace-normal">${nama}</div>
-                                <div class="text-[10px] lg:text-base text-neutral-500 font-mono mt-0.5">${waktu}</div>
+                                <div class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 lg:truncate break-words whitespace-normal">${nama}</div>
+                                <div class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-mono mt-0.5">${waktu}</div>
                             </div>
                             <div class="text-right ml-3 font-mono">
-                                <div class="text-sm font-black text-neutral-100">${window.Utils ? window.Utils.formatRupiah(totalBayar) : totalBayar}</div>
-                                <div class="text-[9px] lg:text-base text-neutral-600 mt-0.5">${noNota}</div>
+                                <div class="text-xs lg:max-xl:text-xs xl:text-sm font-black text-neutral-100">${window.Utils ? window.Utils.formatRupiah(totalBayar) : totalBayar}</div>
+                                <div class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-600 mt-0.5">${noNota}</div>
                             </div>
                         </div>
                     </div>`;

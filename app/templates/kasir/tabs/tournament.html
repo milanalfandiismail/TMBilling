@@ -7,27 +7,29 @@
         <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide">Turnamen Warnet</h3>
-                    <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Kelola kompetisi game lokal, sistem Swiss, dan Playoff Bracket.</p>
+                    <h3 class="text-sm lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-100 tracking-wide">Turnamen Warnet</h3>
+                    <p class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-0.5">Kelola kompetisi game lokal, sistem Swiss, dan Playoff Bracket.</p>
                 </div>
                 {% if session.get('kasir_role') == 'admin' %}
-                <button onclick="Tournament.openCreateModal()"
-                    class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Buat Turnamen Baru
-                </button>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="Tournament.openCreateModal()"
+                        class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Buat Turnamen Baru
+                    </button>
+                </div>
                 {% endif %}
             </div>
         </div>
 
         <!-- Tournaments Grid Card -->
         <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
-            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-400 uppercase tracking-wider mb-4">Daftar Turnamen</h3>
-            <div id="tournaments-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <h3 class="text-xs lg:max-xl:text-base xl:text-[22px] font-bold text-neutral-400 uppercase tracking-wider mb-4">Daftar Turnamen</h3>
+            <div id="tournaments-grid" class="grid grid-cols-1 md:grid-cols-2 lg:max-xl:grid-cols-2 xl:grid-cols-3 gap-4 lg:max-xl:gap-4 xl:gap-6">
                 <!-- Dynamic list will be rendered here -->
-                <div class="col-span-full py-12 text-center text-neutral-500 text-xs lg:text-base">
+                <div class="col-span-full py-12 text-center text-neutral-500 text-xs lg:max-xl:text-xs xl:text-base">
                     Memuat daftar turnamen...
                 </div>
             </div>
@@ -48,10 +50,10 @@
                     </button>
                     <div>
                         <div class="flex items-center gap-2.5">
-                            <h3 id="detail-tournament-name" class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide">Turnamen</h3>
+                            <h3 id="detail-tournament-name" class="text-sm lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-100 tracking-wide">Turnamen</h3>
                             <span id="detail-tournament-status" class="px-2 py-0.5 rounded text-[8px] lg:text-[10px] font-bold uppercase tracking-wider">Status</span>
                         </div>
-                        <p id="detail-tournament-desc" class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Deskripsi</p>
+                        <p id="detail-tournament-desc" class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-0.5">Deskripsi</p>
                     </div>
                 </div>
 

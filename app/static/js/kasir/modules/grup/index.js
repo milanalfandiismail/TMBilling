@@ -189,39 +189,39 @@ const Grup = {
         }
 
         area.innerHTML = `
-            <div class="overflow-x-hidden w-full">
-                <table class="w-full text-xs lg:text-base block lg:table">
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
                     <thead class="hidden lg:table-header-group">
-                        <tr class="text-[9px] lg:text-base text-neutral-500 uppercase border-b border-[#1c1c1c] tracking-wider">
-                            <th class="px-6 py-4 text-left">ID</th>
-                            <th class="px-6 py-4 text-left">Nama Grup</th>
-                            <th class="px-6 py-4 text-left">Keterangan</th>
-                            <th class="px-6 py-4 text-right">Aksi</th>
+                        <tr class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 uppercase border-b border-[#1c1c1c] tracking-wider">
+                            <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-left">ID</th>
+                            <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-left">Nama Grup</th>
+                            <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-left">Keterangan</th>
+                            <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-right">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] block lg:table-row-group">
                         ${list.map(g => `
                             <tr class="hover:bg-[#121212] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#2a2a2a] last:border-b-0 lg:border-b-0">
-                                <td class="px-6 py-4 flex lg:table-cell justify-between items-center">
-                                    <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">ID</span>
+                                <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 flex lg:table-cell justify-between items-center">
+                                    <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">ID</span>
                                     <span class="font-mono text-neutral-500">#${g.id}</span>
                                 </td>
-                                <td class="px-6 py-4 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                    <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nama Grup</span>
-                                    <span class="px-2.5 py-0.5 rounded text-[10px] lg:text-base font-bold uppercase" style="background-color: ${g.warna}15; color: ${g.warna}; border: 1px solid ${g.warna}25;">${g.nama}</span>
+                                <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                    <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nama Grup</span>
+                                    <span class="px-2.5 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-base font-bold uppercase" style="background-color: ${g.warna}15; color: ${g.warna}; border: 1px solid ${g.warna}25;">${g.nama}</span>
                                 </td>
-                                <td class="px-6 py-4 flex lg:table-cell justify-between items-center">
-                                    <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Keterangan</span>
+                                <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 flex lg:table-cell justify-between items-center">
+                                    <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Keterangan</span>
                                     <span class="text-neutral-400">${g.keterangan || '-'}</span>
                                 </td>
-                                <td class="px-6 py-4 text-right flex lg:table-cell justify-between items-center">
-                                    <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
+                                <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-right flex lg:table-cell justify-between items-center">
+                                    <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
                                     ${(window.App && App.user && App.user.role === 'kasir') ? '' : `
                                     <div class="flex items-center justify-end gap-1">
-                                        <button onclick="Grup.showEditModal(${g.id}, '${g.nama}', '${(g.keterangan || '').replace(/'/g, "\\'")}', '${g.warna}')" class="w-8 h-8 rounded bg-[#171717] border border-[#262626] text-blue-400 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center" title="Edit Grup">
+                                        <button onclick="Grup.showEditModal(${g.id}, '${g.nama}', '${(g.keterangan || '').replace(/'/g, "\\'")}', '${g.warna}')" class="w-7 h-7 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-8 xl:h-8 rounded bg-[#171717] border border-[#262626] text-blue-400 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center text-xs" title="Edit Grup">
                                             ✏️
                                         </button>
-                                        <button onclick="Grup.delete(${g.id}, '${g.nama}')" class="w-8 h-8 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center" title="Hapus Grup">
+                                        <button onclick="Grup.delete(${g.id}, '${g.nama}')" class="w-7 h-7 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-8 xl:h-8 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center" title="Hapus Grup">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                         </button>
                                     </div>`}

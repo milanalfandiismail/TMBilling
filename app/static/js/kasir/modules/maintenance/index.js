@@ -192,12 +192,10 @@ const Maintenance = {
 
     renderTickets() {
         const tbody = document.getElementById('maintenance-tickets-tbody');
-        if (!tbody) return;
-
-        if (this.tickets.length === 0) {
+        if (!this.tickets || this.tickets.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="py-10 text-center text-neutral-500">Tidak ada tiket perbaikan yang aktif.</td>
+                    <td colspan="4" class="py-10 text-center text-neutral-500">Tidak ada tiket perbaikan yang aktif.</td>
                 </tr>
             `;
             return;
@@ -217,46 +215,56 @@ const Maintenance = {
             else if (t.status === 'DITOLAK') statusClass = 'bg-red-950/40 text-red-400 border border-red-900/30';
 
             let actionButtons = `
-                <button onclick="Maintenance.openDetailModal(${t.id})" class="px-3.5 py-1.5 bg-[#171717] border border-[#262626] text-neutral-300 rounded-lg hover:bg-neutral-100 hover:text-black text-xs lg:text-sm font-bold transition-colors" title="Lihat Detail Lengkap">Detail</button>
+                <button onclick="Maintenance.openDetailModal(${t.id})" class="px-2.5 py-1 bg-[#171717] border border-[#262626] text-neutral-300 rounded hover:bg-neutral-100 hover:text-black text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors" title="Lihat Detail Lengkap">Detail</button>
             `;
             const isAdmin = !(window.App && App.user && App.user.role === 'kasir');
 
             if (t.status === 'BARU') {
                 actionButtons += `
-                    <button onclick="Maintenance.changeStatus(${t.id}, 'DIPROSES')" class="px-3.5 py-1.5 bg-blue-600/20 border border-blue-600/30 text-blue-400 rounded-lg hover:bg-blue-600/30 text-xs lg:text-sm font-bold transition-colors">Proses</button>
-                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="px-3.5 py-1.5 bg-red-600/20 border border-red-600/30 text-red-400 rounded-lg hover:bg-red-600/30 text-xs lg:text-sm font-bold transition-colors">Tolak</button>
+                    <button onclick="Maintenance.changeStatus(${t.id}, 'DIPROSES')" class="px-2.5 py-1 bg-blue-600/20 border border-blue-600/30 text-blue-400 rounded hover:bg-blue-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Proses</button>
+                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="px-2.5 py-1 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Tolak</button>
                 `;
             } else if (t.status === 'DIPROSES') {
                 actionButtons += `
-                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="px-3.5 py-1.5 bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 rounded-lg hover:bg-emerald-600/30 text-xs lg:text-sm font-bold transition-colors">Selesaikan</button>
+                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="px-2.5 py-1 bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 rounded hover:bg-emerald-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Selesaikan</button>
                 `;
             }
 
             if (isAdmin) {
                 actionButtons += `
-                    <button onclick="Maintenance.deleteTicket(${t.id})" class="px-3.5 py-1.5 bg-red-600/20 border border-red-600/30 text-red-400 rounded-lg hover:bg-red-600 hover:text-white text-xs lg:text-sm font-bold transition-colors" title="Hapus">Hapus</button>
+                    <button onclick="Maintenance.deleteTicket(${t.id})" class="px-2.5 py-1 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600 hover:text-white text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors" title="Hapus">Hapus</button>
                 `;
             }
 
             tbody.innerHTML += `
-                <tr class="hover:bg-[#121212] transition-colors">
-                    <td class="py-3 px-4 font-mono font-bold text-neutral-100">${t.pc_kode}</td>
-                    <td class="py-3 px-4 font-mono text-[10px] lg:text-xs text-neutral-400 font-bold uppercase tracking-wider">${t.kategori}</td>
-                    <td class="py-3 px-4">
-                        <span class="px-2.5 py-0.5 rounded text-[9px] lg:text-xs font-bold ${prioritasClass}">${t.prioritas}</span>
+                <tr class="hover:bg-[#121212] transition-colors border-b border-[#1f1f1f] last:border-b-0">
+                    <td class="py-2.5 px-3">
+                        <div class="flex flex-col">
+                            <span class="font-mono font-bold text-neutral-100 text-xs lg:max-xl:text-xs xl:text-sm">${t.pc_kode}</span>
+                            <div class="flex items-center gap-1 mt-1 flex-wrap">
+                                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${prioritasClass}">${t.prioritas}</span>
+                                <span class="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 font-bold uppercase text-[9px]">${t.kategori}</span>
+                            </div>
+                        </div>
                     </td>
-                    <td class="py-3 px-4 text-neutral-200 cursor-pointer group" onclick="Maintenance.openDetailModal(${t.id})" title="Klik untuk melihat detail masalah">
-                        <div class="font-bold text-neutral-100 group-hover:text-white group-hover:underline transition-colors break-words leading-snug max-w-xs sm:max-w-sm lg:max-w-md">${t.judul}</div>
-                        ${t.deskripsi ? `<div class="text-[10px] lg:text-xs text-neutral-400 break-words mt-1 leading-relaxed line-clamp-2">${t.deskripsi}</div>` : ''}
+                    <td class="py-2.5 px-3 text-neutral-200 cursor-pointer group" onclick="Maintenance.openDetailModal(${t.id})" title="Klik untuk melihat detail masalah">
+                        <div class="flex flex-col">
+                            <div class="font-bold text-neutral-100 group-hover:text-white group-hover:underline transition-colors break-words leading-snug text-xs lg:max-xl:text-xs xl:text-sm">${t.judul}</div>
+                            ${t.deskripsi ? `<div class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-400 break-words mt-0.5 leading-relaxed line-clamp-1">${t.deskripsi}</div>` : ''}
+                        </div>
                     </td>
-                    <td class="py-3 px-4 text-neutral-500 font-mono text-[9px] lg:text-xs">
-                        <div class="font-bold">${t.reporter}</div>
-                        <div class="text-[8px] lg:text-[10px] mt-0.5">${t.created_at}</div>
+                    <td class="py-2.5 px-3">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-neutral-200 text-xs lg:max-xl:text-xs xl:text-sm">${t.reporter}</span>
+                            <span class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 font-mono mt-0.5">${t.created_at}</span>
+                        </div>
                     </td>
-                    <td class="py-3 px-4">
-                        <span class="px-2.5 py-0.5 rounded text-[9px] lg:text-xs font-bold ${statusClass}">${t.status}</span>
+                    <td class="py-2.5 px-3 text-right">
+                        <div class="flex flex-col items-end gap-1.5">
+                            <span class="px-2 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-[10px] font-bold ${statusClass}">${t.status}</span>
+                            <div class="flex items-center justify-end gap-1 flex-wrap">${actionButtons}</div>
+                        </div>
                     </td>
-                    <td class="py-3 px-4 text-right space-x-1.5 whitespace-nowrap">${actionButtons}</td>
                 </tr>
             `;
         });
