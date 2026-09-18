@@ -12,6 +12,7 @@ use serde::Deserialize;
 use winreg::enums::*;
 use winreg::RegKey;
 use once_cell::sync::OnceCell;
+use sha2::{Sha256, Digest};
 
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 const DETACHED_PROCESS: u32 = 0x00000008;
@@ -61,8 +62,26 @@ fn is_obfuscated(input: &str) -> bool {
     deobf.chars().all(|c| c.is_ascii() && !c.is_control())
 }
 
+fn sha256_hex(input: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(input.as_bytes());
+    format!("{:x}", hasher.finalize())
+}
+
+fn to_sha256_hash(val: &str) -> String {
+    let val = val.trim();
+    if val.len() == 64 && val.chars().all(|c| c.is_ascii_hexdigit()) {
+        val.to_lowercase()
+    } else if is_obfuscated(val) {
+        let deobf = deobfuscate(val);
+        sha256_hex(&deobf)
+    } else {
+        sha256_hex(val)
+    }
+}
+
 // Memuat konfigurasi hibrida (Registry -> config.ini -> default)
-// Jika terdeteksi plain-text, langsung dikonversi menjadi ter-obfuscate!
+// Jika terdeteksi plain-text, langsung dikonversi menjadi hash SHA-256 ter-obfuscate!
 fn load_config() -> (String, String, String, String) {
     let mut reg_url = None;
     let mut reg_api_key = None;
@@ -93,21 +112,13 @@ fn load_config() -> (String, String, String, String) {
         if let Ok(user) = subkey.get_value::<String, _>("EmergencyUser") {
             let user_trimmed = user.trim().to_string();
             if !user_trimmed.is_empty() {
-                if is_obfuscated(&user_trimmed) {
-                    reg_em_user = Some(deobfuscate(&user_trimmed));
-                } else {
-                    reg_em_user = Some(user_trimmed);
-                }
+                reg_em_user = Some(to_sha256_hash(&user_trimmed));
             }
         }
         if let Ok(t) = subkey.get_value::<String, _>("EmergencyToken") {
             let t_trimmed = t.trim().to_string();
             if !t_trimmed.is_empty() {
-                if is_obfuscated(&t_trimmed) {
-                    reg_em_token = Some(deobfuscate(&t_trimmed));
-                } else {
-                    reg_em_token = Some(t_trimmed);
-                }
+                reg_em_token = Some(to_sha256_hash(&t_trimmed));
             }
         }
     }
@@ -118,8 +129,6 @@ fn load_config() -> (String, String, String, String) {
     let mut ini_em_user = None;
     let mut ini_em_token = None;
     let mut ini_api_key_is_plain = false;
-    let mut ini_em_user_is_plain = false;
-    let mut ini_em_token_is_plain = false;
 
     if let Ok(content) = fs::read_to_string("C:\\TMBILLING\\config.ini") {
         for line in content.lines() {
@@ -145,21 +154,11 @@ fn load_config() -> (String, String, String, String) {
                     }
                 } else if key == "emergencyuser" || key == "emergency_user" {
                     if !val.is_empty() {
-                        if is_obfuscated(&val) {
-                            ini_em_user = Some(deobfuscate(&val));
-                        } else {
-                            ini_em_user = Some(val.clone());
-                            ini_em_user_is_plain = true;
-                        }
+                        ini_em_user = Some(to_sha256_hash(&val));
                     }
                 } else if key == "emergencytoken" || key == "emergency_token" {
                     if !val.is_empty() {
-                        if is_obfuscated(&val) {
-                            ini_em_token = Some(deobfuscate(&val));
-                        } else {
-                            ini_em_token = Some(val.clone());
-                            ini_em_token_is_plain = true;
-                        }
+                        ini_em_token = Some(to_sha256_hash(&val));
                     }
                 }
             }
@@ -177,17 +176,8 @@ fn load_config() -> (String, String, String, String) {
         reg_api_key.or(ini_api_key).unwrap_or_else(|| "TM2026QWERTY-api-key".to_string())
     };
 
-    let em_user = if ini_em_user_is_plain && ini_em_user.is_some() {
-        ini_em_user.unwrap()
-    } else {
-        reg_em_user.or(ini_em_user).unwrap_or_else(|| "TMBilling".to_string())
-    };
-
-    let em_token = if ini_em_token_is_plain && ini_em_token.is_some() {
-        ini_em_token.unwrap()
-    } else {
-        reg_em_token.or(ini_em_token).unwrap_or_else(|| "TM123qaz!@#".to_string())
-    };
+    let em_user = reg_em_user.or(ini_em_user).unwrap_or_else(|| sha256_hex("TMBilling"));
+    let em_token = reg_em_token.or(ini_em_token).unwrap_or_else(|| sha256_hex("TM123qaz!@#"));
 
     (url, api_key, em_user, em_token)
 }
@@ -228,9 +218,10 @@ fn check_legal_shutdown() -> bool {
                     }
                 }
 
-                // 2. Cek token darurat (Emergency Token) offline/online
+                // 2. Cek token darurat (Emergency Token) offline/online via SHA-256 hash atau direct match
                 let (_, _, _, em_token) = load_config();
-                if clean_token == em_token.trim() {
+                let clean_hash = sha256_hex(clean_token);
+                if clean_hash.eq_ignore_ascii_case(&em_token.trim()) || clean_token == em_token.trim() {
                     return true;
                 }
             }
