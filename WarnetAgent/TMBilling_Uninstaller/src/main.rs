@@ -76,9 +76,12 @@ fn load_config() -> (String, String) {
     let mut final_url = None;
     let mut final_api_key = None;
 
-    // 1. Coba baca dari Registry
+    // 1. Coba baca dari Registry (HKLM dulu, fallback ke HKCU)
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-    if let Ok(subkey) = hklm.open_subkey("Software\\TMBilling") {
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let reg_subkey = hklm.open_subkey("Software\\TMBilling").or_else(|_| hkcu.open_subkey("Software\\TMBilling"));
+
+    if let Ok(subkey) = reg_subkey {
         if let Ok(u) = subkey.get_value::<String, _>("Url") {
             if !u.trim().is_empty() {
                 final_url = Some(u);
@@ -140,9 +143,12 @@ fn load_config() -> (String, String) {
 fn load_emergency_token_offline() -> String {
     let mut final_em_token = None;
 
-    // 1. Coba baca dari Registry
+    // 1. Coba baca dari Registry (HKLM dulu, fallback ke HKCU)
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-    if let Ok(subkey) = hklm.open_subkey("Software\\TMBilling") {
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let reg_subkey = hklm.open_subkey("Software\\TMBilling").or_else(|_| hkcu.open_subkey("Software\\TMBilling"));
+
+    if let Ok(subkey) = reg_subkey {
         if let Ok(t) = subkey.get_value::<String, _>("EmergencyToken") {
             let t_trimmed = t.trim().to_string();
             if !t_trimmed.is_empty() {
@@ -521,9 +527,11 @@ fn lock_executable_file() -> Result<File, std::io::Error> {
 /// Layer 4: Registry Hash Verification - Detect file tampering
 #[cfg(not(debug_assertions))]
 fn verify_file_integrity() -> Result<(), String> {
-    // Read expected hash from Registry
+    // Read expected hash from Registry (HKLM first, then HKCU)
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
     let subkey = hklm.open_subkey("Software\\TMBilling")
+        .or_else(|_| hkcu.open_subkey("Software\\TMBilling"))
         .map_err(|_| "Registry key not found")?;
     
     let expected_hash: String = subkey.get_value("Hash_Uninstaller")
