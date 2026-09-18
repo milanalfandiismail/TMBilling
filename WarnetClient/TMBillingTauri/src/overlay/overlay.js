@@ -7,7 +7,17 @@ import { AppState } from '../shared/state.js';
 import { Api } from '../shared/api.js';
 import { UI } from '../shared/ui.js';
 import { formatTime } from '../shared/utils.js';
-import { AUDIO_WARNING_PATH, AUDIO_WARNING_VOLUME, TIME_THRESHOLD_5MIN, TIME_THRESHOLD_5MAX, STATUS } from '../shared/constants.js';
+import {
+    AUDIO_WARNING_15MIN_PATH,
+    AUDIO_WARNING_5MIN_PATH,
+    AUDIO_WARNING_1MIN_PATH,
+    AUDIO_TARGET_SYSTEM_VOLUME,
+    AUDIO_PLAYBACK_VOLUME,
+    TIME_THRESHOLD_15MIN,
+    TIME_THRESHOLD_5MIN,
+    TIME_THRESHOLD_1MIN,
+    STATUS
+} from '../shared/constants.js';
 
 export const Overlay = {
     /**
@@ -125,38 +135,97 @@ export const Overlay = {
     },
 
     /**
-     * Update timer display
+     * Update timer display & trigger warning alerts
      */
     updateTime(seconds) {
         UI.updateTime(seconds);
 
-        // Trigger 5 minute warning audio
-        if (AppState.isOverlayActive &&
-            seconds <= TIME_THRESHOLD_5MIN &&
-            seconds > TIME_THRESHOLD_5MAX &&
-            !AppState.hasPlayed5MinAlert &&
-            AppState.currentStatus !== STATUS.ADMIN) {
-
-            AppState.hasPlayed5MinAlert = true;
-            this.playWarningAudio();
+        if (!AppState.isOverlayActive || AppState.currentStatus === STATUS.ADMIN) {
+            return;
         }
 
-        // Auto-lock when time runs out (except admin)
-        if (AppState.isOverlayActive && seconds <= 0 && AppState.currentStatus !== STATUS.ADMIN) {
+        // 1. Tangani Penambahan Waktu / Top-Up Billing (Reset flag jika sisa waktu bertambah)
+        if (seconds > TIME_THRESHOLD_15MIN) {
+            AppState.hasPlayed15MinAlert = false;
+            AppState.hasPlayed5MinAlert = false;
+            AppState.hasPlayed1MinAlert = false;
+        } else if (seconds > TIME_THRESHOLD_5MIN) {
+            AppState.hasPlayed5MinAlert = false;
+            AppState.hasPlayed1MinAlert = false;
+        } else if (seconds > TIME_THRESHOLD_1MIN) {
+            AppState.hasPlayed1MinAlert = false;
+        }
+
+        // 2. Trigger Warning Audio Alerts (15 Menit, 5 Menit, 1 Menit)
+        if (seconds <= TIME_THRESHOLD_15MIN && seconds > TIME_THRESHOLD_5MIN && !AppState.hasPlayed15MinAlert) {
+            AppState.hasPlayed15MinAlert = true;
+            this.playWarningAudio('15min');
+        } else if (seconds <= TIME_THRESHOLD_5MIN && seconds > TIME_THRESHOLD_1MIN && !AppState.hasPlayed5MinAlert) {
+            AppState.hasPlayed5MinAlert = true;
+            this.playWarningAudio('5min');
+        } else if (seconds <= TIME_THRESHOLD_1MIN && seconds > 0 && !AppState.hasPlayed1MinAlert) {
+            AppState.hasPlayed1MinAlert = true;
+            this.playWarningAudio('1min');
+        }
+
+        // 3. Auto-lock when time runs out
+        if (seconds <= 0) {
             console.log("Waktu habis! Mengunci PC...");
             this.handleLogout(true);
         }
     },
 
     /**
-     * Play warning audio
+     * Play warning audio with temporary 100% Windows volume override and dynamic auto-restore
      */
-    playWarningAudio() {
-        const alertAudio = new Audio(AUDIO_WARNING_PATH);
-        alertAudio.volume = AUDIO_WARNING_VOLUME;
-        alertAudio.play().catch(err => {
-            console.warn("Berkas audio warning_5min.mp3 belum tersedia atau gagal diputar:", err);
-        });
+    async playWarningAudio(type = '5min') {
+        let audioPath = AUDIO_WARNING_5MIN_PATH;
+        if (type === '15min') {
+            audioPath = AUDIO_WARNING_15MIN_PATH;
+        } else if (type === '1min') {
+            audioPath = AUDIO_WARNING_1MIN_PATH;
+        }
+
+        let prevVolume = null;
+        try {
+            // 1. Naikkan volume master Windows ke 100% dan un-mute (simpan volume asal secara dinamis)
+            prevVolume = await Api.setSystemVolume(AUDIO_TARGET_SYSTEM_VOLUME);
+        } catch (e) {
+            console.warn("Gagal set system volume override:", e);
+        }
+
+        let isRestored = false;
+        const restoreVolumeOnce = async () => {
+            if (isRestored) return;
+            isRestored = true;
+            if (prevVolume !== null && prevVolume !== undefined) {
+                try {
+                    await Api.restoreSystemVolume(prevVolume);
+                } catch (err) {
+                    console.warn("Gagal restore system volume:", err);
+                }
+            }
+        };
+
+        try {
+            const alertAudio = new Audio(audioPath);
+            alertAudio.volume = AUDIO_PLAYBACK_VOLUME;
+
+            // Kembalikan volume begitu audio selesai diputar atau gagal
+            alertAudio.addEventListener('ended', restoreVolumeOnce, { once: true });
+            alertAudio.addEventListener('error', (err) => {
+                console.warn(`Berkas audio ${audioPath} gagal diputar:`, err);
+                restoreVolumeOnce();
+            }, { once: true });
+
+            // Safety fallback timeout: jika audio terputus atau suspend, kembalikan volume setelah 8 detik
+            setTimeout(restoreVolumeOnce, 8000);
+
+            await alertAudio.play();
+        } catch (err) {
+            console.warn(`Gagal memutar audio ${audioPath}:`, err);
+            restoreVolumeOnce();
+        }
     },
 
     /**
