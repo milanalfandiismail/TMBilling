@@ -85,3 +85,19 @@ pub fn open_control_panel_applet(applet: String) -> Result<(), String> {
         Ok(())
     }
 }
+
+#[tauri::command]
+pub fn set_system_volume(volume: f32) -> Result<f32, String> {
+    crate::utils::audio::set_master_volume_windows(volume)
+}
+
+#[tauri::command]
+pub fn restore_system_volume(volume: f32, muted: Option<bool>) -> Result<(), String> {
+    crate::utils::audio::restore_master_volume_windows(volume, muted)
+}
+
+#[tauri::command]
+pub fn get_system_volume() -> Result<f32, String> {
+    crate::utils::audio::get_master_volume_windows()
+}
+

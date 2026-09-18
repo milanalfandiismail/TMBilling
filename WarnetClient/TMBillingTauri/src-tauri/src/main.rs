@@ -53,6 +53,9 @@ fn main() {
             crate::commands::system_commands::get_client_warnet,
             crate::commands::system_commands::get_app_version,
             crate::commands::system_commands::open_control_panel_applet,
+            crate::commands::system_commands::set_system_volume,
+            crate::commands::system_commands::restore_system_volume,
+            crate::commands::system_commands::get_system_volume,
         ])
         .setup(|app| {
             crate::services::setup::setup_app(app)?;

@@ -3,3 +3,5 @@ pub mod window_manager;
 pub mod api;
 pub mod security;
 pub mod screenshot;
+pub mod audio;
+
