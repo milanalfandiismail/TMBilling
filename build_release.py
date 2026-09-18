@@ -61,6 +61,7 @@ def main():
         "run.py",
         "requirements.txt",
         "install.bat",
+        "install_non_admin.bat",
         "start.bat",
         "stop.bat",
         ".env.example",
