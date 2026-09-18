@@ -15,10 +15,6 @@ use serde::Deserialize;
 use winreg::enums::*;
 use winreg::RegKey;
 use sha2::{Sha256, Digest};
-use once_cell::sync::OnceCell;
-use std::fs::OpenOptions;
-use std::os::windows::fs::OpenOptionsExt;
-use std::io::Read;
 
 use winapi::shared::windef::{HWND, HMENU};
 use winapi::shared::minwindef::{HINSTANCE, LPARAM, LRESULT, WPARAM, UINT};
@@ -139,6 +135,24 @@ fn load_config() -> (String, String) {
     (url, api_key)
 }
 
+fn sha256_hex(input: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(input.as_bytes());
+    format!("{:x}", hasher.finalize())
+}
+
+fn to_sha256_hash(val: &str) -> String {
+    let val = val.trim();
+    if val.len() == 64 && val.chars().all(|c| c.is_ascii_hexdigit()) {
+        val.to_lowercase()
+    } else if is_obfuscated(val) {
+        let deobf = deobfuscate(val);
+        sha256_hex(&deobf)
+    } else {
+        sha256_hex(val)
+    }
+}
+
 // Memuat EmergencyToken luring (offline) secara aman dari Registry atau config.ini
 fn load_emergency_token_offline() -> String {
     let mut final_em_token = None;
@@ -152,11 +166,7 @@ fn load_emergency_token_offline() -> String {
         if let Ok(t) = subkey.get_value::<String, _>("EmergencyToken") {
             let t_trimmed = t.trim().to_string();
             if !t_trimmed.is_empty() {
-                if is_obfuscated(&t_trimmed) {
-                    final_em_token = Some(deobfuscate(&t_trimmed));
-                } else {
-                    final_em_token = Some(t_trimmed);
-                }
+                final_em_token = Some(to_sha256_hash(&t_trimmed));
             }
         }
     }
@@ -173,11 +183,7 @@ fn load_emergency_token_offline() -> String {
                     let key = line[..pos].trim().to_lowercase();
                     let val = line[pos + 1..].trim().to_string();
                     if key == "emergencytoken" || key == "emergency_token" {
-                        if is_obfuscated(&val) {
-                            final_em_token = Some(deobfuscate(&val));
-                        } else {
-                            final_em_token = Some(val);
-                        }
+                        final_em_token = Some(to_sha256_hash(&val));
                     }
                 }
             }
@@ -185,7 +191,7 @@ fn load_emergency_token_offline() -> String {
     }
 
     // Default fallback jika benar-benar kosong
-    final_em_token.unwrap_or_else(|| "TM123qaz!@#".to_string())
+    final_em_token.unwrap_or_else(|| sha256_hex("TM123qaz!@#"))
 }
 
 // Mengambil token uninstall aktif langsung dari Flask API secara real-time
@@ -421,8 +427,9 @@ unsafe extern "system" fn window_proc(hwnd: HWND, msg: UINT, wparam: WPARAM, lpa
                                 PostQuitMessage(0);
                             } else {
                                 // Token API tidak cocok, coba fallback ke EmergencyToken offline
+                                let clean_entered_hash = sha256_hex(clean_entered);
                                 let offline_token = load_emergency_token_offline();
-                                if clean_entered == offline_token {
+                                if clean_entered_hash.eq_ignore_ascii_case(&offline_token) {
                                     MessageBoxW(
                                         hwnd,
                                         to_wstring("Token dari server tidak cocok. Menggunakan mode verifikasi Luring (Offline) dengan Token Darurat!").as_ptr(),
@@ -444,8 +451,9 @@ unsafe extern "system" fn window_proc(hwnd: HWND, msg: UINT, wparam: WPARAM, lpa
                         }
                         Err(err_msg) => {
                             // Coba validasi luring (offline) memakai EmergencyToken dari Registry/config.ini
+                            let clean_entered_hash = sha256_hex(clean_entered);
                             let offline_token = load_emergency_token_offline();
-                            if clean_entered == offline_token {
+                            if clean_entered_hash.eq_ignore_ascii_case(&offline_token) {
                                 MessageBoxW(
                                     hwnd,
                                     to_wstring("Gagal terhubung ke server. Menggunakan mode verifikasi Luring (Offline) dengan Token Darurat!").as_ptr(),
