@@ -28,19 +28,36 @@ try {
     $obfToken = Obfuscate -text $EmergencyToken
     $obfApiKey = Obfuscate -text $ApiKey
     
-    # STEP 1: Write to Registry FIRST (before config.ini)
-    # This ensures Registry has correct values before MGCTM starts
-    $regPath = "HKLM:\Software\TMBilling"
-    if (-not (Test-Path $regPath)) {
-        New-Item -Path $regPath -Force | Out-Null
+    # STEP 1: Write to Registry (Try HKLM first, fallback to HKCU for non-admin)
+    $regSuccess = $false
+    try {
+        $regPath = "HKLM:\Software\TMBilling"
+        if (-not (Test-Path $regPath)) {
+            New-Item -Path $regPath -Force | Out-Null
+        }
+        Set-ItemProperty -Path $regPath -Name "Url" -Value $ServerUrl -Type String -Force
+        Set-ItemProperty -Path $regPath -Name "ApiKey" -Value $obfApiKey -Type String -Force
+        Set-ItemProperty -Path $regPath -Name "EmergencyUser" -Value $obfUser -Type String -Force
+        Set-ItemProperty -Path $regPath -Name "EmergencyToken" -Value $obfToken -Type String -Force
+        $regSuccess = $true
+        Write-Host "Registry (HKLM) updated successfully"
+    } catch {
+        # Non-admin fallback to HKCU
+        try {
+            $regPathUser = "HKCU:\Software\TMBilling"
+            if (-not (Test-Path $regPathUser)) {
+                New-Item -Path $regPathUser -Force | Out-Null
+            }
+            Set-ItemProperty -Path $regPathUser -Name "Url" -Value $ServerUrl -Type String -Force
+            Set-ItemProperty -Path $regPathUser -Name "ApiKey" -Value $obfApiKey -Type String -Force
+            Set-ItemProperty -Path $regPathUser -Name "EmergencyUser" -Value $obfUser -Type String -Force
+            Set-ItemProperty -Path $regPathUser -Name "EmergencyToken" -Value $obfToken -Type String -Force
+            $regSuccess = $true
+            Write-Host "Registry (HKCU) updated successfully"
+        } catch {
+            Write-Host "Warning: Could not write to registry, relying on config.ini: $_"
+        }
     }
-    
-    Set-ItemProperty -Path $regPath -Name "Url" -Value $ServerUrl -Type String -Force
-    Set-ItemProperty -Path $regPath -Name "ApiKey" -Value $obfApiKey -Type String -Force
-    Set-ItemProperty -Path $regPath -Name "EmergencyUser" -Value $obfUser -Type String -Force
-    Set-ItemProperty -Path $regPath -Name "EmergencyToken" -Value $obfToken -Type String -Force
-    
-    Write-Host "Registry updated successfully"
     
     # STEP 2: Write config.ini AFTER Registry
     $configPath = Join-Path $InstallDir "config.ini"

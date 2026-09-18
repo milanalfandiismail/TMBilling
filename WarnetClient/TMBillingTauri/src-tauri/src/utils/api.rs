@@ -126,7 +126,10 @@ impl ApiService {
         let mut reg_em_token = None;
 
         let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-        if let Ok(subkey) = hklm.open_subkey("Software\\TMBilling") {
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let reg_result = hklm.open_subkey("Software\\TMBilling").or_else(|_| hkcu.open_subkey("Software\\TMBilling"));
+
+        if let Ok(subkey) = reg_result {
             if let Ok(u) = subkey.get_value::<String, _>("Url") {
                 if !u.trim().is_empty() {
                     reg_url = Some(u);
@@ -164,42 +167,53 @@ impl ApiService {
             }
         }
 
-        // 2. Fallback ke config.ini
+        // 2. Fallback ke config.ini (cek folder aktif, %LOCALAPPDATA%\TMBilling, dan C:\TMBILLING)
         let mut ini_url = None;
         let mut ini_api_key = None;
         let mut ini_em_user = None;
         let mut ini_em_token = None;
 
-        if let Ok(content) = std::fs::read_to_string("config.ini") {
-            for line in content.lines() {
-                let line = line.trim();
-                if line.starts_with(';') || line.starts_with('#') || line.is_empty() {
-                    continue;
-                }
-                if let Some(pos) = line.find('=') {
-                    let key = line[..pos].trim().to_lowercase();
-                    let val = line[pos + 1..].trim().to_string();
-                    if key == "url" {
-                        ini_url = Some(val);
-                    } else if key == "apikey" || key == "api_key" {
-                        if is_obfuscated(&val) {
-                            ini_api_key = Some(deobfuscate(&val));
-                        } else {
-                            ini_api_key = Some(val);
-                        }
-                    } else if key == "emergencyuser" || key == "emergency_user" {
-                        if is_obfuscated(&val) {
-                            ini_em_user = Some(deobfuscate(&val));
-                        } else {
-                            ini_em_user = Some(val);
-                        }
-                    } else if key == "emergencytoken" || key == "emergency_token" {
-                        if is_obfuscated(&val) {
-                            ini_em_token = Some(deobfuscate(&val));
-                        } else {
-                            ini_em_token = Some(val);
+        let mut config_paths = vec![std::path::PathBuf::from("config.ini")];
+        if let Ok(local_appdata) = std::env::var("LOCALAPPDATA") {
+            config_paths.push(std::path::PathBuf::from(local_appdata).join("TMBilling").join("config.ini"));
+        }
+        config_paths.push(std::path::PathBuf::from(r"C:\TMBILLING\config.ini"));
+
+        for config_path in config_paths {
+            if let Ok(content) = std::fs::read_to_string(&config_path) {
+                for line in content.lines() {
+                    let line = line.trim();
+                    if line.starts_with(';') || line.starts_with('#') || line.is_empty() {
+                        continue;
+                    }
+                    if let Some(pos) = line.find('=') {
+                        let key = line[..pos].trim().to_lowercase();
+                        let val = line[pos + 1..].trim().to_string();
+                        if key == "url" {
+                            ini_url = Some(val);
+                        } else if key == "apikey" || key == "api_key" {
+                            if is_obfuscated(&val) {
+                                ini_api_key = Some(deobfuscate(&val));
+                            } else {
+                                ini_api_key = Some(val);
+                            }
+                        } else if key == "emergencyuser" || key == "emergency_user" {
+                            if is_obfuscated(&val) {
+                                ini_em_user = Some(deobfuscate(&val));
+                            } else {
+                                ini_em_user = Some(val);
+                            }
+                        } else if key == "emergencytoken" || key == "emergency_token" {
+                            if is_obfuscated(&val) {
+                                ini_em_token = Some(deobfuscate(&val));
+                            } else {
+                                ini_em_token = Some(val);
+                            }
                         }
                     }
+                }
+                if ini_url.is_some() {
+                    break;
                 }
             }
         }
