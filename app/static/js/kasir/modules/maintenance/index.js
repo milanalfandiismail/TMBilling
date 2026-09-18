@@ -194,8 +194,8 @@ const Maintenance = {
         const tbody = document.getElementById('maintenance-tickets-tbody');
         if (!this.tickets || this.tickets.length === 0) {
             tbody.innerHTML = `
-                <tr>
-                    <td colspan="4" class="py-10 text-center text-neutral-500">Tidak ada tiket perbaikan yang aktif.</td>
+                <tr class="block lg:table-row">
+                    <td colspan="4" class="py-10 text-center text-neutral-500 block lg:table-cell">Tidak ada tiket perbaikan yang aktif.</td>
                 </tr>
             `;
             return;
@@ -237,29 +237,33 @@ const Maintenance = {
             }
 
             tbody.innerHTML += `
-                <tr class="hover:bg-[#121212] transition-colors border-b border-[#1c1c1c] last:border-b-0">
-                    <td class="py-2.5 px-3">
-                        <div class="flex flex-col">
+                <tr class="hover:bg-[#121212] transition-colors border-b border-[#2a2a2a] lg:border-[#1c1c1c] last:border-b-0 block lg:table-row py-3 lg:py-0">
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-start sm:items-center">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">PC & Prioritas</span>
+                        <div class="flex flex-col text-right lg:text-left">
                             <span class="font-mono font-bold text-neutral-100 text-xs lg:max-xl:text-xs xl:text-base">${t.pc_kode}</span>
-                            <div class="flex items-center gap-1 mt-1 flex-wrap">
+                            <div class="flex items-center justify-end lg:justify-start gap-1 mt-1 flex-wrap">
                                 <span class="px-1.5 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-xs font-bold ${prioritasClass}">${t.prioritas}</span>
                                 <span class="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 font-bold uppercase text-[9px] lg:max-xl:text-[9px] xl:text-xs">${t.kategori}</span>
                             </div>
                         </div>
                     </td>
-                    <td class="py-2.5 px-3 text-neutral-200 cursor-pointer group" onclick="Maintenance.openDetailModal(${t.id})" title="Klik untuk melihat detail masalah">
-                        <div class="flex flex-col">
+                    <td class="py-2 lg:py-2.5 px-3 text-neutral-200 cursor-pointer group flex lg:table-cell justify-between items-start sm:items-center border-t border-[#1c1c1c]/40 lg:border-t-0" onclick="Maintenance.openDetailModal(${t.id})" title="Klik untuk melihat detail masalah">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">Masalah</span>
+                        <div class="flex flex-col text-right lg:text-left max-w-[65%] sm:max-w-none">
                             <div class="font-bold text-neutral-100 group-hover:text-white group-hover:underline transition-colors break-words leading-snug text-xs lg:max-xl:text-xs xl:text-base">${t.judul}</div>
                             ${t.deskripsi ? `<div class="text-[10px] lg:max-xl:text-[10px] xl:text-sm text-neutral-400 break-words mt-0.5 leading-relaxed line-clamp-1">${t.deskripsi}</div>` : ''}
                         </div>
                     </td>
-                    <td class="py-2.5 px-3">
-                        <div class="flex flex-col">
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-start sm:items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">Pelapor</span>
+                        <div class="flex flex-col text-right lg:text-left">
                             <span class="font-bold text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base">${t.reporter}</span>
                             <span class="text-[10px] lg:max-xl:text-[10px] xl:text-sm text-neutral-500 font-mono mt-0.5">${t.created_at}</span>
                         </div>
                     </td>
-                    <td class="py-2.5 px-3 text-right">
+                    <td class="py-2 lg:py-2.5 px-3 text-right flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">Status & Aksi</span>
                         <div class="flex flex-col items-end gap-1.5">
                             <span class="px-2 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-xs font-bold ${statusClass}">${t.status}</span>
                             <div class="flex items-center justify-end gap-1 flex-wrap">${actionButtons}</div>

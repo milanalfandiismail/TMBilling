@@ -1,21 +1,21 @@
 <!-- ===== TAB: PERAWATAN PC ===== -->
 <div id="tab-maintenance" class="tab-content hidden space-y-6">
     <!-- Maintenance Action Header -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-5 lg:max-xl:p-5 xl:p-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:max-xl:p-5 xl:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
                     <span>📋</span> Perawatan PC
                 </h3>
                 <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Kelola perbaikan unit komputer, catat tindakan teknis, dan lapor kendala baru secara terpisah.</p>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
                 <button onclick="Maintenance.openCreateModal()"
-                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    class="flex-1 sm:flex-none justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
                     <span>+</span> Lapor Masalah
                 </button>
                 <button onclick="Maintenance.load()"
-                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-1.5">
+                    class="flex-1 sm:flex-none justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-1.5">
                     <span>↻</span> Refresh
                 </button>
             </div>
@@ -23,32 +23,32 @@
     </div>
 
     <!-- 4 Mini Status Cards -->
-    <div id="maintenance-stats" class="grid grid-cols-2 lg:max-xl:grid-cols-4 xl:grid-cols-4 gap-3 lg:max-xl:gap-3 xl:gap-4">
-        <div class="p-4 lg:max-xl:p-4 xl:p-5 bg-[#0c0c0c] border border-[#1c1c1c] rounded">
+    <div id="maintenance-stats" class="grid grid-cols-2 lg:max-xl:grid-cols-4 xl:grid-cols-4 gap-2.5 sm:gap-3 lg:max-xl:gap-3 xl:gap-4">
+        <div class="p-3.5 sm:p-4 lg:max-xl:p-4 xl:p-5 bg-[#0c0c0c] border border-[#1c1c1c] rounded">
             <div class="text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold tracking-wider text-neutral-500">Tiket Baru</div>
             <div id="stat-maint-baru" class="text-xl lg:max-xl:text-2xl xl:text-3xl font-extrabold text-amber-500 mt-1">0</div>
         </div>
-        <div class="p-4 lg:max-xl:p-4 xl:p-5 bg-[#0c0c0c] border border-[#1c1c1c] rounded">
+        <div class="p-3.5 sm:p-4 lg:max-xl:p-4 xl:p-5 bg-[#0c0c0c] border border-[#1c1c1c] rounded">
             <div class="text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold tracking-wider text-neutral-500">Sedang Diproses</div>
             <div id="stat-maint-proses" class="text-xl lg:max-xl:text-2xl xl:text-3xl font-extrabold text-blue-500 mt-1">0</div>
         </div>
-        <div class="p-4 lg:max-xl:p-4 xl:p-5 bg-[#0c0c0c] border border-[#1c1c1c] rounded">
+        <div class="p-3.5 sm:p-4 lg:max-xl:p-4 xl:p-5 bg-[#0c0c0c] border border-[#1c1c1c] rounded">
             <div class="text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold tracking-wider text-neutral-500">Selesai Hari Ini</div>
             <div id="stat-maint-selesai" class="text-xl lg:max-xl:text-2xl xl:text-3xl font-extrabold text-emerald-500 mt-1">0</div>
         </div>
-        <div class="p-4 lg:max-xl:p-4 xl:p-5 bg-[#0c0c0c] border border-[#1c1c1c] rounded">
+        <div class="p-3.5 sm:p-4 lg:max-xl:p-4 xl:p-5 bg-[#0c0c0c] border border-[#1c1c1c] rounded">
             <div class="text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold tracking-wider text-neutral-500">PC Maintenance</div>
             <div id="stat-maint-nonaktif" class="text-xl lg:max-xl:text-2xl xl:text-3xl font-extrabold text-rose-500 mt-1">0</div>
         </div>
     </div>
 
     <!-- Maintenance Data List Card -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-5 lg:max-xl:p-5 xl:p-6 shadow-xl">
-        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:max-xl:p-5 xl:p-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4">
             <h3 class="text-xs lg:max-xl:text-base xl:text-[22px] font-bold text-neutral-400 uppercase tracking-wider">Daftar Tiket</h3>
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <select id="maint-filter-status" onchange="Maintenance.load()"
-                    class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                    class="w-full sm:w-auto px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
                     <option value="">Semua Status Aktif</option>
                     <option value="BARU">BARU</option>
                     <option value="DIPROSES">DIPROSES</option>
@@ -56,20 +56,20 @@
                     <option value="DITOLAK">DITOLAK</option>
                 </select>
                 <button type="button" onclick="Maintenance.openSelectPCModal('filter')"
-                    class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 hover:border-neutral-500 transition-colors flex items-center gap-2">
+                    class="w-full sm:w-auto px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 hover:border-neutral-500 transition-colors flex items-center justify-between sm:justify-start gap-2">
                     <span id="label-maint-filter-pc">Semua PC</span>
                     <span class="text-neutral-500 text-[10px]">▼</span>
                 </button>
                 <input type="hidden" id="maint-filter-pc-val" value="">
                 <button onclick="Maintenance.load()"
-                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Cari</button>
+                    class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Cari</button>
             </div>
         </div>
 
         <!-- List Tickets Table Container -->
         <div class="overflow-x-auto scrollbar-thin w-full">
-            <table class="w-full text-left border-collapse text-xs lg:max-xl:text-xs xl:text-base">
-                <thead>
+            <table class="w-full text-left border-collapse text-xs lg:max-xl:text-xs xl:text-base block lg:table">
+                <thead class="hidden lg:table-header-group">
                     <tr
                         class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] lg:max-xl:text-xs xl:text-base font-bold uppercase tracking-wider">
                         <th class="py-2.5 px-3">PC & Prioritas</th>
@@ -79,9 +79,9 @@
                     </tr>
                 </thead>
                 <tbody id="maintenance-tickets-tbody"
-                    class="divide-y divide-[#1c1c1c] text-xs lg:max-xl:text-xs xl:text-base text-neutral-300">
-                    <tr>
-                        <td colspan="4" class="py-10 text-center text-neutral-500">
+                    class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 block lg:table-row-group">
+                    <tr class="block lg:table-row">
+                        <td colspan="4" class="py-10 text-center text-neutral-500 block lg:table-cell">
                             <div class="flex justify-center">
                                 <div
                                     class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin">
@@ -98,9 +98,9 @@
 
 <!-- Form Modal: Lapor Masalah Baru -->
 <div id="modal-create-ticket"
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div
-        class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md p-6 shadow-2xl relative text-xs lg:max-xl:text-xs xl:text-base">
+        class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md p-5 sm:p-6 shadow-2xl relative text-xs lg:max-xl:text-xs xl:text-base max-h-[90vh] overflow-y-auto scrollbar-thin">
         <button onclick="Maintenance.closeCreateModal()"
             class="absolute top-4 right-4 text-neutral-500 hover:text-neutral-300 text-lg">&times;</button>
         <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2 mb-4">
@@ -163,9 +163,9 @@
 
 <!-- Form Modal: Update Status Tiket -->
 <div id="modal-update-ticket"
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div
-        class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md p-6 shadow-2xl relative text-xs lg:max-xl:text-xs xl:text-base">
+        class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md p-5 sm:p-6 shadow-2xl relative text-xs lg:max-xl:text-xs xl:text-base max-h-[90vh] overflow-y-auto scrollbar-thin">
         <button onclick="Maintenance.closeUpdateModal()"
             class="absolute top-4 right-4 text-neutral-500 hover:text-neutral-300 text-lg">&times;</button>
         <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2 mb-4">
@@ -224,9 +224,9 @@
 
 <!-- Modal: Detail View Tiket -->
 <div id="modal-detail-ticket"
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div
-        class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md p-6 shadow-2xl relative text-xs lg:max-xl:text-xs xl:text-base">
+        class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md p-5 sm:p-6 shadow-2xl relative text-xs lg:max-xl:text-xs xl:text-base max-h-[90vh] overflow-y-auto scrollbar-thin">
         <button onclick="Maintenance.closeDetailModal()"
             class="absolute top-4 right-4 text-neutral-500 hover:text-neutral-300 text-lg">&times;</button>
         <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2 mb-4">
@@ -297,9 +297,9 @@
 
 <!-- Shared Modal: Pilih Unit PC -->
 <div id="modal-select-pc"
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center hidden">
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden">
     <div
-        class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-xl p-6 shadow-2xl relative text-xs lg:max-xl:text-xs xl:text-base flex flex-col max-h-[80vh]">
+        class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-xl p-5 sm:p-6 shadow-2xl relative text-xs lg:max-xl:text-xs xl:text-base flex flex-col max-h-[90vh] sm:max-h-[80vh]">
         <!-- Header -->
         <button onclick="Maintenance.closeSelectPCModal()"
             class="absolute top-4 right-4 text-neutral-500 hover:text-neutral-300 text-lg">&times;</button>

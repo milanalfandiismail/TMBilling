@@ -7,17 +7,17 @@
         <!-- ==================== SUB-TAB: GENERAL (UMUM & KEAMANAN) ==================== -->
         <div id="subtab-general" class="subtab-content space-y-6">
             <!-- Card: Auto Shutdown -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Auto
                     Shutdown</h3>
-                <div class="flex items-center justify-between">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
                         <p class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Timer
                             shutdown (detik)</p>
                         <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Waktu tunggu sebelum PC mati saat tidak
                             dipakai</p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
                         <input type="number" id="shutdown-timer"
                             class="w-24 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 text-center focus:outline-none focus:border-neutral-500"
                             value="180" step="10" min="30" max="600">
@@ -26,15 +26,15 @@
                 </div>
                 <div class="flex justify-end mt-4">
                     <button onclick="Settings.saveAutoShutdown()"
-                        class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Simpan</button>
+                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan</button>
                 </div>
             </div>
 
             <!-- Card: Uninstall Token Client -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Uninstall
                     Token Client</h3>
-                <div class="flex items-center justify-between gap-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
                         <p class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Token
                             Keamanan Uninstall</p>
@@ -42,23 +42,23 @@
                             client secara aman
                             demi maintenance tanpa memicu BSOD.</p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
                         <input type="text" id="uninstall-token-input"
-                            class="w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
+                            class="w-full sm:w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
                             placeholder="Contoh: TM_UNINSTALL_SAFE_2026">
                     </div>
                 </div>
                 <div class="flex justify-end mt-4">
                     <button onclick="Settings.saveUninstallToken()"
-                        class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Simpan</button>
+                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan</button>
                 </div>
             </div>
 
             <!-- Card: API Key System -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">API Key
                     System</h3>
-                <div class="flex items-center justify-between gap-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
                         <p class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Client API
                             Key</p>
@@ -66,9 +66,9 @@
                             klien untuk terhubung
                             secara aman dengan server.</p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
                         <input type="text" id="client-apikey-input"
-                            class="w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
+                            class="w-full sm:w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
                             placeholder="Contoh: TM2026QWERTY-api-key">
                     </div>
                 </div>
@@ -86,31 +86,31 @@
                 </div>
                 <div class="flex justify-end mt-4">
                     <button onclick="Settings.saveClientApiKey()"
-                        class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Simpan
+                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan
                         API Key</button>
                 </div>
             </div>
 
             <!-- Card: Timezone -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">🌐 Zona
                     Waktu (Timezone)</h3>
-                <div class="flex items-center justify-between">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
                         <p class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Timezone
                             Display</p>
                         <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Semua waktu di dashboard &amp; laporan akan
                             ditampilkan dalam zona waktu ini</p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
                         <select id="timezone-select"
-                            class="w-80 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                            class="w-full sm:w-80 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
                         </select>
                     </div>
                 </div>
                 <div class="flex justify-end mt-4">
                     <button onclick="Settings.saveTimezone()"
-                        class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Simpan</button>
+                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan</button>
                 </div>
             </div>
         </div>
@@ -267,11 +267,11 @@
         <!-- ==================== SUB-TAB: TV SIGNAGE ==================== -->
         <div id="subtab-tv" class="subtab-content hidden space-y-6">
             <!-- Card: Konfigurasi TV Signage -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6 space-y-4 sm:space-y-6">
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">📺 Konfigurasi TV Signage &amp; Digital Signage</h3>
 
                 <!-- Running Text -->
-                <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex flex-col md:flex-row gap-3 md:gap-4">
                     <div class="md:w-1/3">
                         <p class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Running Text Footer</p>
                         <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Teks berjalan di footer lobi Smart TV. Buat minimalis dan informatif.</p>
@@ -284,14 +284,14 @@
                 <div class="w-full h-px bg-[#1c1c1c]"></div>
 
                 <!-- URL Akses LAN Smart TV -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#050505] p-4 rounded border border-[#171717]">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#050505] p-3.5 sm:p-4 rounded border border-[#171717]">
                     <div>
                         <p class="text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-300">🔗 Link Akses Smart TV (Jaringan LAN)</p>
                         <p class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 mt-0.5">Buka link ini pada browser Smart TV / monitor lobi yang terhubung ke jaringan router warnet yang sama.</p>
                     </div>
-                    <div class="flex items-center gap-3 shrink-0">
-                        <code class="px-3.5 py-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-sm text-emerald-400 font-mono tracking-wide" id="tv-lan-url-preview">http://IP_SERVER:7015/tv</code>
-                        <a href="/tv" target="_blank" class="px-3 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs font-bold text-neutral-200 transition-colors inline-flex items-center gap-1.5">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full md:w-auto shrink-0">
+                        <code class="px-3.5 py-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-sm text-emerald-400 font-mono tracking-wide break-all text-center sm:text-left" id="tv-lan-url-preview">http://IP_SERVER:7015/tv</code>
+                        <a href="/tv" target="_blank" class="w-full sm:w-auto justify-center px-3 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs font-bold text-neutral-200 transition-colors inline-flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                             </svg>
@@ -302,7 +302,7 @@
 
                 <div class="flex justify-end mt-4">
                     <button onclick="Settings.saveTVSignageSettings()"
-                        class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Simpan Pengaturan TV Signage</button>
+                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan Pengaturan TV Signage</button>
                 </div>
             </div>
         </div>
@@ -651,11 +651,11 @@
         <!-- ==================== SUB-TAB: BERKAS BACKUP LOKAL ==================== -->
         <div id="subtab-local_backup" class="subtab-content hidden space-y-6">
             <!-- Card: Local Backup List -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-4">
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6 space-y-4">
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Berkas Cadangan Lokal (Maks 5 File Teratas)</h3>
                 <div class="overflow-x-auto w-full">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
+                    <table class="w-full text-left border-collapse block lg:table">
+                        <thead class="hidden lg:table-header-group">
                             <tr
                                 class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] lg:max-xl:text-[10px] xl:text-xs uppercase font-bold">
                                 <th class="pb-2">Nama Berkas</th>
@@ -664,9 +664,9 @@
                                 <th class="pb-2 text-right">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="backup-files-table-body" class="text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-mono">
-                            <tr>
-                                <td colspan="4" class="py-4 text-center text-neutral-500">Memuat berkas backup...</td>
+                        <tbody id="backup-files-table-body" class="text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-mono block lg:table-row-group divide-y divide-[#2a2a2a] lg:divide-transparent">
+                            <tr class="block lg:table-row">
+                                <td colspan="4" class="py-4 text-center text-neutral-500 block lg:table-cell">Memuat berkas backup...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -678,9 +678,9 @@
         {% if session.get('kasir_role') == 'admin' or session.get('role') == 'admin' %}
         <div id="subtab-db_cleanup" class="subtab-content hidden space-y-6">
             <!-- Card Maintenance Database & Data Retention (Admin Only) -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6 space-y-4 sm:space-y-6">
                 <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-4">
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3 sm:gap-4">
                         <div
                             class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
                             <svg class="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -702,15 +702,15 @@
                         <p class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider mb-1">Hapus Histori Yang Lebih Tua Dari</p>
                         <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Pilih rentang waktu riwayat lama yang ingin dibersihkan dari server</p>
                     </div>
-                    <div class="flex items-center gap-3 w-full md:w-auto">
-                        <select id="db-retention-months" class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-medium">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto">
+                        <select id="db-retention-months" class="w-full sm:w-auto px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-medium">
                             <option value="1">1 Bulan</option>
                             <option value="3">3 Bulan</option>
                             <option value="6" selected>6 Bulan (Rekomendasi)</option>
                             <option value="12">1 Tahun</option>
                         </select>
                         <button onclick="Settings.executeDbMaintenance()"
-                            class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors whitespace-nowrap">
+                            class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors whitespace-nowrap flex items-center">
                             Backup &amp; Bersihkan Sekarang
                         </button>
                     </div>

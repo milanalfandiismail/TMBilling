@@ -1,7 +1,7 @@
 <!-- ==================== TAB: AKUN KASIR CABANG (REMOTE) ==================== -->
 <div id="tab-branch_kasir" class="tab-content hidden space-y-6">
     <!-- Card 1: Ringkasan & Kontrol Akun Kasir -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
         <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">
             Akun Kasir Cabang (Remote)
         </h3>
@@ -16,7 +16,7 @@
             </div>
             <div class="flex items-center gap-2 shrink-0">
                 <button type="button" onclick="BranchManager.loadRemoteOperators()"
-                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
                     <i class="fa-solid fa-rotate text-xs"></i>
                     <span>Segarkan Data</span>
                 </button>
@@ -25,7 +25,7 @@
     </div>
 
     <!-- Card 2: Tabel Kelola Akun Kasir Cabang -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6 space-y-4 sm:space-y-6">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider" id="op-table-title">
@@ -35,16 +35,16 @@
                     Akun yang tampil di dropdown filter laporan billing dan kantin.
                 </p>
             </div>
-            <div class="flex flex-wrap items-center gap-3">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full lg:w-auto">
                 <!-- Sub-Tab Filter Toggle Buttons -->
-                <div class="flex items-center gap-1.5 p-1 bg-[#050505] border border-[#1c1c1c] rounded">
+                <div class="flex items-center justify-between sm:justify-start gap-1 p-1 bg-[#050505] border border-[#1c1c1c] rounded w-full sm:w-auto">
                     <button type="button" id="btn-subtab-op-active" onclick="BranchManager.switchOperatorSubTab('active')"
-                        class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
+                        class="flex-1 sm:flex-none justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
                         <span>Kasir Aktif</span>
                         <span id="badge-count-op-active" class="px-1.5 py-0.5 text-[10px] rounded-full bg-black/20 text-black font-mono font-bold">0</span>
                     </button>
                     <button type="button" id="btn-subtab-op-archived" onclick="BranchManager.switchOperatorSubTab('archived')"
-                        class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-transparent text-neutral-400 hover:text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
+                        class="flex-1 sm:flex-none justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-transparent text-neutral-400 hover:text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
                         <span>Diarsipkan / Nonaktif</span>
                         <span id="badge-count-op-archived" class="px-1.5 py-0.5 text-[10px] rounded-full bg-neutral-800 text-neutral-300 font-mono font-bold">0</span>
                     </button>
@@ -53,14 +53,14 @@
                 <!-- Search Box -->
                 <input type="text" id="filter-remote-op-search" oninput="BranchManager.filterOperatorsBySearch()"
                     placeholder="Cari kasir / cabang..."
-                    class="w-48 sm:w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono placeholder:text-neutral-600">
+                    class="w-full sm:w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono placeholder:text-neutral-600">
             </div>
         </div>
 
         <!-- Table -->
         <div class="overflow-x-auto w-full pt-2">
-            <table class="w-full text-left border-collapse">
-                <thead>
+            <table class="w-full text-left border-collapse block lg:table">
+                <thead class="hidden lg:table-header-group">
                     <tr class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] lg:max-xl:text-[10px] xl:text-xs uppercase font-bold tracking-wider">
                         <th class="py-2.5 px-3">No &amp; Status</th>
                         <th class="py-2.5 px-3">Identitas Kasir &amp; Cabang</th>
@@ -68,9 +68,9 @@
                         <th class="py-2.5 px-3 text-right">Aktivitas &amp; Aksi</th>
                     </tr>
                 </thead>
-                <tbody id="branch-operators-tbody" class="text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-mono">
-                    <tr>
-                        <td colspan="4" class="py-8 text-center text-xs lg:max-xl:text-xs xl:text-base text-neutral-500">Memuat data akun kasir cabang...</td>
+                <tbody id="branch-operators-tbody" class="text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-mono block lg:table-row-group divide-y divide-[#2a2a2a] lg:divide-transparent">
+                    <tr class="block lg:table-row">
+                        <td colspan="4" class="py-8 text-center text-xs lg:max-xl:text-xs xl:text-base text-neutral-500 block lg:table-cell">Memuat data akun kasir cabang...</td>
                     </tr>
                 </tbody>
             </table>
@@ -79,7 +79,7 @@
 
     <!-- Modal Konfirmasi Hapus Operator Remote -->
     <div id="modal-delete-remote-op" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl overflow-hidden p-6 space-y-4 animate-modal-in">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto scrollbar-thin animate-modal-in">
             <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-triangle-exclamation"></i>

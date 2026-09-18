@@ -422,24 +422,36 @@ const Settings = {
             const res = await API.request('/api/v1/kasir/backup/list');
             if (res.success) {
                 if (res.backups.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-neutral-500">Tidak ada berkas backup di server.</td></tr>`;
+                    tbody.innerHTML = `<tr class="block lg:table-row"><td colspan="4" class="py-4 text-center text-neutral-500 block lg:table-cell">Tidak ada berkas backup di server.</td></tr>`;
                     return;
                 }
 
                 tbody.innerHTML = res.backups.map(b => `
-                    <tr class="border-b border-[#1c1c1c] hover:bg-[#070707] transition-colors">
-                        <td class="py-3 pr-2 text-neutral-200 text-xs lg:text-base font-bold">${b.filename}</td>
-                        <td class="py-3 pr-2 text-neutral-400 text-[10px] lg:text-sm">${b.created_at}</td>
-                        <td class="py-3 pr-2 text-neutral-400 text-xs lg:text-base">${b.size_mb} MB</td>
-                        <td class="py-3 text-right space-x-2">
-                            <button onclick="Settings.downloadBackup('${b.filename}')" class="px-2.5 py-1 bg-neutral-200 hover:bg-neutral-300 text-black text-[10px] lg:text-xs font-bold rounded transition-colors">Unduh</button>
-                            <button onclick="Settings.deleteBackup('${b.filename}')" class="px-2.5 py-1 bg-red-950/40 hover:bg-red-900/40 border border-red-900/50 text-red-400 text-[10px] lg:text-xs font-bold rounded transition-colors">Hapus</button>
+                    <tr class="border-b border-[#2a2a2a] lg:border-[#1c1c1c] hover:bg-[#070707] transition-colors block lg:table-row py-3 lg:py-0 last:border-b-0">
+                        <td class="py-2 lg:py-3 pr-2 text-neutral-200 text-xs lg:text-base font-bold flex lg:table-cell justify-between items-start sm:items-center">
+                            <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Nama Berkas</span>
+                            <span class="break-all font-mono text-right lg:text-left">${b.filename}</span>
+                        </td>
+                        <td class="py-2 lg:py-3 pr-2 text-neutral-400 text-[10px] lg:text-sm flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                            <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Tanggal Dibuat</span>
+                            <span class="font-mono text-right lg:text-left">${b.created_at}</span>
+                        </td>
+                        <td class="py-2 lg:py-3 pr-2 text-neutral-400 text-xs lg:text-base flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                            <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Ukuran</span>
+                            <span class="font-mono text-right lg:text-left">${b.size_mb} MB</span>
+                        </td>
+                        <td class="py-2 lg:py-3 text-right flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                            <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Aksi</span>
+                            <div class="flex items-center justify-end gap-2">
+                                <button onclick="Settings.downloadBackup('${b.filename}')" class="px-2.5 py-1 bg-neutral-200 hover:bg-neutral-300 text-black text-[10px] lg:text-xs font-bold rounded transition-colors">Unduh</button>
+                                <button onclick="Settings.deleteBackup('${b.filename}')" class="px-2.5 py-1 bg-red-950/40 hover:bg-red-900/40 border border-red-900/50 text-red-400 text-[10px] lg:text-xs font-bold rounded transition-colors">Hapus</button>
+                            </div>
                         </td>
                     </tr>
                 `).join('');
             }
         } catch (err) {
-            tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-red-500">Gagal memuat berkas: ${err.message}</td></tr>`;
+            tbody.innerHTML = `<tr class="block lg:table-row"><td colspan="4" class="py-4 text-center text-red-500 block lg:table-cell">Gagal memuat berkas: ${err.message}</td></tr>`;
         }
     },
 
