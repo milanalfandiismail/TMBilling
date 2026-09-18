@@ -7,34 +7,13 @@ echo    TMBilling Server - Setup dan Instalasi
 echo ==========================================================
 echo.
 
-:: [1] Periksa Python (Cek PATH, py launcher, dan user AppData)
-set "PYTHON_EXE="
-
-where python >nul 2>&1
-if %errorlevel% equ 0 (
-    set "PYTHON_EXE=python"
-    goto :python_found
-)
-
-where py >nul 2>&1
-if %errorlevel% equ 0 (
-    set "PYTHON_EXE=py -3"
-    goto :python_found
-)
-
-for /d %%D in ("%LOCALAPPDATA%\Programs\Python\Python3*") do (
-    if exist "%%D\python.exe" (
-        set "PYTHON_EXE=%%D\python.exe"
-        goto :python_found
-    )
-)
-
-for /d %%D in ("C:\Python3*") do (
-    if exist "%%D\python.exe" (
-        set "PYTHON_EXE=%%D\python.exe"
-        goto :python_found
-    )
-)
+:: [1] Periksa Python
+python --version >nul 2>&1
+if errorlevel 1 goto :no_python
+python --version
+echo [OK] Python ditemukan.
+echo.
+goto :check_venv
 
 :no_python
 echo [ERROR] Python tidak terdeteksi di sistem!
@@ -47,17 +26,12 @@ echo ==========================================================
 pause
 exit /b 1
 
-:python_found
-echo [OK] Python ditemukan (%PYTHON_EXE%).
-%PYTHON_EXE% --version
-echo.
-
 :: [2] Buat Virtual Environment
 :check_venv
-if exist ".venv\Scripts\python.exe" goto :skip_venv
+if exist .venv goto :skip_venv
 echo [INFO] Membuat Virtual Environment (.venv)...
-%PYTHON_EXE% -m venv .venv
-if %errorlevel% neq 0 goto :venv_error
+python -m venv .venv
+if errorlevel 1 goto :venv_error
 echo [OK] Virtual Environment berhasil dibuat.
 echo.
 goto :install_deps
