@@ -22,10 +22,19 @@ function Obfuscate {
     return $result
 }
 
+function Compute-Sha256 {
+    param([string]$text)
+    if ([string]::IsNullOrEmpty($text)) { return '' }
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($text)
+    $hashBytes = $sha256.ComputeHash($bytes)
+    return -join ($hashBytes | ForEach-Object { '{0:x2}' -f $_ })
+}
+
 try {
-    # Obfuscate credentials
-    $obfUser = Obfuscate -text $EmergencyUser
-    $obfToken = Obfuscate -text $EmergencyToken
+    # Obfuscate ApiKey, Hash Emergency Credentials with SHA-256
+    $hashUser = Compute-Sha256 -text $EmergencyUser
+    $hashToken = Compute-Sha256 -text $EmergencyToken
     $obfApiKey = Obfuscate -text $ApiKey
     
     # STEP 1: Write to Registry (Try HKLM first, fallback to HKCU for non-admin)
@@ -37,8 +46,8 @@ try {
         }
         Set-ItemProperty -Path $regPath -Name "Url" -Value $ServerUrl -Type String -Force
         Set-ItemProperty -Path $regPath -Name "ApiKey" -Value $obfApiKey -Type String -Force
-        Set-ItemProperty -Path $regPath -Name "EmergencyUser" -Value $obfUser -Type String -Force
-        Set-ItemProperty -Path $regPath -Name "EmergencyToken" -Value $obfToken -Type String -Force
+        Set-ItemProperty -Path $regPath -Name "EmergencyUser" -Value $hashUser -Type String -Force
+        Set-ItemProperty -Path $regPath -Name "EmergencyToken" -Value $hashToken -Type String -Force
         $regSuccess = $true
         Write-Host "Registry (HKLM) updated successfully"
     } catch {
@@ -50,8 +59,8 @@ try {
             }
             Set-ItemProperty -Path $regPathUser -Name "Url" -Value $ServerUrl -Type String -Force
             Set-ItemProperty -Path $regPathUser -Name "ApiKey" -Value $obfApiKey -Type String -Force
-            Set-ItemProperty -Path $regPathUser -Name "EmergencyUser" -Value $obfUser -Type String -Force
-            Set-ItemProperty -Path $regPathUser -Name "EmergencyToken" -Value $obfToken -Type String -Force
+            Set-ItemProperty -Path $regPathUser -Name "EmergencyUser" -Value $hashUser -Type String -Force
+            Set-ItemProperty -Path $regPathUser -Name "EmergencyToken" -Value $hashToken -Type String -Force
             $regSuccess = $true
             Write-Host "Registry (HKCU) updated successfully"
         } catch {
@@ -65,8 +74,8 @@ try {
         "[TMBilling]",
         "url=$ServerUrl",
         "apikey=$obfApiKey",
-        "emergency_user=$obfUser",
-        "emergency_token=$obfToken"
+        "emergency_user=$hashUser",
+        "emergency_token=$hashToken"
     )
     
     [System.IO.File]::WriteAllLines($configPath, $content, [System.Text.Encoding]::UTF8)

@@ -13,6 +13,19 @@ try {
     
     $ini = Get-Content $configPath -Raw
     
+    function Ensure-Sha256 {
+        param([string]$text)
+        $trimmed = $text.Trim()
+        if ($trimmed.Length -eq 64 -and $trimmed -match '^[0-9a-fA-F]{64}$') {
+            return $trimmed
+        }
+        if ([string]::IsNullOrEmpty($trimmed)) { return '' }
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($trimmed)
+        $hashBytes = $sha256.ComputeHash($bytes)
+        return -join ($hashBytes | ForEach-Object { '{0:x2}' -f $_ })
+    }
+
     # Sync to Registry (HKLM and HKCU)
     $regPaths = @("HKLM:\Software\TMBilling", "HKCU:\Software\TMBilling")
     
@@ -31,11 +44,11 @@ try {
                 Set-ItemProperty -Path $regPath -Name "ApiKey" -Value $key -Type String -Force
             }
             if ($ini -match 'emergency_user=(.+)') {
-                $user = $matches[1].Trim()
+                $user = Ensure-Sha256 -text $matches[1]
                 Set-ItemProperty -Path $regPath -Name "EmergencyUser" -Value $user -Type String -Force
             }
             if ($ini -match 'emergency_token=(.+)') {
-                $token = $matches[1].Trim()
+                $token = Ensure-Sha256 -text $matches[1]
                 Set-ItemProperty -Path $regPath -Name "EmergencyToken" -Value $token -Type String -Force
             }
             Write-Host "Synced to $regPath"

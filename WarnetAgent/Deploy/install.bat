@@ -140,21 +140,25 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0write_config.ps1" -Ins
 
 if errorlevel 1 (
     echo    [INFO] Menulis config.ini & Registry langsung...
+    for /f "delims=" %%h in ('powershell -NoProfile -Command "$s=[System.Security.Cryptography.SHA256]::Create(); -join ($s.ComputeHash([System.Text.Encoding]::UTF8.GetBytes('%INPUT_ADMIN_USER%')) | ForEach-Object { '{0:x2}' -f $_ })"') do set HASH_USER=%%h
+    for /f "delims=" %%h in ('powershell -NoProfile -Command "$s=[System.Security.Cryptography.SHA256]::Create(); -join ($s.ComputeHash([System.Text.Encoding]::UTF8.GetBytes('%INPUT_ADMIN_PASS%')) | ForEach-Object { '{0:x2}' -f $_ })"') do set HASH_PASS=%%h
+    if "%HASH_USER%"=="" set HASH_USER=%INPUT_ADMIN_USER%
+    if "%HASH_PASS%"=="" set HASH_PASS=%INPUT_ADMIN_PASS%
     reg add "HKCU\Software\TMBilling" /v Url /t REG_SZ /d "%FINAL_URL%" /f >nul 2>&1
     reg add "HKCU\Software\TMBilling" /v ApiKey /t REG_SZ /d "%INPUT_API_KEY%" /f >nul 2>&1
-    reg add "HKCU\Software\TMBilling" /v EmergencyUser /t REG_SZ /d "%INPUT_ADMIN_USER%" /f >nul 2>&1
-    reg add "HKCU\Software\TMBilling" /v EmergencyToken /t REG_SZ /d "%INPUT_ADMIN_PASS%" /f >nul 2>&1
+    reg add "HKCU\Software\TMBilling" /v EmergencyUser /t REG_SZ /d "%HASH_USER%" /f >nul 2>&1
+    reg add "HKCU\Software\TMBilling" /v EmergencyToken /t REG_SZ /d "%HASH_PASS%" /f >nul 2>&1
     if "%IS_ADMIN%"=="1" (
         reg add "HKLM\Software\TMBilling" /v Url /t REG_SZ /d "%FINAL_URL%" /f >nul 2>&1
         reg add "HKLM\Software\TMBilling" /v ApiKey /t REG_SZ /d "%INPUT_API_KEY%" /f >nul 2>&1
-        reg add "HKLM\Software\TMBilling" /v EmergencyUser /t REG_SZ /d "%INPUT_ADMIN_USER%" /f >nul 2>&1
-        reg add "HKLM\Software\TMBilling" /v EmergencyToken /t REG_SZ /d "%INPUT_ADMIN_PASS%" /f >nul 2>&1
+        reg add "HKLM\Software\TMBilling" /v EmergencyUser /t REG_SZ /d "%HASH_USER%" /f >nul 2>&1
+        reg add "HKLM\Software\TMBilling" /v EmergencyToken /t REG_SZ /d "%HASH_PASS%" /f >nul 2>&1
     )
     echo [TMBilling]> "%INSTALL_DIR%\config.ini"
     echo url=%FINAL_URL%>> "%INSTALL_DIR%\config.ini"
     echo apikey=%INPUT_API_KEY%>> "%INSTALL_DIR%\config.ini"
-    echo emergency_user=%INPUT_ADMIN_USER%>> "%INSTALL_DIR%\config.ini"
-    echo emergency_token=%INPUT_ADMIN_PASS%>> "%INSTALL_DIR%\config.ini"
+    echo emergency_user=%HASH_USER%>> "%INSTALL_DIR%\config.ini"
+    echo emergency_token=%HASH_PASS%>> "%INSTALL_DIR%\config.ini"
 )
 goto :config_done
 
