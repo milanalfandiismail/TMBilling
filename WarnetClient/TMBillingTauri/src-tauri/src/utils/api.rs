@@ -5,6 +5,7 @@ use crate::state::{REMAINING_SECONDS, SESSION_ACTIVE};
 use winreg::enums::*;
 use winreg::RegKey;
 use base64::Engine;
+use sha2::{Sha256, Digest};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StatusResponse {
@@ -90,6 +91,24 @@ fn is_obfuscated(input: &str) -> bool {
     deobf.chars().all(|c| c.is_ascii() && !c.is_control())
 }
 
+fn sha256_hex(input: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(input.as_bytes());
+    format!("{:x}", hasher.finalize())
+}
+
+fn to_sha256_hash(val: &str) -> String {
+    let val = val.trim();
+    if val.len() == 64 && val.chars().all(|c| c.is_ascii_hexdigit()) {
+        val.to_lowercase()
+    } else if is_obfuscated(val) {
+        let deobf = deobfuscate(val);
+        sha256_hex(&deobf)
+    } else {
+        sha256_hex(val)
+    }
+}
+
 #[derive(Clone)]
 pub struct ApiService {
     client: reqwest::Client,
@@ -148,21 +167,13 @@ impl ApiService {
             if let Ok(user) = subkey.get_value::<String, _>("EmergencyUser") {
                 let user = user.trim().to_string();
                 if !user.is_empty() {
-                    if is_obfuscated(&user) {
-                        reg_em_user = Some(deobfuscate(&user));
-                    } else {
-                        reg_em_user = Some(user);
-                    }
+                    reg_em_user = Some(to_sha256_hash(&user));
                 }
             }
             if let Ok(t) = subkey.get_value::<String, _>("EmergencyToken") {
                 let t = t.trim().to_string();
                 if !t.is_empty() {
-                    if is_obfuscated(&t) {
-                        reg_em_token = Some(deobfuscate(&t));
-                    } else {
-                        reg_em_token = Some(t);
-                    }
+                    reg_em_token = Some(to_sha256_hash(&t));
                 }
             }
         }
@@ -198,17 +209,9 @@ impl ApiService {
                                 ini_api_key = Some(val);
                             }
                         } else if key == "emergencyuser" || key == "emergency_user" {
-                            if is_obfuscated(&val) {
-                                ini_em_user = Some(deobfuscate(&val));
-                            } else {
-                                ini_em_user = Some(val);
-                            }
+                            ini_em_user = Some(to_sha256_hash(&val));
                         } else if key == "emergencytoken" || key == "emergency_token" {
-                            if is_obfuscated(&val) {
-                                ini_em_token = Some(deobfuscate(&val));
-                            } else {
-                                ini_em_token = Some(val);
-                            }
+                            ini_em_token = Some(to_sha256_hash(&val));
                         }
                     }
                 }
@@ -220,8 +223,8 @@ impl ApiService {
 
         let url = reg_url.or(ini_url).unwrap_or_else(|| "http://127.0.0.1:7015".to_string());
         let api_key = reg_api_key.or(ini_api_key).unwrap_or_else(|| "TM2026".to_string());
-        let em_user = reg_em_user.or(ini_em_user).unwrap_or_else(|| "TMBilling".to_string());
-        let em_token = reg_em_token.or(ini_em_token).unwrap_or_else(|| "TM123qaz!@#".to_string());
+        let em_user = reg_em_user.or(ini_em_user).unwrap_or_else(|| sha256_hex("TMBilling"));
+        let em_token = reg_em_token.or(ini_em_token).unwrap_or_else(|| sha256_hex("TM123qaz!@#"));
 
         (url, api_key, em_user, em_token)
     }
@@ -330,12 +333,14 @@ impl ApiService {
 
     pub async fn admin_login(&self, ip: &str, mac: &str, user: &str, pass: &str) -> Result<StatusResponse, String> {
         // 1. CEK EMERGENCY CREDENTIALS OFFLINE DULU (biar bisa offline)
-        if user == self.emergency_user && pass == self.emergency_token {
+        let user_hash = sha256_hex(user.trim());
+        let pass_hash = sha256_hex(pass.trim());
+        if user_hash.eq_ignore_ascii_case(&self.emergency_user) && pass_hash.eq_ignore_ascii_case(&self.emergency_token) {
             return Ok(StatusResponse {
                 status: "admin".to_string(),
                 sisa_waktu: Some(0),
                 nama: Some("SYSTEM".to_string()),
-                grup: Some("SYSTEM".to_string()),
+                grup: Some("ADMINISTRATOR".to_string()),
                 pc_kode: None,
                 shutdown_timer: Some(0),
                 command: None,
