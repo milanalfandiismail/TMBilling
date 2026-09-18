@@ -149,14 +149,21 @@ fn sha256_hex(input: &str) -> String {
 
 fn to_sha256_hash(val: &str) -> String {
     let val = val.trim();
+    // Sudah berupa SHA256 hash (64 hex chars) — return as-is
     if val.len() == 64 && val.chars().all(|c| c.is_ascii_hexdigit()) {
-        val.to_lowercase()
-    } else if is_obfuscated(val) {
-        let deobf = deobfuscate(val);
-        sha256_hex(&deobf)
-    } else {
-        sha256_hex(val)
+        return val.to_lowercase();
     }
+    // XOR-obfuscated (format lama registry) — decode dulu
+    if is_obfuscated(val) {
+        let deobf = deobfuscate(val);
+        // Jika hasil decode sudah 64-char hex (SHA256 ter-obfuscate), return as-is
+        if deobf.len() == 64 && deobf.chars().all(|c| c.is_ascii_hexdigit()) {
+            return deobf.to_lowercase();
+        }
+        return sha256_hex(&deobf);
+    }
+    // Plain text — hash langsung
+    sha256_hex(val)
 }
 
 // Memuat konfigurasi hibrida (Registry -> config.ini -> default)
@@ -167,38 +174,35 @@ fn load_config() -> (String, String, String, String) {
     let mut reg_em_user = None;
     let mut reg_em_token = None;
 
-    // 1. Coba baca dari Registry (HKLM dulu, fallback ke HKCU)
+    // 1. Coba baca dari Registry
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-    let reg_subkey = hklm.open_subkey("Software\\TMBilling").or_else(|_| hkcu.open_subkey("Software\\TMBilling"));
 
-    if let Ok(subkey) = reg_subkey {
+    // Url & ApiKey: HKLM dulu (machine-wide setting)
+    let machine_reg = hklm.open_subkey("Software\\TMBilling").or_else(|_| hkcu.open_subkey("Software\\TMBilling"));
+    if let Ok(subkey) = machine_reg {
         if let Ok(u) = subkey.get_value::<String, _>("Url") {
-            if !u.trim().is_empty() {
-                reg_url = Some(u);
-            }
+            if !u.trim().is_empty() { reg_url = Some(u); }
         }
         if let Ok(k) = subkey.get_value::<String, _>("ApiKey") {
             let k_trimmed = k.trim().to_string();
             if !k_trimmed.is_empty() {
-                if is_obfuscated(&k_trimmed) {
-                    reg_api_key = Some(deobfuscate(&k_trimmed));
-                } else {
-                    reg_api_key = Some(k_trimmed);
-                }
+                reg_api_key = Some(if is_obfuscated(&k_trimmed) { deobfuscate(&k_trimmed) } else { k_trimmed });
             }
         }
+    }
+
+    // EmergencyUser & EmergencyToken: HKCU dulu (write_config.ps1 selalu tulis HKCU dengan SHA256 terbaru)
+    // HKLM bisa berisi XOR-format lama yang sudah tidak valid
+    let user_reg = hkcu.open_subkey("Software\\TMBilling").or_else(|_| hklm.open_subkey("Software\\TMBilling"));
+    if let Ok(subkey) = user_reg {
         if let Ok(user) = subkey.get_value::<String, _>("EmergencyUser") {
             let user_trimmed = user.trim().to_string();
-            if !user_trimmed.is_empty() {
-                reg_em_user = Some(to_sha256_hash(&user_trimmed));
-            }
+            if !user_trimmed.is_empty() { reg_em_user = Some(to_sha256_hash(&user_trimmed)); }
         }
         if let Ok(t) = subkey.get_value::<String, _>("EmergencyToken") {
             let t_trimmed = t.trim().to_string();
-            if !t_trimmed.is_empty() {
-                reg_em_token = Some(to_sha256_hash(&t_trimmed));
-            }
+            if !t_trimmed.is_empty() { reg_em_token = Some(to_sha256_hash(&t_trimmed)); }
         }
     }
 
@@ -249,17 +253,16 @@ fn load_config() -> (String, String, String, String) {
     let em_user = reg_em_user.or(ini_em_user).unwrap_or_else(|| sha256_hex("TMBilling"));
     let em_token = reg_em_token.or(ini_em_token).unwrap_or_else(|| sha256_hex("TM123qaz!@#"));
 
-    // 4. Sinkronisasi: tulis ke Registry (dalam bentuk obfuscated) biar komponen lain bisa baca
+    // 4. Sinkronisasi: hanya tulis Url & ApiKey ke HKLM.
+    // EmergencyUser/Token TIDAK ditimpa — sudah diset oleh write_config.ps1 dalam format SHA256.
+    // Menimpa dengan XOR-obfuscated akan membuat Tauri client tidak bisa login.
     let obf_api_key = obfuscate(&api_key);
-    let obf_em_user = obfuscate(&em_user);
-    let obf_em_token = obfuscate(&em_token);
 
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
     if let Ok(subkey) = hklm.create_subkey("Software\\TMBilling") {
         let _ = subkey.set_value("Url", &url);
         let _ = subkey.set_value("ApiKey", &obf_api_key);
-        let _ = subkey.set_value("EmergencyUser", &obf_em_user);
-        let _ = subkey.set_value("EmergencyToken", &obf_em_token);
+        // EmergencyUser & EmergencyToken sengaja tidak ditulis ulang di sini
     }
 
     (url, api_key, em_user, em_token)

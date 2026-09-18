@@ -127,7 +127,8 @@ def emergency_login():
     try:
         result = ClientService.emergency_login(
             ip_address=data.get("ip_address"),
-            mac_address=data.get("mac_address", "").upper().strip()
+            mac_address=data.get("mac_address", "").upper().strip(),
+            username=data.get("username", "SYSTEM").strip()
         )
         return jsonify(result), 200
     except ValueError as e:

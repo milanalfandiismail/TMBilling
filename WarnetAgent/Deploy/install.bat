@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
-title TMBilling Agent & Kiosk Installer
+title TMBilling Agent ^& Kiosk Installer
 color 0b
 
 :: =========================================================================
@@ -21,13 +21,13 @@ if %errorlevel% equ 0 (
 
 cls
 echo =========================================================================
-echo         TMBILLING AGENT & KIOSK - PREMIUM AUTO INSTALLER
+echo         TMBILLING AGENT ^& KIOSK - PREMIUM AUTO INSTALLER
 echo =========================================================================
 echo.
 if "%IS_ADMIN%"=="1" (
-    echo [MODE] Dijalankan sebagai Administrator (Full System Access).
+    echo [MODE] Dijalankan sebagai Administrator ^(Full System Access^).
 ) else (
-    echo [MODE] Dijalankan sebagai Pengguna Standar (Run Biasa / Non-Admin).
+    echo [MODE] Dijalankan sebagai Pengguna Standar ^(Run Biasa / Non-Admin^).
     echo        Installer akan menyesuaikan folder dan Registry secara otomatis.
 )
 echo.
@@ -99,7 +99,7 @@ if exist "%~dp0config.ini" (
 
 echo.
 echo =========================================================================
-echo                PENGATURAN ALAMAT SERVER & API KEY
+echo                PENGATURAN ALAMAT SERVER ^& API KEY
 echo =========================================================================
 set /p SERVER_IP="Masukkan IP atau Domain Server Billing [Default: 127.0.0.1]: "
 if "%SERVER_IP%"=="" set SERVER_IP=127.0.0.1
@@ -139,7 +139,7 @@ echo    Menulis konfigurasi server dan mengamankan kredensial...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0write_config.ps1" -InstallDir "%INSTALL_DIR%" -ServerUrl "%FINAL_URL%" -ApiKey "%INPUT_API_KEY%" -EmergencyUser "%INPUT_ADMIN_USER%" -EmergencyToken "%INPUT_ADMIN_PASS%"
 
 if errorlevel 1 (
-    echo    [INFO] Menulis config.ini & Registry langsung...
+    echo    [INFO] Menulis config.ini ^& Registry langsung...
     for /f "delims=" %%h in ('powershell -NoProfile -Command "$s=[System.Security.Cryptography.SHA256]::Create(); -join ($s.ComputeHash([System.Text.Encoding]::UTF8.GetBytes('%INPUT_ADMIN_USER%')) | ForEach-Object { '{0:x2}' -f $_ })"') do set HASH_USER=%%h
     for /f "delims=" %%h in ('powershell -NoProfile -Command "$s=[System.Security.Cryptography.SHA256]::Create(); -join ($s.ComputeHash([System.Text.Encoding]::UTF8.GetBytes('%INPUT_ADMIN_PASS%')) | ForEach-Object { '{0:x2}' -f $_ })"') do set HASH_PASS=%%h
     if "%HASH_USER%"=="" set HASH_USER=%INPUT_ADMIN_USER%
@@ -171,7 +171,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0sync_registry.ps1" -In
 :: =========================================================================
 :: 4. KONFIGURASI TIGHTVNC REGISTRY (HKCU & HKLM)
 :: =========================================================================
-echo 4. Mengkonfigurasi Registry TightVNC (Loopback & Remote Control Port 5900)...
+echo 4. Mengkonfigurasi Registry TightVNC (Loopback ^& Remote Control Port 5900)...
 reg add "HKCU\Software\TightVNC\Server" /v RfbPort /t REG_DWORD /d 5900 /f >nul 2>&1
 reg add "HKCU\Software\TightVNC\Server" /v AcceptRfbConnections /t REG_DWORD /d 1 /f >nul 2>&1
 reg add "HKCU\Software\TightVNC\Server" /v AllowLoopback /t REG_DWORD /d 1 /f >nul 2>&1
@@ -210,7 +210,7 @@ echo    [OK] Konfigurasi Registry TightVNC siap.
 :: 5. CREATE ADMIN CREDENTIALS DOCUMENTATION
 :: =========================================================================
 if exist "%INSTALL_DIR%\config.ini" (
-    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0create_admin_creds.ps1" -InstallDir "%INSTALL_DIR%" >nul 2>&1
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0create_admin_creds.ps1" -InstallDir "%INSTALL_DIR%" -PlainUser "%INPUT_ADMIN_USER%" -PlainPass "%INPUT_ADMIN_PASS%" >nul 2>&1
 )
 
 :: =========================================================================
@@ -226,7 +226,7 @@ if "%IS_ADMIN%"=="1" (
 )
 
 :: 2. Selalu buat di User Startup Folder (100% aman untuk semua user)
-powershell -ExecutionPolicy Bypass -Command "$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut(\"$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\MGCTM.lnk\"); $Shortcut.TargetPath = '%INSTALL_DIR%\MGCTM.exe'; $Shortcut.WorkingDirectory = '%INSTALL_DIR%'; $Shortcut.Save()" >nul 2>&1
+powershell -ExecutionPolicy Bypass -Command "$WshShell = New-Object -ComObject WScript.Shell; $lnkPath = [System.IO.Path]::Combine($env:APPDATA, 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', 'MGCTM.lnk'); $Shortcut = $WshShell.CreateShortcut($lnkPath); $Shortcut.TargetPath = '%INSTALL_DIR%\MGCTM.exe'; $Shortcut.WorkingDirectory = '%INSTALL_DIR%'; $Shortcut.Save()" >nul 2>&1
 if not errorlevel 1 set "SHORTCUT_CREATED=1"
 
 if "%SHORTCUT_CREATED%"=="1" (
@@ -266,12 +266,12 @@ echo.
 echo =========================================================================
 echo   INSTALASI SELESAI! TMBilling Agent berjalan senyap di background.
 echo   Folder Instalasi: %INSTALL_DIR%
-if exist "%INSTALL_DIR%\admin_credentials.txt" (
-    echo.
-    echo   [PENTING] Kredensial Admin Darurat disimpan di:
-    echo   %INSTALL_DIR%\admin_credentials.txt
-)
 echo =========================================================================
 echo.
+if exist "%INSTALL_DIR%\admin_credentials.txt" (
+    echo   [PENTING] Kredensial Admin Darurat disimpan di:
+    echo   %INSTALL_DIR%\admin_credentials.txt
+    echo.
+)
 pause
 exit /b 0

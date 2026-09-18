@@ -99,14 +99,12 @@ fn sha256_hex(input: &str) -> String {
 
 fn to_sha256_hash(val: &str) -> String {
     let val = val.trim();
+    // Sudah berupa SHA256 hash (64 hex chars) — return as-is
     if val.len() == 64 && val.chars().all(|c| c.is_ascii_hexdigit()) {
-        val.to_lowercase()
-    } else if is_obfuscated(val) {
-        let deobf = deobfuscate(val);
-        sha256_hex(&deobf)
-    } else {
-        sha256_hex(val)
+        return val.to_lowercase();
     }
+    // Plain text — hash langsung (emergency creds tidak di-XOR-obfuscate)
+    sha256_hex(val)
 }
 
 #[derive(Clone)]
@@ -401,11 +399,12 @@ impl ApiService {
         })
     }
 
-    pub async fn emergency_login(&self, ip: &str, mac: &str) -> Result<StatusResponse, String> {
-        // 1. COBA SERVER (bonus — biar set pc.is_admin_mode di DB)
+    pub async fn emergency_login(&self, ip: &str, mac: &str, username: &str) -> Result<StatusResponse, String> {
+        // Kirim ke server agar tercatat di DB & log (PC mana yang emergency login, siapa usernya)
         let body = serde_json::json!({
             "ip_address": ip,
             "mac_address": mac,
+            "username": username,
         });
 
         let url = format!("{}/emergency-login", self.server_url);
@@ -415,7 +414,7 @@ impl ApiService {
             .send()
             .await;
 
-        // 2. TETAP SUKSES (walau server unreachable)
+        // TETAP SUKSES walau server unreachable (emergency mode = offline-first)
         Ok(StatusResponse {
             status: "admin".to_string(),
             sisa_waktu: Some(0),
