@@ -285,9 +285,12 @@ fn load_config() -> (String, String, String, String) {
     let mut reg_em_user = None;
     let mut reg_em_token = None;
 
-    // 1. Coba baca dari Registry
+    // 1. Coba baca dari Registry (HKLM dulu, fallback ke HKCU)
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-    if let Ok(subkey) = hklm.open_subkey("Software\\TMBilling") {
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let reg_subkey = hklm.open_subkey("Software\\TMBilling").or_else(|_| hkcu.open_subkey("Software\\TMBilling"));
+
+    if let Ok(subkey) = reg_subkey {
         if let Ok(u) = subkey.get_value::<String, _>("Url") {
             if !u.trim().is_empty() {
                 reg_url = Some(u);
