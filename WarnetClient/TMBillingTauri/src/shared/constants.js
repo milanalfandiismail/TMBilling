@@ -3,9 +3,9 @@
  * Konstanta yang digunakan di Kiosk dan Overlay mode
  */
 
-export const AUDIO_WARNING_15MIN_PATH = 'assets/sounds/warning_15min.wav';
-export const AUDIO_WARNING_5MIN_PATH = 'assets/sounds/warning_5min.wav';
-export const AUDIO_WARNING_1MIN_PATH = 'assets/sounds/warning_1min.wav';
+export const AUDIO_WARNING_15MIN_PATH = 'assets/sounds/warning_15min.mp3';
+export const AUDIO_WARNING_5MIN_PATH = 'assets/sounds/warning_5min.mp3';
+export const AUDIO_WARNING_1MIN_PATH = 'assets/sounds/warning_1min.mp3';
 export const AUDIO_WARNING_PATH = AUDIO_WARNING_5MIN_PATH;
 
 export const AUDIO_TARGET_SYSTEM_VOLUME = 1.0; // 100% master volume sistem Windows

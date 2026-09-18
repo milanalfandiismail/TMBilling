@@ -179,12 +179,10 @@ export const Overlay = {
      * Play warning audio with temporary 100% Windows volume override and dynamic auto-restore
      */
     async playWarningAudio(type = '5min') {
-        let audioPath = AUDIO_WARNING_5MIN_PATH;
-        if (type === '15min') {
-            audioPath = AUDIO_WARNING_15MIN_PATH;
-        } else if (type === '1min') {
-            audioPath = AUDIO_WARNING_1MIN_PATH;
-        }
+        const audioCandidates = [
+            `assets/sounds/warning_${type}.mp3`,
+            `assets/sounds/warning_${type}.wav`
+        ];
 
         let prevVolume = null;
         try {
@@ -207,25 +205,31 @@ export const Overlay = {
             }
         };
 
-        try {
+        const tryPlayCandidate = (index) => {
+            if (index >= audioCandidates.length) {
+                console.warn(`Semua kandidat audio untuk warning_${type} gagal diputar.`);
+                restoreVolumeOnce();
+                return;
+            }
+
+            const audioPath = audioCandidates[index];
             const alertAudio = new Audio(audioPath);
             alertAudio.volume = AUDIO_PLAYBACK_VOLUME;
 
-            // Kembalikan volume begitu audio selesai diputar atau gagal
             alertAudio.addEventListener('ended', restoreVolumeOnce, { once: true });
-            alertAudio.addEventListener('error', (err) => {
-                console.warn(`Berkas audio ${audioPath} gagal diputar:`, err);
-                restoreVolumeOnce();
+            alertAudio.addEventListener('error', () => {
+                tryPlayCandidate(index + 1);
             }, { once: true });
 
-            // Safety fallback timeout: jika audio terputus atau suspend, kembalikan volume setelah 8 detik
-            setTimeout(restoreVolumeOnce, 8000);
+            alertAudio.play().catch(() => {
+                tryPlayCandidate(index + 1);
+            });
+        };
 
-            await alertAudio.play();
-        } catch (err) {
-            console.warn(`Gagal memutar audio ${audioPath}:`, err);
-            restoreVolumeOnce();
-        }
+        // Safety fallback timeout: jika audio terputus atau suspend, kembalikan volume setelah 8 detik
+        setTimeout(restoreVolumeOnce, 8000);
+
+        tryPlayCandidate(0);
     },
 
     /**
