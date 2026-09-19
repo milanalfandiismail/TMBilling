@@ -162,22 +162,36 @@ const Member = {
         const selections = [];
         let totalMenit = 0;
         let totalHarga = 0;
+        const paketList = (typeof MemberRefill !== 'undefined' ? MemberRefill._currentPaketList : (this._currentPaketList || [])) || [];
         
-        document.querySelectorAll('input[type="checkbox"][id^="mem-chk-paket-"]:checked').forEach(chk => {
-            const paketId = parseInt(chk.value);
-            const qtyInput = document.getElementById(`mem-qty-paket-${paketId}`);
-            const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
-            selections.push({ paket_id: paketId, qty: qty });
-            
-            // MemberRefill has _currentPaketList
-            if (typeof MemberRefill !== 'undefined' && MemberRefill._currentPaketList) {
-                const paket = MemberRefill._currentPaketList.find(p => p.id === paketId);
+        if (typeof MemberRefill !== 'undefined' && MemberRefill._selections && Object.keys(MemberRefill._selections).length > 0) {
+            Object.keys(MemberRefill._selections).forEach(idStr => {
+                const paketId = parseInt(idStr);
+                const sel = MemberRefill._selections[paketId];
+                if (sel && sel.checked) {
+                    const qty = sel.qty || 1;
+                    selections.push({ paket_id: paketId, qty: qty });
+                    const paket = paketList.find(p => p.id === paketId);
+                    if (paket) {
+                        totalMenit += (paket.durasi_menit || 0) * qty;
+                        totalHarga += (paket.harga || 0) * qty;
+                    }
+                }
+            });
+        } else {
+            document.querySelectorAll('input[type="checkbox"][id^="mem-chk-paket-"]:checked').forEach(chk => {
+                const paketId = parseInt(chk.value);
+                const qtyInput = document.getElementById(`mem-qty-paket-${paketId}`);
+                const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+                selections.push({ paket_id: paketId, qty: qty });
+                
+                const paket = paketList.find(p => p.id === paketId);
                 if (paket) {
                     totalMenit += (paket.durasi_menit || 0) * qty;
                     totalHarga += (paket.harga || 0) * qty;
                 }
-            }
-        });
+            });
+        }
 
         if (selections.length === 0) return Toast.error('Pilih minimal satu paket terlebih dahulu');
 

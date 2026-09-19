@@ -242,7 +242,8 @@ const API = {
         processesKill: (pcId, processName) => API.request(`/api/v1/kasir/monitor/processes/${pcId}/kill`, {
             method: 'POST',
             body: JSON.stringify({ process_name: processName })
-        })
+        }),
+        registerBaseline: (pcId) => API.request(`/api/v1/kasir/monitor/register/${pcId}`, { method: 'POST' })
     },
 
     // ⚡ BLACKOUT (MANUAL)

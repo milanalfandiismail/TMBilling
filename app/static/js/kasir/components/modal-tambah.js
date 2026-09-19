@@ -1,6 +1,7 @@
 const TambahModal = {
     sesiId: null,
     _currentPaketList: [],
+    _sesiInfo: null,
 
     async open(sesiId, pcGrup) {
         this.sesiId = sesiId;
@@ -16,12 +17,24 @@ const TambahModal = {
         }
 
         try {
+            // Load detail sesi aktif (Target PC, Guest / Member name, sisa waktu, tipe)
+            const sesiResp = await API.sesi.detail(sesiId);
+            const sesi = sesiResp.sesi || sesiResp;
+            this._sesiInfo = sesi;
+
+            const targetType = sesi.tipe === 'member' ? 'Member' : 'Guest / Tamu';
+            const targetName = sesi.tipe === 'member' ? (sesi.username || sesi.member_nama || 'Member') : (sesi.guest_nama || 'Guest');
+            const pcKode = sesi.pc_kode || '-';
+            const sisaWaktu = sesi.sisa_waktu || 0;
+            const targetGrupEffective = sesi.grup || pcGrup || 'reguler';
+            const grupName = String(targetGrupEffective).toUpperCase();
+
             const data = await API.paket.list({ aktif_only: true });
             const allPaket = Array.isArray(data) ? data : (data.paket || data.paket_list || []);
 
             let filteredPaket = [];
-            if (pcGrup) {
-                const targetGrup = String(pcGrup).toLowerCase();
+            if (targetGrupEffective) {
+                const targetGrup = String(targetGrupEffective).toLowerCase();
                 filteredPaket = allPaket.filter(p => {
                     const pg = String(p.grup || '').toLowerCase();
                     if (targetGrup === 'reguler') {
@@ -29,26 +42,28 @@ const TambahModal = {
                     }
                     return pg === targetGrup;
                 });
+            } else {
+                filteredPaket = allPaket;
             }
 
             this._currentPaketList = filteredPaket;
 
             if (!filteredPaket.length) {
-                return Toast.error('Belum ada paket aktif untuk zona ' + String(pcGrup).toUpperCase());
+                return Toast.error('Belum ada paket aktif untuk zona ' + grupName);
             }
 
             const options = filteredPaket.map(p => {
                 const durasi = p.durasi || p.durasi_menit || 0;
                 return `
-                    <div class="flex items-center justify-between p-3.5 bg-[#141414] border border-[#2a2a2a] rounded-xl transition-all gap-4 select-item relative hover:border-neutral-500" data-paket-id="${p.id}">
+                    <div class="flex items-center justify-between p-3 md:p-3.5 bg-[#141414] border border-[#2a2a2a] rounded-xl transition-all gap-4 select-item relative hover:border-neutral-500" data-paket-id="${p.id}">
                         <div class="flex items-center gap-3 min-w-0 flex-1">
                             <input type="checkbox" id="chk-paket-${p.id}" value="${p.id}" onchange="TambahModal.togglePaketSelection(${p.id})" class="w-4 h-4 rounded text-neutral-100 border-[#2a2a2a] focus:ring-neutral-500 bg-[#050505] focus:ring-2 cursor-pointer shrink-0">
                             <label for="chk-paket-${p.id}" class="cursor-pointer min-w-0 flex-1 select-none flex flex-col justify-center py-0.5">
                                 <span class="font-bold text-xs lg:text-base text-neutral-200 break-words whitespace-normal" title="${p.nama}">${p.nama}</span>
-                                <span class="font-mono text-[10px] lg:text-base text-neutral-400 flex items-center gap-1.5 mt-0.5">
+                                <span class="font-mono text-[10px] lg:text-xs text-neutral-400 flex items-center gap-1.5 mt-0.5">
                                     <span>${Utils.formatDurasiFriendly(durasi)}</span>
                                     <span class="text-neutral-600">&bull;</span>
-                                    <span class="text-emerald-400 font-bold">${Utils.formatRupiah(p.harga)}</span>
+                                    <span class="text-emerald-400 font-bold">${Utils.formatRupiah(p.harga || 0)}</span>
                                 </span>
                             </label>
                         </div>
@@ -63,52 +78,85 @@ const TambahModal = {
             }).join('');
 
             const html = `
-                <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-4 md:p-6 max-w-4xl w-[calc(100%-2rem)] mx-auto md:w-full max-h-[85vh] overflow-y-auto scrollbar-thin my-auto shadow-2xl">
-                    <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-[#2a2a2a]">
+                <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-4 md:p-6 max-w-md md:max-w-4xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[1500px] w-[calc(100%-2rem)] lg:w-[92vw] xl:w-[88vw] 2xl:w-[84vw] max-h-[92vh] xl:max-h-[88vh] mx-auto flex flex-col my-auto shadow-2xl relative overflow-hidden">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-[#2a2a2a] shrink-0">
                         <div class="flex items-center gap-3">
                             <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
                                 <svg class="w-4 h-4 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                             </div>
                             <div>
-                                <h3 class="text-xs lg:text-base font-bold text-neutral-100 uppercase tracking-wider">Tambah Waktu</h3>
-                                <p class="text-[9px] lg:text-base text-neutral-500 mt-0.5">Menambah durasi sesi aktif (Multiple Paket)</p>
+                                <h3 class="text-xs lg:text-base font-bold text-neutral-100 uppercase tracking-wider">Tambah Waktu Sesi</h3>
+                                <p class="text-[9px] lg:text-base text-neutral-500 mt-0.5 font-mono">
+                                    ${pcKode} &middot; <span class="text-neutral-300 font-bold">${targetName}</span> &middot; ${grupName}
+                                </p>
                             </div>
                         </div>
                         <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-5">
+                    <!-- Body (2-Column on lg/xl/2xl) -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5 flex-1 min-h-0 overflow-y-auto scrollbar-thin pr-1">
                         <!-- Left Column: Sesi Info and Total Preview -->
-                        <div class="md:col-span-1 space-y-4">
-                            <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
-                                <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold">Zona PC</div>
-                                <div class="font-bold text-xs lg:text-base text-neutral-200 mt-0.5 font-mono">${pcGrup ? pcGrup.toUpperCase() : 'STANDAR'}</div>
-                            </div>
-                            
-                            <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
-                                <div class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold">Total Tambahan Waktu</div>
-                                <div class="text-sm font-black text-neutral-200 mt-1" id="tambah-paket-total-preview">Pilih paket terlebih dahulu</div>
-                            </div>
+                        <div class="lg:col-span-1 space-y-3.5 flex flex-col justify-between">
+                            <div class="space-y-3.5">
+                                <!-- Target User & PC Info Card -->
+                                <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-3.5">
+                                    <div class="flex items-center justify-between">
+                                        <div class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider">${targetType}</div>
+                                        <span class="px-2 py-0.5 rounded text-[9px] lg:text-[10px] font-mono font-bold uppercase ${sesi.tipe === 'member' ? 'bg-indigo-950/60 border border-indigo-500/40 text-indigo-300' : 'bg-amber-950/60 border border-amber-500/40 text-amber-300'}">
+                                            ${sesi.tipe === 'member' ? 'MEMBER' : 'GUEST'}
+                                        </span>
+                                    </div>
+                                    <div class="font-bold text-xs lg:text-base text-neutral-100 mt-1 break-words font-mono">${targetName}</div>
+                                    
+                                    <div class="border-t border-[#2a2a2a] my-2.5"></div>
+                                    
+                                    <div class="grid grid-cols-2 gap-2 text-left">
+                                        <div>
+                                            <div class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold">Target PC</div>
+                                            <div class="font-mono font-bold text-neutral-200 text-xs lg:text-sm mt-0.5">${pcKode}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold">Sisa Waktu</div>
+                                            <div class="font-mono font-bold text-neutral-200 text-xs lg:text-sm mt-0.5">${Utils.formatDurasiFriendly(sisaWaktu)}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Total Preview Card -->
+                                <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-3.5">
+                                    <div class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider">Total Tambahan Waktu</div>
+                                    <div class="text-sm font-black text-neutral-200 mt-1" id="tambah-paket-total-preview">Pilih paket terlebih dahulu</div>
+                                </div>
 
-                            <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-4">
-                                <label class="text-[9px] lg:text-base text-neutral-500 uppercase font-bold block mb-1">Metode Bayar</label>
-                                <select id="tambah-metode-pembayaran" 
-                                    class="w-full px-2 py-1 bg-[#050505] border border-[#2a2a2a] rounded text-[10px] lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 font-bold transition-all">
-                                    ${paymentMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
-                                </select>
+                                <!-- Payment Method Card -->
+                                <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-3.5">
+                                    <label class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">Metode Bayar</label>
+                                    <select id="tambah-metode-pembayaran" 
+                                        class="w-full px-3 py-2 bg-[#050505] border border-[#2a2a2a] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 font-bold transition-all">
+                                        ${paymentMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         
-                        <!-- Right Column: Package List (Spans 3 columns) -->
-                        <div class="md:col-span-3 space-y-2">
-                            <label class="text-[9px] lg:text-base text-neutral-400 uppercase font-bold tracking-wider font-mono block">Pilih Paket & Tentukan Kuantitas</label>
-                            <div class="space-y-2 max-h-[160px] md:max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
+                        <!-- Right Column: Package List (Smooth Scrollable) -->
+                        <div class="lg:col-span-2 xl:col-span-3 flex flex-col space-y-2.5 min-h-0">
+                            <div class="flex items-center justify-between shrink-0">
+                                <label class="text-[9px] lg:text-xs text-neutral-400 uppercase font-bold tracking-wider font-mono block">Pilih Paket & Tentukan Kuantitas</label>
+                                <span class="text-[10px] lg:text-xs text-neutral-500 font-mono">${filteredPaket.length} Paket Aktif (${grupName})</span>
+                            </div>
+
+                            <!-- Package List Container with smooth scrollbar -->
+                            <div class="space-y-2 flex-1 overflow-y-auto pr-1.5 scrollbar-thin max-h-[380px] md:max-h-[460px] lg:max-h-[520px] xl:max-h-[580px] min-h-[220px]">
                                 ${options}
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex gap-3 justify-end mt-5 pt-4 border-t border-[#2a2a2a]">
+                    <!-- Footer Actions -->
+                    <div class="flex gap-3 justify-end mt-4 pt-3 border-t border-[#2a2a2a] shrink-0">
                         <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded-lg transition-colors">Batal</button>
                         <button onclick="TambahModal.submit()" class="px-5 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Tambah Waktu</button>
                     </div>
@@ -132,7 +180,7 @@ const TambahModal = {
             TambahModal.updateTotalPreview();
 
         } catch (err) {
-            Toast.error('Gagal memuat daftar paket');
+            Toast.error('Gagal memuat detail sesi / daftar paket: ' + err.message);
         }
     },
 
@@ -144,10 +192,12 @@ const TambahModal = {
         if (chk && qtyContainer && card) {
             if (chk.checked) {
                 qtyContainer.classList.remove('opacity-45', 'pointer-events-none');
+                qtyContainer.classList.add('opacity-100');
                 card.classList.remove('border-[#2a2a2a]', 'bg-[#141414]');
                 card.classList.add('border-neutral-400', 'bg-[#1e1e1e]');
             } else {
                 qtyContainer.classList.add('opacity-45', 'pointer-events-none');
+                qtyContainer.classList.remove('opacity-100');
                 card.classList.remove('border-neutral-400', 'bg-[#1e1e1e]');
                 card.classList.add('border-[#2a2a2a]', 'bg-[#141414]');
             }
@@ -159,7 +209,7 @@ const TambahModal = {
         const qtyInput = document.getElementById(`qty-paket-${paketId}`);
         if (!qtyInput) return;
         let val = parseInt(qtyInput.value) || 1;
-        val = Math.max(1, val + delta);
+        val = Math.max(1, Math.min(100, val + delta));
         qtyInput.value = val;
         this.updateTotalPreview();
     },
@@ -215,14 +265,13 @@ const TambahModal = {
 
         try {
             // Fetch session detail for confirmation
-            const sesiInfo = await API.sesi.detail(this.sesiId);
-            const sesi = sesiInfo.sesi || sesiInfo;
+            const sesi = this._sesiInfo || (await API.sesi.detail(this.sesiId)).sesi;
             
             let sisaSekarang = sesi.sisa_waktu || 0;
             let totalSetelah = sisaSekarang + totalMenit;
 
             let targetName = sesi.member_id ? `Member: ${sesi.member_nama || sesi.username || '-'}` : `Guest: ${sesi.guest_nama || 'Guest'}`;
-            let pcName = sesi.pc_kode ? `PC: ${sesi.pc_kode}` : '-';
+            let pcName = sesi.pc_kode || '-';
 
             const dataLines = [
                 { label: 'Target', value: `${pcName} (${targetName})` },

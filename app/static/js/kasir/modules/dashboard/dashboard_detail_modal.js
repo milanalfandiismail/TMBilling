@@ -16,21 +16,24 @@ const DashboardDetailModal = {
         const isAdminMode = pc.is_admin_mode || (sesi?.tipe === 'admin');
 
         const modalHtml = `
-            <div id="pc-detail-modal-card" class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-in transition-all duration-300">
-                <div class="px-6 py-4 border-b border-[#2a2a2a] flex items-center justify-between">
+            <div id="pc-detail-modal-card" class="bg-[#111] border border-[#2a2a2a] rounded-xl w-[calc(100%-2rem)] lg:w-[92vw] xl:w-[88vw] 2xl:w-[84vw] max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[1500px] h-[85vh] xl:h-[90vh] 2xl:h-[92vh] max-h-[94vh] xl:max-h-[94vh] 2xl:max-h-[96vh] flex flex-col overflow-hidden shadow-2xl animate-in transition-all duration-300">
+                <div class="px-5 md:px-6 py-3.5 md:py-4 border-b border-[#2a2a2a] flex items-center justify-between shrink-0">
                     <div>
-                        <h3 class="text-sm font-bold text-neutral-100 tracking-wide font-mono">${pc.kode}</h3>
-                        <div class="flex items-center gap-2 mt-1">
-                            <span class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase font-mono">${pc.grup}</span>
-                            <span class="text-[9px] lg:text-base text-neutral-600 font-mono">${pc.ip_address}</span>
+                        <h3 class="text-xs md:text-sm lg:text-base font-bold text-neutral-100 tracking-wide font-mono">${pc.kode}</h3>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <span class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase font-mono">${pc.grup}</span>
+                            <span class="text-[9px] lg:text-xs text-neutral-600 font-mono">${pc.ip_address}</span>
                         </div>
                     </div>
                     <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
                 </div>
 
-                <div id="modal-view-container" class="flex-1 overflow-y-auto flex flex-col">
-                    <div id="view-action-menu" class="p-5">
-                        <div class="grid grid-cols-3 gap-3">
+                <div id="modal-view-container" class="flex-1 min-h-0 overflow-y-auto flex flex-col scrollbar-thin">
+                    <div id="view-action-menu" class="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 overflow-y-auto scrollbar-thin">
+                        <!-- Left Column: Action Buttons -->
+                        <div class="lg:col-span-7 xl:col-span-7 space-y-2.5 flex flex-col justify-start">
+                            <div class="text-[10px] lg:text-xs text-neutral-400 uppercase font-bold tracking-wider font-mono">Aksi & Kontrol PC</div>
+                            <div class="grid grid-cols-3 gap-2.5 md:gap-3">
                             <button onclick="DashboardProcessMonitor.showProcesses(${pc.id})"
                                 class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 rounded-lg transition-colors ${!isOnline ? 'opacity-40 cursor-not-allowed' : ''}"
                                 ${!isOnline ? 'disabled' : ''}>
@@ -88,12 +91,13 @@ const DashboardDetailModal = {
                                 <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Pindah PC</span>
                             </div>`}
 
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] rounded-lg opacity-25">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <button onclick="DashboardDetailModal.showHardwareView(${pc.id}, '${pc.kode}')"
+                                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 hover:bg-[#141414] rounded-lg transition-colors group">
+                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] group-hover:border-neutral-500 flex items-center justify-center transition-colors">
+                                    <svg class="w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                 </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Hardware</span>
-                            </div>
+                                <span class="text-[10px] lg:text-base font-bold text-neutral-400 group-hover:text-neutral-200 uppercase tracking-wider text-center leading-tight transition-colors">Hardware</span>
+                            </button>
 
                             <button id="btn-screenshot-${pc.id}" onclick="DashboardDetailModal.takeScreenshot(${pc.id})"
                                 class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 rounded-lg transition-colors ${!isOnline ? 'opacity-40 cursor-not-allowed' : ''}"
@@ -157,23 +161,28 @@ const DashboardDetailModal = {
                             </button>` : `
                             <div class="flex flex-col items-center gap-2 p-4 bg-[#0a0a0a] border border-dashed border-[#1a1a1a] rounded-lg opacity-20"><span class="text-[9px] lg:text-base text-neutral-700 uppercase tracking-widest mt-4">—</span></div>`}
                         </div>
+                        </div>
 
-                        <div id="screenshot-preview-container" class="mt-4 p-4 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase tracking-wider font-mono">Tangkapan Layar</span>
-                                <span id="screenshot-time" class="text-[9px] lg:text-base text-neutral-500 font-mono">
-                                    ${pc.screenshot_time ? pc.screenshot_time : 'BELUM DIAMBIL'}
-                                </span>
-                            </div>
-                            <div class="relative w-full aspect-video rounded-lg overflow-hidden border border-[#1a1a1a] bg-black/60 flex items-center justify-center group">
-                                <img id="screenshot-img" src="${pc.screenshot_url && window.API ? API.resolveMediaUrl(pc.screenshot_url) + '?t=' + Date.now() : (pc.screenshot_url ? pc.screenshot_url + '?t=' + Date.now() : '')}" 
-                                    class="w-full h-full object-cover cursor-pointer transition-opacity duration-200 hover:opacity-90 ${pc.screenshot_url ? '' : 'hidden'}" 
-                                    onclick="DashboardDetailModal.viewFullscreen(this)" />
-                                <div id="screenshot-placeholder" class="text-neutral-600 text-xs lg:text-base font-mono ${pc.screenshot_url ? 'hidden' : ''}">Tidak ada gambar</div>
-                                <div id="screenshot-fullscreen-hint" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${pc.screenshot_url ? '' : 'hidden'}">
-                                    <div class="bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-lg flex items-center gap-2">
-                                        <svg class="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
-                                        <span class="text-[10px] lg:text-base font-bold text-white/80 uppercase tracking-wider">Fullscreen</span>
+                        <!-- Right Column: Screenshot Preview -->
+                        <div class="lg:col-span-5 xl:col-span-5 flex flex-col space-y-2.5">
+                            <div class="text-[10px] lg:text-xs text-neutral-400 uppercase font-bold tracking-wider font-mono">Tangkapan Layar Client</div>
+                            <div id="screenshot-preview-container" class="p-3.5 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg flex-1 flex flex-col justify-between">
+                                <div class="flex items-center justify-between mb-2 shrink-0">
+                                    <span class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider font-mono">Waktu Pengambilan</span>
+                                    <span id="screenshot-time" class="text-[9px] lg:text-xs text-neutral-500 font-mono">
+                                        ${pc.screenshot_time ? pc.screenshot_time : 'BELUM DIAMBIL'}
+                                    </span>
+                                </div>
+                                <div class="relative w-full aspect-video rounded-lg overflow-hidden border border-[#1a1a1a] bg-black/60 flex items-center justify-center group flex-1">
+                                    <img id="screenshot-img" src="${pc.screenshot_url && window.API ? API.resolveMediaUrl(pc.screenshot_url) + '?t=' + Date.now() : (pc.screenshot_url ? pc.screenshot_url + '?t=' + Date.now() : '')}" 
+                                        class="w-full h-full object-cover cursor-pointer transition-opacity duration-200 hover:opacity-90 ${pc.screenshot_url ? '' : 'hidden'}" 
+                                        onclick="DashboardDetailModal.viewFullscreen(this)" />
+                                    <div id="screenshot-placeholder" class="text-neutral-600 text-xs lg:text-sm font-mono ${pc.screenshot_url ? 'hidden' : ''}">Tidak ada gambar</div>
+                                    <div id="screenshot-fullscreen-hint" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${pc.screenshot_url ? '' : 'hidden'}">
+                                        <div class="bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-lg flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                                            <span class="text-[10px] lg:text-xs font-bold text-white/80 uppercase tracking-wider">Fullscreen</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -181,28 +190,23 @@ const DashboardDetailModal = {
                     </div>
 
                     <div id="view-process-list" class="hidden flex-1 flex flex-col overflow-hidden">
-                        <div class="px-6 py-3 border-b border-[#1c1c1c] flex items-center justify-between">
-                            <button onclick="DashboardProcessMonitor.backToMenu()" class="text-xs lg:text-base text-neutral-400 hover:text-neutral-200 font-bold transition-colors">&larr; Kembali</button>
-                            <span id="modal-pc-count" class="text-xs lg:text-base text-neutral-500 font-mono">0 PROSES</span>
+                        <div class="px-5 md:px-6 py-3 border-b border-[#1c1c1c] flex items-center justify-between shrink-0">
+                            <button onclick="DashboardProcessMonitor.backToMenu()" class="text-xs lg:text-sm text-neutral-400 hover:text-neutral-200 font-bold transition-colors flex items-center gap-1.5">&larr; Kembali</button>
+                            <span id="modal-pc-count" class="text-xs lg:text-sm text-neutral-400 font-mono font-bold">0 PROSES</span>
                         </div>
-                        <div class="px-6 py-2.5 border-b border-[#1c1c1c] bg-[#0a0a0a] flex items-center">
-                            <input type="text" id="input-search-processes" placeholder="Cari nama proses (contoh: chrome, valo)..." class="w-full bg-[#141414] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-xs lg:text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 font-mono" />
+                        <div class="px-5 md:px-6 py-2.5 border-b border-[#1c1c1c] bg-[#0a0a0a] flex items-center shrink-0">
+                            <div class="relative w-full">
+                                <input type="text" id="input-search-processes" placeholder="Cari nama proses (contoh: chrome, valo)..." class="w-full bg-[#141414] border border-[#2a2a2a] rounded-lg pl-9 pr-3 py-2 text-xs lg:text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 font-mono" />
+                                <svg class="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </div>
                         </div>
-                        <div class="flex-1 overflow-x-hidden overflow-y-auto scrollbar-mono w-full max-h-[55vh]">
-                            <table class="w-full text-xs lg:text-base">
-                                <thead class="sticky top-0 bg-[#0c0c0c] z-10">
-                                    <tr class="border-b border-[#1c1c1c] text-[10px] lg:text-base text-neutral-500 uppercase tracking-wider">
-                                        <th class="px-6 py-3 text-left">Layanan / Aplikasi</th>
-                                        <th class="px-6 py-3 text-right w-32">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="modal-process-list" class="divide-y divide-[#1c1c1c]">
-                                    <tr><td colspan="2" class="px-6 py-10 text-center text-neutral-500 text-xs lg:text-base font-mono">Memuat...</td></tr>
-                                </tbody>
-                            </table>
+                        <div class="flex-1 min-h-0 overflow-y-auto scrollbar-thin p-4">
+                            <div id="modal-process-list" class="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
+                                <div class="col-span-full py-12 text-center text-neutral-500 text-xs lg:text-sm font-mono">Memuat...</div>
+                            </div>
                         </div>
-                        <div class="p-4 border-t border-[#2a2a2a] flex justify-end">
-                            <button id="btn-refresh-processes" onclick="DashboardProcessMonitor.loadProcesses(${pc.id})" class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Segarkan</button>
+                        <div class="p-3.5 md:p-4 border-t border-[#2a2a2a] flex justify-end shrink-0 bg-[#0c0c0c]">
+                            <button id="btn-refresh-processes" onclick="DashboardProcessMonitor.loadProcesses(${pc.id})" class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-sm font-bold rounded-lg transition-colors">Segarkan</button>
                         </div>
                     </div>
 
@@ -326,6 +330,30 @@ const DashboardDetailModal = {
                                     Tutup
                                 </button>
                             </div>
+                        </div>
+                    </div>
+
+                    <div id="view-hardware-specs" class="hidden flex-1 flex flex-col overflow-hidden">
+                        <div class="px-5 md:px-6 py-3 border-b border-[#1c1c1c] flex items-center justify-between shrink-0 bg-[#0c0c0c]">
+                            <button onclick="DashboardDetailModal.backFromHardware()" class="text-xs lg:max-xl:text-sm xl:text-base text-neutral-400 hover:text-neutral-200 font-bold transition-colors flex items-center gap-1.5 font-mono">
+                                &larr; Kembali
+                            </button>
+                            <div id="modal-hw-header-status" class="flex items-center gap-2">
+                                <span class="text-xs lg:max-xl:text-sm xl:text-base text-neutral-400 font-mono font-bold">HARDWARE MONITOR</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-h-0 overflow-y-auto scrollbar-thin p-4 md:p-6" id="modal-hw-scroll-container">
+                            <div id="modal-hw-content" class="space-y-4">
+                                <div class="py-16 text-center text-neutral-500 text-xs lg:max-xl:text-sm xl:text-base font-mono">Memuat data hardware...</div>
+                            </div>
+                        </div>
+                        <div class="p-3.5 md:p-4 border-t border-[#2a2a2a] flex items-center justify-between shrink-0 bg-[#0c0c0c]">
+                            <button id="btn-hw-update-baseline" onclick="DashboardDetailModal.registerBaselineFromModal(${pc.id}, '${pc.kode}')" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded-lg transition-colors flex items-center gap-1.5 font-mono">
+                                <span>🔄</span> Update Baseline
+                            </button>
+                            <button id="btn-hw-refresh" onclick="DashboardDetailModal.loadHardwareData(${pc.id}, '${pc.kode}')" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded-lg transition-colors font-mono">
+                                Segarkan Data
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -462,7 +490,11 @@ const DashboardDetailModal = {
 
         const menu = document.getElementById('view-action-menu');
         const vncView = document.getElementById('view-remote-client');
+        const hwView = document.getElementById('view-hardware-specs');
+        const procView = document.getElementById('view-process-list');
         if (menu) menu.classList.add('hidden');
+        if (hwView) hwView.classList.add('hidden');
+        if (procView) procView.classList.add('hidden');
         if (vncView) vncView.classList.remove('hidden');
 
         const statusBadge = document.getElementById('modal-vnc-status-badge');
@@ -620,12 +652,6 @@ const DashboardDetailModal = {
         if (this.vncSession) {
             this.vncSession.disconnect();
             this.vncSession = null;
-        }
-
-        const modalBox = document.getElementById('pc-detail-modal-card');
-        if (modalBox) {
-            modalBox.classList.remove('max-w-5xl');
-            modalBox.classList.add('max-w-lg');
         }
 
         const menu = document.getElementById('view-action-menu');
@@ -851,6 +877,465 @@ const DashboardDetailModal = {
             return;
         }
         await this.vncSession.copyTextToHost(text, true);
+    },
+
+    showHardwareView(pcId, pcKode) {
+        document.getElementById('view-action-menu')?.classList.add('hidden');
+        document.getElementById('view-process-list')?.classList.add('hidden');
+        document.getElementById('view-remote-client')?.classList.add('hidden');
+        document.getElementById('view-hardware-specs')?.classList.remove('hidden');
+        this.loadHardwareData(pcId, pcKode);
+    },
+
+    backFromHardware() {
+        document.getElementById('view-hardware-specs')?.classList.add('hidden');
+        document.getElementById('view-action-menu')?.classList.remove('hidden');
+    },
+
+    async loadHardwareData(pcId, pcKode) {
+        const contentEl = document.getElementById('modal-hw-content');
+        const statusEl = document.getElementById('modal-hw-header-status');
+        if (contentEl) {
+            contentEl.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-20 text-neutral-500 gap-3">
+                    <div class="w-8 h-8 border-2 border-[#222] border-t-neutral-100 rounded-full animate-spin"></div>
+                    <span class="text-xs lg:text-sm font-mono text-neutral-400">Memuat telemetri & spesifikasi hardware PC ${pcKode}...</span>
+                </div>
+            `;
+        }
+
+        try {
+            const res = await API.monitor.all();
+            if (res && res.success && Array.isArray(res.data)) {
+                const hwData = res.data.find(item => item.pc_id === pcId);
+                this.renderHardwareView(pcId, pcKode, hwData);
+            } else {
+                throw new Error((res && res.error) || 'Gagal mengambil data hardware');
+            }
+        } catch (err) {
+            console.error('[DashboardDetailModal] Load hardware error:', err);
+            if (contentEl) {
+                contentEl.innerHTML = `
+                    <div class="py-16 text-center text-red-400 text-xs lg:text-sm font-mono space-y-2">
+                        <p class="font-bold">Gagal memuat data hardware PC ${pcKode}</p>
+                        <p class="text-neutral-500 text-[11px]">${err.message || 'Koneksi ke server terputus'}</p>
+                        <button onclick="DashboardDetailModal.loadHardwareData(${pcId}, '${pcKode}')" class="mt-2 px-3 py-1.5 bg-[#1a1a1a] hover:bg-[#252525] border border-[#333] text-neutral-200 text-xs rounded-lg transition-colors font-mono">
+                            Coba Lagi
+                        </button>
+                    </div>
+                `;
+            }
+            if (statusEl) {
+                statusEl.innerHTML = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-950/60 border border-red-800 text-red-400">ERROR</span>`;
+            }
+        }
+    },
+
+    renderHardwareView(pcId, pcKode, hwData) {
+        const contentEl = document.getElementById('modal-hw-content');
+        const statusEl = document.getElementById('modal-hw-header-status');
+        if (!contentEl) return;
+
+        if (!hwData) {
+            if (statusEl) {
+                statusEl.innerHTML = `<span class="px-2.5 py-1 rounded bg-amber-900/40 border border-amber-600/50 text-amber-300 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider font-mono">⚙️ Menunggu Telemetry</span>`;
+            }
+            contentEl.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-20 text-neutral-500 gap-2 text-center p-6 border border-dashed border-[#222] rounded-xl bg-[#0a0a0a]">
+                    <div class="w-12 h-12 rounded-xl bg-[#141414] border border-[#222] flex items-center justify-center text-xl mb-1">🖥️</div>
+                    <p class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider font-mono">Belum Ada Data Telemetri</p>
+                    <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 max-w-md">PC ${pcKode} belum mengirimkan log hardware atau agent Hardware Monitor belum aktif di client.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const isMismatch = hwData.hardware_mismatch === true;
+        const hasBaseline = !!hwData.hardware_baseline;
+
+        let statusBadgeHtml = '';
+        if (isMismatch) {
+            statusBadgeHtml = `
+                <span class="px-2.5 py-1 rounded bg-red-900/60 border border-red-500 text-red-200 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider animate-pulse flex items-center gap-1 font-mono shadow-sm shadow-red-950/50">
+                    🚨 Swapped / Mismatch Alert
+                </span>`;
+        } else if (hasBaseline) {
+            statusBadgeHtml = `
+                <span class="px-2.5 py-1 rounded bg-green-950/60 border border-green-500/60 text-green-300 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider flex items-center gap-1 font-mono shadow-sm shadow-green-950/40">
+                    🛡️ Protected (Aman)
+                </span>`;
+        } else {
+            statusBadgeHtml = `
+                <span class="px-2.5 py-1 rounded bg-amber-900/50 border border-amber-600/50 text-amber-300 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider font-mono">
+                    ⚙️ Menunggu Telemetry
+                </span>`;
+        }
+        if (statusEl) statusEl.innerHTML = statusBadgeHtml;
+
+        let baselineSpecs = null;
+        let currentSpecs = null;
+        try {
+            if (hwData.hardware_baseline) {
+                baselineSpecs = typeof hwData.hardware_baseline === 'string' ? JSON.parse(hwData.hardware_baseline) : hwData.hardware_baseline;
+            }
+            if (hwData.hardware_current_specs) {
+                currentSpecs = typeof hwData.hardware_current_specs === 'string' ? JSON.parse(hwData.hardware_current_specs) : hwData.hardware_current_specs;
+            }
+        } catch (e) {
+            console.error('[DashboardDetailModal] Parse specs error:', e);
+        }
+
+        let alertBannerHtml = '';
+        if (isMismatch) {
+            alertBannerHtml = `
+                <div class="p-4 bg-red-950/40 border border-red-500/40 rounded-xl text-xs lg:max-xl:text-xs xl:text-sm text-red-200 space-y-2.5 shadow-lg shadow-red-950/30 animate-in">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 font-bold text-red-400">
+                            <span class="text-base">⚠️</span>
+                            <span class="text-xs lg:max-xl:text-base xl:text-lg uppercase tracking-wider font-mono">PERINGATAN: Deteksi Perubahan Hardware!</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded bg-red-900/80 border border-red-500 text-red-100 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider font-mono">
+                            MISMATCH
+                        </span>
+                    </div>
+                    <div class="font-mono text-xs lg:max-xl:text-xs xl:text-sm pl-3 border-l-2 border-red-500 bg-red-950/60 p-2.5 rounded text-red-200 leading-relaxed">
+                        ${hwData.hardware_mismatch_desc || 'Terdeteksi komponen fisik PC tidak cocok dengan baseline yang telah diverifikasi.'}
+                    </div>
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-400 font-mono pt-1">
+                        <div class="flex items-center gap-1.5">
+                            <span>🎥</span>
+                            <span>Waktu Kejadian (Referensi CCTV): <strong class="text-neutral-200">${hwData.hardware_mismatch_time || '--:--'}</strong></span>
+                        </div>
+                        <div class="text-neutral-500">
+                            Terakhir Sinkron: <span class="text-neutral-300">${hwData.hardware_last_sync || hwData.last_update || '-'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const cpuUsage = typeof hwData.cpu_usage === 'number' ? hwData.cpu_usage : (parseInt(hwData.cpu_usage, 10) || 0);
+        let cpuLoadTextColor = 'text-cyan-400';
+        let cpuBarColor = 'bg-cyan-500';
+        let cpuStatusText = 'NORMAL';
+        let cpuStatusBadge = 'bg-cyan-950/60 border-cyan-800/60 text-cyan-300';
+        if (cpuUsage >= 80) {
+            cpuLoadTextColor = 'text-red-400';
+            cpuBarColor = 'bg-red-500';
+            cpuStatusText = 'HIGH';
+            cpuStatusBadge = 'bg-red-950/80 border-red-500 text-red-200 animate-pulse';
+        } else if (cpuUsage >= 50) {
+            cpuLoadTextColor = 'text-amber-400';
+            cpuBarColor = 'bg-amber-500';
+            cpuStatusText = 'MODERATE';
+            cpuStatusBadge = 'bg-amber-950/70 border-amber-600 text-amber-300';
+        }
+
+        const getTempBadge = (temp) => {
+            if (temp == null || temp === '-' || temp === 0) return `<span class="text-neutral-600 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>`;
+            const tempVal = parseFloat(temp);
+            if (isNaN(tempVal)) return `<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">${temp}</span>`;
+            if (tempVal >= 78) {
+                return `<span class="px-2 py-0.5 rounded bg-red-950/80 border border-red-500 text-red-200 font-mono font-black text-xs lg:max-xl:text-xs xl:text-base uppercase animate-pulse shadow-sm shadow-red-950/50 flex items-center gap-1">🔥 ${tempVal}°C (HOT)</span>`;
+            }
+            if (tempVal >= 65) {
+                return `<span class="px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/80 text-amber-300 font-mono font-bold text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1">⚠️ ${tempVal}°C (WARM)</span>`;
+            }
+            return `<span class="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/60 text-emerald-300 font-mono font-bold text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1">❄️ ${tempVal}°C (NORMAL)</span>`;
+        };
+
+        const getNicBadge = (speed) => {
+            if (!speed || speed === '-' || speed === 'Unknown') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
+            const s = String(speed).toLowerCase();
+            if (s.includes('gbps') || s.includes('1000') || s.includes('2500') || s.includes('10000') || s.includes('2.5') || s.includes('10 gbps')) {
+                return `<span class="px-2 py-0.5 rounded border border-emerald-500/60 bg-emerald-950/60 text-emerald-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1 shadow-sm shadow-emerald-950/40">⚡ ${speed} (Gigabit OK)</span>`;
+            }
+            if (s.includes('100') && !s.includes('1000')) {
+                return `<span class="px-2 py-0.5 rounded border border-red-500 bg-red-950/80 text-red-200 font-black font-mono text-xs lg:max-xl:text-xs xl:text-base animate-pulse flex items-center gap-1 shadow-sm shadow-red-950/50">⚠️ ${speed} (100M Bottleneck!)</span>`;
+            }
+            if (s.includes('10') && !s.includes('100')) {
+                return `<span class="px-2 py-0.5 rounded border border-red-700 bg-red-950 text-red-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1">❌ ${speed} (Slow)</span>`;
+            }
+            return `<span class="px-2 py-0.5 rounded border border-[#262626] bg-[#141414] text-neutral-300 font-mono text-xs lg:max-xl:text-xs xl:text-base font-bold">${speed}</span>`;
+        };
+
+        const getCpuBadge = (name) => {
+            if (!name || name === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
+            const n = String(name).toLowerCase();
+            if (n.includes('intel') || n.includes('core') || n.includes('i3') || n.includes('i5') || n.includes('i7') || n.includes('i9') || n.includes('xeon')) {
+                return `<span class="text-sky-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🔹 ${name}</span>`;
+            }
+            if (n.includes('amd') || n.includes('ryzen') || n.includes('threadripper') || n.includes('athlon')) {
+                return `<span class="text-amber-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🔸 ${name}</span>`;
+            }
+            return `<span class="text-neutral-200 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🖥️ ${name}</span>`;
+        };
+
+        const getGpuBadge = (name) => {
+            if (!name || name === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
+            const n = String(name).toLowerCase();
+            if (n.includes('nvidia') || n.includes('geforce') || n.includes('rtx') || n.includes('gtx')) {
+                return `<span class="text-emerald-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🟢 ${name}</span>`;
+            }
+            if (n.includes('radeon') || n.includes('rx') || n.includes('amd')) {
+                return `<span class="text-rose-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🔴 ${name}</span>`;
+            }
+            if (n.includes('arc') || n.includes('iris') || n.includes('intel')) {
+                return `<span class="text-cyan-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🔵 ${name}</span>`;
+            }
+            return `<span class="text-emerald-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🎮 ${name}</span>`;
+        };
+
+        const getRamBadge = (ram) => {
+            if (!ram || ram === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
+            return `<span class="px-2 py-0.5 rounded border border-purple-800/60 bg-purple-950/50 text-purple-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1 w-fit">💾 ${ram}</span>`;
+        };
+
+        const getMbBadge = (mb) => {
+            if (!mb || mb === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
+            return `<span class="text-amber-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${mb}">🎛️ ${mb}</span>`;
+        };
+
+        const isMbMatch = !baselineSpecs || !currentSpecs || !baselineSpecs.MotherboardSerial || !currentSpecs.MotherboardSerial || (baselineSpecs.MotherboardSerial === currentSpecs.MotherboardSerial);
+        const isCpuMatch = !baselineSpecs || !currentSpecs || !baselineSpecs.CpuId || !currentSpecs.CpuId || (baselineSpecs.CpuId === currentSpecs.CpuId);
+        const isGpuMatch = !baselineSpecs || !currentSpecs || !baselineSpecs.GpuPnpId || !currentSpecs.GpuPnpId || (baselineSpecs.GpuPnpId === currentSpecs.GpuPnpId);
+
+        const renderRamPills = (serials, isBaseline) => {
+            if (!serials || !serials.length) return '<span class="text-neutral-600 font-mono text-xs lg:max-xl:text-xs xl:text-base">N/A</span>';
+            return serials.map(r => {
+                let isMatched = true;
+                if (!isBaseline && baselineSpecs && baselineSpecs.RamSerials && baselineSpecs.RamSerials.length) {
+                    isMatched = baselineSpecs.RamSerials.includes(r);
+                }
+                if (!isMatched) {
+                    return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono animate-pulse">🚨 ${r} (Tukar!)</span>`;
+                }
+                return `<span class="inline-block bg-[#121212] text-purple-300 border border-purple-900/50 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">🏷️ ${r}</span>`;
+            }).join('');
+        };
+
+        const renderDiskPills = (serials, isBaseline) => {
+            if (!serials || !serials.length) return '<span class="text-neutral-600 font-mono text-xs lg:max-xl:text-xs xl:text-base">N/A</span>';
+            return serials.map(d => {
+                let isMatched = true;
+                if (!isBaseline && baselineSpecs && baselineSpecs.DiskSerials && baselineSpecs.DiskSerials.length) {
+                    isMatched = baselineSpecs.DiskSerials.includes(d);
+                }
+                if (!isMatched) {
+                    return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono animate-pulse">🚨 ${d} (Tukar!)</span>`;
+                }
+                return `<span class="inline-block bg-[#121212] text-cyan-300 border border-cyan-900/50 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">💽 ${d}</span>`;
+            }).join('');
+        };
+
+        contentEl.innerHTML = `
+            <div class="space-y-4 md:space-y-5">
+                ${alertBannerHtml}
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5">
+                    <!-- Card 1: Telemetri Real-Time -->
+                    <div class="p-4 sm:p-5 bg-[#0c0c0c] border border-[#202020] rounded-xl flex flex-col justify-between space-y-3">
+                        <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2.5">
+                            <span class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider font-mono flex items-center gap-2">
+                                <span>⚡</span> Telemetri Real-Time
+                            </span>
+                            <span class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-mono">${hwData.last_update || 'Baru saja'}</span>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2.5">
+                            <div class="p-2.5 bg-[#070707] border border-[#181818] rounded-lg flex flex-col justify-between">
+                                <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 font-mono uppercase font-bold tracking-wider">CPU Load</div>
+                                <div class="text-base lg:max-xl:text-xl xl:text-2xl 2xl:text-3xl font-black font-mono ${cpuLoadTextColor} mt-0.5">${cpuUsage}%</div>
+                                <div class="w-full bg-[#181818] h-1.5 lg:max-xl:h-2 xl:h-2 rounded-full overflow-hidden mt-1.5">
+                                    <div class="${cpuBarColor} h-full rounded-full transition-all duration-300" style="width: ${Math.min(100, Math.max(0, cpuUsage))}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="p-2.5 bg-[#070707] border border-[#181818] rounded-lg flex flex-col justify-between">
+                                <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 font-mono uppercase font-bold tracking-wider">Suhu CPU</div>
+                                <div class="mt-1">${getTempBadge(hwData.cpu_temp)}</div>
+                            </div>
+
+                            <div class="p-2.5 bg-[#070707] border border-[#181818] rounded-lg flex flex-col justify-between">
+                                <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 font-mono uppercase font-bold tracking-wider">Suhu GPU</div>
+                                <div class="mt-1">${getTempBadge(hwData.gpu_temp)}</div>
+                            </div>
+                        </div>
+
+                        <div class="p-2.5 bg-[#070707] border border-[#181818] rounded-lg font-mono space-y-1.5">
+                            <div class="flex items-center justify-between text-[10px] lg:max-xl:text-xs xl:text-sm">
+                                <span class="text-neutral-500 font-semibold uppercase tracking-wider">Jendela Aktif:</span>
+                                <span class="text-xs lg:max-xl:text-xs xl:text-base text-sky-300 font-semibold truncate max-w-[200px] sm:max-w-[280px] lg:max-w-[240px] xl:max-w-[320px]" title="${hwData.active_window || '-'}">🪟 ${hwData.active_window || '-'}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-[10px] lg:max-xl:text-xs xl:text-sm">
+                                <span class="text-neutral-500 font-semibold uppercase tracking-wider">Verifikasi Terakhir:</span>
+                                <span class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-400 font-mono">${hwData.hardware_last_sync || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Komponen Utama -->
+                    <div class="p-4 sm:p-5 bg-[#0c0c0c] border border-[#202020] rounded-xl flex flex-col justify-between space-y-3">
+                        <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2.5">
+                            <span class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider font-mono flex items-center gap-2">
+                                <span>⚙️</span> Komponen Utama
+                            </span>
+                            <span class="text-xs lg:max-xl:text-sm xl:text-base font-mono font-bold text-neutral-400 uppercase tracking-wider">${hwData.pc_kode || pcKode}</span>
+                        </div>
+
+                        <div class="space-y-2 font-mono">
+                            <div class="flex items-center justify-between p-2 bg-[#070707] border border-[#181818] rounded-lg">
+                                <span class="text-neutral-400 font-semibold text-[10px] lg:max-xl:text-xs xl:text-sm uppercase tracking-wider">Processor (CPU)</span>
+                                ${getCpuBadge(hwData.cpu_name)}
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-[#070707] border border-[#181818] rounded-lg">
+                                <span class="text-neutral-400 font-semibold text-[10px] lg:max-xl:text-xs xl:text-sm uppercase tracking-wider">Kartu Grafis (GPU)</span>
+                                ${getGpuBadge(hwData.gpu_name)}
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-[#070707] border border-[#181818] rounded-lg">
+                                <span class="text-neutral-400 font-semibold text-[10px] lg:max-xl:text-xs xl:text-sm uppercase tracking-wider">Total Memori RAM</span>
+                                ${getRamBadge(hwData.total_ram)}
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-[#070707] border border-[#181818] rounded-lg">
+                                <span class="text-neutral-400 font-semibold text-[10px] lg:max-xl:text-xs xl:text-sm uppercase tracking-wider">Motherboard</span>
+                                ${getMbBadge(hwData.motherboard)}
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-[#070707] border border-[#181818] rounded-lg">
+                                <span class="text-neutral-400 font-semibold text-[10px] lg:max-xl:text-xs xl:text-sm uppercase tracking-wider">Kecepatan Jaringan (NIC)</span>
+                                ${getNicBadge(hwData.nic_speed)}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Baseline Terkunci -->
+                    <div class="p-4 sm:p-5 bg-[#0c0c0c] border border-[#202020] rounded-xl flex flex-col justify-between space-y-3">
+                        <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2.5">
+                            <span class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-300 uppercase tracking-wider font-mono flex items-center gap-2">
+                                <span>🔒</span> Baseline Terkunci (Official)
+                            </span>
+                            <span class="text-[10px] lg:max-xl:text-xs xl:text-sm font-mono text-emerald-400 bg-emerald-950/50 px-2.5 py-0.5 rounded border border-emerald-900/60 font-bold uppercase tracking-wider">
+                                ${baselineSpecs ? 'TERDAFTAR' : 'KOSONG'}
+                            </span>
+                        </div>
+
+                        ${baselineSpecs ? `
+                            <div class="space-y-2 font-mono">
+                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
+                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">Motherboard Serial</div>
+                                    <div class="text-xs lg:max-xl:text-xs xl:text-base text-amber-200 font-bold truncate" title="${baselineSpecs.MotherboardSerial || 'N/A'}">${baselineSpecs.MotherboardSerial || 'N/A'}</div>
+                                </div>
+                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
+                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">CPU ID</div>
+                                    <div class="text-xs lg:max-xl:text-xs xl:text-base text-sky-200 font-bold truncate" title="${baselineSpecs.CpuId || 'N/A'}">${baselineSpecs.CpuId || 'N/A'}</div>
+                                </div>
+                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
+                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">GPU PNP ID</div>
+                                    <div class="text-xs lg:max-xl:text-xs xl:text-base text-emerald-200 font-bold truncate" title="${baselineSpecs.GpuPnpId || 'N/A'}">${baselineSpecs.GpuPnpId || 'N/A'}</div>
+                                </div>
+                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
+                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">RAM Serial(s)</div>
+                                    <div class="pt-0.5">
+                                        ${renderRamPills(baselineSpecs.RamSerials, true)}
+                                    </div>
+                                </div>
+                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
+                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">Storage / Disk Serial(s)</div>
+                                    <div class="pt-0.5">
+                                        ${renderDiskPills(baselineSpecs.DiskSerials, true)}
+                                    </div>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="py-10 text-center text-neutral-500 font-mono text-xs lg:max-xl:text-sm xl:text-base">
+                                <p>Belum ada baseline terdaftar.</p>
+                                <p class="text-[9px] lg:max-xl:text-xs xl:text-sm text-neutral-600 mt-1">Klik tombol <b>Update Baseline</b> di bawah untuk mendaftarkan spesifikasi resmi.</p>
+                            </div>
+                        `}
+                    </div>
+
+                    <!-- Card 4: Terdeteksi Saat Ini -->
+                    <div class="p-4 sm:p-5 bg-[#0c0c0c] border border-[#202020] rounded-xl flex flex-col justify-between space-y-3">
+                        <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2.5">
+                            <span class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-300 uppercase tracking-wider font-mono flex items-center gap-2">
+                                <span>🔍</span> Terdeteksi Saat Ini (Live Agent)
+                            </span>
+                            <span class="text-[10px] lg:max-xl:text-xs xl:text-sm font-mono text-blue-400 bg-blue-950/50 px-2.5 py-0.5 rounded border border-blue-900/60 font-bold uppercase tracking-wider">
+                                ${currentSpecs ? 'LIVE SPECS' : 'KOSONG'}
+                            </span>
+                        </div>
+
+                        ${currentSpecs ? `
+                            <div class="space-y-2 font-mono">
+                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
+                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">Motherboard Serial</div>
+                                    ${!isMbMatch ? `
+                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-red-300 font-bold truncate bg-red-950/60 border border-red-500 px-1.5 py-0.5 rounded">🚨 ${currentSpecs.MotherboardSerial || 'N/A'} (TUKAR!)</div>
+                                    ` : `
+                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-emerald-300 font-bold truncate" title="${currentSpecs.MotherboardSerial || 'N/A'}">✓ ${currentSpecs.MotherboardSerial || 'N/A'}</div>
+                                    `}
+                                </div>
+                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
+                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">CPU ID</div>
+                                    ${!isCpuMatch ? `
+                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-red-300 font-bold truncate bg-red-950/60 border border-red-500 px-1.5 py-0.5 rounded">🚨 ${currentSpecs.CpuId || 'N/A'} (TUKAR!)</div>
+                                    ` : `
+                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-emerald-300 font-bold truncate" title="${currentSpecs.CpuId || 'N/A'}">✓ ${currentSpecs.CpuId || 'N/A'}</div>
+                                    `}
+                                </div>
+                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
+                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">GPU PNP ID</div>
+                                    ${!isGpuMatch ? `
+                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-red-300 font-bold truncate bg-red-950/60 border border-red-500 px-1.5 py-0.5 rounded">🚨 ${currentSpecs.GpuPnpId || 'N/A'} (TUKAR!)</div>
+                                    ` : `
+                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-emerald-300 font-bold truncate" title="${currentSpecs.GpuPnpId || 'N/A'}">✓ ${currentSpecs.GpuPnpId || 'N/A'}</div>
+                                    `}
+                                </div>
+                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
+                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">RAM Serial(s)</div>
+                                    <div class="pt-0.5">
+                                        ${renderRamPills(currentSpecs.RamSerials, false)}
+                                    </div>
+                                </div>
+                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
+                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">Storage / Disk Serial(s)</div>
+                                    <div class="pt-0.5">
+                                        ${renderDiskPills(currentSpecs.DiskSerials, false)}
+                                    </div>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="py-10 text-center text-neutral-500 font-mono text-xs lg:max-xl:text-sm xl:text-base">
+                                <p>Belum ada data komponen live terdeteksi.</p>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    registerBaselineFromModal(pcId, pcKode) {
+        Modal.confirm(`
+            <div class="text-center">
+                <p class="text-xs lg:max-xl:text-lg xl:text-[22px] text-neutral-200 font-bold uppercase tracking-wider font-mono">Perbarui Baseline Hardware PC ${pcKode}?</p>
+                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-amber-400 font-semibold mt-2 leading-relaxed">
+                    ⚠️ Gunakan tombol ini <b>HANYA</b> jika Anda (Owner/Admin) baru saja melakukan upgrade atau penggantian komponen fisik secara resmi pada PC <b>${pcKode}</b>.
+                </p>
+            </div>
+        `, async () => {
+            try {
+                Toast.info('Memperbarui baseline hardware...');
+                const res = await API.monitor.registerBaseline(pcId);
+                if (res && res.success) {
+                    Toast.success(`Baseline hardware PC ${pcKode} berhasil diperbarui!`);
+                    DashboardDetailModal.loadHardwareData(pcId, pcKode);
+                } else {
+                    Toast.error((res && res.error) || 'Gagal memperbarui baseline');
+                }
+            } catch (err) {
+                Toast.error(err.message || 'Gagal memperbarui baseline');
+            }
+        });
     },
 
     onModalClose: function(pcId) {

@@ -26,13 +26,17 @@ class ReportService:
     def get_laporan_harian():
         """Ringkasan cepat pendapatan dan sesi hari ini (Dashboard Overview)."""
         hari_ini = now_local().date()
-        total = TransaksiRepository.get_total_pendapatan_hari_ini(hari_ini)
+        total_billing = TransaksiRepository.get_total_pendapatan_hari_ini(hari_ini)
+        total_menu = MenuRepository.get_total_pemasukan_by_date(hari_ini)
+        total = int(total_billing or 0) + int(total_menu or 0)
         total_sesi = SesiRepository.count_by_date(hari_ini)
         aktif_sekarang = len(SesiRepository.get_all_aktif())
 
         return {
             "tanggal": str(hari_ini),
             "total_pendapatan": int(total),
+            "total_billing": int(total_billing or 0),
+            "total_kantin": int(total_menu or 0),
             "total_sesi": total_sesi,
             "sesi_aktif": aktif_sekarang
         }

@@ -193,6 +193,18 @@ const App = {
         this.updatePageTitle(tab);
         this.loadTab(tab);
 
+        // Toggle visibility of Header Omzet (hanya tampil di Dashboard pada desktop lg+)
+        const omzetHeader = document.getElementById('header-omzet-container');
+        if (omzetHeader) {
+            if (tab === 'dash') {
+                omzetHeader.classList.remove('hidden');
+                omzetHeader.classList.add('hidden', 'lg:flex');
+            } else {
+                omzetHeader.classList.remove('lg:flex');
+                omzetHeader.classList.add('hidden');
+            }
+        }
+
         // Auto-close sidebar on mobile/tablet after tab selection
         if (window.innerWidth < 1024) {
             const sidebar = document.getElementById('sidebar');

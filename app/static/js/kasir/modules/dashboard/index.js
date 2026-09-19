@@ -14,7 +14,7 @@ const Dashboard = {
     _searchMembers: [],
     _searchFiltered: [],
     _searchPage: 1,
-    _searchPerPage: 5,
+    _searchPerPage: 8,
     _searchDebounceTimer: null,
 
     grupStyles: {
@@ -35,6 +35,9 @@ const Dashboard = {
             this.lastData = data;
             this._render(data);
             this.updateTime();
+            if (data.omzet_billing !== undefined || data.omzet_kantin !== undefined || data.omzet_hari_ini !== undefined) {
+                this.updateHeaderOmzet(data.omzet_billing, data.omzet_kantin, data.omzet_hari_ini);
+            }
         } catch (err) {
             console.error('[Dashboard] Error:', err);
             if (container) {
@@ -362,7 +365,7 @@ const Dashboard = {
                         Modal.closeModal();
                         try {
                             await API.sesi.pindahPC(sesiId, pcKode);
-                            Toast.success(`Sesi dipindah ke PC ${pcKode}`);
+                            Toast.success(`Sesi dipindah ke ${pcKode}`);
                             this.load();
                         } catch (err) {
                             Toast.error(err.message);
@@ -665,13 +668,15 @@ const Dashboard = {
 
         this._searchFiltered = [...this._searchMembers];
         this._searchPage = 1;
+        this._searchPerPage = 8;
         this._selectedGrup = '';
 
         const grupOptions = groups.map(g => `<option value="${g.nama.toLowerCase()}">${g.nama.toUpperCase()}</option>`).join('');
 
         const html = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-2xl p-4 sm:p-6 md:p-7 max-w-2xl md:max-w-3xl lg:max-w-4xl w-[95vw] sm:w-[calc(100%-2rem)] md:w-full max-h-[92vh] overflow-y-auto scrollbar-thin my-auto shadow-2xl transition-all">
-                <div class="flex items-center justify-between mb-5 pb-3.5 border-b border-[#2a2a2a]">
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-2xl p-4 sm:p-6 md:p-7 max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl w-[95vw] sm:w-[calc(100%-2rem)] md:w-full h-[88vh] max-h-[760px] flex flex-col my-auto shadow-2xl relative overflow-hidden">
+                <!-- Header (Fixed) -->
+                <div class="flex items-center justify-between mb-4 pb-3.5 border-b border-[#2a2a2a] shrink-0">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center shrink-0 shadow-inner">
                             <svg class="w-5 h-5 text-neutral-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
@@ -684,7 +689,8 @@ const Dashboard = {
                     <button onclick="Modal.closeModal()" class="w-9 h-9 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-xl leading-none">&times;</button>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4 mb-4">
+                <!-- Search & Filters (Fixed) -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4 mb-3.5 shrink-0">
                     <div class="sm:col-span-8">
                         <label class="text-[11px] sm:text-xs text-neutral-400 font-bold uppercase tracking-wider mb-1.5 block">Cari Member</label>
                         <div class="relative">
@@ -704,23 +710,26 @@ const Dashboard = {
                     </div>
                 </div>
 
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between mb-1">
+                <!-- Member List Section (Scrollable) -->
+                <div class="flex-1 min-h-0 flex flex-col">
+                    <div class="flex items-center justify-between mb-2 shrink-0">
                         <label class="text-[11px] sm:text-xs md:text-sm text-neutral-400 font-bold uppercase tracking-wider font-mono">Pilih Member</label>
-                        <span id="member-search-count-badge" class="text-[10px] sm:text-xs text-neutral-500 font-mono font-medium">5 Member per Halaman</span>
+                        <span id="member-search-count-badge" class="text-[10px] sm:text-xs text-neutral-500 font-mono font-medium">${this._searchPerPage} Member per Halaman</span>
                     </div>
-                    <div id="member-search-results" class="space-y-2.5 min-h-[300px] max-h-[520px] sm:max-h-[580px] lg:max-h-none overflow-y-auto pr-1 scrollbar-thin">
+                    <div id="member-search-results" class="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1.5 scrollbar-thin">
                         <div class="flex justify-center py-12">
                             <div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div>
                         </div>
                     </div>
                 </div>
 
-                <div id="member-search-pagination" class="flex items-center justify-between mt-4 pt-3.5 border-t border-[#2a2a2a]">
-                </div>
-
-                <div class="flex justify-end mt-4 pt-3.5 border-t border-[#2a2a2a]">
-                    <button onclick="Modal.closeModal()" class="px-5 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 hover:text-neutral-200 text-xs sm:text-sm font-bold rounded-xl transition-colors">Batal</button>
+                <!-- Footer: Pagination & Batal (Fixed at bottom) -->
+                <div class="shrink-0 mt-3 pt-3 border-t border-[#2a2a2a]">
+                    <div id="member-search-pagination" class="flex items-center justify-between min-h-[34px]">
+                    </div>
+                    <div class="flex justify-end mt-2.5">
+                        <button onclick="Modal.closeModal()" class="px-5 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 hover:text-neutral-200 text-xs sm:text-sm font-bold rounded-xl transition-colors">Batal</button>
+                    </div>
                 </div>
             </div>`;
 
@@ -777,7 +786,7 @@ const Dashboard = {
 
         const countBadge = document.getElementById('member-search-count-badge');
         if (countBadge) {
-            countBadge.innerText = `${total} Member Ditemukan`;
+            countBadge.innerText = `${total} Member Ditemukan (${this._searchPerPage} per Halaman)`;
         }
 
         if (total === 0) {
@@ -848,6 +857,28 @@ const Dashboard = {
         } else {
             Toast.error('Gagal: modul refill belum siap');
         }
+    },
+
+    updateHeaderOmzet(billing, kantin, total) {
+        const billingEl = document.getElementById('header-omzet-billing');
+        const kantinEl = document.getElementById('header-omzet-kantin');
+        const totalEl = document.getElementById('header-omzet-value');
+
+        const billingMobileEl = document.getElementById('dashboard-omzet-billing-mobile');
+        const kantinMobileEl = document.getElementById('dashboard-omzet-kantin-mobile');
+        
+        const format = (val) => typeof Utils !== 'undefined' && Utils.formatRupiah ? Utils.formatRupiah(val || 0) : `Rp ${Number(val || 0).toLocaleString('id-ID')}`;
+
+        const formattedBilling = format(billing);
+        const formattedKantin = format(kantin);
+        const formattedTotal = format(total !== undefined ? total : (Number(billing || 0) + Number(kantin || 0)));
+
+        if (billingEl) billingEl.innerText = formattedBilling;
+        if (kantinEl) kantinEl.innerText = formattedKantin;
+        if (totalEl) totalEl.innerText = formattedTotal;
+
+        if (billingMobileEl) billingMobileEl.innerText = formattedBilling;
+        if (kantinMobileEl) kantinMobileEl.innerText = formattedKantin;
     }
 };
 

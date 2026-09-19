@@ -8,6 +8,7 @@ untuk ditampilkan di dashboard utama kasir.
 
 from app.services.sesi.sesi_service import SesiService
 from app.services.pc.pc_service import PCService
+from app.repositories import TransaksiRepository, MenuRepository
 from app.utils.logger import write_log
 from app.models import now_local
 
@@ -89,8 +90,17 @@ class DashboardService:
             by_grup.setdefault(g_nama, []).append(pc_dict)
             pc_list.append(pc_dict)
         
+        # F. Omzet Hari Ini untuk Header Dashboard
+        hari_ini = now.date()
+        total_billing = TransaksiRepository.get_total_pendapatan_hari_ini(hari_ini)
+        total_menu = MenuRepository.get_total_pemasukan_by_date(hari_ini)
+        omzet_hari_ini = int(total_billing or 0) + int(total_menu or 0)
+
         return {
             "pc_list": pc_list, 
             "by_grup": by_grup,
-            "grup_meta": grup_meta
+            "grup_meta": grup_meta,
+            "omzet_hari_ini": omzet_hari_ini,
+            "omzet_billing": int(total_billing or 0),
+            "omzet_kantin": int(total_menu or 0)
         }
