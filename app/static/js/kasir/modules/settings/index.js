@@ -109,6 +109,11 @@ const Settings = {
                 if (footerInput && res.settings.warnet_footer !== undefined) {
                     footerInput.value = res.settings.warnet_footer;
                 }
+                const gmapsInput = document.getElementById('warnet-gmaps-input');
+                if (gmapsInput && res.settings.warnet_gmaps !== undefined) {
+                    gmapsInput.value = res.settings.warnet_gmaps;
+                    this.updateGmapsPreview();
+                }
                 const announcementVal = res.settings.warnet_announcement !== undefined ? res.settings.warnet_announcement : '';
                 const announcementInput = document.getElementById('warnet-announcement-input');
                 if (announcementInput) {
@@ -721,6 +726,7 @@ const Settings = {
         const address = document.getElementById('warnet-address-input')?.value || '';
         const phone = document.getElementById('warnet-phone-input')?.value || '';
         const footer = document.getElementById('warnet-footer-input')?.value || '';
+        const gmaps = document.getElementById('warnet-gmaps-input')?.value || '';
         const announcement = this.ckeditorAnnouncementInstance
             ? this.ckeditorAnnouncementInstance.getData()
             : (document.getElementById('warnet-announcement-input')?.value || '');
@@ -752,13 +758,19 @@ const Settings = {
                 body: JSON.stringify({ value: footer })
             });
 
-            // 5. Simpan pengumuman
+            // 5. Simpan Google Maps
+            await API.request('/api/v1/kasir/settings/warnet_gmaps', {
+                method: 'PUT',
+                body: JSON.stringify({ value: gmaps })
+            });
+
+            // 6. Simpan pengumuman
             await API.request('/api/v1/kasir/settings/warnet_announcement', {
                 method: 'PUT',
                 body: JSON.stringify({ value: announcement })
             });
 
-            // 3. Upload QRIS jika ada file yang dipilih
+            // 7. Upload QRIS jika ada file yang dipilih
             if (qrisFileInput.files && qrisFileInput.files[0]) {
                 const formData = new FormData();
                 formData.append('qris_image', qrisFileInput.files[0]);
@@ -778,6 +790,68 @@ const Settings = {
             await this.load(true); // Refresh data
         } catch (err) {
             Toast.error('Gagal menyimpan pengaturan Kiosk: ' + err.message);
+        }
+    },
+
+    updateGmapsPreview() {
+        const input = document.getElementById('warnet-gmaps-input');
+        const previewBox = document.getElementById('settings-gmaps-preview-box');
+        const iframeWrapper = document.getElementById('settings-gmaps-iframe-wrapper');
+        const statusBadge = document.getElementById('settings-gmaps-status-badge');
+        if (!input || !previewBox || !iframeWrapper || !statusBadge) return;
+
+        const val = (input.value || '').trim();
+        if (!val) {
+            previewBox.classList.add('hidden');
+            iframeWrapper.innerHTML = '';
+            return;
+        }
+
+        let embedUrl = null;
+        let navUrl = null;
+
+        if (val.toLowerCase().includes('<iframe')) {
+            const match = val.match(/src=["']([^"']+)["']/i);
+            if (match && (match[1].startsWith('http://') || match[1].startsWith('https://'))) {
+                embedUrl = match[1];
+            }
+        } else if (val.startsWith('https://www.google.com/maps/embed') || val.startsWith('http://www.google.com/maps/embed')) {
+            embedUrl = val;
+        } else if (val.startsWith('https://maps.app.goo.gl/') || val.startsWith('http://maps.app.goo.gl/') || val.startsWith('https://goo.gl/maps/') || val.startsWith('http://goo.gl/maps/')) {
+            navUrl = val;
+        } else if ((val.includes('google.com/maps') || val.includes('maps.google.com')) && (val.startsWith('http://') || val.startsWith('https://'))) {
+            navUrl = val;
+            if (val.includes('output=embed')) {
+                embedUrl = val;
+            }
+        }
+
+        previewBox.classList.remove('hidden');
+        if (embedUrl) {
+            statusBadge.textContent = 'Embed Aktif';
+            statusBadge.className = 'text-[9px] font-mono text-emerald-400';
+            const safeEmbed = window.Utils && Utils.escapeHtml ? Utils.escapeHtml(embedUrl) : embedUrl.replace(/"/g, '&quot;');
+            iframeWrapper.innerHTML = `<iframe src="${safeEmbed}" class="w-full h-full border-0 rounded" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+        } else if (navUrl) {
+            statusBadge.textContent = 'Link Navigasi';
+            statusBadge.className = 'text-[9px] font-mono text-sky-400';
+            const safeNav = window.Utils && Utils.escapeHtml ? Utils.escapeHtml(navUrl) : navUrl.replace(/"/g, '&quot;');
+            iframeWrapper.innerHTML = `
+                <div class="text-center p-4 space-y-2">
+                    <p class="text-xs text-neutral-300 font-medium">Link share Google Maps terdeteksi.</p>
+                    <a href="${safeNav}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a1a] hover:bg-[#252525] border border-[#2e2e2e] text-emerald-400 text-xs font-bold rounded transition-colors">
+                        Buka Tautan Peta ↗
+                    </a>
+                </div>
+            `;
+        } else {
+            statusBadge.textContent = 'Format Tidak Dikenali';
+            statusBadge.className = 'text-[9px] font-mono text-amber-400';
+            iframeWrapper.innerHTML = `
+                <div class="text-center p-4 text-xs text-amber-400/90">
+                    Format tautan/iframe tidak dikenali. Pastikan menyalin kode &lt;iframe src="..."&gt; atau URL Google Maps valid.
+                </div>
+            `;
         }
     },
 
