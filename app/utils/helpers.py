@@ -171,3 +171,75 @@ def sanitize_html(html_content):
     parser = SafeHTMLParser()
     parser.feed(html_content)
     return "".join(parser.result)
+
+
+def parse_google_maps_info(gmaps_input):
+    """Menganalisis dan mengekstrak info Google Maps secara aman (multi-format).
+
+    Mendukung:
+    1. HTML Iframe Embed (<iframe src="https://www.google.com/maps/embed?..."></iframe>)
+    2. Direct Embed URL (https://www.google.com/maps/embed?...)
+    3. Share Link / Shortlink (https://maps.app.goo.gl/... atau https://goo.gl/maps/...)
+    4. Regular Maps URL (https://www.google.com/maps/place/...)
+
+    Args:
+        gmaps_input (str): Input dari admin/kasir.
+
+    Returns:
+        dict: {
+            "raw": str,
+            "embed_url": str | None,
+            "nav_url": str | None,
+            "is_valid": bool
+        }
+    """
+    if not gmaps_input or not isinstance(gmaps_input, str):
+        return {"raw": "", "embed_url": None, "nav_url": None, "is_valid": False}
+
+    raw = gmaps_input.strip()
+    if not raw:
+        return {"raw": "", "embed_url": None, "nav_url": None, "is_valid": False}
+
+    embed_url = None
+    nav_url = None
+
+    # 1. Cek jika input berupa tag <iframe>
+    if "<iframe" in raw.lower():
+        match = re.search(r'src=["\']([^"\']+)["\']', raw, re.IGNORECASE)
+        if match:
+            src_val = match.group(1).strip()
+            # Validasi bahwa src adalah Google Maps URL aman
+            if src_val.startswith("https://www.google.com/maps/embed") or src_val.startswith("http://www.google.com/maps/embed"):
+                embed_url = src_val
+                nav_url = src_val.replace("/maps/embed", "/maps")
+            elif ("google.com/maps" in src_val or "maps.google.com" in src_val) and (src_val.startswith("http://") or src_val.startswith("https://")):
+                embed_url = src_val
+                nav_url = src_val
+        else:
+            return {"raw": raw, "embed_url": None, "nav_url": None, "is_valid": False}
+
+    # 2. Cek jika input adalah URL embed langsung
+    elif raw.startswith("https://www.google.com/maps/embed") or raw.startswith("http://www.google.com/maps/embed"):
+        embed_url = raw
+        nav_url = raw.replace("/maps/embed", "/maps")
+
+    # 3. Cek jika input adalah share link / shortlink Google Maps
+    elif raw.startswith("https://maps.app.goo.gl/") or raw.startswith("http://maps.app.goo.gl/") or raw.startswith("https://goo.gl/maps/") or raw.startswith("http://goo.gl/maps/"):
+        nav_url = raw
+        embed_url = None
+
+    # 4. Cek jika input adalah URL Google Maps standar (place / search / dir)
+    elif ("google.com/maps" in raw or "maps.google.com" in raw) and (raw.startswith("http://") or raw.startswith("https://")):
+        nav_url = raw
+        if "output=embed" in raw:
+            embed_url = raw
+        else:
+            embed_url = None
+
+    is_valid = bool(embed_url or nav_url)
+    return {
+        "raw": raw,
+        "embed_url": embed_url,
+        "nav_url": nav_url,
+        "is_valid": is_valid
+    }
