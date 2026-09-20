@@ -291,17 +291,19 @@ def get_screenshot_status(pc_id):
         if os.path.exists(screenshot_path):
             mtime = os.path.getmtime(screenshot_path)
             dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
-            screenshot_time = format_display(dt_utc)
+            screenshot_time = format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
             return jsonify({
                 "success": True,
                 "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
-                "screenshot_time": screenshot_time
+                "screenshot_time": screenshot_time,
+                "mtime": mtime
             }), 200
         else:
             return jsonify({
                 "success": True,
                 "screenshot_url": None,
-                "screenshot_time": None
+                "screenshot_time": None,
+                "mtime": 0
             }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -328,19 +330,23 @@ def get_all_screenshot_status():
             if os.path.exists(screenshot_path):
                 mtime = os.path.getmtime(screenshot_path)
                 dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
-                screenshot_time = format_display(dt_utc)
+                screenshot_time = format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
                 result.append({
                     "pc_id": pc.id,
                     "pc_kode": pc.kode,
-                    "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",                    "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
-                    "screenshot_time": screenshot_time
+                    "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",
+                    "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
+                    "screenshot_time": screenshot_time,
+                    "mtime": mtime
                 })
             else:
                 result.append({
                     "pc_id": pc.id,
                     "pc_kode": pc.kode,
-                    "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",                    "screenshot_url": None,
-                    "screenshot_time": None
+                    "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",
+                    "screenshot_url": None,
+                    "screenshot_time": None,
+                    "mtime": 0
                 })
                 
         return jsonify({"success": True, "data": result}), 200

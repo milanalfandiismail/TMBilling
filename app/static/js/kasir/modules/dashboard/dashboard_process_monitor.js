@@ -13,12 +13,14 @@ const DashboardProcessMonitor = {
         document.getElementById('view-hardware-specs')?.classList.add('hidden');
         document.getElementById('view-remote-client')?.classList.add('hidden');
         document.getElementById('view-process-list')?.classList.remove('hidden');
+        document.getElementById('modal-card-main-footer')?.classList.add('hidden');
         this.loadProcesses(currentPcId);
     },
 
     backToMenu() {
         document.getElementById('view-action-menu')?.classList.remove('hidden');
         document.getElementById('view-process-list')?.classList.add('hidden');
+        document.getElementById('modal-card-main-footer')?.classList.remove('hidden');
     },
 
     renderProcessRows(pcId, processes) {

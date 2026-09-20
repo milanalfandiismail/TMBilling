@@ -14,25 +14,25 @@
     </div>
 
     <!-- ===== OMZET HARI INI (DASHBOARD ONLY - CENTERED, DIPISAH BILLING & KANTIN) ===== -->
-    <div id="header-omzet-container" class="hidden lg:flex absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 items-center gap-1.5 sm:gap-2.5 lg:gap-3 pointer-events-auto">
-        <!-- Pill 1: Omzet Billing -->
-        <div class="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 lg:max-xl:px-3.5 xl:px-3.5 2xl:px-4 py-0.5 sm:py-1 bg-[#0f0f0f]/90 hover:bg-[#151515] border border-[#222222] hover:border-sky-500/40 rounded-full shadow-lg transition-all backdrop-blur-md cursor-pointer group" onclick="App.switchTab('laporan')" title="Klik untuk melihat Laporan Omzet Billing">
+    <div id="header-omzet-container" class="hidden xl:flex absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 items-center gap-1.5 sm:gap-2.5 lg:gap-3 pointer-events-auto">
+        <!-- Pill 1: Omzet Billing Hari Ini -->
+        <div class="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 lg:max-xl:px-3.5 xl:px-3.5 2xl:px-4 py-0.5 sm:py-1 bg-[#0f0f0f]/90 hover:bg-[#151515] border border-[#222222] hover:border-sky-500/40 rounded-full shadow-lg transition-all backdrop-blur-md cursor-pointer group" onclick="App.switchTab('laporan')" title="Klik untuk melihat Laporan Omzet Billing Hari Ini">
             <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-sky-400 animate-pulse shadow-sm shadow-sky-400/50 shrink-0"></span>
             <span class="text-[9px] sm:text-[11px] lg:max-xl:text-xs xl:text-xs 2xl:text-xs font-bold text-neutral-400 uppercase tracking-wider whitespace-nowrap">
-                <span class="hidden md:inline">Billing:</span>
-                <span class="md:hidden">Bill:</span>
+                <span class="hidden 2xl:inline">Billing Hari Ini:</span>
+                <span class="2xl:hidden">Billing Harian:</span>
             </span>
             <span id="header-omzet-billing" class="text-[10px] sm:text-xs md:text-xs lg:max-xl:text-sm xl:text-sm 2xl:text-base font-black font-mono text-sky-400 tracking-tight whitespace-nowrap group-hover:text-sky-300 transition-colors">
                 Rp 0
             </span>
         </div>
 
-        <!-- Pill 2: Omzet Kantin / F&B -->
-        <div class="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 lg:max-xl:px-3.5 xl:px-3.5 2xl:px-4 py-0.5 sm:py-1 bg-[#0f0f0f]/90 hover:bg-[#151515] border border-[#222222] hover:border-amber-500/40 rounded-full shadow-lg transition-all backdrop-blur-md cursor-pointer group" onclick="App.switchTab('laporan_menu')" title="Klik untuk melihat Laporan Omzet Kantin">
+        <!-- Pill 2: Omzet Kantin Hari Ini -->
+        <div class="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 lg:max-xl:px-3.5 xl:px-3.5 2xl:px-4 py-0.5 sm:py-1 bg-[#0f0f0f]/90 hover:bg-[#151515] border border-[#222222] hover:border-amber-500/40 rounded-full shadow-lg transition-all backdrop-blur-md cursor-pointer group" onclick="App.switchTab('laporan_menu')" title="Klik untuk melihat Laporan Omzet Kantin Hari Ini">
             <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-400 animate-pulse shadow-sm shadow-amber-400/50 shrink-0"></span>
             <span class="text-[9px] sm:text-[11px] lg:max-xl:text-xs xl:text-xs 2xl:text-xs font-bold text-neutral-400 uppercase tracking-wider whitespace-nowrap">
-                <span class="hidden md:inline">Kantin:</span>
-                <span class="md:hidden">Kantin:</span>
+                <span class="hidden 2xl:inline">Kantin Hari Ini:</span>
+                <span class="2xl:hidden">Kantin Harian:</span>
             </span>
             <span id="header-omzet-kantin" class="text-[10px] sm:text-xs md:text-xs lg:max-xl:text-sm xl:text-sm 2xl:text-base font-black font-mono text-amber-400 tracking-tight whitespace-nowrap group-hover:text-amber-300 transition-colors">
                 Rp 0

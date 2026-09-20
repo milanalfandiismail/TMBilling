@@ -25,16 +25,17 @@ const HardwareChecker = {
     },
 
     async registerBaseline(pcId, pcKode) {
-        if (!confirm(`Apakah Anda yakin ingin memperbarui baseline hardware untuk PC ${pcKode}? Gunakan tombol ini HANYA jika Anda (Owner/Admin) baru saja melakukan upgrade/perubahan komponen secara fisik pada PC ${pcKode}.`)) {
+        const targetKode = (pcKode || '').startsWith('PC') ? pcKode : `PC ${pcKode}`;
+        if (!confirm(`Apakah Anda yakin ingin memperbarui baseline hardware untuk ${targetKode}? Gunakan tombol ini HANYA jika Anda (Owner/Admin) baru saja melakukan upgrade/perubahan komponen secara fisik pada ${targetKode}.`)) {
             return;
         }
         try {
-            Toast.success("Memperbarui baseline hardware...");
+            Toast.info("Memperbarui baseline hardware...");
             const res = await API.request(`/api/v1/kasir/monitor/register/${pcId}`, {
                 method: 'POST'
             });
             if (res && res.success) {
-                Toast.success(`Baseline hardware PC ${pcKode} berhasil diperbarui!`);
+                Toast.success(`Baseline hardware ${targetKode} berhasil diperbarui!`);
                 this.load();
             } else {
                 Toast.error(res.error || "Gagal memperbarui baseline");

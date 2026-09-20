@@ -31,7 +31,7 @@ const DashboardDetailModal = {
                 <div id="modal-view-container" class="flex-1 min-h-0 overflow-y-auto flex flex-col scrollbar-thin">
                     <div id="view-action-menu" class="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 overflow-y-auto scrollbar-thin">
                         <!-- Left Column: Action Buttons -->
-                        <div class="lg:col-span-7 xl:col-span-7 space-y-2.5 flex flex-col justify-start">
+                        <div class="lg:col-span-7 xl:col-span-5 2xl:col-span-5 space-y-2.5 flex flex-col justify-start">
                             <div class="text-[10px] lg:text-xs text-neutral-400 uppercase font-bold tracking-wider font-mono">Aksi & Kontrol PC</div>
                             <div class="grid grid-cols-3 gap-2.5 md:gap-3">
                             <button onclick="DashboardProcessMonitor.showProcesses(${pc.id})"
@@ -164,7 +164,7 @@ const DashboardDetailModal = {
                         </div>
 
                         <!-- Right Column: Screenshot Preview -->
-                        <div class="lg:col-span-5 xl:col-span-5 flex flex-col space-y-2.5">
+                        <div class="lg:col-span-5 xl:col-span-7 2xl:col-span-7 flex flex-col space-y-2.5">
                             <div class="text-[10px] lg:text-xs text-neutral-400 uppercase font-bold tracking-wider font-mono">Tangkapan Layar Client</div>
                             <div id="screenshot-preview-container" class="p-3.5 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg flex-1 flex flex-col justify-between">
                                 <div class="flex items-center justify-between mb-2 shrink-0">
@@ -173,9 +173,9 @@ const DashboardDetailModal = {
                                         ${pc.screenshot_time ? pc.screenshot_time : 'BELUM DIAMBIL'}
                                     </span>
                                 </div>
-                                <div class="relative w-full aspect-video rounded-lg overflow-hidden border border-[#1a1a1a] bg-black/60 flex items-center justify-center group flex-1">
+                                <div class="relative w-full aspect-video rounded-lg overflow-hidden border border-[#1a1a1a] bg-black flex items-center justify-center group flex-1">
                                     <img id="screenshot-img" src="${pc.screenshot_url && window.API ? API.resolveMediaUrl(pc.screenshot_url) + '?t=' + Date.now() : (pc.screenshot_url ? pc.screenshot_url + '?t=' + Date.now() : '')}" 
-                                        class="w-full h-full object-cover cursor-pointer transition-opacity duration-200 hover:opacity-90 ${pc.screenshot_url ? '' : 'hidden'}" 
+                                        class="w-full h-full object-contain cursor-pointer transition-opacity duration-200 hover:opacity-90 ${pc.screenshot_url ? '' : 'hidden'}" 
                                         onclick="DashboardDetailModal.viewFullscreen(this)" />
                                     <div id="screenshot-placeholder" class="text-neutral-600 text-xs lg:text-sm font-mono ${pc.screenshot_url ? 'hidden' : ''}">Tidak ada gambar</div>
                                     <div id="screenshot-fullscreen-hint" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${pc.screenshot_url ? '' : 'hidden'}">
@@ -358,8 +358,8 @@ const DashboardDetailModal = {
                     </div>
                 </div>
 
-                <div class="p-4 border-t border-[#2a2a2a] flex justify-end">
-                    <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded-lg transition-colors">Tutup</button>
+                <div id="modal-card-main-footer" class="p-3.5 md:p-4 border-t border-[#2a2a2a] flex justify-end shrink-0 bg-[#0c0c0c]">
+                    <button onclick="Modal.closeModal()" class="px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded-lg transition-colors">Tutup</button>
                 </div>
             </div>
         `;
@@ -376,10 +376,21 @@ const DashboardDetailModal = {
 
         btn.disabled = true;
         btn.classList.add('opacity-40', 'cursor-not-allowed');
-        const oldText = text.innerText;
-        text.innerText = 'MEMINTA...';
+        const oldText = text ? text.innerText : 'Ambil Gambar';
+        if (text) text.innerText = 'MEMINTA...';
 
         try {
+            // Ambil mtime awal sebelum trigger screenshot dikirim
+            let initialMtime = 0;
+            try {
+                const initRes = await API.request(`/api/v1/kasir/monitor/screenshot/status/${pcId}`);
+                if (initRes && initRes.success && initRes.mtime) {
+                    initialMtime = initRes.mtime;
+                }
+            } catch (e) {
+                // Abaikan error initial check
+            }
+
             const result = await API.request(`/api/v1/kasir/monitor/screenshot/trigger/${pcId}`, {
                 method: 'POST'
             });
@@ -388,7 +399,7 @@ const DashboardDetailModal = {
             }
 
             Toast.success('Permintaan screenshot dikirim ke PC!');
-            text.innerText = 'MENUNGGU...';
+            if (text) text.innerText = 'MENUNGGU...';
 
             let attempts = 0;
             const maxAttempts = 15; // 15 attempts * 2 seconds = 30 seconds total timeout
@@ -400,22 +411,28 @@ const DashboardDetailModal = {
                         const timeSpan = document.getElementById('screenshot-time');
                         const img = document.getElementById('screenshot-img');
                         const placeholder = document.getElementById('screenshot-placeholder');
+                        const hint = document.getElementById('screenshot-fullscreen-hint');
 
-                        const prevTime = timeSpan ? timeSpan.innerText.trim() : '';
-                        if (statusData.screenshot_time && statusData.screenshot_time !== prevTime) {
+                        const currentMtime = statusData.mtime || 0;
+                        const isUpdated = initialMtime > 0 ? (currentMtime > initialMtime) : (currentMtime > 0);
+
+                        if (isUpdated) {
                             clearInterval(interval);
-                            if (timeSpan) timeSpan.innerText = statusData.screenshot_time;
+                            if (timeSpan && statusData.screenshot_time) {
+                                timeSpan.innerText = statusData.screenshot_time;
+                            }
                             if (img) {
                                 const resolvedUrl = window.API ? API.resolveMediaUrl(statusData.screenshot_url) : statusData.screenshot_url;
                                 img.src = resolvedUrl + '?t=' + Date.now();
                                 img.classList.remove('hidden');
                             }
                             if (placeholder) placeholder.classList.add('hidden');
+                            if (hint) hint.classList.remove('hidden');
 
                             Toast.success('Tangkapan layar berhasil diperbarui!');
                             btn.disabled = false;
                             btn.classList.remove('opacity-40', 'cursor-not-allowed');
-                            text.innerText = oldText;
+                            if (text) text.innerText = oldText;
                             return;
                         }
                     }
@@ -428,7 +445,7 @@ const DashboardDetailModal = {
                     Toast.error('Batas waktu habis: PC klien tidak merespon permintaan screenshot.');
                     btn.disabled = false;
                     btn.classList.remove('opacity-40', 'cursor-not-allowed');
-                    text.innerText = oldText;
+                    if (text) text.innerText = oldText;
                 }
             }, 2000);
 
@@ -437,7 +454,7 @@ const DashboardDetailModal = {
             Toast.error(err.message || 'Gagal memicu screenshot');
             btn.disabled = false;
             btn.classList.remove('opacity-40', 'cursor-not-allowed');
-            text.innerText = oldText;
+            if (text) text.innerText = oldText;
         }
     },
 
@@ -496,6 +513,7 @@ const DashboardDetailModal = {
         if (hwView) hwView.classList.add('hidden');
         if (procView) procView.classList.add('hidden');
         if (vncView) vncView.classList.remove('hidden');
+        document.getElementById('modal-card-main-footer')?.classList.add('hidden');
 
         const statusBadge = document.getElementById('modal-vnc-status-badge');
         if (statusBadge) {
@@ -658,6 +676,7 @@ const DashboardDetailModal = {
         const vncView = document.getElementById('view-remote-client');
         if (menu) menu.classList.remove('hidden');
         if (vncView) vncView.classList.add('hidden');
+        document.getElementById('modal-card-main-footer')?.classList.remove('hidden');
 
         try {
             await API.request(`/api/v1/kasir/monitor/vnc_client/${pcId}/stop`, { method: 'POST' });
@@ -884,12 +903,14 @@ const DashboardDetailModal = {
         document.getElementById('view-process-list')?.classList.add('hidden');
         document.getElementById('view-remote-client')?.classList.add('hidden');
         document.getElementById('view-hardware-specs')?.classList.remove('hidden');
+        document.getElementById('modal-card-main-footer')?.classList.add('hidden');
         this.loadHardwareData(pcId, pcKode);
     },
 
     backFromHardware() {
         document.getElementById('view-hardware-specs')?.classList.add('hidden');
         document.getElementById('view-action-menu')?.classList.remove('hidden');
+        document.getElementById('modal-card-main-footer')?.classList.remove('hidden');
     },
 
     async loadHardwareData(pcId, pcKode) {
@@ -1315,27 +1336,75 @@ const DashboardDetailModal = {
     },
 
     registerBaselineFromModal(pcId, pcKode) {
-        Modal.confirm(`
-            <div class="text-center">
-                <p class="text-xs lg:max-xl:text-lg xl:text-[22px] text-neutral-200 font-bold uppercase tracking-wider font-mono">Perbarui Baseline Hardware PC ${pcKode}?</p>
-                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-amber-400 font-semibold mt-2 leading-relaxed">
-                    ⚠️ Gunakan tombol ini <b>HANYA</b> jika Anda (Owner/Admin) baru saja melakukan upgrade atau penggantian komponen fisik secara resmi pada PC <b>${pcKode}</b>.
-                </p>
+        const targetKode = (pcKode || '').startsWith('PC') ? pcKode : `PC ${pcKode}`;
+        
+        const confirmOverlayId = 'hw-baseline-confirm-overlay';
+        const existing = document.getElementById(confirmOverlayId);
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = confirmOverlayId;
+        overlay.className = 'fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in';
+        overlay.innerHTML = `
+            <div class="bg-[#0e0e0e] border border-[#262626] rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-amber-950/60 border border-amber-800/60 flex items-center justify-center text-lg shrink-0">
+                        ⚠️
+                    </div>
+                    <div>
+                        <h3 class="text-xs lg:text-sm font-bold text-neutral-100 uppercase tracking-wider font-mono">Perbarui Baseline Hardware</h3>
+                        <p class="text-xs text-amber-400 font-mono font-bold">${targetKode}</p>
+                    </div>
+                </div>
+                <div class="p-3.5 bg-[#141414] border border-[#222] rounded-lg">
+                    <p class="text-xs text-neutral-300 leading-relaxed font-sans">
+                        ⚠️ Gunakan tombol ini <b>HANYA</b> jika Anda (Owner/Admin) baru saja melakukan upgrade atau penggantian komponen fisik secara resmi pada <b>${targetKode}</b>.
+                    </p>
+                </div>
+                <div class="flex gap-3 justify-end pt-1">
+                    <button id="btn-hw-baseline-cancel" class="px-4 py-2 bg-[#1a1a1a] hover:bg-[#252525] border border-[#2a2a2a] text-neutral-300 text-xs font-bold rounded-lg transition-colors font-mono">
+                        Batal
+                    </button>
+                    <button id="btn-hw-baseline-confirm" class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 font-mono">
+                        Ya, Lanjutkan
+                    </button>
+                </div>
             </div>
-        `, async () => {
-            try {
-                Toast.info('Memperbarui baseline hardware...');
-                const res = await API.monitor.registerBaseline(pcId);
-                if (res && res.success) {
-                    Toast.success(`Baseline hardware PC ${pcKode} berhasil diperbarui!`);
-                    DashboardDetailModal.loadHardwareData(pcId, pcKode);
-                } else {
-                    Toast.error((res && res.error) || 'Gagal memperbarui baseline');
+        `;
+
+        document.body.appendChild(overlay);
+
+        const closeOverlay = () => {
+            overlay.remove();
+        };
+
+        const cancelBtn = document.getElementById('btn-hw-baseline-cancel');
+        if (cancelBtn) cancelBtn.onclick = closeOverlay;
+
+        const confirmBtn = document.getElementById('btn-hw-baseline-confirm');
+        if (confirmBtn) {
+            confirmBtn.onclick = async () => {
+                confirmBtn.disabled = true;
+                confirmBtn.innerText = 'Memperbarui...';
+                try {
+                    Toast.info('Memperbarui baseline hardware...');
+                    const res = await API.monitor.registerBaseline(pcId);
+                    if (res && res.success) {
+                        Toast.success(`Baseline hardware ${targetKode} berhasil diperbarui!`);
+                        closeOverlay();
+                        DashboardDetailModal.loadHardwareData(pcId, pcKode);
+                    } else {
+                        Toast.error((res && res.error) || 'Gagal memperbarui baseline');
+                        confirmBtn.disabled = false;
+                        confirmBtn.innerText = 'Ya, Lanjutkan';
+                    }
+                } catch (err) {
+                    Toast.error(err.message || 'Gagal memperbarui baseline');
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerText = 'Ya, Lanjutkan';
                 }
-            } catch (err) {
-                Toast.error(err.message || 'Gagal memperbarui baseline');
-            }
-        });
+            };
+        }
     },
 
     onModalClose: function(pcId) {
