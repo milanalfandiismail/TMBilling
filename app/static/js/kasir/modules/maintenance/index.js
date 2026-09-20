@@ -29,10 +29,14 @@ const Maintenance = {
         }
     },
 
-    openSelectPCModal(context) {
+    async openSelectPCModal(context) {
         this.pcSelectContext = context;
+        const modal = document.getElementById('modal-select-pc');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+
         const allBtn = document.getElementById('btn-pc-select-all');
-        
         if (context === 'input') {
             if (allBtn) allBtn.classList.add('hidden');
         } else {
@@ -43,9 +47,22 @@ const Maintenance = {
         if (searchInput) {
             searchInput.value = '';
         }
+
+        const container = document.getElementById('pc-select-grid-container');
+        if (!this.pcs || this.pcs.length === 0) {
+            if (container) {
+                container.innerHTML = '<div class="text-center py-8 text-neutral-500 text-xs">Memuat daftar unit PC...</div>';
+            }
+            await this.loadPCs();
+        } else {
+            this.renderPCSelectGrid();
+        }
+
         this.filterPCSelectGrid();
 
-        document.getElementById('modal-select-pc')?.classList.remove('hidden');
+        if (searchInput) {
+            setTimeout(() => searchInput.focus(), 50);
+        }
     },
 
     closeSelectPCModal() {
@@ -55,6 +72,11 @@ const Maintenance = {
     renderPCSelectGrid() {
         const container = document.getElementById('pc-select-grid-container');
         if (!container) return;
+
+        if (!this.pcs || this.pcs.length === 0) {
+            container.innerHTML = '<div class="text-center py-8 text-neutral-500 text-xs">Tidak ada unit PC terdaftar.</div>';
+            return;
+        }
 
         const grouped = {};
         const groupColors = {};
@@ -72,17 +94,17 @@ const Maintenance = {
             const gColor = groupColors[gName] || '#888888';
             html += `
                 <div class="pc-group-section" data-group="${gName}">
-                    <div class="text-[11px] uppercase font-bold tracking-wider mb-2 pb-1 border-b" style="color: ${gColor}; border-color: ${gColor};">${gName}</div>
-                    <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                    <div class="text-[10px] lg:max-xl:text-[10px] xl:text-xs uppercase font-bold tracking-wider mb-2 pb-1 border-b" style="color: ${gColor}; border-color: ${gColor}33;">${gName}</div>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                         ${grouped[gName].map(pc => `
                             <button type="button" 
-                                class="pc-item-btn p-2 bg-[#171717] border border-[#262626] rounded-lg text-center hover:bg-neutral-100 hover:text-black hover:border-white transition-all text-xs font-bold flex flex-col items-center justify-center gap-1"
+                                class="pc-item-btn p-2 sm:p-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-center hover:bg-neutral-100 hover:text-black hover:border-white transition-all text-xs font-bold flex flex-col items-center justify-center gap-1 group"
                                 data-id="${pc.id}" 
                                 data-kode="${pc.kode}" 
                                 data-nama="${pc.nama || ''}"
                                 onclick="Maintenance.selectPCFromModal(${pc.id}, '${pc.kode}')">
-                                <span class="text-neutral-100 font-mono">${pc.kode}</span>
-                                <span class="text-[8px] lg:text-[10px] text-neutral-500 font-normal truncate max-w-full">${pc.nama || ''}</span>
+                                <span class="font-mono text-neutral-200 group-hover:text-black font-bold text-xs lg:max-xl:text-xs xl:text-sm">${pc.kode}</span>
+                                <span class="text-[9px] lg:max-xl:text-[9px] xl:text-[11px] text-neutral-500 group-hover:text-neutral-700 font-normal truncate max-w-full">${pc.nama || ''}</span>
                             </button>
                         `).join('')}
                     </div>
@@ -96,14 +118,15 @@ const Maintenance = {
     filterPCSelectGrid() {
         const query = document.getElementById('pc-select-search')?.value.toLowerCase().trim() || '';
         const sections = document.querySelectorAll('.pc-group-section');
+        let totalVisible = 0;
 
         sections.forEach(section => {
             let visibleCount = 0;
             const buttons = section.querySelectorAll('.pc-item-btn');
             buttons.forEach(btn => {
-                const kode = btn.getAttribute('data-kode').toLowerCase();
-                const nama = btn.getAttribute('data-nama').toLowerCase();
-                if (kode.includes(query) || nama.includes(query)) {
+                const kode = (btn.getAttribute('data-kode') || '').toLowerCase();
+                const nama = (btn.getAttribute('data-nama') || '').toLowerCase();
+                if (!query || kode.includes(query) || nama.includes(query)) {
                     btn.classList.remove('hidden');
                     visibleCount++;
                 } else {
@@ -113,10 +136,26 @@ const Maintenance = {
 
             if (visibleCount > 0) {
                 section.classList.remove('hidden');
+                totalVisible += visibleCount;
             } else {
                 section.classList.add('hidden');
             }
         });
+
+        let emptyMsg = document.getElementById('pc-select-empty-msg');
+        if (totalVisible === 0 && sections.length > 0) {
+            if (!emptyMsg) {
+                const container = document.getElementById('pc-select-grid-container');
+                emptyMsg = document.createElement('div');
+                emptyMsg.id = 'pc-select-empty-msg';
+                emptyMsg.className = 'text-center py-8 text-neutral-500 text-xs';
+                emptyMsg.innerText = 'Tidak ada unit PC yang cocok dengan kata kunci.';
+                container?.appendChild(emptyMsg);
+            }
+            emptyMsg.classList.remove('hidden');
+        } else if (emptyMsg) {
+            emptyMsg.classList.add('hidden');
+        }
     },
 
     selectPCFromModal(pcId, pcKode) {
@@ -195,7 +234,7 @@ const Maintenance = {
         if (!this.tickets || this.tickets.length === 0) {
             tbody.innerHTML = `
                 <tr class="block lg:table-row">
-                    <td colspan="4" class="py-10 text-center text-neutral-500 block lg:table-cell">Tidak ada tiket perbaikan yang aktif.</td>
+                    <td colspan="5" class="py-10 text-center text-neutral-500 block lg:table-cell">Tidak ada tiket perbaikan yang aktif.</td>
                 </tr>
             `;
             return;
@@ -262,12 +301,15 @@ const Maintenance = {
                             <span class="text-[10px] lg:max-xl:text-[10px] xl:text-sm text-neutral-500 font-mono mt-0.5">${t.created_at}</span>
                         </div>
                     </td>
-                    <td class="py-2 lg:py-2.5 px-3 text-right flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
-                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">Status & Aksi</span>
-                        <div class="flex flex-col items-end gap-1.5">
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">Status</span>
+                        <div class="flex items-center justify-end lg:justify-start">
                             <span class="px-2 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-xs font-bold ${statusClass}">${t.status}</span>
-                            <div class="flex items-center justify-end gap-1 flex-wrap">${actionButtons}</div>
                         </div>
+                    </td>
+                    <td class="py-2 lg:py-2.5 px-3 text-right flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">Aksi</span>
+                        <div class="flex items-center justify-end gap-1.5 flex-wrap">${actionButtons}</div>
                     </td>
                 </tr>
             `;

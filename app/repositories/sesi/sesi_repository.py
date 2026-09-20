@@ -130,60 +130,81 @@ class SesiRepository:
     # =========================================================================
 
     @staticmethod
-    def get_by_tanggal(tanggal):
-        """Mengambil semua sesi pada tanggal tertentu (diurutkan terbaru)."""
-        return Sesi.query.filter(
-            db.func.date(Sesi.mulai_pada) == tanggal
-        ).order_by(Sesi.mulai_pada.desc()).all()
+    def get_by_tanggal(tanggal=None):
+        """Mengambil semua sesi pada tanggal tertentu atau semua sesi jika tanggal None."""
+        query = Sesi.query
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            query = query.filter(
+                Sesi.mulai_pada >= start_utc,
+                Sesi.mulai_pada < end_utc
+            )
+        return query.order_by(Sesi.mulai_pada.desc()).all()
 
     @staticmethod
-    def count_by_date(tanggal):
-        """Menghitung total jumlah sesi pada tanggal tertentu."""
-        return Sesi.query.filter(
-            db.func.date(Sesi.mulai_pada) == tanggal
-        ).count()
+    def count_by_date(tanggal=None):
+        """Menghitung total jumlah sesi pada tanggal tertentu atau semua sesi jika tanggal None."""
+        query = Sesi.query
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            query = query.filter(
+                Sesi.mulai_pada >= start_utc,
+                Sesi.mulai_pada < end_utc
+            )
+        return query.count()
 
     @staticmethod
-    def get_selesai_by_tanggal(tanggal):
-        """Mengambil sesi yang sudah selesai pada tanggal tertentu."""
-        return Sesi.query.filter(
-            func.date(Sesi.mulai_pada) == tanggal,
-            Sesi.status == "selesai"
-        ).all()
+    def get_selesai_by_tanggal(tanggal=None):
+        """Mengambil sesi yang sudah selesai pada tanggal tertentu atau semua sesi selesai jika None."""
+        query = Sesi.query.filter(Sesi.status == "selesai")
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            query = query.filter(
+                Sesi.mulai_pada >= start_utc,
+                Sesi.mulai_pada < end_utc
+            )
+        return query.all()
 
     # get_total_menit_terbang dipindah ke ReportService (Logic Calculation)
 
     @staticmethod
     def get_distinct_tanggal():
-        """Mengambil daftar tanggal unik dari sesi, transaksi, dan penjualan menu untuk filter laporan."""
-        # Ambil tanggal unik dari Sesi
-        dates_sesi = db.session.query(func.date(Sesi.mulai_pada)).distinct()
-        # Ambil tanggal unik dari Transaksi
-        dates_trans = db.session.query(func.date(Transaksi.dibuat_pada)).distinct()
-        # Ambil tanggal unik dari TransaksiMenu
-        from app.models import TransaksiMenu
-        dates_menu = db.session.query(func.date(TransaksiMenu.tanggal)).distinct()
+        """Mengambil daftar tanggal unik dari sesi, transaksi, penjualan menu, dan tiket perbaikan untuk filter laporan (dalam display timezone)."""
+        from app.utils.timezone_utils import convert_utc_datetimes_to_distinct_dates
+        from app.models import TransaksiMenu, MaintenanceTicket
         
-        # Union dan sort
-        all_dates = dates_sesi.union(dates_trans).union(dates_menu).all()
+        # Ambil semua timestamp
+        dt_sesi = [r[0] for r in db.session.query(Sesi.mulai_pada).filter(Sesi.mulai_pada != None).all()]
+        dt_trans = [r[0] for r in db.session.query(Transaksi.dibuat_pada).filter(Transaksi.dibuat_pada != None).all()]
+        dt_menu = [r[0] for r in db.session.query(TransaksiMenu.tanggal).filter(TransaksiMenu.tanggal != None).all()]
+        dt_maint = [r[0] for r in db.session.query(MaintenanceTicket.resolved_at).filter(MaintenanceTicket.resolved_at != None).all()]
         
-        # Flatten and format as string, filter None
-        result = sorted([str(row[0]) for row in all_dates if row[0]], reverse=True)
-        return result
+        all_dts = dt_sesi + dt_trans + dt_menu + dt_maint
+        return convert_utc_datetimes_to_distinct_dates(all_dts)
 
     
     @staticmethod
-    def count_by_tanggal_dan_tipe(tanggal, tipe=None):
-        """Menghitung jumlah sesi pada tanggal tertentu berdasarkan tipe.
+    def count_by_tanggal_dan_tipe(tanggal=None, tipe=None):
+        """Menghitung jumlah sesi pada tanggal tertentu (atau semua tanggal jika None) berdasarkan tipe.
 
         Args:
-            tanggal (str): Tanggal yang ingin dihitung (format 'YYYY-MM-DD').
+            tanggal (str, optional): Tanggal yang ingin dihitung (format 'YYYY-MM-DD'). Jika None, hitung semua tanggal.
             tipe (str, optional): Tipe sesi ('guest' atau 'member'). Jika None, hitung semua.
 
         Returns:
             int: Jumlah sesi yang sesuai.
         """
-        query = Sesi.query.filter(func.date(Sesi.mulai_pada) == tanggal)
+        query = Sesi.query
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            query = query.filter(
+                Sesi.mulai_pada >= start_utc,
+                Sesi.mulai_pada < end_utc
+            )
         if tipe:
             query = query.filter(Sesi.tipe == tipe)
         return query.count()
@@ -196,7 +217,7 @@ class SesiRepository:
         ada minimal satu Transaksi dengan user_id=kasir_id yang terkait ke sesi tsb.
 
         Args:
-            tanggal (str): Tanggal yang ingin dihitung (format 'YYYY-MM-DD').
+            tanggal (str, optional): Tanggal yang ingin dihitung (format 'YYYY-MM-DD'). Jika None, hitung semua tanggal.
             kasir_id (int): ID user kasir yang akan difilter.
             tipe (str, optional): Tipe sesi ('guest' atau 'member').
 
@@ -204,9 +225,15 @@ class SesiRepository:
             int: Jumlah sesi yang sesuai.
         """
         where_clauses = [
-            Transaksi.sesi_id.isnot(None),
-            func.date(Transaksi.dibuat_pada) == tanggal,
+            Transaksi.sesi_id.isnot(None)
         ]
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            where_clauses.extend([
+                Transaksi.dibuat_pada >= start_utc,
+                Transaksi.dibuat_pada < end_utc,
+            ])
         kasir_str = str(kasir_id).strip()
         if kasir_str.startswith("operator:"):
             target_op = kasir_str.split("operator:", 1)[1].strip()
@@ -273,26 +300,25 @@ class SesiRepository:
     @staticmethod
     def get_blackout_audit_list(selected_date=None):
         """Mengambil daftar sesi blackout untuk halaman audit (dengan filter tanggal)."""
+        from app.utils.timezone_utils import get_local_date_range_utc
         query = Sesi.query.filter_by(is_blackout_suspect=True)
         if selected_date:
-            query = query.filter(func.date(Sesi.mulai_pada) == selected_date)
+            start_utc, end_utc = get_local_date_range_utc(selected_date)
+            query = query.filter(
+                Sesi.mulai_pada >= start_utc,
+                Sesi.mulai_pada < end_utc
+            )
         return query.order_by(Sesi.mulai_pada.desc()).all()
 
     @staticmethod
     def get_blackout_audit_dates():
         """Mengambil daftar tanggal unik yang memiliki catatan insiden blackout."""
+        from app.utils.timezone_utils import convert_utc_datetimes_to_distinct_dates
         try:
-            rows = db.session.query(func.date(Sesi.mulai_pada)) \
+            rows = db.session.query(Sesi.mulai_pada) \
                 .filter_by(is_blackout_suspect=True) \
-                .distinct() \
-                .order_by(func.date(Sesi.mulai_pada).desc()) \
                 .all()
-            result = []
-            for row in rows:
-                if row and row[0]:
-                    d = row[0]
-                    result.append(d if isinstance(d, str) else d.strftime("%Y-%m-%d"))
-            return result
+            return convert_utc_datetimes_to_distinct_dates([r[0] for r in rows if r[0]])
         except Exception as e:
             write_log("DB_ERROR", f"get_blackout_audit_dates: {e}")
             return []
@@ -300,10 +326,13 @@ class SesiRepository:
     @staticmethod
     def delete_resolved_blackout(selected_date):
         """Menghapus record blackout (Tanpa Commit)."""
+        from app.utils.timezone_utils import get_local_date_range_utc
+        start_utc, end_utc = get_local_date_range_utc(selected_date)
         deleted = Sesi.query.filter(
             Sesi.is_blackout_suspect == True,
             Sesi.is_blackout_resolved == True,
-            func.date(Sesi.mulai_pada) == selected_date
+            Sesi.mulai_pada >= start_utc,
+            Sesi.mulai_pada < end_utc
         ).delete()
         return deleted
 
@@ -316,9 +345,12 @@ class SesiRepository:
     @staticmethod
     def delete_history_by_date(tanggal):
         """Menghapus riwayat per tanggal (Tanpa Commit)."""
+        from app.utils.timezone_utils import get_local_date_range_utc
+        start_utc, end_utc = get_local_date_range_utc(tanggal)
         deleted = Sesi.query.filter(
             Sesi.status != 'aktif',
-            func.date(Sesi.mulai_pada) == tanggal
+            Sesi.mulai_pada >= start_utc,
+            Sesi.mulai_pada < end_utc
         ).delete()
         return deleted
 

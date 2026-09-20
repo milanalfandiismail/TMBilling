@@ -280,3 +280,59 @@ def test_pdf_export_with_remote_operator(app_instance, test_setup):
         assert len(pdf_bytes) > 1000
         assert pdf_bytes.startswith(b"%PDF")
         assert "admin_(Remote:_Milan_Net)" in filename
+
+
+def test_laporan_semua_tanggal(app_instance, test_setup):
+    """Memverifikasi laporan billing, kantin, dan export PDF dapat mengambil semua tanggal saat filter tanggal kosong / Semua."""
+    with app_instance.app_context():
+        from datetime import timedelta
+        yesterday = datetime.now() - timedelta(days=2)
+
+        t_old = Transaksi(
+            user_id=test_setup["admin"].id,
+            jenis="beli_paket_guest",
+            jumlah=15000,
+            menit=90,
+            no_nota="TM-20260901-001",
+            operator="admin",
+            dibuat_pada=yesterday
+        )
+        db.session.add(t_old)
+
+        tm_old = TransaksiMenu(
+            menu_id=test_setup["menu"].id,
+            jumlah=2,
+            total_harga=10000,
+            kasir_id=test_setup["admin"].id,
+            operator="admin",
+            no_nota="FB-20260901-001",
+            tanggal=yesterday
+        )
+        db.session.add(tm_old)
+        db.session.commit()
+
+        # Query Billing dengan tanggal=None / ""
+        rep_all = ReportService.get_laporan_by_tanggal(None)
+        assert rep_all["status"] == "success"
+        assert rep_all["tanggal"] == "Semua Tanggal"
+        assert rep_all["total_pendapatan_billing"] >= 15000
+        assert rep_all["total_pendapatan_menu"] >= 10000
+
+        # Query Kantin dengan tanggal=""
+        kantin_all = ReportService.get_laporan_kantin_by_tanggal("")
+        assert kantin_all["status"] == "success"
+        assert kantin_all["tanggal"] == "Semua Tanggal"
+        assert kantin_all["total_pendapatan_menu"] >= 10000
+
+        # Export PDF untuk Semua Tanggal
+        pdf_bytes, filename = ReportService.export_billing_pdf("")
+        assert pdf_bytes.startswith(b"%PDF")
+        assert "Semua_Tanggal" in filename
+
+        pdf_bytes_k, filename_k = ReportService.export_kantin_pdf("")
+        assert pdf_bytes_k.startswith(b"%PDF")
+        assert "Semua_Tanggal" in filename_k
+
+        pdf_bytes_pnl, filename_pnl = ReportService.export_pnl_pdf("")
+        assert pdf_bytes_pnl.startswith(b"%PDF")
+        assert "Semua_Tanggal" in filename_pnl

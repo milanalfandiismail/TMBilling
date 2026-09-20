@@ -206,8 +206,9 @@ class MenuService:
     @staticmethod
     def generate_nota_menu():
         """Generate nomor nota transaksi menu unik dengan format TMM-YYYYMMDD-NNN."""
-        today = datetime.now()
-        date_str = today.strftime('%Y%m%d')
+        from app.utils.timezone_utils import display_in_tz, now_utc
+        today_local = display_in_tz(now_utc())
+        date_str = today_local.strftime('%Y%m%d')
         prefix = f"TMM-{date_str}-"
         
         # Cari total transaksi hari ini untuk penomoran
@@ -232,8 +233,9 @@ class MenuService:
 
             real_operator = operator if (operator and operator != "system") else kasir_username
 
-            today = datetime.now()
-            date_str = today.strftime('%Y%m%d')
+            from app.utils.timezone_utils import display_in_tz, now_utc
+            today_local = display_in_tz(now_utc())
+            date_str = today_local.strftime('%Y%m%d')
             prefix = f"TMM-{date_str}-"
             count_today = MenuRepository.count_transactions_by_prefix(prefix)
             

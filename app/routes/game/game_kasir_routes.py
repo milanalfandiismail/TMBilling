@@ -14,10 +14,11 @@ game_kasir_api_bp = Blueprint("game_kasir", __name__)
 def list_games():
     try:
         category = request.args.get("category")
+        tipe = request.args.get("tipe")
         q = request.args.get("q")
         if q: q = q.strip()
             
-        games = GameService.get_all(aktif_only=False, category=category, search_query=q)
+        games = GameService.get_all(aktif_only=False, category=category, tipe=tipe, search_query=q)
         return jsonify({
             "success": True,
             "data": [g.to_dict() for g in games]
@@ -38,9 +39,10 @@ def tambah_game():
         kasir = session.get("kasir_username", "admin")
         
         game = GameService.create(data, icon_file=icon_file, operator=kasir)
+        tipe_label = "Aplikasi" if game.tipe == "aplikasi" else "Game"
         return jsonify({
             "success": True,
-            "message": f"Game '{game.nama}' berhasil ditambahkan",
+            "message": f"{tipe_label} '{game.nama}' berhasil ditambahkan",
             "data": game.to_dict()
         }), 201
     except ValueError as e:
@@ -58,9 +60,10 @@ def edit_game(game_id):
         kasir = session.get("kasir_username", "admin")
         
         game = GameService.update(game_id, data, icon_file=icon_file, operator=kasir)
+        tipe_label = "Aplikasi" if game.tipe == "aplikasi" else "Game"
         return jsonify({
             "success": True,
-            "message": f"Game '{game.nama}' berhasil diperbarui",
+            "message": f"{tipe_label} '{game.nama}' berhasil diperbarui",
             "data": game.to_dict()
         }), 200
     except ValueError as e:

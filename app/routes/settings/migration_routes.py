@@ -217,6 +217,21 @@ def upload_update():
                     from app.models.branch import BranchInbound
                     BranchInbound.__table__.create(db.engine)
 
+                # v1.6.1 Migration Safety: Kolom 'tipe' pada tabel 'game' dan tabel 'game_kategori'
+                if inspector.has_table('game'):
+                    cols = [c['name'] for c in inspector.get_columns('game')]
+                    if 'tipe' not in cols:
+                        with db.engine.connect() as conn:
+                            conn.execute(text("ALTER TABLE game ADD COLUMN tipe VARCHAR(50) DEFAULT 'game'"))
+                            conn.commit()
+                else:
+                    from app.models.game.game import Game
+                    Game.__table__.create(db.engine)
+
+                if not inspector.has_table('game_kategori'):
+                    from app.models.game.game_kategori import GameKategori
+                    GameKategori.__table__.create(db.engine)
+
                 # Pastikan alembic_version tercatat HEAD
                 from flask_migrate import stamp
                 stamp(directory=migrations_dir, revision='head')

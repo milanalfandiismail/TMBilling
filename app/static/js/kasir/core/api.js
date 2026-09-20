@@ -199,16 +199,18 @@ const API = {
     // 🔗 LAPORAN & LOG
     report: {
         harian: () => API.request('/api/v1/kasir/report/laporan-harian'),
-        byTanggal: (tanggal, kasirId = '', page = 1, perPage = 10, metodePembayaran = '') => {
+        byTanggal: (tanggal, kasirId = '', page = 1, perPage = 10, metodePembayaran = '', q = '') => {
             let url = `/api/v1/kasir/report/laporan/billing?tanggal=${tanggal}&page=${page}&per_page=${perPage}`;
             if (kasirId) url += `&kasir_id=${kasirId}`;
             if (metodePembayaran) url += `&metode_pembayaran=${metodePembayaran}`;
+            if (q) url += `&q=${encodeURIComponent(q)}`;
             return API.request(url);
         },
-        kantinByTanggal: (tanggal, kasirId = '', page = 1, perPage = 12, metodePembayaran = '') => {
+        kantinByTanggal: (tanggal, kasirId = '', page = 1, perPage = 12, metodePembayaran = '', q = '') => {
             let url = `/api/v1/kasir/report/laporan/kantin?tanggal=${tanggal}&page=${page}&per_page=${perPage}`;
             if (kasirId) url += `&kasir_id=${kasirId}`;
             if (metodePembayaran) url += `&metode_pembayaran=${metodePembayaran}`;
+            if (q) url += `&q=${encodeURIComponent(q)}`;
             return API.request(url);
         },
         tanggalList: () => API.request('/api/v1/kasir/report/tanggal'),

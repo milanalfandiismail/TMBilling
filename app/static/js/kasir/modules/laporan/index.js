@@ -5,12 +5,12 @@ const Laporan = {
     currentMetodePembayaran: '',
 
     resetFilters() {
-        this.currentDate = null;
+        this.currentDate = '';
         this.currentPage = 1;
         this.currentKasirId = '';
         this.currentMetodePembayaran = '';
         const tglSelect = document.getElementById('laporan-tanggal-select');
-        if (tglSelect) tglSelect.innerHTML = '<option value="">-- Pilih Tanggal --</option>';
+        if (tglSelect) tglSelect.innerHTML = '<option value="">Semua Tanggal</option>';
         const kasirSelect = document.getElementById('laporan-kasir-select');
         if (kasirSelect) kasirSelect.innerHTML = '<option value="">Semua Kasir</option>';
         const metodeSelect = document.getElementById('laporan-metode-pembayaran-select');
@@ -78,17 +78,17 @@ const Laporan = {
             const tanggalList = data.tanggal || [];
 
             if (tanggalList.length === 0) {
-                select.innerHTML = '<option value="">-- Pilih Tanggal --</option>';
+                select.innerHTML = '<option value="">Semua Tanggal</option>';
                 area.innerHTML = `
                     <div class="flex flex-col items-center justify-center py-16 text-neutral-500 bg-[#0c0c0c] border border-dashed border-[#1c1c1c] rounded">
                         <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
                         <p class="text-xs lg:text-base font-bold uppercase tracking-wider text-neutral-300">Belum Ada Laporan</p>
-                        <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Belum ada transaksi hari ini</p>
+                        <p class="text-[10px] lg:text-base text-neutral-500 mt-1">Belum ada transaksi</p>
                     </div>`;
                 return;
             }
 
-            select.innerHTML = '<option value="">-- Pilih Tanggal --</option>';
+            select.innerHTML = '<option value="">Semua Tanggal</option>';
             tanggalList.forEach(tgl => {
                 select.innerHTML += `<option value="${tgl}">${tgl}</option>`;
             });
@@ -102,9 +102,8 @@ const Laporan = {
         }
     },
 
-    async loadByDate(tanggal, kasirId = '', page = 1, metodePembayaran = '') {
-        if (!tanggal) return;
-        this.currentDate = tanggal;
+    async loadByDate(tanggal = '', kasirId = '', page = 1, metodePembayaran = '') {
+        this.currentDate = tanggal || '';
         this.currentKasirId = kasirId;
         this.currentMetodePembayaran = metodePembayaran;
         this.currentPage = page;
@@ -115,7 +114,7 @@ const Laporan = {
         area.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
         try {
-            const data = await API.report.byTanggal(tanggal, kasirId, page, 12, metodePembayaran);
+            const data = await API.report.byTanggal(this.currentDate, kasirId, page, 12, metodePembayaran);
             this.render(data);
         } catch (err) {
             area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:text-base">Gagal memuat laporan</div>';
@@ -250,22 +249,14 @@ const Laporan = {
     },
 
     exportPDF() {
-        const tanggal = document.getElementById('laporan-tanggal-select').value;
+        const tanggal = document.getElementById('laporan-tanggal-select').value || '';
         const kasirId = document.getElementById('laporan-kasir-select').value;
-        if (!tanggal) {
-            Toast.error("Pilih tanggal terlebih dahulu");
-            return;
-        }
         const metodePembayaran = document.getElementById('laporan-metode-pembayaran-select')?.value || '';
         window.location.href = `/api/v1/kasir/report/export/billing?tanggal=${tanggal}&kasir_id=${kasirId}&metode_pembayaran=${metodePembayaran}`;
     },
 
     exportPnLPDF() {
-        const tanggal = document.getElementById('laporan-tanggal-select').value;
-        if (!tanggal) {
-            Toast.error("Pilih tanggal terlebih dahulu");
-            return;
-        }
+        const tanggal = document.getElementById('laporan-tanggal-select').value || '';
         window.location.href = `/api/v1/kasir/report/export/pnl?tanggal=${tanggal}`;
     }
 };

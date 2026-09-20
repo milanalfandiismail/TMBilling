@@ -33,20 +33,37 @@ class GameService:
         return unique_filename
 
     @staticmethod
-    def get_all(aktif_only=False, category=None, search_query=None):
-        return GameRepository.get_all(aktif_only, category, search_query)
+    def _normalize_kategori(kat_val):
+        if not kat_val:
+            return None
+        if isinstance(kat_val, list):
+            items = [str(k).strip() for k in kat_val if str(k).strip()]
+            return ", ".join(items) if items else None
+        elif isinstance(kat_val, str):
+            items = [k.strip() for k in kat_val.split(",") if k.strip()]
+            return ", ".join(items) if items else None
+        return str(kat_val)
+
+    @staticmethod
+    def get_all(aktif_only=False, category=None, tipe=None, search_query=None):
+        return GameRepository.get_all(aktif_only=aktif_only, category=category, tipe=tipe, search_query=search_query)
 
     @staticmethod
     def create(data, icon_file=None, operator=None):
         nama = data.get("nama")
         if not nama:
-            raise ValueError("Nama game wajib diisi")
+            raise ValueError("Nama game/aplikasi wajib diisi")
             
         icon_filename = GameService._save_icon(icon_file)
+        kategori_str = GameService._normalize_kategori(data.get("kategori"))
+        tipe_val = (data.get("tipe") or "game").strip().lower()
+        if tipe_val not in ("game", "aplikasi"):
+            tipe_val = "game"
         
         game = Game(
             nama=nama,
-            kategori=data.get("kategori"),
+            tipe=tipe_val,
+            kategori=kategori_str,
             exe_path=data.get("exe_path"),
             argumen=data.get("argumen"),
             icon=icon_filename,
@@ -59,9 +76,9 @@ class GameService:
         op_name = operator if isinstance(operator, str) else "admin"
         write_log(
             "GAME_CREATE",
-            f"Game '{nama}' berhasil ditambahkan ke katalog",
+            f"Item '{nama}' ({tipe_val}) berhasil ditambahkan ke katalog",
             user=op_name,
-            detail_json={"nama": game.nama, "kategori": game.kategori, "exe_path": game.exe_path, "argumen": game.argumen}
+            detail_json={"nama": game.nama, "tipe": game.tipe, "kategori": game.kategori, "exe_path": game.exe_path, "argumen": game.argumen}
         )
         return result
 
@@ -69,16 +86,21 @@ class GameService:
     def update(game_id, data, icon_file=None, operator=None):
         game = GameRepository.get_by_id(game_id)
         if not game:
-            raise ValueError("Game tidak ditemukan")
+            raise ValueError("Data game/aplikasi tidak ditemukan")
             
         if "nama" in data and not data["nama"]:
-            raise ValueError("Nama game tidak boleh kosong")
+            raise ValueError("Nama tidak boleh kosong")
             
         old_nama = game.nama
         old_kategori = game.kategori
+        old_tipe = getattr(game, "tipe", "game")
         
         if "nama" in data: game.nama = data["nama"]
-        if "kategori" in data: game.kategori = data["kategori"]
+        if "tipe" in data:
+            tipe_val = (data.get("tipe") or "game").strip().lower()
+            game.tipe = tipe_val if tipe_val in ("game", "aplikasi") else "game"
+        if "kategori" in data:
+            game.kategori = GameService._normalize_kategori(data["kategori"])
         if "exe_path" in data: game.exe_path = data["exe_path"]
         if "argumen" in data: game.argumen = data["argumen"]
         if "aktif" in data:
@@ -97,9 +119,14 @@ class GameService:
         op_name = operator if isinstance(operator, str) else "admin"
         write_log(
             "GAME_UPDATE",
-            f"Game '{old_nama}' berhasil diperbarui",
+            f"Item '{old_nama}' berhasil diperbarui",
             user=op_name,
-            detail_json={"nama_sebelum": old_nama, "nama_baru": game.nama, "kategori_sebelum": old_kategori, "kategori_baru": game.kategori, "exe_path": game.exe_path}
+            detail_json={
+                "nama_sebelum": old_nama, "nama_baru": game.nama,
+                "tipe_sebelum": old_tipe, "tipe_baru": game.tipe,
+                "kategori_sebelum": old_kategori, "kategori_baru": game.kategori,
+                "exe_path": game.exe_path
+            }
         )
         return result
 

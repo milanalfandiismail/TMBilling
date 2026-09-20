@@ -32,8 +32,9 @@ class TransaksiService:
         Mencari suffix tertinggi hari ini untuk menghindari UNIQUE constraint error
         jika ada data yang dihapus sebelumnya.
         """
-        today = datetime.now()
-        date_str = today.strftime('%Y%m%d')
+        from app.utils.timezone_utils import display_in_tz, now_utc
+        today_local = display_in_tz(now_utc())
+        date_str = today_local.strftime('%Y%m%d')
         prefix = f"TM-{date_str}-"
         
         # Cari transaksi terakhir hari ini dengan filter LIKE
@@ -45,7 +46,7 @@ class TransaksiService:
                 last_num = int(last_t.no_nota.split('-')[-1])
                 new_num = last_num + 1
             except (ValueError, IndexError):
-                new_num = TransaksiRepository.count_by_date(today.date()) + 1
+                new_num = TransaksiRepository.count_by_date(today_local.date()) + 1
         else:
             new_num = 1
             
