@@ -85,6 +85,102 @@
             </div>
         </section>
 
+        <!-- Google Maps & Location Section (Hanya tampil jika warnet_gmaps diisi / valid) -->
+        {% if gmaps_info and gmaps_info.is_valid %}
+        <section id="landing-gmaps-section" class="bg-[#0c0c0c] border border-[#1f1f1f] rounded-2xl p-6 md:p-8 space-y-6 shadow-2xl relative overflow-hidden">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1c1c1c] pb-5">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-xs font-mono font-bold tracking-wider uppercase mb-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Lokasi &amp; Akses Arena
+                    </div>
+                    <h3 class="text-xl md:text-2xl font-black text-neutral-100 tracking-tight">Lokasi &amp; Rute Warnet</h3>
+                    <p class="text-xs text-neutral-400 mt-1">Temukan rute tercepat menuju arena kami dan nikmati pengalaman gaming terbaik.</p>
+                </div>
+
+                {% if gmaps_info.nav_url %}
+                <a href="{{ gmaps_info.nav_url }}" target="_blank" rel="noopener noreferrer"
+                    class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs md:text-sm font-bold rounded-xl transition-all shadow-lg hover:shadow-white/10 shrink-0 transform hover:-translate-y-0.5">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span>Petunjuk Arah (Google Maps) ↗</span>
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                <!-- Info Kolom Kiri -->
+                <div class="lg:col-span-4 bg-[#080808] border border-[#1a1a1a] rounded-xl p-5 flex flex-col justify-between space-y-6">
+                    <div class="space-y-4">
+                        <div>
+                            <span class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 font-bold">Nama Arena</span>
+                            <h4 class="text-base font-bold text-neutral-200 mt-0.5">{{ warnet_title }}</h4>
+                        </div>
+
+                        <div>
+                            <span class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 font-bold">Alamat Lengkap</span>
+                            <p class="text-xs text-neutral-300 leading-relaxed mt-0.5 flex items-start gap-2">
+                                <svg class="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                                <span>{{ warnet_address }}</span>
+                            </p>
+                        </div>
+
+                        <div>
+                            <span class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 font-bold">Kontak / Hotline</span>
+                            <p class="text-xs text-neutral-300 font-mono mt-0.5 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                                </svg>
+                                <span>{{ warnet_phone }}</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-[#171717] flex items-center justify-between text-xs text-neutral-400 font-mono">
+                        <span class="flex items-center gap-1.5 text-emerald-400">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            Buka 24 Jam
+                        </span>
+                        <span class="text-[11px] text-neutral-500">Wi-Fi &amp; Full AC</span>
+                    </div>
+                </div>
+
+                <!-- Iframe Kolom Kanan -->
+                <div class="lg:col-span-8 bg-[#080808] border border-[#1a1a1a] rounded-xl overflow-hidden min-h-[300px] lg:min-h-[360px] relative flex items-center justify-center">
+                    {% if gmaps_info.embed_url %}
+                    <iframe src="{{ gmaps_info.embed_url }}"
+                        class="w-full h-full min-h-[300px] lg:min-h-[360px] border-0"
+                        allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                    {% else %}
+                    <!-- Jika embed tidak tersedia (hanya link share), tampilkan kartu direct navigation -->
+                    <div class="p-8 text-center space-y-4 max-w-md">
+                        <div class="w-12 h-12 rounded-xl bg-[#141414] border border-[#222] flex items-center justify-center text-neutral-300 mx-auto">
+                            <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-base font-bold text-neutral-200">Buka Lokasi di Google Maps</h4>
+                        <p class="text-xs text-neutral-400 leading-relaxed">Klik tombol di bawah untuk melihat rute langsung dan navigasi GPS ke lokasi warnet.</p>
+                        <a href="{{ gmaps_info.nav_url }}" target="_blank" rel="noopener noreferrer"
+                            class="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold rounded-xl transition-all shadow-lg hover:shadow-emerald-500/20 transform hover:-translate-y-0.5">
+                            <span>Buka Google Maps</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                            </svg>
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
         <!-- Rules Section (Aturan Warnet) -->
         {% if warnet_rules and warnet_rules.strip() %}
         <section class="bg-[#0a0a0a] border border-[#1f1f1f] rounded-2xl p-6 md:p-8 space-y-6">

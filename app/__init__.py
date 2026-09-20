@@ -144,8 +144,19 @@ def _register_public_routes(app):
     def index():
         """Render public warnet homepage (landing page)."""
         from app.services import SettingsService
+        from app.utils.helpers import parse_google_maps_info
         warnet_rules = SettingsService.get("warnet_announcement", "")
-        return render_template("public/landing/index.html", warnet_rules=warnet_rules)
+        warnet_address = SettingsService.get("warnet_address", "Jl. Merdeka No. 123, Kota")
+        warnet_phone = SettingsService.get("warnet_phone", "0812-3456-7890")
+        warnet_gmaps_raw = SettingsService.get("warnet_gmaps", "")
+        gmaps_info = parse_google_maps_info(warnet_gmaps_raw)
+        return render_template(
+            "public/landing/index.html",
+            warnet_rules=warnet_rules,
+            warnet_address=warnet_address,
+            warnet_phone=warnet_phone,
+            gmaps_info=gmaps_info
+        )
 
     @app.route("/livepc")
     def public_pc_map():
