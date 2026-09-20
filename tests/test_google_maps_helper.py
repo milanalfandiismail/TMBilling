@@ -5,12 +5,13 @@ from app.utils.helpers import parse_google_maps_info
 
 
 def test_parse_iframe_embed():
-    iframe_code = '<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1000!2d106.8!3d-6.2" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"></iframe>'
-    res = parse_google_maps_info(iframe_code)
+    iframe_code = '<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1000!2d106.8271528!3d-6.1753924" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"></iframe>'
+    res = parse_google_maps_info(iframe_code, "Jl. Merdeka No. 123")
     assert res["is_valid"] is True
     assert res["embed_url"].startswith("https://www.google.com/maps/embed")
-    assert "106.8" in res["embed_url"]
-    assert res["nav_url"] is not None
+    assert "106.8271528" in res["embed_url"]
+    assert "destination=-6.1753924,106.8271528" in res["nav_url"]
+    assert res["nav_url"].startswith("https://www.google.com/maps/dir/")
 
 
 def test_parse_direct_embed_url():

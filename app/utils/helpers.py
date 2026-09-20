@@ -173,7 +173,10 @@ def sanitize_html(html_content):
     return "".join(parser.result)
 
 
-def parse_google_maps_info(gmaps_input):
+import urllib.parse
+
+
+def parse_google_maps_info(gmaps_input, warnet_address=""):
     """Menganalisis dan mengekstrak info Google Maps secara aman (multi-format).
 
     Mendukung:
@@ -184,6 +187,7 @@ def parse_google_maps_info(gmaps_input):
 
     Args:
         gmaps_input (str): Input dari admin/kasir.
+        warnet_address (str): Alamat warnet untuk fallback tujuan navigasi.
 
     Returns:
         dict: {
@@ -203,6 +207,16 @@ def parse_google_maps_info(gmaps_input):
     embed_url = None
     nav_url = None
 
+    def build_direction_url(src_url):
+        # Ekstrak koordinat latitude dan longitude dari parameter pb (!3d<lat>!2d<lng>)
+        lat_m = re.search(r'!3d(-?\d+(?:\.\d+)?)', src_url)
+        lng_m = re.search(r'!2d(-?\d+(?:\.\d+)?)', src_url)
+        if lat_m and lng_m:
+            return f"https://www.google.com/maps/dir/?api=1&destination={lat_m.group(1)},{lng_m.group(1)}"
+        if warnet_address and str(warnet_address).strip():
+            return f"https://www.google.com/maps/dir/?api=1&destination={urllib.parse.quote(str(warnet_address).strip())}"
+        return "https://www.google.com/maps"
+
     # 1. Cek jika input berupa tag <iframe>
     if "<iframe" in raw.lower():
         match = re.search(r'src=["\']([^"\']+)["\']', raw, re.IGNORECASE)
@@ -211,7 +225,7 @@ def parse_google_maps_info(gmaps_input):
             # Validasi bahwa src adalah Google Maps URL aman
             if src_val.startswith("https://www.google.com/maps/embed") or src_val.startswith("http://www.google.com/maps/embed"):
                 embed_url = src_val
-                nav_url = src_val.replace("/maps/embed", "/maps")
+                nav_url = build_direction_url(src_val)
             elif ("google.com/maps" in src_val or "maps.google.com" in src_val) and (src_val.startswith("http://") or src_val.startswith("https://")):
                 embed_url = src_val
                 nav_url = src_val
@@ -221,7 +235,7 @@ def parse_google_maps_info(gmaps_input):
     # 2. Cek jika input adalah URL embed langsung
     elif raw.startswith("https://www.google.com/maps/embed") or raw.startswith("http://www.google.com/maps/embed"):
         embed_url = raw
-        nav_url = raw.replace("/maps/embed", "/maps")
+        nav_url = build_direction_url(raw)
 
     # 3. Cek jika input adalah share link / shortlink Google Maps
     elif raw.startswith("https://maps.app.goo.gl/") or raw.startswith("http://maps.app.goo.gl/") or raw.startswith("https://goo.gl/maps/") or raw.startswith("http://goo.gl/maps/"):
@@ -242,4 +256,5 @@ def parse_google_maps_info(gmaps_input):
         "embed_url": embed_url,
         "nav_url": nav_url,
         "is_valid": is_valid
-    }
+    }
+
