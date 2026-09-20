@@ -89,6 +89,27 @@ class MenuService:
             raise e
 
     @staticmethod
+    def _delete_image_file(gambar_path):
+        """Menghapus file fisik gambar menu dari disk secara aman."""
+        if not gambar_path or not isinstance(gambar_path, str):
+            return
+        try:
+            import os
+            from flask import current_app
+            
+            try:
+                root_dir = current_app.root_path
+            except Exception:
+                root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+            filename = os.path.basename(gambar_path.replace("\\", "/"))
+            filepath = os.path.join(root_dir, "static", "uploads", "menu", filename)
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        except Exception:
+            pass
+
+    @staticmethod
     def update_menu(menu_id, data, operator="system"):
         """Mengupdate data menu di katalog."""
         try:
@@ -113,7 +134,11 @@ class MenuService:
             if "stok" in data:
                 menu.stok = int(data["stok"])
             if "gambar_path" in data:
-                menu.gambar_path = data["gambar_path"]
+                new_gambar = data["gambar_path"]
+                # Hapus file gambar lama jika gambar diubah atau dihapus (None / path berbeda)
+                if menu.gambar_path and menu.gambar_path != new_gambar:
+                    MenuService._delete_image_file(menu.gambar_path)
+                menu.gambar_path = new_gambar
 
             db.session.commit()
             
@@ -129,12 +154,55 @@ class MenuService:
             raise e
 
     @staticmethod
+    def get_archived_menu():
+        """Mengambil semua menu yang diarsipkan beserta jumlah transaksi historisnya."""
+        menus = MenuRepository.get_archived()
+        result = []
+        for m in menus:
+            data = m.to_dict()
+            data["transaksi_count"] = MenuRepository.count_transaksi_by_menu(m.id)
+            result.append(data)
+        return result
+
+    @staticmethod
+    def restore_menu(menu_id, operator="system"):
+        """Memulihkan menu dari arsip kembali ke katalog aktif."""
+        try:
+            menu = MenuRepository.get_by_id_including_archived(menu_id)
+            if not menu:
+                raise ValueError("Menu tidak ditemukan")
+            if menu.is_active:
+                return menu
+
+            active_dup = MenuRepository.get_by_name(menu.nama)
+            if active_dup and active_dup.id != menu.id:
+                raise ValueError(f"Menu aktif dengan nama '{menu.nama}' sudah ada di katalog")
+
+            menu.is_active = True
+            db.session.commit()
+
+            detail_restore = {
+                "nama": menu.nama,
+                "harga": menu.harga,
+                "stok": menu.stok
+            }
+            write_log(
+                "RESTORE_MENU",
+                f"Menu '{menu.nama}' berhasil dipulihkan dari arsip ke katalog aktif",
+                user=operator,
+                detail_json=detail_restore
+            )
+            return menu
+        except Exception as e:
+            db.session.rollback()
+            raise e
+
+    @staticmethod
     def delete_menu(menu_id, operator="system"):
         """Mengarsipkan menu dari katalog (soft-delete).
-
-        Jika menu memiliki transaksi historis, hanya diarsipkan (is_active=False)
-        agar struk & laporan lama tetap konsisten. Menu hilang dari katalog POS
-        namun histori F&B tidak hilang.
+        
+        Menu dipindahkan ke arsip (is_active=False) agar struk & laporan lama
+        tetap konsisten dan dapat dipulihkan kapan saja.
         """
         try:
             menu = MenuRepository.get_by_id_including_archived(menu_id)
@@ -146,24 +214,17 @@ class MenuService:
             nama = menu.nama
             transaksi_count = MenuRepository.count_transaksi_by_menu(menu_id)
 
-            if transaksi_count > 0:
-                # Menu sudah pernah terjual — arsipkan saja agar FK tidak dilanggar
-                menu.is_active = False
-                detail_arsip = {
-                    "nama": nama,
-                    "transaksi_historis": transaksi_count
-                }
-                write_log(
-                    "ARSIP_MENU",
-                    f"Menu '{nama}' diarsipkan (memiliki {transaksi_count} transaksi historis)",
-                    user=operator,
-                    detail_json=detail_arsip
-                )
-            else:
-                # Tidak ada transaksi terkait — hapus permanen aman
-                MenuRepository.delete(menu)
-                detail_hapus = {"nama": nama, "transaksi_historis": 0}
-                write_log("HAPUS_MENU", f"Menu '{nama}' dihapus permanen dari katalog", user=operator, detail_json=detail_hapus)
+            menu.is_active = False
+            detail_arsip = {
+                "nama": nama,
+                "transaksi_historis": transaksi_count
+            }
+            write_log(
+                "ARSIP_MENU",
+                f"Menu '{nama}' diarsipkan ke daftar arsip menu",
+                user=operator,
+                detail_json=detail_arsip
+            )
 
             db.session.commit()
             return nama
@@ -183,10 +244,14 @@ class MenuService:
                 raise ValueError("Menu tidak ditemukan")
 
             nama = menu.nama
+            gambar_path = menu.gambar_path
             transaksi_count = MenuRepository.count_transaksi_by_menu(menu_id)
             MenuRepository.delete_transaksi_by_menu(menu_id)
             MenuRepository.delete(menu)
             db.session.commit()
+
+            if gambar_path:
+                MenuService._delete_image_file(gambar_path)
 
             detail_hard = {
                 "nama": nama,

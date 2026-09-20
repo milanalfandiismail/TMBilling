@@ -33,6 +33,19 @@ class GameService:
         return unique_filename
 
     @staticmethod
+    def _delete_icon_file(icon_filename):
+        """Menghapus file fisik icon/cover game dari disk secara aman."""
+        if not icon_filename or not isinstance(icon_filename, str):
+            return
+        try:
+            filename = os.path.basename(icon_filename.replace("\\", "/"))
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        except Exception:
+            pass
+
+    @staticmethod
     def _normalize_kategori(kat_val):
         if not kat_val:
             return None
@@ -107,7 +120,15 @@ class GameService:
             val = data["aktif"]
             game.aktif = str(val).lower() in ("true", "1", "yes")
 
-        if icon_file and icon_file.filename:
+        # Cek apakah icon dihapus atau diganti
+        hapus_icon = data.get("hapus_icon") == "true" or data.get("hapus_icon") is True
+        if hapus_icon:
+            if game.icon:
+                GameService._delete_icon_file(game.icon)
+                game.icon = None
+        elif icon_file and icon_file.filename:
+            if game.icon:
+                GameService._delete_icon_file(game.icon)
             new_icon = GameService._save_icon(icon_file)
             if new_icon:
                 game.icon = new_icon
@@ -138,12 +159,7 @@ class GameService:
             
         # Hapus file icon jika ada
         if game.icon:
-            filepath = os.path.join(UPLOAD_FOLDER, game.icon)
-            if os.path.exists(filepath):
-                try:
-                    os.remove(filepath)
-                except:
-                    pass
+            GameService._delete_icon_file(game.icon)
                     
         GameRepository.delete(game)
         op_name = operator if isinstance(operator, str) else "admin"

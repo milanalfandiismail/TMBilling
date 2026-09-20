@@ -275,9 +275,11 @@ const API = {
     // 🔗 KANTIN / POS F&B
     menu: {
         list: () => API.request('/api/v1/kasir/menu/'),
+        listArchived: () => API.request('/api/v1/kasir/menu/archived'),
         create: (formData) => API.request('/api/v1/kasir/menu/', { method: 'POST', body: formData }),
         update: (id, formData) => API.request(`/api/v1/kasir/menu/${id}`, { method: 'PUT', body: formData }),
         delete: (id) => API.request(`/api/v1/kasir/menu/${id}`, { method: 'DELETE' }),
+        restore: (id) => API.request(`/api/v1/kasir/menu/${id}/restore`, { method: 'POST' }),
         deletePermanent: (id) => API.request(`/api/v1/kasir/menu/${id}/permanent`, { method: 'DELETE' }),
         checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0, metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/menu/checkout', {
             method: 'POST',

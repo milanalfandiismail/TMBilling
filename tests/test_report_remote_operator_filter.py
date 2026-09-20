@@ -190,7 +190,7 @@ def test_billing_and_canteen_filtering_separation(app_instance, test_setup):
             menit=60,
             no_nota="TM-20260904-001",
             operator="admin",
-            dibuat_pada=datetime.now()
+            dibuat_pada=datetime.utcnow()
         )
         # 2. Buat Transaksi Billing Remote: Rp25.000
         t_remote = Transaksi(
@@ -200,7 +200,7 @@ def test_billing_and_canteen_filtering_separation(app_instance, test_setup):
             menit=150,
             no_nota="TM-20260904-002",
             operator="admin (Remote: Milan Net)",
-            dibuat_pada=datetime.now()
+            dibuat_pada=datetime.utcnow()
         )
         # 3. Buat Transaksi Menu Lokal: Rp5.000
         tm_lokal = TransaksiMenu(
@@ -210,7 +210,7 @@ def test_billing_and_canteen_filtering_separation(app_instance, test_setup):
             total_harga=5000,
             kasir_id=test_setup["admin"].id,
             operator="admin",
-            tanggal=datetime.now()
+            tanggal=datetime.utcnow()
         )
         # 4. Buat Transaksi Menu Remote: Rp15.000
         tm_remote = TransaksiMenu(
@@ -220,7 +220,7 @@ def test_billing_and_canteen_filtering_separation(app_instance, test_setup):
             total_harga=15000,
             kasir_id=test_setup["admin"].id,
             operator="admin (Remote: Milan Net)",
-            tanggal=datetime.now()
+            tanggal=datetime.utcnow()
         )
         db.session.add_all([t_lokal, t_remote, tm_lokal, tm_remote])
         db.session.commit()

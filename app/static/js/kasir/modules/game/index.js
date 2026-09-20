@@ -115,7 +115,7 @@ const GameManagement = {
                 <tr class="hover:bg-[#121212] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#1c1c1c] last:border-b-0 lg:border-b-0">
                     <td class="px-3 lg:max-xl:px-4 xl:px-4 py-2 lg:max-xl:py-3 xl:py-2 text-left block lg:table-cell">
                         <div class="flex items-center gap-3">
-                            <img src="${iconUrl}" alt="${g.nama}" class="w-10 h-13 rounded object-cover border border-[#1c1c1c] bg-[#141414] shadow-sm flex-shrink-0" onerror="this.onerror=null; this.src='${defaultIcon}'">
+                            <img src="${iconUrl}" alt="${g.nama}" class="w-10 h-13 rounded object-cover border border-[#1c1c1c] bg-[#141414] shadow-sm flex-shrink-0 ${g.icon ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}" onerror="this.onerror=null; this.src='${defaultIcon}'" ${g.icon ? `onclick="GameManagement.openLightbox('${iconUrl}', '${g.nama.replace(/'/g, "\\'")}', '${(g.tipe || 'game')}', '${(g.kategori || '').replace(/'/g, "\\'")}')" title="Klik untuk lihat ukuran penuh"` : ''}>
                             <div>
                                 <div class="flex items-center gap-1.5">
                                     <span class="font-bold text-neutral-200 text-xs lg:max-xl:text-sm xl:text-base">${g.nama}</span>
@@ -139,6 +139,11 @@ const GameManagement = {
                     <td class="px-3 lg:max-xl:px-4 xl:px-4 py-2 lg:max-xl:py-3 xl:py-2 text-right flex lg:table-cell justify-between items-center">
                         <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
                         <div class="flex justify-end gap-1.5">
+                            ${g.icon ? `
+                            <button onclick="GameManagement.openLightbox('${iconUrl}', '${g.nama.replace(/'/g, "\\'")}', '${(g.tipe || 'game')}', '${(g.kategori || '').replace(/'/g, "\\'")}')" class="w-7 h-7 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-8 xl:h-8 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center shadow-sm" title="Lihat Fullscreen">
+                                <svg class="w-3.5 h-3.5 lg:max-xl:w-3.5 lg:max-xl:h-3.5 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            </button>
+                            ` : ''}
                             <button onclick="GameManagement.openEditModal(${JSON.stringify(g).replace(/"/g, '&quot;')})" class="w-7 h-7 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-8 xl:h-8 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center shadow-sm" title="Edit">
                                 <svg class="w-3.5 h-3.5 lg:max-xl:w-3.5 lg:max-xl:h-3.5 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                             </button>
@@ -434,6 +439,7 @@ const GameManagement = {
         const placeholder = document.getElementById('cropper-placeholder');
         const guide = document.getElementById('cropper-guide');
         const resetBtn = document.getElementById('btn-reset-image');
+        const previewBtn = document.getElementById('btn-preview-game-modal');
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
@@ -446,12 +452,14 @@ const GameManagement = {
             if (placeholder) placeholder.classList.remove('hidden');
             if (guide) guide.classList.add('hidden');
             if (resetBtn) resetBtn.classList.add('hidden');
+            if (previewBtn) previewBtn.classList.add('hidden');
             return;
         }
 
         if (placeholder) placeholder.classList.add('hidden');
         if (guide) guide.classList.remove('hidden');
         if (resetBtn) resetBtn.classList.remove('hidden');
+        if (previewBtn) previewBtn.classList.remove('hidden');
 
         const img = this.cropperState.image;
         
@@ -499,12 +507,14 @@ const GameManagement = {
             form.append('argumen', document.getElementById('form-game-argumen').value.trim());
             form.append('aktif', document.getElementById('form-game-aktif').checked);
             
-            // Handle Cropped Image Blob
+            // Handle Cropped Image Blob or Hapus Icon
             if (this.cropperState.isImageModified && this.cropperState.image) {
                 const blob = await this.getCroppedBlob();
                 if (blob) {
                     form.append('icon', blob, 'cover.jpg');
                 }
+            } else if (this.cropperState.isImageModified && !this.cropperState.image) {
+                form.append('hapus_icon', 'true');
             }
 
             const url = id ? `/api/v1/kasir/game/${id}` : '/api/v1/kasir/game/';
@@ -544,6 +554,65 @@ const GameManagement = {
             }
         } catch (e) {
             Toast.error('Terjadi kesalahan jaringan');
+        }
+    },
+
+    // ==================== LIGHTBOX FULLSCREEN PREVIEW ====================
+    previewFromModal() {
+        const canvas = document.getElementById('cropper-canvas');
+        if (!canvas || !this.cropperState.image) return;
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+        const rawNama = document.getElementById('form-game-nama')?.value?.trim();
+        const nama = rawNama || "Preview Cover Art";
+        const tipe = document.getElementById('form-game-tipe')?.value || "game";
+        const kategori = this.selectedCategories.join(', ');
+        this.openLightbox(dataUrl, nama, tipe, kategori);
+    },
+
+    openLightbox(iconUrl, nama, tipe, kategori) {
+        event?.stopPropagation();
+        const modal = document.getElementById("game-lightbox-modal");
+        const img = document.getElementById("game-lightbox-img");
+        const title = document.getElementById("game-lightbox-title");
+        const badge = document.getElementById("game-lightbox-badge");
+        const katSpan = document.getElementById("game-lightbox-kategori");
+        if (!modal || !img) return;
+
+        img.src = iconUrl;
+        if (title) title.textContent = nama || "Cover Art";
+        
+        const isApp = (tipe || 'game').toLowerCase() === 'aplikasi';
+        if (badge) {
+            badge.textContent = isApp ? 'Aplikasi' : 'Game';
+            badge.className = isApp 
+                ? 'px-2.5 py-1 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-bold rounded-lg uppercase tracking-wider'
+                : 'px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold rounded-lg uppercase tracking-wider';
+        }
+
+        if (katSpan) {
+            katSpan.textContent = kategori ? `Genre / Kategori: ${kategori}` : '';
+        }
+
+        modal.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+
+        if (!this._lightboxEscBound) {
+            this._lightboxEscBound = true;
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && !modal.classList.contains("hidden")) {
+                    this.closeLightbox();
+                }
+            });
+        }
+    },
+
+    closeLightbox() {
+        const modal = document.getElementById("game-lightbox-modal");
+        if (modal) {
+            modal.classList.add("hidden");
+            const img = document.getElementById("game-lightbox-img");
+            if (img) img.src = "";
+            document.body.style.overflow = "";
         }
     }
 };

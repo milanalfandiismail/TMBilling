@@ -37,6 +37,16 @@ class MenuRepository:
         return MenuItem.query.filter_by(is_active=True).order_by(MenuItem.nama.asc()).all()
 
     @staticmethod
+    def get_archived():
+        """Mengambil semua menu yang diarsipkan dari katalog."""
+        return MenuItem.query.filter_by(is_active=False).order_by(MenuItem.nama.asc()).all()
+
+    @staticmethod
+    def count_archived():
+        """Menghitung jumlah menu yang diarsipkan."""
+        return MenuItem.query.filter_by(is_active=False).count()
+
+    @staticmethod
     def count_transaksi_by_menu(menu_id):
         """Menghitung jumlah transaksi menu yang terkait dengan menu_id."""
         return TransaksiMenu.query.filter_by(menu_id=menu_id).count()

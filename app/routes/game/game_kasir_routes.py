@@ -55,8 +55,13 @@ def tambah_game():
 @admin_required
 def edit_game(game_id):
     try:
-        data = request.form.to_dict()
-        icon_file = request.files.get("icon")
+        if request.is_json:
+            data = request.get_json(silent=True) or {}
+            icon_file = None
+        else:
+            data = request.form.to_dict()
+            icon_file = request.files.get("icon")
+
         kasir = session.get("kasir_username", "admin")
         
         game = GameService.update(game_id, data, icon_file=icon_file, operator=kasir)

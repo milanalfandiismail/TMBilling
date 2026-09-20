@@ -174,6 +174,11 @@
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                                 Pilih Gambar
                             </button>
+                            <button type="button" id="btn-preview-game-modal" onclick="GameManagement.previewFromModal()"
+                                class="hidden px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 hover:text-white text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                Preview
+                            </button>
                             <button type="button" id="btn-reset-image" onclick="GameManagement.clearImageState()"
                                 class="hidden px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-red-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">
                                 Hapus / Ganti
@@ -275,4 +280,28 @@
         </div>
     </div>
 </div>
+
+<!-- ===== MODAL: LIGHTBOX PREVIEW GAME / APLIKASI ===== -->
+<div id="game-lightbox-modal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md hidden" onclick="GameManagement.closeLightbox()">
+    <div class="relative max-w-4xl w-full bg-[#0c0c0c] border border-[#222] rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
+        <!-- Header -->
+        <div class="p-4 border-b border-[#1c1c1c] flex items-center justify-between bg-[#111]">
+            <div class="flex items-center gap-3">
+                <span id="game-lightbox-badge" class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold rounded-lg uppercase tracking-wider">Game</span>
+                <h3 id="game-lightbox-title" class="text-sm lg:text-base font-bold text-neutral-100 truncate max-w-md">Preview Cover Art</h3>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="game-lightbox-kategori" class="text-xs lg:text-sm text-neutral-400 font-mono"></span>
+                <button onclick="GameManagement.closeLightbox()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-[#2a2a2a] text-neutral-400 hover:text-white transition-colors flex items-center justify-center" title="Tutup (Esc)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+        </div>
+        <!-- Image Body -->
+        <div class="p-4 sm:p-6 flex items-center justify-center bg-[#050505] overflow-hidden">
+            <img id="game-lightbox-img" src="" alt="Game Poster Full Preview" class="max-h-[70vh] w-auto max-w-full rounded-xl object-contain border border-[#1a1a1a] shadow-lg">
+        </div>
+    </div>
+</div>
+
 
