@@ -235,6 +235,51 @@ def trigger_remote_action(pc_id, action):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@monitor_kasir_bp.route("/remote/batch", methods=["POST"])
+@login_required
+@admin_required
+def trigger_remote_action_batch():
+    """Trigger remote action (shutdown atau restart) ke banyak PC client sekaligus."""
+    try:
+        data = request.get_json() or {}
+        pc_ids = data.get("pc_ids") or []
+        action = data.get("action")
+
+        if action not in ["shutdown", "restart"]:
+            return jsonify({"success": False, "error": "Aksi tidak valid (hanya shutdown/restart)"}), 400
+        if not pc_ids or not isinstance(pc_ids, list):
+            return jsonify({"success": False, "error": "Daftar PC (pc_ids) harus berupa array non-kosong"}), 400
+
+        from app.repositories import PCRepository
+        from app.services import ClientService
+
+        action_label = "Shutdown" if action == "shutdown" else "Restart"
+        operator = session.get("kasir_username", "admin")
+        success_list = []
+        errors = []
+
+        for pc_id in pc_ids:
+            pc = PCRepository.get_by_id(pc_id)
+            if not pc:
+                errors.append({"pc_id": pc_id, "error": "PC tidak ditemukan"})
+                continue
+            try:
+                ClientService.queue_command(pc.id, action)
+                write_log("REMOTE_ACTION_BATCH", f"Perintah {action_label} batch dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode, "action": action})
+                success_list.append(pc.kode)
+            except Exception as e:
+                errors.append({"pc_id": pc_id, "pc_kode": pc.kode, "error": str(e)})
+
+        return jsonify({
+            "success": len(success_list) > 0,
+            "success_pcs": success_list,
+            "errors": errors,
+            "total_success": len(success_list),
+            "total_failed": len(errors)
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 @monitor_api_bp.route("/screenshot/upload", methods=["POST"])
 @api_key_required

@@ -177,6 +177,7 @@ const API = {
     // 🔗 LOGIKA SESI (GUEST & MEMBER)
     sesi: {
         bukaGuest: (pcKode, paketId, namaGuest, metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/sesi/buka-guest', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, paket_id: paketId, nama_guest: namaGuest, metode_pembayaran: metodePembayaran }) }),
+        bukaGuestBatch: (pcKodes, paketId, prefix = 'Guest', metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/sesi/buka-guest-batch', { method: 'POST', body: JSON.stringify({ pc_kodes: pcKodes, paket_id: paketId, nama_guest_prefix: prefix, metode_pembayaran: metodePembayaran }) }),
         bukaMember: (pcKode, username) => API.request('/api/v1/kasir/sesi/buka-member', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, username }) }),
         tambahWaktu: (sesiId, paketIdOrPayload, qty = 1, metodePembayaran = 'Tunai') => {
             if (paketIdOrPayload && typeof paketIdOrPayload === 'object') {
@@ -185,7 +186,18 @@ const API = {
             }
             return API.request(`/api/v1/kasir/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify({ paket_id: paketIdOrPayload, qty, metode_pembayaran: metodePembayaran }) });
         },
+        tambahWaktuBatch: (sesiIds, payloadOrPaketId, qty = 1, metodePembayaran = 'Tunai') => {
+            let bodyData = { sesi_ids: sesiIds, metode_pembayaran: metodePembayaran };
+            if (payloadOrPaketId && typeof payloadOrPaketId === 'object' && payloadOrPaketId.selections) {
+                bodyData.selections = payloadOrPaketId.selections;
+            } else if (typeof payloadOrPaketId === 'number' || typeof payloadOrPaketId === 'string') {
+                bodyData.paket_id = payloadOrPaketId;
+                bodyData.qty = qty;
+            }
+            return API.request('/api/v1/kasir/sesi/tambah-waktu-batch', { method: 'POST', body: JSON.stringify(bodyData) });
+        },
         tutup: sesiId => API.request(`/api/v1/kasir/sesi/tutup/${sesiId}`, { method: 'POST' }),
+        tutupBatch: sesiIds => API.request('/api/v1/kasir/sesi/tutup-batch', { method: 'POST', body: JSON.stringify({ sesi_ids: sesiIds }) }),
         pindahPC: (sesiId, pcKodeBaru) => API.request(`/api/v1/kasir/sesi/pindah-pc/${sesiId}`, { method: 'POST', body: JSON.stringify({ pc_kode_baru: pcKodeBaru }) }),
         detail: sesiId => API.request(`/api/v1/kasir/sesi/${sesiId}`),
         getRiwayatPaket: sesiId => API.request(`/api/v1/kasir/sesi/${sesiId}/riwayat-paket`),
@@ -193,6 +205,13 @@ const API = {
             method: 'POST',
             body: JSON.stringify({ sesi_id: sesiId, transaksi_id: transaksiId })
         }),
+    },
+
+    // 🔗 MONITOR & REMOTE ACTION
+    monitor: {
+        remote: (pcId, action) => API.request(`/api/v1/kasir/monitor/remote/${pcId}/${action}`, { method: 'POST' }),
+        remoteBatch: (pcIds, action) => API.request('/api/v1/kasir/monitor/remote/batch', { method: 'POST', body: JSON.stringify({ pc_ids: pcIds, action }) }),
+        triggerScreenshot: pcId => API.request(`/api/v1/kasir/monitor/screenshot/${pcId}`, { method: 'POST' }),
     },
 
 

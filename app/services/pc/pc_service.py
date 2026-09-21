@@ -106,6 +106,11 @@ class PCService:
         kode = data.get("kode", "").strip().upper()
         if not kode:
             raise ValueError("Kode PC wajib diisi")
+        if len(kode) > 11:
+            raise ValueError("Kode PC maksimal 11 karakter")
+        import re
+        if not re.match(r'^[A-Za-z0-9\-_]+$', kode):
+            raise ValueError("Kode PC hanya boleh berisi huruf, angka, tanda hubung (-), atau garis bawah (_)")
         
         if PCRepository.get_by_kode(kode):
             raise ValueError(f"PC dengan kode {kode} sudah ada")
@@ -157,8 +162,13 @@ class PCService:
         
         # 1. Validasi Kode Baru
         if "kode" in data:
-            kode_baru = data["kode"].strip()
+            kode_baru = data["kode"].strip().upper()
             if kode_baru and kode_baru != pc.kode:
+                if len(kode_baru) > 11:
+                    raise ValueError("Kode PC maksimal 11 karakter")
+                import re
+                if not re.match(r'^[A-Za-z0-9\-_]+$', kode_baru):
+                    raise ValueError("Kode PC hanya boleh berisi huruf, angka, tanda hubung (-), atau garis bawah (_)")
                 if PCRepository.find_by_kode(kode_baru):
                     raise ValueError(f"Kode PC '{kode_baru}' sudah digunakan")
                 pc.kode = kode_baru
@@ -304,36 +314,78 @@ class PCService:
 
     @staticmethod
     def create_batch(data, operator="system"):
-        """Tambah PC massal dengan IP Range Start & End serta validasi duplikasi IP."""
-        prefix = data.get("prefix", "PC-").upper()
-        start_n = int(data.get("start_num", 1))
-        end_n = int(data.get("end_num", 5))
+        """Tambah PC massal dengan IP Range Start & End serta validasi duplikasi IP dan keselarasan jumlah unit."""
+        import ipaddress
+        import re
+
+        prefix_raw = str(data.get("prefix", "PC") or "").strip().upper()
+        clean_prefix = prefix_raw.rstrip("-_")
+        if len(clean_prefix) > 6:
+            raise ValueError("Prefix Kode PC maksimal 6 karakter")
+        if clean_prefix and not re.match(r'^[A-Za-z0-9\-_]+$', clean_prefix):
+            raise ValueError("Prefix Kode PC hanya boleh berisi huruf, angka, tanda hubung (-), atau garis bawah (_)")
+        
+        try:
+            start_n = int(data.get("start_num", 1))
+            end_n = int(data.get("end_num", 1))
+        except (ValueError, TypeError):
+            raise ValueError("Nomor unit harus berupa angka valid")
+
+        if start_n < 1 or end_n > 9999 or len(str(end_n)) > 4 or len(str(start_n)) > 4:
+            raise ValueError("Nomor unit harus berada di antara 1 sampai 9999 (maksimal 4 digit)")
+
+        if start_n > end_n:
+            raise ValueError(f"Nomor awal ({start_n}) tidak boleh lebih besar dari nomor akhir ({end_n})")
+
+        pc_count = end_n - start_n + 1
+
         grup_nama = data.get("grup", "reguler")
-        
-        ip_start = data.get("ip_start")
-        
         grup_obj = GrupRepository.find_by_nama(grup_nama)
         if not grup_obj:
             raise ValueError(f"Grup {grup_nama} tidak ditemukan")
 
-        if not ip_start:
-            raise ValueError("IP Address Awal wajib diisi")
+        ip_start_str = str(data.get("ip_start") or "").strip()
+        ip_end_str = str(data.get("ip_end") or "").strip()
 
-        ip_parts = ip_start.split('.')
-        if len(ip_parts) != 4:
-            raise ValueError("Format IP Address Awal tidak valid (wajib X.X.X.X)")
+        if not ip_start_str:
+            raise ValueError("IP Address Awal wajib diisi")
+        if not ip_end_str:
+            raise ValueError("IP Address Akhir wajib diisi")
 
         try:
-            subnet = ".".join(ip_parts[:3])
-            current_octet = int(ip_parts[3])
-        except (ValueError, IndexError):
-            raise ValueError("IP Address Awal memiliki segmen angka yang tidak valid")
+            ip_start_obj = ipaddress.IPv4Address(ip_start_str)
+        except Exception:
+            raise ValueError(f"Format IP Address Awal '{ip_start_str}' tidak valid (wajib format IPv4 X.X.X.X)")
 
-        # Loop pertama: Validasi seluruh PC terlebih dahulu (Atomic check)
-        temp_octet = current_octet
-        for i in range(start_n, end_n + 1):
-            kode = f"{prefix}{i}"
-            generated_ip = f"{subnet}.{temp_octet}"
+        try:
+            ip_end_obj = ipaddress.IPv4Address(ip_end_str)
+        except Exception:
+            raise ValueError(f"Format IP Address Akhir '{ip_end_str}' tidak valid (wajib format IPv4 X.X.X.X)")
+
+        if int(ip_start_obj) > int(ip_end_obj):
+            raise ValueError(f"IP Address Awal ({ip_start_str}) tidak boleh lebih besar dari IP Address Akhir ({ip_end_str})")
+
+        ip_count = int(ip_end_obj) - int(ip_start_obj) + 1
+        if ip_count != pc_count:
+            if ip_count < pc_count:
+                raise ValueError(
+                    f"Rentang IP Address ({ip_count} IP: {ip_start_str} s/d {ip_end_str}) kurang dari jumlah unit PC yang akan didaftarkan ({pc_count} PC: unit {start_n} s/d {end_n}). Harap sesuaikan IP Address Akhir!"
+                )
+            else:
+                raise ValueError(
+                    f"Rentang IP Address ({ip_count} IP: {ip_start_str} s/d {ip_end_str}) lebih banyak dari jumlah unit PC yang akan didaftarkan ({pc_count} PC: unit {start_n} s/d {end_n}). Harap sesuaikan IP Address Akhir!"
+                )
+
+        def _build_batch_code(idx):
+            return f"{clean_prefix}-{idx}" if clean_prefix else str(idx)
+
+        # Loop pertama: Validasi seluruh PC & IP terlebih dahulu (Atomic check)
+        for offset, i in enumerate(range(start_n, end_n + 1)):
+            kode = _build_batch_code(i)
+            if len(kode) > 11:
+                raise ValueError(f"Kode PC '{kode}' melebihi batas maksimal 11 karakter")
+            
+            generated_ip = str(ipaddress.IPv4Address(int(ip_start_obj) + offset))
 
             # 1. Validasi Kode PC
             existing_code_pc = PCRepository.find_by_kode(kode)
@@ -343,27 +395,24 @@ class PCService:
             # 2. Validasi IP Address
             existing_ip_pc = PCRepository.find_by_ip(generated_ip)
             if existing_ip_pc:
-                raise ValueError(f"{kode} ipnya ketabrak sama {existing_ip_pc.kode} ({generated_ip})")
+                raise ValueError(f"PC {kode} dengan IP {generated_ip} bentrok dengan PC {existing_ip_pc.kode}")
 
-            temp_octet += 1
-
-        # Loop kedua: Jika validasi lolos semua, barulah kita simpan ke database
+        # Loop kedua: Jika validasi lolos semua, simpan ke database
         pc_to_save = []
         added = []
-        for i in range(start_n, end_n + 1):
-            kode = f"{prefix}{i}"
-            generated_ip = f"{subnet}.{current_octet}"
+        for offset, i in enumerate(range(start_n, end_n + 1)):
+            kode = _build_batch_code(i)
+            generated_ip = str(ipaddress.IPv4Address(int(ip_start_obj) + offset))
             
             pc = PC(
                 kode=kode,
-                nama=f"{prefix}{i}",
+                nama=kode,
                 ip_address=generated_ip,
                 grup_id=grup_obj.id,
                 aktif=True
             )
             pc_to_save.append(pc)
             added.append(kode)
-            current_octet += 1
 
         if pc_to_save:
             db.session.add_all(pc_to_save)
@@ -372,9 +421,10 @@ class PCService:
             detail_batch = {
                 "jumlah_ditambahkan": len(added),
                 "daftar_kode": added,
-                "grup": grup_nama
+                "grup": grup_nama,
+                "ip_range": f"{ip_start_str} - {ip_end_str}"
             }
-            write_log("BATCH_PC", f"Tambah {len(added)} PC via IP Range", user=operator, detail_json=detail_batch)
+            write_log("BATCH_PC", f"Tambah {len(added)} PC via IP Range ({ip_start_str} - {ip_end_str})", user=operator, detail_json=detail_batch)
             
         return {"added": added, "errors": []}
 

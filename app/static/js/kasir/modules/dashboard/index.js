@@ -164,7 +164,9 @@ const Dashboard = {
     },
 
     attachEvents() {
-        // Event listeners handled via inline onclick handlers
+        if (window.DashboardSelection) {
+            window.DashboardSelection.init();
+        }
     },
 
     async refundGuestPaket(sesiId, transaksiId, namaPaket, durasiMenit, dibuatPada, sisaWaktuSekarang) {
@@ -584,14 +586,20 @@ const Dashboard = {
         menu.style.left = x + 'px';
         menu.style.top = y + 'px';
 
+        this.setupContextMenuListeners();
+    },
+
+    setupContextMenuListeners() {
         if (this._ctxOutsideHandler) {
             document.removeEventListener('click', this._ctxOutsideHandler);
+            document.removeEventListener('contextmenu', this._ctxOutsideHandler);
         }
         if (this._ctxKeydownHandler) {
             document.removeEventListener('keydown', this._ctxKeydownHandler);
         }
         this._ctxOutsideHandler = (e) => {
-            if (!document.getElementById('pc-context-menu')?.contains(e.target)) {
+            const menu = document.getElementById('pc-context-menu');
+            if (menu && !menu.contains(e.target)) {
                 this.closeContextMenu();
             }
         };
@@ -602,8 +610,9 @@ const Dashboard = {
         };
         setTimeout(() => {
             document.addEventListener('click', this._ctxOutsideHandler);
+            document.addEventListener('contextmenu', this._ctxOutsideHandler);
             document.addEventListener('keydown', this._ctxKeydownHandler);
-        }, 0);
+        }, 10);
     },
 
     closeContextMenu() {
@@ -611,6 +620,7 @@ const Dashboard = {
         if (el) el.remove();
         if (this._ctxOutsideHandler) {
             document.removeEventListener('click', this._ctxOutsideHandler);
+            document.removeEventListener('contextmenu', this._ctxOutsideHandler);
             this._ctxOutsideHandler = null;
         }
         if (this._ctxKeydownHandler) {
