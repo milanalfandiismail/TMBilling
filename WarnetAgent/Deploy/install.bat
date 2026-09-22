@@ -223,20 +223,22 @@ if exist "%INSTALL_DIR%\config.ini" (
 )
 
 :: =========================================================================
-:: 6. REGISTER STARTUP SHORTCUT
+:: 6. REGISTER STARTUP SHORTCUT (HANYA SATU LOKASI STARTUP)
 :: =========================================================================
 echo 5. Membuat shortcut Startup otomatis...
 set "SHORTCUT_CREATED=0"
 
-:: 1. Coba All-Users Startup jika Admin
-if "%IS_ADMIN%"=="1" (
-    powershell -ExecutionPolicy Bypass -Command "$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\MGCTM.lnk'); $Shortcut.TargetPath = '%INSTALL_DIR%\MGCTM.exe'; $Shortcut.WorkingDirectory = '%INSTALL_DIR%'; $Shortcut.Save()" >nul 2>&1
+:: 1. Prioritaskan All-Users Startup (ProgramData)
+powershell -ExecutionPolicy Bypass -Command "$WshShell = New-Object -ComObject WScript.Shell; $allUsersPath = 'C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\MGCTM.lnk'; $Shortcut = $WshShell.CreateShortcut($allUsersPath); $Shortcut.TargetPath = '%INSTALL_DIR%\MGCTM.exe'; $Shortcut.WorkingDirectory = '%INSTALL_DIR%'; $Shortcut.Save()" >nul 2>&1
+if exist "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\MGCTM.lnk" (
+    set "SHORTCUT_CREATED=1"
+    :: Hapus duplikat di AppData jika ada agar tidak ada 2 startup shortcut yang berjalan bersamaan
+    powershell -ExecutionPolicy Bypass -Command "$userLnk = [System.IO.Path]::Combine($env:APPDATA, 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', 'MGCTM.lnk'); if (Test-Path $userLnk) { Remove-Item $userLnk -Force }" >nul 2>&1
+) else (
+    :: 2. Fallback ke User Startup Folder HANYA jika gagal membuat di ProgramData (misal user standar tanpa hak tulis ProgramData)
+    powershell -ExecutionPolicy Bypass -Command "$WshShell = New-Object -ComObject WScript.Shell; $lnkPath = [System.IO.Path]::Combine($env:APPDATA, 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', 'MGCTM.lnk'); $Shortcut = $WshShell.CreateShortcut($lnkPath); $Shortcut.TargetPath = '%INSTALL_DIR%\MGCTM.exe'; $Shortcut.WorkingDirectory = '%INSTALL_DIR%'; $Shortcut.Save()" >nul 2>&1
     if not errorlevel 1 set "SHORTCUT_CREATED=1"
 )
-
-:: 2. Selalu buat di User Startup Folder (100% aman untuk semua user)
-powershell -ExecutionPolicy Bypass -Command "$WshShell = New-Object -ComObject WScript.Shell; $lnkPath = [System.IO.Path]::Combine($env:APPDATA, 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', 'MGCTM.lnk'); $Shortcut = $WshShell.CreateShortcut($lnkPath); $Shortcut.TargetPath = '%INSTALL_DIR%\MGCTM.exe'; $Shortcut.WorkingDirectory = '%INSTALL_DIR%'; $Shortcut.Save()" >nul 2>&1
-if not errorlevel 1 set "SHORTCUT_CREATED=1"
 
 if "%SHORTCUT_CREATED%"=="1" (
     echo    [SUKSES] Shortcut Startup berhasil dipasang.
