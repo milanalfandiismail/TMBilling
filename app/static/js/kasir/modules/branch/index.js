@@ -102,7 +102,7 @@ const BranchManager = {
         }
 
         // Render daftar item dropdown
-        const displayVersion = window.APP_VERSION || document.querySelector('meta[name="app-version"]')?.content || 'v1.6.1';
+        const displayVersion = window.APP_VERSION || document.querySelector('meta[name="app-version"]')?.content || 'v1.6.2';
         let html = `
             <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-neutral-400 border-b border-white/5 flex items-center justify-between">
                 <span>Pilih Cabang</span>

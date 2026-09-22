@@ -2,7 +2,7 @@
 name = "tmbilling"
 version = "1.6.2"
 description = "TMBilling Client"
-authors = ["Antigravity"]
+authors = ["Milan Alfandi Ismail"]
 edition = "2021"
 
 [build-dependencies]

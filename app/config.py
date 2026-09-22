@@ -39,17 +39,17 @@ class Config:
     SESSION_PERMANENT = True
     PERMANENT_SESSION_LIFETIME = 86400  # 24 jam
     WTF_CSRF_TIME_LIMIT = None          # CSRF mengikuti umur session agar tidak kedaluwarsa sendiri
-    VERSION = "1.6.1"
+    VERSION = "1.6.2"
     VERSION_NAME = "Multi-Branch Nexus"
 
     @classmethod
     def get_version_tag(cls) -> str:
-        """Mengembalikan format versi dengan prefix 'v' (contoh: 'v1.6.1')."""
+        """Mengembalikan format versi dengan prefix 'v' (contoh: 'v1.6.2')."""
         return f"v{cls.VERSION}" if not str(cls.VERSION).startswith("v") else str(cls.VERSION)
 
     @classmethod
     def get_cache_version(cls) -> str:
-        """Mengembalikan format numerik versi untuk cache busting URL (contoh: '161' dari '1.6.1')."""
+        """Mengembalikan format numerik versi untuk cache busting URL (contoh: '162' dari '1.6.2')."""
         return "".join(c for c in str(cls.VERSION) if c.isdigit()) or "1"
 
     # Tambahan untuk kebutuhan aplikasi
