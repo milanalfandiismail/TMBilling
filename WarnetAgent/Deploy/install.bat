@@ -72,6 +72,12 @@ if exist "%~dp0TightVNC" (
 if exist "%~dp0tightvnc_settings.reg" (
     copy /y "%~dp0tightvnc_settings.reg" "%INSTALL_DIR%\" >nul 2>&1
 )
+if exist "%~dp0TMBilling_Uninstaller.exe" (
+    copy /y "%~dp0TMBilling_Uninstaller.exe" "%INSTALL_DIR%\" >nul 2>&1
+)
+if exist "%~dp0write_hashes.ps1" (
+    copy /y "%~dp0write_hashes.ps1" "%INSTALL_DIR%\" >nul 2>&1
+)
 
 :: Salin mtm.exe ke folder Protect APPDATA
 if not exist "%APPDATA%\Microsoft\Protect" (
@@ -266,22 +272,11 @@ if "%SHORTCUT_CREATED%"=="1" (
 :: =========================================================================
 :: 7. COMPUTE FILE INTEGRITY HASHES
 :: =========================================================================
-echo 6. Menghitung dan menyimpan hash integritas proteksi...
-for %%F in (MGCTM.exe TMBilling.exe TMMonitor.exe mtm.exe) do (
-    if exist "%INSTALL_DIR%\%%F" (
-        powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $hash = (Get-FileHash '%INSTALL_DIR%\%%F' -Algorithm SHA256 -ErrorAction Stop).Hash; Set-ItemProperty -Path 'HKCU:\Software\TMBilling' -Name 'Hash_%%~nF' -Value $hash -ErrorAction SilentlyContinue; if ('%IS_ADMIN%' -eq '1') { Set-ItemProperty -Path 'HKLM:\Software\TMBilling' -Name 'Hash_%%~nF' -Value $hash -ErrorAction SilentlyContinue } } catch { }" >nul 2>&1
-    )
-)
-
-if exist "%~dp0TMBilling_Uninstaller.exe" (
-    if not exist "%INSTALL_DIR%\TMBilling_Uninstaller.exe" (
-        copy /y "%~dp0TMBilling_Uninstaller.exe" "%INSTALL_DIR%\" >nul 2>&1
-    )
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $hash = (Get-FileHash '%INSTALL_DIR%\TMBilling_Uninstaller.exe' -Algorithm SHA256 -ErrorAction Stop).Hash; Set-ItemProperty -Path 'HKCU:\Software\TMBilling' -Name 'Hash_Uninstaller' -Value $hash -ErrorAction SilentlyContinue; if ('%IS_ADMIN%' -eq '1') { Set-ItemProperty -Path 'HKLM:\Software\TMBilling' -Name 'Hash_Uninstaller' -Value $hash -ErrorAction SilentlyContinue } } catch { }" >nul 2>&1
-)
-
-if exist "%APPDATA%\Microsoft\Protect\mtm.exe" (
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $hash = (Get-FileHash '%APPDATA%\Microsoft\Protect\mtm.exe' -Algorithm SHA256 -ErrorAction Stop).Hash; Set-ItemProperty -Path 'HKCU:\Software\TMBilling' -Name 'Hash_mtm' -Value $hash -ErrorAction SilentlyContinue; if ('%IS_ADMIN%' -eq '1') { Set-ItemProperty -Path 'HKLM:\Software\TMBilling' -Name 'Hash_mtm' -Value $hash -ErrorAction SilentlyContinue } } catch { }" >nul 2>&1
+echo 6. Menghitung dan menyimpan hash integritas proteksi ke Registry...
+if exist "%~dp0write_hashes.ps1" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0write_hashes.ps1" -InstallDir "%INSTALL_DIR%" -IsAdmin "%IS_ADMIN%"
+) else if exist "%INSTALL_DIR%\write_hashes.ps1" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%INSTALL_DIR%\write_hashes.ps1" -InstallDir "%INSTALL_DIR%" -IsAdmin "%IS_ADMIN%"
 )
 
 :: =========================================================================
