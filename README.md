@@ -111,11 +111,11 @@ c:\Project GIT\TMBilling
 
 1. Salin isi folder `WarnetAgent\Deploy` (atau paket zip rilis agen) ke PC Klien.
 2. Klik kanan **`install.bat`** lalu pilih **Run as administrator** (atau jalankan biasa).
-3. Masukkan **IP Server Billing** saat diminta (contoh: `192.168.1.100`). Port default `7015` akan otomatis digunakan *(kecuali jika Anda mengubah port server billing, Anda dapat memasukkan format `IP:PORT`, contoh: `192.168.1.100:8080`)*. Masukkan juga **API Key** yang disesuaikan dengan konfigurasi di server billing Anda (`CLIENT_API_KEY` pada file `.env`).
+3. Masukkan **IP Server Billing** saat diminta (contoh: `192.168.1.100`). Port default `7015` akan otomatis digunakan *(kecuali jika Anda mengubah port server billing, Anda dapat memasukkan format `IP:PORT`, contoh: `192.168.1.100:8080`)*. Masukkan juga **API Key** yang dapat Anda cek dan kelola di dashboard server melalui menu **Sidebar > Pengaturan > Umum & Keamanan > API Key System (Client API Key)**.
 
 > [!WARNING]
 > **PENTING — KEAMANAN API KEY & KREDENSIAL DARURAT:**
-> - **Wajib Ganti Default API Key (`CLIENT_API_KEY`)**: Jangan gunakan API Key bawaan (`TM2026QWERTY-api-key`). Ganti dengan token rahasia yang unik dan kuat di file `.env` server billing serta sesuaikan nilainya saat instalasi di PC klien. Selalu jaga kerahasiaan API Key Anda agar tidak disalahgunakan.
+> - **Wajib Ganti Default API Key**: Jangan gunakan API Key bawaan (`TM2026QWERTY-api-key`). Anda dapat melihat dan mengubah API Key di dashboard kasir/server melalui menu **Sidebar > Pengaturan > Umum & Keamanan > API Key System**, lalu klik **Simpan API Key** *(konfigurasi `CLIENT_API_KEY` pada file `.env` ditujukan khusus untuk kebutuhan development)*. Pastikan API Key yang diinput pada PC klien sama dengan di server dan selalu jaga kerahasiaannya.
 > - **Wajib Ganti Emergency User & Password**: Saat installer menanyakan kredensial admin darurat (*Emergency Access*), harap segera ubah dari nilai default (`TMBilling` / `TM123qaz!@#`) untuk mencegah akses darurat tak sah di PC klien.
 
 4. **Otomatisasi Instalasi**:
