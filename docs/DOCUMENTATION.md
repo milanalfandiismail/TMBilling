@@ -53,11 +53,11 @@
    - [6.2 Modul-Modul Fitur Kasir](#62-modul-modul-fitur-kasir)
 7. [Panduan Teknis WarnetAgent (Tauri v2 Rust Core)](#7-panduan-teknis-warnetagent-tauri-v2-rust-core)
    - [7.1 TMBillingTauri (Client Lock & Overlay)](#71-tmbillingtauri)
-   - [7.2 MGCTM Watchdog Daemon & Dual-Hive Hashes](#72-mgctm-watchdog-daemon)
-   - [7.3 mtm (Hidden Mutual Watchdog & Stealth Mutex Guard)](#73-mtm-hidden-mutual-watchdog--stealth-mutex-guard)
+   - [7.2 MGCTM Watchdog Daemon](#72-mgctm-watchdog-daemon)
+   - [7.3 mtm (Auxiliary Watchdog & Resilience Guard)](#73-mtm-auxiliary-watchdog--resilience-guard)
    - [7.4 TMMonitor (Hardware & Peripheral Telemetry Helper)](#74-tmmonitor-hardware--peripheral-telemetry-helper)
    - [7.5 TMBilling_Uninstaller](#75-tmbilling_uninstaller)
-   - [7.6 Deploy Scripts & TightVNC Registry](#76-deploy-scripts--tightvnc-registry)
+   - [7.6 Deploy Scripts & Configuration](#76-deploy-scripts--configuration)
 8. [Spesifikasi Protokol API & WebSocket](#8-spesifikasi-protokol-api--websocket)
 9. [Panduan Operasional Kasir & Troubleshooting](#9-panduan-operasional-kasir--troubleshooting)
 10. [Panduan Kontribusi, Testing & Build Pipeline](#10-panduan-kontribusi-testing--build-pipeline)
@@ -576,48 +576,47 @@ Klien warnet berlokasi di direktori `WarnetAgent/` dan terdiri dari 5 binary uta
 - **Teknologi**: Rust + Tauri v2 (`WarnetAgent/TMBillingTauri/src-tauri/`).
 - **UI Frontend**: HTML5/CSS murni di `WarnetAgent/TMBillingTauri/src/` (Kiosk Lockscreen, Overlay Bar, Admin Unlock Dialog).
 - **Commands IPC**:
-  - `lock_pc`: Mengunci layar dan mengaktifkan proteksi low-level hooks (blokir tombol Windows, Alt+Tab, Ctrl+Alt+Del Kiosk hook).
+  - `lock_pc`: Mengunci layar dan mengaktifkan proteksi antarmuka (mencegah akses desktop saat PC belum disewa).
   - `unlock_pc`: Membuka kunci desktop Windows setelah sesi dibuka di kasir.
   - `play_warning_sound`: Memutar file audio WAV/MP3 peringatan sisa waktu (15m, 10m, 5m, 1m).
   - `get_hardware_info`: Mengambil serial CPU, GPU, RAM, dan Disk via Win32 WMI.
-  - `vnc_bridge`: Membuka relay VNC port 5900 loopback.
+  - `vnc_bridge`: Membuka relay VNC port 5900 loopback untuk fitur remote desktop.
 
 ### 7.2 MGCTM Watchdog Daemon
 - **Source**: `WarnetAgent/MGCTM/src/main.rs`.
-- **Fungsi**: Service supervisor utama yang berjalan di latar belakang sebagai Administrator.
+- **Fungsi**: Service supervisor utama yang berjalan di latar belakang untuk menjaga keandalan proses klien.
 - **Mekanisme**:
-  1. Membaca hash SHA-256 binary dari Registry Windows (`HKCU\Software\TMBilling` dan `HKLM\Software\TMBilling`).
-  2. Memvalidasi integritas file `TMBilling.exe` secara berkala.
-  3. Memastikan proses `TMBilling.exe` selalu berjalan; jika proses dimatikan paksa, `MGCTM` seketika meluncurkannya kembali dalam hitungan milidetik.
-  4. Bekerja sama secara mutual dengan `mtm.exe` untuk proteksi silang anti-kill.
+  1. Melakukan validasi integritas checksum binary secara berkala terhadap konfigurasi yang terdaftar.
+  2. Memastikan proses antarmuka `TMBilling.exe` selalu aktif; jika proses terhenti tidak normal, `MGCTM` seketika meluncurkannya kembali.
+  3. Bekerja secara sinergis dengan subsistem watchdog pendukung untuk memastikan layanan klien tetap tangguh dan terlindungi dari penutupan paksa.
 
-### 7.3 mtm (Hidden Mutual Watchdog & Stealth Mutex Guard)
+### 7.3 mtm (Auxiliary Watchdog & Resilience Guard)
 - **Source**: `WarnetAgent/mtm/src/main.rs`.
-- **Fungsi**: Secondary stealth supervisor terisolasi yang bertugas memantau supervisor utama (`MGCTM.exe`) secara independen dan senyap (*detached process, no window*).
+- **Fungsi**: Modul pengawas cadangan (*auxiliary supervisor*) yang bertugas memantau ketersediaan supervisor utama secara mandiri dan efisien di latar belakang.
 - **Mekanisme**:
-  1. **Mutual Watchdog**: Memantau apakah proses `MGCTM.exe` sedang berjalan secara native via Win32 API (`CreateToolhelp32Snapshot`). Jika `MGCTM.exe` dihentikan paksa oleh pengguna/cheat, `mtm.exe` seketika me-respawn `MGCTM.exe` tanpa jendela CMD (*anti-flicker*).
-  2. **Legal Shutdown Verification**: Memeriksa file token shutdown legal (`stop.token`) dari Flask API (`/api/v1/kasir/settings/uninstall-token/client`) atau Emergency Token SHA-256 hash agar proses uninstalasi resmi dapat menghentikan pengawasan secara tertib.
-  3. **Win32 File Lock**: Menerapkan Win32 File Lock (`share_mode: 0x00000001`) pada file executable untuk mencegah penghapusan atau penggantian nama file saat proses sedang aktif.
+  1. **Mutual Health Check**: Memantau status proses `MGCTM` secara kontinu. Jika supervisor utama mengalami gangguan, modul ini segera mengaktifkannya kembali untuk menjaga kesinambungan operasional billing.
+  2. **Graceful Shutdown Authentication**: Mengakomodasi penghentian layanan secara tertib hanya apabila menerima otentikasi token resmi saat proses uninstalasi/maintenance oleh pengelola warnet.
+  3. **Runtime Protection**: Menjaga file binary tetap terlindungi selama proses aktif guna mencegah korupsi data atau modifikasi tidak disengaja.
 
 ### 7.4 TMMonitor (Hardware & Peripheral Telemetry Helper)
 - **Source**: `WarnetAgent/TMBilling_Monitor/src/main.rs`.
 - **Fungsi**: Agen telemetri hardware, sensor suhu/beban, pemantau periferal USB (Mouse, Keyboard, Headset), proses aktif, screenshot capture, dan eksekusi task killer jarak jauh.
 - **Mekanisme**:
-  1. **Embedded Assets Auto-Extract**: Secara otomatis mengekstrak file helper pendukung (`HardwareHelper.exe`, `LibreHardwareMonitorLib.dll`, `HidSharp.dll`) dari memory binary Rust.
-  2. **Hardware & Peripherals Telemetry**: Mengumpulkan snapshot serial motherboard, CPU ID, GPU PNP ID, RAM serials, disk serials, kecepatan NIC LAN, dan device ID periferal USB setiap interval 5 detik, lalu mengirimkannya ke server billing (`/api/v1/public/monitor/`).
-  3. **Grace Period Disconnect Tracking**: Melacak durasi pencabutan periferal USB (5 menit batas toleransi) sebelum melaporkan status dicabut/hilang ke kasir.
-  4. **Process Killer**: Menerima instruksi terminasi proses bandel / not-responding dari dashboard kasir.
+  1. **Embedded Assets Auto-Extract**: Secara otomatis mengekstrak modul pustaka pendukung dari memory binary Rust untuk kebutuhan pembacaan sensor mendalam.
+  2. **Hardware & Peripherals Telemetry**: Mengumpulkan snapshot serial motherboard, CPU ID, GPU PNP ID, RAM serials, disk serials, kecepatan NIC LAN, dan status periferal USB secara berkala ke server billing.
+  3. **Grace Period Disconnect Tracking**: Melacak durasi pencabutan periferal USB (toleransi 5 menit) sebelum melaporkan status dicabut/hilang ke kasir.
+  4. **Remote Task Management**: Menerima perintah penutupan aplikasi/proses yang bermasalah secara langsung dari dashboard kasir.
 
 ### 7.5 TMBilling_Uninstaller
 - **Source**: `WarnetAgent/TMBilling_Uninstaller/src/main.rs`.
-- **Fungsi**: Program uninstaller resmi yang aman. Menghapus service watchdog (`MGCTM.exe` dan `mtm.exe`), membersihkan registry keys, dan memulihkan pengaturan Windows hanya setelah memverifikasi kata sandi Administrator dan hash darurat.
+- **Fungsi**: Program uninstaller resmi yang aman untuk menghapus seluruh komponen layanan klien, membersihkan konfigurasi sistem, dan memulihkan pengaturan Windows hanya setelah verifikasi kredensial Administrator yang sah.
 
-### 7.6 Deploy Scripts & TightVNC Registry
+### 7.6 Deploy Scripts & Configuration
 Berlokasi di direktori `WarnetAgent/Deploy/`:
-- **`install.bat`**: Skrip instalasi otomatis 1-klik untuk PC klien warnet (mendukung mode Administrator dan Run Biasa). Skrip ini menyalin seluruh binary (`TMBilling.exe`, `MGCTM.exe`, `TMMonitor.exe`, `WebView2Loader.dll`, `mtm.exe`), mengonfigurasi Registry Windows (`HKCU` & `HKLM`), mengonfigurasi port TightVNC 5900 loopback, mendaftarkan aturan Windows Defender Firewall, membuat shortcut Startup otomatis `MGCTM.lnk`, menghitung hash integritas SHA-256 ke registry, dan meluncurkan agen di background.
-- **`uninstall.bat`**: Skrip peluncur uninstaller resmi (`TMBilling_Uninstaller.exe`) untuk menghapus service, registry, dan binary klien secara bersih.
+- **`install.bat`**: Skrip instalasi otomatis 1-klik untuk PC klien warnet yang menyalin binary, mendaftarkan startup otomatis, konfigurasi firewall, dan menginisialisasi layanan pengawasan klien.
+- **`uninstall.bat`**: Skrip peluncur uninstaller resmi (`TMBilling_Uninstaller.exe`) untuk menghapus layanan dan konfigurasi klien secara aman dan bersih.
 - **`allow_firewall.bat`**: Skrip pendaftaran aturan Windows Defender Firewall untuk port 5900 dan executable TMBilling.
-- **`tightvnc_settings.reg`**: Konfigurasi registry otomatis untuk TightVNC Server (LoopbackOnly = 1, AllowLoopback = 1, port 5900).
+- **`tightvnc_settings.reg`**: Konfigurasi registry untuk layanan remote screen TightVNC Server (LoopbackOnly).
 
 ---
 
