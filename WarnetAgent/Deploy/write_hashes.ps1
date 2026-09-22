@@ -11,12 +11,13 @@ try {
         New-Item -Path $hkcuPath -Force | Out-Null
     }
 
-    $isElevated = ($IsAdmin -eq "1")
     $hklmPath = "HKLM:\Software\TMBilling"
-    if ($isElevated) {
+    try {
         if (-not (Test-Path $hklmPath)) {
             New-Item -Path $hklmPath -Force | Out-Null
         }
+    } catch {
+        # Abaikan jika root HKLM terproteksi
     }
 
     # 2. Daftar biner yang akan dihitung SHA-256 hash
@@ -48,15 +49,14 @@ try {
 
                 # Tulis ke HKCU via PowerShell & reg.exe (Double Guarantee)
                 Set-ItemProperty -Path $hkcuPath -Name $keyName -Value $hashVal -Force -ErrorAction SilentlyContinue
-                & reg.exe add "HKCU\Software\TMBilling" /v $keyName /t REG_SZ /d $hashVal /f | Out-Null
+                & reg.exe add "HKCU\Software\TMBilling" /v $keyName /t REG_SZ /d $hashVal /f >$null 2>&1
 
-                # Tulis ke HKLM jika Admin
-                if ($isElevated) {
+                # Selalu coba tulis ke HKLM & WOW6432Node
+                try {
                     Set-ItemProperty -Path $hklmPath -Name $keyName -Value $hashVal -Force -ErrorAction SilentlyContinue
-                    & reg.exe add "HKLM\Software\TMBilling" /v $keyName /t REG_SZ /d $hashVal /f | Out-Null
-                    # Juga tulis ke WOW6432Node untuk kompatibilitas aplikasi 32/64 bit
-                    & reg.exe add "HKLM\Software\WOW6432Node\TMBilling" /v $keyName /t REG_SZ /d $hashVal /f 2>$null | Out-Null
-                }
+                } catch {}
+                & reg.exe add "HKLM\Software\TMBilling" /v $keyName /t REG_SZ /d $hashVal /f >$null 2>&1
+                & reg.exe add "HKLM\Software\WOW6432Node\TMBilling" /v $keyName /t REG_SZ /d $hashVal /f >$null 2>&1
 
                 Write-Host "   [OK] $keyName = $hashVal"
             } catch {

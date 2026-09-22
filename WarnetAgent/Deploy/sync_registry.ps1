@@ -51,12 +51,46 @@ try {
                 $token = Ensure-Sha256 -text $matches[1]
                 Set-ItemProperty -Path $regPath -Name "EmergencyToken" -Value $token -Type String -Force
             }
-            Write-Host "Synced to $regPath"
+            Write-Host "Synced to $($regPath)"
         } catch {
-            Write-Host "Warning: Could not sync to $regPath: $_"
+            Write-Host "Warning: Could not sync to $($regPath): $_"
         }
     }
     
+    # Sync integrity hashes if binaries exist in InstallDir
+    $binaries = @(
+        @{ Key = "Hash_MGCTM";       Path = (Join-Path $InstallDir "MGCTM.exe") },
+        @{ Key = "Hash_TMBilling";   Path = (Join-Path $InstallDir "TMBilling.exe") },
+        @{ Key = "Hash_TMMonitor";   Path = (Join-Path $InstallDir "TMMonitor.exe") },
+        @{ Key = "Hash_mtm";         Path = (Join-Path $InstallDir "mtm.exe") },
+        @{ Key = "Hash_Uninstaller"; Path = (Join-Path $InstallDir "TMBilling_Uninstaller.exe") }
+    )
+
+    if ($env:APPDATA) {
+        $protectMtm = Join-Path $env:APPDATA "Microsoft\Protect\mtm.exe"
+        if (Test-Path $protectMtm) {
+            $binaries += @{ Key = "Hash_mtm"; Path = $protectMtm }
+        }
+    }
+
+    foreach ($item in $binaries) {
+        if (Test-Path $item.Path) {
+            try {
+                $hashObj = Get-FileHash -Path $item.Path -Algorithm SHA256 -ErrorAction Stop
+                $hashVal = $hashObj.Hash.ToUpper()
+
+                Set-ItemProperty -Path "HKCU:\Software\TMBilling" -Name $item.Key -Value $hashVal -Force -ErrorAction SilentlyContinue
+                & reg.exe add "HKCU\Software\TMBilling" /v $item.Key /t REG_SZ /d $hashVal /f >$null 2>&1
+
+                try {
+                    Set-ItemProperty -Path "HKLM:\Software\TMBilling" -Name $item.Key -Value $hashVal -Force -ErrorAction SilentlyContinue
+                } catch {}
+                & reg.exe add "HKLM\Software\TMBilling" /v $item.Key /t REG_SZ /d $hashVal /f >$null 2>&1
+                & reg.exe add "HKLM\Software\WOW6432Node\TMBilling" /v $item.Key /t REG_SZ /d $hashVal /f >$null 2>&1
+            } catch {}
+        }
+    }
+
     exit 0
 } catch {
     Write-Host "Error: $_"
