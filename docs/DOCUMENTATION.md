@@ -33,7 +33,7 @@
    - [4.15 Floor Plan & Dynamic Visual Room Layout](#415-floor-plan--dynamic-visual-room-layout)
    - [4.16 Database Maintenance & Cloud/Local Backup UI](#416-database-maintenance--cloudlocal-backup-ui)
    - [4.17 Manajemen Member, Paket & Billing Rates](#417-manajemen-member-paket--billing-rates)
-   - [4.18 Shift Kasir & Manajemen Kas Fisik](#418-shift-kasir--manajemen-kas-fisik)
+   - [4.18 Shift Kasir & Manajemen Kas Fisik (Rencana Fitur Mendatang)](#418-shift-kasir--manajemen-kas-fisik-rencana-fitur-mendatang)
    - [4.19 Catatan Kasir & Shift Handover Scratchpad](#419-catatan-kasir--shift-handover-scratchpad)
    - [4.20 Turnamen & Bracket eSports Engine](#420-turnamen--bracket-esports-engine)
    - [4.21 Public TV Billboard & Scoreboard Display](#421-public-tv-billboard--scoreboard-display)
@@ -355,10 +355,11 @@ c:\Project GIT\TMBilling
   - Custom Group Rates: Tarif berbeda untuk tipe ruangan Reguler, VIP, Sofa, atau VVIP Simulator.
   - Reset State Sesi: Proteksi pembersihan data sesi sementara saat PC selesai digunakan.
 
-### 4.18 Shift Kasir & Manajemen Kas Fisik
-- **Deskripsi**: Manajemen pergantian jam kerja operator/kasir warnet.
-- **Fitur**:
-  - Kasir wajib memasukkan nominal **Modal Awal Kas** saat membuka shift.
+### 4.18 Shift Kasir & Manajemen Kas Fisik *(Rencana Fitur Mendatang / Dinonaktifkan Sementara)*
+> ⏳ **Status Fitur:** *Dalam Perancangan / Dinonaktifkan Sementara*. Modul backend (`shift_routes.py`, `shift_service.py`, `ShiftRecord`) telah diimplementasikan, namun alur UI dinonaktifkan sementara secara default pada rilis v1.6.2 demi simplifikasi alur kerja operasional kasir. Fitur ini direncanakan akan diaktifkan kembali pada pembaruan mendatang.
+- **Deskripsi Rencana**: Manajemen pergantian jam kerja operator/kasir warnet.
+- **Cakupan Rencana Fitur**:
+  - Kasir memasukkan nominal **Modal Awal Kas** saat membuka shift.
   - Sistem menghitung total pendapatan tunai billing, pendapatan FnB, dan pembayaran digital selama jam kerja berlangsung.
   - Saat tutup shift, kasir memasukkan **Uang Fisik di Laci**, dan sistem mencatat selisih (*selisih lebih / selisih kurang*) untuk pelaporan ke owner.
 
@@ -984,16 +985,15 @@ Total Blueprint Terdaftar: **36 Blueprint** | Total Endpoint Terdaftar: **250 En
 ## 9. Panduan Operasional Kasir & Troubleshooting
 
 ### 9.1 Alur Kerja Kasir Harian
-1. **Buka Shift**:
-   - Login menggunakan akun kasir Anda.
-   - Masukkan nominal **Modal Awal Kas** (uang kembalian di laci).
+1. **Login Kasir**:
+   - Login menggunakan akun kasir yang telah terdaftar di sistem.
+   - Pastikan koneksi status server dan PC klien pada dashboard menunjukkan status normal.
 2. **Transaksi Pelanggan**:
    - *Buka Sesi*: Klik card PC yang kosong di dashboard atau gunakan denah Floor Plan -> Pilih opsi Personal / Member / Paket Jam -> Sesi PC klien otomatis terbuka.
    - *Pesanan FnB*: Buka tab Kantin -> Pilih menu makanan/minuman -> Pilih metode pembayaran (Tunai/QRIS) atau centang *Bebankan ke PC*.
-3. **Tutup Shift**:
-   - Buka menu **Shift Kasir** -> Klik **Tutup Shift**.
-   - Hitung seluruh uang fisik di laci kasir dan masukkan ke form penutupan kas.
-   - Cetak laporan handover shift untuk diserahkan ke kasir shift berikutnya.
+3. **Pergantian Operator / Log Out**:
+   - Operator dapat langsung melakukan log out dari menu profil di kanan atas saat jam kerja selesai.
+   - Gunakan tab **Catatan Kasir** untuk meninggalkan memo handover kepada operator berikutnya jika terdapat hal operasional yang perlu diperhatikan.
 
 ### 9.2 Panduan Troubleshooting Masalah Umum
 - **Kasus Mati Lampu (Blackout)**:
