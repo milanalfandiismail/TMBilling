@@ -28,12 +28,13 @@ def get_laporan():
         metode_pembayaran = request.args.get("metode_pembayaran")
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 10, type=int)
+        q = request.args.get("q", "").strip()
         
         # RULE: Kasir hanya boleh lihat laporan diri sendiri
         if session.get("kasir_role") == "kasir":
             kasir_id = session.get("kasir_id")
             
-        laporan = ReportService.get_laporan_by_tanggal(tanggal, kasir_id, page, per_page, metode_pembayaran)
+        laporan = ReportService.get_laporan_by_tanggal(tanggal, kasir_id, page, per_page, metode_pembayaran, q)
         return jsonify(laporan), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -48,12 +49,13 @@ def get_laporan_kantin():
         metode_pembayaran = request.args.get("metode_pembayaran")
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 12, type=int)
+        q = request.args.get("q", "").strip()
         
         # RULE: Kasir hanya boleh lihat laporan diri sendiri
         if session.get("kasir_role") == "kasir":
             kasir_id = session.get("kasir_id")
             
-        laporan = ReportService.get_laporan_kantin_by_tanggal(tanggal, kasir_id, page, per_page, metode_pembayaran)
+        laporan = ReportService.get_laporan_kantin_by_tanggal(tanggal, kasir_id, page, per_page, metode_pembayaran, q)
         return jsonify(laporan), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -131,36 +133,7 @@ def get_struk(identifier):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@report_api_bp.route("/struk/by-no", methods=["POST"])
-@login_required
-def get_struk_by_no():
-    """Cari nota berdasarkan nomor struk (Mendukung TM- baru & TRX- lama)."""
-    data = request.get_json()
-    no_input = data.get("no_struk", "").strip()
-    
-    if not no_input:
-        return jsonify({"error": "Nomor nota wajib diisi"}), 400
 
-    kasir = session.get("kasir_username", "Kasir")
-
-    # Cek nota kantin (TMM-)
-    if no_input.startswith("TMM-"):
-        from app.repositories import MenuRepository
-        tm = MenuRepository.get_by_no_nota(no_input)
-        if not tm:
-            return jsonify({"error": f"Nota menu '{no_input}' tidak ditemukan"}), 404
-        data_menu = ReportService.get_struk_menu_data(tm.id, kasir_name=kasir)
-        if not data_menu:
-            return jsonify({"error": "Data transaksi tidak ditemukan"}), 404
-        return jsonify(data_menu), 200
-    
-    t = ReportService.find_transaction(no_input)
-
-    if not t:
-        return jsonify({"error": "Nota tidak ditemukan"}), 404
-
-    # Panggil get_struk (Re-use logic)
-    return get_struk(f"T{t.id}")
 
 
 @report_api_bp.route("/struk/menu/<int:t_menu_id>", methods=["GET"])

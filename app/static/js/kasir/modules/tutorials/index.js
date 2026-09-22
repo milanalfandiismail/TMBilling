@@ -141,19 +141,19 @@ const Tutorials = {
                 <!-- Reader Header -->
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1c1c1c] pb-5">
                     <div class="flex items-center gap-3">
-                        <span class="text-3xl lg:text-4xl p-2.5 bg-neutral-900 border border-[#262626] rounded-xl">${tutorial.icon || '🌐'}</span>
+                        <span class="text-2xl lg:max-xl:text-3xl xl:text-4xl p-2 lg:max-xl:p-2.5 xl:p-2.5 bg-neutral-900 border border-[#262626] rounded-xl">${tutorial.icon || '🌐'}</span>
                         <div>
                             <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">${tutorial.category}</span>
-                            <h2 class="text-base lg:text-2xl font-bold text-neutral-100 tracking-wide mt-0.5">${tutorial.title}</h2>
+                            <h2 class="text-sm lg:max-xl:text-xl xl:text-2xl font-bold text-neutral-100 tracking-wide mt-0.5">${tutorial.title}</h2>
                         </div>
                     </div>
 
                     ${isAdmin ? `
                     <div class="flex items-center gap-2 shrink-0">
-                        <button onclick="Tutorials.openTutorialModal(${tutorial.id})" class="px-3.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold rounded-lg transition-all border border-[#262626] flex items-center gap-1.5">
+                        <button onclick="Tutorials.openTutorialModal(${tutorial.id})" class="px-3 lg:max-xl:px-3 xl:px-3.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold rounded-lg transition-all border border-[#262626] flex items-center gap-1.5">
                             <span>✏️</span> Edit
                         </button>
-                        <button onclick="Tutorials.deleteTutorial(${tutorial.id})" class="px-3.5 py-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 text-xs font-bold rounded-lg transition-all border border-rose-900/50 flex items-center gap-1.5">
+                        <button onclick="Tutorials.deleteTutorial(${tutorial.id})" class="px-3 lg:max-xl:px-3 xl:px-3.5 py-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 text-xs font-bold rounded-lg transition-all border border-rose-900/50 flex items-center gap-1.5">
                             <span>🗑️</span> Hapus
                         </button>
                     </div>
@@ -161,7 +161,7 @@ const Tutorials = {
                 </div>
 
                 <!-- Reader Content -->
-                <div class="prose prose-invert max-w-none text-xs lg:text-base text-neutral-300 leading-relaxed overflow-x-auto">
+                <div class="prose prose-invert max-w-none text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 leading-relaxed overflow-x-auto">
                     ${tutorial.content}
                 </div>
             </div>

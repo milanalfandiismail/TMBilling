@@ -11,7 +11,8 @@ class Game(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     nama = db.Column(db.String(255), nullable=False)
-    kategori = db.Column(db.String(100), nullable=True) # Ex: FPS, RPG
+    tipe = db.Column(db.String(50), default='game', nullable=True) # 'game' atau 'aplikasi'
+    kategori = db.Column(db.String(500), nullable=True) # Ex: FPS, RPG, Action (koma terpisah)
     
     # Path & Arguments
     exe_path = db.Column(db.String(500), nullable=True)
@@ -36,10 +37,14 @@ class Game(db.Model):
         return None
 
     def to_dict(self):
+        raw_kat = self.kategori or ""
+        kat_list = [k.strip() for k in raw_kat.split(",") if k.strip()]
         return {
             "id": self.id,
             "nama": self.nama,
+            "tipe": self.tipe or "game",
             "kategori": self.kategori,
+            "kategori_list": kat_list,
             "exe_path": self.exe_path,
             "argumen": self.argumen,
             "icon": self.icon,
@@ -49,3 +54,4 @@ class Game(db.Model):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "operator_id": self.operator_id
         }
+

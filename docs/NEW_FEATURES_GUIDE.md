@@ -162,5 +162,40 @@ Untuk menjaga konsistensi istilah di seluruh aplikasi, UI form dan modal konfirm
 Rincian kalkulasi ini ditayangkan secara utuh baik pada sesi Guest maupun Member (pada `modal-tambah.js` dan `member_refill.js`).
 
 ---
-*TMBilling v1.5.1*
+
+## 🌐 10. Multi-Cabang (Central Control Panel & Remote Relay - v1.6.0)
+
+Fitur ini memungkinkan pengelola warnet yang memiliki lebih dari satu cabang untuk mengontrol dan memantau server cabang remote secara langsung dari navbar kasir utama:
+*   **Dropdown Branch Switcher**: Berpindah konteks cabang aktif hanya dengan satu klik di header navigasi.
+*   **Reverse-Proxy Relay**: Request HTTP dari browser kasir diteruskan secara transparan ke server cabang tujuan menggunakan Bearer API Key yang aman (`TMBilling-Relay/{version}`).
+*   **State Reset Antar Cabang**: Modul kasir (Member, Maintenance, Laporan Maintenance, Screenshot, Blackout, dan VNC) secara otomatis mereset memori lokal saat switch cabang untuk mencegah data tumpang-tindih.
+*   **Monitoring Inbound Connections**: Tab audit koneksi masuk untuk memantau server cabang mana saja yang sedang mengakses API lokal.
+
+---
+
+## 🖥️ 11. Web VNC Remote Desktop Client (v1.6.0)
+
+Integrasi noVNC modern langsung di dalam tab kasir untuk kendali visual layar PC client:
+*   **Canvas Berbasis Web**: Menampilkan framebuffer layar PC client secara real-time tanpa aplikasi viewer pihak ketiga di kasir.
+*   **Adaptive Display Scaling**: Mendukung penskalaan resolusi layar fleksibel dan kalkulasi koordinat kursor yang presisi.
+*   **Interaktivitas Penuh**: Mapping klik mouse, drag-and-drop, shortcut kombinasi tombol, dan input teks ke PC target.
+*   **Fail-Fast Diagnostics**: Indikator status koneksi dan deteksi timeout otomatis.
+
+---
+
+## 🌡️ 12. Real-Time Server Hardware Monitoring (v1.5.1 / v1.6.0)
+
+*   **Microservice `TMLHMService`**: Daemon C# ringan berbasis LibreHardwareMonitor yang mengekspos data sensor ke server Flask.
+*   **Metrik Komprehensif**: Monitoring suhu CPU, GPU, utilitas memori RAM, pemakaian disk storage, dan throughput transfer jaringan.
+
+---
+
+## ⚡ 13. Sentralisasi Master Versioning & Dynamic Asset Cache-Busting (v1.6.1)
+
+*   **Single Source of Truth**: Seluruh versi backend Python, template HTML, dan frontend JavaScript dikelola tunggal pada `Config.VERSION` di `app/config.py`.
+*   **Dynamic Jinja2 Cache Buster**: Tag `<link>` dan `<script>` otomatis menginjeksi query parameter `?v={{ v_cache }}` dari context processor tanpa hardcoded angka di template HTML.
+*   **Client Context**: Halaman kasir menyuntikkan `window.APP_VERSION` dan `<meta name="app-version">` untuk menjamin seluruh modul JavaScript selalu sinkron.
+
+---
+*TMBilling v1.6.1*
 

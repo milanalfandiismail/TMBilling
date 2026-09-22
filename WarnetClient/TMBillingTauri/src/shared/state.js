@@ -31,7 +31,9 @@ export const AppState = {
     },
 
     // Timer state
+    hasPlayed15MinAlert: false,
     hasPlayed5MinAlert: false,
+    hasPlayed1MinAlert: false,
     shutdownInterval: null,
     shutdownRemaining: 0,
 
@@ -47,10 +49,23 @@ export const AppState = {
     currentPackagePage: 1,
     totalPackagePages: 1,
     selectedGroup: 'Reguler',
+    allMenus: [],
 
     // Methods
     setSessionData(data) {
         this.sessionData = { ...this.sessionData, ...data };
+        if (data.remainingSeconds !== undefined && data.remainingSeconds !== null) {
+            const secs = Number(data.remainingSeconds);
+            if (secs > 0 && secs <= 900) {
+                this.hasPlayed15MinAlert = true;
+            }
+            if (secs > 0 && secs <= 300) {
+                this.hasPlayed5MinAlert = true;
+            }
+            if (secs > 0 && secs <= 60) {
+                this.hasPlayed1MinAlert = true;
+            }
+        }
     },
 
     setNetworkInfo(ip, mac) {
@@ -64,7 +79,9 @@ export const AppState = {
     resetSession() {
         this.isOverlayActive = false;
         this.currentStatus = null;
+        this.hasPlayed15MinAlert = false;
         this.hasPlayed5MinAlert = false;
+        this.hasPlayed1MinAlert = false;
         this.sessionData = {
             memberName: null,
             group: null,

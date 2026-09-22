@@ -101,6 +101,7 @@ export const Kiosk = {
                     remainingSeconds: res.remaining_seconds
                 });
 
+                UI.resetOverlayUI();
                 UI.setOverlayData(res);
                 UI.showScreen('billing-overlay');
                 await Api.switchToOverlay();
@@ -171,8 +172,9 @@ export const Kiosk = {
             AppState.announcementHtml = (config.announcement || '').trim();
             this.initRulesUI();
 
-            // 4. Render Packages
+            // 4. Render Packages & Menus
             AppState.allPackages = config.paket || [];
+            AppState.allMenus = config.menu || [];
             this.initPackagesUI();
 
         } catch (err) {

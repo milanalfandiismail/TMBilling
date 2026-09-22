@@ -483,8 +483,18 @@ Client Tauri dikecualikan: `csrf.exempt(client_bp)`.
 | **Heartbeat** | Polling Tauri client tiap 5 detik |
 | **Shutdown Timer** | Hitungan mundur sebelum PC shutdown otomatis |
 
+## Multi-Branch Relay Pattern (v1.6.0+)
+
+Untuk endpoint multi-cabang, gunakan `BranchProxyService.relay_request()` untuk meneruskan request ke server cabang target dengan menyertakan header `Authorization: Bearer <api_key>` dan `User-Agent: f"TMBilling-Relay/{Config.VERSION}"`.
+
+## Sentralisasi Konfigurasi Versi (v1.6.1)
+
+- Versi master dikelola tunggal pada `Config.VERSION` di `app/config.py`.
+- Jangan pernah melakukan hardcode string versi pada route atau service; selalu import dan gunakan `Config.VERSION` atau helper `Config.get_version_tag()`.
+- Context processor Flask di `app/__init__.py` secara otomatis menyediakan variabel `version`, `app_version`, dan `v_cache` ke seluruh template Jinja2.
+
 ---
 *TMBilling — Backend Guide*
 
 ---
-*TMBilling v1.5.1*
+*TMBilling v1.6.1*

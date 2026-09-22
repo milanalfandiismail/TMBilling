@@ -50,6 +50,7 @@ export const Admin = {
                 AppState.currentStatus = 'admin';
 
                 UI.toggleAdminModal(false);
+                UI.resetOverlayUI();
                 UI.setOverlayData(res);
                 UI.showScreen('billing-overlay');
                 await Api.switchToOverlay();

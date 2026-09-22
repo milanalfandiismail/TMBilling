@@ -109,18 +109,27 @@ class MaintenanceService:
         """Data laporan keuangan & analisis kerusakan."""
         query = MaintenanceTicket.query.filter_by(status="SELESAI")
         
-        if start_date:
+        from app.utils.timezone_utils import get_local_date_range_utc
+
+        if start_date and end_date and start_date == end_date:
             try:
-                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-                query = query.filter(MaintenanceTicket.resolved_at >= start_dt)
-            except ValueError:
+                start_utc, end_utc = get_local_date_range_utc(start_date)
+                query = query.filter(MaintenanceTicket.resolved_at >= start_utc, MaintenanceTicket.resolved_at < end_utc)
+            except Exception:
                 pass
-        if end_date:
-            try:
-                end_dt = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
-                query = query.filter(MaintenanceTicket.resolved_at <= end_dt)
-            except ValueError:
-                pass
+        else:
+            if start_date:
+                try:
+                    start_utc, _ = get_local_date_range_utc(start_date)
+                    query = query.filter(MaintenanceTicket.resolved_at >= start_utc)
+                except Exception:
+                    pass
+            if end_date:
+                try:
+                    _, end_utc = get_local_date_range_utc(end_date)
+                    query = query.filter(MaintenanceTicket.resolved_at < end_utc)
+                except Exception:
+                    pass
         if pc_id:
             query = query.filter_by(pc_id=pc_id)
         elif grup:

@@ -170,7 +170,7 @@ const Monitor = {
                         ${m.active_window && m.active_window !== 'Idle / None' ? `
                         <div class="flex items-center gap-1 w-full mt-0.5 pt-1 border-t border-[#1c1c1c]">
                             <span class="text-[9px] text-neutral-500 uppercase font-bold shrink-0">WND:</span>
-                            <span class="text-lg text-neutral-400 font-medium truncate" title="${m.active_window}">${m.active_window}</span>
+                            <span class="text-xs lg:max-xl:text-xs xl:text-lg text-neutral-400 font-medium truncate" title="${m.active_window}">${m.active_window}</span>
                         </div>
                         ` : ''}
                     </div>
@@ -234,11 +234,11 @@ const Monitor = {
 
         container.innerHTML = `
             <!-- Card Layout (Mobile to LG: <1400px) -->
-            <div class="xl:hidden grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="xl:hidden grid grid-cols-1 sm:grid-cols-2 lg:max-xl:grid-cols-2 gap-3">
                 ${cardHtml}
             </div>
             <!-- XL Table Layout (≥1400px) -->
-            <div class="hidden xl:block overflow-x-hidden w-full border border-[#1c1c1c] rounded">
+            <div class="hidden xl:block overflow-x-auto w-full border border-[#1c1c1c] rounded">
                 <table class="w-full text-sm">
                     <thead class="hidden xl:table-header-group">
                         <tr class="text-[10px] text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c] bg-[#0c0c0c]">

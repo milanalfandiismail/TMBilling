@@ -26,25 +26,31 @@ class ReportService:
     def get_laporan_harian():
         """Ringkasan cepat pendapatan dan sesi hari ini (Dashboard Overview)."""
         hari_ini = now_local().date()
-        total = TransaksiRepository.get_total_pendapatan_hari_ini(hari_ini)
+        total_billing = TransaksiRepository.get_total_pendapatan_hari_ini(hari_ini)
+        total_menu = MenuRepository.get_total_pemasukan_by_date(hari_ini)
+        total = int(total_billing or 0) + int(total_menu or 0)
         total_sesi = SesiRepository.count_by_date(hari_ini)
         aktif_sekarang = len(SesiRepository.get_all_aktif())
 
         return {
             "tanggal": str(hari_ini),
             "total_pendapatan": int(total),
+            "total_billing": int(total_billing or 0),
+            "total_kantin": int(total_menu or 0),
             "total_sesi": total_sesi,
             "sesi_aktif": aktif_sekarang
         }
 
     @staticmethod
-    def get_laporan_by_tanggal(tanggal_str=None, kasir_id=None, page=1, per_page=10, metode_pembayaran=None):
-        """Laporan mendalam berdasarkan filter tanggal tertentu dengan pagination."""
+    def get_laporan_by_tanggal(tanggal_str=None, kasir_id=None, page=1, per_page=10, metode_pembayaran=None, q=None):
+        """Laporan mendalam berdasarkan filter tanggal tertentu (atau semua tanggal jika kosong) dengan pagination dan pencarian query."""
         try:
-            if tanggal_str:
-                tanggal = datetime.strptime(tanggal_str, "%Y-%m-%d").date()
+            if tanggal_str is None or str(tanggal_str).strip().lower() in ("", "all", "semua", "none"):
+                tanggal = None
+                tanggal_display = "Semua Tanggal"
             else:
-                tanggal = now_local().date()
+                tanggal = datetime.strptime(tanggal_str.strip(), "%Y-%m-%d").date()
+                tanggal_display = tanggal.isoformat()
 
             total_pendapatan_billing_gross = TransaksiRepository.get_total_pemasukan(tanggal, kasir_id, metode_pembayaran)
             total_refund = TransaksiRepository.get_total_refund(tanggal, kasir_id, metode_pembayaran)
@@ -60,12 +66,12 @@ class ReportService:
                 total_guest = SesiRepository.count_by_tanggal_dan_tipe(tanggal, 'guest')
                 total_member = SesiRepository.count_by_tanggal_dan_tipe(tanggal, 'member')
 
-            pagination = TransaksiRepository.get_history_nota_paginated(tanggal, page, per_page, kasir_id, metode_pembayaran)
+            pagination = TransaksiRepository.get_history_nota_paginated(tanggal, page, per_page, kasir_id, metode_pembayaran, q)
             history_struk = pagination.items
 
             return {
                 "status": "success",
-                "tanggal": tanggal.isoformat(),
+                "tanggal": tanggal_display,
                 "page": pagination.page,
                 "pages": pagination.pages,
                 "total": pagination.total,
@@ -88,13 +94,15 @@ class ReportService:
             raise Exception(f"Gagal hitung laporan: {str(e)}")
 
     @staticmethod
-    def get_laporan_kantin_by_tanggal(tanggal_str=None, kasir_id=None, page=1, per_page=12, metode_pembayaran=None):
-        """Laporan khusus kantin berdasarkan filter tanggal dengan manual pagination untuk grouping per nota."""
+    def get_laporan_kantin_by_tanggal(tanggal_str=None, kasir_id=None, page=1, per_page=12, metode_pembayaran=None, q=None):
+        """Laporan khusus kantin berdasarkan filter tanggal (atau semua tanggal jika kosong) dengan manual pagination untuk grouping per nota."""
         try:
-            if tanggal_str:
-                tanggal = datetime.strptime(tanggal_str, "%Y-%m-%d").date()
+            if tanggal_str is None or str(tanggal_str).strip().lower() in ("", "all", "semua", "none"):
+                tanggal = None
+                tanggal_display = "Semua Tanggal"
             else:
-                tanggal = now_local().date()
+                tanggal = datetime.strptime(tanggal_str.strip(), "%Y-%m-%d").date()
+                tanggal_display = tanggal.isoformat()
 
             total_pendapatan_menu = MenuRepository.get_total_pemasukan_by_date(tanggal, kasir_id, metode_pembayaran)
             all_tm = MenuRepository.get_transactions_by_date(tanggal, kasir_id, metode_pembayaran)
@@ -106,6 +114,18 @@ class ReportService:
                 if key not in grouped:
                     grouped[key] = []
                 grouped[key].append(tm)
+
+            if q:
+                q_lower = q.lower()
+                filtered_grouped = OrderedDict()
+                for key, items in grouped.items():
+                    first_item = items[0]
+                    menu_names = " ".join([tm.menu.nama for tm in items if tm.menu]).lower()
+                    pc_kode = (first_item.pc_kode or "").lower()
+                    operator = (first_item.operator or "").lower()
+                    if q_lower in key.lower() or q_lower in menu_names or q_lower in pc_kode or q_lower in operator:
+                        filtered_grouped[key] = items
+                grouped = filtered_grouped
 
             total_items = len(grouped)
             pages = (total_items + per_page - 1) // per_page if per_page > 0 else 1
@@ -139,7 +159,7 @@ class ReportService:
 
             return {
                 "status": "success",
-                "tanggal": tanggal.isoformat(),
+                "tanggal": tanggal_display,
                 "page": page,
                 "pages": pages,
                 "total": total_items,
@@ -156,25 +176,7 @@ class ReportService:
         """Ambil daftar tanggal unik yang memiliki aktivitas (untuk filter dropdown)."""
         return SesiRepository.get_distinct_tanggal()
 
-    @staticmethod
-    def find_transaction(no_input):
-        """Mencari transaksi berdasarkan nomor nota."""
-        if not no_input:
-            return None
 
-        t = TransaksiRepository.get_by_no_nota(no_input)
-        if t:
-            return t
-
-        if no_input.startswith("TRX"):
-            try:
-                kode = no_input[3:]
-                sesi_id = int(kode[:-10])
-                return TransaksiRepository.get_by_sesi_id(sesi_id)
-            except (ValueError, IndexError):
-                return None
-
-        return None
 
     @staticmethod
     def get_struk_data(t_id, kasir_name="Kasir"):

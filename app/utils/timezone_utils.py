@@ -14,7 +14,7 @@ Constants:
     TIMEZONE_CHOICES (list): Daftar timezone yang tersedia di Settings
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta, date
 from zoneinfo import ZoneInfo, available_timezones
 
 # Sumber waktu absolut
@@ -173,3 +173,66 @@ def get_tz_short_name(tz_name=None):
         "Pacific/Auckland": "NZST",
     }
     return labels.get(tz_name, tz_name.split("/")[-1].replace("_", " "))
+
+
+def get_today_local_date(tz_name=None):
+    """Mendapatkan tanggal hari ini (date object) dalam timezone display."""
+    return display_in_tz(now_utc(), tz_name).date()
+
+
+def get_local_date_range_utc(target_date=None, tz_name=None):
+    """Mengonversi tanggal lokal kalender menjadi rentang datetime UTC naive [start_utc, end_utc).
+    
+    Karena database menyimpan timestamp dalam UTC naive, pencarian tanggal lokal
+    harus dilakukan dengan rentang waktu UTC absolut yang mencakup 00:00:00 s/d 23:59:59 lokal.
+    
+    Args:
+        target_date (date|datetime|str, optional): Tanggal lokal yang dicari. Jika None, hari ini.
+        tz_name (str, optional): Zona waktu lokal. Jika None, baca dari DB.
+        
+    Returns:
+        tuple[datetime, datetime]: (start_utc, end_utc) sebagai datetime UTC naive.
+    """
+    if target_date is None:
+        d = get_today_local_date(tz_name)
+    elif isinstance(target_date, str):
+        target_date = target_date.strip()
+        if not target_date:
+            d = get_today_local_date(tz_name)
+        else:
+            d = datetime.strptime(target_date, "%Y-%m-%d").date()
+    elif isinstance(target_date, datetime):
+        d = target_date.date()
+    elif isinstance(target_date, date):
+        d = target_date
+    else:
+        d = get_today_local_date(tz_name)
+
+    tz = get_display_tz(tz_name)
+    local_start = datetime.combine(d, datetime.min.time()).replace(tzinfo=tz)
+    start_utc = local_start.astimezone(UTC).replace(tzinfo=None)
+
+    local_end = (datetime.combine(d, datetime.min.time()) + timedelta(days=1)).replace(tzinfo=tz)
+    end_utc = local_end.astimezone(UTC).replace(tzinfo=None)
+
+    return start_utc, end_utc
+
+
+def convert_utc_datetimes_to_distinct_dates(utc_datetimes, tz_name=None):
+    """Mengonversi sekumpulan datetime UTC naive menjadi daftar tanggal unik lokal (ISO string YYYY-MM-DD)."""
+    tz = get_display_tz(tz_name)
+    dates_set = set()
+    for dt in utc_datetimes:
+        if dt is None:
+            continue
+        if isinstance(dt, str):
+            try:
+                dt = datetime.fromisoformat(dt)
+            except Exception:
+                continue
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        local_dt = dt.astimezone(tz)
+        dates_set.add(local_dt.date().isoformat())
+    return sorted(list(dates_set), reverse=True)
+

@@ -89,7 +89,16 @@ const ServerMonitor = {
         
         const tempEl = document.getElementById('sm-cpu-temp');
         if (tempEl) {
-            tempEl.innerText = cpu.temp !== "N/A" ? `${cpu.temp}°C` : '--';
+            if (cpu.temp !== undefined && cpu.temp !== null && cpu.temp !== "N/A" && cpu.temp !== "") {
+                const parsedTemp = parseFloat(cpu.temp);
+                if (!isNaN(parsedTemp)) {
+                    tempEl.innerText = `${Math.round(parsedTemp)} °C`;
+                } else {
+                    tempEl.innerText = `${cpu.temp} °C`;
+                }
+            } else {
+                tempEl.innerText = '--';
+            }
         }
     },
 
@@ -111,7 +120,7 @@ const ServerMonitor = {
     updateDiskList(disks) {
         const container = document.getElementById('sm-disk-list');
         if (!disks || disks.length === 0) {
-            container.innerHTML = '<div class="text-[11px] text-neutral-600 font-mono italic">Tidak ada storage</div>';
+            container.innerHTML = '<div class="text-[11px] text-neutral-600 font-mono italic col-span-full">Tidak ada storage</div>';
             return;
         }
         
@@ -126,22 +135,22 @@ const ServerMonitor = {
             else if (d.percent > 75) color = 'bg-yellow-500';
             
             html += `
-                <div class="flex flex-col justify-between">
+                <div class="bg-[#0e0e0e] border border-[#1f1f1f] rounded-xl p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
                     <div>
                         <div class="flex justify-between items-baseline mb-2">
-                            <span class="text-sm lg:text-base font-bold text-neutral-300 font-mono flex items-center gap-1.5 truncate">
-                                <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-                                ${d.device} ${d.fstype ? `(${d.fstype})` : ''}
+                            <span class="text-xs lg:text-sm font-bold text-neutral-200 font-mono flex items-center gap-1.5 truncate" title="${d.device} ${d.fstype ? `(${d.fstype})` : ''}">
+                                <svg class="w-4 h-4 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                                <span>${d.device}</span> ${d.fstype ? `<span class="text-[10px] text-neutral-500">(${d.fstype})</span>` : ''}
                             </span>
-                            <span class="text-xl lg:text-2xl font-black text-neutral-100 font-mono">${d.percent.toFixed(1)}%</span>
+                            <span class="text-base lg:text-lg font-black text-neutral-100 font-mono">${d.percent.toFixed(1)}%</span>
                         </div>
-                        <div class="h-3 w-full bg-[#1a1a1a] rounded-full overflow-hidden mb-4">
+                        <div class="h-2.5 w-full bg-[#1a1a1a] rounded-full overflow-hidden mb-3.5 border border-[#262626]">
                             <div class="h-full ${color} rounded-full transition-all duration-500" style="width: ${d.percent}%"></div>
                         </div>
                     </div>
-                    <div class="flex justify-between text-xs lg:text-sm text-neutral-500 font-mono bg-[#0c0c0c] p-3 rounded-lg border border-[#1a1a1a]">
-                        <span>Free: ${freeGb} GB</span>
-                        <span class="text-purple-500 font-bold">Total: ${totalGb} GB</span>
+                    <div class="flex justify-between text-[11px] lg:text-xs text-neutral-400 font-mono bg-[#070707] p-2.5 rounded-lg border border-[#1a1a1a]">
+                        <span>Free: <span class="text-neutral-200 font-bold">${freeGb} GB</span></span>
+                        <span class="text-purple-400 font-bold">Total: ${totalGb} GB</span>
                     </div>
                 </div>
             `;
@@ -159,7 +168,7 @@ const ServerMonitor = {
     updateNicList(nics) {
         const container = document.getElementById('sm-nic-list');
         if (!nics || nics.length === 0) {
-            container.innerHTML = '<div class="text-[11px] text-neutral-600 font-mono italic">Tidak ada network adapter</div>';
+            container.innerHTML = '<div class="text-[11px] text-neutral-600 font-mono italic col-span-full">Tidak ada network adapter</div>';
             return;
         }
         
@@ -192,26 +201,26 @@ const ServerMonitor = {
             }
             
             html += `
-                <div class="flex flex-col justify-between">
+                <div class="bg-[#0e0e0e] border border-[#1f1f1f] rounded-xl p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
                     <div>
                         <div class="flex justify-between items-baseline mb-2">
-                            <span class="text-sm lg:text-base font-bold text-neutral-300 truncate max-w-[200px] flex items-center gap-1.5" title="${n.name}">
+                            <span class="text-xs lg:text-sm font-bold text-neutral-300 truncate max-w-[200px] flex items-center gap-1.5" title="${n.name}">
                                 ${statusDot} ${n.name}
                             </span>
-                            <span class="text-lg lg:text-xl ${speedClass} font-mono">${speedText}</span>
+                            <span class="text-sm lg:text-base ${speedClass} font-mono">${speedText}</span>
                         </div>
-                        <div class="text-xs lg:text-sm text-neutral-400 font-mono mb-4">
-                            IP: <span class="text-cyan-500">${n.ip_address}</span>
+                        <div class="text-[11px] lg:text-xs text-neutral-400 font-mono mb-3.5">
+                            IP: <span class="text-cyan-500 font-semibold">${n.ip_address}</span>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-3 text-xs lg:text-sm text-neutral-500 font-mono bg-[#0c0c0c] p-3 rounded-lg border border-[#1a1a1a]">
-                        <div class="flex items-center gap-2">
-                            <svg class="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
-                            <span class="font-bold">${rxKbps} KB/s</span>
+                    <div class="grid grid-cols-2 gap-2 text-[11px] lg:text-xs text-neutral-400 font-mono bg-[#070707] p-2.5 rounded-lg border border-[#1a1a1a]">
+                        <div class="flex items-center gap-1.5 truncate">
+                            <svg class="w-3.5 h-3.5 text-cyan-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                            <span class="font-bold text-neutral-200 truncate">${rxKbps} KB/s</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
-                            <span class="font-bold">${txKbps} KB/s</span>
+                        <div class="flex items-center gap-1.5 truncate">
+                            <svg class="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                            <span class="font-bold text-neutral-200 truncate">${txKbps} KB/s</span>
                         </div>
                     </div>
                 </div>
@@ -235,7 +244,11 @@ const ServerMonitor = {
             let bodyHtml = '';
             if (g.load !== "N/A") {
                 const loadStr = `${g.load.toFixed(1)}%`;
-                const tempStr = g.temp_c !== "N/A" && g.temp_c !== undefined ? `${g.temp_c}°C` : "N/A";
+                let tempStr = "N/A";
+                if (g.temp_c !== "N/A" && g.temp_c !== undefined && g.temp_c !== null && g.temp_c !== "") {
+                    const parsedGpuTemp = parseFloat(g.temp_c);
+                    tempStr = !isNaN(parsedGpuTemp) ? `${Math.round(parsedGpuTemp)} °C` : `${g.temp_c} °C`;
+                }
                 let color = 'bg-rose-500';
                 let barWidth = g.load;
                 if (barWidth > 85) color = 'bg-red-500';

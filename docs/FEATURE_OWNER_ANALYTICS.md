@@ -62,4 +62,4 @@
 | Index kolom tanggal | Tanpa index | Query 50rb record |
 
 ---
-*TMBilling v1.5.1*
+*TMBilling v1.6.1*

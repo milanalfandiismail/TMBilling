@@ -4,6 +4,7 @@
 import uuid
 import requests
 from flask import request, jsonify, Response, session
+from app.config import Config
 from app.models import db, now_local
 from app.models.branch import Branch
 from app.services.settings.settings_service import SettingsService
@@ -84,7 +85,7 @@ class BranchProxyService:
         # Siapkan headers relay
         relay_headers = {
             "Authorization": f"Bearer {branch.api_key}",
-            "User-Agent": "TMBilling-Relay/1.6.0",
+            "User-Agent": f"TMBilling-Relay/{Config.VERSION}",
             "X-Operator-Username": operator_username,
             "X-Origin-Branch-Name": origin_branch_title
         }

@@ -58,3 +58,32 @@
     </div>
 </div>
 {% endif %}
+
+<!-- ===== MODAL SHARED: PILIH UNIT PC ===== -->
+<div id="modal-select-pc"
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden"
+    onclick="if(event.target === this) Maintenance.closeSelectPCModal()">
+    <div
+        class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-xl p-5 sm:p-6 shadow-2xl relative text-xs lg:max-xl:text-xs xl:text-base flex flex-col max-h-[90vh] sm:max-h-[80vh]">
+        <!-- Header -->
+        <button onclick="Maintenance.closeSelectPCModal()"
+            class="absolute top-4 right-4 text-neutral-500 hover:text-neutral-300 text-lg leading-none">&times;</button>
+        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2 mb-4">
+            <span>🖥️</span> Pilih Unit PC
+        </h3>
+
+        <!-- Search & All PC -->
+        <div class="flex items-center gap-3 mb-4">
+            <input type="text" id="pc-select-search" oninput="Maintenance.filterPCSelectGrid()" onkeydown="if(event.key === 'Escape') Maintenance.closeSelectPCModal()"
+                placeholder="Cari kode PC atau nama..."
+                class="flex-1 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:max-xl:text-xs xl:text-base">
+            <button id="btn-pc-select-all" onclick="Maintenance.selectPCFromModal('', 'Semua PC')"
+                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] border border-[#262626] text-neutral-300 font-bold rounded hover:bg-neutral-200 hover:text-black transition-all text-xs lg:max-xl:text-xs xl:text-base whitespace-nowrap">Semua PC</button>
+        </div>
+
+        <!-- PC Grid Container -->
+        <div id="pc-select-grid-container" class="overflow-y-auto flex-1 scrollbar-thin space-y-4 pr-1">
+            <!-- Dinamis via JS -->
+        </div>
+    </div>
+</div>

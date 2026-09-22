@@ -169,5 +169,8 @@ Dengan Tailscale / ZeroTier, PC Server Kasir dan perangkat Anda (Laptop/HP/Table
    - Masukkan password VNC lalu klik **▶ Hubungkan**.
    - Remote Control VNC akan langsung lancar terhubung 100% tanpa kendala!
 
+---
 
-
+<p align="center">
+  <sub>TMBilling v1.6.1 · Remote Desktop & VNC Integration Guide</sub>
+</p>

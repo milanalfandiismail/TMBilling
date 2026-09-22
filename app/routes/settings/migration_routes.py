@@ -18,6 +18,7 @@ import subprocess
 import threading
 import json
 from flask import Blueprint, request, jsonify, session, current_app
+from app.config import Config
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.utils.logger import write_log
 
@@ -74,7 +75,7 @@ def get_migration_status():
             "current": current_revision,
             "head": head_label,
             "needs_upgrade": needs_upgrade,
-            "app_version": current_app.config.get("VERSION", "v1.6.0"),
+            "app_version": current_app.config.get("VERSION", Config.get_version_tag()),
             "history": history_list,
         }), 200
 
@@ -82,7 +83,7 @@ def get_migration_status():
         return jsonify({
             "success": False,
             "error": f"Gagal membaca status migrasi: {str(e)}",
-            "app_version": current_app.config.get("VERSION", "v1.6.0"),
+            "app_version": current_app.config.get("VERSION", Config.get_version_tag()),
             "current": None,
             "head": None,
             "needs_upgrade": False,
@@ -215,6 +216,21 @@ def upload_update():
                 if not inspector.has_table('cabang_inbound'):
                     from app.models.branch import BranchInbound
                     BranchInbound.__table__.create(db.engine)
+
+                # v1.6.1 Migration Safety: Kolom 'tipe' pada tabel 'game' dan tabel 'game_kategori'
+                if inspector.has_table('game'):
+                    cols = [c['name'] for c in inspector.get_columns('game')]
+                    if 'tipe' not in cols:
+                        with db.engine.connect() as conn:
+                            conn.execute(text("ALTER TABLE game ADD COLUMN tipe VARCHAR(50) DEFAULT 'game'"))
+                            conn.commit()
+                else:
+                    from app.models.game.game import Game
+                    Game.__table__.create(db.engine)
+
+                if not inspector.has_table('game_kategori'):
+                    from app.models.game.game_kategori import GameKategori
+                    GameKategori.__table__.create(db.engine)
 
                 # Pastikan alembic_version tercatat HEAD
                 from flask_migrate import stamp

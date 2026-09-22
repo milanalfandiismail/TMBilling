@@ -13,38 +13,48 @@ try {
     
     $ini = Get-Content $configPath -Raw
     
-    # Create registry key if not exists
-    $regPath = "HKLM:\Software\TMBilling"
-    if (-not (Test-Path $regPath)) {
-        New-Item -Path $regPath -Force | Out-Null
+    function Ensure-Sha256 {
+        param([string]$text)
+        $trimmed = $text.Trim()
+        if ($trimmed.Length -eq 64 -and $trimmed -match '^[0-9a-fA-F]{64}$') {
+            return $trimmed
+        }
+        if ([string]::IsNullOrEmpty($trimmed)) { return '' }
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($trimmed)
+        $hashBytes = $sha256.ComputeHash($bytes)
+        return -join ($hashBytes | ForEach-Object { '{0:x2}' -f $_ })
     }
+
+    # Sync to Registry (HKLM and HKCU)
+    $regPaths = @("HKLM:\Software\TMBilling", "HKCU:\Software\TMBilling")
     
-    # Sync URL (write as "Url" to match MGCTM)
-    if ($ini -match 'url=(.+)') {
-        $url = $matches[1].Trim()
-        Set-ItemProperty -Path $regPath -Name "Url" -Value $url -Type String -Force
-        Write-Host "Url synced: $url"
-    }
-    
-    # Sync API Key (already obfuscated in config.ini)
-    if ($ini -match 'apikey=(.+)') {
-        $key = $matches[1].Trim()
-        Set-ItemProperty -Path $regPath -Name "ApiKey" -Value $key -Type String -Force
-        Write-Host "ApiKey synced"
-    }
-    
-    # Sync Emergency User (already obfuscated in config.ini)
-    if ($ini -match 'emergency_user=(.+)') {
-        $user = $matches[1].Trim()
-        Set-ItemProperty -Path $regPath -Name "EmergencyUser" -Value $user -Type String -Force
-        Write-Host "EmergencyUser synced"
-    }
-    
-    # Sync Emergency Token (already obfuscated in config.ini)
-    if ($ini -match 'emergency_token=(.+)') {
-        $token = $matches[1].Trim()
-        Set-ItemProperty -Path $regPath -Name "EmergencyToken" -Value $token -Type String -Force
-        Write-Host "EmergencyToken synced"
+    foreach ($regPath in $regPaths) {
+        try {
+            if (-not (Test-Path $regPath)) {
+                New-Item -Path $regPath -Force | Out-Null
+            }
+            
+            if ($ini -match 'url=(.+)') {
+                $url = $matches[1].Trim()
+                Set-ItemProperty -Path $regPath -Name "Url" -Value $url -Type String -Force
+            }
+            if ($ini -match 'apikey=(.+)') {
+                $key = $matches[1].Trim()
+                Set-ItemProperty -Path $regPath -Name "ApiKey" -Value $key -Type String -Force
+            }
+            if ($ini -match 'emergency_user=(.+)') {
+                $user = Ensure-Sha256 -text $matches[1]
+                Set-ItemProperty -Path $regPath -Name "EmergencyUser" -Value $user -Type String -Force
+            }
+            if ($ini -match 'emergency_token=(.+)') {
+                $token = Ensure-Sha256 -text $matches[1]
+                Set-ItemProperty -Path $regPath -Name "EmergencyToken" -Value $token -Type String -Force
+            }
+            Write-Host "Synced to $regPath"
+        } catch {
+            Write-Host "Warning: Could not sync to $regPath: $_"
+        }
     }
     
     exit 0

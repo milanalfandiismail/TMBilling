@@ -47,10 +47,21 @@ def handle_image_upload(file):
 @menu_api_bp.route("/", methods=["GET"])
 @login_required
 def get_menu_list():
-    """Mengambil katalog semua makanan dan minuman."""
+    """Mengambil katalog semua makanan dan minuman aktif."""
     try:
         menus = MenuService.get_all_menu()
         return jsonify({"success": True, "data": [m.to_dict() for m in menus]}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@menu_api_bp.route("/archived", methods=["GET"])
+@login_required
+def get_archived_menu_list():
+    """Mengambil daftar semua makanan dan minuman yang diarsipkan."""
+    try:
+        menus = MenuService.get_archived_menu()
+        return jsonify({"success": True, "data": menus}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -111,7 +122,9 @@ def update_menu_item(menu_id):
                 data["harga"] = int(json_data.get("harga", 0))
             if "stok" in json_data:
                 data["stok"] = int(json_data.get("stok", 0))
-            if "gambar_path" in json_data:
+            if json_data.get("hapus_gambar") is True or str(json_data.get("hapus_gambar")).lower() == "true":
+                data["gambar_path"] = None
+            elif "gambar_path" in json_data:
                 data["gambar_path"] = json_data.get("gambar_path")
         else:
             if "nama" in request.form:
@@ -121,10 +134,13 @@ def update_menu_item(menu_id):
             if "stok" in request.form:
                 data["stok"] = int(request.form.get("stok", 0))
 
-            # Cek upload gambar baru
-            file = request.files.get("gambar")
-            if file:
-                data["gambar_path"] = handle_image_upload(file)
+            # Cek penghapusan gambar atau upload gambar baru
+            if request.form.get("hapus_gambar") == "true":
+                data["gambar_path"] = None
+            else:
+                file = request.files.get("gambar")
+                if file:
+                    data["gambar_path"] = handle_image_upload(file)
 
         operator = session.get("kasir_username", "system")
         menu = MenuService.update_menu(menu_id, data, operator=operator)
@@ -139,18 +155,32 @@ def update_menu_item(menu_id):
 @login_required
 @admin_required
 def delete_menu_item(menu_id):
-    """Menghapus (arsip) item menu dari katalog.
-
-    - Jika menu belum pernah terjual, dihapus permanen.
-    - Jika memiliki transaksi historis, hanya diarsipkan (is_active=False) agar
-      struk & laporan lama tetap valid (FK tidak dilanggar).
-    """
+    """Mengarsipkan item menu dari katalog aktif ke arsip."""
     try:
         operator = session.get("kasir_username", "system")
         nama = MenuService.delete_menu(menu_id, operator=operator)
         return jsonify({
             "success": True,
-            "message": f"Menu '{nama}' berhasil dihapus dari katalog!"
+            "message": f"Menu '{nama}' berhasil dipindahkan ke arsip!"
+        }), 200
+    except ValueError as val_e:
+        return jsonify({"success": False, "error": str(val_e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@menu_api_bp.route("/<int:menu_id>/restore", methods=["POST"])
+@login_required
+@admin_required
+def restore_menu_item(menu_id):
+    """Memulihkan item menu dari arsip kembali ke katalog aktif."""
+    try:
+        operator = session.get("kasir_username", "system")
+        menu = MenuService.restore_menu(menu_id, operator=operator)
+        return jsonify({
+            "success": True,
+            "data": menu.to_dict(),
+            "message": f"Menu '{menu.nama}' berhasil dipulihkan dari arsip!"
         }), 200
     except ValueError as val_e:
         return jsonify({"success": False, "error": str(val_e)}), 400

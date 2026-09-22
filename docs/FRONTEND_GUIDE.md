@@ -179,40 +179,19 @@ try {
 }
 ```
 
-## CSS Rules
+## Design System & Chamber Noir Tokens (v1.5.5+)
 
-- **Hanya** Tailwind utility classes
-- Tanpa custom CSS file (`kasir.css` hanya berisi komentar)
-- Font: Inter (body), JetBrains Mono (kode/angka)
-- No glassmorphism, no blur, no gradient decorations
+- **Theme**: Chamber Noir (`#050505` background, `#121212` / `#171717` card containers, `#262626` borders).
+- **Typography**: `Space Grotesk` (headings & body UI), `JetBrains Mono` (numbers, countdown, currency, logs).
+- **Aesthetics**: High contrast dark mode, subtle hover states, minimal animations.
 
-## Print Receipt (Thermal 58mm)
+## Dynamic Versioning & Cache Busting (v1.6.1)
 
-Struk dicetak via iframe tersembunyi dengan CSS:
-```css
-@page { margin: 0; }
-body {
-    font-family: 'Courier New', monospace;
-    width: 58mm;
-    font-size: 11px;
-}
-```
-
-## 🔊 Client Asynchronous Audio Alert System
-
-Untuk meminimalkan gangguan pada pemain (mencegah game kehilangan fokus layar penuh atau melepaskan tangkapan kursor mouse), sistem alarm peringatan sisa waktu 5 menit didesain secara asinkron menggunakan HTML5 Audio API:
-* **Audio File**: `/assets/sounds/warning_5min.mp3` (Kompresi MP3 ultra-ringan, berukuran kurang dari 50 KB).
-* **Mekanisme Eksekusi**:
-  * Pemicu berbasis evaluasi data polling lokal (`app.js`).
-  * Dimainkan secara non-blocking di latar belakang melalui objek JavaScript `Audio`:
-    ```javascript
-    const warningAudio = new Audio('./assets/sounds/warning_5min.mp3');
-    warningAudio.play().catch(err => console.log("Audio play blocked: ", err));
-    ```
-  * Menghindari penggunaan pemutar audio bawaan sistem operasi pihak ketiga (seperti `powershell` atau API Windows native yang memblokir keyboard/mouse hook secara sinkron).
+- Client script dapat mengakses versi global melalui `window.APP_VERSION` atau `document.querySelector('meta[name="app-version"]')?.content`.
+- Seluruh tag stylesheet dan script pada template Jinja2 menggunakan query parameter dinamis `?v={{ v_cache }}` yang terhubung ke `Config.VERSION` di `app/config.py`.
 
 ---
 *TMBilling — Frontend Guide*
 
 ---
-*TMBilling v1.5.1*
+*TMBilling v1.6.1*

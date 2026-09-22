@@ -173,3 +173,6 @@ initSearch: function() {
 
 ## Estimated Effort
 **Small** - 2-3 hours implementation + testing
+
+---
+*TMBilling v1.6.1*

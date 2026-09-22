@@ -655,5 +655,46 @@ Prefix: `/api/v1/kasir/settings/migration` — Auth: `admin_required`
 ```
 
 ---
-*TMBilling — API Documentation*
-*TMBilling v1.5.1*
+
+## Multi-Cabang (Central Control Panel)
+
+Prefix: `/api/v1/kasir/branch` — Auth: `@login_required + @admin_required`
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/` | List seluruh cabang terdaftar beserta status online & latensi |
+| POST | `/` | Daftarkan cabang baru (nama, URL, API Key) |
+| PUT | `/<id>` | Perbarui data cabang |
+| DELETE | `/<id>` | Hapus cabang |
+| POST | `/<id>/test` | Uji konektivitas dan latensi cabang |
+| POST | `/<id>/switch` | Beralih context cabang aktif di kasir |
+| GET | `/inbound` | Daftar koneksi masuk dari cabang-cabang lain |
+| ALL | `/<id>/relay/<path:subpath>` | Reverse-proxy relay request ke server cabang remote |
+| GET | `/<id>/media/<path:filename>` | Proxy media/screenshot dari server cabang remote |
+
+---
+
+## Remote Desktop (Web VNC)
+
+Prefix: `/api/v1/kasir/remote` — Auth: `@login_required`
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/status/<pc_id>` | Cek status ketersediaan VNC agent pada PC |
+| POST | `/connect/<pc_id>` | Inisiasi sesi VNC Web Client |
+| POST | `/input/<pc_id>` | Kirim event mouse/keyboard ke PC target |
+
+---
+
+## Server Hardware Monitor
+
+Prefix: `/api/v1/kasir/server-monitor` — Auth: `@login_required + @admin_required`
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/metrics` | Data realtime sensor hardware server (suhu CPU, GPU, RAM, Disk, Net) |
+| GET | `/service-status` | Status daemon service TMLHMService |
+
+---
+*TMBilling — Technical & API Documentation*  
+*TMBilling v1.6.1*

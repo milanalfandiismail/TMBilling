@@ -177,6 +177,7 @@ const API = {
     // 🔗 LOGIKA SESI (GUEST & MEMBER)
     sesi: {
         bukaGuest: (pcKode, paketId, namaGuest, metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/sesi/buka-guest', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, paket_id: paketId, nama_guest: namaGuest, metode_pembayaran: metodePembayaran }) }),
+        bukaGuestBatch: (pcKodes, paketId, prefix = 'Guest', metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/sesi/buka-guest-batch', { method: 'POST', body: JSON.stringify({ pc_kodes: pcKodes, paket_id: paketId, nama_guest_prefix: prefix, metode_pembayaran: metodePembayaran }) }),
         bukaMember: (pcKode, username) => API.request('/api/v1/kasir/sesi/buka-member', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, username }) }),
         tambahWaktu: (sesiId, paketIdOrPayload, qty = 1, metodePembayaran = 'Tunai') => {
             if (paketIdOrPayload && typeof paketIdOrPayload === 'object') {
@@ -185,7 +186,18 @@ const API = {
             }
             return API.request(`/api/v1/kasir/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify({ paket_id: paketIdOrPayload, qty, metode_pembayaran: metodePembayaran }) });
         },
+        tambahWaktuBatch: (sesiIds, payloadOrPaketId, qty = 1, metodePembayaran = 'Tunai') => {
+            let bodyData = { sesi_ids: sesiIds, metode_pembayaran: metodePembayaran };
+            if (payloadOrPaketId && typeof payloadOrPaketId === 'object' && payloadOrPaketId.selections) {
+                bodyData.selections = payloadOrPaketId.selections;
+            } else if (typeof payloadOrPaketId === 'number' || typeof payloadOrPaketId === 'string') {
+                bodyData.paket_id = payloadOrPaketId;
+                bodyData.qty = qty;
+            }
+            return API.request('/api/v1/kasir/sesi/tambah-waktu-batch', { method: 'POST', body: JSON.stringify(bodyData) });
+        },
         tutup: sesiId => API.request(`/api/v1/kasir/sesi/tutup/${sesiId}`, { method: 'POST' }),
+        tutupBatch: sesiIds => API.request('/api/v1/kasir/sesi/tutup-batch', { method: 'POST', body: JSON.stringify({ sesi_ids: sesiIds }) }),
         pindahPC: (sesiId, pcKodeBaru) => API.request(`/api/v1/kasir/sesi/pindah-pc/${sesiId}`, { method: 'POST', body: JSON.stringify({ pc_kode_baru: pcKodeBaru }) }),
         detail: sesiId => API.request(`/api/v1/kasir/sesi/${sesiId}`),
         getRiwayatPaket: sesiId => API.request(`/api/v1/kasir/sesi/${sesiId}/riwayat-paket`),
@@ -195,20 +207,29 @@ const API = {
         }),
     },
 
+    // 🔗 MONITOR & REMOTE ACTION
+    monitor: {
+        remote: (pcId, action) => API.request(`/api/v1/kasir/monitor/remote/${pcId}/${action}`, { method: 'POST' }),
+        remoteBatch: (pcIds, action) => API.request('/api/v1/kasir/monitor/remote/batch', { method: 'POST', body: JSON.stringify({ pc_ids: pcIds, action }) }),
+        triggerScreenshot: pcId => API.request(`/api/v1/kasir/monitor/screenshot/${pcId}`, { method: 'POST' }),
+    },
+
 
     // 🔗 LAPORAN & LOG
     report: {
         harian: () => API.request('/api/v1/kasir/report/laporan-harian'),
-        byTanggal: (tanggal, kasirId = '', page = 1, perPage = 10, metodePembayaran = '') => {
+        byTanggal: (tanggal, kasirId = '', page = 1, perPage = 10, metodePembayaran = '', q = '') => {
             let url = `/api/v1/kasir/report/laporan/billing?tanggal=${tanggal}&page=${page}&per_page=${perPage}`;
             if (kasirId) url += `&kasir_id=${kasirId}`;
             if (metodePembayaran) url += `&metode_pembayaran=${metodePembayaran}`;
+            if (q) url += `&q=${encodeURIComponent(q)}`;
             return API.request(url);
         },
-        kantinByTanggal: (tanggal, kasirId = '', page = 1, perPage = 12, metodePembayaran = '') => {
+        kantinByTanggal: (tanggal, kasirId = '', page = 1, perPage = 12, metodePembayaran = '', q = '') => {
             let url = `/api/v1/kasir/report/laporan/kantin?tanggal=${tanggal}&page=${page}&per_page=${perPage}`;
             if (kasirId) url += `&kasir_id=${kasirId}`;
             if (metodePembayaran) url += `&metode_pembayaran=${metodePembayaran}`;
+            if (q) url += `&q=${encodeURIComponent(q)}`;
             return API.request(url);
         },
         tanggalList: () => API.request('/api/v1/kasir/report/tanggal'),
@@ -237,12 +258,13 @@ const API = {
 
     // 🖥️ HARDWARE MONITOR
     monitor: {
-        all: () => API.request('/api/v1/public/monitor/all'),
-        delete: (id) => API.request(`/api/v1/public/monitor/${id}`, { method: 'DELETE' }),
-        processesKill: (pcId, processName) => API.request(`/api/v1/public/monitor/processes/${pcId}/kill`, {
+        all: () => API.request('/api/v1/kasir/monitor/all'),
+        delete: (id) => API.request(`/api/v1/kasir/monitor/${id}`, { method: 'DELETE' }),
+        processesKill: (pcId, processName) => API.request(`/api/v1/kasir/monitor/processes/${pcId}/kill`, {
             method: 'POST',
             body: JSON.stringify({ process_name: processName })
-        })
+        }),
+        registerBaseline: (pcId) => API.request(`/api/v1/kasir/monitor/register/${pcId}`, { method: 'POST' })
     },
 
     // ⚡ BLACKOUT (MANUAL)
@@ -272,9 +294,11 @@ const API = {
     // 🔗 KANTIN / POS F&B
     menu: {
         list: () => API.request('/api/v1/kasir/menu/'),
+        listArchived: () => API.request('/api/v1/kasir/menu/archived'),
         create: (formData) => API.request('/api/v1/kasir/menu/', { method: 'POST', body: formData }),
         update: (id, formData) => API.request(`/api/v1/kasir/menu/${id}`, { method: 'PUT', body: formData }),
         delete: (id) => API.request(`/api/v1/kasir/menu/${id}`, { method: 'DELETE' }),
+        restore: (id) => API.request(`/api/v1/kasir/menu/${id}/restore`, { method: 'POST' }),
         deletePermanent: (id) => API.request(`/api/v1/kasir/menu/${id}/permanent`, { method: 'DELETE' }),
         checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0, metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/menu/checkout', {
             method: 'POST',

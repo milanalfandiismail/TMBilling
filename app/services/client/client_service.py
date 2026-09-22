@@ -238,7 +238,7 @@ class ClientService:
     # Emergency login selalu diterima server, dan mengaktifkan is_admin_mode.
 
     @staticmethod
-    def emergency_login(ip_address, mac_address):
+    def emergency_login(ip_address, mac_address, username="SYSTEM"):
         """Login emergency dari PC client (bisa offline/online)."""
         pc = PCRepository.get_by_ip(ip_address)
         if not pc:
@@ -269,7 +269,9 @@ class ClientService:
         SesiService.buka_admin(pc.id, token, admin_nama="SYSTEM")
         db.session.commit()
 
-        write_log("EMERGENCY_LOGIN", f"PC {pc.kode} emergency login activated")
+        # Catat username yang memicu emergency login untuk audit
+        triggered_by = username if username else "SYSTEM"
+        write_log("EMERGENCY_LOGIN", f"PC {pc.kode} ({ip_address}) emergency login activated by '{triggered_by}'")
         return {"success": True, "message": "Emergency admin mode activated"}
 
 

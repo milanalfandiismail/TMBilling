@@ -83,7 +83,7 @@ Fitur **Cloudflare Tunnel Auto-Manager** memungkinkan pemilik/kasir warnet menga
 |---|---|---|
 | **"Token Cloudflare Tunnel tidak valid."** | Token yang dimasukkan salah, kedaluwarsa, atau terpotong. | Pastikan token diawali `eyJh...` dan disalin utuh dari dashboard Cloudflare. |
 | **"Biner cloudflared.exe tidak tersedia"** | Terjadi kegagalan koneksi internet saat mengunduh biner. | Periksa koneksi internet server, lalu klik ulang toggle untuk mencoba pengunduhan otomatis kembali. |
-| **Pesan `WinError 193`** | File biner terputus saat diunduh sebelumnya. | TMBilling v1.5.2+ otomatis mendeteksi ukuran biner minimal 45MB dan mengunduh ulang jika file terpotong. |
+| **Pesan `WinError 193`** | File biner terputus saat diunduh sebelumnya. | TMBilling v1.6.1 otomatis mendeteksi ukuran biner minimal 45MB dan mengunduh ulang jika file terpotong. |
 
 ---
 
@@ -108,3 +108,5 @@ Fitur Remote Desktop TMBilling menggunakan kombinasi **TightVNC Server** di PC C
    - Buka menu Remote Control VNC di dashboard TMBilling.
    - Klik **Start Websockify Proxy**. Server akan otomatis mengikat port `8081` dan menyambungkan streaming layar ke browser kasir.
 
+---
+*TMBilling v1.6.1*

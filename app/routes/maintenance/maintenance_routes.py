@@ -87,11 +87,16 @@ def update_status(ticket_id):
 @login_required
 def get_report():
     try:
+        tanggal = request.args.get("tanggal")
         start_date = request.args.get("start_date")
         end_date = request.args.get("end_date")
         pc_id = request.args.get("pc_id", type=int)
         grup = request.args.get("grup")
         kategori = request.args.get("kategori")
+
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            start_date = tanggal.strip()
+            end_date = tanggal.strip()
 
         report_data = MaintenanceService.get_report_data(
             start_date=start_date,
@@ -108,11 +113,16 @@ def get_report():
 @login_required
 def export_report():
     try:
+        tanggal = request.args.get("tanggal")
         start_date = request.args.get("start_date")
         end_date = request.args.get("end_date")
         pc_id = request.args.get("pc_id", type=int)
         grup = request.args.get("grup")
         kategori = request.args.get("kategori")
+
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            start_date = tanggal.strip()
+            end_date = tanggal.strip()
 
         report_data = MaintenanceService.get_report_data(
             start_date=start_date,

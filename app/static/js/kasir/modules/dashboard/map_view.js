@@ -5,17 +5,17 @@
 const MapView = {
     cellW: 120,
     cellH: 90,
-    editorCellW: 80,
-    editorCellH: 60,
+    editorCellW: 75,
+    editorCellH: 55,
     _selectedPcId: null,
     _editorGrup: '',
 
     _getGridSize: function(grup) {
         try {
             var s = localStorage.getItem('map_grid_'+grup);
-            if (s) { var p = JSON.parse(s); return { cols: p.c||10, rows: p.r||7 }; }
+            if (s) { var p = JSON.parse(s); return { cols: p.c||12, rows: p.r||7 }; }
         } catch(e) {}
-        return { cols: 10, rows: 7 };
+        return { cols: 12, rows: 7 };
     },
 
     _setGridSize: function(grup, cols, rows) {
@@ -85,7 +85,7 @@ const MapView = {
             +self._editGrid(cols,rows)+placedDots+'</div></div></div>'
 
             +'<div class="px-6 py-3 border-t border-[#1c1c1c] flex items-center justify-between shrink-0 bg-[#0a0a0a] flex-wrap gap-2">'
-            +'<div class="flex items-center gap-2 text-xs lg:text-base text-neutral-400">Kolom <input type="number" id="edit-cols" value="'+gs.cols+'" min="1" max="10" class="w-16 px-2 py-1 bg-[#0a0a0a] border border-[#222] rounded text-neutral-200 text-center text-xs lg:text-base"> Baris <input type="number" id="edit-rows" value="'+gs.rows+'" min="1" max="100" class="w-16 px-2 py-1 bg-[#0a0a0a] border border-[#222] rounded text-neutral-200 text-center text-xs lg:text-base"> <button onclick="MapView._applyGrid(\''+self._esc(grup)+'\')" class="px-3 py-1 bg-neutral-700 border border-neutral-600 hover:bg-neutral-500 rounded text-xs lg:text-base text-neutral-200 font-semibold transition-colors">Terapkan</button></div>'
+            +'<div class="flex items-center gap-2 text-xs lg:text-base text-neutral-400">Kolom <input type="number" id="edit-cols" value="'+gs.cols+'" min="1" max="12" class="w-16 px-2 py-1 bg-[#0a0a0a] border border-[#222] rounded text-neutral-200 text-center text-xs lg:text-base"> Baris <input type="number" id="edit-rows" value="'+gs.rows+'" min="1" max="100" class="w-16 px-2 py-1 bg-[#0a0a0a] border border-[#222] rounded text-neutral-200 text-center text-xs lg:text-base"> <button onclick="MapView._applyGrid(\''+self._esc(grup)+'\')" class="px-3 py-1 bg-neutral-700 border border-neutral-600 hover:bg-neutral-500 rounded text-xs lg:text-base text-neutral-200 font-semibold transition-colors">Terapkan</button></div>'
             +'<div class="flex gap-2"><button onclick="Modal.closeModal()" class="px-4 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded">Batal</button>'
             +'<button onclick="MapView._save()" class="px-5 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded">Simpan Denah</button></div></div></div>';
 
@@ -163,7 +163,7 @@ const MapView = {
 
     _applyGrid: function(grup) {
         var c = document.getElementById('edit-cols'), r = document.getElementById('edit-rows');
-        var nc = c ? Math.max(1, Math.min(10, parseInt(c.value) || 10)) : 10;
+        var nc = c ? Math.max(1, Math.min(12, parseInt(c.value) || 12)) : 12;
         var nr = r ? Math.max(1, Math.min(100, parseInt(r.value) || 7)) : 7;
         
         var data = (window.Dashboard && window.Dashboard.lastData) || null;
@@ -208,7 +208,7 @@ const MapView = {
     _save: function() {
         var grup = this._editorGrup;
         var colEl = document.getElementById('edit-cols'), rowEl = document.getElementById('edit-rows');
-        var cols = colEl ? Math.max(1,Math.min(10,parseInt(colEl.value)||10)) : 10;
+        var cols = colEl ? Math.max(1,Math.min(12,parseInt(colEl.value)||12)) : 12;
         var rows = rowEl ? Math.max(1,Math.min(100,parseInt(rowEl.value)||7)) : 7;
         this._setGridSize(grup, cols, rows);
 

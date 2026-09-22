@@ -25,50 +25,50 @@ const User = {
         }
 
         area.innerHTML = `
-            <div class="overflow-x-hidden w-full">
-                <table class="w-full text-xs lg:text-base block lg:table">
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
                     <thead class="hidden lg:table-header-group">
-                        <tr class="text-[10px] lg:text-base text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
-                            <th class="px-6 py-4 text-left">Operator</th>
-                            <th class="px-6 py-4 text-center">Role</th>
-                            <th class="px-6 py-4 text-center">Status</th>
-                            <th class="px-6 py-4 text-right">Kelola</th>
+                        <tr class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
+                            <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-left">Operator</th>
+                            <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-center">Role</th>
+                            <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-center">Status</th>
+                            <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-right">Kelola</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] block lg:table-row-group">
                         ${users.map(u => {
                             const roleBadge = u.role === 'admin'
-                                ? '<span class="px-2 py-0.5 rounded text-[10px] lg:text-base font-bold bg-[#2d1215] text-red-400 border border-red-900/30">Admin</span>'
-                                : '<span class="px-2 py-0.5 rounded text-[10px] lg:text-base font-bold bg-[#171717] text-neutral-300 border border-[#262626]">Staff</span>';
+                                ? '<span class="px-2 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-base font-bold bg-[#2d1215] text-red-400 border border-red-900/30">Admin</span>'
+                                : '<span class="px-2 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-base font-bold bg-[#171717] text-neutral-300 border border-[#262626]">Staff</span>';
                             const statusBadge = u.aktif
-                                ? '<span class="inline-flex items-center gap-1.5 text-xs lg:text-base text-neutral-300"><span class="w-1.5 h-1.5 rounded bg-neutral-200"></span>Aktif</span>'
-                                : '<span class="inline-flex items-center gap-1.5 text-xs lg:text-base text-neutral-500"><span class="w-1.5 h-1.5 rounded bg-neutral-700"></span>Nonaktif</span>';
+                                ? '<span class="inline-flex items-center gap-1.5 text-xs lg:max-xl:text-xs xl:text-base text-neutral-300"><span class="w-1.5 h-1.5 rounded bg-neutral-200"></span>Aktif</span>'
+                                : '<span class="inline-flex items-center gap-1.5 text-xs lg:max-xl:text-xs xl:text-base text-neutral-500"><span class="w-1.5 h-1.5 rounded bg-neutral-700"></span>Nonaktif</span>';
                             return `
                                 <tr class="hover:bg-[#121212] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#2a2a2a] last:border-b-0 lg:border-b-0">
-                                    <td class="px-6 py-4 block lg:table-cell">
+                                    <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 block lg:table-cell">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-9 h-9 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-200 font-bold">${u.username.charAt(0).toUpperCase()}</div>
+                                            <div class="w-9 h-9 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-9 xl:h-9 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-200 font-bold text-xs lg:max-xl:text-xs xl:text-base">${u.username.charAt(0).toUpperCase()}</div>
                                             <div>
-                                                <div class="font-bold text-neutral-200">${Utils.escapeHtml(u.username)}</div>
-                                                <div class="text-[10px] lg:text-base text-neutral-500 font-mono">${Utils.escapeHtml(u.nama_lengkap || '-')}</div>
+                                                <div class="font-bold text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base">${Utils.escapeHtml(u.username)}</div>
+                                                <div class="text-[10px] lg:max-xl:text-[11px] xl:text-base text-neutral-500 font-mono">${Utils.escapeHtml(u.nama_lengkap || '-')}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 text-center flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Role</span>
+                                    <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-center flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Role</span>
                                         ${roleBadge}
                                     </td>
-                                    <td class="px-6 py-4 text-center flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Status</span>
+                                    <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-center flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Status</span>
                                         ${statusBadge}
                                     </td>
-                                    <td class="px-6 py-4 text-right flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kelola</span>
+                                    <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-right flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kelola</span>
                                         <div class="flex justify-end gap-2">
-                                            <button onclick="User.edit(${u.id})" class="w-9 h-9 rounded bg-[#171717] border border-[#262626] text-neutral-400 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center">
+                                            <button onclick="User.edit(${u.id})" class="w-9 h-9 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-9 xl:h-9 rounded bg-[#171717] border border-[#262626] text-neutral-400 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                             </button>
-                                            <button onclick="User.delete(${u.id}, '${u.username}')" class="w-9 h-9 rounded bg-[#2d1215] border border-red-900/30 text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center">
+                                            <button onclick="User.delete(${u.id}, '${u.username}')" class="w-9 h-9 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-9 xl:h-9 rounded bg-[#2d1215] border border-red-900/30 text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                             </button>
                                         </div>

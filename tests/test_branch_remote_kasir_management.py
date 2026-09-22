@@ -180,7 +180,7 @@ def test_delete_remote_operator_permanent(app_instance, test_setup):
             menit=150,
             no_nota="TM-DEL-001",
             operator="doni (Remote: Cabang Timur)",
-            dibuat_pada=datetime.now()
+            dibuat_pada=datetime.utcnow()
         )
         tm1 = TransaksiMenu(
             no_nota="TMM-DEL-001",
@@ -189,7 +189,7 @@ def test_delete_remote_operator_permanent(app_instance, test_setup):
             total_harga=10000,
             kasir_id=test_setup["admin"].id,
             operator="doni (Remote: Cabang Timur)",
-            tanggal=datetime.now()
+            tanggal=datetime.utcnow()
         )
         db.session.add_all([t1, tm1])
         db.session.commit()

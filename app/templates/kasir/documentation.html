@@ -257,29 +257,29 @@
 }
 </style>
 
-<div class="flex-1 flex flex-col h-screen bg-[#050505] p-6 lg:p-8 space-y-6 overflow-y-auto">
+<div class="flex-1 flex flex-col h-screen bg-[#050505] p-4 lg:max-xl:p-6 xl:p-8 space-y-4 lg:max-xl:space-y-5 xl:space-y-6 overflow-y-auto">
     <!-- Header Bar & Actions -->
-    <div class="flex items-center justify-between gap-4 bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-6 shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-4 bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-4 lg:max-xl:p-5 xl:p-6 shadow-sm">
         <div>
-            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
+            <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
                 <span>📚</span> Dokumentasi & Panduan Sistem
             </h3>
-            <p class="text-[9px] lg:text-base text-neutral-500 mt-1">
+            <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">
                 Pusat petunjuk penggunaan, troubleshooting, dan panduan konfigurasi teknis TMBilling.
             </p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-2 lg:max-xl:gap-2.5 xl:gap-3">
             <a href="/kasir"
-                class="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs lg:text-base font-bold rounded-lg transition-all shrink-0 flex items-center gap-2 border border-[#262626] shadow">
+                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded-lg transition-all shrink-0 flex items-center gap-2 border border-[#262626] shadow">
                 <span>⬅️</span> Kembali ke Dashboard
             </a>
             {% if session.get('kasir_role') == 'admin' %}
             <button onclick="Tutorials.exportTutorialsToJson()"
-                class="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs lg:text-base font-bold rounded-lg transition-all shrink-0 flex items-center gap-2 border border-[#262626] shadow">
+                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded-lg transition-all shrink-0 flex items-center gap-2 border border-[#262626] shadow">
                 <span>📥</span> Ekspor ke JSON
             </button>
             <button onclick="Tutorials.openTutorialModal()"
-                class="px-4 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded-lg transition-all shrink-0 flex items-center gap-2 shadow">
+                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded-lg transition-all shrink-0 flex items-center gap-2 shadow">
                 <span>➕</span> Tambah Panduan Baru
             </button>
             {% endif %}
@@ -289,14 +289,14 @@
     <!-- Claude Code Docs Style Integrated Wiki Layout -->
     <div class="flex flex-col lg:flex-row gap-6 items-start w-full">
         <!-- Sidebar: Kategori & Panduan Terintegrasi (Kiri) -->
-        <div class="w-full lg:w-72 bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-5 shrink-0 space-y-6">
+        <div class="w-full lg:max-xl:w-64 xl:w-72 bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-4 lg:max-xl:p-4.5 xl:p-5 shrink-0 space-y-6">
             <div id="wiki-sidebar" class="space-y-6">
                 <!-- Sidebar contents rendered dynamically via JS -->
             </div>
         </div>
 
         <!-- Main Content Area: Reader Panduan Aktif (Kanan) -->
-        <div class="w-full flex-1 bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-8 min-h-[600px] flex flex-col">
+        <div class="w-full flex-1 bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-5 lg:max-xl:p-6 xl:p-8 min-h-[600px] flex flex-col">
             <div id="wiki-reader-area" class="flex-1 flex flex-col">
                 <!-- Active tutorial content rendered dynamically via JS -->
             </div>
@@ -309,61 +309,61 @@
     <div class="bg-[#0c0c0c] border border-[#262626] w-full max-w-4xl max-h-[85vh] rounded-xl overflow-hidden shadow-2xl flex flex-col">
         <!-- Modal Header -->
         <div class="flex items-center justify-between px-6 py-3.5 border-b border-[#1c1c1c] bg-[#080808]">
-            <h3 id="modal-tutorial-title-text" class="text-xs lg:text-[20px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
+            <h3 id="modal-tutorial-title-text" class="text-xs lg:max-xl:text-base xl:text-[20px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
                 <span>📝</span> Editor Panduan Sistem
             </h3>
-            <button onclick="Tutorials.closeTutorialModal()" class="text-neutral-400 hover:text-white p-1 rounded transition-colors text-xs lg:text-base">
+            <button onclick="Tutorials.closeTutorialModal()" class="text-neutral-400 hover:text-white p-1 rounded transition-colors text-xs lg:max-xl:text-xs xl:text-base">
                 ✕
             </button>
         </div>
 
         <!-- Modal Body (Form) -->
-        <div class="p-5 space-y-3.5 overflow-y-auto flex-1 text-xs lg:text-base">
+        <div class="p-5 space-y-3.5 overflow-y-auto flex-1 text-xs lg:max-xl:text-xs xl:text-base">
             <input type="hidden" id="tutorial-id-input">
             
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div class="sm:col-span-2">
-                    <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Judul Panduan / Header *</label>
+                    <label class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Judul Panduan / Header *</label>
                     <input type="text" id="tutorial-title-input" placeholder="Misal: Panduan Setup Cloudflare Tunnel"
-                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 font-semibold text-xs lg:text-base">
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 font-semibold text-xs lg:max-xl:text-xs xl:text-base">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Ikon / Emoji</label>
+                    <label class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Ikon / Emoji</label>
                     <input type="text" id="tutorial-icon-input" placeholder="🌐" value="🌐"
-                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-center font-bold text-xs lg:text-base">
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-center font-bold text-xs lg:max-xl:text-xs xl:text-base">
                 </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Kategori *</label>
+                    <label class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Kategori *</label>
                     <select id="tutorial-category-select" onchange="Tutorials.handleCategorySelectChange(this.value)"
-                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:text-base cursor-pointer">
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:max-xl:text-xs xl:text-base cursor-pointer">
                         <option value="Umum">Umum</option>
                         <option value="__NEW__">➕ Tambah Kategori Baru...</option>
                     </select>
                     <input type="text" id="tutorial-new-category-input" placeholder="Ketik nama kategori baru..."
-                        class="hidden w-full mt-2 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:text-base">
+                        class="hidden w-full mt-2 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:max-xl:text-xs xl:text-base">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Nomor Urut Tampilan</label>
+                    <label class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Nomor Urut Tampilan</label>
                     <input type="number" id="tutorial-urutan-input" placeholder="0" value="0"
-                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono text-xs lg:text-base">
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Isi Panduan & Langkah-Langkah *</label>
+                <label class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Isi Panduan & Langkah-Langkah *</label>
                 <textarea id="tutorial-content-editor" class="text-neutral-200 bg-[#050505] border border-[#1c1c1c] rounded w-full p-3 min-h-[150px] focus:outline-none focus:border-neutral-500"></textarea>
             </div>
         </div>
 
         <!-- Modal Footer -->
         <div class="flex items-center justify-end gap-3 px-6 py-3 border-t border-[#1c1c1c] bg-[#080808]">
-            <button onclick="Tutorials.closeTutorialModal()" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold rounded transition-colors text-xs lg:text-base">
+            <button onclick="Tutorials.closeTutorialModal()" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold rounded transition-colors text-xs lg:max-xl:text-xs xl:text-base">
                 Batal
             </button>
-            <button onclick="Tutorials.saveTutorial()" class="px-5 py-2 bg-neutral-100 hover:bg-neutral-200 text-black font-bold rounded transition-colors shadow flex items-center gap-2 text-xs lg:text-base">
+            <button onclick="Tutorials.saveTutorial()" class="px-4 lg:max-xl:px-4.5 xl:px-5 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black font-bold rounded transition-colors shadow flex items-center gap-2 text-xs lg:max-xl:text-xs xl:text-base">
                 <span>💾</span> Simpan Panduan
             </button>
         </div>
@@ -378,20 +378,20 @@
                 📥
             </div>
             <div>
-                <h3 class="text-sm lg:text-base font-bold text-neutral-100">Ekspor Tutorial ke JSON</h3>
-                <p class="text-[10px] lg:text-xs text-neutral-400 mt-0.5">Konfirmasi pembaruan file data seed</p>
+                <h3 class="text-sm lg:max-xl:text-sm xl:text-base font-bold text-neutral-100">Ekspor Tutorial ke JSON</h3>
+                <p class="text-[10px] lg:max-xl:text-xs xl:text-xs text-neutral-400 mt-0.5">Konfirmasi pembaruan file data seed</p>
             </div>
         </div>
-        <p class="text-xs lg:text-sm text-neutral-300 leading-relaxed">
+        <p class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-300 leading-relaxed">
             Apakah Anda yakin ingin mengekspor seluruh data tutorial saat ini ke file <code class="bg-[#171717] px-1.5 py-0.5 rounded text-amber-400 font-mono text-xs">seed_tutorials.json</code>?
         </p>
         <div class="flex items-center justify-end gap-3 pt-2">
             <button type="button" onclick="Tutorials.closeConfirmExportModal()"
-                class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-bold rounded-lg transition-all border border-[#262626]">
+                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded-lg transition-all border border-[#262626]">
                 Batal
             </button>
             <button type="button" onclick="Tutorials.confirmExportTutorialsToJson()"
-                class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg transition-all shadow">
+                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-amber-500 hover:bg-amber-400 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded-lg transition-all shadow">
                 Ya, Ekspor Sekarang
             </button>
         </div>

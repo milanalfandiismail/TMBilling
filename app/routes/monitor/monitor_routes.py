@@ -114,6 +114,80 @@ def delete_hardware_data(hardware_id):
         return jsonify({"success": True, "message": f"Data monitor PC {pc_kode} berhasil dibersihkan"}), 200
     except ValueError as val_e:
         return jsonify({"success": False, "error": str(val_e)}), 404
+@monitor_kasir_bp.route("/all", methods=["GET"])
+@login_required
+def get_all_hardware_kasir():
+    """Endpoint kasir untuk mengambil semua data hardware monitor beserta data PC (relayed via multi-branch)."""
+    try:
+        monitors = HardwareService.get_all_with_pc()
+        result = []
+        for m in monitors:
+            m_dict = m.to_dict()
+            m_dict["pc_kode"] = m.pc.kode if m.pc else "Unknown"
+            m_dict["pc_nama"] = m.pc.nama if m.pc else "Unknown"
+            m_dict["pc_grup_id"] = m.pc.grup_id if m.pc else 0
+            m_dict["pc_grup_nama"] = m.pc.grup.nama if (m.pc and m.pc.grup) else "Unknown"
+            m_dict["health"] = HardwareService.check_pc_warning(m.pc_id, m_dict)
+            result.append(m_dict)
+            
+        # Urutkan hasil secara natural berdasarkan grup dan kode PC
+        result.sort(key=lambda item: (item.get("pc_grup_id") or 0, natural_sort_key(item.get("pc_kode", ""))))
+        return jsonify({"success": True, "data": result}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@monitor_kasir_bp.route("/<int:hardware_id>", methods=["DELETE"])
+@login_required
+@admin_required
+def delete_hardware_data_kasir(hardware_id):
+    """Endpoint kasir untuk menghapus data hardware monitor tertentu."""
+    try:
+        pc_kode = HardwareService.delete_hardware(hardware_id, operator="kasir")
+        return jsonify({"success": True, "message": f"Data monitor PC {pc_kode} berhasil dibersihkan"}), 200
+    except ValueError as val_e:
+        return jsonify({"success": False, "error": str(val_e)}), 404
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@monitor_kasir_bp.route("/processes/<int:pc_id>", methods=["GET"])
+@login_required
+def get_pc_processes_kasir(pc_id):
+    """Endpoint kasir untuk mengambil daftar proses yang sedang berjalan di PC tertentu."""
+    try:
+        processes = HardwareService.get_processes_by_pc(pc_id)
+        return jsonify({
+            "success": True, 
+            "data": processes,
+            "count": len(processes)
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@monitor_kasir_bp.route("/processes/<int:pc_id>/kill", methods=["POST"])
+@login_required
+@admin_required
+def kill_pc_process_kasir(pc_id):
+    """Trigger request taskkill process ke client PC berdasarkan PC ID."""
+    try:
+        data = request.get_json() or {}
+        process_name = data.get("process_name")
+        if not process_name:
+            return jsonify({"success": False, "error": "Nama proses harus diisi"}), 400
+
+        from app.repositories import PCRepository
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+
+        from app.services.client.client_service import ClientService
+        ClientService.queue_command(pc.id, f"kill:{process_name}")
+
+        operator = session.get("kasir_username", "admin")
+        write_log("REMOTE_KILL", f"Perintah Kill Process '{process_name}' dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode, "process_name": process_name})
+        return jsonify({"success": True, "message": f"Perintah mengakhiri proses {process_name} berhasil dikirim ke {pc.kode}"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -158,6 +232,51 @@ def trigger_remote_action(pc_id, action):
         operator = session.get("kasir_username", "admin")
         write_log("REMOTE_ACTION", f"Perintah {action_label} dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode, "action": action})
         return jsonify({"success": True, "message": f"Perintah {action_label} berhasil dikirim ke {pc.kode}"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@monitor_kasir_bp.route("/remote/batch", methods=["POST"])
+@login_required
+@admin_required
+def trigger_remote_action_batch():
+    """Trigger remote action (shutdown atau restart) ke banyak PC client sekaligus."""
+    try:
+        data = request.get_json() or {}
+        pc_ids = data.get("pc_ids") or []
+        action = data.get("action")
+
+        if action not in ["shutdown", "restart"]:
+            return jsonify({"success": False, "error": "Aksi tidak valid (hanya shutdown/restart)"}), 400
+        if not pc_ids or not isinstance(pc_ids, list):
+            return jsonify({"success": False, "error": "Daftar PC (pc_ids) harus berupa array non-kosong"}), 400
+
+        from app.repositories import PCRepository
+        from app.services import ClientService
+
+        action_label = "Shutdown" if action == "shutdown" else "Restart"
+        operator = session.get("kasir_username", "admin")
+        success_list = []
+        errors = []
+
+        for pc_id in pc_ids:
+            pc = PCRepository.get_by_id(pc_id)
+            if not pc:
+                errors.append({"pc_id": pc_id, "error": "PC tidak ditemukan"})
+                continue
+            try:
+                ClientService.queue_command(pc.id, action)
+                write_log("REMOTE_ACTION_BATCH", f"Perintah {action_label} batch dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode, "action": action})
+                success_list.append(pc.kode)
+            except Exception as e:
+                errors.append({"pc_id": pc_id, "pc_kode": pc.kode, "error": str(e)})
+
+        return jsonify({
+            "success": len(success_list) > 0,
+            "success_pcs": success_list,
+            "errors": errors,
+            "total_success": len(success_list),
+            "total_failed": len(errors)
+        }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -217,17 +336,19 @@ def get_screenshot_status(pc_id):
         if os.path.exists(screenshot_path):
             mtime = os.path.getmtime(screenshot_path)
             dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
-            screenshot_time = format_display(dt_utc)
+            screenshot_time = format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
             return jsonify({
                 "success": True,
                 "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
-                "screenshot_time": screenshot_time
+                "screenshot_time": screenshot_time,
+                "mtime": mtime
             }), 200
         else:
             return jsonify({
                 "success": True,
                 "screenshot_url": None,
-                "screenshot_time": None
+                "screenshot_time": None,
+                "mtime": 0
             }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -254,19 +375,23 @@ def get_all_screenshot_status():
             if os.path.exists(screenshot_path):
                 mtime = os.path.getmtime(screenshot_path)
                 dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
-                screenshot_time = format_display(dt_utc)
+                screenshot_time = format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
                 result.append({
                     "pc_id": pc.id,
                     "pc_kode": pc.kode,
-                    "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",                    "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
-                    "screenshot_time": screenshot_time
+                    "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",
+                    "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
+                    "screenshot_time": screenshot_time,
+                    "mtime": mtime
                 })
             else:
                 result.append({
                     "pc_id": pc.id,
                     "pc_kode": pc.kode,
-                    "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",                    "screenshot_url": None,
-                    "screenshot_time": None
+                    "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",
+                    "screenshot_url": None,
+                    "screenshot_time": None,
+                    "mtime": 0
                 })
                 
         return jsonify({"success": True, "data": result}), 200

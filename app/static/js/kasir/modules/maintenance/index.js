@@ -4,6 +4,12 @@ const Maintenance = {
     tickets: [],
     pcs: [],
 
+    resetState() {
+        this.tickets = [];
+        this.pcs = [];
+        this.pcSelectContext = '';
+    },
+
     async init() {
         await this.loadPCs();
         await this.load();
@@ -23,10 +29,14 @@ const Maintenance = {
         }
     },
 
-    openSelectPCModal(context) {
+    async openSelectPCModal(context) {
         this.pcSelectContext = context;
+        const modal = document.getElementById('modal-select-pc');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+
         const allBtn = document.getElementById('btn-pc-select-all');
-        
         if (context === 'input') {
             if (allBtn) allBtn.classList.add('hidden');
         } else {
@@ -37,9 +47,22 @@ const Maintenance = {
         if (searchInput) {
             searchInput.value = '';
         }
+
+        const container = document.getElementById('pc-select-grid-container');
+        if (!this.pcs || this.pcs.length === 0) {
+            if (container) {
+                container.innerHTML = '<div class="text-center py-8 text-neutral-500 text-xs">Memuat daftar unit PC...</div>';
+            }
+            await this.loadPCs();
+        } else {
+            this.renderPCSelectGrid();
+        }
+
         this.filterPCSelectGrid();
 
-        document.getElementById('modal-select-pc')?.classList.remove('hidden');
+        if (searchInput) {
+            setTimeout(() => searchInput.focus(), 50);
+        }
     },
 
     closeSelectPCModal() {
@@ -49,6 +72,11 @@ const Maintenance = {
     renderPCSelectGrid() {
         const container = document.getElementById('pc-select-grid-container');
         if (!container) return;
+
+        if (!this.pcs || this.pcs.length === 0) {
+            container.innerHTML = '<div class="text-center py-8 text-neutral-500 text-xs">Tidak ada unit PC terdaftar.</div>';
+            return;
+        }
 
         const grouped = {};
         const groupColors = {};
@@ -66,17 +94,17 @@ const Maintenance = {
             const gColor = groupColors[gName] || '#888888';
             html += `
                 <div class="pc-group-section" data-group="${gName}">
-                    <div class="text-[11px] uppercase font-bold tracking-wider mb-2 pb-1 border-b" style="color: ${gColor}; border-color: ${gColor};">${gName}</div>
-                    <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                    <div class="text-[10px] lg:max-xl:text-[10px] xl:text-xs uppercase font-bold tracking-wider mb-2 pb-1 border-b" style="color: ${gColor}; border-color: ${gColor}33;">${gName}</div>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                         ${grouped[gName].map(pc => `
                             <button type="button" 
-                                class="pc-item-btn p-2 bg-[#171717] border border-[#262626] rounded-lg text-center hover:bg-neutral-100 hover:text-black hover:border-white transition-all text-xs font-bold flex flex-col items-center justify-center gap-1"
+                                class="pc-item-btn p-2 sm:p-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-center hover:bg-neutral-100 hover:text-black hover:border-white transition-all text-xs font-bold flex flex-col items-center justify-center gap-1 group"
                                 data-id="${pc.id}" 
                                 data-kode="${pc.kode}" 
                                 data-nama="${pc.nama || ''}"
                                 onclick="Maintenance.selectPCFromModal(${pc.id}, '${pc.kode}')">
-                                <span class="text-neutral-100 font-mono">${pc.kode}</span>
-                                <span class="text-[8px] lg:text-[10px] text-neutral-500 font-normal truncate max-w-full">${pc.nama || ''}</span>
+                                <span class="font-mono text-neutral-200 group-hover:text-black font-bold text-xs lg:max-xl:text-xs xl:text-sm">${pc.kode}</span>
+                                <span class="text-[9px] lg:max-xl:text-[9px] xl:text-[11px] text-neutral-500 group-hover:text-neutral-700 font-normal truncate max-w-full">${pc.nama || ''}</span>
                             </button>
                         `).join('')}
                     </div>
@@ -90,14 +118,15 @@ const Maintenance = {
     filterPCSelectGrid() {
         const query = document.getElementById('pc-select-search')?.value.toLowerCase().trim() || '';
         const sections = document.querySelectorAll('.pc-group-section');
+        let totalVisible = 0;
 
         sections.forEach(section => {
             let visibleCount = 0;
             const buttons = section.querySelectorAll('.pc-item-btn');
             buttons.forEach(btn => {
-                const kode = btn.getAttribute('data-kode').toLowerCase();
-                const nama = btn.getAttribute('data-nama').toLowerCase();
-                if (kode.includes(query) || nama.includes(query)) {
+                const kode = (btn.getAttribute('data-kode') || '').toLowerCase();
+                const nama = (btn.getAttribute('data-nama') || '').toLowerCase();
+                if (!query || kode.includes(query) || nama.includes(query)) {
                     btn.classList.remove('hidden');
                     visibleCount++;
                 } else {
@@ -107,10 +136,26 @@ const Maintenance = {
 
             if (visibleCount > 0) {
                 section.classList.remove('hidden');
+                totalVisible += visibleCount;
             } else {
                 section.classList.add('hidden');
             }
         });
+
+        let emptyMsg = document.getElementById('pc-select-empty-msg');
+        if (totalVisible === 0 && sections.length > 0) {
+            if (!emptyMsg) {
+                const container = document.getElementById('pc-select-grid-container');
+                emptyMsg = document.createElement('div');
+                emptyMsg.id = 'pc-select-empty-msg';
+                emptyMsg.className = 'text-center py-8 text-neutral-500 text-xs';
+                emptyMsg.innerText = 'Tidak ada unit PC yang cocok dengan kata kunci.';
+                container?.appendChild(emptyMsg);
+            }
+            emptyMsg.classList.remove('hidden');
+        } else if (emptyMsg) {
+            emptyMsg.classList.add('hidden');
+        }
     },
 
     selectPCFromModal(pcId, pcKode) {
@@ -186,12 +231,10 @@ const Maintenance = {
 
     renderTickets() {
         const tbody = document.getElementById('maintenance-tickets-tbody');
-        if (!tbody) return;
-
-        if (this.tickets.length === 0) {
+        if (!this.tickets || this.tickets.length === 0) {
             tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="py-10 text-center text-neutral-500">Tidak ada tiket perbaikan yang aktif.</td>
+                <tr class="block lg:table-row">
+                    <td colspan="5" class="py-10 text-center text-neutral-500 block lg:table-cell">Tidak ada tiket perbaikan yang aktif.</td>
                 </tr>
             `;
             return;
@@ -211,46 +254,63 @@ const Maintenance = {
             else if (t.status === 'DITOLAK') statusClass = 'bg-red-950/40 text-red-400 border border-red-900/30';
 
             let actionButtons = `
-                <button onclick="Maintenance.openDetailModal(${t.id})" class="px-3.5 py-1.5 bg-[#171717] border border-[#262626] text-neutral-300 rounded-lg hover:bg-neutral-100 hover:text-black text-xs lg:text-sm font-bold transition-colors" title="Lihat Detail Lengkap">Detail</button>
+                <button onclick="Maintenance.openDetailModal(${t.id})" class="px-2.5 py-1 bg-[#171717] border border-[#262626] text-neutral-300 rounded hover:bg-neutral-100 hover:text-black text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors" title="Lihat Detail Lengkap">Detail</button>
             `;
             const isAdmin = !(window.App && App.user && App.user.role === 'kasir');
 
             if (t.status === 'BARU') {
                 actionButtons += `
-                    <button onclick="Maintenance.changeStatus(${t.id}, 'DIPROSES')" class="px-3.5 py-1.5 bg-blue-600/20 border border-blue-600/30 text-blue-400 rounded-lg hover:bg-blue-600/30 text-xs lg:text-sm font-bold transition-colors">Proses</button>
-                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="px-3.5 py-1.5 bg-red-600/20 border border-red-600/30 text-red-400 rounded-lg hover:bg-red-600/30 text-xs lg:text-sm font-bold transition-colors">Tolak</button>
+                    <button onclick="Maintenance.changeStatus(${t.id}, 'DIPROSES')" class="px-2.5 py-1 bg-blue-600/20 border border-blue-600/30 text-blue-400 rounded hover:bg-blue-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Proses</button>
+                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="px-2.5 py-1 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Tolak</button>
                 `;
             } else if (t.status === 'DIPROSES') {
                 actionButtons += `
-                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="px-3.5 py-1.5 bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 rounded-lg hover:bg-emerald-600/30 text-xs lg:text-sm font-bold transition-colors">Selesaikan</button>
+                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="px-2.5 py-1 bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 rounded hover:bg-emerald-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Selesaikan</button>
                 `;
             }
 
             if (isAdmin) {
                 actionButtons += `
-                    <button onclick="Maintenance.deleteTicket(${t.id})" class="px-3.5 py-1.5 bg-red-600/20 border border-red-600/30 text-red-400 rounded-lg hover:bg-red-600 hover:text-white text-xs lg:text-sm font-bold transition-colors" title="Hapus">Hapus</button>
+                    <button onclick="Maintenance.deleteTicket(${t.id})" class="px-2.5 py-1 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600 hover:text-white text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors" title="Hapus">Hapus</button>
                 `;
             }
 
             tbody.innerHTML += `
-                <tr class="hover:bg-[#121212] transition-colors">
-                    <td class="py-3 px-4 font-mono font-bold text-neutral-100">${t.pc_kode}</td>
-                    <td class="py-3 px-4 font-mono text-[10px] lg:text-xs text-neutral-400 font-bold uppercase tracking-wider">${t.kategori}</td>
-                    <td class="py-3 px-4">
-                        <span class="px-2.5 py-0.5 rounded text-[9px] lg:text-xs font-bold ${prioritasClass}">${t.prioritas}</span>
+                <tr class="hover:bg-[#121212] transition-colors border-b border-[#2a2a2a] lg:border-[#1c1c1c] last:border-b-0 block lg:table-row py-3 lg:py-0">
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-start sm:items-center">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">PC & Prioritas</span>
+                        <div class="flex flex-col text-right lg:text-left">
+                            <span class="font-mono font-bold text-neutral-100 text-xs lg:max-xl:text-xs xl:text-base">${t.pc_kode}</span>
+                            <div class="flex items-center justify-end lg:justify-start gap-1 mt-1 flex-wrap">
+                                <span class="px-1.5 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-xs font-bold ${prioritasClass}">${t.prioritas}</span>
+                                <span class="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 font-bold uppercase text-[9px] lg:max-xl:text-[9px] xl:text-xs">${t.kategori}</span>
+                            </div>
+                        </div>
                     </td>
-                    <td class="py-3 px-4 text-neutral-200 cursor-pointer group" onclick="Maintenance.openDetailModal(${t.id})" title="Klik untuk melihat detail masalah">
-                        <div class="font-bold text-neutral-100 group-hover:text-white group-hover:underline transition-colors break-words leading-snug max-w-xs sm:max-w-sm lg:max-w-md">${t.judul}</div>
-                        ${t.deskripsi ? `<div class="text-[10px] lg:text-xs text-neutral-400 break-words mt-1 leading-relaxed line-clamp-2">${t.deskripsi}</div>` : ''}
+                    <td class="py-2 lg:py-2.5 px-3 text-neutral-200 cursor-pointer group flex lg:table-cell justify-between items-start sm:items-center border-t border-[#1c1c1c]/40 lg:border-t-0" onclick="Maintenance.openDetailModal(${t.id})" title="Klik untuk melihat detail masalah">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">Masalah</span>
+                        <div class="flex flex-col text-right lg:text-left max-w-[65%] sm:max-w-none">
+                            <div class="font-bold text-neutral-100 group-hover:text-white group-hover:underline transition-colors break-words leading-snug text-xs lg:max-xl:text-xs xl:text-base">${t.judul}</div>
+                            ${t.deskripsi ? `<div class="text-[10px] lg:max-xl:text-[10px] xl:text-sm text-neutral-400 break-words mt-0.5 leading-relaxed line-clamp-1">${t.deskripsi}</div>` : ''}
+                        </div>
                     </td>
-                    <td class="py-3 px-4 text-neutral-500 font-mono text-[9px] lg:text-xs">
-                        <div class="font-bold">${t.reporter}</div>
-                        <div class="text-[8px] lg:text-[10px] mt-0.5">${t.created_at}</div>
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-start sm:items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">Pelapor</span>
+                        <div class="flex flex-col text-right lg:text-left">
+                            <span class="font-bold text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base">${t.reporter}</span>
+                            <span class="text-[10px] lg:max-xl:text-[10px] xl:text-sm text-neutral-500 font-mono mt-0.5">${t.created_at}</span>
+                        </div>
                     </td>
-                    <td class="py-3 px-4">
-                        <span class="px-2.5 py-0.5 rounded text-[9px] lg:text-xs font-bold ${statusClass}">${t.status}</span>
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">Status</span>
+                        <div class="flex items-center justify-end lg:justify-start">
+                            <span class="px-2 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-xs font-bold ${statusClass}">${t.status}</span>
+                        </div>
                     </td>
-                    <td class="py-3 px-4 text-right space-x-1.5 whitespace-nowrap">${actionButtons}</td>
+                    <td class="py-2 lg:py-2.5 px-3 text-right flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">Aksi</span>
+                        <div class="flex items-center justify-end gap-1.5 flex-wrap">${actionButtons}</div>
+                    </td>
                 </tr>
             `;
         });

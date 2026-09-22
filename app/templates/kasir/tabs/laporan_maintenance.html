@@ -1,21 +1,21 @@
 <!-- ===== TAB: LAPORAN PERAWATAN ===== -->
 <div id="tab-laporan_maintenance" class="tab-content hidden space-y-6">
-    <!-- Laporan Perawatan Action Header -->
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
+    <!-- Laporan Perawatan Action Header Card -->
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide flex items-center gap-2">
+                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
                     <span>📊</span> Laporan Perawatan
                 </h3>
-                <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Pantau total pengeluaran servis, keping/part yang sering diganti, dan ekspor data audit keuangan.</p>
+                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Pantau total pengeluaran servis, keping/part yang sering diganti, dan ekspor data audit keuangan.</p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
                 <button onclick="LaporanMaintenance.exportReport()"
-                    class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-1.5">
+                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-1.5">
                     <span>📥</span> Ekspor CSV
                 </button>
                 <button onclick="LaporanMaintenance.loadReport()"
-                    class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-1.5">
+                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-1.5">
                     <span>↻</span> Refresh
                 </button>
             </div>
@@ -23,98 +23,98 @@
     </div>
 
     <!-- Laporan Perawatan Main Panel Card -->
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5 shadow-xl">
-        <div class="flex flex-wrap items-center justify-between gap-4 mb-4 pb-2 border-b border-[#1f1f1f]">
-            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-400 uppercase tracking-wider">Statistik & Riwayat</h3>
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:p-6 space-y-6">
+        <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-4 border-b border-[#1c1c1c]">
+            <div>
+                <h3 class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider">Statistik &amp; Riwayat</h3>
+                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Filter riwayat perbaikan berdasarkan rentang tanggal, kategori, dan unit PC.</p>
+            </div>
             
-            <!-- Filter Bar Inside the main panel card, just like Data Master filters -->
-            <div class="flex flex-wrap items-center gap-2">
-                <input type="text" id="maint-report-start" class="flatpickr-date px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-32" placeholder="Tgl Mulai">
-                <input type="text" id="maint-report-end" class="flatpickr-date px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-32" placeholder="Tgl Akhir">
-                <select id="maint-report-kategori" class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-32">
+            <!-- Filter Bar: Responsive without truncation at lg, xl, 2xl matching Tab Laporan -->
+            <div class="flex flex-wrap items-center gap-2.5 w-full xl:w-auto">
+                <select id="maint-report-tanggal-select" onchange="LaporanMaintenance.filter()"
+                    class="flex-1 sm:flex-initial w-full sm:w-44 lg:w-44 xl:w-48 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                    <option value="">Semua Tanggal</option>
+                </select>
+                <select id="maint-report-kategori" onchange="LaporanMaintenance.filter()"
+                    class="flex-1 sm:flex-initial w-full sm:w-44 lg:w-44 xl:w-48 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
                     <option value="">Semua Kategori</option>
                     <option value="HARDWARE">HARDWARE</option>
                     <option value="SOFTWARE">SOFTWARE</option>
                     <option value="JARINGAN">JARINGAN</option>
                     <option value="LAINNYA">LAINNYA</option>
                 </select>
-                <button type="button" onclick="Maintenance.openSelectPCModal('report')" class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 hover:border-neutral-500 transition-colors flex items-center gap-2">
+                <button type="button" onclick="Maintenance.openSelectPCModal('report')" class="flex-1 sm:flex-initial px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 hover:border-neutral-500 transition-colors flex items-center justify-between sm:justify-start gap-2 whitespace-nowrap">
                     <span id="label-maint-report-pc">Semua PC</span>
                     <span class="text-neutral-500 text-[10px]">▼</span>
                 </button>
                 <input type="hidden" id="maint-report-pc-val" value="">
                 <button onclick="LaporanMaintenance.filter()"
-                    class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Cari</button>
+                    class="w-full sm:w-auto px-4 lg:max-xl:px-4 xl:px-5 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center justify-center">Cari</button>
             </div>
         </div>
 
-        <!-- 4 Analytics cards -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="p-4 bg-[#050505] border border-[#1f1f1f] rounded-xl">
-                <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-500">Total Pengeluaran</div>
-                <div id="report-maint-biaya" class="text-xl lg:text-2xl font-bold text-neutral-100 mt-1">Rp 0</div>
+        <!-- 3 Analytics cards matching Tab Laporan & Umum -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:max-xl:gap-3 xl:gap-4">
+            <div class="p-3 sm:p-4 bg-[#050505] border border-[#1c1c1c] rounded flex flex-col justify-between h-auto min-h-[5.5rem] lg:max-xl:min-h-[5.5rem] xl:min-h-[6.5rem]">
+                <span class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-bold tracking-wider leading-tight">Total Pengeluaran</span>
+                <span id="report-maint-biaya" class="text-sm lg:max-xl:text-lg xl:text-2xl font-bold text-neutral-100 font-mono mt-2 truncate" title="Rp 0">Rp 0</span>
             </div>
-            <div class="p-4 bg-[#050505] border border-[#1f1f1f] rounded-xl">
-                <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-500">Total Kasus Servis</div>
-                <div id="report-maint-kasus" class="text-xl lg:text-2xl font-bold text-neutral-100 mt-1">0</div>
+            <div class="p-3 sm:p-4 bg-[#050505] border border-[#1c1c1c] rounded flex flex-col justify-between h-auto min-h-[5.5rem] lg:max-xl:min-h-[5.5rem] xl:min-h-[6.5rem]">
+                <span class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-bold tracking-wider leading-tight">Total Kasus Servis</span>
+                <span id="report-maint-kasus" class="text-sm lg:max-xl:text-lg xl:text-2xl font-bold text-neutral-100 font-mono mt-2">0</span>
             </div>
-            <div class="p-4 bg-[#050505] border border-[#1f1f1f] rounded-xl">
-                <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-500">Rata-Rata Biaya</div>
-                <div id="report-maint-rata" class="text-xl lg:text-2xl font-bold text-neutral-100 mt-1">Rp 0</div>
-            </div>
-            <div class="p-4 bg-[#050505] border border-[#1f1f1f] rounded-xl">
-                <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-500">PC Paling Sering Rusak</div>
-                <div id="report-maint-top-pc" class="text-xs lg:text-sm font-bold text-neutral-300 mt-2 truncate">N/A</div>
+            <div class="p-3 sm:p-4 bg-[#050505] border border-[#1c1c1c] rounded flex flex-col justify-between h-auto min-h-[5.5rem] lg:max-xl:min-h-[5.5rem] xl:min-h-[6.5rem]">
+                <span class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-bold tracking-wider leading-tight">Rata-Rata Biaya</span>
+                <span id="report-maint-rata" class="text-sm lg:max-xl:text-lg xl:text-2xl font-bold text-neutral-100 font-mono mt-2 truncate" title="Rp 0">Rp 0</span>
             </div>
         </div>
 
-        <!-- Layout 2-Kolem: Kategori Breakdown & Riwayat Perbaikan -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Layout 2-Kolom: Kategori Breakdown & Riwayat Perbaikan -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:max-xl:gap-4 xl:gap-6 items-start">
             
             <!-- Column 1: Kategori Breakdown -->
-            <div class="bg-[#050505] border border-[#1f1f1f] rounded-xl p-5 space-y-4">
-                <h4 class="text-xs lg:text-base font-bold text-neutral-300 tracking-wider uppercase border-b border-[#1f1f1f] pb-3 flex items-center gap-1.5">
+            <div class="lg:col-span-4 xl:col-span-4 bg-[#050505] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:p-6 space-y-4">
+                <h4 class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-200 tracking-wider uppercase border-b border-[#1c1c1c] pb-3 flex items-center gap-1.5">
                     <span>📊</span> Breakdown Kategori
                 </h4>
-                <div class="space-y-3 font-mono text-xs lg:text-base">
-                    <div class="flex items-center justify-between">
-                        <span class="text-neutral-500">🔧 HARDWARE</span>
-                        <span id="report-breakdown-hardware" class="font-bold text-neutral-200">0</span>
+                <div class="space-y-3 font-mono text-xs lg:max-xl:text-xs xl:text-base">
+                    <div class="flex items-center justify-between py-1 border-b border-[#141414]">
+                        <span class="text-neutral-400 flex items-center gap-2"><span>🔧</span> HARDWARE</span>
+                        <span id="report-breakdown-hardware" class="font-bold text-neutral-100 font-mono">0 kasus</span>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-neutral-500">💿 SOFTWARE</span>
-                        <span id="report-breakdown-software" class="font-bold text-neutral-200">0</span>
+                    <div class="flex items-center justify-between py-1 border-b border-[#141414]">
+                        <span class="text-neutral-400 flex items-center gap-2"><span>💿</span> SOFTWARE</span>
+                        <span id="report-breakdown-software" class="font-bold text-neutral-100 font-mono">0 kasus</span>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-neutral-500">🌐 JARINGAN</span>
-                        <span id="report-breakdown-jaringan" class="font-bold text-neutral-200">0</span>
+                    <div class="flex items-center justify-between py-1 border-b border-[#141414]">
+                        <span class="text-neutral-400 flex items-center gap-2"><span>🌐</span> JARINGAN</span>
+                        <span id="report-breakdown-jaringan" class="font-bold text-neutral-100 font-mono">0 kasus</span>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-neutral-500">⚙️ LAINNYA</span>
-                        <span id="report-breakdown-lainnya" class="font-bold text-neutral-200">0</span>
+                    <div class="flex items-center justify-between py-1">
+                        <span class="text-neutral-400 flex items-center gap-2"><span>⚙️</span> LAINNYA</span>
+                        <span id="report-breakdown-lainnya" class="font-bold text-neutral-100 font-mono">0 kasus</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Column 2 & 3: Riwayat Perbaikan Table -->
-            <div class="lg:col-span-2 bg-[#050505] border border-[#1f1f1f] rounded-xl p-5 space-y-4">
-                <h4 class="text-xs lg:text-base font-bold text-neutral-300 tracking-wider uppercase border-b border-[#1f1f1f] pb-3 flex items-center gap-1.5">
+            <!-- Column 2: Riwayat Perbaikan Table -->
+            <div class="lg:col-span-8 xl:col-span-8 bg-[#050505] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:p-6 space-y-4">
+                <h4 class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-200 tracking-wider uppercase border-b border-[#1c1c1c] pb-3 flex items-center gap-1.5">
                     <span>📋</span> Riwayat Selesai Perbaikan
                 </h4>
-                <div class="overflow-x-auto scrollbar-thin w-full">
-                    <table class="w-full text-left border-collapse text-xs lg:text-base">
+                <div class="overflow-x-auto w-full">
+                    <table class="w-full text-left border-collapse text-xs lg:max-xl:text-xs xl:text-base">
                         <thead>
-                            <tr class="border-b border-[#1f1f1f] text-neutral-500 text-[10px] lg:text-base font-bold uppercase tracking-wider">
-                                <th class="py-2 px-3">Tanggal</th>
-                                <th class="py-2 px-3">PC</th>
-                                <th class="py-2 px-3">Kategori</th>
-                                <th class="py-2 px-3">Detail Masalah / Resolusi</th>
-                                <th class="py-2 px-3 text-right">Biaya</th>
+                            <tr class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] lg:max-xl:text-xs xl:text-base font-bold uppercase tracking-wider">
+                                <th class="py-2.5 px-3">PC &amp; Tanggal</th>
+                                <th class="py-2.5 px-3">Kategori &amp; Biaya</th>
+                                <th class="py-2.5 px-3">Masalah &amp; Resolusi</th>
                             </tr>
                         </thead>
-                        <tbody id="report-maint-tbody" class="divide-y divide-[#1f1f1f] text-xs lg:text-base text-neutral-300">
+                        <tbody id="report-maint-tbody" class="divide-y divide-[#1c1c1c] text-xs lg:max-xl:text-xs xl:text-base text-neutral-300">
                             <tr>
-                                <td colspan="5" class="py-10 text-center text-neutral-500">Belum ada riwayat perbaikan pada periode ini.</td>
+                                <td colspan="3" class="py-10 text-center text-neutral-500">Belum ada riwayat perbaikan pada periode ini.</td>
                             </tr>
                         </tbody>
                     </table>

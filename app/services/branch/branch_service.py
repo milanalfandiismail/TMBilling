@@ -5,6 +5,7 @@ import time
 import requests
 import json
 from datetime import datetime
+from app.config import Config
 from app.models import db, now_local
 from app.models.branch import Branch
 from app.utils.logger import write_log
@@ -41,7 +42,7 @@ class BranchService:
 
         headers = {
             "Authorization": f"Bearer {api_key.strip()}",
-            "User-Agent": "TMBilling-MultiBranch/1.6.0",
+            "User-Agent": f"TMBilling-MultiBranch/{Config.VERSION}",
             "X-Origin-Branch-Name": origin_branch_title,
             "X-Origin-MAC": origin_mac,
             "X-Operator-Username": current_op

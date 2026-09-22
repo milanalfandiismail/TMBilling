@@ -14,28 +14,9 @@ pub async fn login_process(
     let u_trim = username.trim().to_string();
     let p_trim = password.trim().to_string();
 
-    // --- 1. HARDCODED SUPER ADMIN (Emergency) ---
-    if u_trim == api.emergency_user.trim() && p_trim == api.emergency_token.trim() {
-        crate::state::IS_EMERGENCY_MODE.store(true, std::sync::atomic::Ordering::SeqCst);
-        crate::state::IS_ADMIN_MODE.store(true, std::sync::atomic::Ordering::SeqCst);
-        crate::state::SESSION_ACTIVE.store(true, std::sync::atomic::Ordering::SeqCst);
-        
-        // Emergency Login ke server (bonus — biar set pc.is_admin_mode di DB)
-        // Tetap sukses walau server unreachable
-        if let Ok(net) = crate::commands::network_commands::get_network_info() {
-            let _ = api.emergency_login(&net.ip, &net.mac).await;
-        }
-        
-        crate::commands::window_commands::switch_to_overlay(window, app_handle);
-        return Ok(LoginResponse {
-            status: "success".to_string(),
-            member_name: "SYSTEM".to_string(),
-            group: "SYSTEM".to_string(),
-            remaining_seconds: 999999, // Unlimited
-        });
-    }
-
-    // --- 2. API FLASK LOGIN ---
+    // --- 1. ADMIN LOGIN (termasuk Emergency offline via admin_login) ---
+    // Emergency credential check yang benar ada di admin_login (api.rs):
+    // sha256(input) dibandingkan dengan hash yang tersimpan di registry.
     // Ambil Network Info
     let net = crate::commands::network_commands::get_network_info()
         .map_err(|e| e.to_string())?;
@@ -54,10 +35,20 @@ pub async fn login_process(
                 if is_admin || res.status == "admin" {
                     crate::state::IS_ADMIN_MODE.store(true, std::sync::atomic::Ordering::SeqCst);
                 }
-                
+
+                // Jika login emergency offline (nama = SYSTEM, grup = ADMINISTRATOR),
+                // set IS_EMERGENCY_MODE agar polling berjalan offline tanpa logout ke server
+                let is_emergency = res.nama.as_deref() == Some("SYSTEM")
+                    && res.grup.as_deref() == Some("ADMINISTRATOR");
+                if is_emergency {
+                    crate::state::IS_EMERGENCY_MODE.store(true, std::sync::atomic::Ordering::SeqCst);
+                    // Notify server (opsional, tetap sukses walau gagal)
+                    let _ = api.emergency_login(&net.ip, &net.mac, &u_trim).await;
+                }
+
                 // Tandai sesi aktif
                 crate::state::SESSION_ACTIVE.store(true, std::sync::atomic::Ordering::SeqCst);
-                
+
                 // Jika sukses, ubah mode ke Overlay
                 crate::commands::window_commands::switch_to_overlay(window, app_handle);
 

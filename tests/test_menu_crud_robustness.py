@@ -4,6 +4,7 @@
 import pytest
 from app import create_app
 from app.models import db, User, MenuItem
+from app.services import MenuService
 
 
 @pytest.fixture
@@ -11,12 +12,26 @@ def client_with_admin():
     app = create_app()
     app.config["TESTING"] = True
     app.config["WTF_CSRF_ENABLED"] = False
+    with app.app_context():
+        # Bersihkan menu testing jika ada
+        test_names = ["Nasi Goreng Spesial", "Mie Goreng Jumbo", "Es Jeruk Peras", "Es Jeruk Manis"]
+        for name in test_names:
+            item = MenuItem.query.filter_by(nama=name).first()
+            if item:
+                MenuService.hard_delete_menu(item.id, operator="test")
+
     with app.test_client() as client:
         with client.session_transaction() as sess:
             sess["kasir_id"] = 1
             sess["kasir_role"] = "admin"
             sess["kasir_username"] = "admin"
         yield client
+
+    with app.app_context():
+        for name in test_names:
+            item = MenuItem.query.filter_by(nama=name).first()
+            if item:
+                MenuService.hard_delete_menu(item.id, operator="test")
 
 
 def test_create_menu_form_data(client_with_admin):

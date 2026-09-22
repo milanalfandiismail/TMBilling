@@ -8,12 +8,12 @@
 
     <!-- Header Card -->
     <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
-        <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Analitik Owner</h3>
+        <h3 class="text-xs lg:max-xl:text-base xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Analitik Owner</h3>
         <div class="flex flex-wrap items-center gap-2">
-            <input type="date" id="filter-start" class="flex-1 sm:flex-initial w-34 text-xs lg:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200">
-            <span class="text-xs text-neutral-500">s/d</span>
-            <input type="date" id="filter-end" class="flex-1 sm:flex-initial w-34 text-xs lg:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200">
-            <button onclick="OwnerAnalytics.load()" class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Tampilkan</button>
+            <input type="date" id="filter-start" class="flex-1 sm:flex-initial w-32 lg:max-xl:w-32 xl:w-36 text-xs lg:max-xl:text-xs xl:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200">
+            <span class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-500">s/d</span>
+            <input type="date" id="filter-end" class="flex-1 sm:flex-initial w-32 lg:max-xl:w-32 xl:w-36 text-xs lg:max-xl:text-xs xl:text-base px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200">
+            <button onclick="OwnerAnalytics.load()" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded-lg transition-colors">Tampilkan</button>
         </div>
     </div>
 
@@ -23,38 +23,38 @@
     </div>
 
     <!-- Grid 7 Cards -->
-    <div id="analytics-cards" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div id="analytics-cards" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:max-xl:grid-cols-2 xl:grid-cols-3 gap-4">
         <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5">
-            <div class="text-[10px] lg:text-xs text-neutral-500 mb-1">Total Pendapatan Billing</div>
-            <div id="kpi-total-billing" class="text-sm lg:text-xl font-bold text-white mb-3">—</div>
-            <h4 class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Per Hari</h4>
-            <div id="kpi-tabel-billing" class="text-xs lg:text-base"></div>
+            <div class="text-[10px] lg:max-xl:text-xs xl:text-xs text-neutral-500 mb-1">Total Pendapatan Billing</div>
+            <div id="kpi-total-billing" class="text-sm lg:max-xl:text-lg xl:text-xl font-bold text-white mb-3">—</div>
+            <h4 class="text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Per Hari</h4>
+            <div id="kpi-tabel-billing" class="text-xs lg:max-xl:text-xs xl:text-base"></div>
         </div>
         <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5">
-            <div class="text-[10px] lg:text-xs text-neutral-500 mb-1">Total Pendapatan Kantin</div>
-            <div id="kpi-total-kantin" class="text-sm lg:text-xl font-bold text-white mb-3">—</div>
-            <h4 class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Per Hari</h4>
-            <div id="kpi-tabel-kantin" class="text-xs lg:text-base"></div>
+            <div class="text-[10px] lg:max-xl:text-xs xl:text-xs text-neutral-500 mb-1">Total Pendapatan Kantin</div>
+            <div id="kpi-total-kantin" class="text-sm lg:max-xl:text-lg xl:text-xl font-bold text-white mb-3">—</div>
+            <h4 class="text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Per Hari</h4>
+            <div id="kpi-tabel-kantin" class="text-xs lg:max-xl:text-xs xl:text-base"></div>
         </div>
         <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5">
-            <h4 class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Paket Terlaris</h4>
-            <div id="kpi-paket" class="text-xs lg:text-base"></div>
+            <h4 class="text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Paket Terlaris</h4>
+            <div id="kpi-paket" class="text-xs lg:max-xl:text-xs xl:text-base"></div>
         </div>
         <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5">
-            <h4 class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Pendapatan per Kasir</h4>
-            <div id="kpi-kasir" class="text-xs lg:text-base"></div>
+            <h4 class="text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Pendapatan per Kasir</h4>
+            <div id="kpi-kasir" class="text-xs lg:max-xl:text-xs xl:text-base"></div>
         </div>
         <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5">
-            <h4 class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Member</h4>
-            <div id="kpi-member" class="text-xs lg:text-base"></div>
+            <h4 class="text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Member</h4>
+            <div id="kpi-member" class="text-xs lg:max-xl:text-xs xl:text-base"></div>
         </div>
         <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5">
-            <h4 class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Jam Sibuk</h4>
-            <div id="kpi-heatmap" class="text-xs lg:text-base"></div>
+            <h4 class="text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Jam Sibuk</h4>
+            <div id="kpi-heatmap" class="text-xs lg:max-xl:text-xs xl:text-base"></div>
         </div>
         <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5">
-            <h4 class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Refund</h4>
-            <div id="kpi-refund" class="text-xs lg:text-base"></div>
+            <h4 class="text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Refund</h4>
+            <div id="kpi-refund" class="text-xs lg:max-xl:text-xs xl:text-base"></div>
         </div>
     </div>
 </div>

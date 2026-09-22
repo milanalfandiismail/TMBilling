@@ -6,6 +6,7 @@ import requests
 from app.middleware.auth import login_required, admin_required
 from app.services.branch.branch_service import BranchService
 from app.services.settings.settings_service import SettingsService
+from app.config import Config
 from app.models import db, now_local
 from app.models.branch import Branch
 
@@ -388,7 +389,7 @@ def proxy_branch_media(branch_id: int, filename: str):
             target_url,
             headers={
                 "Authorization": f"Bearer {branch.api_key}",
-                "User-Agent": "TMBilling-Relay/1.6.0"
+                "User-Agent": f"TMBilling-Relay/{Config.VERSION}"
             },
             timeout=6,
             stream=True

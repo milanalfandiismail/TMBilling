@@ -106,6 +106,7 @@ const Catatan = {
                 ? 'bg-[#171717] border-neutral-500 text-white shadow-sm' 
                 : 'bg-[#050505] border-[#1c1c1c] text-neutral-300 hover:bg-[#121212] hover:border-[#262626]';
 
+            const cleanTitle = (note.title || '').replace(/\.txt$/i, '');
             const previewText = note.preview ? note.preview.replace(/\n/g, ' ') : '(Catatan kosong)';
             const sizeKb = (note.size / 1024).toFixed(1);
 
@@ -115,7 +116,7 @@ const Catatan = {
                     <div class="flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2 flex-1 min-w-0">
                             ${isPinned ? '<i class="fa-solid fa-thumbtack text-amber-400 text-xs shrink-0" title="Disematkan ke posisi paling atas"></i>' : ''}
-                            <h4 class="text-xs lg:text-sm font-bold truncate flex-1 min-w-0 ${isPinned ? 'text-amber-200' : 'text-neutral-200'}">${this.escapeHtml(note.title)}</h4>
+                            <h4 class="text-xs lg:text-sm font-bold truncate flex-1 min-w-0 ${isPinned ? 'text-amber-200' : 'text-neutral-200'}">${this.escapeHtml(cleanTitle)}</h4>
                         </div>
                         <div class="flex items-center gap-1.5 shrink-0">
                             <span class="text-[10px] lg:text-xs font-mono text-neutral-500">${sizeKb} KB</span>
@@ -208,13 +209,14 @@ const Catatan = {
         }
 
         this.activeFilename = filename;
-        this.setSaveStatus('Memuat...', 'bg-neutral-800 text-neutral-300 border-neutral-700');
+        this.setSaveStatus('saving', 'Memuat...');
 
         try {
             const res = await API.request(`/api/v1/kasir/notes/${encodeURIComponent(filename)}`);
             if (res && res.success && res.note) {
                 const note = res.note;
-                this.currentTitle = note.title;
+                const cleanTitle = (note.title || '').replace(/\.txt$/i, '');
+                this.currentTitle = cleanTitle;
                 this.currentContent = note.content;
                 this.isDirty = false;
 
@@ -222,7 +224,7 @@ const Catatan = {
                 const contentEditor = document.getElementById('note-content-editor');
                 const fileSize = document.getElementById('note-file-size');
 
-                if (titleInput) titleInput.value = note.title;
+                if (titleInput) titleInput.value = cleanTitle;
                 if (contentEditor) {
                     contentEditor.value = note.content;
                     contentEditor.disabled = false;
@@ -237,7 +239,7 @@ const Catatan = {
                 if (dlBtn) dlBtn.disabled = false;
                 this.updatePinButtonState(!!note.is_pinned);
 
-                this.setSaveStatus('Tersimpan', 'bg-neutral-800 text-neutral-400 border-neutral-700');
+                this.setSaveStatus('saved');
                 this.updateStats();
                 this.renderList();
 
@@ -248,7 +250,7 @@ const Catatan = {
             }
         } catch (err) {
             Toast.error('Gagal membuka catatan: ' + err.message);
-            this.setSaveStatus('Gagal', 'bg-red-950/40 text-red-400 border-red-800/60');
+            this.setSaveStatus('error');
         }
     },
 
@@ -278,7 +280,7 @@ const Catatan = {
         if (dlBtn) dlBtn.disabled = true;
         this.updatePinButtonState(false);
 
-        this.setSaveStatus('Belum ada catatan', 'bg-neutral-800 text-neutral-500 border-neutral-700');
+        this.setSaveStatus('ready', 'Belum ada catatan');
         this.updateStats();
     },
 
@@ -335,7 +337,7 @@ const Catatan = {
         if (!titleInput) return;
         this.currentTitle = titleInput.value;
         this.isDirty = true;
-        this.setSaveStatus('Ada perubahan...', 'bg-amber-500/20 text-amber-300 border-amber-500/40');
+        this.setSaveStatus('dirty');
         this.triggerAutoSave();
     },
 
@@ -345,7 +347,7 @@ const Catatan = {
         this.currentContent = contentEditor.value;
         this.isDirty = true;
         this.updateStats();
-        this.setSaveStatus('Mengetik...', 'bg-neutral-800 text-neutral-300 border-neutral-600');
+        this.setSaveStatus('dirty');
         this.triggerAutoSave();
     },
 
@@ -373,7 +375,7 @@ const Catatan = {
             this.autoSaveTimer = null;
         }
 
-        this.setSaveStatus('Menyimpan...', 'bg-neutral-800 text-neutral-200 border-neutral-600');
+        this.setSaveStatus('saving');
 
         try {
             const res = await API.request(`/api/v1/kasir/notes/${encodeURIComponent(this.activeFilename)}`, {
@@ -394,7 +396,7 @@ const Catatan = {
                 const fileSize = document.getElementById('note-file-size');
                 if (fileSize) fileSize.textContent = `${(res.note.size / 1024).toFixed(1)} KB`;
 
-                this.setSaveStatus('Tersimpan', 'bg-neutral-800 text-neutral-400 border-neutral-700');
+                this.setSaveStatus('saved');
                 if (manual) {
                     Toast.success('Catatan berhasil disimpan');
                 }
@@ -413,12 +415,12 @@ const Catatan = {
 
                 setTimeout(() => {
                     if (!this.isDirty) {
-                        this.setSaveStatus('Tersimpan', 'bg-neutral-800 text-neutral-400 border-neutral-700');
+                        this.setSaveStatus('saved');
                     }
                 }, 3000);
             }
         } catch (err) {
-            this.setSaveStatus('Gagal simpan', 'bg-red-950/40 text-red-400 border-red-800/60');
+            this.setSaveStatus('error');
             Toast.error('Gagal menyimpan catatan: ' + err.message);
         }
     },
@@ -505,11 +507,65 @@ const Catatan = {
         statsEl.textContent = `${wordCount} kata • ${charCount} karakter • ${lineCount} baris`;
     },
 
-    setSaveStatus(text, badgeClass) {
-        const statusEl = document.getElementById('note-save-status');
-        if (statusEl) {
-            statusEl.textContent = text;
-            statusEl.className = `px-3.5 py-1.5 rounded text-xs lg:text-base font-semibold border transition-colors ${badgeClass}`;
+    setSaveStatus(status, customText = '') {
+        const statusBtn = document.getElementById('note-save-status');
+        const saveBtn = document.getElementById('btn-save-note');
+        
+        let state = 'saved';
+        const s = String(status || '').toLowerCase();
+        if (s.includes('ubah') || s.includes('ketik') || s.includes('dirty')) {
+            state = 'dirty';
+        } else if (s.includes('simpan...') || s.includes('muat') || s.includes('saving') || s.includes('loading')) {
+            state = 'saving';
+        } else if (s.includes('gagal') || s.includes('error')) {
+            state = 'error';
+        } else if (s.includes('belum') || s.includes('siap') || s.includes('ready')) {
+            state = 'ready';
+        } else {
+            state = 'saved';
+        }
+
+        if (statusBtn) {
+            if (state === 'saved') {
+                statusBtn.className = 'px-3 py-1.5 lg:max-xl:px-3 lg:max-xl:py-1.5 xl:px-3.5 xl:py-1.5 rounded text-xs lg:max-xl:text-xs xl:text-sm font-semibold transition-all flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20';
+                statusBtn.innerHTML = '<i class="fa-solid fa-check text-emerald-400 text-xs"></i><span>Tersimpan</span>';
+                statusBtn.title = 'Semua perubahan tersimpan. Klik untuk menyimpan ulang.';
+            } else if (state === 'dirty') {
+                statusBtn.className = 'px-3 py-1.5 lg:max-xl:px-3 lg:max-xl:py-1.5 xl:px-3.5 xl:py-1.5 rounded text-xs lg:max-xl:text-xs xl:text-sm font-bold transition-all flex items-center gap-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 cursor-pointer animate-pulse shadow-sm';
+                statusBtn.innerHTML = '<i class="fa-solid fa-circle-dot text-amber-400 text-xs"></i><span>Ada Perubahan</span>';
+                statusBtn.title = 'Ada perubahan belum tersimpan. Klik untuk Simpan (Ctrl+S)';
+            } else if (state === 'saving') {
+                statusBtn.className = 'px-3 py-1.5 lg:max-xl:px-3 lg:max-xl:py-1.5 xl:px-3.5 xl:py-1.5 rounded text-xs lg:max-xl:text-xs xl:text-sm font-semibold transition-all flex items-center gap-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20';
+                statusBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-blue-400 text-xs"></i><span>Menyimpan...</span>';
+                statusBtn.title = 'Sedang menyimpan catatan ke server...';
+            } else if (state === 'error') {
+                statusBtn.className = 'px-3 py-1.5 lg:max-xl:px-3 lg:max-xl:py-1.5 xl:px-3.5 xl:py-1.5 rounded text-xs lg:max-xl:text-xs xl:text-sm font-semibold transition-all flex items-center gap-1.5 bg-red-950/40 hover:bg-red-900/40 text-red-400 border border-red-800/60 cursor-pointer';
+                statusBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-red-400 text-xs"></i><span>Gagal Simpan</span>';
+                statusBtn.title = 'Gagal menyimpan. Klik untuk coba lagi.';
+            } else { // ready
+                statusBtn.className = 'px-3 py-1.5 lg:max-xl:px-3 lg:max-xl:py-1.5 xl:px-3.5 xl:py-1.5 rounded text-xs lg:max-xl:text-xs xl:text-sm font-semibold transition-all flex items-center gap-1.5 bg-neutral-900 text-neutral-500 border border-[#262626]';
+                statusBtn.innerHTML = `<i class="fa-regular fa-file text-neutral-500 text-xs"></i><span>${customText || 'Siap'}</span>`;
+                statusBtn.title = 'Belum ada berkas yang diedit';
+            }
+        }
+
+        if (saveBtn) {
+            if (state === 'saved') {
+                saveBtn.className = 'px-3 lg:max-xl:px-3.5 xl:px-4 py-1.5 lg:max-xl:py-2 xl:py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2';
+                saveBtn.innerHTML = '<i class="fa-solid fa-check text-xs"></i> <span>Tersimpan</span>';
+            } else if (state === 'dirty') {
+                saveBtn.className = 'px-3 lg:max-xl:px-3.5 xl:px-4 py-1.5 lg:max-xl:py-2 xl:py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2 shadow-lg shadow-amber-500/20 animate-pulse';
+                saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk text-xs"></i> <span>Simpan Perubahan</span>';
+            } else if (state === 'saving') {
+                saveBtn.className = 'px-3 lg:max-xl:px-3.5 xl:px-4 py-1.5 lg:max-xl:py-2 xl:py-2 bg-neutral-800 text-neutral-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded flex items-center gap-2 cursor-wait';
+                saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span>Menyimpan...</span>';
+            } else if (state === 'error') {
+                saveBtn.className = 'px-3 lg:max-xl:px-3.5 xl:px-4 py-1.5 lg:max-xl:py-2 xl:py-2 bg-red-950/60 hover:bg-red-900/60 border border-red-800/60 text-red-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2';
+                saveBtn.innerHTML = '<i class="fa-solid fa-rotate text-xs"></i> <span>Coba Simpan Lagi</span>';
+            } else { // ready
+                saveBtn.className = 'px-3 lg:max-xl:px-3.5 xl:px-4 py-1.5 lg:max-xl:py-2 xl:py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2';
+                saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk text-xs"></i> <span>Simpan</span>';
+            }
         }
     },
 

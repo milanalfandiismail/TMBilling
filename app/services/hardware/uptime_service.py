@@ -114,12 +114,14 @@ class UptimeService:
             for log in logs:
                 pc_kode = log.pc.kode if log.pc else f"PC-ID-{log.pc_id}"
                 grup_nama = log.pc.grup.nama if log.pc and log.pc.grup else "reguler"
+                grup_warna = log.pc.grup.warna if log.pc and log.pc.grup and log.pc.grup.warna else "#888888"
                 grup_id = log.pc.grup_id if log.pc else 0
                 
                 if pc_kode not in pc_stats:
                     pc_stats[pc_kode] = {
                         "pc_kode": pc_kode,
                         "grup": grup_nama,
+                        "grup_warna": grup_warna,
                         "pc_grup_id": grup_id,
                         "total_online_seconds": 0,
                         "total_billing_seconds": 0,
@@ -147,6 +149,7 @@ class UptimeService:
                 pc_list.append({
                     "pc_kode": stat["pc_kode"],
                     "grup": stat["grup"],
+                    "grup_warna": stat.get("grup_warna", "#888888"),
                     "pc_grup_id": stat["pc_grup_id"],
                     "total_online_menit": online_menit,
                     "total_billing_menit": billing_menit,

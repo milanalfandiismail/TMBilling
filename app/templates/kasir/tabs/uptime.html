@@ -5,45 +5,45 @@
     </style>
 
     <!-- Header & Filter Card -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-5 lg:max-xl:p-5 xl:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
             <div>
-                <h3 class="text-xs lg:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
+                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
                     <span>🕐</span> Pelacak Statistik PC
                 </h3>
-                <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Menganalisis durasi aktif komputer dan tingkat produktivitas penggunaan billing warnet secara real-time.</p>
+                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Menganalisis durasi aktif komputer dan tingkat produktivitas penggunaan billing warnet secara real-time.</p>
             </div>
             
             <!-- Date Filter -->
             <div class="flex flex-wrap items-center gap-2">
-                <select id="uptime-mode-select" onchange="UptimeTracker.toggleMode()" class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-bold cursor-pointer font-sans">
+                <select id="uptime-mode-select" onchange="UptimeTracker.toggleMode()" class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-bold cursor-pointer font-sans">
                     <option value="daily">Harian</option>
                     <option value="range">Rentang Tanggal</option>
                 </select>
                 
                 <!-- Daily Date Input -->
                 <div id="uptime-daily-filter" class="flex items-center gap-2">
-                    <input type="date" id="uptime-date" onchange="UptimeTracker.load()" class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-bold">
+                    <input type="date" id="uptime-date" onchange="UptimeTracker.load()" class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-bold">
                 </div>
 
                 <!-- Range Date Inputs -->
                 <div id="uptime-range-filter" class="hidden flex items-center gap-2">
-                    <input type="date" id="uptime-start" onchange="UptimeTracker.load()" class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-36 font-bold">
-                    <span class="text-xs lg:text-base text-neutral-500 font-bold">s/d</span>
-                    <input type="date" id="uptime-end" onchange="UptimeTracker.load()" class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-36 font-bold">
+                    <input type="date" id="uptime-start" onchange="UptimeTracker.load()" class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-32 lg:max-xl:w-32 xl:w-36 font-bold">
+                    <span class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold">s/d</span>
+                    <input type="date" id="uptime-end" onchange="UptimeTracker.load()" class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-32 lg:max-xl:w-32 xl:w-36 font-bold">
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Summary KPI Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-3 lg:max-xl:grid-cols-3 xl:grid-cols-3 gap-3 lg:max-xl:gap-3 xl:gap-4">
         <!-- Card 1: Avg Utilization -->
         <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-5 flex items-center justify-between">
             <div>
-                <p class="text-xs lg:text-[14px] text-neutral-400 uppercase font-bold tracking-wider font-sans">Rata-rata Utilisasi</p>
-                <h4 id="uptime-kpi-avg-util" class="text-xl lg:text-3xl font-extrabold text-neutral-100 mt-1">—</h4>
-                <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Perbandingan billing vs online</p>
+                <p class="text-xs lg:max-xl:text-xs xl:text-[14px] text-neutral-400 uppercase font-bold tracking-wider font-sans">Rata-rata Utilisasi</p>
+                <h4 id="uptime-kpi-avg-util" class="text-xl lg:max-xl:text-2xl xl:text-3xl font-extrabold text-neutral-100 mt-1">—</h4>
+                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Perbandingan billing vs online</p>
             </div>
             <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-400 flex items-center justify-center">
                 <svg class="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,9 +55,9 @@
         <!-- Card 2: Total Online Time -->
         <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-5 flex items-center justify-between">
             <div>
-                <p class="text-xs lg:text-[14px] text-neutral-400 uppercase font-bold tracking-wider font-sans">Total Waktu Online</p>
-                <h4 id="uptime-kpi-total-online" class="text-xl lg:text-3xl font-extrabold text-neutral-100 mt-1">—</h4>
-                <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Akumulasi PC menyala</p>
+                <p class="text-xs lg:max-xl:text-xs xl:text-[14px] text-neutral-400 uppercase font-bold tracking-wider font-sans">Total Waktu Online</p>
+                <h4 id="uptime-kpi-total-online" class="text-xl lg:max-xl:text-2xl xl:text-3xl font-extrabold text-neutral-100 mt-1">—</h4>
+                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Akumulasi PC menyala</p>
             </div>
             <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-400 flex items-center justify-center">
                 <svg class="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,9 +69,9 @@
         <!-- Card 3: Total Billing Time -->
         <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-5 flex items-center justify-between">
             <div>
-                <p class="text-xs lg:text-[14px] text-neutral-400 uppercase font-bold tracking-wider font-sans">Total Sesi Billing</p>
-                <h4 id="uptime-kpi-total-billing" class="text-xl lg:text-3xl font-extrabold text-neutral-100 mt-1">—</h4>
-                <p class="text-[9px] lg:text-base text-neutral-500 mt-1">Akumulasi waktu produktif</p>
+                <p class="text-xs lg:max-xl:text-xs xl:text-[14px] text-neutral-400 uppercase font-bold tracking-wider font-sans">Total Sesi Billing</p>
+                <h4 id="uptime-kpi-total-billing" class="text-xl lg:max-xl:text-2xl xl:text-3xl font-extrabold text-neutral-100 mt-1">—</h4>
+                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Akumulasi waktu produktif</p>
             </div>
             <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-400 flex items-center justify-center">
                 <svg class="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,29 +82,25 @@
     </div>
 
     <!-- Main Table Container -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 overflow-hidden">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-5 lg:max-xl:p-5 xl:p-6 overflow-hidden">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-4 pb-3 border-b border-[#1c1c1c]">
-            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-400 uppercase tracking-wider">Detail Uptime per PC</h3>
-            <div class="text-xs lg:text-base text-neutral-500 font-semibold" id="uptime-report-desc">Laporan tanggal: —</div>
+            <h3 class="text-xs lg:max-xl:text-base xl:text-[22px] font-bold text-neutral-400 uppercase tracking-wider">Detail Uptime per PC</h3>
+            <div class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-500 font-semibold" id="uptime-report-desc">Laporan tanggal: —</div>
         </div>
         
         <div class="overflow-x-auto scrollbar-thin w-full">
-            <table class="w-full min-w-[800px] text-left border-collapse text-xs lg:text-base">
+            <table class="w-full text-left border-collapse text-xs lg:max-xl:text-xs xl:text-base">
                 <thead>
-                    <tr class="border-b border-[#1c1c1c] text-neutral-500 text-xs lg:text-base font-bold uppercase tracking-wider">
-                        <th class="py-3 px-4">PC</th>
-                        <th class="py-3 px-4">Grup</th>
-                        <th id="th-seen-first" class="py-3 px-4">Mulai Aktif</th>
-                        <th id="th-seen-last" class="py-3 px-4">Terakhir Aktif</th>
-                        <th class="py-3 px-4">Durasi Online</th>
-                        <th class="py-3 px-4">Durasi Billing</th>
-                        <th class="py-3 px-4">Idle (Tanpa Billing)</th>
-                        <th class="py-3 px-4 text-center">Tingkat Utilisasi</th>
+                    <tr class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] lg:max-xl:text-xs xl:text-base font-bold uppercase tracking-wider">
+                        <th class="py-2.5 px-3">PC & Grup</th>
+                        <th class="py-2.5 px-3">Waktu / Rentang Aktif</th>
+                        <th class="py-2.5 px-3">Durasi Online & Billing</th>
+                        <th class="py-2.5 px-3 text-center">Tingkat Utilisasi</th>
                     </tr>
                 </thead>
                 <tbody id="uptime-table-body" class="divide-y divide-[#1c1c1c] text-neutral-300">
                     <tr>
-                        <td colspan="8" class="text-center py-10 text-neutral-500">
+                        <td colspan="4" class="text-center py-10 text-neutral-500">
                             Silakan pilih filter dan klik Tampilkan.
                         </td>
                     </tr>

@@ -258,13 +258,44 @@ def api():
 | **Emergency User** | Username bypass offline dari Registry (diatur saat instalasi, default `TMBilling`) |
 | **Emergency Token** | Password bypass offline & uninstaller fallback (diatur saat instalasi, default `TM123qaz!@#`) |
 
-## Standar Multi-Timezone
+## Multi-Cabang Relay Architecture (v1.6.0+)
 
-- **Penyimpanan:** Semua waktu di-commit ke database dalam format **UTC (Timezone Aware)**.
-- **Konversi:** Disajikan di frontend melalui fungsi utilitas `format_display()` berdasarkan default timezone yang dikonfigurasi di Settings (misal `Asia/Makassar`).
+TMBilling mendukung arsitektur *Central Control Panel* di mana satu Server Kasir Utama dapat mengendalikan server cabang remote:
+
+```
+[Browser Kasir]
+       │
+       ▼ (HTTP/AJAX)
+[Server Kasir Utama]
+       │
+       ▼ (Reverse-Proxy Relay + API Key Bearer)
+[Server Cabang Remote] ──> [DB Cabang / PC Client Cabang]
+```
+
+## Remote Desktop (Web VNC) Architecture (v1.6.0+)
+
+```
+[Browser Kasir: noVNC Canvas]
+       │
+       ▼ (WebSocket ws://host:8081)
+[Websockify Proxy Daemon]
+       │
+       ▼ (RFB Protocol TCP :5900)
+[TightVNC Server di PC Client]
+```
+
+## Server Hardware Monitoring (v1.5.1+)
+
+Microservice `TMLHMService` (C# .NET) berkomunikasi via named pipe / local HTTP endpoint untuk membaca metrik sensor LibreHardwareMonitor (suhu CPU/GPU, utilitas RAM/disk/network) dan mengeksposnya ke backend Flask.
+
+## Sentralisasi Konfigurasi Versi (v1.6.1)
+
+- `app/config.py` (`Config.VERSION`) menjadi *Single Source of Truth* untuk backend Python dan asset web.
+- Flask Context Processor menyuntikkan `version` (`v1.6.1`), `app_version` (`1.6.1`), dan `v_cache` (`161`) ke semua template Jinja.
+- Template HTML menggunakan parameter dinamis `?v={{ v_cache }}` pada seluruh stylesheet & script.
 
 ---
-*Last Updated: 2026-06-20 | TMBilling Core Team*
+*Last Updated: 2026-09-15 | TMBilling Core Team*
 
 ---
-*TMBilling v1.5.1*
+*TMBilling v1.6.1*

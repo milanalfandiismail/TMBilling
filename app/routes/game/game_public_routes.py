@@ -8,13 +8,14 @@ game_public_api_bp = Blueprint("game_public", __name__)
 
 @game_public_api_bp.route("/all", methods=["GET"])
 def get_public_games():
-    """Mengambil daftar game yang aktif untuk konsumsi halaman publik (no login required)."""
+    """Mengambil daftar game/aplikasi yang aktif untuk konsumsi halaman publik (no login required)."""
     try:
         category = request.args.get("category")
+        tipe = request.args.get("tipe")
         q = request.args.get("q")
         if q: q = q.strip()
             
-        games = GameService.get_all(aktif_only=True, category=category, search_query=q)
+        games = GameService.get_all(aktif_only=True, category=category, tipe=tipe, search_query=q)
         return jsonify({
             "success": True,
             "data": [g.to_dict() for g in games]

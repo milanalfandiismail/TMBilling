@@ -9,7 +9,9 @@ termasuk kalkulasi pendapatan dan histori pembelian.
 from app.models import db
 from app.models import Transaksi
 from app.models import Sesi
-from sqlalchemy import func
+from app.models import Member
+from app.models import PC
+from sqlalchemy import func, or_
 
 
 class TransaksiRepository:
@@ -100,27 +102,35 @@ class TransaksiRepository:
         return [r[0] for r in results if r[0]]
 
     @staticmethod
-    def get_all_by_tanggal_with_nota(tanggal, kasir_id=None):
+    def get_all_by_tanggal_with_nota(tanggal=None, kasir_id=None):
         """Pusat query transaksi harian yang ada nomor notanya."""
-        query = Transaksi.query.filter(
-            db.func.date(Transaksi.dibuat_pada) == tanggal,
-            Transaksi.no_nota != None
-        )
+        query = Transaksi.query.filter(Transaksi.no_nota != None)
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            query = query.filter(
+                Transaksi.dibuat_pada >= start_utc,
+                Transaksi.dibuat_pada < end_utc
+            )
         query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
         return query.order_by(Transaksi.dibuat_pada.desc()).all()
 
     @staticmethod
-    def get_history_nota_by_date(tanggal, kasir_id=None):
+    def get_history_nota_by_date(tanggal=None, kasir_id=None):
         """Alias untuk get_all_by_tanggal_with_nota"""
         return TransaksiRepository.get_all_by_tanggal_with_nota(tanggal, kasir_id)
 
     @staticmethod
-    def get_history_nota_paginated(tanggal, page=1, per_page=10, kasir_id=None, metode_pembayaran=None):
-        """Ambil histori nota dengan pagination."""
-        query = Transaksi.query.filter(
-            func.date(Transaksi.dibuat_pada) == tanggal,
-            Transaksi.no_nota != None
-        )
+    def get_history_nota_paginated(tanggal=None, page=1, per_page=10, kasir_id=None, metode_pembayaran=None, q=None):
+        """Ambil histori nota dengan pagination dan pencarian query."""
+        query = Transaksi.query.filter(Transaksi.no_nota != None)
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            query = query.filter(
+                Transaksi.dibuat_pada >= start_utc,
+                Transaksi.dibuat_pada < end_utc
+            )
         query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
         if metode_pembayaran:
             if metode_pembayaran == "Tunai":
@@ -130,6 +140,20 @@ class TransaksiRepository:
                 )
             else:
                 query = query.filter(Transaksi.metode_pembayaran == metode_pembayaran)
+        
+        if q:
+            search = f"%{q}%"
+            query = query.outerjoin(Transaksi.member).outerjoin(Transaksi.sesi).outerjoin(Sesi.pc).filter(
+                or_(
+                    Transaksi.no_nota.ilike(search),
+                    Transaksi.keterangan.ilike(search),
+                    Member.username.ilike(search),
+                    Member.nama_lengkap.ilike(search),
+                    Sesi.nama_guest.ilike(search),
+                    PC.kode.ilike(search),
+                    PC.nama.ilike(search)
+                )
+            )
         
         return query.order_by(Transaksi.dibuat_pada.desc()).paginate(
             page=page, per_page=per_page, error_out=False
@@ -158,12 +182,18 @@ class TransaksiRepository:
     # =========================================================================
 
     @staticmethod
-    def get_total_pemasukan_hari_ini(tanggal, kasir_id=None, metode_pembayaran=None):
+    def get_total_pemasukan_hari_ini(tanggal=None, kasir_id=None, metode_pembayaran=None):
         """Total pemasukan (jumlah > 0, tanpa refund)."""
         query = db.session.query(func.sum(Transaksi.jumlah)).filter(
-            func.date(Transaksi.dibuat_pada) == tanggal,
             Transaksi.jumlah > 0
         )
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            query = query.filter(
+                Transaksi.dibuat_pada >= start_utc,
+                Transaksi.dibuat_pada < end_utc
+            )
         query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
         if metode_pembayaran:
             if metode_pembayaran == "Tunai":
@@ -176,12 +206,18 @@ class TransaksiRepository:
         return query.scalar() or 0
 
     @staticmethod
-    def get_total_refund_hari_ini(tanggal, kasir_id=None, metode_pembayaran=None):
+    def get_total_refund_hari_ini(tanggal=None, kasir_id=None, metode_pembayaran=None):
         """Total refund (nilai positif)."""
         query = db.session.query(func.sum(Transaksi.jumlah)).filter(
-            func.date(Transaksi.dibuat_pada) == tanggal,
             Transaksi.jenis == "refund_paket"
         )
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            query = query.filter(
+                Transaksi.dibuat_pada >= start_utc,
+                Transaksi.dibuat_pada < end_utc
+            )
         query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
         if metode_pembayaran:
             if metode_pembayaran == "Tunai":
@@ -195,21 +231,32 @@ class TransaksiRepository:
         return abs(refund)
 
     @staticmethod
-    def get_total_pendapatan_hari_ini(tanggal, kasir_id=None):
+    def get_total_pendapatan_hari_ini(tanggal=None, kasir_id=None):
         """Total pendapatan bersih (semua transaksi, termasuk refund)."""
-        query = db.session.query(func.sum(Transaksi.jumlah)).filter(
-            func.date(Transaksi.dibuat_pada) == tanggal
-        )
+        query = db.session.query(func.sum(Transaksi.jumlah))
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            query = query.filter(
+                Transaksi.dibuat_pada >= start_utc,
+                Transaksi.dibuat_pada < end_utc
+            )
         query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
         return query.scalar() or 0
 
     @staticmethod
-    def get_total_pendapatan_by_tanggal(tanggal, jenis_list, kasir_id=None, metode_pembayaran=None):
+    def get_total_pendapatan_by_tanggal(tanggal=None, jenis_list=None, kasir_id=None, metode_pembayaran=None):
         """Total pendapatan berdasarkan tanggal dan jenis transaksi tertentu."""
-        query = db.session.query(func.sum(Transaksi.jumlah)).filter(
-            func.date(Transaksi.dibuat_pada) == tanggal,
-            Transaksi.jenis.in_(jenis_list)
-        )
+        query = db.session.query(func.sum(Transaksi.jumlah))
+        if jenis_list:
+            query = query.filter(Transaksi.jenis.in_(jenis_list))
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            query = query.filter(
+                Transaksi.dibuat_pada >= start_utc,
+                Transaksi.dibuat_pada < end_utc
+            )
         query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
         if metode_pembayaran:
             if metode_pembayaran == "Tunai":
@@ -222,11 +269,17 @@ class TransaksiRepository:
         return query.scalar() or 0
 
     @staticmethod
-    def count_by_date(tanggal):
+    def count_by_date(tanggal=None):
         """Menghitung jumlah transaksi pada tanggal tertentu (untuk nomor nota)."""
-        return db.session.query(func.count(Transaksi.id)).filter(
-            func.date(Transaksi.dibuat_pada) == tanggal
-        ).scalar() or 0
+        query = db.session.query(func.count(Transaksi.id))
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            query = query.filter(
+                Transaksi.dibuat_pada >= start_utc,
+                Transaksi.dibuat_pada < end_utc
+            )
+        return query.scalar() or 0
 
     @staticmethod
     def get_last_nota_today(date_str):
@@ -271,13 +324,17 @@ class TransaksiRepository:
     @staticmethod
     def delete_by_date(tanggal):
         """Menghapus transaksi per tanggal (Tanpa Commit)."""
-        count = Transaksi.query.filter(func.date(Transaksi.dibuat_pada) == tanggal).delete()
+        from app.utils.timezone_utils import get_local_date_range_utc
+        start_utc, end_utc = get_local_date_range_utc(tanggal)
+        count = Transaksi.query.filter(
+            Transaksi.dibuat_pada >= start_utc,
+            Transaksi.dibuat_pada < end_utc
+        ).delete()
         return count
 
     @staticmethod
     def get_distinct_tanggal():
-        """Ambil daftar tanggal unik dari transaksi (untuk filter laporan)."""
-        result = db.session.query(
-            func.date(Transaksi.dibuat_pada).label('tgl')
-        ).distinct().order_by(db.desc('tgl')).all()
-        return [str(row[0]) for row in result if row[0]]
+        """Ambil daftar tanggal unik dari transaksi (dalam display timezone untuk filter laporan)."""
+        from app.utils.timezone_utils import convert_utc_datetimes_to_distinct_dates
+        result = db.session.query(Transaksi.dibuat_pada).filter(Transaksi.dibuat_pada != None).all()
+        return convert_utc_datetimes_to_distinct_dates([row[0] for row in result if row[0]])
