@@ -117,6 +117,7 @@ c:\Project GIT\TMBilling
 > **PENTING — KEAMANAN API KEY & KREDENSIAL DARURAT:**
 > - **Wajib Ganti Default API Key**: Jangan gunakan API Key bawaan (`TM2026QWERTY-api-key`). Anda dapat melihat dan mengubah API Key secara praktis langsung dari dashboard di menu **Sidebar > Pengaturan > Umum & Keamanan > API Key System**, lalu klik **Simpan API Key** *(atau bagi yang memahami konfigurasi server, dapat langsung menyesuaikan variabel `CLIENT_API_KEY` pada file `.env`)*. Pastikan API Key yang diinput pada PC klien sama persis dengan yang ada di server dan selalu jaga kerahasiaannya.
 > - **Wajib Ganti Emergency User & Password**: Saat installer menanyakan kredensial admin darurat (*Emergency Access*), harap segera ubah dari nilai default (`TMBilling` / `TM123qaz!@#`) untuk mencegah akses darurat tak sah di PC klien.
+> - **Wajib Hapus / Amankan Berkas `admin_credentials.txt`**: Setelah instalasi selesai, installer membuat catatan kredensial `admin_credentials.txt` di folder instalasi (contoh: `C:\TMBILLING\admin_credentials.txt`). **Segera catat kredensial tersebut lalu hapus berkasnya (atau pindahkan ke tempat aman admin)** agar tidak terlihat atau diakses oleh pengguna/pelanggan di PC klien!
 
 4. **Otomatisasi Instalasi**:
    - Skrip menyalin seluruh binary (`TMBilling.exe`, `MGCTM.exe`, `TMMonitor.exe`, `WebView2Loader.dll`, `mtm.exe`, `TightVNC`).
