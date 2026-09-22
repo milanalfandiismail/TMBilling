@@ -170,6 +170,77 @@ class HardwareService:
                             hardware.hardware_mismatch_time = None
                             hardware.hardware_last_sync = now_utc()
 
+            # --- Peripheral Monitoring & Disconnect Grace Period (5 Menit) ---
+            periph_data = data.get("Peripherals", data.get("peripherals"))
+            if periph_data and isinstance(periph_data, dict):
+                import json
+                hardware.peripherals_current = json.dumps(periph_data)
+
+                if not hardware.peripherals_baseline:
+                    hardware.peripherals_baseline = json.dumps(periph_data)
+                    hardware.peripherals_mismatch = False
+                    hardware.peripherals_mismatch_desc = None
+                    hardware.peripherals_mismatch_time = None
+                    hardware.peripherals_disconnect_tracker = None
+                else:
+                    try:
+                        p_baseline = json.loads(hardware.peripherals_baseline)
+                    except Exception:
+                        p_baseline = {}
+
+                    try:
+                        p_tracker = json.loads(hardware.peripherals_disconnect_tracker or "{}")
+                    except Exception:
+                        p_tracker = {}
+
+                    curr_utc = now_utc()
+                    p_mismatches = []
+                    earliest_disconnect_time = None
+
+                    for periph_name, base_info in p_baseline.items():
+                        curr_info = periph_data.get(periph_name)
+                        if curr_info and curr_info != "Unknown":
+                            # Perangkat kembali terhubung: Bersihkan dari pending disconnect tracker
+                            if periph_name in p_tracker:
+                                del p_tracker[periph_name]
+                        else:
+                            # Perangkat tidak terdeteksi / dicabut
+                            if periph_name not in p_tracker:
+                                p_tracker[periph_name] = {
+                                    "disconnected_at": curr_utc.isoformat(),
+                                    "baseline": str(base_info)
+                                }
+                            else:
+                                disc_entry = p_tracker[periph_name]
+                                disc_str = disc_entry.get("disconnected_at")
+                                try:
+                                    disc_dt = datetime.fromisoformat(disc_str)
+                                    if disc_dt.tzinfo is None:
+                                        disc_dt = disc_dt.replace(tzinfo=timezone.utc)
+                                except Exception:
+                                    disc_dt = curr_utc
+
+                                elapsed = (curr_utc - disc_dt).total_seconds()
+                                if elapsed > 300:  # > 5 Menit Grace Period
+                                    from app.utils.timezone_utils import format_display
+                                    disc_fmt = format_display(disc_dt, fmt="%H:%M")
+                                    p_mismatches.append(f"{periph_name} dicabut pukul {disc_fmt} (> 5 menit lalu). Cek aktivitas CCTV jam {disc_fmt}")
+                                    if not earliest_disconnect_time or disc_dt < earliest_disconnect_time:
+                                        earliest_disconnect_time = disc_dt
+
+                    if p_mismatches:
+                        hardware.peripherals_mismatch = True
+                        hardware.peripherals_mismatch_desc = "; ".join(p_mismatches)
+                        if not hardware.peripherals_mismatch_time:
+                            hardware.peripherals_mismatch_time = earliest_disconnect_time or curr_utc
+                        write_log("PERIPHERAL_ALERT", f"PC {pc.kode} terdeteksi peripheral mismatch: {hardware.peripherals_mismatch_desc}")
+                    else:
+                        hardware.peripherals_mismatch = False
+                        hardware.peripherals_mismatch_desc = None
+                        hardware.peripherals_mismatch_time = None
+
+                    hardware.peripherals_disconnect_tracker = json.dumps(p_tracker) if p_tracker else None
+
             # 5. Sync Process List if provided
             process_list = data.get("ProcessList", data.get("processList", data.get("process_list")))
             if process_list is not None and isinstance(process_list, list):
@@ -296,6 +367,14 @@ class HardwareService:
             hardware.hardware_mismatch_desc = None
             hardware.hardware_mismatch_time = None
             hardware.hardware_last_sync = now_utc()
+            
+            # Copy current peripherals ke baseline jika ada
+            if hardware.peripherals_current:
+                hardware.peripherals_baseline = hardware.peripherals_current
+            hardware.peripherals_mismatch = False
+            hardware.peripherals_mismatch_desc = None
+            hardware.peripherals_mismatch_time = None
+            hardware.peripherals_disconnect_tracker = None
             
             db.session.commit()
             
