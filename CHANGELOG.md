@@ -6,6 +6,31 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [1.6.2] - 2026-09-22
+
+### Ditambahkan
+- **Konsolidasi Master Dokumentasi (Single Source of Truth)**: 
+  - Seluruh dokumentasi sistem dan arsitektur dilebur ke dalam [docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md) yang mencakup katalog lengkap 28 domain fitur, panduan backend (30 blueprints, 35+ services, 25 database models), frontend modular JS, serta panduan teknis agent Rust.
+  - Pembaruan dokumen ringkas [README.md](file:///c:/Project%20GIT/TMBilling/README.md) dengan panduan Quick Start terstandarisasi.
+- **Dual-Hive Registry SHA-256 Binary Integrity**:
+  - Penambahan verifikasi hash SHA-256 binary pada registry `HKCU` dan `HKLM` (`Hash_MGCTM`, `Hash_TMBilling`, `Hash_TMMonitor`, `Hash_mtm`, `Hash_Uninstaller`) untuk mencegah manipulasi binary klien oleh pihak ketiga.
+- **Bi-directional Clipboard Sync & Auto-Firewall TightVNC**:
+  - Sinkronisasi clipboard dua arah otomatis antara browser kasir dan desktop Windows PC klien melalui WebSocket VNC proxy port `5900` loopback.
+  - Penyediaan skrip otomatisasi firewall Windows Defender `allow_firewall.bat` dan `tightvnc_settings.reg`.
+- **Blackout Auto-Recovery System**:
+  - Toleransi pemadaman listrik otomatis dengan pencatatan heartbeat `PCUptimeLog` dan pemulihan sisa waktu pelanggan secara otomatis saat PC kembali menyala (*Auto Session Resume*).
+
+### Diubah
+- **Restrukturisasi Direktori Klien**:
+  - Pemindahan seluruh modul klien dari `WarnetClient/TMBillingTauri` ke direktori terpusat `WarnetAgent/TMBillingTauri` untuk konsistensi penamaan arsitektur.
+  - Penyesuaian skrip otomatisasi root `build_and_deploy.bat`, `developer_install.bat`, dan `WarnetAgent/Deploy/build_and_deploy.bat`.
+
+### Diperbaiki
+- **Batch Actions Multi-PC API**:
+  - Konsolidasi deklarasi ganda namespace `API.monitor` pada `app/static/js/kasir/core/api.js` sehingga pemanggilan `API.monitor.remoteBatch` untuk aksi massal (>1 PC: Shutdown, Restart, Lock, Move PC, Clear Sesi) berjalan normal tanpa error JavaScript.
+
+---
+
 ## [1.6.1] - 2026-09-15
 
 ### Ditambahkan
@@ -19,7 +44,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **VNC Relay Synchronization**: Sinkronisasi rute relay multi-cabang untuk remote monitor mouse, keyboard, dan framebuffer events.
 
 ### Ditingkatkan
-- **Pembersihan Dashboard Kasir**: Penghapusan 4 kartu ringkasan statistik (Pendapatan Hari Ini, PC Aktif, Member Terdaftar, Kasir Aktif) dari bagian atas tab Dashboard kasir untuk antarmuka yang lebih bersih, cepat, dan fokus pada status grid PC.
+- **Pembersihan Dashboard Kasir**: Penghapusan 4 kartu ringkasan statistik dari bagian atas tab Dashboard kasir untuk antarmuka yang lebih bersih, cepat, dan fokus pada status grid PC.
 - **Modal Tambah Waktu Member**: Perluasan modal pencarian & pengisian waktu member pada Dashboard (`max-w-4xl`) dengan grid 2-kolom responsif dan list 5 hasil member tanpa scrollbar.
 
 ---
@@ -42,7 +67,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 ## [1.5.8] - 2026-08-25
 
 ### Ditambahkan
-- **Natural Sorting Screenshot Monitor**: Pengurutan nama PC secara alami (contoh: PC-1, PC-2, ..., PC-10) pada monitor screenshot kasir.
+- **Natural Sorting Screenshot Monitor**: Pengurutan nama PC secara alami (contoh: PC-01, PC-02, ..., PC-10) pada monitor screenshot kasir.
 - **Overlay Properties Enhancement**: Sinkronisasi properti overlay informasi sisa waktu pada client Tauri.
 
 ---
