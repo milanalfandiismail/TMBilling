@@ -21,7 +21,7 @@
    - [4.3 TightVNC Remote Control System & Bi-directional Clipboard Sync](#43-tightvnc-remote-control-system--bi-directional-clipboard-sync)
    - [4.4 Blackout Auto-Recovery System (Toleransi Mati Lampu & Uptime Tracker)](#44-blackout-auto-recovery-system-toleransi-mati-lampu--uptime-tracker)
    - [4.5 5-Layer WarnetAgent Anti-Tamper Security & Registry Hash Verification](#45-5-layer-warnetagent-anti-tamper-security--registry-hash-verification)
-   - [4.6 Hardware Baseline Monitoring & Theft Alerts](#46-hardware-baseline-monitoring--theft-alerts)
+   - [4.6 Hardware Checker, Peripheral Security & CCTV Smart Reference](#46-hardware-checker-peripheral-security--cctv-smart-reference)
    - [4.7 Remote Process Monitor & Task Killer](#47-remote-process-monitor--task-killer)
    - [4.8 Web File Explorer (Remote Disk Explorer)](#48-web-file-explorer-remote-disk-explorer)
    - [4.9 Screenshot Monitor with Natural Sorting](#49-screenshot-monitor-with-natural-sorting)
@@ -125,7 +125,7 @@ graph TB
 - **Service Layer**: Pemisahan logika bisnis dari endpoint HTTP menggunakan 35+ service class independen.
 
 ### 2.2 Frontend Dashboard
-- **Teknologi**: Modular ES6 Vanilla JavaScript (tanpa Node.js bundler runtime), TailwindCSS styling, Font Awesome icon set.
+- **Teknologi**: Modular ES6 JavaScript (tanpa Node.js bundler runtime), TailwindCSS styling, Font Awesome icon set.
 - **Arsitektur**: Core API layer (`app/static/js/kasir/core/api.js`), Event Bus, Theme Variables, dan 32+ modul fitur terisolasi.
 - **Responsivitas**: Dual layout adaptif (1024px compact mode s/d 1920px full widescreen) serta dukungan gesture sentuh untuk tablet/smartphone kasir.
 
@@ -277,9 +277,51 @@ c:\Project GIT\TMBilling
 - **Lapis 4 - Watchdog Daemon (`MGCTM.exe`)**: Process independen berhak Administrator yang terus memantau `TMBilling.exe`. Jika `TMBilling.exe` dimatikan paksa (misal via process hacker), `MGCTM.exe` seketika me-respawn klien dan mengunci sistem.
 - **Lapis 5 - Emergency Credentials SHA-256**: Autentikasi darurat offline berbasis hash SHA-256 yang aman untuk membuka kunci PC oleh teknisi saat jaringan server terputus.
 
-### 4.6 Hardware Baseline Monitoring & Theft Alerts
-- **Deskripsi**: Merekam *snapshot* spesifikasi hardware PC klien (CPU Serial/Model, GPU Model, RAM Capacity & Stick Count, Disk Serial Numbers) ke dalam tabel `HardwareMonitor`.
-- **Deteksi Pencurian / Pergantian**: Setiap kali PC klien booting, agent membandingkan hardware saat ini dengan baseline tersimpan. Jika ada RAM yang dicabut atau GPU/Disk yang ditukar, dashboard kasir seketika memunculkan alert diskrepansi visual berkedip merah dan notifikasi suara darurat.
+### 4.6 Hardware Checker, Peripheral Security & CCTV Smart Reference
+
+#### A. Hardware Baseline Monitoring & Deteksi Pencurian Komponen Internal
+- **Deskripsi**: Merekam *snapshot* spesifikasi hardware PC klien (Motherboard Serial, CPU ID, GPU PNP Device ID, RAM Serials, Disk Serials) ke dalam tabel `HardwareMonitor` sebagai *baseline* resmi yang terkunci.
+- **Deteksi Pencurian / Pergantian Komponen**: Setiap kali PC klien booting, agent mengirimkan spesifikasi hardware saat ini (*current specs*). Sistem secara otomatis membandingkannya dengan baseline tersimpan. Jika terdapat perbedaan (GPU PNP ID berbeda, RAM serial hilang, Disk diganti), dashboard kasir seketika memunculkan alert diskrepansi visual berkedip merah dengan deskripsi komponen yang berubah.
+- **Visualisasi Audit di Tab Hardware Checker**: Accordion *"Spesifikasi Lengkap"* menampilkan dua kolom berdampingan:
+  - **🔒 Baseline Resmi (Terkunci)** — spesifikasi yang terdaftar saat tombol *Update Baseline* terakhir ditekan, disertai badge `TERDAFTAR`.
+  - **🔍 Terdeteksi Saat Ini (Live Telemetry)** — spesifikasi yang dikirim agen saat terakhir booting, disertai badge `LIVE SPECS`. RAM dan Disk serial ditampilkan dalam *pill tag* berwarna: ungu normal (🏷️), merah berkedip (🚨 Tukar!) jika tidak ada di baseline.
+- **Audit di Modal Detail PC Dashboard**: Pada tampilan detail hardware per-PC (tab Hardware), ditampilkan matriks yang sama lengkap dengan alert mismatch dan panduan referensi CCTV.
+
+#### B. Peripheral Security Audit (Mouse, Keyboard, Headset & Perangkat USB Dinamis)
+- **Deskripsi**: Sistem perekaman dan verifikasi periferal gaming PC klien (Mouse, Keyboard, Headset, dan perangkat USB/Audio lainnya) yang bersifat dinamis — mendukung penambahan jenis periferal baru secara otomatis dari data yang dikirim agen.
+- **Kolom Database Baru di `HardwareMonitor`**:
+  - `peripherals_baseline` (TEXT/JSON) — snapshot nama periferal resmi saat baseline terakhir diset.
+  - `peripherals_current` (TEXT/JSON) — periferal yang terdeteksi live oleh agen.
+  - `peripherals_mismatch` (BOOLEAN) — flag aktif jika ada periferal hilang lebih dari 5 menit.
+  - `peripherals_mismatch_desc` (TEXT) — deskripsi mismatch periferal.
+  - `peripherals_mismatch_time` (DATETIME) — waktu mismatch terdeteksi pertama kali.
+  - `peripherals_disconnect_tracker` (TEXT/JSON) — tracker waktu per periferal yang dicabut, untuk evaluasi grace period.
+- **Grace Period 5 Menit (Anti-False Alarm)**: Periferal yang dicabut tidak langsung dinyatakan mismatch. Sistem mempertahankan status *"Dicabut (< 5m)"* (badge kuning berdenyut) selama 5 menit. Jika tidak kembali terhubung, baru masuk ke status mismatch resmi dan alert merah menyala.
+- **Auto-Register Baseline Periferal**: Saat agen pertama kali mengirimkan data periferal dan belum ada baseline terdaftar, sistem secara otomatis menggunakan data tersebut sebagai baseline awal.
+- **Indikator Status Periferal di Dashboard**:
+  - 🟢 `Terhubung` — periferal terdeteksi aktif.
+  - ⏳ `Dicabut (< 5m)` — periferal baru saja dicabut, masih dalam masa grace.
+  - 🔴 `Hilang / Dicabut` — periferal hilang melebihi grace period (mismatch resmi).
+  - 🔌 `Belum Ada Data` — belum ada telemetry untuk periferal ini.
+
+#### C. Referensi CCTV Cerdas dengan Rentang Waktu (Smart CCTV Time Window)
+- **Deskripsi**: Setiap deteksi perubahan hardware internal maupun periferal selalu menghasilkan **rentang waktu estimasi** untuk memandu operator dalam mengecek rekaman CCTV, bukan hanya satu titik waktu.
+- **Format Output Rentang Waktu**:
+  - Jika data log shutdown tersedia: `"22/09/2026 16:38 WITA s/d 23/09/2026 00:38 WITA (rentang PC mati sebelum boot)"`
+  - Jika log shutdown tidak tersedia (estimasi otomatis 8 jam sebelum boot): `"17/09/2026 11:33 WITA s/d 19:33 WITA (rentang PC mati sebelum boot)"`
+- **Panduan CCTV untuk PC Tidak Bisa Boot (Agent Offline)**: Jika PC tidak bisa booting sama sekali (seluruh komponen penting dicuri sehingga tidak ada data telemetry), modal detail PC di dashboard menampilkan field **"Terakhir PC Aktif / Sinkron"** dengan catatan: *`> [Waktu PC Terakhir Dimatikan]`* sebagai panduan batas awal pengecekan rekaman CCTV.
+- **Implementasi**: Fungsi `format_cctv_internal_window()` di `app/services/hardware/hardware_service.py`.
+
+#### D. Indikator Kecepatan NIC (Network Interface Card)
+- NIC speed terdeteksi dari agent dan ditampilkan di baris bawah kartu hardware:
+  - **≥ 1 Gbps / ≥ 1000 Mbps** → tampil hijau emerald (`text-emerald-400 font-bold`).
+  - **< 1 Gbps** (misal 100 Mbps, 10 Mbps) → tampil merah berkedip (`text-red-400 font-bold animate-pulse`) sebagai sinyal peringatan koneksi lambat.
+
+#### E. Alur Operasional: Update Baseline
+1. Owner/Admin mengklik tombol **🔄 Update Baseline** pada PC yang bersangkutan.
+2. Sistem merekam spesifikasi hardware internal dan periferal yang saat ini terdeteksi sebagai baseline resmi baru.
+3. Seluruh flag mismatch direset, dan monitoring berjalan kembali dari titik awal.
+4. Endpoint: `POST /api/v1/kasir/monitor/register/<pc_id>`.
 
 ### 4.7 Remote Process Monitor & Task Killer
 - **Deskripsi**: Kasir dapat melihat seluruh aplikasi dan proses yang sedang berjalan di PC klien tertentu secara langsung dari modal web dashboard.
@@ -385,7 +427,7 @@ c:\Project GIT\TMBilling
 
 ### 4.22 Owner Analytics & Business Intelligence
 - **Deskripsi**: Dashboard grafik analitik bisnis khusus untuk pemilik warnet (*Owner*).
-- **Metrik Utama**:
+- **Metode Utama**:
   - Grafik tren pendapatan harian, mingguan, dan bulanan.
   - Analisis jam sibuk (*Peak Hours Occupancy Heatmap*) untuk optimasi promosi.
   - Perbandingan rasio keuntungan antara pendapatan sewa PC vs penjualan F&B kantin.
@@ -482,7 +524,9 @@ TMBilling menggunakan 25 model ORM terdefinisi di `app/models/`:
 8. `MenuItem`: Katalog produk kantin/FnB (`id`, `nama_item`, `kategori`, `harga_jual`, `stok`, `is_unlimited`).
 9. `TransaksiMenu`: Transaksi pesanan kantin (`id`, `transaksi_id`, `sesi_id`, `total_harga`, `metode_pembayaran`, `status_bayar`).
 10. `ShiftRecord`: Rekam shift kasir (`id`, `user_id`, `waktu_buka`, `waktu_tutup`, `modal_awal`, `total_kas_fisik`, `selisih`).
-11. `HardwareMonitor`: Snapshot baseline hardware PC (`id`, `pc_id`, `cpu_info`, `gpu_info`, `ram_total`, `disk_serial`, `last_checked`).
+11. `HardwareMonitor`: Snapshot baseline hardware PC dan monitoring real-time (`id`, `pc_id`, `cpu_usage`, `cpu_temp`, `gpu_temp`, `cpu_name`, `gpu_name`, `total_ram`, `motherboard`, `nic_speed`, `active_window`, `last_update`).
+    - *Audit Internal*: `hardware_baseline`, `hardware_current_specs`, `hardware_mismatch`, `hardware_mismatch_desc`, `hardware_mismatch_time`, `hardware_cctv_window`, `hardware_last_sync`.
+    - *Audit Periferal*: `peripherals_baseline`, `peripherals_current`, `peripherals_mismatch`, `peripherals_mismatch_desc`, `peripherals_mismatch_time`, `peripherals_disconnect_tracker`.
 12. `PCProcess`: Snapshot proses yang sedang berjalan di klien.
 13. `PCUptimeLog`: Catatan uptime & downtime PC untuk toleransi blackout (`id`, `pc_id`, `status`, `timestamp`).
 14. `Branch`: Registrasi cabang warnet (`id`, `nama_cabang`, `api_url`, `api_key`, `timezone`).
@@ -513,7 +557,9 @@ Frontend dashboard kasir dibangun tanpa dependensi framework runtime (Vanilla JS
 Terletak di `app/static/js/kasir/modules/`:
 - `dashboard/dashboard_selection.js`: Mengelola logika seleksi banyak PC (multi-select) dan triggering aksi batch.
 - `dashboard/dashboard_process_monitor.js`: Menangani tampilan remote task manager dan penghentian proses.
+- `dashboard/dashboard_detail_modal.js`: Modal detail PC lengkap termasuk tampilan Hardware Checker & Peripheral Security (matriks baseline vs live telemetry, alert mismatch CCTV, kartu periferal gaming real-time).
 - `dashboard/map_view.js`: Canvas 2D interaktif denah ruangan meja warnet.
+- `hardware_checker/index.js`: Tab Hardware Checker & Audit Keamanan — merender kartu per-PC dengan status badge hardware (🛡️ Internal Aman / 🚨 Hardware Ditukar), kartu periferal gaming (Mouse, Keyboard, Headset + dinamis), accordion *Spesifikasi Lengkap* dengan pill tags RAM/Disk berwarna (baseline vs live), alert CCTV time window, dan indikator kecepatan NIC. Implementasi objek singleton `HardwareChecker` di `window.HardwareChecker`.
 - `remote/vnc_client.js`: Handler rendering layar RFB VNC dan listener clipboard dua arah.
 - `menu/index.js` & `struk/struk_preview.js`: UI pesanan FnB kasir dan antarmuka cetak struk kasir thermal ESC/POS.
 - `owner/analytics.js`: Visualisasi grafik analitik bisnis owner.
