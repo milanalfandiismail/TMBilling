@@ -51,6 +51,9 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 | `shift/shift_record.py` | ShiftRecord | kasir_id, waktu_mulai, waktu_selesai, modal_awal, uang_fisik, status |
 | `tournament/tournament.py` | Turnamen, TurnamenTahap, TurnamenTim, TurnamenMatch | nama, status, tipe_jalur, teams, matches, scores, next_match_id |
 | `pc/maintenance_ticket.py` | MaintenanceTicket | pc_id, subjek, deskripsi, prioritas, status, dilaporkan_oleh, ditangani_oleh |
+| `branch.py` | Branch, InboundConnection | nama, url, api_key, is_active, status_online, last_ping_ms |
+| `uptime/pc_uptime_log.py` | PCUptimeLog | pc_id, start_time, end_time, duration_minutes, session_type |
+| `tutorial/tutorial.py` | SystemTutorial | slug, judul, kategori, konten, order_index, is_active |
 
 ### 1.3 Services (`app/services/`)
 
@@ -58,6 +61,9 @@ Routes (validasi) → Services (business logic + commit) → Repositories (query
 |---------|--------------|
 | `client_service.py` | Identifikasi PC, polling status, emergency/admin login |
 | `sesi_service.py` | Buka/tutup sesi guest/member/admin, tambah waktu, pindah PC, blackout resolve |
+| `branch_service.py` | Manajemen koneksi multi-cabang, health check, latency test |
+| `branch_proxy_service.py` | Reverse proxy relay HTTP request dan media proxy antar cabang |
+| `server_monitor/` | Telemetri sensor hardware server (TMLHMService LibreHardwareMonitor) |
 | `member_service.py` | CRUD member, top-up, refund paket |
 | `pc_service.py` | CRUD PC, batch registration, admin mode reset |
 | `dashboard_service.py` | Data grid PC + ringkasan harian |
@@ -461,4 +467,4 @@ cd WarnetAgent/TMBilling_Monitor && cargo build --release
 ---
 
 *TMBilling — Codebase Documentation*
-*TMBilling v1.5.1*
+*TMBilling v1.6.1*

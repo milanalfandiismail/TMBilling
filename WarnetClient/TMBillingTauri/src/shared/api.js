@@ -57,6 +57,38 @@ export const Api = {
         return await invoke('get_app_version');
     },
 
+    async openControlPanel(applet) {
+        return await invoke('open_control_panel_applet', { applet });
+    },
+
+    // Audio / Volume Management
+    async setSystemVolume(volume = 1.0) {
+        try {
+            return await invoke('set_system_volume', { volume });
+        } catch (err) {
+            console.warn("Gagal set system volume:", err);
+            return null;
+        }
+    },
+
+    async restoreSystemVolume(volume, muted = false) {
+        try {
+            if (volume === null || volume === undefined) return;
+            return await invoke('restore_system_volume', { volume, muted });
+        } catch (err) {
+            console.warn("Gagal restore system volume:", err);
+        }
+    },
+
+    async getSystemVolume() {
+        try {
+            return await invoke('get_system_volume');
+        } catch (err) {
+            console.warn("Gagal get system volume:", err);
+            return 1.0;
+        }
+    },
+
     // Listener Event dari Rust
     async onEvent(name, callback) {
         return await listen(name, (event) => callback(event.payload));

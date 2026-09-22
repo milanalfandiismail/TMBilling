@@ -10,23 +10,17 @@ const DashboardProcessMonitor = {
 
     showProcesses(currentPcId) {
         document.getElementById('view-action-menu')?.classList.add('hidden');
+        document.getElementById('view-hardware-specs')?.classList.add('hidden');
+        document.getElementById('view-remote-client')?.classList.add('hidden');
         document.getElementById('view-process-list')?.classList.remove('hidden');
-        const card = document.getElementById('pc-detail-modal-card');
-        if (card) {
-            card.classList.remove('max-w-lg');
-            card.classList.add('max-w-4xl');
-        }
+        document.getElementById('modal-card-main-footer')?.classList.add('hidden');
         this.loadProcesses(currentPcId);
     },
 
     backToMenu() {
         document.getElementById('view-action-menu')?.classList.remove('hidden');
         document.getElementById('view-process-list')?.classList.add('hidden');
-        const card = document.getElementById('pc-detail-modal-card');
-        if (card) {
-            card.classList.remove('max-w-4xl');
-            card.classList.add('max-w-lg');
-        }
+        document.getElementById('modal-card-main-footer')?.classList.remove('hidden');
     },
 
     renderProcessRows(pcId, processes) {
@@ -37,32 +31,29 @@ const DashboardProcessMonitor = {
         countEl.innerText = `${processes.length} PROSES`;
 
         if (processes.length === 0) {
-            container.innerHTML = '<tr><td colspan="2" class="px-6 py-10 text-center text-neutral-500 text-xs lg:text-base font-mono">Tidak ada proses</td></tr>';
+            container.innerHTML = '<div class="col-span-full py-12 text-center text-neutral-500 text-xs lg:text-sm font-mono">Tidak ada proses</div>';
             return;
         }
 
         container.innerHTML = processes.map(p => `
-            <tr class="hover:bg-[#121212] transition-colors">
-                <td class="px-6 py-2.5 text-xs lg:text-base text-neutral-200 font-mono">
-                    <div class="font-bold text-neutral-100">${p.name}</div>
-                    <div class="text-[10px] lg:text-xs text-neutral-500 mt-0.5">${p.title || '-'}</div>
-                </td>
-                <td class="px-6 py-2.5 text-right whitespace-nowrap">
-                    <button onclick="DashboardProcessMonitor.killProcess(${pcId}, '${p.name}')" class="px-3 py-1 bg-red-950/40 hover:bg-red-900 border border-red-800/40 hover:border-red-700 text-red-400 hover:text-red-200 text-xs font-bold rounded-lg transition-all font-mono uppercase tracking-wider">
-                        Akhiri
-                    </button>
-                </td>
-            </tr>
+            <div class="flex items-center justify-between p-3 bg-[#141414] hover:bg-[#181818] border border-[#222] hover:border-neutral-500 rounded-xl transition-all gap-3 select-none group">
+                <div class="min-w-0 flex-1 font-mono">
+                    <div class="font-bold text-xs lg:text-sm text-neutral-100 truncate">${p.name}</div>
+                    <div class="text-[10px] lg:text-xs text-neutral-400 truncate mt-0.5">${p.title || '-'}</div>
+                </div>
+                <button onclick="DashboardProcessMonitor.killProcess(${pcId}, '${p.name}')" class="px-3 py-1.5 bg-red-950/40 hover:bg-red-900 border border-red-800/40 hover:border-red-700 text-red-400 hover:text-red-200 text-xs font-bold rounded-lg transition-all font-mono uppercase tracking-wider shrink-0">
+                    Akhiri
+                </button>
+            </div>
         `).join('');
     },
 
     async loadProcesses(pcId) {
         const container = document.getElementById('modal-process-list');
-        if (container) container.innerHTML = '<tr><td colspan="2" class="px-6 py-10 text-center text-neutral-500 text-xs lg:text-base font-mono">Memuat...</td></tr>';
+        if (container) container.innerHTML = '<div class="col-span-full py-12 text-center text-neutral-500 text-xs lg:text-sm font-mono">Memuat...</div>';
 
         try {
-            const res = await fetch(`/api/v1/public/monitor/processes/${pcId}`);
-            const json = await res.json();
+            const json = await API.request(`/api/v1/kasir/monitor/processes/${pcId}`);
 
             if (!json.success) throw new Error(json.error);
 
@@ -93,7 +84,7 @@ const DashboardProcessMonitor = {
                 };
             }
         } catch (err) {
-            if (container) container.innerHTML = `<tr><td colspan="2" class="px-6 py-10 text-center text-red-400 text-xs lg:text-base font-mono">Gagal: ${err.message}</td></tr>`;
+            if (container) container.innerHTML = `<div class="col-span-full py-12 text-center text-red-400 text-xs lg:text-sm font-mono">Gagal: ${err.message}</div>`;
         }
     },
 

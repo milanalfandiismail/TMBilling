@@ -42,10 +42,10 @@ const CompactGrid = {
             var s = localStorage.getItem('map_grid_' + grup);
             if (s) {
                 var p = JSON.parse(s);
-                return { cols: p.c || 10, rows: p.r || 7 };
+                return { cols: p.c || 12, rows: p.r || 7 };
             }
         } catch (e) { }
-        return { cols: 10, rows: 7 };
+        return { cols: 12, rows: 7 };
     },
 
     _setGridSize(grup, cols, rows) {
@@ -143,15 +143,27 @@ const CompactGrid = {
         const borderAttr = borderStyle ? `style="${borderStyle}"` : '';
         const timerColorClass = isActive && sesi && sesi.sisa_menit <= 5 && sesi.tipe !== 'admin' ? 'text-red-400 animate-pulse' : 'text-emerald-300';
         const timerFontSizeClass = timerStr.length > 8 ? 'text-[11px] lg:text-xs xl:text-sm' : 'text-xs lg:text-sm xl:text-base';
+        const kodeFontSizeClass = (pc.kode || '').length > 7 ? 'text-xs lg:text-sm xl:text-base' : 'text-sm lg:text-base xl:text-lg';
+
+        const isSelected = window.DashboardSelection && window.DashboardSelection.isSelected(pc.id);
+        const selectionClasses = isSelected ? 'ring-2 ring-indigo-500 border-indigo-400 bg-indigo-950/30' : '';
 
         return `
-            <div class="${cardBorderClass} ${cardBgClass} ${cardOpacityClass} rounded-xl p-2 sm:p-2.5 cursor-pointer transition-all hover:brightness-125 flex flex-col justify-between text-left min-h-[125px] lg:min-h-[130px] h-auto w-full shadow-lg" 
+            <div class="pc-card-item relative ${cardBorderClass} ${cardBgClass} ${cardOpacityClass} ${selectionClasses} rounded-xl p-2 sm:p-2.5 cursor-pointer transition-colors hover:brightness-125 flex flex-col justify-between text-left min-h-[120px] lg:min-h-[125px] h-auto w-full shadow-lg select-none" 
+                 data-pc-id="${pc.id}"
+                 data-pc-kode="${pc.kode}"
                  ${borderAttr}
-                 onclick="event.preventDefault(); event.stopPropagation(); Dashboard.showContextMenu(event, ${pc.id})"
-                 oncontextmenu="event.preventDefault(); event.stopPropagation(); Dashboard.showContextMenu(event, ${pc.id})">
-                <!-- Row 1: Kode PC - DOT -->
+                 ondragstart="return false"
+                 onmousedown="event.button === 0 && window.DashboardSelection && DashboardSelection.handleCardMouseDown(event, ${pc.id})"
+                 onclick="event.preventDefault(); event.stopPropagation(); (window.DashboardSelection ? DashboardSelection.handleCardClick(event, ${pc.id}) : Dashboard.showContextMenu(event, ${pc.id}))"
+                 oncontextmenu="event.preventDefault(); event.stopPropagation(); (window.DashboardSelection ? DashboardSelection.handleCardContextMenu(event, ${pc.id}) : Dashboard.showContextMenu(event, ${pc.id}))">
+                
+                <!-- Row 1: Kode PC - Inline Selection Checkmark - Status DOT -->
                 <div class="flex items-center justify-between">
-                    <span class="text-sm lg:text-base xl:text-lg font-black text-neutral-100 tracking-tight">${pc.kode}</span>
+                    <div class="flex items-center gap-1 min-w-0">
+                        <span class="selection-check-badge text-indigo-400 font-black text-xs lg:text-sm shrink-0 ${isSelected ? '' : 'hidden'}">✓</span>
+                        <span class="${kodeFontSizeClass} font-black text-neutral-100 tracking-tight truncate">${pc.kode}</span>
+                    </div>
                     <span class="w-2.5 h-2.5 rounded-full ${indicatorColorClass} shrink-0 bg-current"></span>
                 </div>
                 <!-- Row 2: Aplikasi / Active Window -->
@@ -238,7 +250,7 @@ const CompactGrid = {
                     <!-- Grid Container -->
                     ${isAutoSort ? (isMobile ? `
                         <!-- Auto-Sort Mobile Grid: 2 columns natural wrap -->
-                        <div class="grid gap-2 grid-cols-2">
+                        <div class="grid gap-2 grid-cols-2 p-1">
                             ${pcs.map(pc => {
                         return `
                                     <div>
@@ -248,9 +260,9 @@ const CompactGrid = {
                     }).join('')}
                         </div>
                     ` : `
-                        <!-- Auto-Sort Grid: flows naturally but scaled -->
-                        <div class="auto-grid-wrapper overflow-hidden w-full" style="transition: height 0.15s ease-out;">
-                            <div class="auto-grid-container grid gap-2 auto-rows-fr" data-cols="${Math.min(pcs.length, 10)}" style="grid-template-columns: repeat(${Math.min(pcs.length, 10)}, minmax(0, 1fr));">
+                        <!-- Auto-Sort Grid: flows naturally in fixed 12 columns, leaves remaining slots empty -->
+                        <div class="auto-grid-wrapper overflow-hidden w-full pt-2 pb-2 px-1" style="transition: height 0.15s ease-out;">
+                            <div class="auto-grid-container grid gap-2 auto-rows-fr p-1" data-cols="12" style="grid-template-columns: repeat(12, minmax(0, 1fr));">
                                 ${pcs.map(pc => {
                         return `
                                         <div>
@@ -262,8 +274,8 @@ const CompactGrid = {
                         </div>
                     `) : `
                         <!-- Manual Layout Grid: uses absolute pos_x / pos_y -->
-                        <div class="manual-grid-wrapper overflow-hidden w-full" style="transition: height 0.15s ease-out;">
-                            <div class="manual-grid-container grid gap-2 auto-rows-fr" data-cols="${cols}" data-rows="${rows}" style="grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, minmax(0, 1fr));">
+                        <div class="manual-grid-wrapper overflow-hidden w-full pt-2 pb-2 px-1" style="transition: height 0.15s ease-out;">
+                            <div class="manual-grid-container grid gap-2 auto-rows-fr p-1" data-cols="${cols}" data-rows="${rows}" style="grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, minmax(0, 1fr));">
                                 ${mapped.map(pc => {
                         return `
                                         <div style="grid-column: ${pc.pos_x + 1}; grid-row: ${pc.pos_y + 1};">
@@ -305,14 +317,19 @@ const CompactGrid = {
 
         container.innerHTML = html || emptyStateHtml;
         Dashboard.attachEvents();
+        if (window.DashboardSelection) {
+            window.DashboardSelection.init();
+            window.DashboardSelection.updateUI();
+        }
         this.adjustGridScale();
+        requestAnimationFrame(() => {
+            this.adjustGridScale();
+        });
     },
 
     adjustGridScale() {
-        // Scale manual grid
-        const manualWrappers = document.querySelectorAll('.manual-grid-wrapper');
-        manualWrappers.forEach(wrapper => {
-            const grid = wrapper.querySelector('.manual-grid-container');
+        const scaleWrapper = (wrapper, gridSelector) => {
+            const grid = wrapper.querySelector(gridSelector);
             if (!grid) return;
 
             const parent = wrapper.parentElement;
@@ -321,8 +338,8 @@ const CompactGrid = {
             const containerWidth = parent.clientWidth;
             if (containerWidth === 0) return;
 
-            const cols = parseInt(grid.dataset.cols) || 10;
-            const baseColWidth = 130;
+            const cols = parseInt(grid.dataset.cols) || 12;
+            const baseColWidth = 115;
             const gap = 8;
             const unscaledWidth = (cols * baseColWidth) + ((cols - 1) * gap);
 
@@ -332,47 +349,30 @@ const CompactGrid = {
                 grid.style.transform = `scale(${scale})`;
                 grid.style.transformOrigin = 'top left';
 
-                const unscaledHeight = grid.scrollHeight;
-                wrapper.style.height = (unscaledHeight * scale) + 'px';
+                const unscaledHeight = grid.scrollHeight || grid.offsetHeight;
+                const compStyle = window.getComputedStyle(wrapper);
+                const padTop = parseFloat(compStyle.paddingTop) || 0;
+                const padBottom = parseFloat(compStyle.paddingBottom) || 0;
+
+                // Match exact bottom padding of XL/2XL (padTop + scaledHeight + padBottom)
+                const totalHeight = Math.ceil(unscaledHeight * scale + padTop + padBottom);
+                wrapper.style.height = totalHeight + 'px';
             } else {
                 grid.style.width = '';
                 grid.style.transform = '';
                 grid.style.transformOrigin = '';
                 wrapper.style.height = '';
             }
+        };
+
+        // Scale manual grid
+        document.querySelectorAll('.manual-grid-wrapper').forEach(wrapper => {
+            scaleWrapper(wrapper, '.manual-grid-container');
         });
 
         // Scale auto-sort grid
-        const autoWrappers = document.querySelectorAll('.auto-grid-wrapper');
-        autoWrappers.forEach(wrapper => {
-            const grid = wrapper.querySelector('.auto-grid-container');
-            if (!grid) return;
-
-            const parent = wrapper.parentElement;
-            if (!parent) return;
-
-            const containerWidth = parent.clientWidth;
-            if (containerWidth === 0) return;
-
-            const cols = parseInt(grid.dataset.cols) || 10;
-            const baseColWidth = 130;
-            const gap = 8;
-            const unscaledWidth = (cols * baseColWidth) + ((cols - 1) * gap);
-
-            if (containerWidth < unscaledWidth) {
-                const scale = containerWidth / unscaledWidth;
-                grid.style.width = unscaledWidth + 'px';
-                grid.style.transform = `scale(${scale})`;
-                grid.style.transformOrigin = 'top left';
-
-                const unscaledHeight = grid.scrollHeight;
-                wrapper.style.height = (unscaledHeight * scale) + 'px';
-            } else {
-                grid.style.width = '';
-                grid.style.transform = '';
-                grid.style.transformOrigin = '';
-                wrapper.style.height = '';
-            }
+        document.querySelectorAll('.auto-grid-wrapper').forEach(wrapper => {
+            scaleWrapper(wrapper, '.auto-grid-container');
         });
     }
 };

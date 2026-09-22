@@ -144,8 +144,19 @@ def _register_public_routes(app):
     def index():
         """Render public warnet homepage (landing page)."""
         from app.services import SettingsService
+        from app.utils.helpers import parse_google_maps_info
         warnet_rules = SettingsService.get("warnet_announcement", "")
-        return render_template("public/landing/index.html", warnet_rules=warnet_rules)
+        warnet_address = SettingsService.get("warnet_address", "Jl. Merdeka No. 123, Kota")
+        warnet_phone = SettingsService.get("warnet_phone", "0812-3456-7890")
+        warnet_gmaps_raw = SettingsService.get("warnet_gmaps", "")
+        gmaps_info = parse_google_maps_info(warnet_gmaps_raw, warnet_address=warnet_address)
+        return render_template(
+            "public/landing/index.html",
+            warnet_rules=warnet_rules,
+            warnet_address=warnet_address,
+            warnet_phone=warnet_phone,
+            gmaps_info=gmaps_info
+        )
 
     @app.route("/livepc")
     def public_pc_map():
@@ -226,8 +237,18 @@ def _register_context_processors(app):
             plugin_menus = []
             
         from app.utils.timezone_utils import format_display
-        version = current_app.config.get("VERSION", "v1.6.0")
-        return dict(warnet_title=title, plugin_menus=plugin_menus, version=version, format_display=format_display)
+        from app.config import Config
+        raw_version = current_app.config.get("VERSION", Config.VERSION)
+        version_tag = f"v{raw_version}" if not str(raw_version).startswith("v") else str(raw_version)
+        v_cache = "".join(c for c in str(raw_version) if c.isdigit()) or Config.get_cache_version()
+        return dict(
+            warnet_title=title,
+            plugin_menus=plugin_menus,
+            version=version_tag,
+            app_version=raw_version,
+            v_cache=v_cache,
+            format_display=format_display
+        )
 
 def _init_app_context(app):
     """Inisialisasi yang membutuhkan app context (database, plugin, admin)."""

@@ -11,7 +11,8 @@ const App = {
             return;
         }
 
-        await this.loadTab('dash');
+        this.setupNavigation();
+        this.switchTab('dash');
         await Grup.load();
         // Shift Handover — under maintenance
         // if (typeof Shift !== 'undefined') Shift.load();
@@ -75,6 +76,7 @@ const App = {
     },
  
     switchTab(tab) {
+        if (tab === 'dashboard') tab = 'dash';
         let mainTab = tab;
         let subTab = null;
 
@@ -152,11 +154,11 @@ const App = {
         // Auto-expand/collapse submenus based on the active tab
         const tabToSubmenu = {
             menu: 'operasional', tournament: 'operasional',
-            member: 'master', paket: 'master', pc: 'master', grup: 'master',
+            member: 'master', paket: 'master', pc: 'master', grup: 'master', game_management: 'master',
             user: 'staff',
             laporan: 'laporan', laporan_menu: 'laporan', struk: 'laporan', laporan_maintenance: 'laporan',
             log: 'sistemlog',
-            monitor: 'system', server_statistic: 'system', hardware_checker: 'system', maintenance: 'system', blackout: 'system', screenshot: 'system', uptime: 'system',
+            monitor: 'system', server_statistic: 'system', hardware_checker: 'system', maintenance: 'system', screenshot: 'system', uptime: 'system',
             settings_general: 'settings',
             settings_payment: 'settings',
             settings_kiosk: 'settings',
@@ -168,7 +170,6 @@ const App = {
             settings_db_cleanup: 'settings',
             settings_scheduler: 'settings',
             settings_migration: 'settings',
-            analytics: 'analytics',
             plugins: 'plugins',
             'plugin-spa': 'plugins',
             branch: 'branch',
@@ -192,6 +193,18 @@ const App = {
         this.updatePageTitle(tab);
         this.loadTab(tab);
 
+        // Toggle visibility of Header Omzet (hanya tampil di Dashboard pada desktop xl+)
+        const omzetHeader = document.getElementById('header-omzet-container');
+        if (omzetHeader) {
+            if (tab === 'dash') {
+                omzetHeader.classList.remove('hidden');
+                omzetHeader.classList.add('hidden', 'xl:flex');
+            } else {
+                omzetHeader.classList.remove('xl:flex');
+                omzetHeader.classList.add('hidden');
+            }
+        }
+
         // Auto-close sidebar on mobile/tablet after tab selection
         if (window.innerWidth < 1024) {
             const sidebar = document.getElementById('sidebar');
@@ -208,8 +221,8 @@ const App = {
     updatePageTitle(tab) {
         const titles = {
             dash: 'Dashboard', pc: 'Unit PC', paket: 'Paket', member: 'Member',
-            grup: 'Grup', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Aktivitas Sistem',
-            monitor: 'Hardware Monitor', hardware_checker: 'Hardware Checker', maintenance: 'Perawatan PC', laporan_maintenance: 'Laporan Perawatan', blackout: 'Blackout', screenshot: 'Screenshot Monitor',
+            grup: 'Grup', game_management: 'Kelola Game & Aplikasi', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Aktivitas Sistem',
+            monitor: 'Hardware Monitor', hardware_checker: 'Hardware Checker', maintenance: 'Perawatan PC', laporan_maintenance: 'Laporan Perawatan', blackout: 'Pemulihan Mati Lampu', screenshot: 'Screenshot Monitor',
             uptime: 'Uptime Tracker',
             user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat',
             menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen', catatan: 'Catatan',
@@ -237,6 +250,11 @@ const App = {
     },
  
     async loadTab(tab) {
+        // Close modal on tab change
+        const modal = document.getElementById('modal');
+        if (modal && !modal.classList.contains('hidden')) {
+            Modal.close();
+        }
         if (tab.startsWith('settings_') || tab === 'whitelist_ip') {
             const sub = tab === 'whitelist_ip' ? 'whitelist_ip' : tab.replace('settings_', '');
             if (typeof Settings !== 'undefined') {
@@ -246,6 +264,7 @@ const App = {
             return;
         }
         switch (tab) {
+            case 'dashboard':
             case 'dash': await Dashboard.load(); break;
             case 'pc': await PC.load(); break;
             case 'paket': await Paket.load(); break;
@@ -254,7 +273,14 @@ const App = {
             case 'laporan_menu': if (typeof LaporanMenu !== 'undefined') await LaporanMenu.load(); break;
             case 'log': await Log.load(); break;
             case 'grup': await Grup.load(); break;
+            case 'game_management': if (typeof GameManagement !== 'undefined') await GameManagement.init(); break;
             case 'monitor': if (typeof Monitor !== 'undefined') await Monitor.load(); break;
+            case 'server_statistic':
+                if (typeof ServerMonitor !== 'undefined') {
+                    ServerMonitor.fetchMetrics();
+                    ServerMonitor.checkLHMStatus();
+                }
+                break;
             case 'hardware_checker': if (typeof HardwareChecker !== 'undefined') await HardwareChecker.load(); break;
             case 'maintenance': if (typeof Maintenance !== 'undefined') await Maintenance.init(); break;
             case 'laporan_maintenance': if (typeof LaporanMaintenance !== 'undefined') await LaporanMaintenance.init(); break;

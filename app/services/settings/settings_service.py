@@ -34,6 +34,7 @@ class SettingsService:
             "warnet_address": "Jl. Merdeka No. 123, Kota",
             "warnet_phone": "0812-3456-7890",
             "warnet_footer": "Terima kasih, selamat bermain!",
+            "warnet_gmaps": "",
             "qris_image_url": "/static/uploads/qris/default_qris.png",
             "mikrotik_enabled": "0",
             "mikrotik_host": "192.168.1.1",

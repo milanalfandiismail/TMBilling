@@ -50,9 +50,11 @@ pub fn lock_executable_file() -> Result<File, std::io::Error> {
 /// Layer 4: Registry Hash Verification - Detect file tampering
 #[cfg(not(debug_assertions))]
 pub fn verify_file_integrity() -> Result<(), String> {
-    // Read expected hash from Registry
+    // Read expected hash from Registry (HKLM first, then HKCU)
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
     let subkey = hklm.open_subkey("Software\\TMBilling")
+        .or_else(|_| hkcu.open_subkey("Software\\TMBilling"))
         .map_err(|_| "Registry key not found")?;
     
     let expected_hash: String = subkey.get_value("Hash_TMBilling")

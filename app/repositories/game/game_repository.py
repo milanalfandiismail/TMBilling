@@ -5,17 +5,25 @@ from app.models.game.game import Game
 
 class GameRepository:
     @staticmethod
-    def get_all(aktif_only=False, category=None, search_query=None):
+    def get_all(aktif_only=False, category=None, tipe=None, search_query=None):
         query = Game.query
         
         if aktif_only:
             query = query.filter_by(aktif=True)
             
+        if tipe and tipe.lower() != 'all':
+            query = query.filter(Game.tipe == tipe.lower())
+            
         if category and category.lower() != 'all':
-            query = query.filter(Game.kategori.ilike(category))
+            query = query.filter(Game.kategori.ilike(f"%{category}%"))
             
         if search_query:
-            query = query.filter(Game.nama.ilike(f"%{search_query}%"))
+            query = query.filter(
+                db.or_(
+                    Game.nama.ilike(f"%{search_query}%"),
+                    Game.kategori.ilike(f"%{search_query}%")
+                )
+            )
             
         return query.order_by(Game.nama).all()
 

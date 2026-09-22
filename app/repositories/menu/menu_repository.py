@@ -37,6 +37,16 @@ class MenuRepository:
         return MenuItem.query.filter_by(is_active=True).order_by(MenuItem.nama.asc()).all()
 
     @staticmethod
+    def get_archived():
+        """Mengambil semua menu yang diarsipkan dari katalog."""
+        return MenuItem.query.filter_by(is_active=False).order_by(MenuItem.nama.asc()).all()
+
+    @staticmethod
+    def count_archived():
+        """Menghitung jumlah menu yang diarsipkan."""
+        return MenuItem.query.filter_by(is_active=False).count()
+
+    @staticmethod
     def count_transaksi_by_menu(menu_id):
         """Menghitung jumlah transaksi menu yang terkait dengan menu_id."""
         return TransaksiMenu.query.filter_by(menu_id=menu_id).count()
@@ -110,11 +120,16 @@ class MenuRepository:
         return [r[0] for r in results if r[0]]
 
     @staticmethod
-    def get_total_pemasukan_by_date(date_obj, kasir_id=None, metode_pembayaran=None):
-        """Menghitung total pendapatan F&B pada tanggal tertentu, opsional difilter kasir."""
-        res = db.session.query(db.func.sum(TransaksiMenu.total_harga)).select_from(TransaksiMenu).filter(
-            db.func.date(TransaksiMenu.tanggal) == date_obj
-        )
+    def get_total_pemasukan_by_date(date_obj=None, kasir_id=None, metode_pembayaran=None):
+        """Menghitung total pendapatan F&B pada tanggal tertentu (atau semua tanggal jika None), opsional difilter kasir."""
+        res = db.session.query(db.func.sum(TransaksiMenu.total_harga)).select_from(TransaksiMenu)
+        if date_obj and str(date_obj).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(date_obj)
+            res = res.filter(
+                TransaksiMenu.tanggal >= start_utc,
+                TransaksiMenu.tanggal < end_utc
+            )
         res = MenuRepository._apply_kasir_filter(res, kasir_id)
         if metode_pembayaran:
             if metode_pembayaran == "Tunai":
@@ -126,9 +141,16 @@ class MenuRepository:
         return int(val) if val else 0
 
     @staticmethod
-    def get_transactions_by_date(date_obj, kasir_id=None, metode_pembayaran=None):
-        """Mendapatkan daftar transaksi F&B pada tanggal tertentu, opsional difilter kasir."""
-        query = TransaksiMenu.query.filter(db.func.date(TransaksiMenu.tanggal) == date_obj)
+    def get_transactions_by_date(date_obj=None, kasir_id=None, metode_pembayaran=None):
+        """Mendapatkan daftar transaksi F&B pada tanggal tertentu (atau semua tanggal jika None), opsional difilter kasir."""
+        query = TransaksiMenu.query
+        if date_obj and str(date_obj).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(date_obj)
+            query = query.filter(
+                TransaksiMenu.tanggal >= start_utc,
+                TransaksiMenu.tanggal < end_utc
+            )
         query = MenuRepository._apply_kasir_filter(query, kasir_id)
         if metode_pembayaran:
             if metode_pembayaran == "Tunai":
@@ -141,9 +163,16 @@ class MenuRepository:
         return query.order_by(TransaksiMenu.tanggal.desc()).all()
 
     @staticmethod
-    def get_transactions_by_date_paginated(date_obj, page, per_page, kasir_id=None, metode_pembayaran=None):
-        """Mendapatkan daftar transaksi F&B dengan pagination pada tanggal tertentu."""
-        query = TransaksiMenu.query.filter(db.func.date(TransaksiMenu.tanggal) == date_obj)
+    def get_transactions_by_date_paginated(date_obj=None, page=1, per_page=12, kasir_id=None, metode_pembayaran=None):
+        """Mendapatkan daftar transaksi F&B dengan pagination pada tanggal tertentu (atau semua tanggal jika None)."""
+        query = TransaksiMenu.query
+        if date_obj and str(date_obj).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(date_obj)
+            query = query.filter(
+                TransaksiMenu.tanggal >= start_utc,
+                TransaksiMenu.tanggal < end_utc
+            )
         query = MenuRepository._apply_kasir_filter(query, kasir_id)
         if metode_pembayaran:
             if metode_pembayaran == "Tunai":

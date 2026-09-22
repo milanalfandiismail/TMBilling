@@ -102,10 +102,11 @@ const BranchManager = {
         }
 
         // Render daftar item dropdown
+        const displayVersion = window.APP_VERSION || document.querySelector('meta[name="app-version"]')?.content || 'v1.6.1';
         let html = `
             <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-neutral-400 border-b border-white/5 flex items-center justify-between">
                 <span>Pilih Cabang</span>
-                <span class="text-[9px] bg-white/5 px-1.5 py-0.5 rounded text-neutral-400 font-mono">v1.6.0</span>
+                <span class="text-[9px] bg-white/5 px-1.5 py-0.5 rounded text-neutral-400 font-mono">${displayVersion}</span>
             </div>
             <div class="py-1 max-h-60 overflow-y-auto custom-scrollbar">
                 <button type="button" data-branch-id="0" class="branch-option-item w-full flex items-center justify-between px-3 py-2 text-xs text-left transition-colors ${this.activeBranchId === '0' ? 'bg-accent/15 text-accent font-bold' : 'text-neutral-300 hover:bg-white/5'}">
@@ -433,13 +434,17 @@ const BranchManager = {
             if (typeof Laporan !== 'undefined' && typeof Laporan.resetFilters === 'function') Laporan.resetFilters();
             if (typeof LaporanMenu !== 'undefined' && typeof LaporanMenu.resetFilters === 'function') LaporanMenu.resetFilters();
             if (typeof Struk !== 'undefined' && typeof Struk.resetState === 'function') Struk.resetState();
+            if (typeof Maintenance !== 'undefined' && typeof Maintenance.resetState === 'function') Maintenance.resetState();
+            if (typeof LaporanMaintenance !== 'undefined' && typeof LaporanMaintenance.resetState === 'function') LaporanMaintenance.resetState();
+            if (typeof Blackout !== 'undefined' && typeof Blackout.resetState === 'function') Blackout.resetState();
+            if (typeof Screenshot !== 'undefined' && typeof Screenshot.resetState === 'function') Screenshot.resetState();
 
             // 2. Refresh Grup Sistem Global (opsi filter & dropdown di seluruh modal sinkron)
             if (typeof Grup !== 'undefined' && typeof Grup.load === 'function') {
                 await Grup.load();
             }
 
-            // 3. Selalu muat data Dashboard (PC, kartu statistik omzet/sesi, dan grup) dengan grup bersih
+            // 3. Selalu muat data Dashboard (PC dan grup) dengan grup bersih
             if (typeof Dashboard !== 'undefined') {
                 Dashboard.activeGrup = 'semua';
                 if (typeof Dashboard.load === 'function') {
@@ -452,6 +457,11 @@ const BranchManager = {
                 if (App.currentTab === 'settings' || App.currentTab.startsWith('settings_')) {
                     if (typeof Settings !== 'undefined') {
                         await Settings.load(true);
+                    }
+                } else if (App.currentTab === 'server_statistic') {
+                    if (typeof ServerMonitor !== 'undefined') {
+                        await ServerMonitor.fetchMetrics();
+                        await ServerMonitor.checkLHMStatus();
                     }
                 } else if (App.currentTab !== 'dash' && typeof App.loadTab === 'function') {
                     await App.loadTab(App.currentTab);
@@ -618,8 +628,8 @@ const BranchManager = {
 
         if (!this.branches || this.branches.length === 0) {
             tbody.innerHTML = `
-                <tr>
-                    <td colspan="5" class="py-8 text-center text-xs text-neutral-500">
+                <tr class="block lg:table-row">
+                    <td colspan="3" class="py-8 text-center text-xs text-neutral-500 block lg:table-cell">
                         Belum ada cabang lain yang terhubung. Klik tombol <strong>+ Tambah Cabang</strong> untuk menghubungkan cabang baru.
                     </td>
                 </tr>
@@ -630,24 +640,35 @@ const BranchManager = {
         let html = '';
         this.branches.forEach((branch, idx) => {
             const statusBadge = branch.status_online
-                ? `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] lg:text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Online ${branch.latensi_ms ? `(${branch.latensi_ms}ms)` : ''}</span>`
-                : `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] lg:text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20"><span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Offline</span>`;
+                ? `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] lg:max-xl:text-[10px] xl:text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Online ${branch.latensi_ms ? `(${branch.latensi_ms}ms)` : ''}</span>`
+                : `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] lg:max-xl:text-[10px] xl:text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20"><span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Offline</span>`;
 
             html += `
-                <tr class="border-b border-[#1c1c1c] hover:bg-white/[0.02] transition-colors text-xs lg:text-base">
-                    <td class="py-3 px-3 text-neutral-400 font-mono">${idx + 1}</td>
-                    <td class="py-3 px-3 font-semibold text-neutral-200 font-sans">${branch.nama}</td>
-                    <td class="py-3 px-3 text-neutral-400 font-mono text-xs lg:text-sm max-w-xs truncate">${branch.url}</td>
-                    <td class="py-3 px-3">${statusBadge}</td>
-                    <td class="py-3 px-3 text-right">
-                        <div class="flex items-center justify-end gap-2">
-                            <button type="button" onclick="BranchManager.testExistingBranch(${branch.id})" class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 hover:text-white rounded text-xs lg:text-sm font-bold transition-colors">
+                <tr class="border-b border-[#2a2a2a] lg:border-[#1c1c1c] hover:bg-white/[0.02] transition-colors text-xs lg:max-xl:text-xs xl:text-base block lg:table-row py-3 lg:py-0 last:border-b-0">
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-center">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">No & Status</span>
+                        <div class="flex items-center gap-2">
+                            <div class="font-mono text-neutral-400 font-bold">#${idx + 1}</div>
+                            <div class="mt-0 lg:mt-1">${statusBadge}</div>
+                        </div>
+                    </td>
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-start sm:items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Cabang</span>
+                        <div class="text-right lg:text-left">
+                            <div class="font-bold text-neutral-100 text-xs lg:max-xl:text-xs xl:text-sm font-sans">${this.escapeHtml(branch.nama)}</div>
+                            <div class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-400 font-mono mt-0.5 max-w-sm truncate">${this.escapeHtml(branch.url)}</div>
+                        </div>
+                    </td>
+                    <td class="py-2 lg:py-2.5 px-3 text-right flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Aksi Kontrol</span>
+                        <div class="flex items-center justify-end gap-1.5 flex-wrap">
+                            <button type="button" onclick="BranchManager.testExistingBranch(${branch.id})" class="px-2.5 py-1 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 hover:text-white rounded text-[11px] lg:max-xl:text-[11px] xl:text-xs font-bold transition-colors">
                                 Tes
                             </button>
-                            <button type="button" onclick="BranchManager.editBranch(${branch.id})" class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 hover:text-white rounded text-xs lg:text-sm font-bold transition-colors">
+                            <button type="button" onclick="BranchManager.editBranch(${branch.id})" class="px-2.5 py-1 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 hover:text-white rounded text-[11px] lg:max-xl:text-[11px] xl:text-xs font-bold transition-colors">
                                 Edit
                             </button>
-                            <button type="button" onclick="BranchManager.deleteBranch(${branch.id})" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded text-xs lg:text-sm font-bold transition-colors">
+                            <button type="button" onclick="BranchManager.deleteBranch(${branch.id})" class="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded text-[11px] lg:max-xl:text-[11px] xl:text-xs font-bold transition-colors">
                                 Hapus
                             </button>
                         </div>
@@ -962,7 +983,7 @@ const BranchManager = {
         if (tbody) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="9" class="py-8 text-center text-xs text-neutral-500">Memuat data akun kasir cabang...</td>
+                    <td colspan="4" class="py-8 text-center text-xs lg:max-xl:text-xs xl:text-base text-neutral-500">Memuat data akun kasir cabang...</td>
                 </tr>
             `;
         }
@@ -1062,8 +1083,8 @@ const BranchManager = {
 
         if (filtered.length === 0) {
             tbody.innerHTML = `
-                <tr>
-                    <td colspan="9" class="py-8 text-center text-xs lg:text-base text-neutral-500">
+                <tr class="block lg:table-row">
+                    <td colspan="4" class="py-8 text-center text-xs lg:max-xl:text-xs xl:text-base text-neutral-500 block lg:table-cell">
                         ${query ? 'Tidak ada akun kasir yang cocok dengan pencarian.' : (isArchivedTab ? 'Belum ada akun kasir remote yang diarsipkan.' : 'Belum ada akun kasir remote yang tercatat di transaksi.')}
                     </td>
                 </tr>
@@ -1082,30 +1103,30 @@ const BranchManager = {
             const encodedOp = encodeURIComponent(op.operator);
 
             const actionButtons = isArchivedTab ? `
-                <div class="flex items-center justify-end gap-2">
+                <div class="flex items-center justify-end gap-1.5 flex-wrap">
                     <button type="button" onclick="BranchManager.restoreRemoteOperator('${encodedOp}')"
-                        class="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1.5"
+                        class="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-[11px] lg:max-xl:text-[11px] xl:text-xs font-bold rounded transition-colors flex items-center gap-1.5"
                         title="Aktifkan kembali ke dropdown laporan">
                         <i class="fa-solid fa-rotate-left text-[10px]"></i>
                         <span>Aktifkan</span>
                     </button>
                     <button type="button" onclick="BranchManager.openDeleteOperatorModal('${encodedOp}')"
-                        class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1.5"
+                        class="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-[11px] lg:max-xl:text-[11px] xl:text-xs font-bold rounded transition-colors flex items-center gap-1.5"
                         title="Hapus permanen identitas kasir">
                         <i class="fa-solid fa-trash text-[10px]"></i>
                         <span>Hapus</span>
                     </button>
                 </div>
             ` : `
-                <div class="flex items-center justify-end gap-2">
+                <div class="flex items-center justify-end gap-1.5 flex-wrap">
                     <button type="button" onclick="BranchManager.hideRemoteOperator('${encodedOp}')"
-                        class="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1.5"
+                        class="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 text-[11px] lg:max-xl:text-[11px] xl:text-xs font-bold rounded transition-colors flex items-center gap-1.5"
                         title="Sembunyikan dari dropdown filter laporan aktif">
                         <i class="fa-solid fa-eye-slash text-[10px]"></i>
                         <span>Nonaktifkan</span>
                     </button>
                     <button type="button" onclick="BranchManager.openDeleteOperatorModal('${encodedOp}')"
-                        class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs lg:text-sm font-bold rounded transition-colors flex items-center gap-1.5"
+                        class="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-[11px] lg:max-xl:text-[11px] xl:text-xs font-bold rounded transition-colors flex items-center gap-1.5"
                         title="Hapus permanen identitas kasir">
                         <i class="fa-solid fa-trash text-[10px]"></i>
                         <span>Hapus</span>
@@ -1114,35 +1135,55 @@ const BranchManager = {
             `;
 
             const statusBadge = op.is_hidden ?
-                `<span class="px-2 py-0.5 text-[10px] lg:text-xs rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold uppercase tracking-wider">Diarsipkan</span>` :
-                `<span class="px-2 py-0.5 text-[10px] lg:text-xs rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase tracking-wider">Aktif</span>`;
+                `<span class="px-2 py-0.5 text-[10px] lg:max-xl:text-[10px] xl:text-xs rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold uppercase tracking-wider">Diarsipkan</span>` :
+                `<span class="px-2 py-0.5 text-[10px] lg:max-xl:text-[10px] xl:text-xs rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase tracking-wider">Aktif</span>`;
 
             return `
-                <tr class="border-b border-[#1c1c1c] hover:bg-white/[0.02] transition-colors text-xs lg:text-base">
-                    <td class="py-3 px-3 text-neutral-500 font-mono">${index + 1}</td>
-                    <td class="py-3 px-3 font-semibold text-neutral-200">
+                <tr class="border-b border-[#2a2a2a] lg:border-[#1c1c1c] hover:bg-white/[0.02] transition-colors text-xs lg:max-xl:text-xs xl:text-base block lg:table-row py-3 lg:py-0 last:border-b-0">
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-center">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">No & Status</span>
                         <div class="flex items-center gap-2">
-                            <span class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-[11px] text-neutral-400 shrink-0">👤</span>
-                            <span class="font-mono text-xs lg:text-sm">${this.escapeHtml(op.operator)}</span>
+                            <div class="font-mono text-neutral-400 font-bold">#${index + 1}</div>
+                            <div class="mt-0 lg:mt-1">${statusBadge}</div>
                         </div>
                     </td>
-                    <td class="py-3 px-3 text-neutral-300 font-mono text-xs lg:text-sm">${this.escapeHtml(op.username)}</td>
-                    <td class="py-3 px-3 text-neutral-300">
-                        <span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[11px] lg:text-xs font-bold font-mono">
-                            ${this.escapeHtml(op.branch_name)}
-                        </span>
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-start sm:items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Identitas Kasir</span>
+                        <div class="text-right lg:text-left">
+                            <div class="flex items-center justify-end lg:justify-start gap-2">
+                                <span class="w-5 h-5 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-[10px] text-neutral-400 shrink-0">👤</span>
+                                <span class="font-bold text-neutral-100 text-xs lg:max-xl:text-xs xl:text-sm font-sans">${this.escapeHtml(op.operator)}</span>
+                            </div>
+                            <div class="flex items-center justify-end lg:justify-start gap-1.5 mt-0.5">
+                                <span class="font-mono text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-400">@${this.escapeHtml(op.username)}</span>
+                                <span class="px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[9px] lg:max-xl:text-[9px] xl:text-[11px] font-bold font-mono">
+                                    ${this.escapeHtml(op.branch_name)}
+                                </span>
+                            </div>
+                        </div>
                     </td>
-                    <td class="py-3 px-3 text-center">
-                        <span class="px-2 py-0.5 rounded bg-[#171717] border border-[#262626] text-neutral-300 font-mono text-xs lg:text-sm font-bold">
-                            ${op.total_transaksi}
-                        </span>
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-start sm:items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Statistik</span>
+                        <div class="text-right lg:text-left">
+                            <div class="font-bold text-emerald-400 font-mono text-xs lg:max-xl:text-xs xl:text-sm">
+                                ${formatMoney(op.total_nominal)}
+                            </div>
+                            <div class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 font-mono mt-0.5">
+                                ${op.total_transaksi}x transaksi
+                            </div>
+                        </div>
                     </td>
-                    <td class="py-3 px-3 text-right font-bold text-emerald-400 font-mono text-xs lg:text-sm">
-                        ${formatMoney(op.total_nominal)}
+                    <td class="py-2 lg:py-2.5 px-3 text-right flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Aktivitas & Aksi</span>
+                        <div class="text-right">
+                            <div class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-400 font-mono">
+                                ${op.terakhir_aktif || '-'}
+                            </div>
+                            <div class="mt-1">
+                                ${actionButtons}
+                            </div>
+                        </div>
                     </td>
-                    <td class="py-3 px-3 text-neutral-400 text-xs lg:text-sm font-mono">${op.terakhir_aktif || '-'}</td>
-                    <td class="py-3 px-3 text-center">${statusBadge}</td>
-                    <td class="py-3 px-3 text-right">${actionButtons}</td>
                 </tr>
             `;
         }).join('');
@@ -1303,7 +1344,7 @@ const BranchManager = {
         if (tbody) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center py-8 text-neutral-500 text-xs lg:text-base font-mono">
+                    <td colspan="5" class="text-center py-8 text-neutral-500 text-xs lg:max-xl:text-xs xl:text-base font-mono">
                         <i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat daftar koneksi masuk...
                     </td>
                 </tr>
@@ -1358,8 +1399,8 @@ const BranchManager = {
 
         if (filtered.length === 0) {
             tbody.innerHTML = `
-                <tr>
-                    <td colspan="8" class="text-center py-8 text-neutral-500 text-xs lg:text-base font-mono">
+                <tr class="block lg:table-row">
+                    <td colspan="5" class="text-center py-8 text-neutral-500 text-xs lg:max-xl:text-xs xl:text-base font-mono block lg:table-cell">
                         ${this.filterInboundQuery ? 'Tidak ada cabang yang cocok dengan pencarian.' : 'Belum ada cabang luar yang terhubung ke server ini.'}
                     </td>
                 </tr>
@@ -1370,11 +1411,11 @@ const BranchManager = {
         tbody.innerHTML = filtered.map((b, idx) => {
             const isBlocked = b.status === 'diblokir';
             const statusBadge = isBlocked
-                ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] lg:text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                ? `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20">
                      <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
                      Diblokir
                    </span>`
-                : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] lg:text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                : `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                      Terhubung
                    </span>`;
@@ -1396,49 +1437,68 @@ const BranchManager = {
 
             const actionBlockBtn = isBlocked
                 ? `<button type="button" onclick="BranchManager.openUnblockInboundModal(${b.id}, '${safeName}')"
-                     class="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded text-xs lg:text-sm font-bold transition-colors inline-flex items-center gap-1.5"
+                     class="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded text-[11px] lg:max-xl:text-[11px] xl:text-xs font-bold transition-colors inline-flex items-center gap-1.5"
                      title="Buka Blokir">
-                     <i class="fa-solid fa-lock-open text-[11px]"></i>
+                     <i class="fa-solid fa-lock-open text-[10px]"></i>
                      <span>Buka Blokir</span>
                    </button>`
                 : `<button type="button" onclick="BranchManager.openBlockInboundModal(${b.id}, '${safeName}')"
-                     class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded text-xs lg:text-sm font-bold transition-colors inline-flex items-center gap-1.5"
+                     class="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded text-[11px] lg:max-xl:text-[11px] xl:text-xs font-bold transition-colors inline-flex items-center gap-1.5"
                      title="Blokir Akses">
-                     <i class="fa-solid fa-ban text-[11px]"></i>
+                     <i class="fa-solid fa-ban text-[10px]"></i>
                      <span>Blokir</span>
                    </button>`;
 
             const actionDeleteBtn = `
                 <button type="button" onclick="BranchManager.openDeleteInboundModal(${b.id}, '${safeName}')"
-                  class="px-3 py-1.5 bg-[#171717] hover:bg-red-500/20 border border-[#262626] hover:border-red-500/30 text-neutral-400 hover:text-red-400 rounded text-xs lg:text-sm font-bold transition-colors inline-flex items-center gap-1"
+                  class="px-2.5 py-1 bg-[#171717] hover:bg-red-500/20 border border-[#262626] hover:border-red-500/30 text-neutral-400 hover:text-red-400 rounded text-[11px] lg:max-xl:text-[11px] xl:text-xs font-bold transition-colors inline-flex items-center gap-1"
                   title="Hapus riwayat">
-                  <i class="fa-solid fa-trash text-[11px]"></i>
+                  <i class="fa-solid fa-trash text-[10px]"></i>
                 </button>
             `;
 
             return `
-                <tr class="border-b border-[#1c1c1c] hover:bg-white/[0.02] transition-colors">
-                    <td class="py-3 px-3 text-xs lg:text-base text-neutral-500 font-mono">${idx + 1}</td>
-                    <td class="py-3 px-3">
-                        <div class="text-xs lg:text-base font-bold text-neutral-200">${b.nama || '-'}</div>
-                        ${b.url ? `<div class="text-[10px] lg:text-xs text-neutral-500 font-mono mt-0.5">${b.url}</div>` : ''}
+                <tr class="border-b border-[#2a2a2a] lg:border-[#1c1c1c] hover:bg-white/[0.02] transition-colors text-xs lg:max-xl:text-xs xl:text-base block lg:table-row py-3 lg:py-0 last:border-b-0">
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-center">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">No & Status</span>
+                        <div class="flex items-center gap-2">
+                            <div class="font-mono text-neutral-400 font-bold">#${idx + 1}</div>
+                            <div class="mt-0 lg:mt-1">${statusBadge}</div>
+                        </div>
                     </td>
-                    <td class="py-3 px-3">
-                        <div class="font-mono text-xs lg:text-sm text-neutral-300">${b.mac_address || '-'}</div>
-                        <div class="text-[10px] lg:text-xs text-neutral-500 font-mono mt-0.5">${b.ip_address || '-'}</div>
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-start sm:items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Cabang</span>
+                        <div class="text-right lg:text-left">
+                            <div class="font-bold text-neutral-100 text-xs lg:max-xl:text-xs xl:text-sm font-sans">${this.escapeHtml(b.nama || '-')}</div>
+                            <div class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 font-mono mt-0.5 truncate max-w-[180px]">${this.escapeHtml(b.url || '-')}</div>
+                        </div>
                     </td>
-                    <td class="py-3 px-3 text-xs lg:text-sm text-neutral-300 font-mono">${b.operator_terakhir || '-'}</td>
-                    <td class="py-3 px-3 text-xs lg:text-sm text-neutral-400 font-mono">${lastActiveFormatted}</td>
-                    <td class="py-3 px-3 text-center">
-                        <span class="inline-block px-2.5 py-1 rounded bg-neutral-900 border border-[#262626] font-mono text-xs lg:text-sm text-neutral-300">
-                            ${b.total_request || 1}
-                        </span>
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-start sm:items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Hardware / IP</span>
+                        <div class="text-right lg:text-left">
+                            <div class="font-mono text-neutral-300 font-semibold text-xs lg:max-xl:text-xs xl:text-sm">${this.escapeHtml(b.mac_address || '-')}</div>
+                            <div class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 font-mono mt-0.5">${this.escapeHtml(b.ip_address || '-')}</div>
+                        </div>
                     </td>
-                    <td class="py-3 px-3 text-center">${statusBadge}</td>
-                    <td class="py-3 px-3 text-right">
-                        <div class="flex items-center justify-end gap-2">
-                            ${actionBlockBtn}
-                            ${actionDeleteBtn}
+                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-start sm:items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Operator</span>
+                        <div class="text-right lg:text-left">
+                            <div class="font-mono text-neutral-200 font-medium text-xs lg:max-xl:text-xs xl:text-sm">${this.escapeHtml(b.operator_terakhir || '-')}</div>
+                            <div class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 font-mono mt-0.5">${lastActiveFormatted}</div>
+                        </div>
+                    </td>
+                    <td class="py-2 lg:py-2.5 px-3 text-right flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Total & Aksi</span>
+                        <div class="text-right">
+                            <div class="flex items-center justify-end">
+                                <span class="inline-block px-2 py-0.5 rounded bg-neutral-900 border border-[#262626] font-mono text-[11px] lg:max-xl:text-[11px] xl:text-xs text-neutral-300 font-bold">
+                                    ${b.total_request || 1}x akses
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-end gap-1.5 mt-1.5 flex-wrap">
+                                ${actionBlockBtn}
+                                ${actionDeleteBtn}
+                            </div>
                         </div>
                     </td>
                 </tr>

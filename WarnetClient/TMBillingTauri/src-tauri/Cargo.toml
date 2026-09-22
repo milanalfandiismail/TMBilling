@@ -1,6 +1,6 @@
 [package]
 name = "tmbilling"
-version = "1.6.0"
+version = "1.6.1"
 description = "TMBilling Client"
 authors = ["Antigravity"]
 edition = "2021"
@@ -25,7 +25,13 @@ windows = { version = "0.52", features = [
     "Win32_Foundation",
     "Win32_UI_WindowsAndMessaging",
     "Win32_UI_Input_KeyboardAndMouse",
-    "Win32_System_LibraryLoader"
+    "Win32_System_LibraryLoader",
+    "Win32_Media_Audio",
+    "Win32_Media_Audio_Endpoints",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_UI_Shell_PropertiesSystem",
+    "Win32_System_Variant"
 ] }
 screenshots = "0.8.10"
 base64 = "0.22"

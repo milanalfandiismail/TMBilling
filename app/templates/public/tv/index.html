@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TMBilling - TV Signage (Dynamic Mode)</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v={{ v_cache }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -121,6 +121,6 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="{{ url_for('static', filename='js/public/tv.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/public/tv.js') }}?v={{ v_cache }}"></script>
 </body>
 </html>

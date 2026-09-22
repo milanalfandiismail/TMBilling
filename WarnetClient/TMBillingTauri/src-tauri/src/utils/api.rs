@@ -5,6 +5,7 @@ use crate::state::{REMAINING_SECONDS, SESSION_ACTIVE};
 use winreg::enums::*;
 use winreg::RegKey;
 use base64::Engine;
+use sha2::{Sha256, Digest};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StatusResponse {
@@ -58,6 +59,8 @@ pub struct WarnetConfig {
     pub announcement: Option<String>,
     pub qris_url: Option<String>,
     pub paket: Vec<serde_json::Value>,
+    #[serde(default)]
+    pub menu: Vec<serde_json::Value>,
 }
 
 fn deobfuscate(hex_input: &str) -> String {
@@ -86,6 +89,22 @@ fn is_obfuscated(input: &str) -> bool {
         return false;
     }
     deobf.chars().all(|c| c.is_ascii() && !c.is_control())
+}
+
+fn sha256_hex(input: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(input.as_bytes());
+    format!("{:x}", hasher.finalize())
+}
+
+fn to_sha256_hash(val: &str) -> String {
+    let val = val.trim();
+    // Sudah berupa SHA256 hash (64 hex chars) — return as-is
+    if val.len() == 64 && val.chars().all(|c| c.is_ascii_hexdigit()) {
+        return val.to_lowercase();
+    }
+    // Plain text — hash langsung (emergency creds tidak di-XOR-obfuscate)
+    sha256_hex(val)
 }
 
 #[derive(Clone)]
@@ -124,7 +143,10 @@ impl ApiService {
         let mut reg_em_token = None;
 
         let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-        if let Ok(subkey) = hklm.open_subkey("Software\\TMBilling") {
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let reg_result = hklm.open_subkey("Software\\TMBilling").or_else(|_| hkcu.open_subkey("Software\\TMBilling"));
+
+        if let Ok(subkey) = reg_result {
             if let Ok(u) = subkey.get_value::<String, _>("Url") {
                 if !u.trim().is_empty() {
                     reg_url = Some(u);
@@ -143,69 +165,64 @@ impl ApiService {
             if let Ok(user) = subkey.get_value::<String, _>("EmergencyUser") {
                 let user = user.trim().to_string();
                 if !user.is_empty() {
-                    if is_obfuscated(&user) {
-                        reg_em_user = Some(deobfuscate(&user));
-                    } else {
-                        reg_em_user = Some(user);
-                    }
+                    reg_em_user = Some(to_sha256_hash(&user));
                 }
             }
             if let Ok(t) = subkey.get_value::<String, _>("EmergencyToken") {
                 let t = t.trim().to_string();
                 if !t.is_empty() {
-                    if is_obfuscated(&t) {
-                        reg_em_token = Some(deobfuscate(&t));
-                    } else {
-                        reg_em_token = Some(t);
-                    }
+                    reg_em_token = Some(to_sha256_hash(&t));
                 }
             }
         }
 
-        // 2. Fallback ke config.ini
+        // 2. Fallback ke config.ini (cek folder aktif, %LOCALAPPDATA%\TMBilling, dan C:\TMBILLING)
         let mut ini_url = None;
         let mut ini_api_key = None;
         let mut ini_em_user = None;
         let mut ini_em_token = None;
 
-        if let Ok(content) = std::fs::read_to_string("config.ini") {
-            for line in content.lines() {
-                let line = line.trim();
-                if line.starts_with(';') || line.starts_with('#') || line.is_empty() {
-                    continue;
-                }
-                if let Some(pos) = line.find('=') {
-                    let key = line[..pos].trim().to_lowercase();
-                    let val = line[pos + 1..].trim().to_string();
-                    if key == "url" {
-                        ini_url = Some(val);
-                    } else if key == "apikey" || key == "api_key" {
-                        if is_obfuscated(&val) {
-                            ini_api_key = Some(deobfuscate(&val));
-                        } else {
-                            ini_api_key = Some(val);
-                        }
-                    } else if key == "emergencyuser" || key == "emergency_user" {
-                        if is_obfuscated(&val) {
-                            ini_em_user = Some(deobfuscate(&val));
-                        } else {
-                            ini_em_user = Some(val);
-                        }
-                    } else if key == "emergencytoken" || key == "emergency_token" {
-                        if is_obfuscated(&val) {
-                            ini_em_token = Some(deobfuscate(&val));
-                        } else {
-                            ini_em_token = Some(val);
+        let mut config_paths = vec![std::path::PathBuf::from("config.ini")];
+        if let Ok(local_appdata) = std::env::var("LOCALAPPDATA") {
+            config_paths.push(std::path::PathBuf::from(local_appdata).join("TMBilling").join("config.ini"));
+        }
+        config_paths.push(std::path::PathBuf::from(r"C:\TMBILLING\config.ini"));
+
+        for config_path in config_paths {
+            if let Ok(content) = std::fs::read_to_string(&config_path) {
+                for line in content.lines() {
+                    let line = line.trim();
+                    if line.starts_with(';') || line.starts_with('#') || line.is_empty() {
+                        continue;
+                    }
+                    if let Some(pos) = line.find('=') {
+                        let key = line[..pos].trim().to_lowercase();
+                        let val = line[pos + 1..].trim().to_string();
+                        if key == "url" {
+                            ini_url = Some(val);
+                        } else if key == "apikey" || key == "api_key" {
+                            if is_obfuscated(&val) {
+                                ini_api_key = Some(deobfuscate(&val));
+                            } else {
+                                ini_api_key = Some(val);
+                            }
+                        } else if key == "emergencyuser" || key == "emergency_user" {
+                            ini_em_user = Some(to_sha256_hash(&val));
+                        } else if key == "emergencytoken" || key == "emergency_token" {
+                            ini_em_token = Some(to_sha256_hash(&val));
                         }
                     }
+                }
+                if ini_url.is_some() {
+                    break;
                 }
             }
         }
 
         let url = reg_url.or(ini_url).unwrap_or_else(|| "http://127.0.0.1:7015".to_string());
         let api_key = reg_api_key.or(ini_api_key).unwrap_or_else(|| "TM2026".to_string());
-        let em_user = reg_em_user.or(ini_em_user).unwrap_or_else(|| "TMBilling".to_string());
-        let em_token = reg_em_token.or(ini_em_token).unwrap_or_else(|| "TM123qaz!@#".to_string());
+        let em_user = reg_em_user.or(ini_em_user).unwrap_or_else(|| sha256_hex("TMBilling"));
+        let em_token = reg_em_token.or(ini_em_token).unwrap_or_else(|| sha256_hex("TM123qaz!@#"));
 
         (url, api_key, em_user, em_token)
     }
@@ -314,12 +331,14 @@ impl ApiService {
 
     pub async fn admin_login(&self, ip: &str, mac: &str, user: &str, pass: &str) -> Result<StatusResponse, String> {
         // 1. CEK EMERGENCY CREDENTIALS OFFLINE DULU (biar bisa offline)
-        if user == self.emergency_user && pass == self.emergency_token {
+        let user_hash = sha256_hex(user.trim());
+        let pass_hash = sha256_hex(pass.trim());
+        if user_hash.eq_ignore_ascii_case(&self.emergency_user) && pass_hash.eq_ignore_ascii_case(&self.emergency_token) {
             return Ok(StatusResponse {
                 status: "admin".to_string(),
                 sisa_waktu: Some(0),
                 nama: Some("SYSTEM".to_string()),
-                grup: Some("SYSTEM".to_string()),
+                grup: Some("ADMINISTRATOR".to_string()),
                 pc_kode: None,
                 shutdown_timer: Some(0),
                 command: None,
@@ -380,11 +399,12 @@ impl ApiService {
         })
     }
 
-    pub async fn emergency_login(&self, ip: &str, mac: &str) -> Result<StatusResponse, String> {
-        // 1. COBA SERVER (bonus — biar set pc.is_admin_mode di DB)
+    pub async fn emergency_login(&self, ip: &str, mac: &str, username: &str) -> Result<StatusResponse, String> {
+        // Kirim ke server agar tercatat di DB & log (PC mana yang emergency login, siapa usernya)
         let body = serde_json::json!({
             "ip_address": ip,
             "mac_address": mac,
+            "username": username,
         });
 
         let url = format!("{}/emergency-login", self.server_url);
@@ -394,7 +414,7 @@ impl ApiService {
             .send()
             .await;
 
-        // 2. TETAP SUKSES (walau server unreachable)
+        // TETAP SUKSES walau server unreachable (emergency mode = offline-first)
         Ok(StatusResponse {
             status: "admin".to_string(),
             sisa_waktu: Some(0),

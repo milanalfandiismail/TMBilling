@@ -127,7 +127,8 @@ def emergency_login():
     try:
         result = ClientService.emergency_login(
             ip_address=data.get("ip_address"),
-            mac_address=data.get("mac_address", "").upper().strip()
+            mac_address=data.get("mac_address", "").upper().strip(),
+            username=data.get("username", "SYSTEM").strip()
         )
         return jsonify(result), 200
     except ValueError as e:
@@ -150,11 +151,19 @@ def get_warnet_config():
         
         paket = PaketService.get_all(aktif_only=True)
         
+        try:
+            from app.services import MenuService
+            menu_items = MenuService.get_all_menu()
+            menu_list = [m.to_dict() for m in menu_items if getattr(m, 'is_active', True)]
+        except Exception as _e:
+            menu_list = []
+        
         return jsonify({
             "title": title,
             "announcement": announcement,
             "qris_url": qris_url,
-            "paket": [p.to_dict() for p in paket]
+            "paket": [p.to_dict() for p in paket],
+            "menu": menu_list
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

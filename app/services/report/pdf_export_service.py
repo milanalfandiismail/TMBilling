@@ -105,7 +105,8 @@ class PdfExportService:
         doc.build(story)
         pdf_bytes = buffer.getvalue()
 
-        filename = f"Laporan_Billing_{tanggal}_{nama_kasir.replace(' ', '_')}.pdf"
+        clean_tgl = str(tanggal).replace(' ', '_')
+        filename = f"Laporan_Billing_{clean_tgl}_{nama_kasir.replace(' ', '_')}.pdf"
         return pdf_bytes, filename
 
     @staticmethod
@@ -271,7 +272,8 @@ class PdfExportService:
         doc.build(story)
         pdf_bytes = buffer.getvalue()
 
-        filename = f"Laporan_PnL_{tanggal}.pdf"
+        clean_tgl = str(tanggal).replace(' ', '_')
+        filename = f"Laporan_PnL_{clean_tgl}.pdf"
         return pdf_bytes, filename
 
     @staticmethod
@@ -299,7 +301,7 @@ class PdfExportService:
             Paragraph("No. Nota", styles["table_header"]),
             Paragraph("Item Menu", styles["table_header"]),
             Paragraph("Qty", styles["table_header"]),
-            Paragraph("Total Harga", styles["table_header"]),
+            Paragraph("Total", styles["table_header"]),
             Paragraph("Metode", styles["table_header"]),
             Paragraph("Pemesanan", styles["table_header"]),
             Paragraph("Kasir", styles["table_header"])
@@ -307,26 +309,23 @@ class PdfExportService:
 
         table_data = [headers]
 
-        for idx, tm in enumerate(history_menu, 1):
-            waktu = tm.get("waktu", "-")
-            no_nota = tm.get("no_nota", "-")
-            menu_nama = tm.get("menu_nama", "-")
+        for tm in history_menu:
+            waktu = tm.get("waktu") or "-"
+            no_nota = tm.get("no_nota") or "-"
+            menu_nama = tm.get("menu_nama") or "-"
             jumlah = str(tm.get("jumlah", 0))
-
-            total_harga_raw = tm.get("total_harga", 0)
-            total_harga = f"Rp {total_harga_raw:,.0f}"
-
-            metode = tm.get("metode_pembayaran", "Tunai") or "Tunai"
-            pc_kode = tm.get("pc_kode", "-")
-            pemesanan = "Take Away" if pc_kode != "Tempat" else "Makan di Tempat"
-            kasir_nama = tm.get("kasir_nama", "-")
+            total_raw = tm.get("total_harga", 0)
+            total = f"Rp {total_raw:,.0f}"
+            metode = tm.get("metode_pembayaran") or "Tunai"
+            pemesanan = "Tempat" if tm.get("pc_kode") == "Tempat" else "Take Away"
+            kasir_nama = tm.get("kasir_nama") or "-"
 
             row = [
                 Paragraph(waktu, styles["table_cell_center"]),
                 Paragraph(no_nota, styles["table_cell_center"]),
                 Paragraph(menu_nama, styles["table_cell"]),
                 Paragraph(jumlah, styles["table_cell_center"]),
-                Paragraph(total_harga, styles["table_cell_right"]),
+                Paragraph(total, styles["table_cell_right"]),
                 Paragraph(metode, styles["table_cell_center"]),
                 Paragraph(pemesanan, styles["table_cell_center"]),
                 Paragraph(kasir_nama, styles["table_cell_center"])
@@ -360,7 +359,8 @@ class PdfExportService:
         doc.build(story)
         pdf_bytes = buffer.getvalue()
 
-        filename = f"Laporan_Kantin_{tanggal}_{nama_kasir.replace(' ', '_')}.pdf"
+        clean_tgl = str(tanggal).replace(' ', '_')
+        filename = f"Laporan_Kantin_{clean_tgl}_{nama_kasir.replace(' ', '_')}.pdf"
         return pdf_bytes, filename
 
     @staticmethod

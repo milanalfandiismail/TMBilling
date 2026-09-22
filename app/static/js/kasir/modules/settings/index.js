@@ -109,6 +109,11 @@ const Settings = {
                 if (footerInput && res.settings.warnet_footer !== undefined) {
                     footerInput.value = res.settings.warnet_footer;
                 }
+                const gmapsInput = document.getElementById('warnet-gmaps-input');
+                if (gmapsInput && res.settings.warnet_gmaps !== undefined) {
+                    gmapsInput.value = res.settings.warnet_gmaps;
+                    this.updateGmapsPreview();
+                }
                 const announcementVal = res.settings.warnet_announcement !== undefined ? res.settings.warnet_announcement : '';
                 const announcementInput = document.getElementById('warnet-announcement-input');
                 if (announcementInput) {
@@ -422,24 +427,36 @@ const Settings = {
             const res = await API.request('/api/v1/kasir/backup/list');
             if (res.success) {
                 if (res.backups.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-neutral-500">Tidak ada berkas backup di server.</td></tr>`;
+                    tbody.innerHTML = `<tr class="block lg:table-row"><td colspan="4" class="py-4 text-center text-neutral-500 block lg:table-cell">Tidak ada berkas backup di server.</td></tr>`;
                     return;
                 }
 
                 tbody.innerHTML = res.backups.map(b => `
-                    <tr class="border-b border-[#1c1c1c] hover:bg-[#070707] transition-colors">
-                        <td class="py-3 pr-2 text-neutral-200 text-xs lg:text-base font-bold">${b.filename}</td>
-                        <td class="py-3 pr-2 text-neutral-400 text-[10px] lg:text-sm">${b.created_at}</td>
-                        <td class="py-3 pr-2 text-neutral-400 text-xs lg:text-base">${b.size_mb} MB</td>
-                        <td class="py-3 text-right space-x-2">
-                            <button onclick="Settings.downloadBackup('${b.filename}')" class="px-2.5 py-1 bg-neutral-200 hover:bg-neutral-300 text-black text-[10px] lg:text-xs font-bold rounded transition-colors">Unduh</button>
-                            <button onclick="Settings.deleteBackup('${b.filename}')" class="px-2.5 py-1 bg-red-950/40 hover:bg-red-900/40 border border-red-900/50 text-red-400 text-[10px] lg:text-xs font-bold rounded transition-colors">Hapus</button>
+                    <tr class="border-b border-[#2a2a2a] lg:border-[#1c1c1c] hover:bg-[#070707] transition-colors block lg:table-row py-3 lg:py-0 last:border-b-0">
+                        <td class="py-2 lg:py-3 pr-2 text-neutral-200 text-xs lg:text-base font-bold flex lg:table-cell justify-between items-start sm:items-center">
+                            <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Nama Berkas</span>
+                            <span class="break-all font-mono text-right lg:text-left">${b.filename}</span>
+                        </td>
+                        <td class="py-2 lg:py-3 pr-2 text-neutral-400 text-[10px] lg:text-sm flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                            <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Tanggal Dibuat</span>
+                            <span class="font-mono text-right lg:text-left">${b.created_at}</span>
+                        </td>
+                        <td class="py-2 lg:py-3 pr-2 text-neutral-400 text-xs lg:text-base flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                            <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Ukuran</span>
+                            <span class="font-mono text-right lg:text-left">${b.size_mb} MB</span>
+                        </td>
+                        <td class="py-2 lg:py-3 text-right flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
+                            <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Aksi</span>
+                            <div class="flex items-center justify-end gap-2">
+                                <button onclick="Settings.downloadBackup('${b.filename}')" class="px-2.5 py-1 bg-neutral-200 hover:bg-neutral-300 text-black text-[10px] lg:text-xs font-bold rounded transition-colors">Unduh</button>
+                                <button onclick="Settings.deleteBackup('${b.filename}')" class="px-2.5 py-1 bg-red-950/40 hover:bg-red-900/40 border border-red-900/50 text-red-400 text-[10px] lg:text-xs font-bold rounded transition-colors">Hapus</button>
+                            </div>
                         </td>
                     </tr>
                 `).join('');
             }
         } catch (err) {
-            tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-red-500">Gagal memuat berkas: ${err.message}</td></tr>`;
+            tbody.innerHTML = `<tr class="block lg:table-row"><td colspan="4" class="py-4 text-center text-red-500 block lg:table-cell">Gagal memuat berkas: ${err.message}</td></tr>`;
         }
     },
 
@@ -709,6 +726,7 @@ const Settings = {
         const address = document.getElementById('warnet-address-input')?.value || '';
         const phone = document.getElementById('warnet-phone-input')?.value || '';
         const footer = document.getElementById('warnet-footer-input')?.value || '';
+        const gmaps = document.getElementById('warnet-gmaps-input')?.value || '';
         const announcement = this.ckeditorAnnouncementInstance
             ? this.ckeditorAnnouncementInstance.getData()
             : (document.getElementById('warnet-announcement-input')?.value || '');
@@ -740,13 +758,19 @@ const Settings = {
                 body: JSON.stringify({ value: footer })
             });
 
-            // 5. Simpan pengumuman
+            // 5. Simpan Google Maps
+            await API.request('/api/v1/kasir/settings/warnet_gmaps', {
+                method: 'PUT',
+                body: JSON.stringify({ value: gmaps })
+            });
+
+            // 6. Simpan pengumuman
             await API.request('/api/v1/kasir/settings/warnet_announcement', {
                 method: 'PUT',
                 body: JSON.stringify({ value: announcement })
             });
 
-            // 3. Upload QRIS jika ada file yang dipilih
+            // 7. Upload QRIS jika ada file yang dipilih
             if (qrisFileInput.files && qrisFileInput.files[0]) {
                 const formData = new FormData();
                 formData.append('qris_image', qrisFileInput.files[0]);
@@ -766,6 +790,68 @@ const Settings = {
             await this.load(true); // Refresh data
         } catch (err) {
             Toast.error('Gagal menyimpan pengaturan Kiosk: ' + err.message);
+        }
+    },
+
+    updateGmapsPreview() {
+        const input = document.getElementById('warnet-gmaps-input');
+        const previewBox = document.getElementById('settings-gmaps-preview-box');
+        const iframeWrapper = document.getElementById('settings-gmaps-iframe-wrapper');
+        const statusBadge = document.getElementById('settings-gmaps-status-badge');
+        if (!input || !previewBox || !iframeWrapper || !statusBadge) return;
+
+        const val = (input.value || '').trim();
+        if (!val) {
+            previewBox.classList.add('hidden');
+            iframeWrapper.innerHTML = '';
+            return;
+        }
+
+        let embedUrl = null;
+        let navUrl = null;
+
+        if (val.toLowerCase().includes('<iframe')) {
+            const match = val.match(/src=["']([^"']+)["']/i);
+            if (match && (match[1].startsWith('http://') || match[1].startsWith('https://'))) {
+                embedUrl = match[1];
+            }
+        } else if (val.startsWith('https://www.google.com/maps/embed') || val.startsWith('http://www.google.com/maps/embed')) {
+            embedUrl = val;
+        } else if (val.startsWith('https://maps.app.goo.gl/') || val.startsWith('http://maps.app.goo.gl/') || val.startsWith('https://goo.gl/maps/') || val.startsWith('http://goo.gl/maps/')) {
+            navUrl = val;
+        } else if ((val.includes('google.com/maps') || val.includes('maps.google.com')) && (val.startsWith('http://') || val.startsWith('https://'))) {
+            navUrl = val;
+            if (val.includes('output=embed')) {
+                embedUrl = val;
+            }
+        }
+
+        previewBox.classList.remove('hidden');
+        if (embedUrl) {
+            statusBadge.textContent = 'Embed Aktif';
+            statusBadge.className = 'text-[9px] font-mono text-emerald-400';
+            const safeEmbed = window.Utils && Utils.escapeHtml ? Utils.escapeHtml(embedUrl) : embedUrl.replace(/"/g, '&quot;');
+            iframeWrapper.innerHTML = `<iframe src="${safeEmbed}" class="w-full h-full border-0 rounded" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+        } else if (navUrl) {
+            statusBadge.textContent = 'Link Navigasi';
+            statusBadge.className = 'text-[9px] font-mono text-sky-400';
+            const safeNav = window.Utils && Utils.escapeHtml ? Utils.escapeHtml(navUrl) : navUrl.replace(/"/g, '&quot;');
+            iframeWrapper.innerHTML = `
+                <div class="text-center p-4 space-y-2">
+                    <p class="text-xs text-neutral-300 font-medium">Link share Google Maps terdeteksi.</p>
+                    <a href="${safeNav}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a1a] hover:bg-[#252525] border border-[#2e2e2e] text-emerald-400 text-xs font-bold rounded transition-colors">
+                        Buka Tautan Peta ↗
+                    </a>
+                </div>
+            `;
+        } else {
+            statusBadge.textContent = 'Format Tidak Dikenali';
+            statusBadge.className = 'text-[9px] font-mono text-amber-400';
+            iframeWrapper.innerHTML = `
+                <div class="text-center p-4 text-xs text-amber-400/90">
+                    Format tautan/iframe tidak dikenali. Pastikan menyalin kode &lt;iframe src="..."&gt; atau URL Google Maps valid.
+                </div>
+            `;
         }
     },
 

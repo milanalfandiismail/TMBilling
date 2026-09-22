@@ -2,7 +2,7 @@
 <html lang="id">
 
 <head>
-    {% set page_title = "Daftar Game | " ~ warnet_title %}
+    {% set page_title = "Daftar Aplikasi & Game | " ~ warnet_title %}
     {% include 'public/components/_head.html' %}
 </head>
 
@@ -12,15 +12,22 @@
     {% include 'public/components/_navbar_public.html' %}
 
     <!-- Main Content -->
-    <main class="flex-1 w-full max-w-[90rem] mx-auto px-6 md:px-10 py-8 lg:py-12 space-y-8">
+    <main class="flex-1 w-full max-w-7xl 2xl:max-w-[1550px] mx-auto px-6 md:px-10 py-8 lg:py-12 space-y-8">
         
         <!-- Header & Search -->
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative">
-            <div class="absolute -top-20 -left-20 w-64 h-64 bg-emerald-500/20 blur-[100px] rounded-full pointer-events-none"></div>
+            <div class="absolute -top-20 -left-20 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none"></div>
             
-            <div class="relative z-10">
-                <h2 class="text-3xl lg:text-5xl font-black text-white tracking-tight">Daftar Game</h2>
-                <p class="text-neutral-400 mt-2 font-medium">Jelajahi dan temukan game favorit Anda sebelum bermain.</p>
+            <div class="relative z-10 space-y-2">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-800 bg-[#0c0c0c]/80 backdrop-blur-md text-xs font-mono text-neutral-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Katalog Software &amp; Gaming
+                </div>
+                <h2 class="text-3xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-400 tracking-tight leading-tight">
+                    Daftar Aplikasi &amp; Game
+                </h2>
+                <p class="text-neutral-400 text-xs md:text-sm leading-relaxed">
+                    Jelajahi dan temukan aplikasi serta game favorit Anda sebelum bermain.
+                </p>
             </div>
             
             <div class="relative z-10 flex-shrink-0 w-full md:w-80">
@@ -28,37 +35,57 @@
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-neutral-500 group-focus-within:text-emerald-400 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
-                    <input type="text" id="search-game" placeholder="Cari game..." 
-                        class="w-full pl-12 pr-4 py-3 bg-[#0a0a0a]/80 backdrop-blur-md border border-neutral-800 rounded-xl text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all shadow-xl">
+                    <input type="text" id="search-game" placeholder="Cari aplikasi atau game..." 
+                        class="w-full pl-12 pr-4 py-3 bg-[#0a0a0a]/90 backdrop-blur-md border border-neutral-800 rounded-xl text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all shadow-xl text-sm">
                 </div>
             </div>
         </div>
 
-        <!-- Categories Filters -->
-        <div class="relative z-10 flex flex-wrap items-center gap-2" id="kategori-filters">
-            <!-- Rendered by JS -->
-            <button class="px-5 py-2 rounded-full text-sm font-bold bg-neutral-100 text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]">Semua</button>
-            <button class="px-5 py-2 rounded-full text-sm font-bold bg-[#0f0f0f] text-neutral-400 border border-[#1f1f1f] hover:text-white hover:border-neutral-700 transition-colors">Loading...</button>
+        <!-- Filter Controls: Tipe & Kategori -->
+        <div class="space-y-4">
+            <!-- Tipe Filter (Semua, Game, Aplikasi) -->
+            <div class="flex flex-wrap items-center gap-2" id="tipe-filters">
+                <button onclick="GameLauncher.setType('all')" id="btn-tipe-all"
+                    class="px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                    Semua
+                </button>
+                <button onclick="GameLauncher.setType('game')" id="btn-tipe-game"
+                    class="px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-[#0f0f0f] text-neutral-400 border border-[#1f1f1f] hover:text-white hover:border-neutral-700">
+                    🎮 Game
+                </button>
+                <button onclick="GameLauncher.setType('aplikasi')" id="btn-tipe-aplikasi"
+                    class="px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-[#0f0f0f] text-neutral-400 border border-[#1f1f1f] hover:text-white hover:border-neutral-700">
+                    💻 Aplikasi
+                </button>
+            </div>
+
+            <!-- Categories / Genre Filters -->
+            <div class="relative z-10 flex flex-wrap items-center gap-2 overflow-x-auto pb-1 scrollbar-thin" id="kategori-filters">
+                <!-- Rendered by JS -->
+                <button class="px-4 py-1.5 rounded-full text-xs font-bold bg-neutral-100 text-black">Semua Genre</button>
+                <button class="px-4 py-1.5 rounded-full text-xs font-bold bg-[#0f0f0f] text-neutral-400 border border-[#1f1f1f]">Memuat...</button>
+            </div>
         </div>
 
-        <!-- Games Grid -->
-        <div class="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pt-4" id="game-grid">
+        <!-- Grid Cards -->
+        <div class="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6 pt-2" id="game-grid">
             <!-- Skeletons while loading -->
             {% for i in range(12) %}
-            <div class="animate-pulse bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl overflow-hidden aspect-[3/4]"></div>
+            <div class="animate-pulse bg-[#0f0f0f] border border-[#1a1a1a] rounded-2xl overflow-hidden aspect-[3/4]"></div>
             {% endfor %}
         </div>
 
         <!-- Empty State -->
-        <div id="empty-state" class="hidden flex-col items-center justify-center py-32 text-neutral-500">
+        <div id="empty-state" class="hidden flex-col items-center justify-center py-28 text-neutral-500 bg-[#0a0a0a]/50 border border-dashed border-[#1f1f1f] rounded-2xl">
             <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <p class="font-bold text-lg md:text-xl text-neutral-400">Game tidak ditemukan</p>
-            <p class="text-sm mt-2 text-neutral-600">Coba ubah kata kunci pencarian Anda.</p>
+            <p class="font-bold text-base md:text-lg text-neutral-300">Aplikasi atau Game Tidak Ditemukan</p>
+            <p class="text-xs md:text-sm mt-1 text-neutral-500">Coba ubah kata kunci pencarian atau ganti filter kategori.</p>
         </div>
         
     </main>
 
     <!-- Footer -->
+    {% set footer_label = "E-Sports & Gaming Arena" %}
     {% include 'public/components/_footer.html' %}
 
     <!-- Scripts -->

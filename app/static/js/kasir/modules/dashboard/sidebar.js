@@ -13,12 +13,12 @@ const DashboardSidebar = {
         } else {
             Dashboard.isSidebarMini = !Dashboard.isSidebarMini;
             if (Dashboard.isSidebarMini) {
-                sidebar.classList.remove('w-64');
+                sidebar.classList.remove('w-44');
                 sidebar.classList.add('w-0', 'overflow-hidden', 'border-r-0');
                 navbarToggle?.classList.remove('lg:hidden');
             } else {
                 sidebar.classList.remove('w-0', 'overflow-hidden', 'border-r-0');
-                sidebar.classList.add('w-64');
+                sidebar.classList.add('w-44');
                 navbarToggle?.classList.add('lg:hidden');
             }
             if (Dashboard.lastData) {

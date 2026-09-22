@@ -18,8 +18,10 @@ export const UI = {
     },
 
     setOverlayData(data) {
-        document.getElementById('overlay-member-name').innerText = `: ${data.member_name}`;
-        document.getElementById('overlay-group').innerText = `: ${data.group}`;
+        const memberEl = document.getElementById('overlay-member-name');
+        const groupEl = document.getElementById('overlay-group');
+        if (memberEl) memberEl.innerText = `: ${data.member_name || '-'}`;
+        if (groupEl) groupEl.innerText = `: ${data.group || '-'}`;
         if (data.remaining_seconds !== undefined) {
             this.updateTime(data.remaining_seconds);
         }
@@ -29,6 +31,52 @@ export const UI = {
     updateTime(seconds) {
         const timeStr = formatTime(seconds);
         document.getElementById('overlay-time').innerText = timeStr;
+    },
+
+    // Reset Seluruh Komponen Overlay ke State Awal yang Bersih (Pristine Initial State)
+    resetOverlayUI() {
+        // 1. Tutup semua modal overlay
+        const logoutModal = document.getElementById('logout-confirm-modal');
+        if (logoutModal) logoutModal.classList.add('hidden');
+
+        const menuModal = document.getElementById('modal-menu-paket');
+        if (menuModal) menuModal.classList.add('hidden');
+
+        const adminModal = document.getElementById('admin-modal');
+        if (adminModal) adminModal.classList.add('hidden');
+
+        const powerModal = document.getElementById('power-confirm-modal');
+        if (powerModal) powerModal.classList.add('hidden');
+
+        // 2. Reset tab Menu & Paket ke tab awal 'paket'
+        const tabPaketBtn = document.getElementById('tab-btn-paket');
+        const tabMenuBtn = document.getElementById('tab-btn-menu');
+        const contentPaket = document.getElementById('tab-content-paket');
+        const contentMenu = document.getElementById('tab-content-menu');
+
+        if (tabPaketBtn && tabMenuBtn && contentPaket && contentMenu) {
+            tabPaketBtn.className = "flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-accent text-white shadow-md shadow-accent/20 cursor-pointer";
+            tabMenuBtn.className = "flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border border-white/5 cursor-pointer";
+            contentPaket.classList.remove('hidden');
+            contentMenu.classList.add('hidden');
+        }
+
+        // 3. Reset display data
+        const timeEl = document.getElementById('overlay-time');
+        if (timeEl) timeEl.innerText = "00:00:00";
+
+        const memberEl = document.getElementById('overlay-member-name');
+        if (memberEl) memberEl.innerText = ": -";
+
+        const groupEl = document.getElementById('overlay-group');
+        if (groupEl) groupEl.innerText = ": -";
+
+        // 4. Bersihkan input form login
+        const usernameInput = document.getElementById('username');
+        if (usernameInput) usernameInput.value = "";
+
+        const passwordInput = document.getElementById('password');
+        if (passwordInput) passwordInput.value = "";
     },
 
     // Feedback Login

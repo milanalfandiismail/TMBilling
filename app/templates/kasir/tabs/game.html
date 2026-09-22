@@ -1,78 +1,86 @@
-<!-- ===== TAB: KELOLA GAME ===== -->
+<!-- ===== TAB: KELOLA APLIKASI & GAME ===== -->
 <div id="tab-game_management" class="tab-content hidden space-y-6">
     <!-- Header Section -->
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide">Kelola Game</h3>
-                <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Daftar game yang terpasang di client dan ditampilkan di portal publik.</p>
+                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Kelola Aplikasi &amp; Game</h3>
+                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Daftar software aplikasi dan game yang terpasang di client dan ditampilkan di portal publik.</p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
                 <button onclick="KategoriManagement.openModal()" 
-                    class="px-4 py-2.5 bg-[#1a1a1a] hover:bg-[#222] border border-[#2a2a2a] text-neutral-300 text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
+                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
                     Kelola Kategori
                 </button>
                 <button onclick="GameManagement.openAddModal()" 
-                    class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
+                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
                     </svg>
-                    Tambah Game Baru
+                    Tambah Baru
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Filters & Search Card -->
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
-        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-400 uppercase tracking-wider">Daftar Game</h3>
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-2">
+            <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Katalog Aplikasi &amp; Game</h3>
             <div class="flex flex-wrap items-center gap-2">
                 <input type="text" id="game-search" oninput="GameManagement.handleSearch(this.value)"
-                    placeholder="Cari nama game..." 
-                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 w-40 md:w-64">
+                    placeholder="Cari nama atau genre..." 
+                    class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 w-36 lg:max-xl:w-48 xl:w-60">
+                <select id="game-type-filter"
+                    class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
+                    onchange="GameManagement.filterType(this.value)">
+                    <option value="all">Semua Jenis</option>
+                    <option value="game">🎮 Game</option>
+                    <option value="aplikasi">💻 Aplikasi</option>
+                </select>
                 <select id="game-category-filter"
-                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
+                    class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
                     onchange="GameManagement.filterCategory(this.value)">
                     <option value="all">Semua Kategori</option>
                     <!-- Option kategori akan diisi lewat JS -->
                 </select>
                 <button onclick="GameManagement.fetchGames()"
-                    class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Cari</button>
+                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Cari</button>
             </div>
         </div>
 
         <!-- Games Table -->
-        <div class="overflow-x-hidden w-full">
-            <table class="w-full text-xs lg:text-base block lg:table">
+        <div class="overflow-x-auto w-full">
+            <table class="w-full text-left border-collapse block lg:table">
                 <thead class="hidden lg:table-header-group">
-                    <tr class="text-[9px] lg:text-base text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
-                        <th class="px-4 py-2 text-left w-[45%] md:w-[40%] font-bold">Game</th>
-                        <th class="px-4 py-2 text-center w-[30%] md:w-[20%] font-bold">Tampilkan</th>
-                        <th class="px-4 py-2 text-right w-[25%] md:w-[40%] font-bold">Aksi</th>
+                    <tr class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] lg:max-xl:text-[10px] xl:text-xs uppercase font-bold">
+                        <th class="pb-3 text-left w-[40%]">Item &amp; Jenis</th>
+                        <th class="pb-3 text-left w-[30%]">Kategori / Genre</th>
+                        <th class="pb-3 text-center w-[15%]">Tampilkan</th>
+                        <th class="pb-3 text-right w-[15%]">Aksi</th>
                     </tr>
                 </thead>
-                <tbody id="game-table-body" class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] block lg:table-row-group">
+                <tbody id="game-table-body" class="text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base block lg:table-row-group divide-y divide-[#1c1c1c]">
                     <!-- Data game akan di-render di sini oleh JavaScript -->
                 </tbody>
             </table>
         </div>
-        <div id="game-empty-state" class="hidden flex flex-col items-center justify-center py-20 text-neutral-500 bg-[#0c0c0c] border border-dashed border-[#1c1c1c] rounded">
-            <svg class="w-12 h-12 mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-            <p class="text-xs lg:text-base font-bold uppercase tracking-wider">Tidak Ada Game Ditemukan</p>
+        <div id="game-empty-state" class="hidden flex flex-col items-center justify-center py-16 text-neutral-500 bg-[#050505] border border-dashed border-[#1c1c1c] rounded mt-4">
+            <svg class="w-12 h-12 mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+            <p class="text-xs lg:max-xl:text-xs xl:text-base font-bold uppercase tracking-wider">Tidak Ada Data Ditemukan</p>
         </div>
     </div>
 </div>
 
-<!-- Modal: Tambah/Edit Game -->
+<!-- Modal: Tambah/Edit Game & Aplikasi -->
 <div id="game-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden p-4">
     <!-- Backdrop -->
     <div class="fixed inset-0 bg-black/85" onclick="GameManagement.closeModal()"></div>
     
     <!-- Modal Content -->
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-2xl w-full max-w-xl relative z-10 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-        <div class="p-5 border-b border-[#1f1f1f] flex items-center justify-between">
-            <h3 id="game-modal-title" class="text-base font-bold text-neutral-200">Tambah Game Baru</h3>
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl w-full max-w-2xl relative z-10 overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+        <div class="p-4 sm:p-5 border-b border-[#1c1c1c] flex items-center justify-between">
+            <h3 id="game-modal-title" class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Tambah Item Baru</h3>
             <button onclick="GameManagement.closeModal()" class="text-neutral-500 hover:text-neutral-300 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -80,68 +88,158 @@
             </button>
         </div>
         
-        <form id="game-form" onsubmit="GameManagement.handleSubmit(event)" class="overflow-y-auto p-6 space-y-4">
+        <form id="game-form" onsubmit="GameManagement.handleSubmit(event)" class="overflow-y-auto p-4 sm:p-6 space-y-5">
             <input type="hidden" id="form-game-id">
             
-            <!-- Nama Game & Kategori -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                    <label class="text-[11px] text-neutral-400 font-medium tracking-wide">Nama Game <span class="text-red-500">*</span></label>
-                    <input type="text" id="form-game-nama" required placeholder="Contoh: Valorant"
-                        class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-neutral-500 focus:outline-none rounded-lg text-[13px] text-neutral-200">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-[11px] text-neutral-400 font-medium tracking-wide">Kategori <span class="text-red-500">*</span></label>
-                    <select id="form-game-kategori" required
-                        class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-neutral-500 focus:outline-none rounded-lg text-[13px] text-neutral-200">
-                        <!-- Option kategori akan diisi lewat JS -->
+            <!-- Jenis (Tipe) & Nama -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="space-y-1.5 sm:col-span-1">
+                    <label class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider">Jenis <span class="text-red-500">*</span></label>
+                    <select id="form-game-tipe" required
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200">
+                        <option value="game">🎮 Game</option>
+                        <option value="aplikasi">💻 Aplikasi</option>
                     </select>
+                </div>
+                <div class="space-y-1.5 sm:col-span-2">
+                    <label class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider">Nama Game / Software <span class="text-red-500">*</span></label>
+                    <input type="text" id="form-game-nama" required placeholder="Contoh: Valorant / Discord / Steam"
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200">
                 </div>
             </div>
 
-            <!-- File Icon -->
-            <div class="space-y-1.5">
-                <label class="text-[11px] text-neutral-400 font-medium tracking-wide">Icon Game (.png / .jpg)</label>
-                <input type="file" id="form-game-icon" accept="image/*"
-                    class="w-full px-3 py-1.5 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-neutral-500 focus:outline-none rounded-lg text-[13px] text-neutral-400 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-[11px] file:font-semibold file:bg-[#1a1a1a] file:text-neutral-300 hover:file:bg-[#222]">
+            <!-- Multi-Category / Unlimited Genre Selector -->
+            <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider">
+                        Kategori / Genre <span class="text-neutral-500 text-[9px] lg:max-xl:text-xs xl:text-xs lowercase">(pilih banyak/unlimited)</span>
+                    </label>
+                    <span class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 font-mono" id="selected-count-badge">0 terpilih</span>
+                </div>
+                
+                <!-- Selected Chips Container -->
+                <div id="selected-category-tags" class="min-h-[38px] p-2 bg-[#050505] border border-[#1c1c1c] rounded flex flex-wrap gap-1.5 items-center">
+                    <span class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-600 italic px-1" id="category-placeholder-text">Klik kategori di bawah atau ketik tag baru...</span>
+                </div>
+
+                <!-- Quick Pick Available Categories & Custom Tag Input -->
+                <div class="space-y-2 pt-1">
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="custom-tag-input" placeholder="+ Ketik tag/genre baru lalu Enter..." 
+                            class="flex-1 px-3 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500"
+                            onkeydown="GameManagement.handleCustomTagKeydown(event)">
+                        <button type="button" onclick="GameManagement.addCustomTagFromInput()"
+                            class="px-3 lg:max-xl:px-3.5 xl:px-4 py-1.5 lg:max-xl:py-2 xl:py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">
+                            Tambah Tag
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 bg-[#050505] border border-[#1c1c1c] rounded scrollbar-thin" id="category-quick-pills">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Upload, Preview, Zoom & Crop (3:4 Aspect Ratio) -->
+            <div class="space-y-2 pt-1 border-t border-[#1c1c1c]">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider">Icon / Poster Cover Art (Rasio 3:4)</label>
+                    <span class="text-[9px] lg:max-xl:text-xs xl:text-xs text-neutral-500">Bisa di-zoom &amp; disesuaikan posisinya</span>
+                </div>
+                
+                <input type="file" id="form-game-icon" accept="image/*" class="hidden" onchange="GameManagement.handleImageSelected(this)">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center bg-[#050505] border border-[#1c1c1c] rounded p-4">
+                    <!-- Canvas / Crop Viewport (3:4 ratio) -->
+                    <div class="sm:col-span-5 flex flex-col items-center">
+                        <div class="relative w-[150px] h-[200px] bg-[#0c0c0c] border-2 border-dashed border-[#262626] rounded overflow-hidden shadow-inner flex items-center justify-center cursor-grab active:cursor-grabbing group" id="cropper-viewport-container">
+                            <canvas id="cropper-canvas" width="300" height="400" class="w-full h-full object-cover"></canvas>
+                            
+                            <!-- Overlay placeholder when no image -->
+                            <div id="cropper-placeholder" class="absolute inset-0 flex flex-col items-center justify-center p-3 text-center pointer-events-none bg-[#050505]">
+                                <svg class="w-8 h-8 text-neutral-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                <span class="text-[10px] text-neutral-500">Belum ada gambar</span>
+                            </div>
+
+                            <!-- Crop Guide Frame -->
+                            <div id="cropper-guide" class="hidden absolute inset-0 pointer-events-none border border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.2)]"></div>
+                        </div>
+                        <p class="text-[10px] text-neutral-500 mt-1.5 font-mono">Geser (Drag) untuk memindahkan</p>
+                    </div>
+
+                    <!-- Cropper Controls & Zoom Slider -->
+                    <div class="sm:col-span-7 space-y-3">
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" onclick="document.getElementById('form-game-icon').click()"
+                                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                Pilih Gambar
+                            </button>
+                            <button type="button" id="btn-preview-game-modal" onclick="GameManagement.previewFromModal()"
+                                class="hidden px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 hover:text-white text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                Preview
+                            </button>
+                            <button type="button" id="btn-reset-image" onclick="GameManagement.clearImageState()"
+                                class="hidden px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-red-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">
+                                Hapus / Ganti
+                            </button>
+                        </div>
+
+                        <!-- Zoom Slider -->
+                        <div class="space-y-1.5" id="zoom-control-container">
+                            <div class="flex justify-between items-center text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-400 font-bold uppercase tracking-wider">
+                                <span>Zoom Gambar</span>
+                                <span id="zoom-level-text" class="font-mono text-neutral-300">1.0x</span>
+                            </div>
+                            <input type="range" id="cropper-zoom-slider" min="1" max="3" step="0.05" value="1"
+                                class="w-full accent-neutral-200 bg-[#1c1c1c] h-1.5 rounded cursor-pointer"
+                                oninput="GameManagement.handleZoomChange(this.value)">
+                            <div class="flex justify-between text-[9px] text-neutral-500 font-mono">
+                                <span>1.0x</span>
+                                <span>2.0x</span>
+                                <span>3.0x</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Executable Launcher Path & Arguments -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                 <div class="space-y-1.5">
-                    <label class="text-[11px] text-neutral-400 font-medium tracking-wide flex items-center gap-1">
+                    <label class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1">
                         <span>Launcher Path</span>
-                        <span class="text-[10px] text-neutral-600">(Ketik / Paste Manual)</span>
+                        <span class="text-[9px] lg:max-xl:text-xs xl:text-xs text-neutral-500 font-normal lowercase">(manual)</span>
                     </label>
                     <input type="text" id="form-game-path" placeholder="Contoh: D:\Games\Valorant.exe"
-                        class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-neutral-500 focus:outline-none rounded-lg text-[13px] text-neutral-200">
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 font-mono">
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-[11px] text-neutral-400 font-medium tracking-wide flex items-center gap-1">
+                    <label class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1">
                         <span>Launch Arguments</span>
-                        <span class="text-[10px] text-neutral-600">(Masa Depan)</span>
+                        <span class="text-[9px] lg:max-xl:text-xs xl:text-xs text-neutral-500 font-normal lowercase">(opsional)</span>
                     </label>
                     <input type="text" id="form-game-argumen" placeholder="Contoh: --launch-direct"
-                        class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-neutral-500 focus:outline-none rounded-lg text-[13px] text-neutral-200">
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 font-mono">
                 </div>
             </div>
 
             <!-- Checkbox Aktif -->
-            <div class="flex items-center gap-2 pt-2">
+            <div class="flex items-center gap-2 pt-1">
                 <input type="checkbox" id="form-game-aktif" checked
-                    class="w-4 h-4 rounded border-[#2a2a2a] bg-[#0a0a0a] text-neutral-100 focus:ring-0 focus:ring-offset-0">
-                <label for="form-game-aktif" class="text-[13px] text-neutral-300 select-none">Tampilkan di halaman publik</label>
+                    class="w-4 h-4 rounded border-[#1c1c1c] bg-[#050505] text-neutral-100 focus:ring-0 focus:ring-offset-0">
+                <label for="form-game-aktif" class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 select-none">Tampilkan di portal publik</label>
             </div>
 
             <!-- Footer Action -->
-            <div class="flex items-center justify-end gap-2 border-t border-[#1f1f1f] pt-5 mt-5">
+            <div class="flex items-center justify-end gap-2 border-t border-[#1c1c1c] pt-5 mt-5">
                 <button type="button" onclick="GameManagement.closeModal()"
-                    class="px-4 py-2 border border-[#2a2a2a] bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 text-[13px] font-bold rounded-lg transition-colors">
+                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">
                     Batal
                 </button>
-                <button type="submit"
-                    class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-[13px] font-bold rounded-lg transition-colors">
-                    Simpan Game
+                <button type="submit" id="btn-save-game"
+                    class="px-4 lg:max-xl:px-5 xl:px-6 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">
+                    Simpan
                 </button>
             </div>
         </form>
@@ -152,9 +250,9 @@
 <div id="kategori-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden p-4">
     <div class="fixed inset-0 bg-black/85" onclick="KategoriManagement.closeModal()"></div>
     
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-2xl w-full max-w-md relative z-10 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-        <div class="p-5 border-b border-[#1f1f1f] flex items-center justify-between">
-            <h3 class="text-base font-bold text-neutral-200">Kelola Kategori</h3>
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl w-full max-w-md relative z-10 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="p-4 sm:p-5 border-b border-[#1c1c1c] flex items-center justify-between">
+            <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Kelola Kategori</h3>
             <button onclick="KategoriManagement.closeModal()" class="text-neutral-500 hover:text-neutral-300 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -162,23 +260,48 @@
             </button>
         </div>
         
-        <div class="p-5 overflow-y-auto">
-            <form id="kategori-form" onsubmit="KategoriManagement.addKategori(event)" class="flex gap-2 mb-6">
+        <div class="p-4 sm:p-5 overflow-y-auto space-y-4">
+            <form id="kategori-form" onsubmit="KategoriManagement.addKategori(event)" class="flex gap-2">
                 <input type="text" id="form-kategori-nama" required placeholder="Nama Kategori Baru"
-                    class="flex-1 px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-neutral-500 focus:outline-none rounded-lg text-[13px] text-neutral-200">
-                <button type="submit" class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-[13px] font-bold rounded-lg transition-colors">
+                    class="flex-1 px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200">
+                <button type="submit" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors whitespace-nowrap">
                     Tambah
                 </button>
             </form>
             
-            <div class="border border-[#1f1f1f] rounded-lg overflow-hidden bg-[#0c0c0c]">
-                <table class="w-full text-left border-collapse text-[13px]">
-                    <tbody id="kategori-table-body" class="divide-y divide-[#1f1f1f] text-neutral-300">
+            <div class="border border-[#1c1c1c] rounded overflow-hidden bg-[#050505]">
+                <table class="w-full text-left border-collapse text-xs lg:max-xl:text-xs xl:text-base">
+                    <tbody id="kategori-table-body" class="divide-y divide-[#1c1c1c] text-neutral-300">
                         <!-- Rendered by JS -->
                     </tbody>
                 </table>
             </div>
-            <div id="kategori-empty" class="hidden py-6 text-center text-[13px] text-neutral-500">Belum ada kategori.</div>
+            <div id="kategori-empty" class="hidden py-6 text-center text-xs lg:max-xl:text-xs xl:text-base text-neutral-500">Belum ada kategori.</div>
         </div>
     </div>
 </div>
+
+<!-- ===== MODAL: LIGHTBOX PREVIEW GAME / APLIKASI ===== -->
+<div id="game-lightbox-modal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md hidden" onclick="GameManagement.closeLightbox()">
+    <div class="relative max-w-4xl w-full bg-[#0c0c0c] border border-[#222] rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
+        <!-- Header -->
+        <div class="p-4 border-b border-[#1c1c1c] flex items-center justify-between bg-[#111]">
+            <div class="flex items-center gap-3">
+                <span id="game-lightbox-badge" class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold rounded-lg uppercase tracking-wider">Game</span>
+                <h3 id="game-lightbox-title" class="text-sm lg:text-base font-bold text-neutral-100 truncate max-w-md">Preview Cover Art</h3>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="game-lightbox-kategori" class="text-xs lg:text-sm text-neutral-400 font-mono"></span>
+                <button onclick="GameManagement.closeLightbox()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-[#2a2a2a] text-neutral-400 hover:text-white transition-colors flex items-center justify-center" title="Tutup (Esc)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+        </div>
+        <!-- Image Body -->
+        <div class="p-4 sm:p-6 flex items-center justify-center bg-[#050505] overflow-hidden">
+            <img id="game-lightbox-img" src="" alt="Game Poster Full Preview" class="max-h-[70vh] w-auto max-w-full rounded-xl object-contain border border-[#1a1a1a] shadow-lg">
+        </div>
+    </div>
+</div>
+
+

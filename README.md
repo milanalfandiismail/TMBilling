@@ -250,6 +250,44 @@ Sistem dirancang untuk:
       </ul>
     </td>
   </tr>
+  <tr>
+    <td>
+      <h4>🌐 Multi-Cabang (Central Control Panel)</h4>
+      <ul>
+        <li>Kontrol terpadu multi-cabang warnet via dropdown switcher di navbar Kasir</li>
+        <li>Reverse-proxy relay berbasis API Key terenkripsi untuk routing transparan</li>
+        <li>Monitoring <em>Inbound Connections</em> & dedicated connection health test</li>
+        <li>State reset otomatis antar cabang untuk menjaga isolasi data</li>
+      </ul>
+    </td>
+    <td>
+      <h4>🖥️ Web VNC Remote Desktop Client</h4>
+      <ul>
+        <li>Integrasi canvas noVNC modern langsung di dalam dashboard Kasir</li>
+        <li>Adaptive display scaling & koordinat pointer dinamis</li>
+        <li>Mapping keyboard shortcuts, input text, & click dispatching</li>
+        <li>Fail-fast diagnostic monitoring & status real-time</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h4>🌡️ Server Hardware Monitoring</h4>
+      <ul>
+        <li>Microservice <code>TMLHMService</code> berbasis LibreHardwareMonitor</li>
+        <li>Metrik realtime suhu CPU, GPU, RAM, storage, dan network bandwidth</li>
+        <li>Dashboard analitik performa server kasir terpusat</li>
+      </ul>
+    </td>
+    <td>
+      <h4>⚡ Sentralisasi Master Versioning</h4>
+      <ul>
+        <li>Single Source of Truth versi terpusat di <code>app/config.py</code></li>
+        <li>Dynamic cache-busting Jinja2 (<code>?v={{ v_cache }}</code>) otomatis</li>
+        <li>Client global version injection (<code>window.APP_VERSION</code>)</li>
+      </ul>
+    </td>
+  </tr>
 </table>
 
 ---
@@ -1288,7 +1326,7 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more informa
 </p>
 
 <p align="center">
-  <sub>TMBilling v1.6.0</sub>
+  <sub>TMBilling v1.6.1</sub>
 </p>
 
 ---

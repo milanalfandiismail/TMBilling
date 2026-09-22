@@ -1,27 +1,25 @@
 #![windows_subsystem = "windows"]
 
-use std::ptr::null_mut;
-use std::os::windows::ffi::OsStrExt;
-use std::ffi::OsStr;
-use std::fs::File;
-use std::fs;
-use std::io::Write;
+use once_cell::sync::OnceCell;
 use std::env;
+use std::ffi::OsStr;
+use std::fs;
+use std::fs::{File, OpenOptions};
+use std::io::{Read, Write};
+use std::os::windows::ffi::OsStrExt;
+use std::os::windows::fs::OpenOptionsExt;
+use std::ptr::null_mut;
 
+use serde::Deserialize;
+use sha2::{Digest, Sha256};
 use std::process::Command;
 use std::thread;
 use std::time::Duration;
-use serde::Deserialize;
 use winreg::enums::*;
 use winreg::RegKey;
-use sha2::{Sha256, Digest};
-use once_cell::sync::OnceCell;
-use std::fs::OpenOptions;
-use std::os::windows::fs::OpenOptionsExt;
-use std::io::Read;
 
-use winapi::shared::windef::{HWND, HMENU};
-use winapi::shared::minwindef::{HINSTANCE, LPARAM, LRESULT, WPARAM, UINT};
+use winapi::shared::minwindef::{HINSTANCE, LPARAM, LRESULT, UINT, WPARAM};
+use winapi::shared::windef::{HMENU, HWND};
 use winapi::um::winuser::*;
 
 // ID kontrol GUI
@@ -37,7 +35,10 @@ struct TokenResponse {
 }
 
 fn to_wstring(str: &str) -> Vec<u16> {
-    OsStr::new(str).encode_wide().chain(Some(0).into_iter()).collect()
+    OsStr::new(str)
+        .encode_wide()
+        .chain(Some(0).into_iter())
+        .collect()
 }
 
 // =========================================================================
@@ -48,8 +49,8 @@ fn deobfuscate(hex_input: &str) -> String {
     let mut bytes = Vec::new();
     for i in (0..hex_input.len()).step_by(2) {
         if i + 2 <= hex_input.len() {
-            if let Ok(b) = u8::from_str_radix(&hex_input[i..i+2], 16) {
-                bytes.push(b ^ key[(i/2) % key.len()]);
+            if let Ok(b) = u8::from_str_radix(&hex_input[i..i + 2], 16) {
+                bytes.push(b ^ key[(i / 2) % key.len()]);
             }
         }
     }
@@ -76,9 +77,14 @@ fn load_config() -> (String, String) {
     let mut final_url = None;
     let mut final_api_key = None;
 
-    // 1. Coba baca dari Registry
+    // 1. Coba baca dari Registry (HKLM dulu, fallback ke HKCU)
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-    if let Ok(subkey) = hklm.open_subkey("Software\\TMBilling") {
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let reg_subkey = hklm
+        .open_subkey("Software\\TMBilling")
+        .or_else(|_| hkcu.open_subkey("Software\\TMBilling"));
+
+    if let Ok(subkey) = reg_subkey {
         if let Ok(u) = subkey.get_value::<String, _>("Url") {
             if !u.trim().is_empty() {
                 final_url = Some(u);
@@ -136,21 +142,38 @@ fn load_config() -> (String, String) {
     (url, api_key)
 }
 
+fn sha256_hex(input: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(input.as_bytes());
+    format!("{:x}", hasher.finalize())
+}
+
+fn to_sha256_hash(val: &str) -> String {
+    let val = val.trim();
+    // Sudah berupa SHA256 hash (64 hex chars) — return as-is
+    if val.len() == 64 && val.chars().all(|c| c.is_ascii_hexdigit()) {
+        return val.to_lowercase();
+    }
+    // Plain text — hash langsung (emergency creds tidak di-XOR-obfuscate)
+    sha256_hex(val)
+}
+
 // Memuat EmergencyToken luring (offline) secara aman dari Registry atau config.ini
 fn load_emergency_token_offline() -> String {
     let mut final_em_token = None;
 
-    // 1. Coba baca dari Registry
+    // 1. Coba baca dari Registry (HKLM dulu, fallback ke HKCU)
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-    if let Ok(subkey) = hklm.open_subkey("Software\\TMBilling") {
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let reg_subkey = hklm
+        .open_subkey("Software\\TMBilling")
+        .or_else(|_| hkcu.open_subkey("Software\\TMBilling"));
+
+    if let Ok(subkey) = reg_subkey {
         if let Ok(t) = subkey.get_value::<String, _>("EmergencyToken") {
             let t_trimmed = t.trim().to_string();
             if !t_trimmed.is_empty() {
-                if is_obfuscated(&t_trimmed) {
-                    final_em_token = Some(deobfuscate(&t_trimmed));
-                } else {
-                    final_em_token = Some(t_trimmed);
-                }
+                final_em_token = Some(to_sha256_hash(&t_trimmed));
             }
         }
     }
@@ -167,11 +190,7 @@ fn load_emergency_token_offline() -> String {
                     let key = line[..pos].trim().to_lowercase();
                     let val = line[pos + 1..].trim().to_string();
                     if key == "emergencytoken" || key == "emergency_token" {
-                        if is_obfuscated(&val) {
-                            final_em_token = Some(deobfuscate(&val));
-                        } else {
-                            final_em_token = Some(val);
-                        }
+                        final_em_token = Some(to_sha256_hash(&val));
                     }
                 }
             }
@@ -179,13 +198,16 @@ fn load_emergency_token_offline() -> String {
     }
 
     // Default fallback jika benar-benar kosong
-    final_em_token.unwrap_or_else(|| "TM123qaz!@#".to_string())
+    final_em_token.unwrap_or_else(|| sha256_hex("TM123qaz!@#"))
 }
 
 // Mengambil token uninstall aktif langsung dari Flask API secara real-time
 fn fetch_uninstall_token_from_api() -> Result<String, String> {
     let (server_url, api_key) = load_config();
-    let target_endpoint = format!("{}/api/v1/kasir/settings/uninstall-token/client", server_url.trim_end_matches('/'));
+    let target_endpoint = format!(
+        "{}/api/v1/kasir/settings/uninstall-token/client",
+        server_url.trim_end_matches('/')
+    );
 
     let resp = ureq::get(&target_endpoint)
         .set("X-Client-Key", &api_key)
@@ -226,7 +248,10 @@ fn elevator_to_admin() {
         if let Ok(exe_path) = std::env::current_exe() {
             let path_str = exe_path.to_string_lossy().to_string();
             let _ = Command::new("powershell")
-                .args(["-Command", &format!("Start-Process '{}' -Verb RunAs", path_str)])
+                .args([
+                    "-Command",
+                    &format!("Start-Process '{}' -Verb RunAs", path_str),
+                ])
                 .creation_flags(CREATE_NO_WINDOW)
                 .status();
             std::process::exit(0);
@@ -252,7 +277,7 @@ fn execute_uninstall(plain_password: &str) {
         .args(["/F", "/IM", "TMBilling.exe"])
         .creation_flags(CREATE_NO_WINDOW)
         .status();
-        
+
     let _ = Command::new("taskkill")
         .args(["/F", "/IM", "TMMonitor.exe"])
         .creation_flags(CREATE_NO_WINDOW)
@@ -281,9 +306,46 @@ fn execute_uninstall(plain_password: &str) {
     // Beri jeda tambahan 1.5 detik agar OS Windows melepaskan file lock setelah taskkill
     thread::sleep(Duration::from_millis(1500));
 
-    // 4. Hapus Registry HKLM (MGCTM udah mati, gak bakal re-create)
+    // 4. Hapus Registry TMBilling (HKLM dan HKCU)
     let _ = Command::new("reg")
         .args(["delete", "HKLM\\Software\\TMBilling", "/f"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .status();
+    let _ = Command::new("reg")
+        .args(["delete", "HKCU\\Software\\TMBilling", "/f"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .status();
+
+    // 4b. Hapus Registry TightVNC dan ORL (HKCU dan HKLM, termasuk subkey Server & WinVNC3)
+    // Stop service TightVNC terlebih dahulu
+    let _ = Command::new("sc")
+        .args(["stop", "tvnserver"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .status();
+    let _ = Command::new("sc")
+        .args(["delete", "tvnserver"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .status();
+    // Hapus TightVNC registry (rekursif — mencakup \Server, \WinVNC3, dll)
+    let _ = Command::new("reg")
+        .args(["delete", "HKCU\\Software\\TightVNC", "/f"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .status();
+    let _ = Command::new("reg")
+        .args(["delete", "HKLM\\Software\\TightVNC", "/f"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .status();
+    let _ = Command::new("reg")
+        .args(["delete", "HKCU\\Software\\ORL", "/f"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .status();
+    let _ = Command::new("reg")
+        .args(["delete", "HKLM\\Software\\ORL", "/f"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .status();
+    // Hapus TightVNC Windows Service dari Services registry
+    let _ = Command::new("reg")
+        .args(["delete", "HKLM\\SYSTEM\\CurrentControlSet\\Services\\tvnserver", "/f"])
         .creation_flags(CREATE_NO_WINDOW)
         .status();
 
@@ -303,17 +365,68 @@ fn execute_uninstall(plain_password: &str) {
         "tmmonitor.lock",
         "WebView2Loader.dll",
         "admin_credentials.txt",
+        "agent_debug.log",
+        "C:\\TMBILLING\\MGCTM.exe",
+        "C:\\TMBILLING\\TMBilling.exe",
+        "C:\\TMBILLING\\TMMonitor.exe",
+        "C:\\TMBILLING\\mtm.exe",
+        "C:\\TMBILLING\\HardwareHelper.exe",
+        "C:\\TMBILLING\\HardwareHelper.sys",
+        "C:\\TMBILLING\\LibreHardwareMonitorLib.dll",
+        "C:\\TMBILLING\\LibreHardwareMonitorLib.sys",
+        "C:\\TMBILLING\\HidSharp.dll",
+        "C:\\TMBILLING\\config.ini",
+        "C:\\TMBILLING\\stop.token",
+        "C:\\TMBILLING\\tmmonitor.lock",
+        "C:\\TMBILLING\\WebView2Loader.dll",
+        "C:\\TMBILLING\\admin_credentials.txt",
+        "C:\\TMBILLING\\agent_debug.log",
     ];
 
     for file in files_to_delete {
         let _ = std::fs::remove_file(file);
     }
 
-    // 5. Bersihkan cache token di Temp Folder dan hapus scout mtm.exe dari AppData
+    // Hapus folder TightVNC secara eksplisit
+    let _ = std::fs::remove_dir_all(r"C:\TMBILLING\TightVNC");
+    let _ = std::fs::remove_dir_all("TightVNC");
+    if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
+        let _ = std::fs::remove_dir_all(format!(r"{}\TMBilling\TightVNC", localappdata));
+        let _ = std::fs::remove_file(format!(r"{}\TMBilling\agent_debug.log", localappdata));
+        let _ = std::fs::remove_file(format!(r"{}\TMBilling\config.ini", localappdata));
+    }
+
+    // Bersihkan seluruh file & folder sisa di C:\TMBILLING (kecuali file exe uninstaller yang sedang berjalan)
+    if let Ok(entries) = std::fs::read_dir(r"C:\TMBILLING") {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if let Ok(current_exe) = std::env::current_exe() {
+                if path == current_exe {
+                    continue;
+                }
+            }
+            if path.is_dir() {
+                let _ = std::fs::remove_dir_all(&path);
+            } else {
+                let _ = std::fs::remove_file(&path);
+            }
+        }
+    }
+
+    // 6. Bersihkan cache token di Temp Folder dan log debug di Temp
     let mut temp_path = env::temp_dir();
     temp_path.push("tmb_uninstall.token");
-    let _ = std::fs::remove_file(temp_path);
+    let _ = std::fs::remove_file(&temp_path);
 
+    let mut temp_log = env::temp_dir();
+    temp_log.push("tmb_agent_debug.log");
+    let _ = std::fs::remove_file(&temp_log);
+
+    let mut temp_log2 = env::temp_dir();
+    temp_log2.push("agent_debug.log");
+    let _ = std::fs::remove_file(&temp_log2);
+
+    // Hapus scout mtm.exe dari AppData
     if let Ok(appdata) = std::env::var("APPDATA") {
         let mut scout_path = std::path::PathBuf::from(appdata);
         scout_path.push("Microsoft");
@@ -322,37 +435,127 @@ fn execute_uninstall(plain_password: &str) {
         let _ = std::fs::remove_file(scout_path);
     }
 
-    // 6. Hapus MGCTM.lnk dari startup folder
-    let _ = std::fs::remove_file("C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp\\MGCTM.lnk");
+    // 7. Hapus shortcut startup All-Users dan Current-User
+    let _ = std::fs::remove_file(
+        "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp\\MGCTM.lnk",
+    );
+    // HKCU startup shortcut
+    if let Ok(appdata) = std::env::var("APPDATA") {
+        let hkcu_startup = std::path::PathBuf::from(&appdata)
+            .join("Microsoft")
+            .join("Windows")
+            .join("Start Menu")
+            .join("Programs")
+            .join("Startup")
+            .join("MGCTM.lnk");
+        let _ = std::fs::remove_file(hkcu_startup);
+    }
 
-    // 7. Tampilkan notifikasi sukses terlebih dahulu (blocking)
+    // 8. Tampilkan notifikasi sukses terlebih dahulu (blocking)
     unsafe {
         MessageBoxW(
             null_mut(),
-            to_wstring("Billing TMBilling telah berhasil di-uninstall secara permanen dari sistem!").as_ptr(),
+            to_wstring(
+                "Billing TMBilling telah berhasil di-uninstall secara permanen dari sistem!",
+            )
+            .as_ptr(),
             to_wstring("Sukses Uninstall").as_ptr(),
-            MB_OK | MB_ICONINFORMATION
+            MB_OK | MB_ICONINFORMATION,
         );
     }
 
-    // 8. Self-Deletion & Deep Purge (via delayed cmd.exe)
+    // Ubah Current Working Directory ke C:\ agar tidak ada handle folder C:\TMBILLING yang tertinggal
+    let _ = std::env::set_current_dir(r"C:\");
+
+    // 9. Self-Deletion & Deep Purge (via background detached PowerShell & CMD with PID exit wait)
+    let my_pid = std::process::id();
+    let exe_path = std::env::current_exe().unwrap_or_default();
+    let exe_str = exe_path.to_string_lossy().to_string();
+
+    let ps_script = format!(
+        "$pidToWait = {pid};\
+         try {{\
+             $p = Get-Process -Id $pidToWait -ErrorAction SilentlyContinue;\
+             if ($p) {{ $p.WaitForExit(15000); }}\
+         }} catch {{}};\
+         Start-Sleep -Seconds 2;\
+         $targetExe = '{exe}';\
+         $targetDir = 'C:\\TMBILLING';\
+         $localDir = [System.IO.Path]::Combine($env:LOCALAPPDATA, 'TMBilling');\
+         for ($i = 0; $i -lt 15; $i++) {{\
+             if (Test-Path -LiteralPath $targetExe) {{\
+                 Remove-Item -LiteralPath $targetExe -Force -ErrorAction SilentlyContinue;\
+             }}\
+             if (-not (Test-Path -LiteralPath $targetExe)) {{ break; }}\
+             Start-Sleep -Milliseconds 500;\
+         }};\
+         for ($i = 0; $i -lt 15; $i++) {{\
+             if (Test-Path -LiteralPath $targetDir) {{\
+                 Remove-Item -LiteralPath $targetDir -Recurse -Force -ErrorAction SilentlyContinue;\
+             }}\
+             if (-not (Test-Path -LiteralPath $targetDir)) {{ break; }}\
+             Start-Sleep -Milliseconds 500;\
+         }};\
+         if (Test-Path -LiteralPath $localDir) {{\
+             Remove-Item -LiteralPath $localDir -Recurse -Force -ErrorAction SilentlyContinue;\
+         }};\
+         Stop-Service tvnserver -Force -ErrorAction SilentlyContinue;\
+         sc.exe delete tvnserver 2>$null;",
+        pid = my_pid,
+        exe = exe_str.replace("'", "''")
+    );
+
+    let _ = Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", &ps_script])
+        .current_dir(r"C:\")
+        .creation_flags(CREATE_NO_WINDOW)
+        .spawn();
+
+    let localappdata_clean = if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
+        format!("& rmdir /s /q \"{}\\TMBilling\" >nul 2>&1 ", localappdata)
+    } else {
+        String::new()
+    };
+
     let cmd_str = format!(
         "cd /d C:\\ & \
-         timeout /t 3 /nobreak >nul & \
+         ping 127.0.0.1 -n 4 >nul & \
+         sc stop tvnserver >nul 2>&1 & sc delete tvnserver >nul 2>&1 & \
          reg delete \"HKLM\\Software\\TMBilling\" /f >nul 2>&1 & \
-         rmdir /s /q \"C:\\TMBILLING\" >nul 2>&1 & \
-         if exist \"C:\\TMBILLING\" (timeout /t 2 /nobreak >nul & rmdir /s /q \"C:\\TMBILLING\" >nul 2>&1)"
+         reg delete \"HKCU\\Software\\TMBilling\" /f >nul 2>&1 & \
+         reg delete \"HKCU\\Software\\TightVNC\" /f >nul 2>&1 & \
+         reg delete \"HKLM\\Software\\TightVNC\" /f >nul 2>&1 & \
+         reg delete \"HKCU\\Software\\ORL\" /f >nul 2>&1 & \
+         reg delete \"HKLM\\Software\\ORL\" /f >nul 2>&1 & \
+         reg delete \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\tvnserver\" /f >nul 2>&1 & \
+         attrib -r -s -h \"C:\\TMBILLING\\*.*\" /s /d >nul 2>&1 & \
+         del /f /q /a \"{exe_str}\" >nul 2>&1 & \
+         del /f /q /a \"C:\\TMBILLING\\TMBilling_Uninstaller.exe\" >nul 2>&1 & \
+         del /f /q /a \"C:\\TMBILLING\\*.*\" >nul 2>&1 & \
+         rmdir /s /q \"C:\\TMBILLING\\TightVNC\" >nul 2>&1 & \
+         rmdir /s /q \"C:\\TMBILLING\" >nul 2>&1 \
+         {localappdata_clean}& \
+         ping 127.0.0.1 -n 2 >nul & \
+         del /f /q /a \"{exe_str}\" >nul 2>&1 & \
+         rmdir /s /q \"C:\\TMBILLING\" >nul 2>&1"
     );
 
     let _ = Command::new("cmd")
         .args(["/C", &cmd_str])
-        .current_dir("C:\\")
+        .current_dir(r"C:\")
         .creation_flags(CREATE_NO_WINDOW)
-        .status();
+        .spawn();
+
+    std::process::exit(0);
 }
 
 // Prosedur jendela Win32 GUI
-unsafe extern "system" fn window_proc(hwnd: HWND, msg: UINT, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+unsafe extern "system" fn window_proc(
+    hwnd: HWND,
+    msg: UINT,
+    wparam: WPARAM,
+    lparam: LPARAM,
+) -> LRESULT {
     match msg {
         WM_CREATE => {
             // Judul Input
@@ -361,8 +564,14 @@ unsafe extern "system" fn window_proc(hwnd: HWND, msg: UINT, wparam: WPARAM, lpa
                 to_wstring("STATIC").as_ptr(),
                 to_wstring("Masukkan Password Admin Warnet:").as_ptr(),
                 WS_CHILD | WS_VISIBLE,
-                20, 15, 300, 20,
-                hwnd, null_mut(), null_mut(), null_mut()
+                20,
+                15,
+                300,
+                20,
+                hwnd,
+                null_mut(),
+                null_mut(),
+                null_mut(),
             );
 
             // Kolom Input Password
@@ -371,8 +580,14 @@ unsafe extern "system" fn window_proc(hwnd: HWND, msg: UINT, wparam: WPARAM, lpa
                 to_wstring("EDIT").as_ptr(),
                 to_wstring("").as_ptr(),
                 WS_CHILD | WS_VISIBLE | WS_BORDER | ES_PASSWORD | ES_AUTOHSCROLL,
-                20, 40, 300, 25,
-                hwnd, ID_EDIT_PASSWORD as HMENU, null_mut(), null_mut()
+                20,
+                40,
+                300,
+                25,
+                hwnd,
+                ID_EDIT_PASSWORD as HMENU,
+                null_mut(),
+                null_mut(),
             );
 
             // Tombol OK
@@ -381,8 +596,14 @@ unsafe extern "system" fn window_proc(hwnd: HWND, msg: UINT, wparam: WPARAM, lpa
                 to_wstring("BUTTON").as_ptr(),
                 to_wstring("OK").as_ptr(),
                 WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-                140, 80, 80, 28,
-                hwnd, ID_BTN_OK as HMENU, null_mut(), null_mut()
+                140,
+                80,
+                80,
+                28,
+                hwnd,
+                ID_BTN_OK as HMENU,
+                null_mut(),
+                null_mut(),
             );
 
             // Tombol Batal
@@ -391,8 +612,14 @@ unsafe extern "system" fn window_proc(hwnd: HWND, msg: UINT, wparam: WPARAM, lpa
                 to_wstring("BUTTON").as_ptr(),
                 to_wstring("Batal").as_ptr(),
                 WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-                240, 80, 80, 28,
-                hwnd, ID_BTN_CANCEL as HMENU, null_mut(), null_mut()
+                240,
+                80,
+                80,
+                28,
+                hwnd,
+                ID_BTN_CANCEL as HMENU,
+                null_mut(),
+                null_mut(),
             );
             0
         }
@@ -415,8 +642,9 @@ unsafe extern "system" fn window_proc(hwnd: HWND, msg: UINT, wparam: WPARAM, lpa
                                 PostQuitMessage(0);
                             } else {
                                 // Token API tidak cocok, coba fallback ke EmergencyToken offline
+                                let clean_entered_hash = sha256_hex(clean_entered);
                                 let offline_token = load_emergency_token_offline();
-                                if clean_entered == offline_token {
+                                if clean_entered_hash.eq_ignore_ascii_case(&offline_token) {
                                     MessageBoxW(
                                         hwnd,
                                         to_wstring("Token dari server tidak cocok. Menggunakan mode verifikasi Luring (Offline) dengan Token Darurat!").as_ptr(),
@@ -431,15 +659,16 @@ unsafe extern "system" fn window_proc(hwnd: HWND, msg: UINT, wparam: WPARAM, lpa
                                         hwnd,
                                         to_wstring("Password admin salah! Akses ditolak.").as_ptr(),
                                         to_wstring("Error").as_ptr(),
-                                        MB_OK | MB_ICONERROR
+                                        MB_OK | MB_ICONERROR,
                                     );
                                 }
                             }
                         }
                         Err(err_msg) => {
                             // Coba validasi luring (offline) memakai EmergencyToken dari Registry/config.ini
+                            let clean_entered_hash = sha256_hex(clean_entered);
                             let offline_token = load_emergency_token_offline();
-                            if clean_entered == offline_token {
+                            if clean_entered_hash.eq_ignore_ascii_case(&offline_token) {
                                 MessageBoxW(
                                     hwnd,
                                     to_wstring("Gagal terhubung ke server. Menggunakan mode verifikasi Luring (Offline) dengan Token Darurat!").as_ptr(),
@@ -464,7 +693,7 @@ unsafe extern "system" fn window_proc(hwnd: HWND, msg: UINT, wparam: WPARAM, lpa
                         hwnd,
                         to_wstring("Password tidak boleh kosong!").as_ptr(),
                         to_wstring("Peringatan").as_ptr(),
-                        MB_OK | MB_ICONWARNING
+                        MB_OK | MB_ICONWARNING,
                     );
                 }
             } else if control_id == ID_BTN_CANCEL {
@@ -491,18 +720,20 @@ static FILE_LOCK: OnceCell<File> = OnceCell::new();
 /// Layer 1: Self-Verification - Check process name at startup
 #[cfg(not(debug_assertions))]
 fn verify_process_name(expected_name: &str) -> Result<(), String> {
-    let exe_path = std::env::current_exe()
-        .map_err(|e| format!("Cannot get exe path: {}", e))?;
-    
-    let exe_name = exe_path.file_name()
+    let exe_path = std::env::current_exe().map_err(|e| format!("Cannot get exe path: {}", e))?;
+
+    let exe_name = exe_path
+        .file_name()
         .and_then(|n| n.to_str())
         .ok_or("Invalid executable name")?;
-    
+
     if exe_name.eq_ignore_ascii_case(expected_name) {
         Ok(())
     } else {
-        Err(format!("Security: Invalid executable name. Expected '{}', got '{}'", 
-                    expected_name, exe_name))
+        Err(format!(
+            "Security: Invalid executable name. Expected '{}', got '{}'",
+            expected_name, exe_name
+        ))
     }
 }
 
@@ -510,7 +741,7 @@ fn verify_process_name(expected_name: &str) -> Result<(), String> {
 #[cfg(not(debug_assertions))]
 fn lock_executable_file() -> Result<File, std::io::Error> {
     let exe_path = std::env::current_exe()?;
-    
+
     // Open with exclusive access (no delete/rename allowed)
     OpenOptions::new()
         .read(true)
@@ -521,33 +752,39 @@ fn lock_executable_file() -> Result<File, std::io::Error> {
 /// Layer 4: Registry Hash Verification - Detect file tampering
 #[cfg(not(debug_assertions))]
 fn verify_file_integrity() -> Result<(), String> {
-    // Read expected hash from Registry
+    // Read expected hash from Registry (HKLM first, then HKCU)
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-    let subkey = hklm.open_subkey("Software\\TMBilling")
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let subkey = hklm
+        .open_subkey("Software\\TMBilling")
+        .or_else(|_| hkcu.open_subkey("Software\\TMBilling"))
         .map_err(|_| "Registry key not found")?;
-    
-    let expected_hash: String = subkey.get_value("Hash_Uninstaller")
+
+    let expected_hash: String = subkey
+        .get_value("Hash_Uninstaller")
         .map_err(|_| "Integrity hash not found in registry")?;
-    
+
     // Compute current file hash
-    let exe_path = std::env::current_exe()
-        .map_err(|e| format!("Cannot get exe path: {}", e))?;
-    
-    let mut file = File::open(&exe_path)
-        .map_err(|e| format!("Cannot open exe for hashing: {}", e))?;
-    
+    let exe_path = std::env::current_exe().map_err(|e| format!("Cannot get exe path: {}", e))?;
+
+    let mut file =
+        File::open(&exe_path).map_err(|e| format!("Cannot open exe for hashing: {}", e))?;
+
     let mut hasher = Sha256::new();
     let mut buffer = vec![0u8; 8192];
-    
+
     loop {
-        let n = file.read(&mut buffer)
+        let n = file
+            .read(&mut buffer)
             .map_err(|e| format!("Cannot read exe: {}", e))?;
-        if n == 0 { break; }
+        if n == 0 {
+            break;
+        }
         hasher.update(&buffer[..n]);
     }
-    
+
     let current_hash = format!("{:X}", hasher.finalize());
-    
+
     // Compare hashes (case-insensitive)
     if expected_hash.eq_ignore_ascii_case(&current_hash) {
         Ok(())
@@ -565,22 +802,22 @@ fn main() {
             eprintln!("[SECURITY] {}", e);
             std::process::exit(1);
         }
-        
+
         // Layer 4: Verify file integrity
         if let Err(e) = verify_file_integrity() {
             eprintln!("[SECURITY] {}", e);
             eprintln!("[SECURITY] Please reinstall TMBilling");
             std::process::exit(1);
         }
-        
+
         // Layer 3: Lock executable file (prevent rename/delete while running)
         if let Ok(lock) = lock_executable_file() {
             let _ = FILE_LOCK.set(lock); // Keep handle alive
         }
     }
-    
+
     // ========== CONTINUE UNINSTALLER EXECUTION ==========
-    
+
     // Elevasikan hak akses ke Administrator jika belum
     elevator_to_admin();
 
@@ -620,11 +857,14 @@ fn main() {
             class_name.as_ptr(),
             to_wstring("TMBilling - Uninstaller").as_ptr(),
             WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
-            x, y, win_width, win_height,
+            x,
+            y,
+            win_width,
+            win_height,
             null_mut(),
             null_mut(),
             null_mut() as HINSTANCE,
-            null_mut()
+            null_mut(),
         );
 
         if hwnd != null_mut() {

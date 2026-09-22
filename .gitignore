@@ -36,10 +36,14 @@ dist/
 DESIGN.md
 implementation_plan.md
 brainstorming_fitur_tmbilling.md
+docs/laporan_tugas_akhir.md
+laporan_tugas_akhir.md
 
 # Flask-specific
 instance/
 .webassets-cache
+app/tmp/
+tmp/
 
 # Environment variables and secrets
 .env

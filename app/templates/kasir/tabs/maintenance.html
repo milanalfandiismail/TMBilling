@@ -1,22 +1,21 @@
 <!-- ===== TAB: PERAWATAN PC ===== -->
 <div id="tab-maintenance" class="tab-content hidden space-y-6">
     <!-- Maintenance Action Header -->
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:max-xl:p-5 xl:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
-                <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 tracking-wide flex items-center gap-2">
+                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
                     <span>📋</span> Perawatan PC
                 </h3>
-                <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Kelola perbaikan unit komputer, catat
-                    tindakan teknis, dan lapor kendala baru secara terpisah.</p>
+                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Kelola perbaikan unit komputer, catat tindakan teknis, dan lapor kendala baru secara terpisah.</p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
                 <button onclick="Maintenance.openCreateModal()"
-                    class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
+                    class="flex-1 sm:flex-none justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
                     <span>+</span> Lapor Masalah
                 </button>
                 <button onclick="Maintenance.load()"
-                    class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded-lg transition-colors flex items-center gap-1.5">
+                    class="flex-1 sm:flex-none justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-1.5">
                     <span>↻</span> Refresh
                 </button>
             </div>
@@ -24,32 +23,32 @@
     </div>
 
     <!-- 4 Mini Status Cards -->
-    <div id="maintenance-stats" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="p-4 bg-[#111] border border-[#1f1f1f] rounded-xl">
-            <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-500">Tiket Baru</div>
-            <div id="stat-maint-baru" class="text-xl lg:text-2xl font-bold text-amber-500 mt-1">0</div>
+    <div id="maintenance-stats" class="grid grid-cols-2 lg:max-xl:grid-cols-4 xl:grid-cols-4 gap-2.5 sm:gap-3 lg:max-xl:gap-3 xl:gap-4">
+        <div class="p-3.5 sm:p-4 lg:max-xl:p-4 xl:p-5 bg-[#0c0c0c] border border-[#1c1c1c] rounded">
+            <div class="text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold tracking-wider text-neutral-500">Tiket Baru</div>
+            <div id="stat-maint-baru" class="text-xl lg:max-xl:text-2xl xl:text-3xl font-extrabold text-amber-500 mt-1">0</div>
         </div>
-        <div class="p-4 bg-[#111] border border-[#1f1f1f] rounded-xl">
-            <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-500">Sedang Diproses</div>
-            <div id="stat-maint-proses" class="text-xl lg:text-2xl font-bold text-blue-500 mt-1">0</div>
+        <div class="p-3.5 sm:p-4 lg:max-xl:p-4 xl:p-5 bg-[#0c0c0c] border border-[#1c1c1c] rounded">
+            <div class="text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold tracking-wider text-neutral-500">Sedang Diproses</div>
+            <div id="stat-maint-proses" class="text-xl lg:max-xl:text-2xl xl:text-3xl font-extrabold text-blue-500 mt-1">0</div>
         </div>
-        <div class="p-4 bg-[#111] border border-[#1f1f1f] rounded-xl">
-            <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-500">Selesai Hari Ini</div>
-            <div id="stat-maint-selesai" class="text-xl lg:text-2xl font-bold text-emerald-500 mt-1">0</div>
+        <div class="p-3.5 sm:p-4 lg:max-xl:p-4 xl:p-5 bg-[#0c0c0c] border border-[#1c1c1c] rounded">
+            <div class="text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold tracking-wider text-neutral-500">Selesai Hari Ini</div>
+            <div id="stat-maint-selesai" class="text-xl lg:max-xl:text-2xl xl:text-3xl font-extrabold text-emerald-500 mt-1">0</div>
         </div>
-        <div class="p-4 bg-[#111] border border-[#1f1f1f] rounded-xl">
-            <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-500">PC Maintenance</div>
-            <div id="stat-maint-nonaktif" class="text-xl lg:text-2xl font-bold text-rose-500 mt-1">0</div>
+        <div class="p-3.5 sm:p-4 lg:max-xl:p-4 xl:p-5 bg-[#0c0c0c] border border-[#1c1c1c] rounded">
+            <div class="text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold tracking-wider text-neutral-500">PC Maintenance</div>
+            <div id="stat-maint-nonaktif" class="text-xl lg:max-xl:text-2xl xl:text-3xl font-extrabold text-rose-500 mt-1">0</div>
         </div>
     </div>
 
     <!-- Maintenance Data List Card -->
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5 shadow-xl">
-        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <h3 class="text-xs lg:text-[22px] font-bold text-neutral-400 uppercase tracking-wider">Daftar Tiket</h3>
-            <div class="flex flex-wrap items-center gap-2">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:max-xl:p-5 xl:p-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4">
+            <h3 class="text-xs lg:max-xl:text-base xl:text-[22px] font-bold text-neutral-400 uppercase tracking-wider">Daftar Tiket</h3>
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <select id="maint-filter-status" onchange="Maintenance.load()"
-                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                    class="w-full sm:w-auto px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
                     <option value="">Semua Status Aktif</option>
                     <option value="BARU">BARU</option>
                     <option value="DIPROSES">DIPROSES</option>
@@ -57,38 +56,36 @@
                     <option value="DITOLAK">DITOLAK</option>
                 </select>
                 <button type="button" onclick="Maintenance.openSelectPCModal('filter')"
-                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 hover:border-neutral-500 transition-colors flex items-center gap-2">
+                    class="w-full sm:w-auto px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 hover:border-neutral-500 transition-colors flex items-center justify-between sm:justify-start gap-2">
                     <span id="label-maint-filter-pc">Semua PC</span>
                     <span class="text-neutral-500 text-[10px]">▼</span>
                 </button>
                 <input type="hidden" id="maint-filter-pc-val" value="">
                 <button onclick="Maintenance.load()"
-                    class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Cari</button>
+                    class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Cari</button>
             </div>
         </div>
 
         <!-- List Tickets Table Container -->
         <div class="overflow-x-auto scrollbar-thin w-full">
-            <table class="w-full text-left border-collapse text-xs lg:text-base">
-                <thead>
+            <table class="w-full text-left border-collapse text-xs lg:max-xl:text-xs xl:text-base block lg:table">
+                <thead class="hidden lg:table-header-group">
                     <tr
-                        class="border-b border-[#1f1f1f] text-neutral-500 text-[10px] lg:text-base font-bold uppercase tracking-wider">
-                        <th class="py-3 px-4">PC</th>
-                        <th class="py-3 px-4">Kategori</th>
-                        <th class="py-3 px-4">Prioritas</th>
-                        <th class="py-3 px-4">Masalah / Judul</th>
-                        <th class="py-3 px-4">Dilaporkan</th>
-                        <th class="py-3 px-4">Status</th>
-                        <th class="py-3 px-4 text-right">Aksi</th>
+                        class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] lg:max-xl:text-xs xl:text-base font-bold uppercase tracking-wider">
+                        <th class="py-2.5 px-3">PC &amp; Prioritas</th>
+                        <th class="py-2.5 px-3">Masalah &amp; Detail</th>
+                        <th class="py-2.5 px-3">Pelapor &amp; Tanggal</th>
+                        <th class="py-2.5 px-3">Status</th>
+                        <th class="py-2.5 px-3 text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="maintenance-tickets-tbody"
-                    class="divide-y divide-[#1f1f1f] text-xs lg:text-base text-neutral-300">
-                    <tr>
-                        <td colspan="7" class="py-10 text-center text-neutral-500">
+                    class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 block lg:table-row-group">
+                    <tr class="block lg:table-row">
+                        <td colspan="5" class="py-10 text-center text-neutral-500 block lg:table-cell">
                             <div class="flex justify-center">
                                 <div
-                                    class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin">
+                                    class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin">
                                 </div>
                             </div>
                         </td>
@@ -102,19 +99,19 @@
 
 <!-- Form Modal: Lapor Masalah Baru -->
 <div id="modal-create-ticket"
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div
-        class="bg-[#111] border border-[#1f1f1f] rounded-xl w-full max-w-md p-6 shadow-2xl relative text-xs lg:text-base">
+        class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md p-5 sm:p-6 shadow-2xl relative text-xs lg:max-xl:text-xs xl:text-base max-h-[90vh] overflow-y-auto scrollbar-thin">
         <button onclick="Maintenance.closeCreateModal()"
             class="absolute top-4 right-4 text-neutral-500 hover:text-neutral-300 text-lg">&times;</button>
-        <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 flex items-center gap-2 mb-4">
+        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2 mb-4">
             <span>📋</span> Lapor Masalah Baru
         </h3>
         <form id="form-create-ticket" onsubmit="Maintenance.submitCreate(event)" class="space-y-4">
             <div>
-                <label class="block text-[10px] uppercase font-bold text-neutral-500 mb-1.5">Pilih Unit PC *</label>
+                <label class="block text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold text-neutral-400 mb-1.5">Pilih Unit PC *</label>
                 <button id="btn-maint-input-pc" type="button" onclick="Maintenance.openSelectPCModal('input')"
-                    class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 hover:border-neutral-500 transition-colors text-left flex justify-between items-center gap-2 text-xs lg:text-base">
+                    class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 hover:border-neutral-500 transition-colors text-left flex justify-between items-center gap-2 text-xs lg:max-xl:text-xs xl:text-base">
                     <span id="label-maint-input-pc">-- Pilih Unit PC --</span>
                     <span class="text-neutral-500 text-[10px]">▼</span>
                 </button>
@@ -122,9 +119,9 @@
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-[10px] uppercase font-bold text-neutral-500 mb-1.5">Kategori *</label>
+                    <label class="block text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold text-neutral-400 mb-1.5">Kategori *</label>
                     <select id="maint-input-kategori" required
-                        class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:text-base">
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:max-xl:text-xs xl:text-base">
                         <option value="HARDWARE">HARDWARE</option>
                         <option value="SOFTWARE">SOFTWARE</option>
                         <option value="JARINGAN">JARINGAN</option>
@@ -132,9 +129,9 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-[10px] uppercase font-bold text-neutral-500 mb-1.5">Prioritas *</label>
+                    <label class="block text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold text-neutral-400 mb-1.5">Prioritas *</label>
                     <select id="maint-input-prioritas" required
-                        class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:text-base">
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:max-xl:text-xs xl:text-base">
                         <option value="RENDAH">RENDAH</option>
                         <option value="SEDANG" selected>SEDANG</option>
                         <option value="TINGGI">TINGGI</option>
@@ -143,22 +140,22 @@
                 </div>
             </div>
             <div>
-                <label class="block text-[10px] uppercase font-bold text-neutral-500 mb-1.5">Judul Masalah *</label>
+                <label class="block text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold text-neutral-400 mb-1.5">Judul Masalah *</label>
                 <input type="text" id="maint-input-judul" required placeholder="Contoh: Klik kiri mouse macet"
-                    class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:text-base">
+                    class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:max-xl:text-xs xl:text-base">
             </div>
             <div>
-                <label class="block text-[10px] uppercase font-bold text-neutral-500 mb-1.5">Deskripsi / Detail
+                <label class="block text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold text-neutral-400 mb-1.5">Deskripsi / Detail
                     Tambahan</label>
                 <textarea id="maint-input-deskripsi" rows="3"
                     placeholder="Contoh: Kadang bisa diklik, kadang macet total saat dipakai gaming."
-                    class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:text-base scrollbar-thin"></textarea>
+                    class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:max-xl:text-xs xl:text-base scrollbar-thin"></textarea>
             </div>
             <div class="flex justify-end gap-2 pt-2">
                 <button type="button" onclick="Maintenance.closeCreateModal()"
-                    class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded-lg transition-colors">Batal</button>
+                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Batal</button>
                 <button type="submit"
-                    class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Kirim
+                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Kirim
                     Laporan</button>
             </div>
         </form>
@@ -167,31 +164,31 @@
 
 <!-- Form Modal: Update Status Tiket -->
 <div id="modal-update-ticket"
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div
-        class="bg-[#111] border border-[#1f1f1f] rounded-xl w-full max-w-md p-6 shadow-2xl relative text-xs lg:text-base">
+        class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md p-5 sm:p-6 shadow-2xl relative text-xs lg:max-xl:text-xs xl:text-base max-h-[90vh] overflow-y-auto scrollbar-thin">
         <button onclick="Maintenance.closeUpdateModal()"
             class="absolute top-4 right-4 text-neutral-500 hover:text-neutral-300 text-lg">&times;</button>
-        <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 flex items-center gap-2 mb-4">
+        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2 mb-4">
             <span>🔧</span> Update Status Perbaikan
         </h3>
 
         <!-- Ringkasan Masalah yang Sedang Di-update -->
-        <div id="maint-update-info-box" class="bg-[#050505] border border-[#1f1f1f] rounded-lg p-3 space-y-1 mb-4">
-            <div class="flex items-center justify-between text-[10px] text-neutral-500 font-mono">
+        <div id="maint-update-info-box" class="bg-[#050505] border border-[#1c1c1c] rounded p-3.5 space-y-1.5 mb-4">
+            <div class="flex items-center justify-between text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 font-mono">
                 <span id="maint-update-info-pc" class="font-bold text-neutral-200">PC-01</span>
                 <span id="maint-update-info-kategori" class="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 font-bold uppercase">HARDWARE</span>
             </div>
-            <div id="maint-update-info-judul" class="text-xs lg:text-sm font-bold text-neutral-100 leading-snug break-words">Judul Masalah</div>
-            <div id="maint-update-info-deskripsi" class="text-[10px] lg:text-xs text-neutral-400 whitespace-pre-line break-words leading-relaxed">Deskripsi...</div>
+            <div id="maint-update-info-judul" class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-100 leading-snug break-words">Judul Masalah</div>
+            <div id="maint-update-info-deskripsi" class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-400 whitespace-pre-line break-words leading-relaxed">Deskripsi...</div>
         </div>
 
         <form id="form-update-ticket" onsubmit="Maintenance.submitUpdate(event)" class="space-y-4">
             <input type="hidden" id="maint-update-id">
             <div>
-                <label class="block text-[10px] uppercase font-bold text-neutral-500 mb-1.5">Pilih Status *</label>
+                <label class="block text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold text-neutral-400 mb-1.5">Pilih Status *</label>
                 <select id="maint-update-status" onchange="Maintenance.toggleResolutionFields()" required
-                    class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:text-base">
+                    class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:max-xl:text-xs xl:text-base">
                     <option value="DIPROSES">SEDANG DIPROSES</option>
                     <option value="SELESAI">SELESAI</option>
                     <option value="DITOLAK">DITOLAK / BATAL</option>
@@ -202,24 +199,24 @@
             <div id="maint-resolution-wrapper" class="space-y-4 hidden">
                 <div>
                     <label id="maint-label-resolusi"
-                        class="block text-[10px] uppercase font-bold text-neutral-500 mb-1.5">Catatan Resolusi /
+                        class="block text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold text-neutral-400 mb-1.5">Catatan Resolusi /
                         Tindakan *</label>
                     <textarea id="maint-update-resolusi" rows="3" placeholder="Tuliskan tindakan perbaikan..."
-                        class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:text-base scrollbar-thin"></textarea>
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:max-xl:text-xs xl:text-base scrollbar-thin"></textarea>
                 </div>
                 <div id="maint-biaya-wrapper">
-                    <label class="block text-[10px] uppercase font-bold text-neutral-500 mb-1.5">Biaya Perbaikan
+                    <label class="block text-[10px] lg:max-xl:text-xs xl:text-sm uppercase font-bold text-neutral-400 mb-1.5">Biaya Perbaikan
                         (Rp)</label>
                     <input type="number" id="maint-update-biaya" min="0" placeholder="0"
-                        class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:text-base">
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:max-xl:text-xs xl:text-base">
                 </div>
             </div>
 
             <div class="flex justify-end gap-2 pt-2">
                 <button type="button" onclick="Maintenance.closeUpdateModal()"
-                    class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded-lg transition-colors">Batal</button>
+                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Batal</button>
                 <button type="submit"
-                    class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">Simpan
+                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Simpan
                     Perubahan</button>
             </div>
         </form>
@@ -228,102 +225,73 @@
 
 <!-- Modal: Detail View Tiket -->
 <div id="modal-detail-ticket"
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div
-        class="bg-[#111] border border-[#1f1f1f] rounded-xl w-full max-w-md p-6 shadow-2xl relative text-xs lg:text-base">
+        class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md p-5 sm:p-6 shadow-2xl relative text-xs lg:max-xl:text-xs xl:text-base max-h-[90vh] overflow-y-auto scrollbar-thin">
         <button onclick="Maintenance.closeDetailModal()"
             class="absolute top-4 right-4 text-neutral-500 hover:text-neutral-300 text-lg">&times;</button>
-        <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 flex items-center gap-2 mb-4">
+        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2 mb-4">
             <span>🔍</span> Detail Tiket Perawatan
         </h3>
-        <div class="space-y-3.5 text-xs lg:text-base text-neutral-300 font-mono">
-            <div class="flex justify-between border-b border-[#1f1f1f] pb-2">
+        <div class="space-y-3.5 text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 font-mono">
+            <div class="flex justify-between border-b border-[#1c1c1c] pb-2">
                 <span class="text-neutral-500">Unit PC</span>
                 <span id="maint-detail-pc" class="font-bold text-neutral-100">N/A</span>
             </div>
-            <div class="flex justify-between border-b border-[#1f1f1f] pb-2">
+            <div class="flex justify-between border-b border-[#1c1c1c] pb-2">
                 <span class="text-neutral-500">Kategori</span>
                 <span id="maint-detail-kategori" class="font-bold text-neutral-100">N/A</span>
             </div>
-            <div class="flex justify-between border-b border-[#1f1f1f] pb-2">
+            <div class="flex justify-between border-b border-[#1c1c1c] pb-2">
                 <span class="text-neutral-500">Prioritas</span>
                 <span id="maint-detail-prioritas" class="font-bold text-neutral-100">N/A</span>
             </div>
-            <div class="flex justify-between border-b border-[#1f1f1f] pb-2">
+            <div class="flex justify-between border-b border-[#1c1c1c] pb-2">
                 <span class="text-neutral-500">Status</span>
                 <span id="maint-detail-status" class="font-bold">N/A</span>
             </div>
-            <div class="flex justify-between border-b border-[#1f1f1f] pb-2">
+            <div class="flex justify-between border-b border-[#1c1c1c] pb-2">
                 <span class="text-neutral-500">Pelapor</span>
                 <span id="maint-detail-reporter" class="text-neutral-100">N/A</span>
             </div>
-            <div class="flex justify-between border-b border-[#1f1f1f] pb-2">
+            <div class="flex justify-between border-b border-[#1c1c1c] pb-2">
                 <span class="text-neutral-500">Tanggal Lapor</span>
                 <span id="maint-detail-created" class="text-neutral-400">N/A</span>
             </div>
-            <div class="border-b border-[#1f1f1f] pb-2.5">
-                <span class="text-neutral-500 block text-[10px] uppercase font-bold tracking-wider mb-1">Judul Masalah</span>
-                <div id="maint-detail-judul" class="font-bold text-neutral-100 break-words leading-snug font-sans text-xs lg:text-base">N/A</div>
+            <div class="border-b border-[#1c1c1c] pb-2.5">
+                <span class="text-neutral-500 block text-[10px] lg:max-xl:text-[10px] xl:text-xs uppercase font-bold tracking-wider mb-1">Judul Masalah</span>
+                <div id="maint-detail-judul" class="font-bold text-neutral-100 break-words leading-snug font-sans text-xs lg:max-xl:text-xs xl:text-base">N/A</div>
             </div>
-            <div class="border-b border-[#1f1f1f] pb-2.5">
-                <span class="text-neutral-500 block text-[10px] uppercase font-bold tracking-wider mb-1">Deskripsi Lengkap</span>
-                <div id="maint-detail-deskripsi" class="bg-[#050505] p-3 rounded-lg border border-[#1f1f1f] text-neutral-300 whitespace-pre-line leading-relaxed font-sans text-xs lg:text-sm break-words">N/A</div>
+            <div class="border-b border-[#1c1c1c] pb-2.5">
+                <span class="text-neutral-500 block text-[10px] lg:max-xl:text-[10px] xl:text-xs uppercase font-bold tracking-wider mb-1">Deskripsi Lengkap</span>
+                <div id="maint-detail-deskripsi" class="bg-[#050505] p-3 rounded border border-[#1c1c1c] text-neutral-300 whitespace-pre-line leading-relaxed font-sans text-xs lg:max-xl:text-xs xl:text-sm break-words">N/A</div>
             </div>
 
             <!-- Ditampilkan jika status SELESAI/DITOLAK -->
             <div id="maint-detail-resolution-section" class="space-y-3.5 hidden">
-                <div class="flex justify-between border-b border-[#1f1f1f] pb-2">
+                <div class="flex justify-between border-b border-[#1c1c1c] pb-2">
                     <span class="text-neutral-500">Diselesaikan Oleh</span>
                     <span id="maint-detail-resolved-by" class="text-neutral-100">N/A</span>
                 </div>
-                <div class="flex justify-between border-b border-[#1f1f1f] pb-2">
+                <div class="flex justify-between border-b border-[#1c1c1c] pb-2">
                     <span class="text-neutral-500">Tanggal Selesai</span>
                     <span id="maint-detail-resolved-at" class="text-neutral-400">N/A</span>
                 </div>
-                <div class="flex justify-between border-b border-[#1f1f1f] pb-2">
+                <div class="flex justify-between border-b border-[#1c1c1c] pb-2">
                     <span class="text-neutral-500">Biaya Perbaikan</span>
                     <span id="maint-detail-biaya" class="font-bold text-emerald-400">Rp 0</span>
                 </div>
                 <div>
                     <span class="text-neutral-500 block mb-1">Tindakan / Resolusi</span>
                     <div id="maint-detail-resolusi"
-                        class="bg-[#050505] p-2.5 rounded border border-[#1f1f1f] text-neutral-200 whitespace-pre-line leading-relaxed font-space-grotesk">
+                        class="bg-[#050505] p-2.5 rounded border border-[#1c1c1c] text-neutral-200 whitespace-pre-line leading-relaxed font-sans text-xs lg:max-xl:text-xs xl:text-base">
                         N/A</div>
                 </div>
             </div>
         </div>
         <div class="flex justify-end pt-4">
             <button onclick="Maintenance.closeDetailModal()"
-                class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:text-base font-bold rounded-lg transition-colors">Tutup</button>
-        </div>
-    </div>
-</div>
-
-<!-- Shared Modal: Pilih Unit PC -->
-<div id="modal-select-pc"
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center hidden">
-    <div
-        class="bg-[#111] border border-[#1f1f1f] rounded-xl w-full max-w-xl p-5 shadow-2xl relative text-xs lg:text-base flex flex-col max-h-[80vh]">
-        <!-- Header -->
-        <button onclick="Maintenance.closeSelectPCModal()"
-            class="absolute top-4 right-4 text-neutral-500 hover:text-neutral-300 text-lg">&times;</button>
-        <h3 class="text-sm lg:text-[22px] font-bold text-neutral-100 flex items-center gap-2 mb-4">
-            <span>🖥️</span> Pilih Unit PC
-        </h3>
-
-        <!-- Search & All PC -->
-        <div class="flex items-center gap-3 mb-4">
-            <input type="text" id="pc-select-search" oninput="Maintenance.filterPCSelectGrid()"
-                placeholder="Cari kode PC atau nama..."
-                class="flex-1 px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 focus:outline-none focus:border-neutral-500 text-xs lg:text-base">
-            <button id="btn-pc-select-all" onclick="Maintenance.selectPCFromModal('', 'Semua PC')"
-                class="px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-300 font-bold rounded-lg hover:bg-neutral-200 hover:text-black transition-all">Semua
-                PC</button>
-        </div>
-
-        <!-- PC Grid Container -->
-        <div id="pc-select-grid-container" class="overflow-y-auto flex-1 scrollbar-thin space-y-4 pr-1">
-            <!-- Dinamis via JS -->
+                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Tutup</button>
         </div>
     </div>
 </div>
