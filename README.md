@@ -86,21 +86,24 @@ c:\Project GIT\TMBilling
 
 ### 1. Setup & Menjalankan Server Billing (Komputer Server / Kasir)
 
-1. **Instalasi Server 1-Klik**:
+1. **Unduh Paket Server**:
+   Unduh paket rilis server terbaru (misal: `TMBilling_Server_v1.6.2.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak di komputer server/kasir Anda (contoh: `C:\TMBilling`). *(Bagi developer, silakan gunakan `git clone` pada [Panduan Pengembang](#3-panduan-pengembang-developer--build-pipeline))*.
+
+2. **Instalasi Server 1-Klik**:
    Jalankan file `install.bat` di direktori utama:
    ```cmd
    install.bat
    ```
    > Skrip otomatis memeriksa Python, membuat virtual environment (`.venv`), memasang seluruh dependensi dari `requirements.txt`, meng-generate file `.env` dengan `SECRET_KEY` acak, dan menginisialisasi basis data SQLite.
 
-2. **Menyalakan Server**:
+3. **Menyalakan Server**:
    ```cmd
    start.bat
    ```
    > Server otomatis berjalan di background pada port `7015`. Buka browser ke:
    > **`http://localhost:7015`** *(Login Default: `admin` / `admin123`)*.
 
-3. **Menghentikan Server**:
+4. **Menghentikan Server**:
    ```cmd
    stop.bat
    ```
@@ -109,7 +112,8 @@ c:\Project GIT\TMBilling
 
 ### 2. Setup & Instalasi WarnetAgent (PC Klien Warnet)
 
-1. Salin isi folder `WarnetAgent\Deploy` (atau paket zip rilis agen) ke PC Klien.
+1. **Unduh Paket Klien**:
+   Unduh paket rilis klien terbaru (misal: `TMBilling_Client_v1.6.2.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak ke PC Klien *(atau salin isi folder `WarnetAgent\Deploy` jika Anda mengunduh full repository)*.
 2. Klik kanan **`install.bat`** lalu pilih **Run as administrator** (atau jalankan biasa).
 3. Masukkan **IP Server Billing** saat diminta (contoh: `192.168.1.100`). Port default `7015` akan otomatis digunakan *(kecuali jika Anda mengubah port server billing, Anda dapat memasukkan format `IP:PORT`, contoh: `192.168.1.100:8080`)*. Masukkan juga **API Key** yang dapat Anda cek dan kelola di dashboard server melalui menu **Sidebar > Pengaturan > Umum & Keamanan > API Key System (Client API Key)**.
 
@@ -133,22 +137,30 @@ c:\Project GIT\TMBilling
 
 ### 3. Panduan Pengembang (Developer & Build Pipeline)
 
-1. **Inisialisasi Environment Pengembang**:
+1. **Clone Repositori**:
+   ```bash
+   git clone https://github.com/milanalfandiismail/TMBilling.git
+   cd TMBilling
+   ```
+
+2. **Inisialisasi Environment Pengembang**:
+   Jalankan skrip untuk otomatis membuat virtual environment Python, menginstal dependensi backend, node modules, dan build aset CSS:
    ```cmd
    developer_install.bat
    ```
-2. **Kompilasi & Build Seluruh Komponen Klien**:
+
+3. **Kompilasi & Build Seluruh Komponen Klien (Rust / Tauri v2)**:
    ```cmd
    build_and_deploy.bat
    ```
    > Mengompilasi seluruh modul Rust (`TMBillingTauri`, `TMBilling_Monitor`, `MGCTM`, `TMBilling_Uninstaller`, `mtm`), microservice `TMLHMService`, dan menyalin seluruh binary rilis ke folder `WarnetAgent\Deploy\`.
 
-3. **Menjalankan Pengujian Backend (Pytest)**:
+4. **Menjalankan Pengujian Backend (Pytest)**:
    ```powershell
    .\.venv\Scripts\python.exe -m pytest
    ```
 
-4. **Memeriksa Kompilasi Klien Rust**:
+5. **Memeriksa Kompilasi Klien Rust**:
    ```powershell
    cd WarnetAgent\TMBillingTauri\src-tauri
    cargo check
