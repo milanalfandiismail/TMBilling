@@ -9,7 +9,7 @@ echo.
 set "DEPLOY_DIR=%~dp0"
 
 echo [1/5] Memulai kompilasi Tauri Client (TMBilling)...
-cd /d "%DEPLOY_DIR%..\..\WarnetClient\TMBillingTauri"
+cd /d "%DEPLOY_DIR%..\TMBillingTauri"
 call npm run tauri build
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -18,7 +18,7 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 echo Menyalin file TMBilling.exe ke folder Deploy...
-copy /Y "%DEPLOY_DIR%..\..\WarnetClient\TMBillingTauri\src-tauri\target\release\TMBilling.exe" "%DEPLOY_DIR%TMBilling.exe"
+copy /Y "%DEPLOY_DIR%..\TMBillingTauri\src-tauri\target\release\TMBilling.exe" "%DEPLOY_DIR%TMBilling.exe"
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Gagal menyalin TMBilling.exe!
     pause
