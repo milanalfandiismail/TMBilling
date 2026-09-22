@@ -547,10 +547,11 @@ Klien warnet berlokasi di direktori `WarnetAgent/`:
 - **Fungsi**: Program uninstaller resmi yang aman. Menghapus service watchdog, membersihkan registry keys, dan memulihkan pengaturan Windows hanya setelah memverifikasi kata sandi Administrator dan hash darurat.
 
 ### 7.4 Deploy Scripts & TightVNC Registry
-- **Lokasi**: `WarnetAgent/Deploy/`.
-- `tightvnc_settings.reg`: Konfigurasi registry otomatis untuk TightVNC Server (LoopbackOnly = 1, AllowLoopback = 1, port 5900).
-- `allow_firewall.bat`: Skrip otomatis pendaftaran Windows Defender Firewall untuk port 5900 dan executable TMBilling.
-- `install.bat`: Skrip instalasi lengkap 1-klik untuk PC klien warnet baru.
+Berlokasi di direktori `WarnetAgent/Deploy/`:
+- **`install.bat`**: Skrip instalasi otomatis 1-klik untuk PC klien warnet (mendukung mode Administrator dan Run Biasa). Skrip ini menyalin seluruh binary (`TMBilling.exe`, `MGCTM.exe`, `TMMonitor.exe`, `WebView2Loader.dll`, `mtm.exe`), mengonfigurasi Registry Windows (`HKCU` & `HKLM`), mengonfigurasi port TightVNC 5900 loopback, mendaftarkan aturan Windows Defender Firewall, membuat shortcut Startup otomatis `MGCTM.lnk`, menghitung hash integritas SHA-256 ke registry, dan meluncurkan agen di background.
+- **`uninstall.bat`**: Skrip peluncur uninstaller resmi (`TMBilling_Uninstaller.exe`) untuk menghapus service, registry, dan binary klien secara bersih.
+- **`allow_firewall.bat`**: Skrip pendaftaran aturan Windows Defender Firewall untuk port 5900 dan executable TMBilling.
+- **`tightvnc_settings.reg`**: Konfigurasi registry otomatis untuk TightVNC Server (LoopbackOnly = 1, AllowLoopback = 1, port 5900).
 
 ---
 
@@ -1024,9 +1025,16 @@ cd WarnetAgent\TMBillingTauri\src-tauri
 cargo check
 ```
 
-### 10.4 Skrip Build & Packaging Otomatis
-Gunakan skrip terpadu di root direktori untuk build produksi:
-```powershell
-.\build_and_deploy.bat
-```
-Skrip ini akan mengompilasi binary Tauri Rust klien, mengemas aset frontend, dan memperbarui installer Inno Setup siap rilis.
+### 10.4 Skrip Otomatisasi & Build Pipeline
+Repositori menyediakan skrip batch otomatis untuk menyederhanakan manajemen operasional dan proses build:
+
+| Skrip Batch | Direktori | Fungsi Utama |
+| :--- | :--- | :--- |
+| **`install.bat`** | Root (`/`) | Instalasi Server Billing 1-klik (Python venv, requirements, `.env`, SQLite init). |
+| **`start.bat`** | Root (`/`) | Menjalankan Server Billing di background pada port `7015` (`http://localhost:7015`). |
+| **`stop.bat`** | Root (`/`) | Menghentikan proses Server Billing. |
+| **`developer_install.bat`** | Root (`/`) | Inisialisasi environment lengkap untuk pengembang (Python & Frontend dependencies). |
+| **`build_and_deploy.bat`** | Root (`/`) | Kompilasi seluruh binary klien Rust (`TMBillingTauri`, `TMBilling_Monitor`, `MGCTM`, `TMBilling_Uninstaller`, `mtm`, `TMLHMService`) dan menyalin binary rilis ke `WarnetAgent/Deploy/`. |
+| **`install.bat`** | `WarnetAgent/Deploy/` | Instalasi otomatis klien PC warnet (konfigurasi IP server, registry, firewall, startup). |
+| **`uninstall.bat`** | `WarnetAgent/Deploy/` | Uninstalasi aman klien warnet via `TMBilling_Uninstaller.exe`. |
+| **`allow_firewall.bat`** | `WarnetAgent/Deploy/` | Konfigurasi aturan Windows Defender Firewall port 5900 TightVNC. |

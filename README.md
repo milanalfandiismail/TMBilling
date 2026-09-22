@@ -24,7 +24,7 @@
 **TMBilling** adalah solusi manajemen operasional terpadu untuk warnet, cybercafe, dan arena esports modern. Dirancang dengan arsitektur **3-Layer Separation of Concerns (SoC)** yang tangguh, sistem ini mengintegrasikan server billing kasir, kasir kantin/FnB terpadu, kendali jarak jauh (remote control TightVNC berbasis web), monitoring hardware baseline anti-maling, dan pertahanan klien 5-lapis (*5-Layer Anti-Tamper Security*).
 
 > 📚 **Dokumentasi Lengkap (Single Source of Truth):**  
-> Untuk panduan arsitektur mendalam, 28 spesifikasi fitur lengkap, skema database, dan API reference, buka **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)**.
+> Untuk panduan arsitektur mendalam, 28 spesifikasi fitur lengkap, katalog 250 endpoint API, dan skema database, buka **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)**.
 
 ---
 
@@ -51,7 +51,7 @@ c:\Project GIT\TMBilling
 ├── app/                        # Backend Server Flask & Frontend Kasir Web
 │   ├── config.py               # Single Source of Version Truth (v1.6.2)
 │   ├── models/                 # 25 Database Model SQLAlchemy
-│   ├── routes/                 # 30 Blueprint REST & WebSocket
+│   ├── routes/                 # 30 Blueprint REST & WebSocket (250 Endpoints)
 │   ├── services/               # 35+ Service Layer Logika Bisnis
 │   └── static/js/kasir/        # Modular Vanilla ES6 Frontend JS
 ├── docs/                       # Master Dokumentasi
@@ -60,105 +60,92 @@ c:\Project GIT\TMBilling
 ├── tools/ckeditor-builder/     # Custom CKEditor 5 Build untuk CMS
 ├── WarnetAgent/                # Source Code Klien Warnet (Rust / Tauri v2)
 │   ├── TMBillingTauri/         # Klien Utama (Lockscreen, Overlay, Win32 Hooks)
+│   ├── TMBilling_Monitor/      # Modul Hardware Monitor & Process Helper
 │   ├── MGCTM/                  # Watchdog Service Supervisor
 │   ├── TMBilling_Uninstaller/  # Secure Uninstaller
-│   └── Deploy/                 # Skrip Instalasi Klien & Registry Firewall
-├── build_and_deploy.bat        # Skrip Build Otomatis Klien & Server
-├── developer_install.bat       # Skrip Inisialisasi Environment Cepat
+│   └── Deploy/                 # Paket Siap Deploy Klien & Skrip Instalasi
+├── install.bat                 # Skrip Instalasi Server 1-Klik
+├── start.bat                   # Skrip Menyalakan Server (Port 7015 Background)
+├── stop.bat                    # Skrip Menghentikan Server
+├── developer_install.bat       # Skrip Inisialisasi Environment Pengembang
+├── build_and_deploy.bat        # Skrip Kompilasi Seluruh Binary Klien ke Deploy
 ├── CHANGELOG.md                # Riwayat Rilis & Update Per Versi
 └── README.md                   # File Ini
 ```
 
 ---
 
-## 🚀 Panduan Instalasi Cepat (Quick Start)
+## 🚀 Panduan Instalasi & Pengoperasian Cepat
 
 ### Prasyarat Sistem:
-- **Server Billing**: Windows 10/11 / Windows Server, Python 3.10+, Git.
-- **Klien PC**: Windows 10/11 64-bit, Microsoft Edge WebView2 Runtime, TightVNC Server 2.8+.
-- **Development (Opsional)**: Node.js 18+, Rust & Cargo 1.75+, Inno Setup 6+.
+- **Server Billing**: Windows 10/11 / Windows Server, Python 3.10+, Koneksi Internet (untuk dependensi awal).
+- **PC Klien Warnet**: Windows 10/11 64-bit, Microsoft Edge WebView2 Runtime.
+- **Pengembang (Opsional)**: Node.js 18+, Rust & Cargo 1.75+, .NET Framework 4.5+ SDK.
 
 ---
 
-### 1. Setup Server Billing
+### 1. Setup & Menjalankan Server Billing (Komputer Server / Kasir)
 
-```powershell
-# 1. Clone repository
-git clone https://github.com/milanalfandiismail/TMBilling.git
-cd TMBilling
-
-# 2. Jalankan skrip developer install (otomatis membuat venv & install packages)
-.\developer_install.bat
-
-# 3. Atau setup manual:
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-
-# 4. Jalankan Server Billing
-python run.py
-```
-> Server akan aktif di `http://127.0.0.1:5000` (atau IP LAN Server: `http://192.168.1.X:5000`).
-
----
-
-### 2. Setup WarnetAgent Klien (PC Warnet)
-
-Untuk mengompilasi dan menguji aplikasi klien di komputer pengembang / komputer klien:
-
-```powershell
-# Masuk ke direktori Tauri Klien
-cd WarnetAgent\TMBillingTauri
-
-# Install dependensi frontend
-npm install
-
-# Jalankan dalam mode development
-npm run tauri dev
-
-# Build binary rilis klien (.exe)
-npm run tauri build
-```
-
----
-
-### 3. Setup TightVNC & Firewall di PC Klien
-
-Agar fitur Remote Control Web kasir berfungsi lancar:
-1. Pastikan TightVNC Server terpasang di PC klien.
-2. Jalankan skrip registrasi registry dan firewall otomatis:
-   ```powershell
-   cd WarnetAgent\Deploy
-   # Jalankan sebagai Administrator:
-   .\allow_firewall.bat
+1. **Instalasi Server 1-Klik**:
+   Jalankan file `install.bat` di direktori utama:
+   ```cmd
+   install.bat
    ```
-3. TightVNC akan otomatis terkonfigurasi pada port `5900` loopback lokal dan terhubung aman dengan WebSocket proxy server billing.
+   > Skrip otomatis memeriksa Python, membuat virtual environment (`.venv`), memasang seluruh dependensi dari `requirements.txt`, meng-generate file `.env` dengan `SECRET_KEY` acak, dan menginisialisasi basis data SQLite.
+
+2. **Menyalakan Server**:
+   ```cmd
+   start.bat
+   ```
+   > Server otomatis berjalan di background pada port `7015`. Buka browser ke:
+   > **`http://localhost:7015`** *(Login Default: `admin` / `admin123`)*.
+
+3. **Menghentikan Server**:
+   ```cmd
+   stop.bat
+   ```
 
 ---
 
-## 🛠️ Skrip Build & Deploy Otomatis
+### 2. Setup & Instalasi WarnetAgent (PC Klien Warnet)
 
-Untuk mengompilasi seluruh modul (Backend, Frontend, dan WarnetAgent Klien Rust) sekaligus mengemas installer:
+1. Salin isi folder `WarnetAgent\Deploy` (atau paket zip rilis agen) ke PC Klien.
+2. Klik kanan **`install.bat`** lalu pilih **Run as administrator** (atau jalankan biasa).
+3. Masukkan **IP Server Billing** saat diminta (contoh: `192.168.1.100`). Port `7015` dan API Key akan dikonfigurasi otomatis.
+4. **Otomatisasi Instalasi**:
+   - Skrip menyalin seluruh binary (`TMBilling.exe`, `MGCTM.exe`, `TMMonitor.exe`, `WebView2Loader.dll`, `mtm.exe`, `TightVNC`).
+   - Mendaftarkan konfigurasi Registry Windows (`HKCU` & `HKLM`) dan TightVNC port `5900` loopback.
+   - Menambahkan aturan Windows Defender Firewall otomatis untuk port 5900 dan executable.
+   - Mendaftarkan shortcut Startup Windows agar agen otomatis aktif saat PC booting.
+   - Menghitung hash SHA-256 binary untuk proteksi integritas dan langsung menjalankan agen di background.
 
-```powershell
-# Dari root repositori:
-.\build_and_deploy.bat
-```
+5. **Uninstalasi Klien**:
+   Jalankan **`uninstall.bat`** di PC klien untuk meluncurkan panel uninstalasi aman.
 
 ---
 
-## 🧪 Menjalankan Pengujian (Testing)
+### 3. Panduan Pengembang (Developer & Build Pipeline)
 
-### 1. Backend Test Suite (Pytest)
-```powershell
-pytest
-```
+1. **Inisialisasi Environment Pengembang**:
+   ```cmd
+   developer_install.bat
+   ```
+2. **Kompilasi & Build Seluruh Komponen Klien**:
+   ```cmd
+   build_and_deploy.bat
+   ```
+   > Mengompilasi seluruh modul Rust (`TMBillingTauri`, `TMBilling_Monitor`, `MGCTM`, `TMBilling_Uninstaller`, `mtm`), microservice `TMLHMService`, dan menyalin seluruh binary rilis ke folder `WarnetAgent\Deploy\`.
 
-### 2. Rust Agent Check
-```powershell
-cd WarnetAgent\TMBillingTauri\src-tauri
-cargo check
-```
+3. **Menjalankan Pengujian Backend (Pytest)**:
+   ```powershell
+   .\.venv\Scripts\python.exe -m pytest
+   ```
+
+4. **Memeriksa Kompilasi Klien Rust**:
+   ```powershell
+   cd WarnetAgent\TMBillingTauri\src-tauri
+   cargo check
+   ```
 
 ---
 
@@ -166,7 +153,7 @@ cargo check
 
 | Dokumen | Deskripsi |
 | :--- | :--- |
-| **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog lengkap 28 fitur, skema database, panduan backend/frontend/Rust, dan spesifikasi API. |
+| **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog lengkap 28 fitur, katalog 250 endpoint REST API, skema 25 database models, panduan backend/frontend/Rust, dan spesifikasi protokol WebSocket. |
 | **[CHANGELOG.md](file:///c:/Project%20GIT/TMBilling/CHANGELOG.md)** | **Catatan Rilis** — Riwayat log perubahan dan rilis dari `v1.0.0` hingga `v1.6.2`. |
 
 ---
