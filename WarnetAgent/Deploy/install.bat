@@ -216,6 +216,23 @@ if "%IS_ADMIN%"=="1" (
 echo    [OK] Konfigurasi Registry TightVNC siap.
 
 :: =========================================================================
+:: 4b. KONFIGURASI WINDOWS DEFENDER FIREWALL (PORT 5900 & TVNSERVER)
+:: =========================================================================
+echo    Mendaftarkan aturan Inbound Windows Defender Firewall (Port 5900)...
+netsh advfirewall firewall delete rule name="TMBilling VNC (Port 5900)" >nul 2>&1
+netsh advfirewall firewall delete rule name="TMBilling TightVNC Server" >nul 2>&1
+netsh advfirewall firewall delete rule name="TMBilling TightVNC Server (Root)" >nul 2>&1
+
+netsh advfirewall firewall add rule name="TMBilling VNC (Port 5900)" dir=in action=allow protocol=TCP localport=5900 enable=yes >nul 2>&1
+if exist "%INSTALL_DIR%\TightVNC\tvnserver.exe" (
+    netsh advfirewall firewall add rule name="TMBilling TightVNC Server" dir=in action=allow program="%INSTALL_DIR%\TightVNC\tvnserver.exe" enable=yes >nul 2>&1
+)
+if exist "%INSTALL_DIR%\tvnserver.exe" (
+    netsh advfirewall firewall add rule name="TMBilling TightVNC Server (Root)" dir=in action=allow program="%INSTALL_DIR%\tvnserver.exe" enable=yes >nul 2>&1
+)
+echo    [OK] Aturan Firewall Remote VNC telah disesuaikan.
+
+:: =========================================================================
 :: 5. CREATE ADMIN CREDENTIALS DOCUMENTATION
 :: =========================================================================
 if exist "%INSTALL_DIR%\config.ini" (
