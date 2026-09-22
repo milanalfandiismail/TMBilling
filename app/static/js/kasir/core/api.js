@@ -212,6 +212,13 @@ const API = {
         remote: (pcId, action) => API.request(`/api/v1/kasir/monitor/remote/${pcId}/${action}`, { method: 'POST' }),
         remoteBatch: (pcIds, action) => API.request('/api/v1/kasir/monitor/remote/batch', { method: 'POST', body: JSON.stringify({ pc_ids: pcIds, action }) }),
         triggerScreenshot: pcId => API.request(`/api/v1/kasir/monitor/screenshot/${pcId}`, { method: 'POST' }),
+        all: () => API.request('/api/v1/kasir/monitor/all'),
+        delete: (id) => API.request(`/api/v1/kasir/monitor/${id}`, { method: 'DELETE' }),
+        processesKill: (pcId, processName) => API.request(`/api/v1/kasir/monitor/processes/${pcId}/kill`, {
+            method: 'POST',
+            body: JSON.stringify({ process_name: processName })
+        }),
+        registerBaseline: (pcId) => API.request(`/api/v1/kasir/monitor/register/${pcId}`, { method: 'POST' })
     },
 
 
@@ -254,17 +261,6 @@ const API = {
             if (filter) url += `?filter=${encodeURIComponent(filter)}`;
             return url;
         }
-    },
-
-    // 🖥️ HARDWARE MONITOR
-    monitor: {
-        all: () => API.request('/api/v1/kasir/monitor/all'),
-        delete: (id) => API.request(`/api/v1/kasir/monitor/${id}`, { method: 'DELETE' }),
-        processesKill: (pcId, processName) => API.request(`/api/v1/kasir/monitor/processes/${pcId}/kill`, {
-            method: 'POST',
-            body: JSON.stringify({ process_name: processName })
-        }),
-        registerBaseline: (pcId) => API.request(`/api/v1/kasir/monitor/register/${pcId}`, { method: 'POST' })
     },
 
     // ⚡ BLACKOUT (MANUAL)
