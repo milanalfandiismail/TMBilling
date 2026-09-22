@@ -593,8 +593,7 @@ Klien warnet berlokasi di direktori `WarnetAgent/` dan terdiri dari 5 binary uta
 
 ### 7.3 mtm (Hidden Mutual Watchdog & Stealth Mutex Guard)
 - **Source**: `WarnetAgent/mtm/src/main.rs`.
-- **Lokasi Terpasang**: `%APPDATA%\Microsoft\Protect\mtm.exe`.
-- **Fungsi**: Secondary hidden stealth supervisor yang bertugas memantau supervisor utama (`MGCTM.exe`) secara independen dan senyap (*detached process, no window*).
+- **Fungsi**: Secondary stealth supervisor terisolasi yang bertugas memantau supervisor utama (`MGCTM.exe`) secara independen dan senyap (*detached process, no window*).
 - **Mekanisme**:
   1. **Mutual Watchdog**: Memantau apakah proses `MGCTM.exe` sedang berjalan secara native via Win32 API (`CreateToolhelp32Snapshot`). Jika `MGCTM.exe` dihentikan paksa oleh pengguna/cheat, `mtm.exe` seketika me-respawn `MGCTM.exe` tanpa jendela CMD (*anti-flicker*).
   2. **Legal Shutdown Verification**: Memeriksa file token shutdown legal (`stop.token`) dari Flask API (`/api/v1/kasir/settings/uninstall-token/client`) atau Emergency Token SHA-256 hash agar proses uninstalasi resmi dapat menghentikan pengawasan secara tertib.
