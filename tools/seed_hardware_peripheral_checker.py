@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from app import create_app
 from app.models import db, PC, Grup, HardwareMonitor
+from app.services.hardware.hardware_service import HardwareService
 from app.utils.timezone_utils import now_utc, format_display
 
 def seed():
@@ -208,6 +209,7 @@ def seed():
                 "hw_mismatch": True,
                 "hw_desc": "GPU/VGA ditukar (PNP Device ID berbeda). Cek CCTV dari rentang waktu PC mati sebelum booting.",
                 "hw_time": now - timedelta(hours=8),
+                "hw_cctv_window": HardwareService.format_cctv_internal_window(now - timedelta(hours=8), now),
                 "baseline_periph": {
                     "Mouse": "Fantech VX7 Crypto (USB)",
                     "Keyboard": "Fantech K613 Fighter (USB)",
@@ -265,6 +267,7 @@ def seed():
             hw.hardware_mismatch = p_info["hw_mismatch"]
             hw.hardware_mismatch_desc = p_info["hw_desc"]
             hw.hardware_mismatch_time = p_info["hw_time"]
+            hw.hardware_cctv_window = p_info.get("hw_cctv_window")
             hw.hardware_last_sync = now
 
             hw.peripherals_baseline = json.dumps(p_info["baseline_periph"])
@@ -273,6 +276,18 @@ def seed():
             hw.peripherals_mismatch_desc = p_info["periph_desc"]
             hw.peripherals_mismatch_time = p_info["periph_time"]
             hw.peripherals_disconnect_tracker = p_info["periph_tracker"]
+
+        # Update legacy mismatched records without hardware_cctv_window
+        legacy_mismatches = HardwareMonitor.query.filter(
+            HardwareMonitor.hardware_mismatch == True,
+            HardwareMonitor.hardware_cctv_window.is_(None)
+        ).all()
+        for leg_hw in legacy_mismatches:
+            event_time = leg_hw.hardware_mismatch_time or now
+            leg_hw.hardware_cctv_window = HardwareService.format_cctv_internal_window(
+                event_time - timedelta(hours=8),
+                event_time
+            )
 
         db.session.commit()
         print("[SUCCESS] Data seed untuk 4 skenario Hardware & Peripheral Checker berhasil diisi!")

@@ -18,6 +18,7 @@ depends_on = None
 
 def upgrade():
     with op.batch_alter_table('hardware_monitor', schema=None) as batch_op:
+        batch_op.add_column(sa.Column('hardware_cctv_window', sa.Text(), nullable=True))
         batch_op.add_column(sa.Column('peripherals_baseline', sa.Text(), nullable=True))
         batch_op.add_column(sa.Column('peripherals_current', sa.Text(), nullable=True))
         batch_op.add_column(sa.Column('peripherals_mismatch', sa.Boolean(), nullable=True))
@@ -34,3 +35,4 @@ def downgrade():
         batch_op.drop_column('peripherals_mismatch')
         batch_op.drop_column('peripherals_current')
         batch_op.drop_column('peripherals_baseline')
+        batch_op.drop_column('hardware_cctv_window')

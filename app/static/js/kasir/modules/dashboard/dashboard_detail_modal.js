@@ -957,6 +957,16 @@ const DashboardDetailModal = {
         const statusEl = document.getElementById('modal-hw-header-status');
         if (!contentEl) return;
 
+        const escapeHtml = (str) => {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
         if (!hwData) {
             if (statusEl) {
                 statusEl.innerHTML = `<span class="px-2.5 py-1 rounded bg-amber-900/40 border border-amber-600/50 text-amber-300 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider font-mono">⚙️ Menunggu Telemetry</span>`;
@@ -965,36 +975,54 @@ const DashboardDetailModal = {
                 <div class="flex flex-col items-center justify-center py-20 text-neutral-500 gap-2 text-center p-6 border border-dashed border-[#222] rounded-xl bg-[#0a0a0a]">
                     <div class="w-12 h-12 rounded-xl bg-[#141414] border border-[#222] flex items-center justify-center text-xl mb-1">🖥️</div>
                     <p class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider font-mono">Belum Ada Data Telemetri</p>
-                    <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 max-w-md">PC ${pcKode} belum mengirimkan log hardware atau agent Hardware Monitor belum aktif di client.</p>
+                    <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 max-w-md">PC ${escapeHtml(pcKode)} belum mengirimkan log hardware atau agent Hardware Monitor belum aktif di client.</p>
                 </div>
             `;
             return;
         }
 
-        const isMismatch = hwData.hardware_mismatch === true;
+        const isHwMismatch = hwData.hardware_mismatch === true;
+        const isPeriphMismatch = hwData.peripherals_mismatch === true;
         const hasBaseline = !!hwData.hardware_baseline;
 
-        let statusBadgeHtml = '';
-        if (isMismatch) {
-            statusBadgeHtml = `
-                <span class="px-2.5 py-1 rounded bg-red-900/60 border border-red-500 text-red-200 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider animate-pulse flex items-center gap-1 font-mono shadow-sm shadow-red-950/50">
-                    🚨 Swapped / Mismatch Alert
+        let statusBadgeHtml = '<div class="flex flex-wrap items-center gap-1.5">';
+        if (isHwMismatch) {
+            statusBadgeHtml += `
+                <span class="px-2.5 py-1 rounded bg-red-900/60 border border-red-500 text-red-200 text-[10px] lg:max-xl:text-xs xl:text-xs font-black uppercase tracking-wider animate-pulse flex items-center gap-1 font-mono shadow-sm shadow-red-950/50">
+                    🚨 Hardware Ditukar / Hilang
                 </span>`;
         } else if (hasBaseline) {
-            statusBadgeHtml = `
-                <span class="px-2.5 py-1 rounded bg-green-950/60 border border-green-500/60 text-green-300 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider flex items-center gap-1 font-mono shadow-sm shadow-green-950/40">
-                    🛡️ Protected (Aman)
+            statusBadgeHtml += `
+                <span class="px-2.5 py-1 rounded bg-green-950/60 border border-green-500/60 text-green-300 text-[10px] lg:max-xl:text-xs xl:text-xs font-black uppercase tracking-wider flex items-center gap-1 font-mono shadow-sm shadow-green-950/40">
+                    🛡️ Internal Aman
                 </span>`;
         } else {
-            statusBadgeHtml = `
-                <span class="px-2.5 py-1 rounded bg-amber-900/50 border border-amber-600/50 text-amber-300 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider font-mono">
+            statusBadgeHtml += `
+                <span class="px-2.5 py-1 rounded bg-amber-900/50 border border-amber-600/50 text-amber-300 text-[10px] lg:max-xl:text-xs xl:text-xs font-black uppercase tracking-wider font-mono">
                     ⚙️ Menunggu Telemetry
                 </span>`;
         }
+
+        if (isPeriphMismatch) {
+            statusBadgeHtml += `
+                <span class="px-2.5 py-1 rounded bg-red-900/60 border border-red-500 text-red-200 text-[10px] lg:max-xl:text-xs xl:text-xs font-black uppercase tracking-wider animate-pulse flex items-center gap-1 font-mono shadow-sm shadow-red-950/50">
+                    ⚠️ Periferal Tercuri / Diganti
+                </span>`;
+        } else if (hwData.peripherals_baseline) {
+            statusBadgeHtml += `
+                <span class="px-2.5 py-1 rounded bg-green-950/60 border border-green-500/60 text-green-300 text-[10px] lg:max-xl:text-xs xl:text-xs font-black uppercase tracking-wider flex items-center gap-1 font-mono shadow-sm shadow-green-950/40">
+                    🛡️ Periferal Lengkap
+                </span>`;
+        }
+        statusBadgeHtml += '</div>';
         if (statusEl) statusEl.innerHTML = statusBadgeHtml;
 
         let baselineSpecs = null;
         let currentSpecs = null;
+        let baselinePeriph = null;
+        let currentPeriph = null;
+        let periphTracker = null;
+
         try {
             if (hwData.hardware_baseline) {
                 baselineSpecs = typeof hwData.hardware_baseline === 'string' ? JSON.parse(hwData.hardware_baseline) : hwData.hardware_baseline;
@@ -1002,34 +1030,64 @@ const DashboardDetailModal = {
             if (hwData.hardware_current_specs) {
                 currentSpecs = typeof hwData.hardware_current_specs === 'string' ? JSON.parse(hwData.hardware_current_specs) : hwData.hardware_current_specs;
             }
+            if (hwData.peripherals_baseline) {
+                baselinePeriph = typeof hwData.peripherals_baseline === 'string' ? JSON.parse(hwData.peripherals_baseline) : hwData.peripherals_baseline;
+            }
+            if (hwData.peripherals_current) {
+                currentPeriph = typeof hwData.peripherals_current === 'string' ? JSON.parse(hwData.peripherals_current) : hwData.peripherals_current;
+            }
+            if (hwData.peripherals_disconnect_tracker) {
+                periphTracker = typeof hwData.peripherals_disconnect_tracker === 'string' ? JSON.parse(hwData.peripherals_disconnect_tracker) : hwData.peripherals_disconnect_tracker;
+            }
         } catch (e) {
             console.error('[DashboardDetailModal] Parse specs error:', e);
         }
 
         let alertBannerHtml = '';
-        if (isMismatch) {
-            alertBannerHtml = `
-                <div class="p-4 bg-red-950/40 border border-red-500/40 rounded-xl text-xs lg:max-xl:text-xs xl:text-sm text-red-200 space-y-2.5 shadow-lg shadow-red-950/30 animate-in">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2 font-bold text-red-400">
-                            <span class="text-base">⚠️</span>
-                            <span class="text-xs lg:max-xl:text-base xl:text-lg uppercase tracking-wider font-mono">PERINGATAN: Deteksi Perubahan Hardware!</span>
+        if (isHwMismatch) {
+            const cctvWindowDisplay = hwData.hardware_cctv_window || `${hwData.hardware_mismatch_time || '--:--'} (saat booting)`;
+            alertBannerHtml += `
+                <div class="p-3.5 sm:p-4 bg-red-950/30 border border-red-500/40 rounded-xl text-xs lg:max-xl:text-xs xl:text-sm text-red-200 space-y-2 shadow-lg shadow-red-950/30 animate-in min-w-0 w-full">
+                    <div class="flex items-center justify-between min-w-0">
+                        <div class="flex items-center gap-2 font-bold text-red-400 min-w-0">
+                            <span class="text-base shrink-0">🚨</span>
+                            <span class="text-xs lg:max-xl:text-base xl:text-lg uppercase tracking-wider font-mono truncate">DETEKSI PERUBAHAN HARDWARE INTERNAL:</span>
                         </div>
-                        <span class="px-2 py-0.5 rounded bg-red-900/80 border border-red-500 text-red-100 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider font-mono">
+                        <span class="px-2 py-0.5 rounded bg-red-900/80 border border-red-500 text-red-100 text-[10px] lg:max-xl:text-xs xl:text-xs font-black uppercase tracking-wider font-mono shrink-0">
                             MISMATCH
                         </span>
                     </div>
-                    <div class="font-mono text-xs lg:max-xl:text-xs xl:text-sm pl-3 border-l-2 border-red-500 bg-red-950/60 p-2.5 rounded text-red-200 leading-relaxed">
-                        ${hwData.hardware_mismatch_desc || 'Terdeteksi komponen fisik PC tidak cocok dengan baseline yang telah diverifikasi.'}
+                    <p class="font-mono text-xs lg:max-xl:text-xs xl:text-sm pl-2.5 border-l-2 border-red-500 bg-red-950/50 p-2.5 rounded text-red-200 leading-relaxed break-all min-w-0 w-full">
+                        ${escapeHtml(hwData.hardware_mismatch_desc || 'Terdeteksi komponen fisik PC tidak cocok dengan baseline yang telah diverifikasi.')}
+                    </p>
+                    <div class="text-[11px] lg:max-xl:text-xs xl:text-sm text-neutral-400 flex flex-wrap items-center gap-1.5 min-w-0 pt-1">
+                        <span>🎥</span>
+                        <strong class="text-neutral-300 uppercase shrink-0">Rentang Waktu Estimasi (Referensi CCTV):</strong>
+                        <span class="font-mono font-bold text-red-300 break-all min-w-0">${escapeHtml(cctvWindowDisplay)}</span>
                     </div>
-                    <div class="flex flex-wrap items-center justify-between gap-2 text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-400 font-mono pt-1">
-                        <div class="flex items-center gap-1.5">
-                            <span>🎥</span>
-                            <span>Waktu Kejadian (Referensi CCTV): <strong class="text-neutral-200">${hwData.hardware_mismatch_time || '--:--'}</strong></span>
+                </div>
+            `;
+        }
+
+        if (isPeriphMismatch) {
+            alertBannerHtml += `
+                <div class="p-3.5 sm:p-4 bg-amber-500/10 border border-amber-500/40 rounded-xl text-xs lg:max-xl:text-xs xl:text-sm text-amber-200 space-y-2 shadow-lg shadow-amber-950/20 animate-in min-w-0 w-full">
+                    <div class="flex items-center justify-between min-w-0">
+                        <div class="flex items-center gap-2 font-bold text-amber-400 min-w-0">
+                            <span class="text-base shrink-0">⚠️</span>
+                            <span class="text-xs lg:max-xl:text-base xl:text-lg uppercase tracking-wider font-mono truncate">PERINGATAN PERIFERAL DICABUT / DIGANTI:</span>
                         </div>
-                        <div class="text-neutral-500">
-                            Terakhir Sinkron: <span class="text-neutral-300">${hwData.hardware_last_sync || hwData.last_update || '-'}</span>
-                        </div>
+                        <span class="px-2 py-0.5 rounded bg-amber-900/80 border border-amber-500 text-amber-100 text-[10px] lg:max-xl:text-xs xl:text-xs font-black uppercase tracking-wider font-mono shrink-0">
+                            PERIPHERAL ALERT
+                        </span>
+                    </div>
+                    <p class="font-mono text-xs lg:max-xl:text-xs xl:text-sm pl-2.5 border-l-2 border-amber-500 bg-amber-950/40 p-2.5 rounded text-amber-200 leading-relaxed break-all min-w-0 w-full">
+                        ${escapeHtml(hwData.peripherals_mismatch_desc || 'Periferal gaming PC terdeteksi dicabut atau diganti.')}
+                    </p>
+                    <div class="text-[11px] lg:max-xl:text-xs xl:text-sm text-neutral-400 flex flex-wrap items-center gap-1.5 min-w-0 pt-1">
+                        <span>🎥</span>
+                        <strong class="text-neutral-300 uppercase shrink-0">Waktu Dicabut (CCTV):</strong>
+                        <span class="font-mono font-bold text-amber-300 break-all min-w-0">${escapeHtml(hwData.peripherals_mismatch_time || '--:--')}</span>
                     </div>
                 </div>
             `;
@@ -1055,7 +1113,7 @@ const DashboardDetailModal = {
         const getTempBadge = (temp) => {
             if (temp == null || temp === '-' || temp === 0) return `<span class="text-neutral-600 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>`;
             const tempVal = parseFloat(temp);
-            if (isNaN(tempVal)) return `<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">${temp}</span>`;
+            if (isNaN(tempVal)) return `<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">${escapeHtml(temp)}</span>`;
             if (tempVal >= 78) {
                 return `<span class="px-2 py-0.5 rounded bg-red-950/80 border border-red-500 text-red-200 font-mono font-black text-xs lg:max-xl:text-xs xl:text-base uppercase animate-pulse shadow-sm shadow-red-950/50 flex items-center gap-1">🔥 ${tempVal}°C (HOT)</span>`;
             }
@@ -1068,53 +1126,57 @@ const DashboardDetailModal = {
         const getNicBadge = (speed) => {
             if (!speed || speed === '-' || speed === 'Unknown') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
             const s = String(speed).toLowerCase();
-            if (s.includes('gbps') || s.includes('1000') || s.includes('2500') || s.includes('10000') || s.includes('2.5') || s.includes('10 gbps')) {
-                return `<span class="px-2 py-0.5 rounded border border-emerald-500/60 bg-emerald-950/60 text-emerald-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1 shadow-sm shadow-emerald-950/40">⚡ ${speed} (Gigabit OK)</span>`;
+            let isGigabitOrMore = false;
+            if (s.includes('gbps')) {
+                const val = parseFloat(s.replace(/[^0-9.]/g, ''));
+                isGigabitOrMore = !isNaN(val) && val >= 1.0;
+            } else if (s.includes('mbps')) {
+                const val = parseFloat(s.replace(/[^0-9.]/g, ''));
+                isGigabitOrMore = !isNaN(val) && val >= 1000.0;
             }
-            if (s.includes('100') && !s.includes('1000')) {
-                return `<span class="px-2 py-0.5 rounded border border-red-500 bg-red-950/80 text-red-200 font-black font-mono text-xs lg:max-xl:text-xs xl:text-base animate-pulse flex items-center gap-1 shadow-sm shadow-red-950/50">⚠️ ${speed} (100M Bottleneck!)</span>`;
+
+            if (isGigabitOrMore) {
+                return `<span class="px-2 py-0.5 rounded border border-emerald-500/60 bg-emerald-950/60 text-emerald-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1 shadow-sm shadow-emerald-950/40">⚡ ${escapeHtml(speed)} (Gigabit OK)</span>`;
+            } else {
+                return `<span class="px-2 py-0.5 rounded border border-red-500 bg-red-950/80 text-red-200 font-black font-mono text-xs lg:max-xl:text-xs xl:text-base animate-pulse flex items-center gap-1 shadow-sm shadow-red-950/50">⚠️ ${escapeHtml(speed)} (< 1 Gbps)</span>`;
             }
-            if (s.includes('10') && !s.includes('100')) {
-                return `<span class="px-2 py-0.5 rounded border border-red-700 bg-red-950 text-red-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1">❌ ${speed} (Slow)</span>`;
-            }
-            return `<span class="px-2 py-0.5 rounded border border-[#262626] bg-[#141414] text-neutral-300 font-mono text-xs lg:max-xl:text-xs xl:text-base font-bold">${speed}</span>`;
         };
 
         const getCpuBadge = (name) => {
             if (!name || name === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
             const n = String(name).toLowerCase();
             if (n.includes('intel') || n.includes('core') || n.includes('i3') || n.includes('i5') || n.includes('i7') || n.includes('i9') || n.includes('xeon')) {
-                return `<span class="text-sky-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🔹 ${name}</span>`;
+                return `<span class="text-sky-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(name)}">🔹 ${escapeHtml(name)}</span>`;
             }
             if (n.includes('amd') || n.includes('ryzen') || n.includes('threadripper') || n.includes('athlon')) {
-                return `<span class="text-amber-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🔸 ${name}</span>`;
+                return `<span class="text-amber-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(name)}">🔸 ${escapeHtml(name)}</span>`;
             }
-            return `<span class="text-neutral-200 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🖥️ ${name}</span>`;
+            return `<span class="text-neutral-200 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(name)}">🖥️ ${escapeHtml(name)}</span>`;
         };
 
         const getGpuBadge = (name) => {
             if (!name || name === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
             const n = String(name).toLowerCase();
             if (n.includes('nvidia') || n.includes('geforce') || n.includes('rtx') || n.includes('gtx')) {
-                return `<span class="text-emerald-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🟢 ${name}</span>`;
+                return `<span class="text-emerald-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(name)}">🟢 ${escapeHtml(name)}</span>`;
             }
             if (n.includes('radeon') || n.includes('rx') || n.includes('amd')) {
-                return `<span class="text-rose-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🔴 ${name}</span>`;
+                return `<span class="text-rose-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(name)}">🔴 ${escapeHtml(name)}</span>`;
             }
             if (n.includes('arc') || n.includes('iris') || n.includes('intel')) {
-                return `<span class="text-cyan-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🔵 ${name}</span>`;
+                return `<span class="text-cyan-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(name)}">🔵 ${escapeHtml(name)}</span>`;
             }
-            return `<span class="text-emerald-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🎮 ${name}</span>`;
+            return `<span class="text-emerald-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(name)}">🎮 ${escapeHtml(name)}</span>`;
         };
 
         const getRamBadge = (ram) => {
             if (!ram || ram === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
-            return `<span class="px-2 py-0.5 rounded border border-purple-800/60 bg-purple-950/50 text-purple-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1 w-fit">💾 ${ram}</span>`;
+            return `<span class="px-2 py-0.5 rounded border border-purple-800/60 bg-purple-950/50 text-purple-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1 w-fit">💾 ${escapeHtml(ram)}</span>`;
         };
 
         const getMbBadge = (mb) => {
             if (!mb || mb === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
-            return `<span class="text-amber-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${mb}">🎛️ ${mb}</span>`;
+            return `<span class="text-amber-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(mb)}">🎛️ ${escapeHtml(mb)}</span>`;
         };
 
         const isMbMatch = !baselineSpecs || !currentSpecs || !baselineSpecs.MotherboardSerial || !currentSpecs.MotherboardSerial || (baselineSpecs.MotherboardSerial === currentSpecs.MotherboardSerial);
@@ -1129,9 +1191,9 @@ const DashboardDetailModal = {
                     isMatched = baselineSpecs.RamSerials.includes(r);
                 }
                 if (!isMatched) {
-                    return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono animate-pulse">🚨 ${r} (Tukar!)</span>`;
+                    return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono animate-pulse">🚨 ${escapeHtml(r)} (Tukar!)</span>`;
                 }
-                return `<span class="inline-block bg-[#121212] text-purple-300 border border-purple-900/50 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">🏷️ ${r}</span>`;
+                return `<span class="inline-block bg-[#121212] text-purple-300 border border-purple-900/50 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">🏷️ ${escapeHtml(r)}</span>`;
             }).join('');
         };
 
@@ -1143,11 +1205,94 @@ const DashboardDetailModal = {
                     isMatched = baselineSpecs.DiskSerials.includes(d);
                 }
                 if (!isMatched) {
-                    return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono animate-pulse">🚨 ${d} (Tukar!)</span>`;
+                    return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono animate-pulse">🚨 ${escapeHtml(d)} (Tukar!)</span>`;
                 }
-                return `<span class="inline-block bg-[#121212] text-cyan-300 border border-cyan-900/50 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">💽 ${d}</span>`;
+                return `<span class="inline-block bg-[#121212] text-cyan-300 border border-cyan-900/50 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">💽 ${escapeHtml(d)}</span>`;
             }).join('');
         };
+
+        // Peripherals Items Breakdown
+        const allPeriphKeys = Array.from(new Set([
+            'Mouse', 'Keyboard', 'Headset',
+            ...Object.keys(baselinePeriph || {}),
+            ...Object.keys(currentPeriph || {})
+        ]));
+
+        let periphCardsHtml = '';
+        allPeriphKeys.forEach(pKey => {
+            const baseVal = baselinePeriph ? baselinePeriph[pKey] : null;
+            const currVal = currentPeriph ? currentPeriph[pKey] : null;
+            const isDisconnectedPending = periphTracker && periphTracker[pKey];
+
+            let pStatusColor = 'border-[#1c1c1c] bg-[#0c0c0c] text-neutral-400';
+            let pIcon = '🔌';
+            let pStatusText = 'Belum Ada Data';
+
+            if (currVal && currVal !== 'Unknown') {
+                pStatusColor = 'border-green-500/30 bg-green-950/20 text-green-300';
+                pIcon = '🟢';
+                pStatusText = 'Terhubung';
+            } else if (isDisconnectedPending) {
+                pStatusColor = 'border-amber-500/40 bg-amber-950/30 text-amber-300 animate-pulse';
+                pIcon = '⏳';
+                pStatusText = 'Dicabut (< 5m)';
+            } else if (baseVal && (!currVal || currVal === 'Unknown')) {
+                pStatusColor = 'border-red-500/50 bg-red-950/40 text-red-200 font-bold';
+                pIcon = '🔴';
+                pStatusText = 'Hilang / Dicabut';
+            }
+
+            const displayDevName = (currVal && currVal !== 'Unknown') ? currVal : (baseVal || null);
+
+            periphCardsHtml += `
+                <div class="p-2.5 sm:p-3 rounded-lg border ${pStatusColor} flex flex-col justify-between gap-1.5 transition-all min-w-0">
+                    <div class="flex items-center justify-between gap-1 min-w-0">
+                        <span class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 truncate">${escapeHtml(pKey)}</span>
+                    </div>
+                    <div class="space-y-1 min-w-0">
+                        <div class="text-[10px] lg:max-xl:text-[10px] xl:text-xs font-mono flex items-center gap-1.5">
+                            <span>${pIcon}</span>
+                            <span>${pStatusText}</span>
+                        </div>
+                        <div class="text-[10px] lg:max-xl:text-[11px] xl:text-xs text-neutral-400 font-mono break-words leading-tight min-w-0">
+                            ${displayDevName ? escapeHtml(displayDevName) : '<span class="text-neutral-600 italic">Tidak terdeteksi</span>'}
+                        </div>
+                    </div>
+                </div>`;
+        });
+
+        // Generate Peripherals lists for Baseline Specs
+        let basePeriphItemsHtml = '';
+        allPeriphKeys.forEach(pKey => {
+            const bVal = baselinePeriph ? baselinePeriph[pKey] : null;
+            basePeriphItemsHtml += `
+                <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                    <strong class="text-neutral-500 shrink-0">${escapeHtml(pKey)}:</strong>
+                    <span class="break-words text-neutral-300 min-w-0">${bVal ? escapeHtml(bVal) : '<span class="text-neutral-600 italic">Belum terdaftar</span>'}</span>
+                </li>`;
+        });
+
+        // Generate Peripherals lists for Live Telemetry Specs
+        let currPeriphItemsHtml = '';
+        allPeriphKeys.forEach(pKey => {
+            const cVal = currentPeriph ? currentPeriph[pKey] : null;
+            const isDisc = periphTracker && periphTracker[pKey];
+            let statusBadge = '';
+            if (cVal && cVal !== 'Unknown') {
+                statusBadge = '<span class="text-green-400 font-bold text-[10px] lg:max-xl:text-[11px] xl:text-xs ml-1 shrink-0">[🟢 Terhubung]</span>';
+            } else if (isDisc) {
+                statusBadge = '<span class="text-amber-400 font-bold text-[10px] lg:max-xl:text-[11px] xl:text-xs ml-1 shrink-0 animate-pulse">[⏳ Dicabut <5m]</span>';
+            } else {
+                statusBadge = '<span class="text-red-400 font-bold text-[10px] lg:max-xl:text-[11px] xl:text-xs ml-1 shrink-0">[🔴 Tidak Terdeteksi / Hilang]</span>';
+            }
+
+            currPeriphItemsHtml += `
+                <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                    <strong class="text-neutral-500 shrink-0">${escapeHtml(pKey)}:</strong>
+                    <span class="break-words text-neutral-300 font-mono min-w-0">${cVal && cVal !== 'Unknown' ? escapeHtml(cVal) : '<span class="text-neutral-600 italic">Tidak Terdeteksi</span>'}</span>
+                    ${statusBadge}
+                </li>`;
+        });
 
         contentEl.innerHTML = `
             <div class="space-y-4 md:space-y-5">
@@ -1160,7 +1305,7 @@ const DashboardDetailModal = {
                             <span class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider font-mono flex items-center gap-2">
                                 <span>⚡</span> Telemetri Real-Time
                             </span>
-                            <span class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-mono">${hwData.last_update || 'Baru saja'}</span>
+                            <span class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-mono">${escapeHtml(hwData.last_update || 'Baru saja')}</span>
                         </div>
 
                         <div class="grid grid-cols-3 gap-2.5">
@@ -1186,11 +1331,15 @@ const DashboardDetailModal = {
                         <div class="p-2.5 bg-[#070707] border border-[#181818] rounded-lg font-mono space-y-1.5">
                             <div class="flex items-center justify-between text-[10px] lg:max-xl:text-xs xl:text-sm">
                                 <span class="text-neutral-500 font-semibold uppercase tracking-wider">Jendela Aktif:</span>
-                                <span class="text-xs lg:max-xl:text-xs xl:text-base text-sky-300 font-semibold truncate max-w-[200px] sm:max-w-[280px] lg:max-w-[240px] xl:max-w-[320px]" title="${hwData.active_window || '-'}">🪟 ${hwData.active_window || '-'}</span>
+                                <span class="text-xs lg:max-xl:text-xs xl:text-base text-sky-300 font-semibold truncate max-w-[200px] sm:max-w-[280px] lg:max-w-[240px] xl:max-w-[320px]" title="${escapeHtml(hwData.active_window || '-')}">🪟 ${escapeHtml(hwData.active_window || '-')}</span>
                             </div>
                             <div class="flex items-center justify-between text-[10px] lg:max-xl:text-xs xl:text-sm">
-                                <span class="text-neutral-500 font-semibold uppercase tracking-wider">Verifikasi Terakhir:</span>
-                                <span class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-400 font-mono">${hwData.hardware_last_sync || '-'}</span>
+                                <span class="text-neutral-500 font-semibold uppercase tracking-wider">Terakhir PC Aktif / Sinkron:</span>
+                                <span class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 font-bold font-mono">${escapeHtml(hwData.last_update || hwData.hardware_last_sync || '-')}</span>
+                            </div>
+                            <div class="pt-1.5 border-t border-[#181818] text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 flex items-start gap-1 leading-snug">
+                                <span class="shrink-0">💡</span>
+                                <span>Jika PC tidak dapat menyala/booting (indikasi RAM/komponen dilepas), cek CCTV mulai: <strong class="text-amber-300">&gt; ${escapeHtml(hwData.last_update || hwData.hardware_last_sync || 'Waktu PC Mati')}</strong></span>
                             </div>
                         </div>
                     </div>
@@ -1201,7 +1350,7 @@ const DashboardDetailModal = {
                             <span class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider font-mono flex items-center gap-2">
                                 <span>⚙️</span> Komponen Utama
                             </span>
-                            <span class="text-xs lg:max-xl:text-sm xl:text-base font-mono font-bold text-neutral-400 uppercase tracking-wider">${hwData.pc_kode || pcKode}</span>
+                            <span class="text-xs lg:max-xl:text-sm xl:text-base font-mono font-bold text-neutral-400 uppercase tracking-wider">${escapeHtml(hwData.pc_kode || pcKode)}</span>
                         </div>
 
                         <div class="space-y-2 font-mono">
@@ -1227,109 +1376,148 @@ const DashboardDetailModal = {
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Card 3: Baseline Terkunci -->
-                    <div class="p-4 sm:p-5 bg-[#0c0c0c] border border-[#202020] rounded-xl flex flex-col justify-between space-y-3">
-                        <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2.5">
-                            <span class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-300 uppercase tracking-wider font-mono flex items-center gap-2">
-                                <span>🔒</span> Baseline Terkunci (Official)
-                            </span>
-                            <span class="text-[10px] lg:max-xl:text-xs xl:text-sm font-mono text-emerald-400 bg-emerald-950/50 px-2.5 py-0.5 rounded border border-emerald-900/60 font-bold uppercase tracking-wider">
-                                ${baselineSpecs ? 'TERDAFTAR' : 'KOSONG'}
-                            </span>
+                <!-- Card 3: Periferal Gaming (USB / Audio) Real-Time -->
+                <div class="p-4 sm:p-5 bg-[#0c0c0c] border border-[#202020] rounded-xl space-y-3 min-w-0 w-full">
+                    <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2.5 min-w-0">
+                        <span class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider font-mono flex items-center gap-2 min-w-0">
+                            <span>🎧</span> Periferal Gaming (USB / Audio)
+                        </span>
+                        <span class="text-[10px] lg:max-xl:text-xs xl:text-xs text-neutral-500 font-mono font-normal shrink-0">Grace: 5m</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 min-w-0">
+                        ${periphCardsHtml}
+                    </div>
+                </div>
+
+                <!-- Split Matrix: Baseline Terkunci vs Terdeteksi Saat Ini -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5 min-w-0">
+                    <!-- Card 4: Baseline Terkunci -->
+                    <div class="p-4 sm:p-5 bg-[#0c0c0c] border border-[#202020] rounded-xl flex flex-col justify-between space-y-4 min-w-0 overflow-hidden">
+                        <div class="min-w-0 w-full">
+                            <div class="flex flex-wrap items-center border-b border-[#1c1c1c] pb-2.5 min-w-0 mb-3 gap-x-2 gap-y-1 min-h-[52px]">
+                                <span class="text-xs font-bold text-neutral-300 uppercase tracking-wider font-mono flex items-center gap-1.5 flex-1 min-w-0">
+                                    <span>🔒</span> Baseline Resmi (Terkunci)
+                                </span>
+                                <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-900/60 font-bold uppercase tracking-wider shrink-0">
+                                    ${baselineSpecs ? 'TERDAFTAR' : 'KOSONG'}
+                                </span>
+                            </div>
+
+                            ${baselineSpecs ? `
+                                <div class="space-y-3 font-mono min-w-0 w-full">
+                                    <div class="min-w-0 w-full">
+                                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">🛠️ Komponen Internal:</span>
+                                        <ul class="text-xs lg:max-xl:text-xs xl:text-sm space-y-2 font-mono text-neutral-400 min-w-0 w-full">
+                                            <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">Motherboard:</strong>
+                                                <span class="break-all text-neutral-300 min-w-0">${escapeHtml(baselineSpecs.MotherboardSerial || 'N/A')}</span>
+                                            </li>
+                                            <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">CPU ID:</strong>
+                                                <span class="break-all text-neutral-300 min-w-0">${escapeHtml(baselineSpecs.CpuId || 'N/A')}</span>
+                                            </li>
+                                            <li class="flex flex-col gap-1 min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">GPU PNP:</strong>
+                                                <span class="break-all text-neutral-300 font-mono text-[10px] sm:text-[11px] lg:max-xl:text-[11px] xl:text-xs bg-[#070707] border border-[#181818] p-2 rounded block w-full select-all leading-relaxed min-w-0 overflow-hidden" title="${escapeHtml(baselineSpecs.GpuPnpId || 'N/A')}">${escapeHtml(baselineSpecs.GpuPnpId || 'N/A')}</span>
+                                            </li>
+                                            <li class="min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">RAM Serials:</strong>
+                                                <div class="pt-1 min-w-0">
+                                                    ${renderRamPills(baselineSpecs.RamSerials, true)}
+                                                </div>
+                                            </li>
+                                            <li class="min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">Disks:</strong>
+                                                <div class="pt-1 min-w-0">
+                                                    ${renderDiskPills(baselineSpecs.DiskSerials, true)}
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <div class="pt-2.5 border-t border-[#1c1c1c] min-w-0 w-full">
+                                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">🎧 Periferal Gaming Terdaftar:</span>
+                                        <ul class="text-xs lg:max-xl:text-xs xl:text-sm space-y-1.5 font-mono text-neutral-400 min-w-0 w-full">
+                                            ${basePeriphItemsHtml}
+                                        </ul>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="py-10 text-center text-neutral-500 font-mono text-xs lg:max-xl:text-sm xl:text-base">
+                                    <p>Belum ada baseline terdaftar.</p>
+                                    <p class="text-[9px] lg:max-xl:text-xs xl:text-sm text-neutral-600 mt-1">Klik tombol <b>Update Baseline</b> di bawah untuk mendaftarkan spesifikasi resmi.</p>
+                                </div>
+                            `}
                         </div>
-
-                        ${baselineSpecs ? `
-                            <div class="space-y-2 font-mono">
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">Motherboard Serial</div>
-                                    <div class="text-xs lg:max-xl:text-xs xl:text-base text-amber-200 font-bold truncate" title="${baselineSpecs.MotherboardSerial || 'N/A'}">${baselineSpecs.MotherboardSerial || 'N/A'}</div>
-                                </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">CPU ID</div>
-                                    <div class="text-xs lg:max-xl:text-xs xl:text-base text-sky-200 font-bold truncate" title="${baselineSpecs.CpuId || 'N/A'}">${baselineSpecs.CpuId || 'N/A'}</div>
-                                </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">GPU PNP ID</div>
-                                    <div class="text-xs lg:max-xl:text-xs xl:text-base text-emerald-200 font-bold truncate" title="${baselineSpecs.GpuPnpId || 'N/A'}">${baselineSpecs.GpuPnpId || 'N/A'}</div>
-                                </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">RAM Serial(s)</div>
-                                    <div class="pt-0.5">
-                                        ${renderRamPills(baselineSpecs.RamSerials, true)}
-                                    </div>
-                                </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">Storage / Disk Serial(s)</div>
-                                    <div class="pt-0.5">
-                                        ${renderDiskPills(baselineSpecs.DiskSerials, true)}
-                                    </div>
-                                </div>
-                            </div>
-                        ` : `
-                            <div class="py-10 text-center text-neutral-500 font-mono text-xs lg:max-xl:text-sm xl:text-base">
-                                <p>Belum ada baseline terdaftar.</p>
-                                <p class="text-[9px] lg:max-xl:text-xs xl:text-sm text-neutral-600 mt-1">Klik tombol <b>Update Baseline</b> di bawah untuk mendaftarkan spesifikasi resmi.</p>
-                            </div>
-                        `}
                     </div>
 
-                    <!-- Card 4: Terdeteksi Saat Ini -->
-                    <div class="p-4 sm:p-5 bg-[#0c0c0c] border border-[#202020] rounded-xl flex flex-col justify-between space-y-3">
-                        <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2.5">
-                            <span class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-300 uppercase tracking-wider font-mono flex items-center gap-2">
-                                <span>🔍</span> Terdeteksi Saat Ini (Live Agent)
-                            </span>
-                            <span class="text-[10px] lg:max-xl:text-xs xl:text-sm font-mono text-blue-400 bg-blue-950/50 px-2.5 py-0.5 rounded border border-blue-900/60 font-bold uppercase tracking-wider">
-                                ${currentSpecs ? 'LIVE SPECS' : 'KOSONG'}
-                            </span>
-                        </div>
+                    <!-- Card 5: Terdeteksi Saat Ini -->
+                    <div class="p-4 sm:p-5 bg-[#0c0c0c] border border-[#202020] rounded-xl flex flex-col justify-between space-y-4 min-w-0 overflow-hidden">
+                        <div class="min-w-0 w-full">
+                            <div class="flex flex-wrap items-center border-b border-[#1c1c1c] pb-2.5 min-w-0 mb-3 gap-x-2 gap-y-1 min-h-[52px]">
+                                <span class="text-xs font-bold text-neutral-300 uppercase tracking-wider font-mono flex items-center gap-1.5 flex-1 min-w-0">
+                                    <span>🔍</span> Terdeteksi Saat Ini (Live Telemetry)
+                                </span>
+                                <span class="text-[10px] font-mono text-blue-400 bg-blue-950/50 px-2 py-0.5 rounded border border-blue-900/60 font-bold uppercase tracking-wider shrink-0">
+                                    ${currentSpecs ? 'LIVE SPECS' : 'KOSONG'}
+                                </span>
+                            </div>
 
-                        ${currentSpecs ? `
-                            <div class="space-y-2 font-mono">
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">Motherboard Serial</div>
-                                    ${!isMbMatch ? `
-                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-red-300 font-bold truncate bg-red-950/60 border border-red-500 px-1.5 py-0.5 rounded">🚨 ${currentSpecs.MotherboardSerial || 'N/A'} (TUKAR!)</div>
-                                    ` : `
-                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-emerald-300 font-bold truncate" title="${currentSpecs.MotherboardSerial || 'N/A'}">✓ ${currentSpecs.MotherboardSerial || 'N/A'}</div>
-                                    `}
-                                </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">CPU ID</div>
-                                    ${!isCpuMatch ? `
-                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-red-300 font-bold truncate bg-red-950/60 border border-red-500 px-1.5 py-0.5 rounded">🚨 ${currentSpecs.CpuId || 'N/A'} (TUKAR!)</div>
-                                    ` : `
-                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-emerald-300 font-bold truncate" title="${currentSpecs.CpuId || 'N/A'}">✓ ${currentSpecs.CpuId || 'N/A'}</div>
-                                    `}
-                                </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">GPU PNP ID</div>
-                                    ${!isGpuMatch ? `
-                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-red-300 font-bold truncate bg-red-950/60 border border-red-500 px-1.5 py-0.5 rounded">🚨 ${currentSpecs.GpuPnpId || 'N/A'} (TUKAR!)</div>
-                                    ` : `
-                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-emerald-300 font-bold truncate" title="${currentSpecs.GpuPnpId || 'N/A'}">✓ ${currentSpecs.GpuPnpId || 'N/A'}</div>
-                                    `}
-                                </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">RAM Serial(s)</div>
-                                    <div class="pt-0.5">
-                                        ${renderRamPills(currentSpecs.RamSerials, false)}
+                            ${currentSpecs ? `
+                                <div class="space-y-3 font-mono min-w-0 w-full">
+                                    <div class="min-w-0 w-full">
+                                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">🛠️ Komponen Internal:</span>
+                                        <ul class="text-xs lg:max-xl:text-xs xl:text-sm space-y-2 font-mono text-neutral-400 min-w-0 w-full">
+                                            <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">Motherboard:</strong>
+                                                <span class="break-all text-neutral-300 min-w-0">${escapeHtml(currentSpecs.MotherboardSerial || 'N/A')}</span>
+                                            </li>
+                                            <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">CPU ID:</strong>
+                                                <span class="break-all text-neutral-300 min-w-0">${escapeHtml(currentSpecs.CpuId || 'N/A')}</span>
+                                            </li>
+                                            <li class="flex flex-col gap-1 min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">GPU PNP:</strong>
+                                                <span class="break-all text-neutral-300 font-mono text-[10px] sm:text-[11px] lg:max-xl:text-[11px] xl:text-xs bg-[#070707] border border-[#181818] p-2 rounded block w-full select-all leading-relaxed min-w-0 overflow-hidden" title="${escapeHtml(currentSpecs.GpuPnpId || 'N/A')}">${escapeHtml(currentSpecs.GpuPnpId || 'N/A')}</span>
+                                            </li>
+                                            <li class="min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">RAM Serials:</strong>
+                                                <div class="pt-1 min-w-0">
+                                                    ${renderRamPills(currentSpecs.RamSerials, false)}
+                                                </div>
+                                            </li>
+                                            <li class="min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">Disks:</strong>
+                                                <div class="pt-1 min-w-0">
+                                                    ${renderDiskPills(currentSpecs.DiskSerials, false)}
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <div class="pt-2.5 border-t border-[#1c1c1c] min-w-0 w-full">
+                                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">🎧 Periferal Gaming Terdeteksi:</span>
+                                        <ul class="text-xs lg:max-xl:text-xs xl:text-sm space-y-1.5 font-mono text-neutral-400 min-w-0 w-full">
+                                            ${currPeriphItemsHtml}
+                                        </ul>
                                     </div>
                                 </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">Storage / Disk Serial(s)</div>
-                                    <div class="pt-0.5">
-                                        ${renderDiskPills(currentSpecs.DiskSerials, false)}
-                                    </div>
+                            ` : `
+                                <div class="py-10 text-center text-neutral-500 font-mono text-xs lg:max-xl:text-sm xl:text-base">
+                                    <p>Belum ada data komponen live terdeteksi.</p>
                                 </div>
-                            </div>
-                        ` : `
-                            <div class="py-10 text-center text-neutral-500 font-mono text-xs lg:max-xl:text-sm xl:text-base">
-                                <p>Belum ada data komponen live terdeteksi.</p>
-                            </div>
-                        `}
+                            `}
+                        </div>
                     </div>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button onclick="DashboardDetailModal.registerBaselineFromModal(${pcId}, '${escapeHtml(pcKode)}')"
+                        class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors flex items-center gap-1.5 font-mono shadow-md">
+                        🔄 Update Baseline Resmi
+                    </button>
                 </div>
             </div>
         `;

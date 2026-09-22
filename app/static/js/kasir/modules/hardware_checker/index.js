@@ -1,4 +1,37 @@
 const HardwareChecker = {
+    escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    },
+
+    getNicSpeedBadge(nicSpeed) {
+        if (!nicSpeed || nicSpeed === '--' || nicSpeed === 'Unknown') {
+            return '<span class="text-neutral-500 font-mono">NIC: --</span>';
+        }
+        const str = String(nicSpeed).trim();
+        const lower = str.toLowerCase();
+        
+        let isGigabitOrMore = false;
+        if (lower.includes('gbps')) {
+            const val = parseFloat(lower.replace(/[^0-9.]/g, ''));
+            isGigabitOrMore = !isNaN(val) && val >= 1.0;
+        } else if (lower.includes('mbps')) {
+            const val = parseFloat(lower.replace(/[^0-9.]/g, ''));
+            isGigabitOrMore = !isNaN(val) && val >= 1000.0;
+        }
+
+        if (isGigabitOrMore) {
+            return `<span class="font-mono text-neutral-400">NIC: <strong class="text-emerald-400 font-bold">${this.escapeHtml(str)}</strong></span>`;
+        } else {
+            return `<span class="font-mono text-neutral-400">NIC: <strong class="text-red-400 font-bold animate-pulse" title="Kecepatan LAN di bawah 1 Gbps">${this.escapeHtml(str)}</strong></span>`;
+        }
+    },
+
     async load() {
         try {
             const container = document.getElementById('hardware-checker-container');
@@ -65,10 +98,10 @@ const HardwareChecker = {
 
         if (!data || data.length === 0) {
             container.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-20 text-neutral-500">
-                    <span class="text-3xl mb-2">🖥️</span>
-                    <p class="text-base font-bold text-neutral-300">Belum Ada Data Monitor PC</p>
-                    <p class="text-xs text-neutral-600 mt-1">Pastikan TMBilling Monitor Agent berjalan pada setiap client</p>
+                <div class="flex flex-col items-center justify-center py-20 text-neutral-500 space-y-2">
+                    <span class="text-3xl mb-1">🖥️</span>
+                    <p class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Belum Ada Data Monitor PC</p>
+                    <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500">Pastikan TMBilling Monitor Agent berjalan pada setiap client</p>
                 </div>`;
             return;
         }
@@ -99,7 +132,7 @@ const HardwareChecker = {
                 if (m.peripherals_disconnect_tracker) periphTracker = JSON.parse(m.peripherals_disconnect_tracker);
             } catch (err) {}
 
-            let cardBorder = 'border-[#1c1c1c] bg-[#0c0c0c] hover:border-[#2a2a2a]';
+            let cardBorder = 'border-[#1c1c1c] hover:border-[#2a2a2a]';
             if (isAnyMismatch) {
                 cardBorder = 'border-red-500/50 bg-red-950/10 shadow-lg shadow-red-950/20';
             }
@@ -108,17 +141,17 @@ const HardwareChecker = {
             let hwBadge = '';
             if (isHwMismatch) {
                 hwBadge = `
-                    <span class="px-2 py-0.5 rounded bg-red-900/60 border border-red-500 text-red-200 text-[10px] font-black uppercase tracking-wider animate-pulse flex items-center gap-1">
+                    <span class="px-2.5 py-1 rounded bg-red-900/60 border border-red-500 text-red-200 text-[10px] lg:max-xl:text-xs xl:text-xs font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
                         🚨 Hardware Ditukar / Hilang
                     </span>`;
             } else if (hasBaseline) {
                 hwBadge = `
-                    <span class="px-2 py-0.5 rounded bg-green-950/60 border border-green-500/60 text-green-300 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                    <span class="px-2.5 py-1 rounded bg-green-950/60 border border-green-500/60 text-green-300 text-[10px] lg:max-xl:text-xs xl:text-xs font-bold uppercase tracking-wider flex items-center gap-1">
                         🛡️ Internal Aman
                     </span>`;
             } else {
                 hwBadge = `
-                    <span class="px-2 py-0.5 rounded bg-amber-900/50 border border-amber-600/50 text-amber-300 text-[10px] font-black uppercase tracking-wider">
+                    <span class="px-2.5 py-1 rounded bg-amber-900/50 border border-amber-600/50 text-amber-300 text-[10px] lg:max-xl:text-xs xl:text-xs font-bold uppercase tracking-wider">
                         ⚙️ Menunggu Telemetry
                     </span>`;
             }
@@ -127,26 +160,31 @@ const HardwareChecker = {
             let periphBadge = '';
             if (isPeriphMismatch) {
                 periphBadge = `
-                    <span class="px-2 py-0.5 rounded bg-red-900/60 border border-red-500 text-red-200 text-[10px] font-black uppercase tracking-wider animate-pulse flex items-center gap-1">
+                    <span class="px-2.5 py-1 rounded bg-red-900/60 border border-red-500 text-red-200 text-[10px] lg:max-xl:text-xs xl:text-xs font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
                         ⚠️ Periferal Tercuri / Diganti
                     </span>`;
             } else if (m.peripherals_baseline) {
                 periphBadge = `
-                    <span class="px-2 py-0.5 rounded bg-green-950/60 border border-green-500/60 text-green-300 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                    <span class="px-2.5 py-1 rounded bg-green-950/60 border border-green-500/60 text-green-300 text-[10px] lg:max-xl:text-xs xl:text-xs font-bold uppercase tracking-wider flex items-center gap-1">
                         🛡️ Periferal Lengkap
                     </span>`;
             }
 
-            // Peripherals Items Breakdown (Mouse, Keyboard, Headset)
-            const periphKeys = ['Mouse', 'Keyboard', 'Headset'];
+            // Peripherals Items Breakdown (Mouse, Keyboard, Headset + dynamic)
+            const allPeriphKeys = Array.from(new Set([
+                'Mouse', 'Keyboard', 'Headset',
+                ...Object.keys(baselinePeriph || {}),
+                ...Object.keys(currentPeriph || {})
+            ]));
+
             let periphCardsHtml = '';
 
-            periphKeys.forEach(pKey => {
+            allPeriphKeys.forEach(pKey => {
                 const baseVal = baselinePeriph ? baselinePeriph[pKey] : null;
                 const currVal = currentPeriph ? currentPeriph[pKey] : null;
                 const isDisconnectedPending = periphTracker && periphTracker[pKey];
 
-                let pStatusColor = 'border-[#222] bg-[#111] text-neutral-400';
+                let pStatusColor = 'border-[#1c1c1c] bg-[#0c0c0c] text-neutral-400';
                 let pIcon = '🔌';
                 let pStatusText = 'Belum Ada Data';
 
@@ -164,14 +202,21 @@ const HardwareChecker = {
                     pStatusText = 'Hilang / Dicabut';
                 }
 
+                const displayDevName = (currVal && currVal !== 'Unknown') ? currVal : (baseVal || null);
+
                 periphCardsHtml += `
-                    <div class="p-2.5 rounded-lg border ${pStatusColor} flex flex-col justify-between transition-all">
-                        <div class="flex items-center justify-between gap-1 mb-1">
-                            <span class="text-[11px] font-bold text-neutral-200">${pKey}</span>
-                            <span class="text-[10px] font-mono flex items-center gap-1">${pIcon} ${pStatusText}</span>
+                    <div class="p-2.5 sm:p-3 rounded border ${pStatusColor} flex flex-col justify-between gap-1.5 transition-all min-w-0">
+                        <div class="flex items-center justify-between gap-1 min-w-0">
+                            <span class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 truncate">${this.escapeHtml(pKey)}</span>
                         </div>
-                        <div class="text-[10px] text-neutral-400 truncate" title="${currVal || baseVal || 'Tidak terdeteksi'}">
-                            ${currVal || baseVal || '<span class="text-neutral-600">Tidak terdeteksi</span>'}
+                        <div class="space-y-1 min-w-0">
+                            <div class="text-[10px] lg:max-xl:text-[10px] xl:text-xs font-mono flex items-center gap-1.5">
+                                <span>${pIcon}</span>
+                                <span>${pStatusText}</span>
+                            </div>
+                            <div class="text-[10px] lg:max-xl:text-[11px] xl:text-xs text-neutral-400 font-mono break-words leading-tight min-w-0">
+                                ${displayDevName ? this.escapeHtml(displayDevName) : '<span class="text-neutral-600 italic">Tidak terdeteksi</span>'}
+                            </div>
                         </div>
                     </div>`;
             });
@@ -179,152 +224,276 @@ const HardwareChecker = {
             // CCTV Alerts Panel
             let alertHtml = '';
             if (isHwMismatch) {
+                const cctvWindowDisplay = m.hardware_cctv_window || `${m.hardware_mismatch_time || '--:--'} (saat booting)`;
                 alertHtml += `
-                    <div class="p-3.5 bg-red-950/30 border border-red-500/30 rounded-lg text-xs sm:text-sm text-red-200 space-y-1.5 mt-3">
-                        <div class="flex items-center gap-1.5 font-bold text-red-400">
+                    <div class="p-3.5 sm:p-4 bg-red-950/30 border border-red-500/30 rounded text-xs lg:max-xl:text-xs xl:text-sm space-y-2 mt-3 min-w-0 w-full">
+                        <div class="flex items-center gap-2 font-bold text-red-400 uppercase tracking-wider min-w-0">
                             <span>🚨</span> DETEKSI PERUBAHAN HARDWARE INTERNAL:
                         </div>
-                        <p class="font-mono text-xs pl-2 border-l-2 border-red-500 bg-red-950/50 p-2 rounded text-red-200">${m.hardware_mismatch_desc || 'Unknown mismatch'}</p>
-                        <div class="text-[11px] text-neutral-400 flex flex-wrap items-center gap-1">
-                            <span>🎥</span> <strong class="text-neutral-300">Waktu Kejadian (Referensi CCTV):</strong> 
-                            <span class="font-mono font-bold text-red-300">${m.hardware_mismatch_time || '--:--'}</span>
+                        <p class="font-mono text-xs lg:max-xl:text-xs xl:text-sm pl-2.5 border-l-2 border-red-500 bg-red-950/50 p-2.5 rounded text-red-200 break-all min-w-0 w-full">${this.escapeHtml(m.hardware_mismatch_desc || 'Unknown mismatch')}</p>
+                        <div class="text-[11px] lg:max-xl:text-xs xl:text-sm text-neutral-400 flex flex-wrap items-center gap-1.5 min-w-0">
+                            <span>🎥</span> <strong class="text-neutral-300 uppercase shrink-0">Rentang Waktu Estimasi (Referensi CCTV):</strong> 
+                            <span class="font-mono font-bold text-red-300 break-all min-w-0">${this.escapeHtml(cctvWindowDisplay)}</span>
                         </div>
                     </div>`;
             }
 
             if (isPeriphMismatch) {
                 alertHtml += `
-                    <div class="p-3.5 bg-red-950/30 border border-amber-500/40 rounded-lg text-xs sm:text-sm text-amber-200 space-y-1.5 mt-3">
-                        <div class="flex items-center gap-1.5 font-bold text-amber-400">
+                    <div class="p-3.5 sm:p-4 bg-amber-500/10 border border-amber-500/30 rounded text-xs lg:max-xl:text-xs xl:text-sm space-y-2 mt-3 min-w-0 w-full">
+                        <div class="flex items-center gap-2 font-bold text-amber-300 uppercase tracking-wider min-w-0">
                             <span>⚠️</span> PERINGATAN PERIFERAL DICABUT / DIGANTI:
                         </div>
-                        <p class="font-mono text-xs pl-2 border-l-2 border-amber-500 bg-red-950/50 p-2 rounded text-amber-200">${m.peripherals_mismatch_desc || 'Peripheral mismatch'}</p>
-                        <div class="text-[11px] text-neutral-400 flex flex-wrap items-center gap-1">
-                            <span>🎥</span> <strong class="text-neutral-300">Waktu Dicabut (CCTV):</strong> 
-                            <span class="font-mono font-bold text-amber-300">${m.peripherals_mismatch_time || '--:--'}</span>
+                        <p class="font-mono text-xs lg:max-xl:text-xs xl:text-sm pl-2.5 border-l-2 border-amber-500 bg-amber-950/40 p-2.5 rounded text-amber-200 break-all min-w-0 w-full">${this.escapeHtml(m.peripherals_mismatch_desc || 'Peripheral mismatch')}</p>
+                        <div class="text-[11px] lg:max-xl:text-xs xl:text-sm text-neutral-400 flex flex-wrap items-center gap-1.5 min-w-0">
+                            <span>🎥</span> <strong class="text-neutral-300 uppercase shrink-0">Waktu Dicabut (CCTV):</strong> 
+                            <span class="font-mono font-bold text-amber-300 break-all min-w-0">${this.escapeHtml(m.peripherals_mismatch_time || '--:--')}</span>
                         </div>
                     </div>`;
             }
 
             // Specs Details Accordion (Baseline vs Detected)
             let specDetailsHtml = '';
-            if (currentSpecs) {
+            if (currentSpecs || baselineSpecs || baselinePeriph || currentPeriph) {
+                const renderRamPills = (serials, isBaseline) => {
+                    if (!serials || !serials.length) return '<span class="text-neutral-600 font-mono text-xs lg:max-xl:text-xs xl:text-base">N/A</span>';
+                    return serials.map(r => {
+                        let isMatched = true;
+                        if (!isBaseline && baselineSpecs && baselineSpecs.RamSerials && baselineSpecs.RamSerials.length) {
+                            isMatched = baselineSpecs.RamSerials.includes(r);
+                        }
+                        if (!isMatched) {
+                            return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono animate-pulse">🚨 ${this.escapeHtml(r)} (Tukar!)</span>`;
+                        }
+                        return `<span class="inline-block bg-[#121212] text-purple-300 border border-purple-900/50 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">🏷️ ${this.escapeHtml(r)}</span>`;
+                    }).join('');
+                };
+
+                const renderDiskPills = (serials, isBaseline) => {
+                    if (!serials || !serials.length) return '<span class="text-neutral-600 font-mono text-xs lg:max-xl:text-xs xl:text-base">N/A</span>';
+                    return serials.map(d => {
+                        let isMatched = true;
+                        if (!isBaseline && baselineSpecs && baselineSpecs.DiskSerials && baselineSpecs.DiskSerials.length) {
+                            isMatched = baselineSpecs.DiskSerials.includes(d);
+                        }
+                        if (!isMatched) {
+                            return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono animate-pulse">🚨 ${this.escapeHtml(d)} (Tukar!)</span>`;
+                        }
+                        return `<span class="inline-block bg-[#121212] text-cyan-300 border border-cyan-900/50 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">💽 ${this.escapeHtml(d)}</span>`;
+                    }).join('');
+                };
+
+                // Generate Peripherals lists for Baseline
+                let basePeriphItemsHtml = '';
+                allPeriphKeys.forEach(pKey => {
+                    const bVal = baselinePeriph ? baselinePeriph[pKey] : null;
+                    basePeriphItemsHtml += `
+                        <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                            <strong class="text-neutral-500 shrink-0">${this.escapeHtml(pKey)}:</strong>
+                            <span class="break-words text-neutral-300 min-w-0">${bVal ? this.escapeHtml(bVal) : '<span class="text-neutral-600 italic">Belum terdaftar</span>'}</span>
+                        </li>`;
+                });
+
+                // Generate Peripherals lists for Live Telemetry
+                let currPeriphItemsHtml = '';
+                allPeriphKeys.forEach(pKey => {
+                    const cVal = currentPeriph ? currentPeriph[pKey] : null;
+                    const isDisc = periphTracker && periphTracker[pKey];
+                    let statusBadge = '';
+                    if (cVal && cVal !== 'Unknown') {
+                        statusBadge = '<span class="text-green-400 font-bold text-[10px] lg:max-xl:text-[11px] xl:text-xs ml-1 shrink-0">[🟢 Terhubung]</span>';
+                    } else if (isDisc) {
+                        statusBadge = '<span class="text-amber-400 font-bold text-[10px] lg:max-xl:text-[11px] xl:text-xs ml-1 shrink-0 animate-pulse">[⏳ Dicabut <5m]</span>';
+                    } else {
+                        statusBadge = '<span class="text-red-400 font-bold text-[10px] lg:max-xl:text-[11px] xl:text-xs ml-1 shrink-0">[🔴 Tidak Terdeteksi / Hilang]</span>';
+                    }
+
+                    currPeriphItemsHtml += `
+                        <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                            <strong class="text-neutral-500 shrink-0">${this.escapeHtml(pKey)}:</strong>
+                            <span class="break-words text-neutral-300 font-mono min-w-0">${cVal && cVal !== 'Unknown' ? this.escapeHtml(cVal) : '<span class="text-neutral-600 italic">Tidak Terdeteksi</span>'}</span>
+                            ${statusBadge}
+                        </li>`;
+                });
+
                 specDetailsHtml = `
-                    <div class="mt-4 pt-4 border-t border-[#1c1c1c] space-y-4 hidden" id="hc-details-${m.pc_id}">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="mt-4 pt-4 border-t border-[#1c1c1c] space-y-4 hidden min-w-0 w-full" id="hc-details-${m.pc_id}">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 min-w-0 w-full">
                             <!-- Baseline Specs -->
-                            <div class="p-3.5 bg-[#050505] border border-[#171717] rounded-lg">
-                                <h4 class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2 border-b border-[#1c1c1c] pb-1 flex items-center gap-1.5">
-                                    <span>🔒</span> Baseline Resmi (Terkunci)
-                                </h4>
-                                ${baselineSpecs ? `
-                                    <ul class="text-xs space-y-1.5 font-mono text-neutral-400">
-                                        <li><strong class="text-neutral-500">Motherboard:</strong> ${baselineSpecs.MotherboardSerial || 'N/A'}</li>
-                                        <li><strong class="text-neutral-500">CPU ID:</strong> ${baselineSpecs.CpuId || 'N/A'}</li>
-                                        <li><strong class="text-neutral-500">GPU PNP:</strong> <span class="truncate block max-w-[280px]" title="${baselineSpecs.GpuPnpId || 'N/A'}">${baselineSpecs.GpuPnpId || 'N/A'}</span></li>
-                                        <li><strong class="text-neutral-500">RAM Serials:</strong>
-                                            <ul class="list-disc pl-4 text-neutral-500 text-[10px] mt-0.5">
-                                                ${(baselineSpecs.RamSerials || []).map(r => `<li>${r}</li>`).join('') || '<li>N/A</li>'}
-                                            </ul>
-                                        </li>
-                                        <li><strong class="text-neutral-500">Disks:</strong>
-                                            <ul class="list-disc pl-4 text-neutral-500 text-[10px] mt-0.5">
-                                                ${(baselineSpecs.DiskSerials || []).map(d => `<li>${d}</li>`).join('') || '<li>N/A</li>'}
-                                            </ul>
-                                        </li>
-                                    </ul>
-                                ` : '<p class="text-xs text-neutral-600">Belum ada baseline terdaftar.</p>'}
+                            <div class="p-4 sm:p-5 bg-[#050505] border border-[#1c1c1c] rounded space-y-4 min-w-0 overflow-hidden w-full">
+                                <div class="min-w-0 w-full">
+                                    <div class="flex flex-wrap items-center border-b border-[#1c1c1c] pb-2.5 min-w-0 mb-3 gap-x-2 gap-y-1 min-h-[36px]">
+                                        <span class="text-xs font-bold text-neutral-300 uppercase tracking-wider font-mono flex items-center gap-1.5 flex-1 min-w-0">
+                                            <span>🔒</span> Baseline Resmi (Terkunci)
+                                        </span>
+                                        <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-900/60 font-bold uppercase tracking-wider shrink-0">
+                                            ${baselineSpecs ? 'TERDAFTAR' : 'KOSONG'}
+                                        </span>
+                                    </div>
+                                    ${baselineSpecs ? `
+                                        <div class="space-y-3 min-w-0 w-full">
+                                            <div class="min-w-0 w-full">
+                                                <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">🛠️ Komponen Internal:</span>
+                                                <ul class="text-xs lg:max-xl:text-xs xl:text-sm space-y-2 font-mono text-neutral-400 min-w-0 w-full">
+                                                    <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                                                        <strong class="text-neutral-500 shrink-0">Motherboard:</strong>
+                                                        <span class="break-all text-neutral-300 min-w-0">${this.escapeHtml(baselineSpecs.MotherboardSerial || 'N/A')}</span>
+                                                    </li>
+                                                    <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                                                        <strong class="text-neutral-500 shrink-0">CPU ID:</strong>
+                                                        <span class="break-all text-neutral-300 min-w-0">${this.escapeHtml(baselineSpecs.CpuId || 'N/A')}</span>
+                                                    </li>
+                                                    <li class="flex flex-col gap-1 min-w-0 w-full">
+                                                        <strong class="text-neutral-500 shrink-0">GPU PNP:</strong>
+                                                        <span class="break-all text-neutral-300 font-mono text-[10px] sm:text-[11px] lg:max-xl:text-[11px] xl:text-xs bg-[#0c0c0c] border border-[#1c1c1c] p-2 rounded block w-full select-all leading-relaxed min-w-0 overflow-hidden" title="${this.escapeHtml(baselineSpecs.GpuPnpId || 'N/A')}">${this.escapeHtml(baselineSpecs.GpuPnpId || 'N/A')}</span>
+                                                    </li>
+                                                    <li class="min-w-0 w-full">
+                                                        <strong class="text-neutral-500 shrink-0">RAM Serials:</strong>
+                                                        <div class="pt-1 min-w-0">
+                                                            ${renderRamPills(baselineSpecs.RamSerials, true)}
+                                                        </div>
+                                                    </li>
+                                                    <li class="min-w-0 w-full">
+                                                        <strong class="text-neutral-500 shrink-0">Disks:</strong>
+                                                        <div class="pt-1 min-w-0">
+                                                            ${renderDiskPills(baselineSpecs.DiskSerials, true)}
+                                                        </div>
+                                                    </li>
+                                                </ul>
+                                            </div>
+
+                                            <div class="pt-2.5 border-t border-[#1c1c1c] min-w-0 w-full">
+                                                <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">🎧 Periferal Gaming Terdaftar:</span>
+                                                <ul class="text-xs lg:max-xl:text-xs xl:text-sm space-y-1.5 font-mono text-neutral-400 min-w-0 w-full">
+                                                    ${basePeriphItemsHtml}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    ` : '<p class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-600">Belum ada baseline terdaftar.</p>'}
+                                </div>
                             </div>
 
                             <!-- Current Detected Specs -->
-                            <div class="p-3.5 bg-[#050505] border border-[#171717] rounded-lg">
-                                <h4 class="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2 border-b border-[#1c1c1c] pb-1 flex items-center gap-1.5">
-                                    <span>🔍</span> Terdeteksi Saat Ini (Live Telemetry)
-                                </h4>
-                                <ul class="text-xs space-y-1.5 font-mono text-neutral-400">
-                                    <li><strong class="text-neutral-500">Motherboard:</strong> ${currentSpecs.MotherboardSerial || 'N/A'}</li>
-                                    <li><strong class="text-neutral-500">CPU ID:</strong> ${currentSpecs.CpuId || 'N/A'}</li>
-                                    <li><strong class="text-neutral-500">GPU PNP:</strong> <span class="truncate block max-w-[280px]" title="${currentSpecs.GpuPnpId || 'N/A'}">${currentSpecs.GpuPnpId || 'N/A'}</span></li>
-                                    <li><strong class="text-neutral-500">RAM Serials:</strong>
-                                        <ul class="list-disc pl-4 text-neutral-500 text-[10px] mt-0.5">
-                                            ${(currentSpecs.RamSerials || []).map(r => `<li>${r}</li>`).join('') || '<li>N/A</li>'}
-                                        </ul>
-                                    </li>
-                                    <li><strong class="text-neutral-500">Disks:</strong>
-                                        <ul class="list-disc pl-4 text-neutral-500 text-[10px] mt-0.5">
-                                            ${(currentSpecs.DiskSerials || []).map(d => `<li>${d}</li>`).join('') || '<li>N/A</li>'}
-                                        </ul>
-                                    </li>
-                                </ul>
+                            <div class="p-4 sm:p-5 bg-[#050505] border border-[#1c1c1c] rounded space-y-4 min-w-0 overflow-hidden w-full">
+                                <div class="min-w-0 w-full">
+                                    <div class="flex flex-wrap items-center border-b border-[#1c1c1c] pb-2.5 min-w-0 mb-3 gap-x-2 gap-y-1 min-h-[36px]">
+                                        <span class="text-xs font-bold text-neutral-300 uppercase tracking-wider font-mono flex items-center gap-1.5 flex-1 min-w-0">
+                                            <span>🔍</span> Terdeteksi Saat Ini (Live Telemetry)
+                                        </span>
+                                        <span class="text-[10px] font-mono text-blue-400 bg-blue-950/50 px-2 py-0.5 rounded border border-blue-900/60 font-bold uppercase tracking-wider shrink-0">
+                                            ${currentSpecs ? 'LIVE SPECS' : 'KOSONG'}
+                                        </span>
+                                    </div>
+                                    <div class="space-y-3 min-w-0 w-full">
+                                        <div class="min-w-0 w-full">
+                                            <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">🛠️ Komponen Internal:</span>
+                                            <ul class="text-xs lg:max-xl:text-xs xl:text-sm space-y-2 font-mono text-neutral-400 min-w-0 w-full">
+                                                <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                                                    <strong class="text-neutral-500 shrink-0">Motherboard:</strong>
+                                                    <span class="break-all text-neutral-300 min-w-0">${this.escapeHtml(currentSpecs?.MotherboardSerial || 'N/A')}</span>
+                                                </li>
+                                                <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                                                    <strong class="text-neutral-500 shrink-0">CPU ID:</strong>
+                                                    <span class="break-all text-neutral-300 min-w-0">${this.escapeHtml(currentSpecs?.CpuId || 'N/A')}</span>
+                                                </li>
+                                                <li class="flex flex-col gap-1 min-w-0 w-full">
+                                                    <strong class="text-neutral-500 shrink-0">GPU PNP:</strong>
+                                                    <span class="break-all text-neutral-300 font-mono text-[10px] sm:text-[11px] lg:max-xl:text-[11px] xl:text-xs bg-[#0c0c0c] border border-[#1c1c1c] p-2 rounded block w-full select-all leading-relaxed min-w-0 overflow-hidden" title="${this.escapeHtml(currentSpecs?.GpuPnpId || 'N/A')}">${this.escapeHtml(currentSpecs?.GpuPnpId || 'N/A')}</span>
+                                                </li>
+                                                <li class="min-w-0 w-full">
+                                                    <strong class="text-neutral-500 shrink-0">RAM Serials:</strong>
+                                                    <div class="pt-1 min-w-0">
+                                                        ${renderRamPills(currentSpecs?.RamSerials, false)}
+                                                    </div>
+                                                </li>
+                                                <li class="min-w-0 w-full">
+                                                    <strong class="text-neutral-500 shrink-0">Disks:</strong>
+                                                    <div class="pt-1 min-w-0">
+                                                        ${renderDiskPills(currentSpecs?.DiskSerials, false)}
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="pt-2.5 border-t border-[#1c1c1c] min-w-0 w-full">
+                                            <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">🎧 Periferal Gaming Terdeteksi:</span>
+                                            <ul class="text-xs lg:max-xl:text-xs xl:text-sm space-y-1.5 font-mono text-neutral-400 min-w-0 w-full">
+                                                ${currPeriphItemsHtml}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>`;
             }
 
+            const nicBadgeHtml = this.getNicSpeedBadge(m.nic_speed);
+
             html += `
-                <div class="border ${cardBorder} rounded-xl p-4 sm:p-5 lg:p-6 transition-all space-y-4">
+                <div class="bg-[#0c0c0c] border ${cardBorder} rounded p-4 sm:p-5 lg:p-6 transition-all space-y-4 min-w-0 overflow-hidden">
                     <!-- Top Bar: Header & Actions (Responsive sm -> 2xl) -->
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-3 border-b border-[#171717]">
-                        <div class="min-w-0">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <h4 class="text-base sm:text-lg font-black text-neutral-100 font-mono tracking-wider">${m.pc_kode}</h4>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-3 border-b border-[#1c1c1c] min-w-0">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-2.5">
+                                <h4 class="text-sm sm:text-base lg:max-xl:text-lg xl:text-xl font-black text-neutral-100 font-mono tracking-wider">${this.escapeHtml(m.pc_kode)}</h4>
                                 ${hwBadge}
                                 ${periphBadge}
                             </div>
-                            <div class="text-xs text-neutral-400 mt-1">
-                                <span class="font-bold text-neutral-300">${m.cpu_name || '--'}</span> | ${m.gpu_name || '--'} (${m.total_ram || '--'})
+                            <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-400 mt-1 break-words min-w-0">
+                                <span class="font-bold text-neutral-300">${this.escapeHtml(m.cpu_name || '--')}</span> | ${this.escapeHtml(m.gpu_name || '--')} (${this.escapeHtml(m.total_ram || '--')})
                             </div>
                         </div>
 
-                        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 self-stretch sm:self-auto shrink-0">
-                            ${currentSpecs ? `
+                        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 self-stretch sm:self-auto shrink-0">
+                            ${(currentSpecs || baselineSpecs || baselinePeriph || currentPeriph) ? `
                                 <button id="hc-btn-details-${m.pc_id}" onclick="HardwareChecker.toggleDetails(${m.pc_id})"
-                                    class="flex-1 sm:flex-none px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1">
+                                    class="flex-1 sm:flex-none justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-1.5">
                                     <span>▼</span> Spesifikasi Lengkap
                                 </button>
                             ` : ''}
-                            <button onclick="HardwareChecker.registerBaseline(${m.pc_id}, '${m.pc_kode}')"
-                                class="flex-1 sm:flex-none px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 shadow">
+                            <button onclick="HardwareChecker.registerBaseline(${m.pc_id}, '${this.escapeHtml(m.pc_kode)}')"
+                                class="flex-1 sm:flex-none justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-1.5">
                                 🔄 Update Baseline
                             </button>
                         </div>
                     </div>
 
                     <!-- Split Panels on XL & 2XL (7 Cols Internal Specs / 5 Cols Peripherals) -->
-                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 min-w-0">
                         <!-- Internal Specs Summary (7 Cols) -->
-                        <div class="xl:col-span-7 p-3.5 bg-[#070707] border border-[#141414] rounded-xl flex flex-col justify-between space-y-2">
-                            <div class="flex items-center justify-between text-xs text-neutral-400 font-bold border-b border-[#141414] pb-1.5">
+                        <div class="xl:col-span-7 bg-[#050505] border border-[#1c1c1c] rounded p-3.5 sm:p-4 flex flex-col justify-between space-y-3 min-w-0">
+                            <div class="text-xs lg:max-xl:text-sm xl:text-base text-neutral-300 font-bold uppercase tracking-wider flex items-center justify-between border-b border-[#1c1c1c] pb-2 min-w-0">
                                 <span>🛠️ Komponen Internal Chassis</span>
-                                <span class="text-[11px] font-mono text-neutral-500">${m.motherboard || 'Motherboard'}</span>
+                                <span class="text-[10px] lg:max-xl:text-xs xl:text-sm font-mono text-neutral-500 font-normal truncate max-w-[200px]" title="${this.escapeHtml(m.motherboard || 'Motherboard')}">${this.escapeHtml(m.motherboard || 'Motherboard')}</span>
                             </div>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-mono text-neutral-400 pt-1">
-                                <div>
-                                    <span class="text-[10px] text-neutral-500 block">Processor</span>
-                                    <span class="text-neutral-300 truncate block">${m.cpu_name || 'N/A'}</span>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs lg:max-xl:text-xs xl:text-sm font-mono text-neutral-400 pt-1 min-w-0">
+                                <div class="min-w-0">
+                                    <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-semibold block">Processor</span>
+                                    <span class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 break-words block font-mono">${this.escapeHtml(m.cpu_name || 'N/A')}</span>
                                 </div>
-                                <div>
-                                    <span class="text-[10px] text-neutral-500 block">Graphics Card</span>
-                                    <span class="text-neutral-300 truncate block">${m.gpu_name || 'N/A'}</span>
+                                <div class="min-w-0">
+                                    <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-semibold block">Graphics Card</span>
+                                    <span class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 break-words block font-mono">${this.escapeHtml(m.gpu_name || 'N/A')}</span>
                                 </div>
-                                <div>
-                                    <span class="text-[10px] text-neutral-500 block">Total Memory</span>
-                                    <span class="text-neutral-300 block">${m.total_ram || 'N/A'}</span>
+                                <div class="min-w-0">
+                                    <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-semibold block">Total Memory</span>
+                                    <span class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 block font-mono">${this.escapeHtml(m.total_ram || 'N/A')}</span>
                                 </div>
                             </div>
-                            <div class="text-[11px] text-neutral-500 pt-1 flex items-center justify-between">
-                                <span>Verifikasi Terakhir: <strong class="text-neutral-400">${m.hardware_last_sync || 'Baru saja'}</strong></span>
-                                <span class="text-[10px] text-neutral-600">NIC: ${m.nic_speed || '--'}</span>
+                            <div class="text-[10px] lg:max-xl:text-xs xl:text-xs text-neutral-500 pt-2 border-t border-[#1c1c1c]/60 flex flex-wrap items-center justify-between gap-2 min-w-0">
+                                <span>Verifikasi Terakhir: <strong class="text-neutral-300">${this.escapeHtml(m.hardware_last_sync || m.last_update || 'Baru saja')}</strong></span>
+                                ${nicBadgeHtml}
                             </div>
                         </div>
 
                         <!-- Peripherals Panel (5 Cols) -->
-                        <div class="xl:col-span-5 p-3.5 bg-[#070707] border border-[#141414] rounded-xl space-y-2">
-                            <div class="flex items-center justify-between text-xs text-neutral-400 font-bold border-b border-[#141414] pb-1.5">
+                        <div class="xl:col-span-5 bg-[#050505] border border-[#1c1c1c] rounded p-3.5 sm:p-4 space-y-3 min-w-0">
+                            <div class="text-xs lg:max-xl:text-sm xl:text-base text-neutral-300 font-bold uppercase tracking-wider flex items-center justify-between border-b border-[#1c1c1c] pb-2 min-w-0">
                                 <span>🎧 Periferal Gaming (USB / Audio)</span>
-                                <span class="text-[10px] text-neutral-500 font-normal">Grace Period: 5m</span>
+                                <span class="text-[10px] lg:max-xl:text-xs xl:text-xs text-neutral-500 font-mono font-normal shrink-0">Grace: 5m</span>
                             </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-3 gap-2 pt-1">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-3 gap-2.5 pt-1 min-w-0">
                                 ${periphCardsHtml}
                             </div>
                         </div>

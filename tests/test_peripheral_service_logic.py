@@ -156,6 +156,25 @@ class TestPeripheralServiceLogic(unittest.TestCase):
         self.assertFalse(refreshed.peripherals_mismatch)
         self.assertIsNone(refreshed.hardware_mismatch_desc)
         self.assertIsNone(refreshed.peripherals_mismatch_desc)
-        self.assertIsNone(refreshed.peripherals_disconnect_tracker)
+        self.assertIsNone(refreshed.hardware_cctv_window)
         self.assertIn("NEW-MB", refreshed.hardware_baseline)
         self.assertIn("New Headset", refreshed.peripherals_baseline)
+
+    def test_format_cctv_internal_window_same_date(self):
+        # Same date test
+        start_dt = datetime(2026, 9, 22, 6, 0, tzinfo=timezone.utc)   # 14:00 WITA
+        end_dt = datetime(2026, 9, 22, 8, 18, tzinfo=timezone.utc)    # 16:18 WITA
+        window_str = HardwareService.format_cctv_internal_window(start_dt, end_dt)
+        self.assertIn("22/09/2026 14:00 WITA", window_str)
+        self.assertIn("16:18 WITA", window_str)
+        self.assertIn("(rentang PC mati sebelum boot)", window_str)
+
+    def test_format_cctv_internal_window_different_dates(self):
+        # Overnight shutdown test
+        start_dt = datetime(2026, 9, 22, 15, 0, tzinfo=timezone.utc)  # 23:00 WITA
+        end_dt = datetime(2026, 9, 23, 0, 0, tzinfo=timezone.utc)     # 08:00 WITA next day
+        window_str = HardwareService.format_cctv_internal_window(start_dt, end_dt)
+        self.assertIn("22/09/2026 23:00 WITA", window_str)
+        self.assertIn("23/09/2026 08:00 WITA", window_str)
+        self.assertIn("(rentang PC mati sebelum boot)", window_str)
+

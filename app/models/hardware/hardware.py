@@ -61,6 +61,7 @@ class HardwareMonitor(db.Model):
     hardware_mismatch = db.Column(db.Boolean, default=False)
     hardware_mismatch_desc = db.Column(db.Text, nullable=True)
     hardware_mismatch_time = db.Column(db.DateTime, nullable=True)
+    hardware_cctv_window = db.Column(db.Text, nullable=True)
     hardware_last_sync = db.Column(db.DateTime, nullable=True)
     
     # Peripheral Security Audit (Mouse, Keyboard, Headset)
@@ -104,6 +105,7 @@ class HardwareMonitor(db.Model):
             "hardware_mismatch": self.hardware_mismatch,
             "hardware_mismatch_desc": self.hardware_mismatch_desc,
             "hardware_mismatch_time": format_display(self.hardware_mismatch_time) if self.hardware_mismatch_time else None,
+            "hardware_cctv_window": self.hardware_cctv_window,
             "hardware_last_sync": format_display(self.hardware_last_sync) if self.hardware_last_sync else None,
             
             # Security fields (Peripherals)

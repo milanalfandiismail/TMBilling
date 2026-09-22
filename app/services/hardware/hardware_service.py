@@ -8,8 +8,8 @@ untuk ditampilkan di dashboard kasir.
 """
 
 import re
-from datetime import datetime, timezone
-from app.utils.timezone_utils import now_utc
+from datetime import datetime, timezone, timedelta
+from app.utils.timezone_utils import now_utc, display_in_tz, get_tz_short_name
 from app.models import db
 from app.models import HardwareMonitor
 from app.repositories import HardwareRepository
@@ -160,14 +160,29 @@ class HardwareService:
                                 
                         if mismatch_reasons:
                             if not hardware.hardware_mismatch:
+                                curr_now = now_utc()
                                 hardware.hardware_mismatch = True
-                                hardware.hardware_mismatch_time = now_utc()
+                                hardware.hardware_mismatch_time = curr_now
                                 hardware.hardware_mismatch_desc = "; ".join(mismatch_reasons)
-                                write_log("HARDWARE_ALERT", f"PC {pc.kode} terdeteksi mismatch: {hardware.hardware_mismatch_desc}")
+                                
+                                # Hitung referensi rentang waktu CCTV (estimasi waktu PC mati sebelum boot)
+                                try:
+                                    from app.models import PCUptimeLog
+                                    prev_log = PCUptimeLog.query.filter(
+                                        PCUptimeLog.pc_id == pc.id,
+                                        PCUptimeLog.last_seen < curr_now.replace(tzinfo=None) - timedelta(minutes=2)
+                                    ).order_by(PCUptimeLog.last_seen.desc()).first()
+                                    last_shutdown = prev_log.last_seen if (prev_log and prev_log.last_seen) else (curr_now - timedelta(hours=8))
+                                    hardware.hardware_cctv_window = HardwareService.format_cctv_internal_window(last_shutdown, curr_now)
+                                except Exception:
+                                    hardware.hardware_cctv_window = HardwareService.format_cctv_internal_window(curr_now - timedelta(hours=8), curr_now)
+                                
+                                write_log("HARDWARE_ALERT", f"PC {pc.kode} terdeteksi mismatch: {hardware.hardware_mismatch_desc} ({hardware.hardware_cctv_window})")
                         else:
                             hardware.hardware_mismatch = False
                             hardware.hardware_mismatch_desc = None
                             hardware.hardware_mismatch_time = None
+                            hardware.hardware_cctv_window = None
                             hardware.hardware_last_sync = now_utc()
 
             # --- Peripheral Monitoring & Disconnect Grace Period (5 Menit) ---
@@ -366,6 +381,7 @@ class HardwareService:
             hardware.hardware_mismatch = False
             hardware.hardware_mismatch_desc = None
             hardware.hardware_mismatch_time = None
+            hardware.hardware_cctv_window = None
             hardware.hardware_last_sync = now_utc()
             
             # Copy current peripherals ke baseline jika ada
@@ -384,3 +400,35 @@ class HardwareService:
         except Exception as e:
             db.session.rollback()
             raise e
+
+    @staticmethod
+    def format_cctv_internal_window(start_dt, end_dt):
+        """Format rentang waktu estimasi kejadian saat PC dalam kondisi mati sebelum booting.
+        
+        Selalu menghasilkan format rentang waktu (start s/d end) agar operator CCTV
+        memiliki rentang waktu yang jelas untuk memeriksa arsip rekaman saat PC mati.
+        
+        Args:
+            start_dt (datetime|None): Waktu PC terakhir terlihat/shutdown sebelum mati.
+                                      Jika None, otomatis menggunakan estimasi 8 jam sebelum end_dt.
+            end_dt (datetime): Waktu PC pertama kali boot / terdeteksi mismatch.
+            
+        Returns:
+            str: String rentang waktu berlabel timezone.
+        """
+        if not end_dt:
+            return "-"
+            
+        if not start_dt:
+            start_dt = end_dt - timedelta(hours=8)
+            
+        start_local = display_in_tz(start_dt)
+        end_local = display_in_tz(end_dt)
+        tz_label = get_tz_short_name()
+        
+        if start_local.date() == end_local.date():
+            return f"{start_local.strftime('%d/%m/%Y %H:%M')} {tz_label} s/d {end_local.strftime('%H:%M')} {tz_label} (rentang PC mati sebelum boot)"
+        else:
+            return f"{start_local.strftime('%d/%m/%Y %H:%M')} {tz_label} s/d {end_local.strftime('%d/%m/%Y %H:%M')} {tz_label} (rentang PC mati sebelum boot)"
+
+
