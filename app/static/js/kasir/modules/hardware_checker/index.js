@@ -1,4 +1,7 @@
 const HardwareChecker = {
+    openedDetails: new Set(),
+    isLoading: false,
+
     escapeHtml(str) {
         if (str === null || str === undefined) return '';
         return String(str)
@@ -32,28 +35,42 @@ const HardwareChecker = {
         }
     },
 
-    async load() {
+    async load(isInitial = false) {
+        if (this.isLoading) return;
+        this.isLoading = true;
+
+        const refreshBtn = document.getElementById('hc-refresh-btn');
+        const refreshIcon = document.getElementById('hc-refresh-icon');
+        if (refreshBtn) refreshBtn.disabled = true;
+        if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+        const container = document.getElementById('hardware-checker-container');
+        const hasExistingCards = container && container.querySelector('.bg-\\[\\#0c0c0c\\]');
+
+        if (container && (!hasExistingCards || isInitial)) {
+            container.innerHTML = `
+                <div class="flex justify-center py-10">
+                    <div class="w-8 h-8 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div>
+                </div>`;
+        }
+
         try {
-            const container = document.getElementById('hardware-checker-container');
-            if (container) {
-                container.innerHTML = `
-                    <div class="flex justify-center py-10">
-                        <div class="w-8 h-8 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div>
-                    </div>`;
-            }
-            
             const result = await window.API.monitor.all();
-            if (result.success) {
+            if (result && result.success) {
                 this.render(result.data);
             } else {
                 Toast.error("Gagal memuat status hardware checker");
             }
         } catch (error) {
+            console.error('[HardwareChecker] Load error:', error);
             Toast.error("Gagal memuat status hardware checker");
-            const container = document.getElementById('hardware-checker-container');
-            if (container) {
+            if (container && !hasExistingCards) {
                 container.innerHTML = '<div class="text-center py-10 text-red-400 text-sm font-medium">Gagal memuat data hardware checker.</div>';
             }
+        } finally {
+            this.isLoading = false;
+            if (refreshBtn) refreshBtn.disabled = false;
+            if (refreshIcon) refreshIcon.classList.remove('animate-spin');
         }
     },
 
@@ -84,9 +101,11 @@ const HardwareChecker = {
         if (el) {
             if (el.classList.contains('hidden')) {
                 el.classList.remove('hidden');
+                this.openedDetails.add(pcId);
                 if (btn) btn.innerHTML = `<span>▲</span> Sembunyikan Detail`;
             } else {
                 el.classList.add('hidden');
+                this.openedDetails.delete(pcId);
                 if (btn) btn.innerHTML = `<span>▼</span> Spesifikasi Lengkap`;
             }
         }
@@ -316,8 +335,9 @@ const HardwareChecker = {
                         </li>`;
                 });
 
+                const isDetailsOpen = this.openedDetails.has(m.pc_id);
                 specDetailsHtml = `
-                    <div class="mt-4 pt-4 border-t border-[#1c1c1c] space-y-4 hidden min-w-0 w-full" id="hc-details-${m.pc_id}">
+                    <div class="mt-4 pt-4 border-t border-[#1c1c1c] space-y-4 ${isDetailsOpen ? '' : 'hidden'} min-w-0 w-full" id="hc-details-${m.pc_id}">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 min-w-0 w-full">
                             <!-- Baseline Specs -->
                             <div class="p-4 sm:p-5 bg-[#050505] border border-[#1c1c1c] rounded space-y-4 min-w-0 overflow-hidden w-full">
@@ -447,12 +467,12 @@ const HardwareChecker = {
 
                         <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 self-stretch sm:self-auto shrink-0">
                             ${(currentSpecs || baselineSpecs || baselinePeriph || currentPeriph) ? `
-                                <button id="hc-btn-details-${m.pc_id}" onclick="HardwareChecker.toggleDetails(${m.pc_id})"
+                                <button id="hc-btn-details-${m.pc_id}" type="button" onclick="HardwareChecker.toggleDetails(${m.pc_id})"
                                     class="flex-1 sm:flex-none justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-1.5">
-                                    <span>▼</span> Spesifikasi Lengkap
+                                    <span>${isDetailsOpen ? '▲' : '▼'}</span> ${isDetailsOpen ? 'Sembunyikan Detail' : 'Spesifikasi Lengkap'}
                                 </button>
                             ` : ''}
-                            <button onclick="HardwareChecker.registerBaseline(${m.pc_id}, '${this.escapeHtml(m.pc_kode)}')"
+                            <button type="button" onclick="HardwareChecker.registerBaseline(${m.pc_id}, '${this.escapeHtml(m.pc_kode)}')"
                                 class="flex-1 sm:flex-none justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-1.5">
                                 🔄 Update Baseline
                             </button>

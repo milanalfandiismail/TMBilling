@@ -8,9 +8,9 @@
                 </h3>
                 <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Pemeriksaan serial number internal (CPU, GPU, RAM, SSD) & periferal (Mouse, Keyboard, Headset) dengan referensi cerdas CCTV.</p>
             </div>
-            <button onclick="HardwareChecker.load()"
-                class="w-full sm:w-auto px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center justify-center gap-1.5 self-start sm:self-center">
-                <span>↻</span> Refresh Status
+            <button id="hc-refresh-btn" type="button" onclick="HardwareChecker.load()"
+                class="w-full sm:w-auto px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center justify-center gap-1.5 self-start sm:self-center disabled:opacity-50 disabled:cursor-not-allowed">
+                <span id="hc-refresh-icon" class="inline-block transition-transform">↻</span> Refresh Status
             </button>
         </div>
 
