@@ -173,6 +173,4 @@ cargo check
 
 ## 📜 Lisensi
 
-Proyek ini dilisensikan di bawah lisensi **MIT License** — lihat berkas [LICENSE](LICENSE) untuk informasi rincian lisensi selengkapnya.
-
-Hak Cipta © 2026 **TMBilling Team**.
+Proyek ini dilisensikan di bawah [MIT License](LICENSE).
