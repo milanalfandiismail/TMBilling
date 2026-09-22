@@ -14,7 +14,7 @@
   <img alt="Tauri" src="https://img.shields.io/badge/Tauri-v2.0-FFC131?style=flat-square&logo=tauri" />
   <img alt="Rust" src="https://img.shields.io/badge/Rust-1.75%2B-DEA584?style=flat-square&logo=rust" />
   <img alt="Database" src="https://img.shields.io/badge/Database-SQLite-003B57?style=flat-square&logo=sqlite" />
-  <img alt="License" src="https://img.shields.io/badge/License-Proprietary-red?style=flat-square" />
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" />
 </p>
 
 ---
@@ -171,6 +171,8 @@ cargo check
 
 ---
 
-## 📜 Lisensi & Hak Cipta
+## 📜 Lisensi
 
-Hak Cipta © 2026 **TMBilling Team**. Seluruh hak cipta dilindungi undang-undang.
+Proyek ini dilisensikan di bawah lisensi **MIT License** — lihat berkas [LICENSE](LICENSE) untuk informasi rincian lisensi selengkapnya.
+
+Hak Cipta © 2026 **TMBilling Team**.
