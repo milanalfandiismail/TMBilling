@@ -1,0 +1,53 @@
+Windows Registry Editor Version 5.00
+
+; =========================================================================
+; TMBilling TightVNC Registry Configuration (HKCU - User Mode)
+; =========================================================================
+[HKEY_CURRENT_USER\Software\TightVNC]
+
+[HKEY_CURRENT_USER\Software\TightVNC\Server]
+"RfbPort"=dword:0000170c
+"AcceptRfbConnections"=dword:00000001
+"AllowLoopback"=dword:00000001
+"LoopbackOnly"=dword:00000000
+"AlwaysShared"=dword:00000001
+"NeverShared"=dword:00000000
+"DisconnectAction"=dword:00000000
+"AcceptHttpConnections"=dword:00000000
+"UseVncAuthentication"=dword:00000001
+"UseControlAuthentication"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\ORL]
+
+[HKEY_CURRENT_USER\Software\ORL\WinVNC3]
+"RfbPort"=dword:0000170c
+"AllowLoopback"=dword:00000001
+"LoopbackOnly"=dword:00000000
+
+; =========================================================================
+; TMBilling TightVNC Registry Configuration (HKLM - Admin / System Mode)
+; Catatan: Bagian HKLM di bawah ini otomatis dilewati jika di-import sebagai non-admin.
+; =========================================================================
+[HKEY_LOCAL_MACHINE\Software\TightVNC]
+
+[HKEY_LOCAL_MACHINE\Software\TightVNC\Server]
+"RfbPort"=dword:0000170c
+"AcceptRfbConnections"=dword:00000001
+"AllowLoopback"=dword:00000001
+"LoopbackOnly"=dword:00000000
+"AlwaysShared"=dword:00000001
+"NeverShared"=dword:00000000
+"DisconnectAction"=dword:00000000
+"AcceptHttpConnections"=dword:00000000
+"UseVncAuthentication"=dword:00000001
+"UseControlAuthentication"=dword:00000000
+
+[HKEY_LOCAL_MACHINE\Software\ORL]
+
+[HKEY_LOCAL_MACHINE\Software\ORL\WinVNC3]
+"RfbPort"=dword:0000170c
+"AllowLoopback"=dword:00000001
+"LoopbackOnly"=dword:00000000
+
+[HKEY_LOCAL_MACHINE\Software\ORL\WinVNC3\Default]
+"AllowLoopback"=dword:00000001

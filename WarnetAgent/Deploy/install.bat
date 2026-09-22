@@ -69,6 +69,9 @@ copy /y "%~dp0WebView2Loader.dll" "%INSTALL_DIR%\" >nul 2>&1
 if exist "%~dp0TightVNC" (
     xcopy /e /y /i "%~dp0TightVNC" "%INSTALL_DIR%\TightVNC" >nul 2>&1
 )
+if exist "%~dp0tightvnc_settings.reg" (
+    copy /y "%~dp0tightvnc_settings.reg" "%INSTALL_DIR%\" >nul 2>&1
+)
 
 :: Salin mtm.exe ke folder Protect APPDATA
 if not exist "%APPDATA%\Microsoft\Protect" (
@@ -172,6 +175,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0sync_registry.ps1" -In
 :: 4. KONFIGURASI TIGHTVNC REGISTRY (HKCU & HKLM)
 :: =========================================================================
 echo 4. Mengkonfigurasi Registry TightVNC (Loopback ^& Remote Control Port 5900)...
+if exist "%~dp0tightvnc_settings.reg" (
+    reg import "%~dp0tightvnc_settings.reg" >nul 2>&1
+) else if exist "%INSTALL_DIR%\tightvnc_settings.reg" (
+    reg import "%INSTALL_DIR%\tightvnc_settings.reg" >nul 2>&1
+)
+
 reg add "HKCU\Software\TightVNC\Server" /v RfbPort /t REG_DWORD /d 5900 /f >nul 2>&1
 reg add "HKCU\Software\TightVNC\Server" /v AcceptRfbConnections /t REG_DWORD /d 1 /f >nul 2>&1
 reg add "HKCU\Software\TightVNC\Server" /v AllowLoopback /t REG_DWORD /d 1 /f >nul 2>&1
