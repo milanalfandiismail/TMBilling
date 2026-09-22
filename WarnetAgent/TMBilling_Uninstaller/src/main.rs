@@ -231,6 +231,7 @@ use std::os::windows::process::CommandExt; // Trait khusus Windows
 const CREATE_NO_WINDOW: u32 = 0x08000000; // Flag agar tidak memicu flashing CMD window
 
 // Fungsi pembantu untuk memeriksa apakah aplikasi berjalan dengan hak akses Administrator
+#[allow(dead_code)]
 fn is_run_as_admin() -> bool {
     let output = Command::new("net")
         .arg("session")
@@ -239,23 +240,6 @@ fn is_run_as_admin() -> bool {
     match output {
         Ok(status) => status.success(),
         Err(_) => false,
-    }
-}
-
-// Elevasikan hak akses ke Administrator via UAC jika diperlukan
-fn elevator_to_admin() {
-    if !is_run_as_admin() {
-        if let Ok(exe_path) = std::env::current_exe() {
-            let path_str = exe_path.to_string_lossy().to_string();
-            let _ = Command::new("powershell")
-                .args([
-                    "-Command",
-                    &format!("Start-Process '{}' -Verb RunAs", path_str),
-                ])
-                .creation_flags(CREATE_NO_WINDOW)
-                .status();
-            std::process::exit(0);
-        }
     }
 }
 
@@ -268,8 +252,17 @@ fn execute_uninstall(plain_password: &str) {
     if let Ok(mut file) = File::create("C:\\TMBILLING\\stop.token") {
         let _ = write!(file, "{}", plain_password);
     }
+    if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
+        let mut p = std::path::PathBuf::from(localappdata);
+        p.push("TMBilling");
+        let _ = std::fs::create_dir_all(&p);
+        p.push("stop.token");
+        if let Ok(mut file) = File::create(p) {
+            let _ = write!(file, "{}", plain_password);
+        }
+    }
 
-    // 3. Beri jeda 2.5 detik agar watchdog & MGCTM melepas status kritis dan keluar
+    // 2. Beri jeda 2.5 detik agar watchdog & MGCTM melepas status kritis dan keluar
     thread::sleep(Duration::from_millis(2500));
 
     // 3. Taskkill sisa proses GUI / Monitor / Watchdog secara agresif
@@ -409,6 +402,26 @@ fn execute_uninstall(plain_password: &str) {
                 let _ = std::fs::remove_dir_all(&path);
             } else {
                 let _ = std::fs::remove_file(&path);
+            }
+        }
+    }
+
+    // Bersihkan seluruh file & folder sisa di %LOCALAPPDATA%\TMBilling (kecuali file exe uninstaller yang sedang berjalan)
+    if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
+        let local_dir = std::path::PathBuf::from(localappdata).join("TMBilling");
+        if let Ok(entries) = std::fs::read_dir(&local_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Ok(current_exe) = std::env::current_exe() {
+                    if path == current_exe {
+                        continue;
+                    }
+                }
+                if path.is_dir() {
+                    let _ = std::fs::remove_dir_all(&path);
+                } else {
+                    let _ = std::fs::remove_file(&path);
+                }
             }
         }
     }
@@ -817,9 +830,6 @@ fn main() {
     }
 
     // ========== CONTINUE UNINSTALLER EXECUTION ==========
-
-    // Elevasikan hak akses ke Administrator jika belum
-    elevator_to_admin();
 
     // 🔥 PENTING: Paksa working directory ke folder biner berada
     if let Ok(mut exe_dir) = std::env::current_exe() {

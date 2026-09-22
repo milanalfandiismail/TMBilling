@@ -206,23 +206,36 @@ fn fetch_uninstall_token_from_api() -> Result<String, String> {
 
 // Cek apakah ada file token shutdown yang valid ditulis oleh uninstaller
 fn check_legal_shutdown() -> bool {
-    let token_path = "C:\\TMBILLING\\stop.token";
-    if fs::metadata(token_path).is_ok() {
-        if let Ok(token_content) = fs::read_to_string(token_path) {
-            let clean_token = token_content.trim();
-            if !clean_token.is_empty() {
-                // 1. Cek token uninstall aktif lewat API jika online
-                if let Ok(api_token) = fetch_uninstall_token_from_api() {
-                    if clean_token == api_token {
+    let mut possible_paths = vec![
+        std::path::PathBuf::from("C:\\TMBILLING\\stop.token"),
+        std::path::PathBuf::from("stop.token"),
+    ];
+    if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
+        possible_paths.push(
+            std::path::PathBuf::from(localappdata)
+                .join("TMBilling")
+                .join("stop.token"),
+        );
+    }
+
+    for token_path in possible_paths {
+        if fs::metadata(&token_path).is_ok() {
+            if let Ok(token_content) = fs::read_to_string(&token_path) {
+                let clean_token = token_content.trim();
+                if !clean_token.is_empty() {
+                    // 1. Cek token uninstall aktif lewat API jika online
+                    if let Ok(api_token) = fetch_uninstall_token_from_api() {
+                        if clean_token == api_token {
+                            return true;
+                        }
+                    }
+
+                    // 2. Cek token darurat (Emergency Token) offline/online via SHA-256 hash atau direct match
+                    let (_, _, _, em_token) = load_config();
+                    let clean_hash = sha256_hex(clean_token);
+                    if clean_hash.eq_ignore_ascii_case(&em_token.trim()) || clean_token == em_token.trim() {
                         return true;
                     }
-                }
-
-                // 2. Cek token darurat (Emergency Token) offline/online via SHA-256 hash atau direct match
-                let (_, _, _, em_token) = load_config();
-                let clean_hash = sha256_hex(clean_token);
-                if clean_hash.eq_ignore_ascii_case(&em_token.trim()) || clean_token == em_token.trim() {
-                    return true;
                 }
             }
         }

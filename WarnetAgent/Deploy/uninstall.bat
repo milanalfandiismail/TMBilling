@@ -1,39 +1,59 @@
 @echo off
-title TMBilling Agent Uninstaller
+setlocal enabledelayedexpansion
+cd /d "%~dp0"
+title TMBilling Agent ^& Kiosk Uninstaller
 color 0c
 
 :: =========================================================================
-:: 1. AUTO-ELEVATION TO ADMINISTRATOR
+:: 1. CHECK PERMISSIONS (SUPPORT BOTH ADMIN & RUN BIASA / NON-ADMIN)
 :: =========================================================================
-:check_permissions
-echo Memeriksa hak akses administrator...
+set "IS_ADMIN=0"
 net session >nul 2>&1
-if %errorLevel% == 0 (
-    goto :uninstall
-) else (
-    echo.
-    echo [PENTING] Uninstaller ini memerlukan hak akses Administrator.
-    echo Mencoba menjalankan ulang sebagai Administrator...
-    powershell -Command "Start-Process '%~dpnx0' -Verb RunAs"
-    exit /b
+if %errorlevel% equ 0 (
+    set "IS_ADMIN=1"
 )
 
-:uninstall
 cls
 echo =========================================================================
-echo               TMBILLING AGENT - SECURE UNINSTALLER
+echo         TMBILLING AGENT ^& KIOSK - SECURE UNINSTALLER
 echo =========================================================================
 echo.
-
-set INSTALL_DIR=C:\TMBILLING
-
-:: Jalankan uninstaller GUI Rust yang aman
-if exist "%INSTALL_DIR%\TMBilling_Uninstaller.exe" (
-    echo Meluncurkan panel uninstalasi aman dengan verifikasi Token Dinamis...
-    start "" "%INSTALL_DIR%\TMBilling_Uninstaller.exe"
+if "%IS_ADMIN%"=="1" (
+    echo [MODE] Dijalankan sebagai Administrator ^(Full System Access^).
 ) else (
-    echo [ERROR] Berkas TMBilling_Uninstaller.exe tidak ditemukan di folder instalasi!
-    echo Silakan jalankan ulang installer atau hubungi administrator.
-    pause
+    echo [MODE] Dijalankan sebagai Pengguna Standar ^(Run Biasa / Non-Admin^).
 )
-exit /b
+echo.
+
+:: =========================================================================
+:: 2. DETECT INSTALLATION DIRECTORY
+:: =========================================================================
+set "INSTALL_DIR="
+
+if exist "%~dp0TMBilling_Uninstaller.exe" (
+    set "INSTALL_DIR=%~dp0"
+) else if exist "C:\TMBILLING\TMBilling_Uninstaller.exe" (
+    set "INSTALL_DIR=C:\TMBILLING"
+) else if exist "%LOCALAPPDATA%\TMBilling\TMBilling_Uninstaller.exe" (
+    set "INSTALL_DIR=%LOCALAPPDATA%\TMBilling"
+)
+
+:: =========================================================================
+:: 3. LAUNCH SECURE UNINSTALLER GUI
+:: =========================================================================
+if defined INSTALL_DIR (
+    if exist "!INSTALL_DIR!\TMBilling_Uninstaller.exe" (
+        echo Meluncurkan panel uninstalasi aman dari !INSTALL_DIR!...
+        start "" "!INSTALL_DIR!\TMBilling_Uninstaller.exe"
+        exit /b 0
+    )
+)
+
+echo [ERROR] Berkas TMBilling_Uninstaller.exe tidak ditemukan di:
+echo         - %~dp0
+echo         - C:\TMBILLING
+echo         - %LOCALAPPDATA%\TMBilling
+echo.
+echo Silakan pastikan TMBilling terpasang atau hubungi administrator.
+pause
+exit /b 1
