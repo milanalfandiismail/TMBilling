@@ -63,6 +63,14 @@ class HardwareMonitor(db.Model):
     hardware_mismatch_time = db.Column(db.DateTime, nullable=True)
     hardware_last_sync = db.Column(db.DateTime, nullable=True)
     
+    # Peripheral Security Audit (Mouse, Keyboard, Headset)
+    peripherals_baseline = db.Column(db.Text, nullable=True)
+    peripherals_current = db.Column(db.Text, nullable=True)
+    peripherals_mismatch = db.Column(db.Boolean, default=False)
+    peripherals_mismatch_desc = db.Column(db.Text, nullable=True)
+    peripherals_mismatch_time = db.Column(db.DateTime, nullable=True)
+    peripherals_disconnect_tracker = db.Column(db.Text, nullable=True)
+    
     last_update = db.Column(db.DateTime, default=now_local, onupdate=now_local)
 
     # Relasi balik ke PC
@@ -90,13 +98,21 @@ class HardwareMonitor(db.Model):
             "last_update": format_display(self.last_update) if self.last_update else None,
             "last_update_ts": self.last_update.replace(tzinfo=timezone.utc).timestamp() * 1000 if self.last_update else None,
             
-            # Security fields
+            # Security fields (Internal Hardware)
             "hardware_baseline": self.hardware_baseline,
             "hardware_current_specs": self.hardware_current_specs,
             "hardware_mismatch": self.hardware_mismatch,
             "hardware_mismatch_desc": self.hardware_mismatch_desc,
             "hardware_mismatch_time": format_display(self.hardware_mismatch_time) if self.hardware_mismatch_time else None,
-            "hardware_last_sync": format_display(self.hardware_last_sync) if self.hardware_last_sync else None
+            "hardware_last_sync": format_display(self.hardware_last_sync) if self.hardware_last_sync else None,
+            
+            # Security fields (Peripherals)
+            "peripherals_baseline": self.peripherals_baseline,
+            "peripherals_current": self.peripherals_current,
+            "peripherals_mismatch": self.peripherals_mismatch,
+            "peripherals_mismatch_desc": self.peripherals_mismatch_desc,
+            "peripherals_mismatch_time": format_display(self.peripherals_mismatch_time) if self.peripherals_mismatch_time else None,
+            "peripherals_disconnect_tracker": self.peripherals_disconnect_tracker
         }
 
 class PCProcess(db.Model):
