@@ -572,24 +572,412 @@ Jika terjadi kegagalan:
 }
 ```
 
-### 8.2 Daftar Endpoint REST Utama
-| Method | Endpoint | Deskripsi |
+### 8.2 Katalog Lengkap Seluruh Endpoint REST API (250 Endpoints Terdaftar)
+
+Total Blueprint Terdaftar: **36 Blueprint** | Total Endpoint Terdaftar: **250 Endpoints**
+
+#### 🔹 Blueprint: auth (3 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
 | :--- | :--- | :--- |
-| `POST` | `/api/auth/login` | Autentikasi kasir & admin |
-| `GET` | `/api/dashboard/summary` | Mengambil metrik ringkas dashboard kasir |
-| `POST` | `/api/sesi/buka` | Membuka sesi billing baru pada PC |
-| `POST` | `/api/sesi/tambah` | Menambah durasi sesi yang sedang aktif |
-| `POST` | `/api/sesi/stop` | Menghentikan sesi billing aktif |
-| `POST` | `/api/monitor/remote-batch` | Menjalankan aksi batch (shutdown/restart/lock/move) |
-| `GET` | `/api/monitor/processes/<pc_id>` | Mengambil daftar proses aktif di PC klien |
-| `POST` | `/api/monitor/kill-process` | Menghentikan proses tertentu di PC klien |
-| `GET` | `/api/fileexplorer/list` | Menjelajahi folder PC klien |
-| `POST` | `/api/fnb/transaksi` | Membuat pesanan FnB & cetak struk |
-| `GET` | `/api/version` | Mengembalikan versi software saat ini (`1.6.2`) |
+| POST | /api/v1/public/auth/login | auth.login |
+| POST | /api/v1/public/auth/logout | auth.logout |
+| POST | /api/v1/public/auth/status | auth.status |
+
+#### 🔹 Blueprint: auth_kasir (4 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| POST | /api/v1/kasir/auth/admin-check | auth_kasir.admin_check |
+| GET | /api/v1/kasir/auth/check | auth_kasir.check_session |
+| POST | /api/v1/kasir/auth/login | auth_kasir.login |
+| POST | /api/v1/kasir/auth/logout | auth_kasir.logout |
+
+#### 🔹 Blueprint: backup (5 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| DELETE | /api/v1/kasir/backup/delete/<filename> | backup.delete_backup |
+| GET | /api/v1/kasir/backup/download/<filename> | backup.download_backup |
+| GET | /api/v1/kasir/backup/list | backup.list_backups |
+| POST | /api/v1/kasir/backup/test-connection | backup.test_connection |
+| POST | /api/v1/kasir/backup/trigger | backup.trigger_backup |
+
+#### 🔹 Blueprint: blackout (9 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| POST | /api/v1/kasir/blackout/clear | blackout.clear_audit |
+| GET | /api/v1/kasir/blackout/dates | blackout.get_dates |
+| POST | /api/v1/kasir/blackout/deteksi | blackout.deteksi |
+| POST | /api/v1/kasir/blackout/force-all-and-detect | blackout.force_all_and_detect |
+| GET | /api/v1/kasir/blackout/list | blackout.list_audit |
+| POST | /api/v1/kasir/blackout/resolve/guest/lanjut/<int:sesi_id> | blackout.resolve_guest_lanjut |
+| POST | /api/v1/kasir/blackout/resolve/guest/sama/<int:sesi_id> | blackout.resolve_guest_sama |
+| POST | /api/v1/kasir/blackout/resolve/guest/tutup/<int:sesi_id> | blackout.resolve_guest_tutup |
+| POST | /api/v1/kasir/blackout/resolve/member/<int:sesi_id> | blackout.resolve_member |
+
+#### 🔹 Blueprint: branch_api (18 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| DELETE | /api/v1/kasir/branch/<int:branch_id> | branch_api.delete_branch |
+| PUT | /api/v1/kasir/branch/<int:branch_id> | branch_api.update_branch |
+| GET | /api/v1/kasir/branch/<int:branch_id>/media/<path:filename> | branch_api.proxy_branch_media |
+| POST | /api/v1/kasir/branch/<int:branch_id>/test | branch_api.test_saved_branch_connection |
+| POST | /api/v1/kasir/branch/add | branch_api.add_branch |
+| GET | /api/v1/kasir/branch/inbound | branch_api.list_inbound_branches |
+| DELETE | /api/v1/kasir/branch/inbound/<int:inbound_id> | branch_api.delete_inbound_branch |
+| POST | /api/v1/kasir/branch/inbound/<int:inbound_id>/block | branch_api.block_inbound_branch |
+| POST | /api/v1/kasir/branch/inbound/<int:inbound_id>/unblock | branch_api.unblock_inbound_branch |
+| GET | /api/v1/kasir/branch/list | branch_api.list_branches |
+| GET | /api/v1/kasir/branch/my-key | branch_api.get_my_branch_key |
+| POST | /api/v1/kasir/branch/my-key/regenerate | branch_api.regenerate_my_branch_key |
+| GET | /api/v1/kasir/branch/operators | branch_api.get_remote_operators |
+| POST | /api/v1/kasir/branch/operators/delete | branch_api.delete_remote_operator |
+| POST | /api/v1/kasir/branch/operators/hide | branch_api.hide_remote_operator |
+| POST | /api/v1/kasir/branch/operators/restore | branch_api.restore_remote_operator |
+| POST | /api/v1/kasir/branch/switch-context | branch_api.switch_branch_context |
+| POST | /api/v1/kasir/branch/test | branch_api.test_branch_connection |
+
+#### 🔹 Blueprint: client (9 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| POST | /api/v1/public/client/admin-login | client.admin_login |
+| POST | /api/v1/public/client/emergency-login | client.emergency_login |
+| POST | /api/v1/public/client/identify | client.identify |
+| POST | /api/v1/public/client/selesai | client.selesai |
+| POST | /api/v1/public/client/status | client.status |
+| POST | /api/v1/public/client/vnc_poll | client.vnc_poll |
+| POST | /api/v1/public/client/vnc_ready | client.vnc_ready |
+| POST | /api/v1/public/client/vnc_stopped | client.vnc_stopped |
+| GET | /api/v1/public/client/warnet | client.get_warnet_config |
+
+#### 🔹 Blueprint: dashboard (3 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /kasir/ | dashboard.dashboard |
+| GET | /kasir/documentation | dashboard.documentation |
+| GET | /kasir/login | dashboard.login_page |
+
+#### 🔹 Blueprint: dashboard_api (3 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/dashboard/analytics | dashboard_api.analytics_data |
+| GET | /api/v1/kasir/dashboard/pc | dashboard_api.list_pc_api |
+| GET | /api/v1/kasir/dashboard/server-metrics | dashboard_api.server_metrics_api |
+
+#### 🔹 Blueprint: fileexplorer (8 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| POST | /api/v1/kasir/fileexplorer/create | fileexplorer.create_item |
+| POST | /api/v1/kasir/fileexplorer/delete | fileexplorer.delete_item |
+| GET | /api/v1/kasir/fileexplorer/list | fileexplorer.list_dir |
+| GET | /api/v1/kasir/fileexplorer/read | fileexplorer.read_file |
+| POST | /api/v1/kasir/fileexplorer/rename | fileexplorer.rename_item |
+| GET | /api/v1/kasir/fileexplorer/roots | fileexplorer.get_roots |
+| POST | /api/v1/kasir/fileexplorer/roots | fileexplorer.update_roots |
+| POST | /api/v1/kasir/fileexplorer/save | fileexplorer.save_file |
+
+#### 🔹 Blueprint: game_kasir (7 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/game/ | game_kasir.list_games |
+| POST | /api/v1/kasir/game/ | game_kasir.tambah_game |
+| DELETE | /api/v1/kasir/game/<int:game_id> | game_kasir.hapus_game |
+| POST, PUT | /api/v1/kasir/game/<int:game_id> | game_kasir.edit_game |
+| GET | /api/v1/kasir/game/kategori | game_kasir.list_kategori |
+| POST | /api/v1/kasir/game/kategori | game_kasir.tambah_kategori |
+| DELETE | /api/v1/kasir/game/kategori/<int:kategori_id> | game_kasir.hapus_kategori |
+
+#### 🔹 Blueprint: game_public (2 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/public/game/all | game_public.get_public_games |
+| GET | /api/v1/public/game/kategori | game_public.get_public_kategori |
+
+#### 🔹 Blueprint: global (10 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | / | index |
+| GET | /games | public_games |
+| GET | /livepc | public_pc_map |
+| GET | /paket | public_packages |
+| GET | /spesifikasi | public_specs |
+| GET | /static/<path:filename> | static |
+| GET | /tv | public_tv_static |
+| GET | /tv-static | public_tv_static |
+| GET | /tv/dynamic | public_tv_dynamic |
+| GET | /tv/static | public_tv_static |
+
+#### 🔹 Blueprint: grup (4 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/grup/ | grup.list_grup |
+| POST | /api/v1/kasir/grup/ | grup.tambah_grup |
+| DELETE | /api/v1/kasir/grup/<int:grup_id> | grup.hapus_grup |
+| PUT | /api/v1/kasir/grup/<int:grup_id> | grup.update_grup |
+
+#### 🔹 Blueprint: maintenance (6 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| DELETE | /api/v1/kasir/maintenance/<int:ticket_id> | maintenance.delete_ticket |
+| PUT | /api/v1/kasir/maintenance/<int:ticket_id>/status | maintenance.update_status |
+| POST | /api/v1/kasir/maintenance/create | maintenance.create_ticket |
+| GET | /api/v1/kasir/maintenance/export | maintenance.export_report |
+| GET | /api/v1/kasir/maintenance/list | maintenance.list_tickets |
+| GET | /api/v1/kasir/maintenance/report | maintenance.get_report |
+
+#### 🔹 Blueprint: member (8 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/member/ | member.list_member |
+| POST | /api/v1/kasir/member/ | member.tambah_member |
+| DELETE | /api/v1/kasir/member/<int:member_id> | member.delete_member |
+| GET | /api/v1/kasir/member/<int:member_id> | member.get_member_detail |
+| PUT | /api/v1/kasir/member/<int:member_id> | member.edit_member |
+| GET | /api/v1/kasir/member/<int:member_id>/paket | member.get_riwayat_paket |
+| POST | /api/v1/kasir/member/refund-paket | member.refund_paket |
+| POST | /api/v1/kasir/member/tambah-waktu | member.tambah_waktu |
+
+#### 🔹 Blueprint: member_portal (7 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /member | member_portal.dashboard_page |
+| GET | /member/dashboard | member_portal.dashboard_page |
+| GET | /member/login | member_portal.login_page |
+| POST | /member/login | member_portal.login_action |
+| POST | /member/logout | member_portal.logout_action |
+| POST | /member/profile/update | member_portal.update_profile_action |
+| GET | /pc-status | member_portal.public_pc_status |
+
+#### 🔹 Blueprint: menu (9 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/menu/ | menu.get_menu_list |
+| POST | /api/v1/kasir/menu/ | menu.create_menu_item |
+| DELETE | /api/v1/kasir/menu/<int:menu_id> | menu.delete_menu_item |
+| PUT | /api/v1/kasir/menu/<int:menu_id> | menu.update_menu_item |
+| DELETE | /api/v1/kasir/menu/<int:menu_id>/permanent | menu.hard_delete_menu_item |
+| POST | /api/v1/kasir/menu/<int:menu_id>/restore | menu.restore_menu_item |
+| GET | /api/v1/kasir/menu/archived | menu.get_archived_menu_list |
+| POST | /api/v1/kasir/menu/checkout | menu.checkout_order |
+| GET | /api/v1/kasir/menu/transaksi | menu.get_all_transactions |
+
+#### 🔹 Blueprint: migration (2 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/settings/migration/status | migration.get_migration_status |
+| POST | /api/v1/kasir/settings/migration/upload | migration.upload_update |
+
+#### 🔹 Blueprint: mikrotik (4 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/mikrotik/config | mikrotik.get_mikrotik_config |
+| POST | /api/v1/kasir/mikrotik/config | mikrotik.save_mikrotik_config |
+| POST | /api/v1/kasir/mikrotik/sync_all | mikrotik.sync_all_mikrotik_members |
+| POST | /api/v1/kasir/mikrotik/test | mikrotik.test_mikrotik_connection |
+
+#### 🔹 Blueprint: monitor (6 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| POST | /api/v1/public/monitor/ | monitor.receive_hardware_data |
+| DELETE | /api/v1/public/monitor/<int:hardware_id> | monitor.delete_hardware_data |
+| GET | /api/v1/public/monitor/all | monitor.get_all_hardware |
+| GET | /api/v1/public/monitor/processes/<int:pc_id> | monitor.get_pc_processes |
+| POST | /api/v1/public/monitor/processes/<int:pc_id>/kill | monitor.kill_pc_process |
+| POST | /api/v1/public/monitor/screenshot/upload | monitor.upload_screenshot |
+
+#### 🔹 Blueprint: monitor_kasir (13 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| DELETE | /api/v1/kasir/monitor/<int:hardware_id> | monitor_kasir.delete_hardware_data_kasir |
+| GET | /api/v1/kasir/monitor/all | monitor_kasir.get_all_hardware_kasir |
+| GET | /api/v1/kasir/monitor/processes/<int:pc_id> | monitor_kasir.get_pc_processes_kasir |
+| POST | /api/v1/kasir/monitor/processes/<int:pc_id>/kill | monitor_kasir.kill_pc_process_kasir |
+| POST | /api/v1/kasir/monitor/register/<int:pc_id> | monitor_kasir.register_pc_hardware |
+| POST | /api/v1/kasir/monitor/remote/<int:pc_id>/<string:action> | monitor_kasir.trigger_remote_action |
+| POST | /api/v1/kasir/monitor/remote/batch | monitor_kasir.trigger_remote_action_batch |
+| GET | /api/v1/kasir/monitor/screenshot/all | monitor_kasir.get_all_screenshot_status |
+| GET | /api/v1/kasir/monitor/screenshot/status/<int:pc_id> | monitor_kasir.get_screenshot_status |
+| POST | /api/v1/kasir/monitor/screenshot/trigger/<int:pc_id> | monitor_kasir.trigger_screenshot |
+| POST | /api/v1/kasir/monitor/vnc_client/<int:pc_id>/start | monitor_kasir.start_vnc_client |
+| GET | /api/v1/kasir/monitor/vnc_client/<int:pc_id>/status | monitor_kasir.status_vnc_client |
+| POST | /api/v1/kasir/monitor/vnc_client/<int:pc_id>/stop | monitor_kasir.stop_vnc_client |
+
+#### 🔹 Blueprint: notes_api (8 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/notes | notes_api.list_notes |
+| POST | /api/v1/kasir/notes | notes_api.create_note |
+| DELETE | /api/v1/kasir/notes/<filename> | notes_api.delete_note |
+| GET | /api/v1/kasir/notes/<filename> | notes_api.get_note |
+| PUT | /api/v1/kasir/notes/<filename> | notes_api.save_note |
+| GET | /api/v1/kasir/notes/<filename>/download | notes_api.download_note |
+| POST | /api/v1/kasir/notes/<filename>/duplicate | notes_api.duplicate_note |
+| POST | /api/v1/kasir/notes/<filename>/pin | notes_api.toggle_pin_note |
+
+#### 🔹 Blueprint: paket (4 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/paket/ | paket.list_paket |
+| POST | /api/v1/kasir/paket/ | paket.tambah_paket |
+| DELETE | /api/v1/kasir/paket/<int:paket_id> | paket.hapus_paket |
+| PUT | /api/v1/kasir/paket/<int:paket_id> | paket.edit_paket |
+
+#### 🔹 Blueprint: pc (8 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/pc/ | pc.list_pc |
+| POST | /api/v1/kasir/pc/ | pc.tambah_pc |
+| DELETE | /api/v1/kasir/pc/<int:pc_id> | pc.hapus_pc |
+| PUT | /api/v1/kasir/pc/<int:pc_id> | pc.edit_pc |
+| PUT | /api/v1/kasir/pc/<int:pc_id>/position | pc.update_pc_position |
+| POST | /api/v1/kasir/pc/batch | pc.tambah_batch |
+| POST | /api/v1/kasir/pc/reset-admin/<int:pc_id> | pc.reset_admin |
+| POST | /api/v1/kasir/pc/wol | pc.wol_pc |
+
+#### 🔹 Blueprint: plugins (4 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/settings/plugins/ | plugins.get_plugins |
+| GET | /api/v1/kasir/settings/plugins/page | plugins.plugins_page |
+| POST | /api/v1/kasir/settings/plugins/toggle | plugins.toggle_plugin |
+| POST | /api/v1/kasir/settings/plugins/upload | plugins.upload_plugin |
+
+#### 🔹 Blueprint: report (18 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/report/blackout-log | report.blackout_log |
+| GET | /api/v1/kasir/report/export/audit-pdf | report.export_audit_pdf |
+| GET | /api/v1/kasir/report/export/billing | report.export_billing |
+| GET | /api/v1/kasir/report/export/kantin | report.export_kantin |
+| GET | /api/v1/kasir/report/export/pnl | report.export_pnl |
+| GET | /api/v1/kasir/report/kasir-list | report.get_kasir_list |
+| GET | /api/v1/kasir/report/laporan-harian | report.laporan_harian |
+| GET | /api/v1/kasir/report/laporan/billing | report.get_laporan |
+| GET | /api/v1/kasir/report/laporan/kantin | report.get_laporan_kantin |
+| GET | /api/v1/kasir/report/log | report.get_logs |
+| POST | /api/v1/kasir/report/log/clear | report.clear_logs_endpoint |
+| GET | /api/v1/kasir/report/log/export | report.export_logs |
+| GET | /api/v1/kasir/report/struk/<identifier> | report.get_struk |
+| GET | /api/v1/kasir/report/struk/menu/<int:t_menu_id> | report.get_struk_menu |
+| GET | /api/v1/kasir/report/tanggal | report.get_tanggal_list |
+| DELETE | /api/v1/kasir/report/transaksi/<int:t_id> | report.delete_transaction_endpoint |
+| DELETE | /api/v1/kasir/report/transaksi/by-date/<string:tanggal> | report.clear_date_transactions_endpoint |
+| POST | /api/v1/kasir/report/transaksi/clear | report.clear_transactions_endpoint |
+
+#### 🔹 Blueprint: server_monitor_api (4 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/server-monitor | server_monitor_api.get_metrics |
+| POST | /api/v1/kasir/server-monitor/lhm/start | server_monitor_api.start_lhm_service |
+| GET | /api/v1/kasir/server-monitor/lhm/status | server_monitor_api.status_lhm_service |
+| POST | /api/v1/kasir/server-monitor/lhm/stop | server_monitor_api.stop_lhm_service |
+
+#### 🔹 Blueprint: sesi (11 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/sesi/<int:sesi_id> | sesi.get_sesi |
+| GET | /api/v1/kasir/sesi/<int:sesi_id>/riwayat-paket | sesi.get_riwayat_paket |
+| POST | /api/v1/kasir/sesi/buka-guest | sesi.buka_guest |
+| POST | /api/v1/kasir/sesi/buka-guest-batch | sesi.buka_guest_batch |
+| POST | /api/v1/kasir/sesi/buka-member | sesi.buka_member |
+| POST | /api/v1/kasir/sesi/pindah-pc/<int:sesi_id> | sesi.pindah_pc |
+| POST | /api/v1/kasir/sesi/refund-paket | sesi.refund_paket |
+| POST | /api/v1/kasir/sesi/tambah-waktu-batch | sesi.tambah_waktu_batch |
+| POST | /api/v1/kasir/sesi/tambah-waktu-sesi/<int:sesi_id> | sesi.tambah_waktu_sesi |
+| POST | /api/v1/kasir/sesi/tutup-batch | sesi.tutup_sesi_batch |
+| POST | /api/v1/kasir/sesi/tutup/<int:sesi_id> | sesi.tutup_sesi |
+
+#### 🔹 Blueprint: settings (22 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/settings/ | settings.get_all_settings |
+| GET, PUT | /api/v1/kasir/settings/<key> | settings.handle_setting |
+| PUT | /api/v1/kasir/settings/apikey | settings.update_client_api_key |
+| POST | /api/v1/kasir/settings/app-public-url | settings.set_app_public_url |
+| PUT | /api/v1/kasir/settings/auto-shutdown | settings.update_auto_shutdown |
+| GET | /api/v1/kasir/settings/backup/download | settings.download_db |
+| POST | /api/v1/kasir/settings/backup/manual | settings.trigger_manual_backup |
+| POST | /api/v1/kasir/settings/cloudflare-tunnel/save-token | settings.cloudflare_tunnel_save_token |
+| GET | /api/v1/kasir/settings/cloudflare-tunnel/status | settings.cloudflare_tunnel_status |
+| POST | /api/v1/kasir/settings/cloudflare-tunnel/toggle | settings.cloudflare_tunnel_toggle |
+| POST | /api/v1/kasir/settings/database/purge-and-vacuum | settings.purge_and_vacuum_database |
+| GET | /api/v1/kasir/settings/ip-whitelist | settings.list_ip_whitelist |
+| POST | /api/v1/kasir/settings/ip-whitelist | settings.add_whitelist_ip |
+| DELETE | /api/v1/kasir/settings/ip-whitelist/<ip> | settings.remove_whitelist_ip |
+| POST | /api/v1/kasir/settings/ip-whitelist/regenerate-token | settings.regenerate_whitelist_token |
+| GET | /api/v1/kasir/settings/ip-whitelist/status | settings.status_whitelist |
+| POST | /api/v1/kasir/settings/ip-whitelist/toggle | settings.toggle_whitelist |
+| POST | /api/v1/kasir/settings/qris | settings.upload_qris |
+| PUT | /api/v1/kasir/settings/scheduler | settings.update_scheduler_config |
+| POST | /api/v1/kasir/settings/scheduler/restart | settings.restart_scheduler |
+| PUT | /api/v1/kasir/settings/timezone | settings.update_timezone |
+| GET | /api/v1/kasir/settings/uninstall-token/client | settings.get_uninstall_token_for_client |
+
+#### 🔹 Blueprint: shift (5 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/shift/active | shift.get_active_shift |
+| POST | /api/v1/kasir/shift/end | shift.end_shift |
+| GET | /api/v1/kasir/shift/history | shift.get_shift_history |
+| POST | /api/v1/kasir/shift/start | shift.start_shift |
+| GET | /api/v1/kasir/shift/summary | shift.get_shift_summary |
+
+#### 🔹 Blueprint: tournament (7 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/tournament/ | tournament.list_tournament |
+| POST | /api/v1/kasir/tournament/ | tournament.create_tournament |
+| DELETE | /api/v1/kasir/tournament/<int:t_id> | tournament.delete_tournament |
+| GET | /api/v1/kasir/tournament/<int:t_id> | tournament.get_tournament |
+| POST | /api/v1/kasir/tournament/<int:t_id>/swiss/next | tournament.next_swiss_round |
+| POST | /api/v1/kasir/tournament/match/<int:match_id>/skor | tournament.update_match_skor |
+| POST | /api/v1/kasir/tournament/stage/<int:stage_id>/finish | tournament.finish_stage |
+
+#### 🔹 Blueprint: tutorial (9 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/tutorials/ | tutorial.get_tutorials |
+| POST | /api/v1/kasir/tutorials/ | tutorial.create_tutorial |
+| DELETE | /api/v1/kasir/tutorials/<int:tutorial_id> | tutorial.delete_tutorial |
+| PUT | /api/v1/kasir/tutorials/<int:tutorial_id> | tutorial.update_tutorial |
+| GET | /api/v1/kasir/tutorials/categories | tutorial.get_categories |
+| DELETE | /api/v1/kasir/tutorials/categories/<path:category_name> | tutorial.delete_category |
+| POST | /api/v1/kasir/tutorials/cleanup-temp | tutorial.cleanup_temp_images |
+| POST | /api/v1/kasir/tutorials/export-json | tutorial.export_tutorials_json |
+| POST | /api/v1/kasir/tutorials/upload-image | tutorial.upload_tutorial_image |
+
+#### 🔹 Blueprint: tv_public_api (1 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/public/tv/data | tv_public_api.get_tv_data |
+
+#### 🔹 Blueprint: uptime_api (2 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/uptime/daily | uptime_api.get_daily_uptime |
+| GET | /api/v1/kasir/uptime/range | uptime_api.get_range_uptime |
+
+#### 🔹 Blueprint: user (5 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| GET | /api/v1/kasir/user/ | user.get_all_users |
+| POST | /api/v1/kasir/user/ | user.create_user |
+| DELETE | /api/v1/kasir/user/<int:user_id> | user.delete_user |
+| GET | /api/v1/kasir/user/<int:user_id> | user.get_user |
+| PUT | /api/v1/kasir/user/<int:user_id> | user.update_user |
+
+#### 🔹 Blueprint: vnc (2 Endpoint)
+| Method | Endpoint URL | Handler Endpoint |
+| :--- | :--- | :--- |
+| POST | /api/v1/kasir/vnc/start | vnc.start_vnc_proxy |
+| GET | /api/v1/kasir/vnc/status | vnc.get_vnc_status |
+
 
 ### 8.3 Protokol WebSocket
-- **VNC Proxy**: `ws://<server_ip>:<port>/ws/vnc/<pc_id>` (Meneruskan binary byte array frame RFB dan text clipboard).
-- **Telemetry Stream**: `ws://<server_ip>:<port>/ws/telemetry` (Broadcast status PC real-time ke seluruh kasir yang membuka dashboard).
+- **VNC Proxy Stream**: `ws://<server_ip>:<port>/ws/vnc/<pc_id>`
+  - Meneruskan data binary byte array frame RFB (Remote FrameBuffer).
+  - Meneruskan event keyboard & mouse kasir ke PC klien.
+  - Bi-directional clipboard text synchronization.
+- **Telemetry & Live Monitor Stream**: `ws://<server_ip>:<port>/ws/telemetry`
+  - Broadcast status PC, sisa durasi sesi, dan heartbeat PC klien ke seluruh dashboard kasir secara real-time.
 
 ---
 
