@@ -115,7 +115,7 @@ c:\Project GIT\TMBilling
 
 > [!WARNING]
 > **PENTING — KEAMANAN API KEY & KREDENSIAL DARURAT:**
-> - **Wajib Ganti Default API Key**: Jangan gunakan API Key bawaan (`TM2026QWERTY-api-key`). Anda dapat melihat dan mengubah API Key di dashboard kasir/server melalui menu **Sidebar > Pengaturan > Umum & Keamanan > API Key System**, lalu klik **Simpan API Key** *(konfigurasi `CLIENT_API_KEY` pada file `.env` ditujukan khusus untuk kebutuhan development)*. Pastikan API Key yang diinput pada PC klien sama dengan di server dan selalu jaga kerahasiaannya.
+> - **Wajib Ganti Default API Key**: Jangan gunakan API Key bawaan (`TM2026QWERTY-api-key`). Anda dapat melihat dan mengubah API Key secara praktis langsung dari dashboard di menu **Sidebar > Pengaturan > Umum & Keamanan > API Key System**, lalu klik **Simpan API Key** *(atau bagi yang memahami konfigurasi server, dapat langsung menyesuaikan variabel `CLIENT_API_KEY` pada file `.env`)*. Pastikan API Key yang diinput pada PC klien sama persis dengan yang ada di server dan selalu jaga kerahasiaannya.
 > - **Wajib Ganti Emergency User & Password**: Saat installer menanyakan kredensial admin darurat (*Emergency Access*), harap segera ubah dari nilai default (`TMBilling` / `TM123qaz!@#`) untuk mencegah akses darurat tak sah di PC klien.
 
 4. **Otomatisasi Instalasi**:
