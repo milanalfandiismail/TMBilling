@@ -131,6 +131,7 @@ const HardwareChecker = {
         let html = '';
 
         data.forEach(m => {
+            const isDetailsOpen = this.openedDetails.has(m.pc_id);
             const hasBaseline = !!m.hardware_baseline;
             const isHwMismatch = m.hardware_mismatch === true;
             const isPeriphMismatch = m.peripherals_mismatch === true;
@@ -335,7 +336,6 @@ const HardwareChecker = {
                         </li>`;
                 });
 
-                const isDetailsOpen = this.openedDetails.has(m.pc_id);
                 specDetailsHtml = `
                     <div class="mt-4 pt-4 border-t border-[#1c1c1c] space-y-4 ${isDetailsOpen ? '' : 'hidden'} min-w-0 w-full" id="hc-details-${m.pc_id}">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 min-w-0 w-full">
