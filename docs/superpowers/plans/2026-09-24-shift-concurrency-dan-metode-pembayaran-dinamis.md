@@ -162,20 +162,22 @@ def test_dynamic_payment_summary_calculation(shift_multi_payment_ctx):
     app, kasir = shift_multi_payment_ctx
     shift = ShiftService.start_shift("kasir_pay", modal_awal=100000, operator="kasir_pay")
 
-    # Transaksi Billing: Tunai (50k), QRIS (30k), Transfer Bank (40k)
+    # Transaksi Billing: Tunai (50k), QRIS (30k), Transfer Bank (40k), Alipay (35k)
     t1 = Transaksi(user_id=kasir.id, total_biaya=50000, jumlah=50000, metode_pembayaran="Tunai", jenis="paket_personal", status="selesai")
     t2 = Transaksi(user_id=kasir.id, total_biaya=30000, jumlah=30000, metode_pembayaran="QRIS", jenis="paket_personal", status="selesai")
     t3 = Transaksi(user_id=kasir.id, total_biaya=40000, jumlah=40000, metode_pembayaran="Transfer Bank", jenis="paket_personal", status="selesai")
+    t4 = Transaksi(user_id=kasir.id, total_biaya=35000, jumlah=35000, metode_pembayaran="Alipay", jenis="paket_personal", status="selesai")
     
-    # Transaksi Kantin: Tunai (20k), QRIS (15k), Debit BCA (25k)
+    # Transaksi Kantin: Tunai (20k), QRIS (15k), Debit BCA (25k), Alibaba (50k)
     tm1 = TransaksiMenu(kasir_id=kasir.id, total_harga=20000, metode_pembayaran="Tunai", status="selesai")
     tm2 = TransaksiMenu(kasir_id=kasir.id, total_harga=15000, metode_pembayaran="QRIS", status="selesai")
     tm3 = TransaksiMenu(kasir_id=kasir.id, total_harga=25000, metode_pembayaran="Debit BCA", status="selesai")
+    tm4 = TransaksiMenu(kasir_id=kasir.id, total_harga=50000, metode_pembayaran="Alibaba", status="selesai")
 
     # Refund Tunai: 10k
     t_ref = Transaksi(user_id=kasir.id, total_biaya=10000, jumlah=10000, metode_pembayaran="Tunai", jenis="refund_paket", status="selesai")
 
-    db.session.add_all([t1, t2, t3, tm1, tm2, tm3, t_ref])
+    db.session.add_all([t1, t2, t3, t4, tm1, tm2, tm3, tm4, t_ref])
     db.session.commit()
 
     summary = ShiftService.get_shift_summary(shift.id)
@@ -184,7 +186,7 @@ def test_dynamic_payment_summary_calculation(shift_multi_payment_ctx):
     # Uang seharusnya di laci = modal awal (100k) + total tunai bersih (60k) = 160k
     assert summary["total_seharusnya"] == 160000
 
-    # Verifikasi rincian non-tunai dinamis
+    # Verifikasi rincian non-tunai dinamis (QRIS, Transfer, Debit, Alipay, Alibaba)
     breakdown = summary["rincian_pembayaran"]
     assert breakdown["tunai"]["total"] == 60000
     
@@ -192,6 +194,8 @@ def test_dynamic_payment_summary_calculation(shift_multi_payment_ctx):
     assert non_tunai_map["QRIS"] == 45000  # 30k + 15k
     assert non_tunai_map["Transfer Bank"] == 40000
     assert non_tunai_map["Debit BCA"] == 25000
+    assert non_tunai_map["Alipay"] == 35000
+    assert non_tunai_map["Alibaba"] == 50000
 
     # Tutup shift dengan blind count 160.000 (PAS)
     res = ShiftService.end_shift(shift.id, uang_fisik=160000, catatan="Lancar", operator="kasir_pay")
