@@ -33,6 +33,8 @@
             <!-- Tabs Content (Khusus Admin - Server-Side Guarded) -->
             {% if session.get('kasir_role') == 'admin' %}
             {% include 'kasir/tabs/user.html' %}
+            {% include 'kasir/tabs/shift_history.html' %}
+            {% include 'kasir/tabs/user_logs.html' %}
             {% include 'kasir/tabs/log.html' %}
             {% include 'kasir/tabs/monitor.html' %}
             {% include 'kasir/server_monitor/server_statistic.html' %}

@@ -31,6 +31,7 @@ const User = {
                         <tr class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
                             <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-left">Operator</th>
                             <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-center">Role</th>
+                            <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-center">Benefit Bermain</th>
                             <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-center">Status</th>
                             <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-right">Kelola</th>
                         </tr>
@@ -43,6 +44,15 @@ const User = {
                             const statusBadge = u.aktif
                                 ? '<span class="inline-flex items-center gap-1.5 text-xs lg:max-xl:text-xs xl:text-base text-neutral-300"><span class="w-1.5 h-1.5 rounded bg-neutral-200"></span>Aktif</span>'
                                 : '<span class="inline-flex items-center gap-1.5 text-xs lg:max-xl:text-xs xl:text-base text-neutral-500"><span class="w-1.5 h-1.5 rounded bg-neutral-700"></span>Nonaktif</span>';
+                            const kuotaDisplay = u.role === 'kasir'
+                                ? `<div class="inline-flex items-center gap-1.5 font-mono text-xs">
+                                    <span class="text-neutral-200">${Math.floor((u.sisa_kuota_main || 0) / 60)}j ${(u.sisa_kuota_main || 0) % 60}m</span>
+                                    <span class="text-neutral-500">/ ${Math.floor((u.kuota_main_bulanan || 0) / 60)} Jam</span>
+                                    <button onclick="User.resetKuota(${u.id}, '${Utils.escapeHtml(u.username)}')" title="Reset Kuota Bermain" class="ml-1 p-1 hover:bg-neutral-800 rounded text-amber-400/80 hover:text-amber-400 transition-colors">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    </button>
+                                   </div>`
+                                : '<span class="text-neutral-600">-</span>';
                             return `
                                 <tr class="hover:bg-[#121212] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#2a2a2a] last:border-b-0 lg:border-b-0">
                                     <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 block lg:table-cell">
@@ -57,6 +67,10 @@ const User = {
                                     <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-center flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
                                         <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Role</span>
                                         ${roleBadge}
+                                    </td>
+                                    <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-center flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Benefit</span>
+                                        ${kuotaDisplay}
                                     </td>
                                     <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-center flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Status</span>
@@ -129,6 +143,14 @@ const User = {
                             </select>
                         </div>
                     </div>
+                    <div id="wrapper-kuota-main" class="${userData?.role === 'admin' ? 'hidden' : ''}">
+                        <label for="inp-user-kuota" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Benefit Kuota Main Bulanan (Jam)</label>
+                        <div class="relative">
+                            <input type="number" id="inp-user-kuota" min="0" max="720" value="${userData ? Math.floor((userData.kuota_main_bulanan || 0) / 60) : 10}" class="w-full px-3.5 py-2.5 bg-[#050505] border border-[#222] focus:border-neutral-500 rounded-lg text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none transition-colors">
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 text-xs">Jam</span>
+                        </div>
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Benefit bermain gratis di luar jam kerja (0 - 720 Jam)</p>
+                    </div>
                 </div>
                 <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#222]">
                     <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#141414] border border-[#262626] hover:bg-[#222] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors">Batal</button>
@@ -138,6 +160,20 @@ const User = {
                 </div>
             </div>`;
         Modal.show(modalHtml);
+
+        setTimeout(() => {
+            const roleEl = document.getElementById('inp-user-role');
+            const kuotaWrap = document.getElementById('wrapper-kuota-main');
+            if (roleEl && kuotaWrap) {
+                roleEl.addEventListener('change', () => {
+                    if (roleEl.value === 'kasir') {
+                        kuotaWrap.classList.remove('hidden');
+                    } else {
+                        kuotaWrap.classList.add('hidden');
+                    }
+                });
+            }
+        }, 50);
     },
 
     async addOrupdate() {
@@ -146,12 +182,21 @@ const User = {
         const password = document.getElementById('inp-user-pass').value;
         const role = document.getElementById('inp-user-role').value;
         const aktif = document.getElementById('inp-user-aktif').value === 'true';
+        const kuotaJam = parseInt(document.getElementById('inp-user-kuota')?.value || '0', 10);
+        
         if (!username || (!this.editingId && !password)) return Toast.error("Username dan Password wajib diisi");
         if (!Utils.isValidUsername(username, 3, 30)) return Toast.error("Username harus 3 - 30 karakter (hanya huruf, angka, _, -, .)");
         if (password && !Utils.isValidPassword(password, 6, 32)) return Toast.error("Password harus 6 - 32 karakter");
         if (nama_lengkap && nama_lengkap.length > 100) return Toast.error("Nama lengkap maksimal 100 karakter");
+        if (isNaN(kuotaJam) || kuotaJam < 0 || kuotaJam > 720) return Toast.error("Kuota main bulanan harus antara 0 s/d 720 jam");
 
-        const data = { username, nama_lengkap, role, aktif };
+        const data = { 
+            username, 
+            nama_lengkap, 
+            role, 
+            aktif,
+            kuota_main_bulanan: role === 'kasir' ? kuotaJam * 60 : 0
+        };
         if (password) data.password = password;
 
         try {
@@ -187,6 +232,19 @@ const User = {
                 this.load();
             } catch (err) {
                 Toast.error(err.message);
+            }
+        });
+    },
+
+    async resetKuota(id, username) {
+        const message = `<div class="text-center"><p class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-300 font-semibold mb-1">Reset kuota bermain <span class="text-neutral-100 font-bold font-mono">${Utils.escapeHtml(username)}</span>?</p><p class="text-[11px] lg:max-xl:text-[11px] xl:text-xs text-neutral-500">Sisa kuota akan dikembalikan ke kuota bulanan penuh.</p></div>`;
+        Modal.confirm(message, async () => {
+            try {
+                await API.user.resetKuota(id);
+                Toast.success("Kuota bermain berhasil di-reset");
+                this.load();
+            } catch (err) {
+                Toast.error(err.message || "Gagal me-reset kuota");
             }
         });
     }

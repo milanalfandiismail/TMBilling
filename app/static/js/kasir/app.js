@@ -92,7 +92,7 @@ const App = {
 
         // RBAC: Kasir tidak boleh membuka tab admin-only
         const kasirOnlyRestricted = [
-            'user', 'log',
+            'user', 'shift_history', 'user_logs', 'log',
             'server_statistic', 'monitor', 'hardware_checker', 'uptime', 'maintenance', 'screenshot', 'blackout', 'remote_server',
             'settings', 'settings_general', 'settings_branch', 'settings_payment', 'settings_kiosk', 'settings_tv', 
             'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup', 
@@ -155,7 +155,7 @@ const App = {
         const tabToSubmenu = {
             menu: 'operasional', tournament: 'operasional',
             member: 'master', paket: 'master', pc: 'master', grup: 'master', game_management: 'master',
-            user: 'staff',
+            user: 'staff', shift_history: 'staff', user_logs: 'staff',
             laporan: 'laporan', laporan_menu: 'laporan', struk: 'laporan', laporan_maintenance: 'laporan',
             log: 'sistemlog',
             monitor: 'system', server_statistic: 'system', hardware_checker: 'system', maintenance: 'system', screenshot: 'system', uptime: 'system',
@@ -224,7 +224,7 @@ const App = {
             grup: 'Grup', game_management: 'Kelola Game & Aplikasi', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Aktivitas Sistem',
             monitor: 'Hardware Monitor', hardware_checker: 'Hardware Checker', maintenance: 'Perawatan PC', laporan_maintenance: 'Laporan Perawatan', blackout: 'Pemulihan Mati Lampu', screenshot: 'Screenshot Monitor',
             uptime: 'Uptime Tracker',
-            user: 'Kelola User', settings: 'Pengaturan', struk: 'Riwayat',
+            user: 'Kelola User', shift_history: 'Riwayat Serah Terima Shift', user_logs: 'Log & Audit Staff', settings: 'Pengaturan', struk: 'Riwayat',
             menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen', catatan: 'Catatan',
             settings_general: 'Pengaturan Umum & Keamanan',
             settings_payment: 'Metode Pembayaran',
@@ -288,6 +288,8 @@ const App = {
             case 'uptime': if (typeof UptimeTracker !== 'undefined') await UptimeTracker.init(); break;
             case 'blackout': await Blackout.load(); break;
             case 'user': if (typeof User !== 'undefined') await User.load(); break;
+            case 'shift_history': if (typeof Shift !== 'undefined') await Shift.loadHistory(); break;
+            case 'user_logs': if (typeof Shift !== 'undefined') await Shift.loadUserLogs(); break;
             case 'struk': if (typeof Struk !== 'undefined') await Struk.init(); break;
             case 'settings': if (typeof Settings !== 'undefined') await Settings.load(); break;
             case 'menu': if (typeof Menu !== 'undefined') await Menu.load(); break;

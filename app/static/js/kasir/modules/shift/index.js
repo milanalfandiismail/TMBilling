@@ -400,96 +400,203 @@ const Shift = {
     },
 
     showHasilShift(result) {
-        const selisihClass = result.selisih >= 0 ? 'text-emerald-400' : 'text-red-400';
-        const selisihLabel = result.selisih >= 0 ? 'SURPLUS' : 'DEFISIT';
+        const shiftId = result.id || result.shift_id;
+        const rincian = result.rincian_pembayaran || result.detail_metode || null;
 
-        let breakdownHtml = '';
-        if (result.breakdown) {
-            breakdownHtml = '<div class="border-t border-[#1c1c1c] pt-2 mt-2 space-y-1"><span class="text-[10px] text-neutral-500 uppercase font-bold">Rincian Metode Pembayaran:</span>';
+        // Hitung atau ambil rincian tunai
+        const billingTunai = rincian?.tunai?.billing ?? result.total_billing ?? 0;
+        const kantinTunai = rincian?.tunai?.kantin ?? result.total_kantin ?? 0;
+        const refundTunai = result.total_refund ?? rincian?.tunai?.refund ?? 0;
+        const totalTunaiBersih = rincian?.tunai?.total ?? ((billingTunai + kantinTunai) - refundTunai);
+
+        // Ambil rincian non-tunai dinamis
+        let nonTunaiList = [];
+        let totalNonTunai = 0;
+        if (rincian && Array.isArray(rincian.non_tunai)) {
+            nonTunaiList = rincian.non_tunai;
+            totalNonTunai = rincian.total_non_tunai || 0;
+        } else if (result.breakdown) {
             for (const [method, amount] of Object.entries(result.breakdown)) {
-                breakdownHtml += `
-                    <div class="flex justify-between">
-                        <span class="text-neutral-400">- ${method}</span>
-                        <span class="text-neutral-300 font-mono">${Utils.formatRupiah(amount || 0)}</span>
-                    </div>
-                `;
+                if (method !== 'Tunai') {
+                    nonTunaiList.push({ method, total: amount || 0 });
+                    totalNonTunai += (amount || 0);
+                }
             }
-            breakdownHtml += '</div>';
         }
 
+        // Hitung rekonsiliasi laci fisik
+        const modalAwal = result.modal_awal || 0;
+        const totalFisikSeharusnya = modalAwal + totalTunaiBersih;
+        const uangFisik = result.uang_fisik;
+        const selisih = result.selisih;
+
+        let selisihHtml = '';
+        if (selisih !== null && selisih !== undefined) {
+            if (selisih > 0) {
+                selisihHtml = `
+                    <span class="text-emerald-400 font-mono font-bold text-sm flex items-center gap-1.5">
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/50 font-bold">SURPLUS (+)</span>
+                        Rp ${Utils.formatRawRupiah(selisih)}
+                    </span>
+                `;
+            } else if (selisih < 0) {
+                selisihHtml = `
+                    <span class="text-red-400 font-mono font-bold text-sm flex items-center gap-1.5">
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-red-950/80 text-red-400 border border-red-800/50 font-bold">DEFISIT (-)</span>
+                        Rp ${Utils.formatRawRupiah(Math.abs(selisih))}
+                    </span>
+                `;
+            } else {
+                selisihHtml = `
+                    <span class="text-neutral-300 font-mono font-bold text-sm flex items-center gap-1.5">
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700 font-bold">SESUAI / PAS</span>
+                        Rp 0
+                    </span>
+                `;
+            }
+        } else {
+            selisihHtml = '<span class="text-neutral-500 font-mono text-xs italic">- (Penutupan Paksa)</span>';
+        }
+
+        let nonTunaiRowsHtml = '';
+        if (nonTunaiList.length > 0) {
+            nonTunaiRowsHtml = nonTunaiList.map(item => `
+                <div class="flex justify-between py-1 text-xs">
+                    <span class="text-neutral-400 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400/80"></span>
+                        ${Utils.escapeHtml(item.method)}
+                    </span>
+                    <span class="text-neutral-200 font-mono">${Utils.formatRupiah(item.total || 0)}</span>
+                </div>
+            `).join('');
+        } else {
+            nonTunaiRowsHtml = '<p class="text-neutral-500 text-[11px] italic py-0.5">Tidak ada penerimaan non-tunai</p>';
+        }
+
+        const isForceClose = (result.catatan || '').includes('[FORCE CLOSE');
+
         const modalHtml = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in">
-                <div class="px-6 py-5 border-b border-[#2a2a2a]">
-                    <h3 class="text-base font-bold text-neutral-100">Shift Selesai ✅</h3>
-                    <p class="text-xs text-neutral-500 mt-1">Handover shift kasir berhasil dicatat</p>
-                </div>
-                <div class="px-6 py-5 space-y-3 text-xs">
-                    <div class="bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-4 space-y-2.5">
-                        <div class="flex justify-between">
-                            <span class="text-neutral-500">Kasir</span>
-                            <span class="text-neutral-200 font-bold">${result.kasir_nama}</span>
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-lg overflow-hidden shadow-2xl animate-in">
+                <!-- Header -->
+                <div class="px-6 py-5 border-b border-[#2a2a2a] flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-bold text-neutral-100">Rekapitulasi Shift Kasir</h3>
+                            ${isForceClose ? '<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-red-950/80 text-red-400 border border-red-800/60">FORCE CLOSE</span>' : '<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">SELESAI</span>'}
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-neutral-500">Waktu Mulai</span>
-                            <span class="text-neutral-300 font-mono">${result.waktu_mulai}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-neutral-500">Waktu Selesai</span>
-                            <span class="text-neutral-300 font-mono">${result.waktu_selesai}</span>
-                        </div>
-                        <div class="border-t border-[#1c1c1c] pt-2"></div>
-                        <div class="flex justify-between">
-                            <span class="text-neutral-500">Modal Awal</span>
-                            <span class="text-neutral-300 font-mono">${Utils.formatRupiah(result.modal_awal || 0)}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-neutral-500">Pendapatan Billing</span>
-                            <span class="text-emerald-300 font-mono">${Utils.formatRupiah(result.total_billing || 0)}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-neutral-500">Pendapatan Kantin</span>
-                            <span class="text-amber-300 font-mono">${Utils.formatRupiah(result.total_kantin || 0)}</span>
-                        </div>
-                        <div class="flex justify-between font-bold">
-                            <span class="text-neutral-300">Total Pendapatan</span>
-                            <span class="text-neutral-100 font-mono">${Utils.formatRupiah(result.total_pendapatan || 0)}</span>
-                        </div>
-                        ${breakdownHtml}
-                        <div class="border-t border-[#1c1c1c] pt-2"></div>
-                        <div class="flex justify-between">
-                            <span class="text-neutral-400">Uang Fisik</span>
-                            <span class="text-neutral-100 font-mono font-bold">${Utils.formatRupiah(result.uang_fisik || 0)}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-neutral-400">Selisih</span>
-                            <span class="${selisihClass} font-mono font-bold text-sm flex items-center gap-1.5">
-                                <span class="text-[9px] px-1.5 py-0.5 rounded ${result.selisih >= 0 ? 'bg-emerald-900/40 text-emerald-400' : 'bg-red-900/40 text-red-400'} font-bold">${selisihLabel}</span>
-                                Rp ${Utils.formatRawRupiah(Math.abs(result.selisih) || 0)}
-                            </span>
-                        </div>
-                        ${result.catatan ? `
-                        <div class="border-t border-[#1c1c1c] pt-2 flex flex-col gap-1">
-                            <span class="text-[10px] text-neutral-500 uppercase font-bold">Catatan Handover:</span>
-                            <p class="text-neutral-300 italic text-[11px] bg-[#141414] p-2 rounded border border-[#222]">${Utils.escapeHtml(result.catatan)}</p>
-                        </div>
-                        ` : ''}
+                        <p class="text-xs text-neutral-500 mt-0.5">Laporan serah terima shift dan rekonsiliasi laci fisik</p>
                     </div>
+                    <button onclick="Modal.closeModal()" class="text-neutral-500 hover:text-white transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
                 </div>
-                <div class="px-6 py-4 border-t border-[#2a2a2a] flex flex-wrap justify-between items-center gap-2">
+
+                <div class="px-6 py-5 space-y-4 max-h-[75vh] overflow-y-auto scrollbar-thin text-xs">
+                    <!-- Info Petugas & Waktu -->
+                    <div class="p-3 rounded-lg bg-neutral-900/70 border border-[#222] space-y-1.5">
+                        <div class="flex justify-between">
+                            <span class="text-neutral-500">Kasir:</span>
+                            <span class="text-neutral-200 font-bold">${Utils.escapeHtml(result.kasir_nama || 'Kasir')}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-500">Waktu Mulai:</span>
+                            <span class="text-neutral-300 font-mono">${result.waktu_mulai || '-'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-500">Waktu Selesai:</span>
+                            <span class="text-neutral-300 font-mono">${result.waktu_selesai || '-'}</span>
+                        </div>
+                    </div>
+
+                    <!-- 1. Rincian Penerimaan Tunai -->
+                    <div class="p-3.5 rounded-lg bg-[#0d0d0d] border border-[#202020] space-y-2">
+                        <div class="flex items-center justify-between pb-1.5 border-b border-[#1c1c1c]">
+                            <span class="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                                Penerimaan Tunai (Cash)
+                            </span>
+                            <span class="text-[11px] font-bold text-amber-400 font-mono">${Utils.formatRupiah(totalTunaiBersih)}</span>
+                        </div>
+                        <div class="space-y-1 pt-1 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-neutral-400">Billing Rental Tunai</span>
+                                <span class="text-neutral-200 font-mono">${Utils.formatRupiah(billingTunai)}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-neutral-400">Kantin / F&B Tunai</span>
+                                <span class="text-neutral-200 font-mono">${Utils.formatRupiah(kantinTunai)}</span>
+                            </div>
+                            ${refundTunai > 0 ? `
+                            <div class="flex justify-between text-red-400">
+                                <span>Refund Paket Tunai</span>
+                                <span class="font-mono">- ${Utils.formatRupiah(refundTunai)}</span>
+                            </div>` : ''}
+                        </div>
+                    </div>
+
+                    <!-- 2. Rincian Penerimaan Non-Tunai Dinamis -->
+                    <div class="p-3.5 rounded-lg bg-[#0d0d0d] border border-[#202020] space-y-2">
+                        <div class="flex items-center justify-between pb-1.5 border-b border-[#1c1c1c]">
+                            <span class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                                Penerimaan Non-Tunai (Digital)
+                            </span>
+                            <span class="text-[11px] font-bold text-cyan-400 font-mono">${Utils.formatRupiah(totalNonTunai)}</span>
+                        </div>
+                        <div class="space-y-1 pt-1">
+                            ${nonTunaiRowsHtml}
+                        </div>
+                    </div>
+
+                    <!-- 3. Rekonsiliasi Laci Kasir -->
+                    <div class="p-3.5 rounded-lg bg-neutral-900/90 border border-[#262626] space-y-2">
+                        <div class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider pb-1.5 border-b border-[#222]">
+                            Rekonsiliasi Laci Kasir
+                        </div>
+                        <div class="space-y-1.5 pt-1 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-neutral-400">Modal Awal di Laci</span>
+                                <span class="text-neutral-200 font-mono">${Utils.formatRupiah(modalAwal)}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-neutral-400">Total Tunai Masuk (Bersih)</span>
+                                <span class="text-neutral-200 font-mono">${Utils.formatRupiah(totalTunaiBersih)}</span>
+                            </div>
+                            <div class="flex justify-between pt-1 border-t border-[#1c1c1c] font-semibold">
+                                <span class="text-neutral-300">Total Seharusnya di Laci</span>
+                                <span class="text-neutral-100 font-mono">${Utils.formatRupiah(totalFisikSeharusnya)}</span>
+                            </div>
+                            <div class="flex justify-between font-bold pt-1">
+                                <span class="text-neutral-300">Uang Fisik Aktual di Laci</span>
+                                <span class="text-white font-mono text-sm">${uangFisik !== null && uangFisik !== undefined ? Utils.formatRupiah(uangFisik) : '-'}</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-1.5 border-t border-[#222]">
+                                <span class="text-neutral-400 font-semibold">Selisih Keuangan</span>
+                                ${selisihHtml}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Catatan Serah Terima -->
+                    ${result.catatan ? `
+                    <div class="p-3 rounded-lg bg-[#0e0e0e] border border-[#222] space-y-1">
+                        <span class="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Catatan Handover / Audit:</span>
+                        <p class="text-neutral-300 italic text-[11px] break-words whitespace-pre-wrap">${Utils.escapeHtml(result.catatan)}</p>
+                    </div>` : ''}
+                </div>
+
+                <!-- Footer Aksi -->
+                <div class="px-6 py-4 border-t border-[#2a2a2a] flex flex-wrap justify-between items-center gap-2 bg-[#0c0c0c]">
                     <div class="flex gap-2">
                         <button onclick="Shift.printHandover(${JSON.stringify(result).replace(/"/g, "'")})" 
                             class="px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                            </svg>
-                            Struk HTML
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                            Struk Browser
                         </button>
-                        ${result.id ? `
-                        <button onclick="Shift.printThermalReceipt(${result.id})" 
+                        ${shiftId ? `
+                        <button onclick="Shift.printThermalReceipt(${shiftId})" 
                             class="px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
+                            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                             Thermal 58mm
                         </button>
                         ` : ''}
@@ -507,22 +614,46 @@ const Shift = {
         const waktuMulai = result.waktu_mulai || '-';
         const waktuSelesai = result.waktu_selesai || '-';
         const modalAwal = Utils.formatRawRupiah(result.modal_awal || 0);
-        const billing = Utils.formatRawRupiah(result.total_billing || 0);
-        const kantin = Utils.formatRawRupiah(result.total_kantin || 0);
-        const totalPendapatan = Utils.formatRawRupiah(result.total_pendapatan || 0);
-        const uangFisik = Utils.formatRawRupiah(result.uang_fisik || 0);
 
-        let breakdownPrint = '';
-        if (result.breakdown) {
-            breakdownPrint = '<div class="line"></div><div class="header" style="font-size:9px; margin-bottom: 2px;">RINCIAN PEMBAYARAN:</div>';
-            for (const [method, amount] of Object.entries(result.breakdown)) {
-                breakdownPrint += `<div class="row"><span class="label"> - ${method}</span><span class="value">Rp ${Utils.formatRawRupiah(amount || 0)}</span></div>`;
+        const rincian = result.rincian_pembayaran || result.detail_metode || null;
+        const billingTunai = rincian?.tunai?.billing ?? result.total_billing ?? 0;
+        const kantinTunai = rincian?.tunai?.kantin ?? result.total_kantin ?? 0;
+        const refundTunai = result.total_refund ?? rincian?.tunai?.refund ?? 0;
+        const totalTunaiBersih = rincian?.tunai?.total ?? ((billingTunai + kantinTunai) - refundTunai);
+
+        const totalFisikSeharusnya = (result.modal_awal || 0) + totalTunaiBersih;
+        const uangFisik = result.uang_fisik !== null && result.uang_fisik !== undefined 
+            ? 'Rp ' + Utils.formatRawRupiah(result.uang_fisik) 
+            : '-';
+
+        let nonTunaiList = [];
+        if (rincian && Array.isArray(rincian.non_tunai)) {
+            nonTunaiList = rincian.non_tunai;
+        } else if (result.breakdown) {
+            for (const [m, a] of Object.entries(result.breakdown)) {
+                if (m !== 'Tunai') nonTunaiList.push({ method: m, total: a || 0 });
             }
+        }
+
+        let nonTunaiPrint = '';
+        if (nonTunaiList.length > 0) {
+            nonTunaiPrint = '<div class="line"></div><div class="header" style="font-size:9px; text-align:left; margin-bottom:2px;">NON-TUNAI (DIGITAL):</div>';
+            nonTunaiList.forEach(item => {
+                nonTunaiPrint += `<div class="row"><span class="label"> - ${item.method}</span><span class="value">Rp ${Utils.formatRawRupiah(item.total || 0)}</span></div>`;
+            });
         }
 
         let catatanPrint = '';
         if (result.catatan) {
             catatanPrint = `<div class="line"></div><div class="row"><span class="label">Catatan:</span><span class="value" style="font-weight:normal; text-align:right;">${Utils.escapeHtml(result.catatan)}</span></div>`;
+        }
+
+        let selisihPrint = '';
+        if (result.selisih !== null && result.selisih !== undefined) {
+            const label = result.selisih > 0 ? 'SURPLUS (+)' : (result.selisih < 0 ? 'DEFISIT (-)' : 'SESUAI (PAS)');
+            selisihPrint = `<div class="selisih-label">${label} Rp ${Utils.formatRawRupiah(Math.abs(result.selisih))}</div>`;
+        } else {
+            selisihPrint = '<div class="selisih-label">PENUTUPAN PAKSA</div>';
         }
 
         const printContent = `
@@ -548,24 +679,25 @@ const Shift = {
     <div class="sub">${waktuSelesai}</div>
     <div class="line"></div>
     <div class="row"><span class="label">Kasir</span><span class="value">${kasirNama}</span></div>
-    <div class="row"><span class="label">Waktu Mulai</span><span class="value">${waktuMulai}</span></div>
-    <div class="row"><span class="label">Waktu Selesai</span><span class="value">${waktuSelesai}</span></div>
+    <div class="row"><span class="label">Mulai</span><span class="value">${waktuMulai}</span></div>
+    <div class="row"><span class="label">Selesai</span><span class="value">${waktuSelesai}</span></div>
     <div class="line"></div>
-    <div class="row"><span class="label">Modal Awal</span><span class="value">Rp ${modalAwal}</span></div>
-    <div class="row"><span class="label">Pendapatan Billing</span><span class="value">Rp ${billing}</span></div>
-    <div class="row"><span class="label">Pendapatan Kantin</span><span class="value">Rp ${kantin}</span></div>
-    <div class="row totals"><span class="label">TOTAL PENDAPATAN</span><span class="value">Rp ${totalPendapatan}</span></div>
-    ${breakdownPrint}
+    <div class="row"><span class="label">Billing Tunai</span><span class="value">Rp ${Utils.formatRawRupiah(billingTunai)}</span></div>
+    <div class="row"><span class="label">Kantin Tunai</span><span class="value">Rp ${Utils.formatRawRupiah(kantinTunai)}</span></div>
+    ${refundTunai > 0 ? `<div class="row"><span class="label">Refund Tunai</span><span class="value">-Rp ${Utils.formatRawRupiah(refundTunai)}</span></div>` : ''}
+    <div class="row totals"><span class="label">TOTAL TUNAI</span><span class="value">Rp ${Utils.formatRawRupiah(totalTunaiBersih)}</span></div>
+    ${nonTunaiPrint}
     <div class="line"></div>
-    <div class="row"><span class="label">Uang Fisik</span><span class="value">Rp ${uangFisik}</span></div>
-    <div class="selisih-label">${result.selisih >= 0 ? 'SURPLUS' : 'DEFISIT'} Rp ${Math.abs(result.selisih || 0).toLocaleString('id-ID')}</div>
+    <div class="row"><span class="label">Modal Awal Laci</span><span class="value">Rp ${modalAwal}</span></div>
+    <div class="row"><span class="label">Seharusnya Laci</span><span class="value">Rp ${Utils.formatRawRupiah(totalFisikSeharusnya)}</span></div>
+    <div class="row totals"><span class="label">Uang Fisik Laci</span><span class="value">${uangFisik}</span></div>
+    ${selisihPrint}
     ${catatanPrint}
     <div class="line" style="border-top: 1px solid #000;"></div>
     <div class="footer">Terima kasih<br>Dicetak: ${new Date().toLocaleString('id-ID')}</div>
 </body>
 </html>`;
 
-        // Cetak via iframe — standar pola existing
         const iframe = document.createElement('iframe');
         iframe.style.position = 'fixed';
         iframe.style.width = '0';
@@ -622,6 +754,190 @@ const Shift = {
             }, 300);
         } catch (err) {
             Toast.error('Gagal mencetak struk thermal: ' + err.message);
+        }
+    },
+
+    async loadHistory(params = {}) {
+        const container = document.getElementById('shift-history-rows');
+        if (!container) return;
+
+        container.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-8 text-neutral-500 text-xs">
+                    <div class="inline-block w-5 h-5 border-2 border-neutral-600 border-t-amber-400 rounded-full animate-spin mr-2 align-middle"></div>
+                    Memuat riwayat serah terima shift...
+                </td>
+            </tr>
+        `;
+
+        try {
+            const tanggalMulai = document.getElementById('filter-shift-mulai')?.value || params.tanggal_mulai || '';
+            const tanggalSelesai = document.getElementById('filter-shift-selesai')?.value || params.tanggal_selesai || '';
+            const kasirId = document.getElementById('filter-shift-kasir')?.value || params.kasir_id || '';
+
+            const res = await API.shift.history({
+                tanggal_mulai: tanggalMulai,
+                tanggal_selesai: tanggalSelesai,
+                kasir_id: kasirId,
+                limit: 50
+            });
+
+            if (!res.success) throw new Error(res.error || 'Gagal memuat riwayat');
+
+            const shifts = res.shifts?.data || [];
+            if (shifts.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center py-8 text-neutral-500 text-xs">
+                            Tidak ada data riwayat shift ditemukan
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            container.innerHTML = shifts.map(s => {
+                const isForceClose = (s.catatan || '').includes('[FORCE CLOSE');
+                let selisihBadge = '';
+                if (s.selisih !== null && s.selisih !== undefined) {
+                    if (s.selisih > 0) {
+                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 font-mono">+${Utils.formatRawRupiah(s.selisih)}</span>`;
+                    } else if (s.selisih < 0) {
+                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-950/70 text-red-400 border border-red-800/40 font-mono">-${Utils.formatRawRupiah(Math.abs(s.selisih))}</span>`;
+                    } else {
+                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-neutral-800 text-neutral-300 font-mono">Rp 0</span>`;
+                    }
+                } else {
+                    selisihBadge = '<span class="text-neutral-500 font-mono text-[10px]">-</span>';
+                }
+
+                const statusBadge = isForceClose
+                    ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950/70 text-red-400 border border-red-800/40">FORCE CLOSE</span>'
+                    : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40">SELESAI</span>';
+
+                return `
+                    <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs">
+                        <td class="px-3.5 py-3 font-mono text-neutral-400">#${s.id}</td>
+                        <td class="px-3.5 py-3">
+                            <div class="font-bold text-neutral-200">${Utils.escapeHtml(s.kasir_nama || 'Kasir')}</div>
+                            <div class="text-[10px] text-neutral-500 font-mono">${s.waktu_mulai || '-'} s/d ${s.waktu_selesai ? s.waktu_selesai.split(' ')[1] : '-'}</div>
+                        </td>
+                        <td class="px-3.5 py-3 font-mono text-neutral-300">${Utils.formatRupiah(s.modal_awal || 0)}</td>
+                        <td class="px-3.5 py-3 font-mono text-neutral-300">${Utils.formatRupiah(s.total_billing || 0)}</td>
+                        <td class="px-3.5 py-3 font-mono text-neutral-300">${Utils.formatRupiah(s.total_kantin || 0)}</td>
+                        <td class="px-3.5 py-3 font-mono font-bold text-neutral-100">${s.uang_fisik !== null && s.uang_fisik !== undefined ? Utils.formatRupiah(s.uang_fisik) : '-'}</td>
+                        <td class="px-3.5 py-3">${selisihBadge}</td>
+                        <td class="px-3.5 py-3">${statusBadge}</td>
+                        <td class="px-3.5 py-3 text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <button onclick="Shift.viewShiftDetail(${s.id})" title="Lihat Rekapitulasi"
+                                    class="p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </button>
+                                <button onclick="Shift.printThermalReceipt(${s.id})" title="Cetak Struk Thermal 58mm"
+                                    class="p-1.5 rounded bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/40 text-amber-400 hover:text-amber-300 transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (err) {
+            container.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center py-6 text-red-400 text-xs">
+                        Error memuat riwayat: ${Utils.escapeHtml(err.message)}
+                    </td>
+                </tr>
+            `;
+        }
+    },
+
+    async viewShiftDetail(shiftId) {
+        try {
+            const res = await API.shift.getSummary(shiftId);
+            if (!res.success || !res.summary) {
+                throw new Error(res.error || 'Gagal memuat ringkasan shift');
+            }
+            this.showHasilShift(res.summary);
+        } catch (err) {
+            Toast.error('Gagal membuka rekap shift: ' + err.message);
+        }
+    },
+
+    async loadUserLogs(params = {}) {
+        const container = document.getElementById('user-logs-rows');
+        if (!container) return;
+
+        container.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-8 text-neutral-500 text-xs">
+                    <div class="inline-block w-5 h-5 border-2 border-neutral-600 border-t-cyan-400 rounded-full animate-spin mr-2 align-middle"></div>
+                    Memuat log aktivitas staff...
+                </td>
+            </tr>
+        `;
+
+        try {
+            const search = document.getElementById('filter-user-logs-search')?.value?.trim() || '';
+            const actionType = document.getElementById('filter-user-logs-action')?.value || '';
+
+            const res = await API.report.logs(search, 200, '');
+            const rawLogs = res.logs || [];
+
+            // Filter log yang relevan dengan aktivitas staf
+            const staffActionKeywords = ['SHIFT', 'USER', 'RESET_KUOTA', 'LOGIN', 'LOGOUT'];
+            const staffLogs = rawLogs.filter(log => {
+                const act = (log.action || '').toUpperCase();
+                const matchesKeyword = staffActionKeywords.some(kw => act.includes(kw));
+                if (!matchesKeyword) return false;
+                if (actionType && !act.includes(actionType.toUpperCase())) return false;
+                return true;
+            });
+
+            if (staffLogs.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-8 text-neutral-500 text-xs">
+                            Tidak ada log aktivitas staff yang cocok dengan filter
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            container.innerHTML = staffLogs.map(log => {
+                const act = (log.action || '').toUpperCase();
+                let badgeClass = 'bg-neutral-800 text-neutral-300 border-neutral-700';
+                if (act.includes('BUKA')) badgeClass = 'bg-emerald-950/70 text-emerald-400 border-emerald-800/40';
+                else if (act.includes('TUTUP')) badgeClass = 'bg-blue-950/70 text-blue-400 border-blue-800/40';
+                else if (act.includes('FORCE_CLOSE') || act.includes('GAGAL') || act.includes('HAPUS')) badgeClass = 'bg-red-950/70 text-red-400 border-red-800/40';
+                else if (act.includes('KUOTA') || act.includes('UPDATE')) badgeClass = 'bg-purple-950/70 text-purple-400 border-purple-800/40';
+                else if (act.includes('LOGIN')) badgeClass = 'bg-amber-950/70 text-amber-400 border-amber-800/40';
+
+                return `
+                    <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs">
+                        <td class="px-3.5 py-3 font-mono text-neutral-400 whitespace-nowrap">${log.timestamp || '-'}</td>
+                        <td class="px-3.5 py-3 font-bold text-neutral-200 whitespace-nowrap">
+                            <span class="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-700 font-mono text-[11px]">${Utils.escapeHtml(log.user || 'system')}</span>
+                        </td>
+                        <td class="px-3.5 py-3 whitespace-nowrap">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeClass}">${Utils.escapeHtml(log.action || '-')}</span>
+                        </td>
+                        <td class="px-3.5 py-3 text-neutral-300 break-words whitespace-pre-wrap">${Utils.escapeHtml(log.detail || '-')}</td>
+                        <td class="px-3.5 py-3 font-mono text-[11px] text-neutral-500 whitespace-nowrap">${log.ip_address || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (err) {
+            container.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-6 text-red-400 text-xs">
+                        Error memuat log: ${Utils.escapeHtml(err.message)}
+                    </td>
+                </tr>
+            `;
         }
     },
 
