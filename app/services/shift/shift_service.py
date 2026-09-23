@@ -45,12 +45,15 @@ class ShiftService:
         if not kasir:
             raise ValueError("Kasir tidak ditemukan")
 
-        # Cek apakah sudah ada shift aktif
-        aktif = ShiftRecord.query.filter_by(
-            kasir_id=kasir.id, status="AKTIF"
-        ).first()
+        # Cek apakah masih ada shift aktif di sistem (single active shift system-wide)
+        aktif = ShiftRecord.query.filter_by(status="AKTIF").first()
         if aktif:
-            raise ValueError(f"Kasir '{kasir_username}' sudah punya shift aktif sejak {format_display(aktif.waktu_mulai)}")
+            kasir_aktif_nama = aktif.kasir.nama_lengkap or aktif.kasir.username if aktif.kasir else "Kasir Lain"
+            raise ValueError(
+                f"Tidak dapat membuka shift baru: Masih ada shift aktif oleh '{kasir_aktif_nama}' "
+                f"sejak {format_display(aktif.waktu_mulai)} (ID #{aktif.id}). "
+                "Selesaikan shift tersebut terlebih dahulu."
+            )
 
         shift = ShiftRecord(
             kasir_id=kasir.id,
