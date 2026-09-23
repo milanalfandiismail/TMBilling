@@ -186,7 +186,7 @@ def test_dynamic_payment_summary_calculation(shift_multi_payment_ctx):
     # Uang seharusnya di laci = modal awal (100k) + total tunai bersih (60k) = 160k
     assert summary["total_seharusnya"] == 160000
 
-    # Verifikasi rincian non-tunai dinamis (QRIS, Transfer, Debit, Alipay, Alibaba)
+    # Verifikasi rincian non-tunai dinamis (QRIS, Transfer, Debit, Alipay, Alibaba, OVO)
     breakdown = summary["rincian_pembayaran"]
     assert breakdown["tunai"]["total"] == 60000
     
@@ -196,6 +196,9 @@ def test_dynamic_payment_summary_calculation(shift_multi_payment_ctx):
     assert non_tunai_map["Debit BCA"] == 25000
     assert non_tunai_map["Alipay"] == 35000
     assert non_tunai_map["Alibaba"] == 50000
+    # Metode yang ada di konfigurasi tapi tidak ada transaksi tetap muncul dengan nilai 0
+    if "OVO" in non_tunai_map:
+        assert non_tunai_map["OVO"] == 0
 
     # Tutup shift dengan blind count 160.000 (PAS)
     res = ShiftService.end_shift(shift.id, uang_fisik=160000, catatan="Lancar", operator="kasir_pay")

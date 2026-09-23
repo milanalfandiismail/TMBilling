@@ -29,7 +29,7 @@ Sistem serah terima shift **TIDAK PERNAH melakukan hardcoding** terhadap nama me
   - Contoh: Jika ada transaksi via `Alipay` Rp 150.000 dan `Alibaba` Rp 200.000, laporan serah terima akan otomatis menampilkan baris:
     - `Alipay`: Billing Rp X, Kantin Rp Y $\rightarrow$ Total Rp 150.000
     - `Alibaba`: Billing Rp X, Kantin Rp Y $\rightarrow$ Total Rp 200.000
-    Sehingga kasir/owner dapat mencocokkan mutasi kasir langsung ke aplikasi/portal merchant terkait.
+  - **Penanganan Nilai Nol**: Jika suatu metode pembayaran yang terdaftar di konfigurasi tidak memiliki transaksi sama sekali selama shift, sistem tetap menampilkannya dengan nilai **Rp 0** (bukan `null`, bukan `undefined`, dan bukan hilang), sehingga kasir/owner memiliki kepastian penuh bahwa memang tidak ada penerimaan pada metode tersebut.
 
 #### 2. Rekonsiliasi & Hitung Buta (Blind Count):
 * **Uang Fisik Seharusnya di Laci**:
