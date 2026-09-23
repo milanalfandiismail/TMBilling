@@ -28,20 +28,21 @@
 
 ---
 
-### Task 1: Database Model Extensions & Auto-Migration
+### Task 1: Database Model Extensions, Auto-Migration & ZIP Update Backward Compatibility
 
 **Files:**
 - Modify: `app/models/user/user.py`
 - Modify: `app/models/sesi/sesi.py`
 - Modify: `app/models/shift/shift_record.py`
 - Modify: `app/__init__.py`
+- Modify: `app/routes/settings/migration_routes.py:202-255`
 - Test: `tests/test_kasir_benefit_models.py`
 
 **Interfaces:**
-- Consumes: `db.Model`, `now_local()`
-- Produces: `User.kuota_main_bulanan`, `User.sisa_kuota_menit`, `User.terakhir_reset_kuota`, `User.cek_dan_reset_kuota_bulanan()`, `User.tambah_kuota_bonus()`, `Sesi.user_id`, `ShiftRecord.catatan`, `ShiftRecord.total_qris`, `ShiftRecord.total_refund`
+- Consumes: `db.Model`, `now_local()`, `inspector = inspect(db.engine)`
+- Produces: `User.kuota_main_bulanan`, `User.sisa_kuota_menit`, `User.terakhir_reset_kuota`, `User.cek_dan_reset_kuota_bulanan()`, `User.tambah_kuota_bonus()`, `Sesi.user_id`, `ShiftRecord.catatan`, `ShiftRecord.total_qris`, `ShiftRecord.total_refund`, `upload_update` safety sync
 
-- [ ] **Step 1: Write the failing test for User, Sesi, and ShiftRecord extensions**
+- [ ] **Step 1: Write the failing test for User, Sesi, and ShiftRecord extensions and backward compatibility**
 
 ```python
 # tests/test_kasir_benefit_models.py
@@ -49,6 +50,7 @@ import pytest
 from app import create_app, db
 from app.models import User, Sesi, PC, Grup, ShiftRecord
 from datetime import datetime
+from sqlalchemy import text
 
 @pytest.fixture
 def app_ctx():
@@ -124,6 +126,20 @@ def test_shift_record_catatan_and_qris_fields(app_ctx):
     saved = ShiftRecord.query.get(shift.id)
     assert saved.catatan == "Serah terima lancar"
     assert saved.total_qris == 150000
+
+def test_backward_compatibility_old_database_defaults(app_ctx):
+    # Simulasi user dan shift lama yang kolom barunya kosong
+    user_lama = User(username="kasir_lama", role="kasir")
+    user_lama.set_password("pass123")
+    db.session.add(user_lama)
+    db.session.commit()
+
+    assert user_lama.kuota_main_bulanan in (0, None)
+    assert user_lama.sisa_kuota_menit in (0, None)
+    # Tidak boleh crash saat to_dict()
+    d = user_lama.to_dict()
+    assert "kuota_main_bulanan" in d
+    assert "sisa_kuota_menit" in d
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -150,7 +166,10 @@ Modify `app/models/shift/shift_record.py`:
 - Update `to_dict()`
 
 Modify `app/__init__.py`:
-- Add SQLite idempotent column addition checking `PRAGMA table_info(user)`, `PRAGMA table_info(sesi)`, and `PRAGMA table_info(shift_record)`.
+- In `_init_app_context()`: Tambahkan auto-migration non-destruktif berbasis `PRAGMA table_info` atau `inspect(db.engine)` untuk `user`, `sesi`, dan `shift_record`.
+
+Modify `app/routes/settings/migration_routes.py`:
+- In `upload_update()`: Pastikan proses ekstraksi ZIP menjalankan safety net sync untuk menambahkan kolom baru ke database SQLite eksisting tanpa kehilangan data.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -160,8 +179,8 @@ Expected: PASS
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/models/ tests/test_kasir_benefit_models.py app/__init__.py
-git commit -m "feat(models): tambahkan kolom benefit kuota kasir, tipe sesi kasir, dan catatan shift"
+git add app/models/ tests/test_kasir_benefit_models.py app/__init__.py app/routes/settings/migration_routes.py
+git commit -m "feat(models): tambahkan kolom kuota kasir, tipe sesi kasir, catatan shift, dan auto-migration zip updater"
 ```
 
 ---

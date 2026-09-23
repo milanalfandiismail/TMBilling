@@ -169,11 +169,33 @@ Untuk mencegah kesalahan input, salah ketik (*typo*), atau data anomali, sistem 
 
 ---
 
-## 7. Auto-Migration SQLite (`app/__init__.py`)
-Skrip startup otomatis mendeteksi dan menambahkan kolom yang belum ada:
-- `user`: `kuota_main_bulanan`, `sisa_kuota_menit`, `terakhir_reset_kuota`.
-- `sesi`: `user_id`.
-- `shift_record`: `catatan`, `total_qris`, `total_refund`.
+## 7. Kompatibilitas Mundur (Backward Compatibility) & Pembaruan via ZIP
+
+Sistem dirancang untuk mendukung *zero-downtime, zero-error migration* saat admin memperbarui sistem ke versi ini melalui menu **Migrasi & Update** menggunakan berkas `.zip`:
+
+### A. Mekanisme Pembaruan Dashboard via ZIP (`migration_routes.py`)
+1. **Preservasi Data & Konfigurasi**:
+   - Skrip ekstraksi ZIP secara ketat mengabaikan folder database (`instance/`), berkas konfigurasi (`.env`), backup (`backups/`), dan repository (`.git/`).
+   - Database SQLite lama tetap utuh tanpa risiko terhapus atau tertimpa.
+2. **Auto-Backup Otomatis**:
+   - Sebelum proses migrasi dieksekusi, sistem secara otomatis mencadangkan database ke `backups/auto_pre_migration_*.db`.
+3. **Sinkronisasi Skema Cerdas (Safety Net Migration)**:
+   - Terintegrasi langsung di handler `/upload` pada `app/routes/settings/migration_routes.py` dan pada startup aplikasi `_init_app_context()` di `app/__init__.py`.
+   - Menggunakan inspeksi SQLite non-destruktif (`PRAGMA table_info` / `inspect(engine)`):
+     - Menambahkan kolom `kuota_main_bulanan`, `sisa_kuota_menit`, `terakhir_reset_kuota` ke tabel `user` jika belum ada.
+     - Menambahkan kolom `user_id` ke tabel `sesi` jika belum ada.
+     - Menambahkan kolom `catatan`, `total_qris`, `total_refund` ke tabel `shift_record` jika belum ada.
+   - Eksekusi `stamp('head')` pada Alembic agar status migrasi di dashboard langsung berstatus hijau/Up to Date tanpa bentrok revisi.
+
+### B. Kompatibilitas Data Lama (Backward Data Compatibility)
+1. **Akun Kasir Lama**:
+   - Kasir eksisting yang belum memiliki kuota akan memiliki nilai default `0` (tidak ada error `NULL` atau crash). Kasir tetap dapat login dashboard kasir secara normal, dan admin dapat mengisi kuota bermain kapan pun diinginkan.
+2. **Sesi Member & Guest Lama**:
+   - Sesi eksisting memiliki `user_id = None` dan `tipe` berupa `"member"` atau `"guest"`. Seluruh logika lama untuk billing member dan guest tetap berfungsi 100% tanpa perubahan.
+3. **Riwayat Shift Lama**:
+   - Shift-shift yang pernah ditutup di masa lalu memiliki `catatan = NULL` dan `total_qris = 0`. UI secara otomatis menampilkan tanda `"-"` jika catatan kosong, sehingga tidak ada error render tabel.
+4. **Koneksi PC Client Eksisting**:
+   - Format JSON respons `/api/v1/public/auth/login` dan `/status` mempertahankan struktur key asli (`status`, `success`, `waktu_tersimpan`, `pesan`). Aplikasi client warnet C# dan Tauri versi lama tetap dapat berkomunikasi dengan server tanpa perlu pembaruan file executable di sisi client.
 
 ---
 
