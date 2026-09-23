@@ -87,46 +87,64 @@ const User = {
         const isEdit = !!userData;
 
         const modalHtml = `
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 max-w-md w-[calc(100%-2rem)] mx-auto md:w-full">
-                <div class="flex items-center justify-between mb-4 pb-4 border-b border-[#1c1c1c]">
-                    <div><h3 class="text-xs lg:text-base font-bold text-neutral-200 uppercase tracking-wider">${isEdit ? 'Edit User' : 'Tambah User Baru'}</h3></div>
-                    <button onclick="Modal.closeModal()" class="text-neutral-500 hover:text-neutral-300 text-xl leading-none">&times;</button>
+            <div class="bg-[#0c0c0c] border border-[#222] rounded-xl p-5 md:p-6 max-w-lg lg:max-w-xl w-[calc(100%-2rem)] mx-auto md:w-full max-h-[90vh] overflow-y-auto scrollbar-thin my-auto shadow-2xl">
+                <div class="flex items-center justify-between mb-5 pb-4 border-b border-[#222]">
+                    <div>
+                        <h3 class="text-sm lg:max-xl:text-sm xl:text-base font-bold text-neutral-100 uppercase tracking-wider">${isEdit ? 'Edit Akun Kasir / Admin' : 'Tambah User Kasir Baru'}</h3>
+                        <p class="text-[10px] lg:max-xl:text-[11px] xl:text-xs text-neutral-500 mt-0.5">${isEdit ? 'Perbarui informasi dan hak akses pengguna' : 'Daftarkan staf kasir atau administrator sistem'}</p>
+                    </div>
+                    <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#141414] border border-[#262626] text-neutral-400 hover:text-white hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
                 </div>
                 <div class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider mb-1 block">Username <span class="text-[9px] text-neutral-500 font-normal font-sans">(3 - 30 karakter)</span></label>
-                            <input type="text" id="inp-user-username" maxlength="30" minlength="3" placeholder="Username" value="${userData ? Utils.escapeHtml(userData.username) : ''}" class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                            <div class="flex items-center justify-between mb-1.5 gap-2">
+                                <label class="text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider truncate">Username <span class="text-red-400">*</span></label>
+                                <span class="text-[9px] lg:max-xl:text-[10px] xl:text-[11px] text-neutral-500 font-normal font-sans shrink-0">3 - 30 kar</span>
+                            </div>
+                            <input type="text" id="inp-user-username" maxlength="30" minlength="3" placeholder="Contoh: kasir1" value="${userData ? Utils.escapeHtml(userData.username) : ''}" class="w-full px-3.5 py-2.5 bg-[#050505] border border-[#222] focus:border-neutral-500 rounded-lg text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none transition-colors">
                         </div>
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider mb-1 block">Nama Lengkap <span class="text-[9px] text-neutral-500 font-normal font-sans">(Maks. 100 karakter)</span></label>
-                            <input type="text" id="inp-user-nama" maxlength="100" placeholder="Nama" value="${userData ? Utils.escapeHtml(userData.nama_lengkap || '') : ''}" class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                            <div class="flex items-center justify-between mb-1.5 gap-2">
+                                <label class="text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider truncate">Nama Lengkap</label>
+                                <span class="text-[9px] lg:max-xl:text-[10px] xl:text-[11px] text-neutral-500 font-normal font-sans shrink-0">Maks. 100 kar</span>
+                            </div>
+                            <input type="text" id="inp-user-nama" maxlength="100" placeholder="Contoh: John Doe" value="${userData ? Utils.escapeHtml(userData.nama_lengkap || '') : ''}" class="w-full px-3.5 py-2.5 bg-[#050505] border border-[#222] focus:border-neutral-500 rounded-lg text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none transition-colors">
                         </div>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider mb-1 block">Password ${isEdit ? '(kosongi jika tidak ganti)' : ''} <span class="text-[9px] text-neutral-500 font-normal font-sans">(6 - 32 karakter)</span></label>
-                        <input type="password" id="inp-user-pass" maxlength="32" minlength="6" placeholder="${isEdit ? 'Kosongkan' : 'Password'}" class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                        <div class="flex items-center justify-between mb-1.5 gap-2">
+                            <label class="text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider truncate">Password ${isEdit ? '' : '<span class="text-red-400">*</span>'}</label>
+                            <span class="text-[9px] lg:max-xl:text-[10px] xl:text-[11px] text-neutral-500 font-normal font-sans shrink-0">${isEdit ? 'Kosongi jika tidak ganti (6 - 32 kar)' : '6 - 32 karakter'}</span>
+                        </div>
+                        <input type="password" id="inp-user-pass" maxlength="32" minlength="6" placeholder="${isEdit ? '•••••••• (Biarkan kosong jika tidak diubah)' : 'Minimal 6 karakter'}" class="w-full px-3.5 py-2.5 bg-[#050505] border border-[#222] focus:border-neutral-500 rounded-lg text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none transition-colors">
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider mb-1 block">Role</label>
-                            <select id="inp-user-role" class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                            <div class="flex items-center justify-between mb-1.5 gap-2">
+                                <label class="text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider truncate">Role Hak Akses</label>
+                            </div>
+                            <select id="inp-user-role" class="w-full px-3.5 py-2.5 bg-[#050505] border border-[#222] focus:border-neutral-500 rounded-lg text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 focus:outline-none transition-colors">
                                 <option value="kasir" ${userData?.role === 'kasir' ? 'selected' : ''}>Staff Kasir</option>
                                 <option value="admin" ${userData?.role === 'admin' ? 'selected' : ''}>Administrator</option>
                             </select>
                         </div>
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider mb-1 block">Status</label>
-                            <select id="inp-user-aktif" class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
-                                <option value="true" ${userData?.aktif !== false ? 'selected' : ''}>Aktif</option>
-                                <option value="false" ${userData?.aktif === false ? 'selected' : ''}>Nonaktif</option>
+                            <div class="flex items-center justify-between mb-1.5 gap-2">
+                                <label class="text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider truncate">Status Akun</label>
+                            </div>
+                            <select id="inp-user-aktif" class="w-full px-3.5 py-2.5 bg-[#050505] border border-[#222] focus:border-neutral-500 rounded-lg text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 focus:outline-none transition-colors">
+                                <option value="true" ${userData?.aktif !== false ? 'selected' : ''}>Aktif (Dapat Login)</option>
+                                <option value="false" ${userData?.aktif === false ? 'selected' : ''}>Nonaktif (Diblokir)</option>
                             </select>
                         </div>
                     </div>
                 </div>
-                <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#1c1c1c]">
-                    <button onclick="Modal.closeModal()" class="px-4 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded transition-colors">Batal</button>
-                    <button onclick="User.addOrupdate()" class="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors">${isEdit ? 'Simpan' : 'Daftarkan'}</button>
+                <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#222]">
+                    <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#141414] border border-[#262626] hover:bg-[#222] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors">Batal</button>
+                    <button onclick="User.addOrupdate()" class="px-5 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors flex items-center gap-2">
+                        ${isEdit ? '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Simpan Perubahan' : '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Daftarkan User'}
+                    </button>
                 </div>
             </div>`;
         Modal.show(modalHtml);
@@ -171,7 +189,7 @@ const User = {
     },
 
     async delete(id, username) {
-        const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-400">Hapus akun <span class="text-neutral-200 font-bold font-mono">${username}</span>?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Semua hak akses akan dicabut.</p></div>`;
+        const message = `<div class="text-center"><p class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-300 font-semibold mb-1">Hapus akun <span class="text-neutral-100 font-bold font-mono">${Utils.escapeHtml(username)}</span>?</p><p class="text-[11px] lg:max-xl:text-[11px] xl:text-xs text-neutral-500">Semua hak akses akan dicabut secara permanen.</p></div>`;
         Modal.confirm(message, async () => {
             try {
                 await API.user.delete(id);
