@@ -11,19 +11,25 @@ Dokumen ini mendefinisikan spesifikasi arsitektur dan teknis untuk menyempurnaka
 
 ## 2. Arsitektur & Logika Bisnis
 
-### A. Rekapitulasi Metode Pembayaran Dinamis
-TMBilling mendukung konfigurasi metode pembayaran dinamis melalui `SettingsService` (kolom `payment_methods`, misal `"Tunai, QRIS, Transfer Bank, Debit"`). Transaksi di tabel `transaksi` dan `transaksi_menu` mencatat metode pembayaran yang digunakan.
+### A. Rekapitulasi Metode Pembayaran Dinamis Tanpa Batas (100% Fleksibel CRUD)
+TMBilling mendukung konfigurasi metode pembayaran dinamis yang dapat di-CRUD bebas oleh pemilik warnet melalui menu pengaturan (`payment_methods`, misalnya kasir/owner menambahkan `"Tunai, QRIS, Transfer Bank, Debit BCA, Alipay, Alibaba, GoPay, OVO"`). Transaksi di tabel `transaksi` dan `transaksi_menu` mencatat string metode pembayaran yang digunakan saat transaksi terjadi.
+
+Sistem serah terima shift **TIDAK PERNAH melakukan hardcoding** terhadap nama metode non-tunai. Seluruh metode yang muncul dari hasil query database `GROUP BY metode_pembayaran` diperlakukan secara dinamis:
 
 #### 1. Pengelompokan Pembayaran:
-* **Kelompok Tunai (Fisik Laci)**:
-  - Nilai metode: `"Tunai"`, `"Cash"`, atau `None`/kosong (default).
+* **Kelompok Tunai (Fisik Masuk Laci)**:
+  - Nilai metode: `"Tunai"`, `"Cash"`, atau `None`/kosong (default cash).
   - Merupakan satu-satunya uang yang secara fisik masuk ke dalam laci meja kasir.
   - $\text{Total Tunai Bersih} = \text{Billing Tunai} + \text{Kantin Tunai} - \text{Total Refund Tunai}$.
-* **Kelompok Non-Tunai (Rekening / Merchant Digital)**:
-  - Semua metode selain kelompok tunai (misal `"QRIS"`, `"Transfer Bank"`, dsb.).
-  - Uang langsung masuk ke rekening bank/e-wallet merchant pemilik warnet, tidak masuk ke laci kasir.
-  - Dihitung per metode pembayaran secara dinamis:
+* **Kelompok Non-Tunai (Rekening / E-Wallet / Merchant Settlement)**:
+  - Semua metode selain kelompok tunai—baik metode umum (QRIS, Transfer Bank) maupun metode kustom hasil CRUD pengguna (misal `"Alipay"`, `"Alibaba"`, `"ShopeePay"`, `"Dana"`, dsb.).
+  - Uang langsung masuk ke saldo digital/rekening/portal masing-masing penyedia, tidak masuk ke laci kasir.
+  - Sistem secara dinamis membuat daftar per metode pembayaran apa pun yang tercatat:
     $$\text{Total Metode } X = \text{Billing } X + \text{Kantin } X$$
+  - Contoh: Jika ada transaksi via `Alipay` Rp 150.000 dan `Alibaba` Rp 200.000, laporan serah terima akan otomatis menampilkan baris:
+    - `Alipay`: Billing Rp X, Kantin Rp Y $\rightarrow$ Total Rp 150.000
+    - `Alibaba`: Billing Rp X, Kantin Rp Y $\rightarrow$ Total Rp 200.000
+    Sehingga kasir/owner dapat mencocokkan mutasi kasir langsung ke aplikasi/portal merchant terkait.
 
 #### 2. Rekonsiliasi & Hitung Buta (Blind Count):
 * **Uang Fisik Seharusnya di Laci**:
