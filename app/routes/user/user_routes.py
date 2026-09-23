@@ -84,3 +84,23 @@ def delete_user(user_id):
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": f"Internal Error: {str(e)}"}), 500
+
+
+@user_api_bp.route("/<int:user_id>/reset-kuota", methods=["POST"])
+@login_required
+@admin_required
+def reset_kuota_user(user_id):
+    """Reset kuota bermain bulanan kasir kembali ke alokasi penuh."""
+    operator = session.get("kasir_username", "admin")
+    try:
+        updated_user = UserService.reset_kuota_kasir(user_id, operator)
+        return jsonify({
+            "success": True,
+            "user": updated_user,
+            "message": "Kuota bermain kasir berhasil direset"
+        }), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Internal Error: {str(e)}"}), 500
+

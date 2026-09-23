@@ -88,6 +88,14 @@ class User(db.Model):
         """
         if menit and menit > 0:
             self.sisa_kuota_menit = (self.sisa_kuota_menit or 0) + int(menit)
+
+    def reset_kuota_manual(self):
+        """Mereset sisa kuota kembali ke nilai kuota_main_bulanan dasar secara manual oleh admin."""
+        self.sisa_kuota_menit = self.kuota_main_bulanan or 0
+        self.terakhir_reset_kuota = now_local().strftime("%Y-%m")
+        db.session.commit()
+        return self.sisa_kuota_menit
+
     
     def to_dict(self):
         """Mengkonversi data user ke dictionary untuk API response.

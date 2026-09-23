@@ -123,3 +123,17 @@ class UserService:
         db.session.commit()
         write_log("HAPUS_USER", f"User:{user.username} dihapus secara permanen", user=operator, detail_json={"username": user.username})
         return {"success": True, "message": "User berhasil dihapus"}
+
+    @staticmethod
+    def reset_kuota_kasir(user_id, operator="admin"):
+        """Reset kuota bermain bulanan kasir kembali ke alokasi kuota penuh."""
+        user = UserRepository.get_by_id(user_id)
+        if not user:
+            raise ValueError("User tidak ditemukan")
+        if user.role != "kasir":
+            raise ValueError("Hanya akun kasir yang memiliki benefit kuota bermain")
+
+        user.reset_kuota_manual()
+        write_log("RESET_KUOTA_KASIR", f"Kuota bermain kasir {user.username} direset ke {user.sisa_kuota_menit}m", user=operator)
+        return user.to_dict()
+
