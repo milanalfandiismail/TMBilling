@@ -342,6 +342,20 @@ def create_app():
     app.before_request(check_ip_whitelist)
     app.before_request(handle_branch_proxy_relay)
 
+    @app.after_request
+    def _isolate_stateless_bearer_sessions(response):
+        """Mencegah pencemaran cookie sesi browser pada request API stateless Bearer relay."""
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer ") or getattr(g, "is_branch_api_call", False):
+            from flask import session as flask_sess
+            flask_sess.modified = False
+            if "Set-Cookie" in response.headers:
+                cookie_name = app.config.get("SESSION_COOKIE_NAME", "session")
+                cookies = response.headers.getlist("Set-Cookie")
+                filtered = [c for c in cookies if not c.strip().startswith(f"{cookie_name}=")]
+                response.headers.setlist("Set-Cookie", filtered)
+        return response
+
     os.makedirs("logs", exist_ok=True)
 
     _register_blueprints(app)

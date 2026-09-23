@@ -82,10 +82,18 @@ def _apply_branch_relay_identity():
 
     from app.repositories import UserRepository
     first_admin = UserRepository.get_first_admin()
-    if first_admin:
-        session["kasir_id"] = first_admin.id
+    admin_id = first_admin.id if first_admin else 1
+
+    g.kasir_id = admin_id
+    g.kasir_username = full_operator
+    g.kasir_role = "admin"
+    g.kasir_nama = full_operator
+
+    # Sinkronisasi ke session in-memory untuk kompatibilitas route tanpa mencemari cookie sesi
+    session["kasir_id"] = admin_id
     session["kasir_username"] = full_operator
     session["kasir_role"] = "admin"
+    session.modified = False
 
 
 def login_required(f):
