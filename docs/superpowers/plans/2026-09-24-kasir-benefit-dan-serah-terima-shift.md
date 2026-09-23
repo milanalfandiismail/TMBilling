@@ -12,9 +12,19 @@
 
 ## Global Constraints
 - **Bahasa**: Seluruh pesan error, notifikasi, dan label antarmuka wajib dalam Bahasa Indonesia yang ramah pengguna.
+- **Validasi Input Ketat Berlapis Ganda (Dual-Layer FE & BE)**:
+  - `modal_awal`: 0 s/d Rp 100.000.000 (integer)
+  - `uang_fisik`: 0 s/d Rp 100.000.000 (integer)
+  - `catatan`: Maks. 255 karakter string
+  - `kuota_jam`: 0 s/d 720 jam/bulan (integer)
+  - `jam_bonus`: 1 s/d 100 jam (integer)
+  - `keterangan_bonus`: Minimal 3 karakter, maksimal 255 karakter
+  - Validasi FE: Atribut `min`, `max`, `step="1"`, live formatting, petunjuk batas di bawah input, dan dialog konfirmasi jika `uang_fisik == 0`.
+  - Validasi BE: Menggunakan utilitas `app.utils.validators` (`validate_integer_range`, `validate_string_length`), return `400 Bad Request` dengan pesan Bahasa Indonesia informatif.
 - **Kompatibilitas Client**: Respons endpoint `/api/v1/public/auth/login` dan `/status` harus sepenuhnya kompatibel dengan aplikasi Client C# dan Tauri tanpa perlu mengubah source code client C#.
 - **Zero Regression**: 211 test unit eksisting harus tetap 100% lulus (hijau).
 - **Isolasi Finansial**: Sesi bermain kasir (benefit) berstatus Rp 0 dan TIDAK BOLEH masuk ke dalam laporan omset tunai/QRIS maupun pendapatan billing.
+- **Konsistensi UI/UX**: Mengacu 100% pada standar visual tab **Umum & Keamanan** (`settings.html`) dan responsif penuh di breakpoint `sm, md, lg, xl, 2xl`.
 
 ---
 

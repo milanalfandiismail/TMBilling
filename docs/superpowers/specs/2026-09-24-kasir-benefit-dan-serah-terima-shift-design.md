@@ -137,7 +137,39 @@ Semua modal baru (Modal Buka Shift, Modal Tutup Shift Blind Count, Modal Rekap D
 
 ---
 
-## 6. Auto-Migration SQLite (`app/__init__.py`)
+## 6. Standar Validasi Input Ketat (Frontend & Backend)
+
+Untuk mencegah kesalahan input, salah ketik (*typo*), atau data anomali, sistem menerapkan validasi berlapis ganda (Dual-Layer Validation):
+
+### A. Validasi Sisi Backend (`app/utils/validators.py`)
+1. **Buka Shift (`modal_awal`)**:
+   - `validate_integer_range(modal_awal, min_val=0, max_val=100_000_000, field_name="Modal Awal")`.
+   - Menolak input non-integer, negatif, atau melebihi Rp 100.000.000.
+2. **Tutup Shift (`uang_fisik` & `catatan`)**:
+   - `validate_integer_range(uang_fisik, min_val=0, max_val=100_000_000, field_name="Uang Fisik")`.
+   - `validate_string_length(catatan, min_len=0, max_len=255, allow_empty=True, field_name="Catatan Serah Terima")`.
+3. **Set Kuota Bulanan Kasir (`kuota_jam`)**:
+   - `validate_integer_range(kuota_jam, min_val=0, max_val=720, field_name="Kuota Bermain Bulanan")` (maks. 720 jam/bulan).
+4. **Tambah Jam Bonus Kasir (`jam_bonus` & `keterangan`)**:
+   - `validate_integer_range(jam_bonus, min_val=1, max_val=100, field_name="Jam Bonus Kasir")`.
+   - `validate_string_length(keterangan, min_len=3, max_len=255, allow_empty=False, field_name="Alasan / Keterangan Bonus")`.
+5. **Respons Kesalahan**:
+   - Menghasilkan status HTTP `400 Bad Request` dengan pesan kesalahan dalam Bahasa Indonesia yang menyebutkan batas minimum dan maksimum secara presisi.
+
+### B. Validasi Sisi Frontend (UI/UX)
+1. **Input Numerik**:
+   - Menggunakan atribut HTML5 `type="number"`, `min`, `max`, `step="1"`.
+   - Formatter live Rupiah/Jam dan petunjuk batas nilai yang jelas di bawah input (contoh: *Batas nilai: Rp 0 s/d Rp 100.000.000*).
+   - Validasi pra-kirim (`Utils.parseRupiah`), menampilkan `Toast.error(...)` sebelum memanggil API jika nilai berada di luar batas.
+2. **Input Teks**:
+   - Menggunakan atribut `maxlength="255"` dan counter panjang karakter.
+   - Peringatan instan jika keterangan masih kosong atau di bawah 3 karakter.
+3. **Konfirmasi Kasus Khusus**:
+   - Jika kasir memasukkan `uang_fisik = 0`, muncul dialog konfirmasi ganda (*Modal.confirm*) untuk memastikan laci kasir memang benar-benar kosong.
+
+---
+
+## 7. Auto-Migration SQLite (`app/__init__.py`)
 Skrip startup otomatis mendeteksi dan menambahkan kolom yang belum ada:
 - `user`: `kuota_main_bulanan`, `sisa_kuota_menit`, `terakhir_reset_kuota`.
 - `sesi`: `user_id`.
@@ -145,7 +177,7 @@ Skrip startup otomatis mendeteksi dan menambahkan kolom yang belum ada:
 
 ---
 
-## 7. Rencana Pengujian Otomatis (Testing)
+## 8. Rencana Pengujian Otomatis (Testing)
 1. **Test Kuota Kasir**:
    - Login kasir dengan kuota -> sesi dibuat, sisa jam berkurang.
    - Login kasir kuota habis -> ditolak dengan pesan ramah.
