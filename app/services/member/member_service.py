@@ -21,6 +21,14 @@ from app.models import db, now_local
 from app.models.mikrotik.mikrotik import MikroTikConfig
 from app.utils.mikrotik_api import MikroTikAPIClient
 import threading
+from app.utils.validators import (
+    validate_username,
+    validate_password,
+    validate_phone_number,
+    validate_email_format,
+    validate_string_length,
+    validate_integer_range
+)
 
 class MemberService:
     """Service untuk business logic member/pelanggan warnet.
@@ -115,11 +123,14 @@ class MemberService:
     @staticmethod
     def create(data, operator="system"):
         """Buat akun member baru dengan validasi grup & username unik."""
-        username = data.get("username", "").strip().lower()
-        if not username:
-            raise ValueError("Username wajib diisi")
+        username = validate_username(data.get("username", ""), min_len=3, max_len=30, lowercase_only=True)
         if MemberRepository.find_by_username(username):
             raise ValueError("Username sudah ada")
+
+        password = validate_password(data.get("password", "123456"), min_len=4, max_len=16)
+        nama_lengkap = validate_string_length(data.get("nama_lengkap", ""), min_len=0, max_len=100, field_name="Nama lengkap", required=False)
+        no_hp = validate_phone_number(data.get("no_hp"))
+        email = validate_email_format(data.get("email"))
 
         grup_nama = data.get("grup", "reguler")
         grup_obj = GrupRepository.find_by_nama(grup_nama)
@@ -128,13 +139,13 @@ class MemberService:
 
         member = Member(
             username=username,
-            nama_lengkap=data.get("nama_lengkap"),
-            email=data.get("email"),
-            no_hp=data.get("no_hp"),
+            nama_lengkap=nama_lengkap,
+            email=email,
+            no_hp=no_hp,
             grup_id=grup_obj.id,
             waktu_tersimpan=0
         )
-        member.set_password(data.get("password", "123456"))
+        member.set_password(password)
         db.session.add(member)
         db.session.commit()
         
@@ -149,7 +160,7 @@ class MemberService:
         write_log("TAMBAH_MEMBER", f"Member {username} ({grup_nama}) dibuat", user=operator, detail_json=detail_member)
         
         # Sinkronisasi ke MikroTik
-        MemberService._sync_mikrotik("add", member, data.get("password", "123456"))
+        MemberService._sync_mikrotik("add", member, password)
         
         return member
 
@@ -157,21 +168,30 @@ class MemberService:
     def update(member_id, data, operator="system"):
         """Perbarui profil member (nama, email, grup)."""
         member = MemberRepository.get_by_id(member_id)
+        if not member:
+            raise ValueError("Member tidak ditemukan")
+
         if "grup" in data:
             grup_obj = GrupRepository.find_by_nama(data["grup"])
             if not grup_obj:
                 raise ValueError("Grup tidak valid")
             member.grup_id = grup_obj.id
 
-        member.nama_lengkap = data.get("nama_lengkap", member.nama_lengkap)
-        member.email = data.get("email", member.email)
-        member.no_hp = data.get("no_hp", member.no_hp)
+        if "nama_lengkap" in data:
+            member.nama_lengkap = validate_string_length(data.get("nama_lengkap", ""), min_len=0, max_len=100, field_name="Nama lengkap", required=False)
+            
+        if "email" in data:
+            member.email = validate_email_format(data.get("email"))
+            
+        if "no_hp" in data:
+            member.no_hp = validate_phone_number(data.get("no_hp"))
         
         # Update password jika disediakan
         if "password" in data and data["password"]:
-            member.set_password(data["password"])
+            password = validate_password(data["password"], min_len=4, max_len=16)
+            member.set_password(password)
             # Sinkronisasi ke MikroTik hanya jika password berubah
-            MemberService._sync_mikrotik("update", member, data["password"])
+            MemberService._sync_mikrotik("update", member, password)
         
         db.session.commit()
         
