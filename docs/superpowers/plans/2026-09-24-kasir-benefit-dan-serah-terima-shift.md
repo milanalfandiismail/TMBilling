@@ -567,15 +567,18 @@ In `app/static/js/kasir/modules/user/index.js`:
 - Add `showBonusJamModal(userId)`: modal input jam bonus (misal +5 jam) dan catatan alasan.
 - Add `submitSetKuota()` and `submitBonusJam()`.
 
-- [ ] **Step 3: Create shift_history.html and user_logs.html tabs**
+- [ ] **Step 3: Create shift_history.html and user_logs.html tabs (Mengacu ke Tab Umum & Keamanan)**
 
 Create `app/templates/kasir/tabs/shift_history.html`:
-- Date filter (Dari - Sampai), Kasir filter, table with shift details.
+- Acuan desain: Tab **Umum & Keamanan** (`subtab-general`): Card container `bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6`, header title uppercase tracking-wider, filter inputs `bg-[#050505] border border-[#1c1c1c]`.
+- Date filter (Dari - Sampai), Kasir filter, table with shift details responsif untuk breakpoint `sm, md, lg, xl, 2xl`.
 - Tombol **`Lihat Detail`**: Membuka popup modal digital lengkap berisi seluruh breakdown pendapatan, uang fisik, selisih, dan catatan di layar monitor (paperless, tanpa perlu cetak struk).
 - Tombol **`Cetak Struk`**: Opsi cetak fisik thermal jika kasir/owner menginginkannya (`Shift.printHandover()`).
 
 Create `app/templates/kasir/tabs/user_logs.html`:
+- Acuan desain: Tab **Umum & Keamanan** (`subtab-general`), responsif untuk `sm, md, lg, xl, 2xl`.
 - Filter date, Kasir filter, audit log table for staff actions (tambah jam bonus, reset kuota bulanan, sesi bermain PC kasir, edit profil, ganti password).
+- Seluruh modal popup (Modal Set Kuota Kasir, Modal Jam Bonus, Modal Blind Count, Modal Detail Shift Digital) distandarisasi konsisten dengan modal eksisting (`Modal.show(...)`) dan responsif penuh di breakpoint `sm, md, lg, xl, 2xl`.
 
 Include tabs in `app/templates/kasir/dashboard.html`.
 

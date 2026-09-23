@@ -97,8 +97,9 @@ Berdasarkan audit mendalam menggunakan MCP `codebase-memory`:
 
 ---
 
-## 5. Integrasi Menu Manajemen Staff di Sidebar Admin
+## 5. Integrasi Menu Manajemen Staff di Sidebar Admin & Standar UI/UX
 
+### A. Sub-Menu Manajemen Staff
 Dropdown **Manajemen Staff** di `sidebar_admin.html` kini memiliki 3 sub-menu terstruktur:
 1. **Akun Kasir & Admin** (`data-tab="user"`):
    - Daftar staf, status, kolom Kuota Bulanan & Sisa Jam Main.
@@ -110,6 +111,29 @@ Dropdown **Manajemen Staff** di `sidebar_admin.html` kini memiliki 3 sub-menu te
    - Tombol **🖨️ Cetak Struk**: Cetak ulang struk thermal jika sewaktu-waktu dibutuhkan fisik kertasnya.
 3. **Log & Audit Staf** (`data-tab="user_logs"`):
    - Riwayat audit khusus akun kasir: penambahan jam bonus, reset kuota bulanan, sesi bermain kasir di PC, ganti password, perubahan status/arsip akun.
+
+### B. Standar UI/UX Acuan: Tab "Umum & Keamanan" (`settings.html`)
+Semua antarmuka baru (`user_logs.html`, `shift_history.html`, modal popup, dan tabel) mengacu pada standar visual tab **Umum & Keamanan**:
+- **Wadah Kartu (Card Container)**: `bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6`
+- **Tipografi**:
+  - Judul Tab/Bagian: `text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4`
+  - Label Form/Filter: `text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block`
+  - Subteks Deskripsi: `text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1`
+  - Catatan/Petunjuk Input: `text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans`
+- **Input & Filter Dropdown**:
+  - `bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500`
+- **Tombol Aksi**:
+  - Primer: `px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors`
+  - Sekunder/Batal: `bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded`
+
+### C. Konsistensi Modal & Responsif `sm, md, lg, xl, 2xl`
+Semua modal baru (Modal Buka Shift, Modal Tutup Shift Blind Count, Modal Rekap Digital, Modal Kuota Kasir, Modal Jam Bonus):
+- Menggunakan `Modal.show(...)` dengan struktur standar:
+  - Container: `bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl overflow-hidden shadow-2xl animate-in`
+  - Header: `px-4 sm:px-6 py-4 sm:py-5 border-b border-[#2a2a2a]`
+  - Body: `px-4 sm:px-6 py-4 sm:py-5 space-y-4 max-h-[80vh] overflow-y-auto`
+  - Footer: `px-4 sm:px-6 py-3.5 sm:py-4 border-t border-[#2a2a2a] flex justify-end gap-2`
+- Menjamin tampilan 100% rapi dan proporsional di seluruh breakpoint mobile (`sm: 640px`), tablet (`md: 768px`), desktop (`lg: 1024px`), widescreen (`xl: 1280px`), dan monitor besar (`2xl: 1536px`).
 
 ---
 
