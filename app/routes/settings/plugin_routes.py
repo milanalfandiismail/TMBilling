@@ -47,6 +47,14 @@ def toggle_plugin():
         
     return jsonify({"success": True, "message": "Plugin status updated. Restart backend to apply fully."})
 
+import re
+
+def _is_safe_path(base_dir: str, path: str) -> bool:
+    """Verifikasi bahwa path berada di dalam base_dir setelah resolusi absolut."""
+    base = os.path.abspath(base_dir)
+    target = os.path.abspath(os.path.join(base, path))
+    return os.path.commonpath([base]) == os.path.commonpath([base, target])
+
 @plugin_api_bp.route("/upload", methods=["POST"])
 @login_required
 @admin_required
@@ -74,6 +82,12 @@ def upload_plugin():
         file.save(temp_path)
         
         with zipfile.ZipFile(temp_path, 'r') as zip_ref:
+            # Validasi keamanan seluruh path di dalam ZIP sebelum diekstrak
+            for member in zip_ref.namelist():
+                norm = member.replace('\\', '/')
+                if norm.startswith('/') or '..' in norm.split('/'):
+                    return jsonify({"success": False, "error": "Invalid ZIP: unsafe path traversal detected"}), 400
+
             # Look for manifest.json
             manifest_info = None
             for info in zip_ref.infolist():
@@ -86,38 +100,41 @@ def upload_plugin():
                 
             # Extract manifest to read plugin ID
             with zip_ref.open(manifest_info) as f:
-                manifest_data = json.load(f)
+                try:
+                    manifest_data = json.load(f)
+                except Exception:
+                    return jsonify({"success": False, "error": "Invalid manifest: Corrupted JSON"}), 400
                 plugin_id = manifest_data.get('id')
                 
-                if not plugin_id:
-                    return jsonify({"success": False, "error": "Invalid manifest: Missing 'id'"}), 400
+                if not plugin_id or not re.match(r'^[a-zA-Z0-9_-]+$', str(plugin_id)):
+                    return jsonify({"success": False, "error": "Invalid manifest: Missing or invalid 'id' format"}), 400
             
-            # The ZIP might contain a top-level folder or just files.
-            # We want to extract it safely into plugins_dir / plugin_id
             target_dir = os.path.join(plugins_dir, plugin_id)
+            if not _is_safe_path(plugins_dir, plugin_id):
+                return jsonify({"success": False, "error": "Invalid plugin target directory"}), 400
+
             if not os.path.exists(target_dir):
-                os.makedirs(target_dir)
+                os.makedirs(target_dir, exist_ok=True)
                 
-            # If ZIP has a top-level folder that is the same as plugin_id, we strip it.
-            # Simplified approach: extract everything, if it creates a nested folder we could move it,
-            # but for now let's just extract all directly into target_dir if the zip has no root folder.
-            # For robustness, just extract directly to plugins_dir if the zip already contains a root folder.
-            
-            # Check if all files share a common root dir
             common_prefix = os.path.commonprefix(zip_ref.namelist())
             if common_prefix and common_prefix.endswith('/'):
-                # Extract directly to plugins_dir, the folder should become plugin_id
-                # (Assuming the zip root folder name matches plugin_id)
-                zip_ref.extractall(plugins_dir)
-                # If the folder name was different, we should rename it to plugin_id
+                extract_root = plugins_dir
+                for member in zip_ref.infolist():
+                    if not _is_safe_path(extract_root, member.filename):
+                        return jsonify({"success": False, "error": "Unsafe path detected during extraction"}), 400
+                zip_ref.extractall(extract_root)
                 extracted_folder = os.path.join(plugins_dir, common_prefix.strip('/'))
                 if extracted_folder != target_dir and os.path.exists(extracted_folder):
                     shutil.move(extracted_folder, target_dir)
             else:
-                # No common root, extract into target_dir
+                for member in zip_ref.infolist():
+                    if not _is_safe_path(target_dir, member.filename):
+                        return jsonify({"success": False, "error": "Unsafe path detected during extraction"}), 400
                 zip_ref.extractall(target_dir)
             
         return jsonify({"success": True, "message": "Plugin uploaded successfully!"})
+    except zipfile.BadZipFile:
+        return jsonify({"success": False, "error": "Invalid ZIP format"}), 400
     except Exception as e:
         logger.error(f"Plugin upload error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500

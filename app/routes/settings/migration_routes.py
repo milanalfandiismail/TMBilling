@@ -120,7 +120,14 @@ def upload_update():
         temp_path = os.path.join(current_app.instance_path, "temp_update.zip")
         file.save(temp_path)
 
-        # Validasi isi ZIP
+        def _is_safe_path(base_dir: str, path: str) -> bool:
+            base = os.path.abspath(base_dir)
+            target = os.path.abspath(os.path.join(base, path))
+            return os.path.commonpath([base]) == os.path.commonpath([base, target])
+
+        root_dir = os.path.abspath(os.path.join(current_app.root_path, '..'))
+        zip_migrations_dir = False
+
         try:
             with zipfile.ZipFile(temp_path, 'r') as zf:
                 all_files = zf.namelist()
@@ -128,36 +135,41 @@ def upload_update():
                 has_app_folder = any(f.replace('\\', '/').startswith('app/') for f in all_files)
 
                 if not has_run_py or not has_app_folder:
-                    os.remove(temp_path)
                     return jsonify({
                         "error": "Berkas ZIP bukan paket rilis TMBilling yang valid. Pastikan file berisi run.py dan folder app/."
                     }), 400
 
-                # Proteksi: skip .env, instance/, backups/ dan path traversal
-                root_dir = os.path.abspath(os.path.join(current_app.root_path, '..'))
+                # Validasi keamanan seluruh entri ZIP terlebih dahulu
+                for member in all_files:
+                    norm = member.replace('\\', '/')
+                    if norm.startswith('/') or '..' in norm.split('/'):
+                        return jsonify({"error": "Berkas ZIP mengandung path tidak aman (path traversal detected)"}), 400
+
+                # Proteksi: skip .env, instance/, backups/ dan ekstrak hanya path aman
                 for member in zf.namelist():
                     normalized = member.replace('\\', '/')
-                    # Lewati path traversal
-                    if normalized.startswith('../') or normalized.startswith('..\\'):
-                        continue
-                    # Lewati file/folder yang dilindungi
                     skip_prefixes = ('.env', 'instance/', 'backups/', '.git/')
                     if normalized.startswith(skip_prefixes):
                         continue
+                    if not _is_safe_path(root_dir, member):
+                        return jsonify({"error": f"Path berkas {member} berada di luar direktori aman aplikasi"}), 400
                     zf.extract(member, root_dir)
 
-        except zipfile.BadZipFile:
-            os.remove(temp_path)
-            return jsonify({"error": "File bukan format ZIP yang valid"}), 400
+                # Cek apakah ada folder migrations/ di ZIP
+                for member in all_files:
+                    normalized = member.replace('\\', '/')
+                    if normalized.startswith('migrations/'):
+                        zip_migrations_dir = True
+                        break
 
-        # Cek apakah ada folder migrations/ di ZIP — auto migrate
-        migrations_dir = os.path.join(root_dir, 'migrations')
-        zip_migrations_dir = None
-        for member in zf.namelist():
-            normalized = member.replace('\\', '/')
-            if normalized.startswith('migrations/'):
-                zip_migrations_dir = True
-                break
+        except zipfile.BadZipFile:
+            return jsonify({"error": "File bukan format ZIP yang valid"}), 400
+        finally:
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
 
         if zip_migrations_dir and os.path.exists(migrations_dir):
             # Backup database sebelum migrasi
