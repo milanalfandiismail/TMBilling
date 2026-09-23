@@ -10,6 +10,7 @@ from app.repositories import PCRepository
 from app.repositories import SesiRepository
 from app.repositories import GrupRepository
 from app.utils.logger import write_log
+from app.utils.validators import validate_string_length, validate_integer_range
 
 
 class PCService:
@@ -134,9 +135,11 @@ class PCService:
         if not grup_obj:
             raise ValueError(f"Grup '{grup_nama}' tidak ditemukan. Buat dulu di menu Grup.")
 
+        nama_pc = validate_string_length(data.get("nama") or kode, min_len=1, max_len=50, field_name="Nama PC", required=False)
+
         pc = PC(
             kode=kode,
-            nama=data.get("nama") or kode,
+            nama=nama_pc,
             ip_address=ip_address,
             mac_address=mac_address,
             grup_id=grup_obj.id,
