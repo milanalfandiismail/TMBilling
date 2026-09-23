@@ -5,7 +5,7 @@ ringkasan pendapatan, dan riwayat shift.
 """
 
 from flask import Blueprint, request, jsonify, session
-from app.routes.auth.auth_kasir_routes import login_required
+from app.middleware.auth import login_required, admin_required
 from app.services import ShiftService
 
 shift_api_bp = Blueprint("shift", __name__)
@@ -92,6 +92,33 @@ def end_shift():
             operator=kasir_username,
         )
         return jsonify({"success": True, "result": result}), 200
+
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@shift_api_bp.route("/force-close", methods=["POST"])
+@login_required
+@admin_required
+def force_close_shift():
+    """Tutup paksa shift aktif oleh admin (Emergency Handover)."""
+    try:
+        data = request.get_json() or {}
+        shift_id = data.get("shift_id")
+        alasan = data.get("alasan", "").strip()
+        admin_username = session.get("kasir_username", "admin")
+
+        if not shift_id:
+            return jsonify({"error": "Shift ID wajib diisi"}), 400
+
+        result = ShiftService.force_close_shift(
+            shift_id=int(shift_id),
+            admin_username=admin_username,
+            alasan=alasan
+        )
+        return jsonify({"success": True, "result": result, "message": "Shift berhasil ditutup paksa"}), 200
 
     except ValueError as e:
         return jsonify({"error": str(e)}), 400

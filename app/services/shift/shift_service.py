@@ -364,6 +364,84 @@ class ShiftService:
         }
 
     @staticmethod
+    def force_close_shift(shift_id, admin_username, alasan):
+        """Emergency force-close shift aktif oleh admin.
+
+        Digunakan saat kasir berhalangan hadir / pulang darurat dan shift masih menggantung.
+
+        Args:
+            shift_id: ID shift yang akan ditutup paksa.
+            admin_username: Username admin yang menutup shift.
+            alasan: Alasan penutupan paksa (minimal 3 karakter).
+
+        Returns:
+            dict: Ringkasan data shift yang ditutup paksa.
+        """
+        if not alasan or len(alasan.strip()) < 3:
+            raise ValueError("Alasan force-close shift minimal 3 karakter")
+        if len(alasan.strip()) > 255:
+            raise ValueError("Alasan force-close shift maksimal 255 karakter")
+
+        shift = ShiftRecord.query.get(shift_id)
+        if not shift:
+            raise ValueError("Shift tidak ditemukan")
+        if shift.status != "AKTIF":
+            raise ValueError("Shift sudah ditutup sebelumnya")
+
+        shift.waktu_selesai = now_local()
+        db.session.commit()
+
+        summary = ShiftService.get_shift_summary(shift_id)
+
+        alasan_clean = alasan.strip()
+        catatan_lengkap = f"[FORCE CLOSE oleh {admin_username}] {alasan_clean}"
+        if shift.catatan:
+            catatan_lengkap = f"{shift.catatan} | {catatan_lengkap}"
+
+        shift.status = "SELESAI"
+        shift.catatan = catatan_lengkap
+        shift.total_qris = summary["breakdown"].get("QRIS", 0)
+        shift.total_refund = summary.get("total_refund", 0)
+        shift.detail_metode_json = json.dumps(summary["rincian_pembayaran"])
+        shift.uang_fisik = summary["total_seharusnya"]
+        shift.selisih = 0
+        db.session.commit()
+
+        from app.utils.logger import write_log
+        detail_fc = {
+            "shift_id": shift.id,
+            "kasir_username": shift.kasir.username if shift.kasir else "Kasir",
+            "admin_username": admin_username,
+            "alasan": alasan_clean,
+            "total_billing": summary["total_billing"],
+            "total_kantin": summary["total_kantin"],
+            "total_seharusnya": summary["total_seharusnya"]
+        }
+        write_log(
+            "SHIFT_FORCE_CLOSE",
+            f"Admin:{admin_username} FORCE CLOSE Shift #{shift.id} Kasir:{detail_fc['kasir_username']} | Alasan:{alasan_clean}",
+            user=admin_username,
+            detail_json=detail_fc
+        )
+
+        return {
+            "id": shift.id,
+            "kasir_nama": shift.kasir.nama_lengkap or shift.kasir.username if shift.kasir else "Kasir",
+            "waktu_mulai": format_display(shift.waktu_mulai),
+            "waktu_selesai": format_display(shift.waktu_selesai),
+            "modal_awal": shift.modal_awal,
+            "total_billing": shift.total_billing,
+            "total_kantin": shift.total_kantin,
+            "total_seharusnya": summary["total_seharusnya"],
+            "uang_fisik": shift.uang_fisik,
+            "selisih": shift.selisih,
+            "catatan": shift.catatan,
+            "status": "SELESAI",
+            "rincian_pembayaran": summary["rincian_pembayaran"],
+            "detail_metode": summary["rincian_pembayaran"]
+        }
+
+    @staticmethod
     def get_shift_history(kasir_id=None, limit=20, offset=0, tanggal_mulai=None, tanggal_selesai=None):
         """Ambil riwayat shift yang sudah selesai dengan pagination & filter tanggal.
 
