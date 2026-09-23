@@ -12,7 +12,7 @@ Exports:
     create_app: Factory function untuk membuat instance Flask app.
 """
 
-from flask import Flask, current_app, redirect, render_template, request
+from flask import Flask, current_app, redirect, render_template, request, g
 from flask_cors import CORS
 import os
 
@@ -133,10 +133,7 @@ def _register_blueprints(app):
     csrf.exempt(client_api_bp)
     csrf.exempt(auth_api_bp)
     csrf.exempt(monitor_api_bp)
-    csrf.exempt(shift_api_bp)
     csrf.exempt(server_monitor_bp)
-    csrf.exempt(tutorial_api_bp)
-    csrf.exempt(branch_api_bp)
 
 def _register_public_routes(app):
     """Mendaftarkan route publik."""
