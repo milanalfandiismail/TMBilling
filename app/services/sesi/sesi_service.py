@@ -141,6 +141,9 @@ class SesiService:
     @staticmethod
     def tambah_waktu_sesi(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
         """Tambah durasi pada sesi berjalan (Guest/Member) + Suntik Nota TM."""
+        if not isinstance(qty, int) or qty < 1 or qty > 100:
+            raise ValueError("Kuantitas paket harus berupa angka bulat antara 1 sampai 100")
+
         sesi = SesiRepository.get_aktif_by_id(sesi_id)
         if not sesi: raise ValueError("Sesi tidak aktif")
 
@@ -148,8 +151,7 @@ class SesiService:
             raise ValueError(f"Paket zona {paket.grup.nama.upper()} tidak cocok dengan PC!")
         
         if sesi.tipe == "member" and sesi.member:
-            for _ in range(qty):
-                sesi.member.tambah_waktu(paket.durasi_menit, paket.kadaluarsa_hari)
+            sesi.member.tambah_waktu(paket.durasi_menit * qty, (paket.kadaluarsa_hari or 0) * qty)
             sesi.waktu_tersimpan_awal += (paket.durasi_menit * qty)
             
             transaksi = Transaksi(

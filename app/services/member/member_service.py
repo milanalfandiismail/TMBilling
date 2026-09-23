@@ -229,6 +229,9 @@ class MemberService:
     @staticmethod
     def tambah_waktu(member_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
         """Tambah waktu member & suntik Nota Transaksi (TM)."""
+        if not isinstance(qty, int) or qty < 1 or qty > 100:
+            raise ValueError("Kuantitas paket harus berupa angka bulat antara 1 sampai 100")
+
         member = MemberRepository.get_by_id(member_id)
         if SesiRepository.get_aktif_by_member(member.id):
             raise ValueError("Member sedang bermain. Gunakan tombol '+Waktu' di dashboard PC.")
@@ -236,8 +239,7 @@ class MemberService:
         if paket.grup_id != member.grup_id:
             raise ValueError(f"Paket grup {paket.grup.nama.upper()}, member grup {member.grup.nama.upper()}")
         
-        for _ in range(qty):
-            member.tambah_waktu(paket.durasi_menit, paket.kadaluarsa_hari)
+        member.tambah_waktu(paket.durasi_menit * qty, (paket.kadaluarsa_hari or 0) * qty)
         
         # INJECT NOTA TM
         transaksi = Transaksi(
