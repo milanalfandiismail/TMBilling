@@ -341,6 +341,8 @@ def _init_app_context(app):
                         conn.execute(text("ALTER TABLE shift_record ADD COLUMN total_qris INTEGER DEFAULT 0"))
                     if 'total_refund' not in shift_cols:
                         conn.execute(text("ALTER TABLE shift_record ADD COLUMN total_refund INTEGER DEFAULT 0"))
+                    if 'detail_metode_json' not in shift_cols:
+                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN detail_metode_json TEXT"))
                     conn.commit()
         except Exception as e:
             app.logger.warning(f"Pengecekan bootstrap skema database: {e}")
