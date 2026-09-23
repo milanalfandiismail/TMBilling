@@ -282,16 +282,14 @@ class TournamentService:
     @staticmethod
     def create_tournament(data):
         """Membuat turnamen baru beserta tim dan menginisialisasi stage pertama."""
-        nama = data.get("nama", "").strip()
-        deskripsi = data.get("deskripsi", "").strip()
-        tipe_jalur = data.get("tipe_jalur", "playoff")
+        from app.utils.validators import validate_string_length, validate_choice, validate_integer_range
+        nama = validate_string_length(data.get("nama"), min_len=2, max_len=100, field_name="Nama Turnamen", required=True)
+        deskripsi = validate_string_length(data.get("deskripsi"), min_len=0, max_len=500, field_name="Deskripsi Turnamen", required=False) if data.get("deskripsi") else ""
+        tipe_jalur = validate_choice(data.get("tipe_jalur", "playoff"), ["playoff", "swiss"], field_name="Tipe Format Turnamen", case_sensitive=False)
         teams_input = data.get("teams", [])
-        default_bo = int(data.get("bo_format", 1))
+        default_bo = validate_integer_range(data.get("bo_format", 1), min_val=1, max_val=9, field_name="Format BO")
 
-        if not nama:
-            raise ValueError("Nama turnamen wajib diisi")
-
-        if len(teams_input) < 2:
+        if not isinstance(teams_input, list) or len(teams_input) < 2:
             raise ValueError("Minimal harus mendaftarkan 2 tim")
 
         existing = TournamentRepository.get_by_nama(nama)
@@ -305,9 +303,9 @@ class TournamentService:
 
             db_teams = []
             for t_name in teams_input:
-                t_name = t_name.strip()
-                if t_name:
-                    tm = TurnamenTim(turnamen_id=t.id, nama_tim=t_name)
+                clean_team_name = validate_string_length(str(t_name), min_len=1, max_len=50, field_name="Nama Tim", required=False)
+                if clean_team_name:
+                    tm = TurnamenTim(turnamen_id=t.id, nama_tim=clean_team_name)
                     TournamentRepository.save(tm)
                     db_teams.append(tm)
             TournamentRepository.flush()

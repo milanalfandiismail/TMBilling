@@ -91,9 +91,9 @@ const Shift = {
     },
 
     async submitBukaShift() {
-        const modalAwal = parseInt(document.getElementById('modal-awal-input')?.value || '0');
-        if (modalAwal < 0) {
-            Toast.error('Modal awal tidak boleh negatif');
+        const modalAwal = Utils.parseRupiah(document.getElementById('modal-awal-input')?.value || '0');
+        if (modalAwal < 0 || modalAwal > 100000000) {
+            Toast.error('Modal awal harus antara Rp0 s/d Rp100.000.000');
             return;
         }
 
@@ -204,9 +204,9 @@ const Shift = {
     },
 
     async submitTutupShift() {
-        const uangFisik = parseInt(document.getElementById('uang-fisik-input')?.value || '0');
-        if (uangFisik < 0) {
-            Toast.error('Uang fisik tidak boleh negatif');
+        const uangFisik = Utils.parseRupiah(document.getElementById('uang-fisik-input')?.value || '0');
+        if (uangFisik < 0 || uangFisik > 100000000) {
+            Toast.error('Uang fisik harus antara Rp0 s/d Rp100.000.000');
             return;
         }
         if (uangFisik === 0) {

@@ -102,10 +102,11 @@ const Member = {
             grup: (get('modal-mem-grup', 'inp-mem-grup') || {}).value || ''
         };
         if (!data.username || !data.password) return Toast.error('Username dan password wajib diisi');
-        if (data.username.length < 3 || data.username.length > 30) return Toast.error('Username harus 3 - 30 karakter');
-        if (data.password.length < 4 || data.password.length > 16) return Toast.error('Password PIN harus 4 - 16 karakter');
+        if (!Utils.isValidUsername(data.username, 3, 30)) return Toast.error('Username harus 3 - 30 karakter (hanya huruf, angka, _, -, .)');
+        if (!Utils.isValidPassword(data.password, 4, 16)) return Toast.error('Password PIN harus 4 - 16 karakter');
         if (data.nama_lengkap && data.nama_lengkap.length > 100) return Toast.error('Nama lengkap maksimal 100 karakter');
-        if (data.email && data.email.length > 120) return Toast.error('Email maksimal 120 karakter');
+        if (data.email && !Utils.isValidEmail(data.email)) return Toast.error('Format email tidak valid atau melebihi 120 karakter');
+        if (data.no_hp && !Utils.isValidPhone(data.no_hp)) return Toast.error('Nomor HP tidak valid (8-16 digit angka)');
 
         try {
             await API.member.create(data);
@@ -144,13 +145,13 @@ const Member = {
         };
         const password = passEl ? passEl.value : '';
         if (password) {
-            if (password.length < 4 || password.length > 16) {
+            if (!Utils.isValidPassword(password, 4, 16)) {
                 return Toast.error('Password baru harus 4 - 16 karakter');
             }
             data.password = password;
         }
         if (data.nama_lengkap && data.nama_lengkap.length > 100) return Toast.error('Nama lengkap maksimal 100 karakter');
-        if (data.email && data.email.length > 120) return Toast.error('Email maksimal 120 karakter');
+        if (data.email && !Utils.isValidEmail(data.email)) return Toast.error('Format email tidak valid atau melebihi 120 karakter');
 
         try {
             await API.member.update(id, data);

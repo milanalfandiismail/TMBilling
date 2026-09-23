@@ -190,6 +190,8 @@ const PC = {
         if (!data.kode) return Toast.error('Kode PC wajib diisi');
         if (data.kode.length > 11) return Toast.error('Kode PC maksimal 11 karakter');
         if (!/^[A-Za-z0-9\-_]+$/.test(data.kode)) return Toast.error('Kode PC hanya boleh huruf, angka, (-), dan (_)');
+        if (data.ip_address && !Utils.isValidIP(data.ip_address)) return Toast.error('Format IP Address tidak valid (contoh: 192.168.1.10)');
+        if (data.mac_address && !Utils.isValidMAC(data.mac_address)) return Toast.error('Format MAC Address tidak valid (contoh: AA:BB:CC:DD:EE:FF)');
         try {
             await API.pc.create(data);
             Toast.success(`PC ${data.kode} berhasil ditambahkan`);
@@ -227,6 +229,8 @@ const PC = {
         if (!data.kode) return Toast.error('Kode PC wajib diisi');
         if (data.kode.length > 11) return Toast.error('Kode PC maksimal 11 karakter');
         if (!/^[A-Za-z0-9\-_]+$/.test(data.kode)) return Toast.error('Kode PC hanya boleh huruf, angka, (-), dan (_)');
+        if (data.ip_address && !Utils.isValidIP(data.ip_address)) return Toast.error('Format IP Address tidak valid (contoh: 192.168.1.10)');
+        if (data.mac_address && !Utils.isValidMAC(data.mac_address)) return Toast.error('Format MAC Address tidak valid (contoh: AA:BB:CC:DD:EE:FF)');
         try {
             await API.pc.update(id, data);
             Toast.success('Data PC berhasil diperbarui');

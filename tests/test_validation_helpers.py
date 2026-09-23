@@ -107,3 +107,70 @@ def test_validate_string_length():
         validate_string_length("ab", 3, 50, "Nama")
     with pytest.raises(ValueError, match="Nama maksimal 10 karakter"):
         validate_string_length("12345678901", 1, 10, "Nama")
+
+
+def test_validate_ip_address():
+    from app.utils.validators import validate_ip_address
+    # Valid IPv4
+    assert validate_ip_address("192.168.1.10") == "192.168.1.10"
+    assert validate_ip_address("  10.0.0.1  ") == "10.0.0.1"
+    assert validate_ip_address("", allow_empty=True) is None
+    assert validate_ip_address(None, allow_empty=True) is None
+
+    # Invalid IPv4
+    with pytest.raises(ValueError, match="Alamat IP tidak boleh kosong"):
+        validate_ip_address("", allow_empty=False)
+    with pytest.raises(ValueError, match="Format alamat IP tidak valid"):
+        validate_ip_address("999.999.999.999")
+    with pytest.raises(ValueError, match="Format alamat IP tidak valid"):
+        validate_ip_address("192.168.1.abc")
+
+
+def test_validate_mac_address():
+    from app.utils.validators import validate_mac_address
+    # Valid MAC
+    assert validate_mac_address("AA:BB:CC:DD:EE:FF") == "AA:BB:CC:DD:EE:FF"
+    assert validate_mac_address("aa-bb-cc-dd-ee-ff") == "AA:BB:CC:DD:EE:FF"
+    assert validate_mac_address("aabb.ccdd.eeff") == "AA:BB:CC:DD:EE:FF"
+    assert validate_mac_address("aabbccddeeff") == "AA:BB:CC:DD:EE:FF"
+    assert validate_mac_address("", allow_empty=True) is None
+    assert validate_mac_address(None, allow_empty=True) is None
+
+    # Invalid MAC
+    with pytest.raises(ValueError, match="Alamat MAC tidak boleh kosong"):
+        validate_mac_address("", allow_empty=False)
+    with pytest.raises(ValueError, match="Format alamat MAC address tidak valid"):
+        validate_mac_address("AA:BB:CC:DD:EE:GG")
+    with pytest.raises(ValueError, match="Format alamat MAC address tidak valid"):
+        validate_mac_address("12345")
+
+
+def test_validate_choice():
+    from app.utils.validators import validate_choice
+    choices = ["admin", "kasir", "teknisi"]
+    assert validate_choice("admin", choices, "Role") == "admin"
+    assert validate_choice("KASIR", choices, "Role", case_sensitive=False) == "kasir"
+
+    with pytest.raises(ValueError, match="Role tidak valid"):
+        validate_choice("superadmin", choices, "Role")
+
+
+def test_validate_filename():
+    from app.utils.validators import validate_filename
+    # Valid filenames
+    assert validate_filename("catatan.txt", allowed_extensions={"txt"}) == "catatan.txt"
+    assert validate_filename("backup_2026_09_23.zip", allowed_extensions={"zip"}) == "backup_2026_09_23.zip"
+    assert validate_filename("foto_profile.png", allowed_extensions={"png", "jpg"}) == "foto_profile.png"
+
+    # Directory traversal attempts
+    with pytest.raises(ValueError, match="Akses tidak sah"):
+        validate_filename("../../../etc/passwd")
+    with pytest.raises(ValueError, match="Akses tidak sah"):
+        validate_filename("folder/subfolder/file.txt")
+
+    # Invalid extensions
+    with pytest.raises(ValueError, match="Ekstensi berkas tidak diizinkan"):
+        validate_filename("malicious.exe", allowed_extensions={"txt", "zip"})
+    with pytest.raises(ValueError, match="Nama Berkas tidak boleh kosong"):
+        validate_filename("")
+

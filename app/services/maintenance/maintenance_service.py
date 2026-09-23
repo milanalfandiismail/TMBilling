@@ -11,6 +11,7 @@ from sqlalchemy import func
 from app.models import db, PC, MaintenanceTicket
 from app.utils.timezone_utils import format_display
 from app.utils.logger import write_log
+from app.utils.validators import validate_choice, validate_string_length, validate_integer_range
 
 class MaintenanceService:
 
@@ -23,21 +24,18 @@ class MaintenanceService:
         if not pc:
             raise ValueError(f"PC dengan ID {pc_id} tidak ditemukan.")
 
-        valid_kategori = ["HARDWARE", "SOFTWARE", "JARINGAN", "LAINNYA"]
-        if kategori not in valid_kategori:
-            raise ValueError(f"Kategori tidak valid. Harus salah satu dari {valid_kategori}")
-
-        valid_prioritas = ["RENDAH", "SEDANG", "TINGGI", "KRITIS"]
-        if prioritas not in valid_prioritas:
-            raise ValueError(f"Prioritas tidak valid. Harus salah satu dari {valid_prioritas}")
+        kategori_valid = validate_choice(kategori, ["HARDWARE", "SOFTWARE", "JARINGAN", "LAINNYA"], field_name="Kategori Tiket", case_sensitive=False).upper()
+        prioritas_valid = validate_choice(prioritas, ["RENDAH", "SEDANG", "TINGGI", "KRITIS"], field_name="Prioritas Tiket", case_sensitive=False).upper()
+        judul_valid = validate_string_length(judul, min_len=3, max_len=150, field_name="Judul Tiket", required=True)
+        deskripsi_valid = validate_string_length(deskripsi, min_len=0, max_len=1000, field_name="Deskripsi Tiket", required=False) if deskripsi else None
 
         ticket = MaintenanceTicket(
             pc_id=pc_id,
             reporter=reporter,
-            kategori=kategori,
-            prioritas=prioritas,
-            judul=judul,
-            deskripsi=deskripsi,
+            kategori=kategori_valid,
+            prioritas=prioritas_valid,
+            judul=judul_valid,
+            deskripsi=deskripsi_valid,
             status="BARU"
         )
 
@@ -47,11 +45,11 @@ class MaintenanceService:
         detail_tiket = {
             "pc_kode": pc.kode,
             "reporter": reporter,
-            "kategori": kategori,
-            "prioritas": prioritas,
-            "judul": judul
+            "kategori": kategori_valid,
+            "prioritas": prioritas_valid,
+            "judul": judul_valid
         }
-        write_log("BUAT_TIKET", f"Tiket {kategori} PC {pc.kode} dibuat (Prioritas {prioritas})", user=reporter, detail_json=detail_tiket)
+        write_log("BUAT_TIKET", f"Tiket {kategori_valid} PC {pc.kode} dibuat (Prioritas {prioritas_valid})", user=reporter, detail_json=detail_tiket)
         return ticket
 
     @staticmethod
@@ -79,19 +77,19 @@ class MaintenanceService:
         if not ticket:
             raise ValueError(f"Tiket dengan ID {ticket_id} tidak ditemukan.")
 
-        valid_status = ["BARU", "DIPROSES", "SELESAI", "DITOLAK"]
-        if status not in valid_status:
-            raise ValueError(f"Status tidak valid. Harus salah satu dari {valid_status}")
+        status_valid = validate_choice(status, ["BARU", "DIPROSES", "SELESAI", "DITOLAK"], field_name="Status Tiket", case_sensitive=False).upper()
+        biaya_valid = validate_integer_range(biaya or 0, min_val=0, max_val=100_000_000, field_name="Biaya Perbaikan")
+        resolusi_valid = validate_string_length(resolusi, min_len=0, max_len=1000, field_name="Resolusi Tiket", required=False) if resolusi else None
 
-        ticket.status = status
+        ticket.status = status_valid
         
-        if status == "SELESAI":
+        if status_valid == "SELESAI":
             ticket.resolved_at = datetime.now(timezone.utc).replace(tzinfo=None)
             ticket.resolved_by = resolved_by
-            ticket.resolusi = resolusi
-            ticket.biaya = int(biaya or 0)
-        elif status == "DITOLAK":
-            ticket.resolusi = resolusi
+            ticket.resolusi = resolusi_valid
+            ticket.biaya = biaya_valid
+        elif status_valid == "DITOLAK":
+            ticket.resolusi = resolusi_valid
 
         db.session.commit()
         

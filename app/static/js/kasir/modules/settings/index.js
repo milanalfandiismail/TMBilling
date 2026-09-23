@@ -222,7 +222,12 @@ const Settings = {
     },
 
     async saveAutoShutdown() {
-        const val = document.getElementById('shutdown-timer').value;
+        const rawVal = document.getElementById('shutdown-timer')?.value;
+        const val = parseInt(rawVal, 10);
+        if (isNaN(val) || val < 30 || val > 600) {
+            Toast.error('Timer auto-shutdown harus antara 30 s/d 600 detik (10 menit)');
+            return;
+        }
         try {
             await API.settings.updateAutoShutdown(val);
             Toast.success('Pengaturan auto-shutdown disimpan');

@@ -343,6 +343,14 @@ const Maintenance = {
                 Toast.error('Harap pilih unit PC.');
                 return;
             }
+            if (!judul || judul.length < 3 || judul.length > 150) {
+                Toast.error('Judul kendala harus antara 3 sampai 150 karakter.');
+                return;
+            }
+            if (deskripsi.length > 5000) {
+                Toast.error('Deskripsi kendala maksimal 5000 karakter.');
+                return;
+            }
 
             const res = await API.request('/api/v1/kasir/maintenance/create', {
                 method: 'POST',
@@ -439,7 +447,17 @@ const Maintenance = {
             const ticketId = document.getElementById('maint-update-id').value;
             const status = document.getElementById('maint-update-status').value;
             const resolusi = document.getElementById('maint-update-resolusi').value.trim();
-            const biaya = document.getElementById('maint-update-biaya').value || 0;
+            const rawBiaya = document.getElementById('maint-update-biaya').value;
+            const biaya = Utils.parseRupiah(rawBiaya);
+
+            if (status === 'SELESAI' && !resolusi) {
+                Toast.error('Catatan perbaikan (resolusi) wajib diisi jika status Selesai.');
+                return;
+            }
+            if (biaya < 0 || biaya > 100000000) {
+                Toast.error('Biaya perbaikan harus antara Rp 0 sampai Rp 100.000.000.');
+                return;
+            }
 
             const res = await API.request(`/api/v1/kasir/maintenance/${ticketId}/status`, {
                 method: 'PUT',

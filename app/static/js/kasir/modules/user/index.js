@@ -139,8 +139,8 @@ const User = {
         const role = document.getElementById('inp-user-role').value;
         const aktif = document.getElementById('inp-user-aktif').value === 'true';
         if (!username || (!this.editingId && !password)) return Toast.error("Username dan Password wajib diisi");
-        if (username.length < 3 || username.length > 30) return Toast.error("Username harus 3 - 30 karakter");
-        if (password && (password.length < 6 || password.length > 32)) return Toast.error("Password harus 6 - 32 karakter");
+        if (!Utils.isValidUsername(username, 3, 30)) return Toast.error("Username harus 3 - 30 karakter (hanya huruf, angka, _, -, .)");
+        if (password && !Utils.isValidPassword(password, 6, 32)) return Toast.error("Password harus 6 - 32 karakter");
         if (nama_lengkap && nama_lengkap.length > 100) return Toast.error("Nama lengkap maksimal 100 karakter");
 
         const data = { username, nama_lengkap, role, aktif };

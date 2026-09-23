@@ -56,18 +56,8 @@ def update_auto_shutdown():
         if not data:
             return jsonify({"error": "Request body diperlukan"}), 400
         
-        timer_seconds = data.get("timer_seconds")
-        if timer_seconds is None:
-            return jsonify({"error": "timer_seconds wajib diisi"}), 400
-        
-        # Validasi Tipe Data & Range
-        try:
-            timer_seconds = int(timer_seconds)
-        except ValueError:
-            return jsonify({"error": "timer_seconds harus berupa angka"}), 400
-        
-        if timer_seconds < 30 or timer_seconds > 600:
-            return jsonify({"error": "Range timer harus antara 30 s/d 600 detik"}), 400
+        from app.utils.validators import validate_integer_range
+        timer_seconds = validate_integer_range(data.get("timer_seconds"), min_val=30, max_val=600, field_name="Timer Auto-Shutdown")
         
         # Simpan ke Database via Service
         old_val = SettingsService.get("auto_shutdown_timer_seconds", "180")

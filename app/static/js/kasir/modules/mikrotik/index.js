@@ -91,14 +91,29 @@ const MikrotikModule = {
     saveConfig: function () {
         const isEnabled = document.getElementById('mikrotik-enabled').checked;
         const host = document.getElementById('mikrotik-host').value.trim();
-        const port = document.getElementById('mikrotik-port').value.trim() || '8728';
+        const portStr = document.getElementById('mikrotik-port').value.trim() || '8728';
         const username = document.getElementById('mikrotik-username').value.trim();
         const password = document.getElementById('mikrotik-password').value;
         const profile = document.getElementById('mikrotik-profile').value.trim() || 'default';
 
-        if (!host || !username) {
-            Toast.show('Host dan Username tidak boleh kosong', 'error');
-            return;
+        if (isEnabled) {
+            if (!host) {
+                Toast.show('Host / IP MikroTik wajib diisi', 'error');
+                return;
+            }
+            const portNum = parseInt(portStr, 10);
+            if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
+                Toast.show('Port MikroTik harus antara 1 sampai 65535', 'error');
+                return;
+            }
+            if (!username || username.length < 1 || username.length > 64) {
+                Toast.show('Username MikroTik harus antara 1 sampai 64 karakter', 'error');
+                return;
+            }
+            if (profile.length > 64) {
+                Toast.show('Hotspot profile maksimal 64 karakter', 'error');
+                return;
+            }
         }
 
         API.request('/api/v1/kasir/mikrotik/config', {
@@ -107,7 +122,7 @@ const MikrotikModule = {
             body: JSON.stringify({ 
                 enabled: isEnabled,
                 host: host,
-                port: port,
+                port: portStr,
                 username: username,
                 password: password,
                 hotspot_profile: profile
@@ -127,12 +142,21 @@ const MikrotikModule = {
 
     testConnection: function () {
         const host = document.getElementById('mikrotik-host').value.trim();
-        const port = document.getElementById('mikrotik-port').value.trim() || '8728';
+        const portStr = document.getElementById('mikrotik-port').value.trim() || '8728';
         const username = document.getElementById('mikrotik-username').value.trim();
         const password = document.getElementById('mikrotik-password').value;
 
         if (!host || !username) {
             Toast.show('Host dan Username tidak boleh kosong', 'error');
+            return;
+        }
+        const portNum = parseInt(portStr, 10);
+        if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
+            Toast.show('Port MikroTik harus antara 1 sampai 65535', 'error');
+            return;
+        }
+        if (username.length > 64) {
+            Toast.show('Username MikroTik maksimal 64 karakter', 'error');
             return;
         }
 
@@ -141,7 +165,7 @@ const MikrotikModule = {
         API.request('/api/v1/kasir/mikrotik/test', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ host, port, username, password })
+            body: JSON.stringify({ host, port: portStr, username, password })
         })
             .then(data => {
                 if (data.success) {

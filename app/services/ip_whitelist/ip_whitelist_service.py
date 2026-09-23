@@ -115,26 +115,25 @@ class IpWhitelistService:
     @staticmethod
     def add(ip, label=''):
         """Tambah IP ke whitelist. Raise ValueError jika invalid/duplicate."""
-        try:
-            ipaddress.IPv4Address(ip)
-        except ipaddress.AddressValueError:
-            raise ValueError(f"IP address '{ip}' tidak valid (harus IPv4).")
+        from app.utils.validators import validate_ip_address, validate_string_length
+        clean_ip = validate_ip_address(ip, allow_empty=False, version=4)
+        clean_label = validate_string_length(label, min_len=1, max_len=100, field_name="Label IP Whitelist", required=False) if label else "Manual entry"
 
         entries = IpWhitelistService._load_entries()
-        if any(e['ip'] == ip for e in entries):
-            raise ValueError(f"IP '{ip}' sudah ada di whitelist.")
+        if any(e['ip'] == clean_ip for e in entries):
+            raise ValueError(f"IP '{clean_ip}' sudah ada di whitelist.")
 
         import datetime
         entries.append({
-            'ip': ip,
+            'ip': clean_ip,
             'added_at': datetime.datetime.now().isoformat(),
-            'label': label or 'Manual entry'
+            'label': clean_label
         })
         IpWhitelistService._save_entries(entries)
 
         write_log(
             aksi='IP_WHITELIST_ADD',
-            detail=f"IP {ip} ditambahkan ke whitelist (label: {label or '-'})",
+            detail=f"IP {clean_ip} ditambahkan ke whitelist (label: {clean_label})",
             user='admin'
         )
         return entries

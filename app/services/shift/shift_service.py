@@ -37,6 +37,9 @@ class ShiftService:
         Raises:
             ValueError: Jika kasir sudah punya shift aktif.
         """
+        from app.utils.validators import validate_integer_range
+        modal_awal = validate_integer_range(modal_awal or 0, min_val=0, max_val=100_000_000, field_name="Modal Awal")
+
         kasir = User.query.filter_by(username=kasir_username).first()
         if not kasir:
             raise ValueError("Kasir tidak ditemukan")
@@ -47,9 +50,6 @@ class ShiftService:
         ).first()
         if aktif:
             raise ValueError(f"Kasir '{kasir_username}' sudah punya shift aktif sejak {format_display(aktif.waktu_mulai)}")
-
-        if modal_awal < 0:
-            raise ValueError("Modal awal tidak boleh negatif")
 
         shift = ShiftRecord(
             kasir_id=kasir.id,
@@ -201,14 +201,14 @@ class ShiftService:
         Raises:
             ValueError: Jika shift tidak valid atau sudah ditutup.
         """
+        from app.utils.validators import validate_integer_range
+        uang_fisik = validate_integer_range(uang_fisik or 0, min_val=0, max_val=100_000_000, field_name="Uang Fisik")
+
         shift = ShiftRecord.query.get(shift_id)
         if not shift:
             raise ValueError("Shift tidak ditemukan")
         if shift.status != "AKTIF":
             raise ValueError("Shift sudah ditutup sebelumnya")
-
-        if uang_fisik < 0:
-            raise ValueError("Uang fisik tidak boleh negatif")
 
         # Hitung pendapatan dulu
         summary = ShiftService.get_shift_summary(shift_id)

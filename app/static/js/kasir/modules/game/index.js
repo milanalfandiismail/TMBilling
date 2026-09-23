@@ -492,6 +492,18 @@ const GameManagement = {
     async handleSubmit(e) {
         e.preventDefault();
         const id = document.getElementById('form-game-id').value;
+        const nama = document.getElementById('form-game-nama').value.trim();
+        const exePath = document.getElementById('form-game-path').value.trim();
+
+        if (!nama || nama.length < 2 || nama.length > 100) {
+            Toast.error('Nama game/aplikasi harus antara 2 sampai 100 karakter');
+            return;
+        }
+        if (exePath.length > 255) {
+            Toast.error('Lokasi file (exe_path) maksimal 255 karakter');
+            return;
+        }
+
         const saveBtn = document.getElementById('btn-save-game');
         if (saveBtn) {
             saveBtn.disabled = true;
@@ -500,10 +512,10 @@ const GameManagement = {
 
         try {
             const form = new FormData();
-            form.append('nama', document.getElementById('form-game-nama').value.trim());
+            form.append('nama', nama);
             form.append('tipe', document.getElementById('form-game-tipe').value);
             form.append('kategori', this.selectedCategories.join(', '));
-            form.append('exe_path', document.getElementById('form-game-path').value.trim());
+            form.append('exe_path', exePath);
             form.append('argumen', document.getElementById('form-game-argumen').value.trim());
             form.append('aktif', document.getElementById('form-game-aktif').checked);
             
