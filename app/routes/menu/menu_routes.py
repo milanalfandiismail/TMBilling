@@ -10,7 +10,7 @@ import os
 from flask import Blueprint, request, jsonify, current_app, session
 from werkzeug.utils import secure_filename
 from app.services import MenuService
-from app.routes.auth.auth_kasir_routes import login_required, admin_required
+from app.middleware.auth import login_required, admin_required, shift_required
 from app.utils.validators import validate_filename
 
 menu_api_bp = Blueprint("menu", __name__)
@@ -212,6 +212,7 @@ def hard_delete_menu_item(menu_id):
 
 @menu_api_bp.route("/checkout", methods=["POST"])
 @login_required
+@shift_required
 def checkout_order():
     """Checkout pesanan makanan/minuman."""
     try:

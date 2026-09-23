@@ -7,7 +7,7 @@ memindah, dan menambah waktu sesi bermain di dashboard kasir.
 """
 
 from flask import Blueprint, request, jsonify, session
-from app.routes.auth.auth_kasir_routes import login_required
+from app.middleware.auth import login_required, shift_required
 from app.services import SesiService
 from app.services import PaketService
 
@@ -21,6 +21,7 @@ sesi_api_bp = Blueprint("sesi", __name__)
 
 @sesi_api_bp.route("/buka-guest", methods=["POST"])
 @login_required
+@shift_required
 def buka_guest():
     """Buka sesi baru untuk guest di PC tertentu."""
     try:
@@ -46,6 +47,7 @@ def buka_guest():
 
 @sesi_api_bp.route("/buka-member", methods=["POST"])
 @login_required
+@shift_required
 def buka_member():
     """Buka sesi baru untuk member menggunakan saldo waktu tersimpan."""
     try:
@@ -70,6 +72,7 @@ def buka_member():
 
 @sesi_api_bp.route("/buka-guest-batch", methods=["POST"])
 @login_required
+@shift_required
 def buka_guest_batch():
     """Buka sesi baru untuk banyak guest di beberapa PC sekaligus."""
     try:
@@ -125,6 +128,7 @@ def buka_guest_batch():
 
 @sesi_api_bp.route("/tambah-waktu-batch", methods=["POST"])
 @login_required
+@shift_required
 def tambah_waktu_batch():
     """Tambah durasi pada beberapa sesi bermain aktif sekaligus."""
     try:
@@ -172,6 +176,7 @@ def tambah_waktu_batch():
 
 @sesi_api_bp.route("/tambah-waktu-sesi/<int:sesi_id>", methods=["POST"])
 @login_required
+@shift_required
 def tambah_waktu_sesi(sesi_id):
     """Tambah durasi pada sesi yang sedang aktif bermain (mendukung multiple paket)."""
     try:
@@ -304,6 +309,7 @@ def get_riwayat_paket(sesi_id):
 
 @sesi_api_bp.route("/refund-paket", methods=["POST"])
 @login_required
+@shift_required
 def refund_paket():
     """Batalkan transaksi paket guest: Potong saldo waktu sesi guest dan tandai transaksi direfund."""
     try:
