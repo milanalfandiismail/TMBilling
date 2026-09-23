@@ -502,14 +502,18 @@ git commit -m "feat(shift): update endpoint end_shift dan get_shift_history deng
 In `app/templates/kasir/base.html`:
 - Uncomment line 358: `<script src="{{ url_for('static', filename='js/kasir/modules/shift/index.js') }}?v={{ v_cache }}"></script>`.
 
-- [ ] **Step 2: Add shift status widget container in sidebar.html**
+- [ ] **Step 2: Add shift status widget container in sidebar.html above logout button**
 
 In `app/templates/kasir/components/sidebar.html`:
-- Add `<div id="shift-info" class="mb-2"></div>` right above `#user-info`.
+- Inside the sidebar user footer (`border-t border-[#171717] bg-[#080808]`), place `<div id="shift-info" class="mb-2 w-full"></div>` directly between `#user-info` and the `App.logout()` button.
+- Ensure the layout, buttons, and text inside `#shift-info` are fully responsive across breakpoints `sm`, `md`, `lg`, `xl`, and `2xl` without text clipping or horizontal overflow.
 
-- [ ] **Step 3: Enhance shift/index.js with catatan field and auto-load**
+- [ ] **Step 3: Enhance shift/index.js with responsive UI, catatan field, and handover button**
 
 In `app/static/js/kasir/modules/shift/index.js`:
+- In `updateSidebarInfo()`:
+  - If no active shift: render responsive button **`Buka Shift Kasir`** (full-width, amber accent, responsive text `text-[10px] lg:text-xs xl:text-xs 2xl:text-sm`).
+  - If active shift: render compact status card with pulsing green indicator, start time, modal awal, and a prominent button **`Pertukaran / Serah Terima Shift`** located right above the Logout button.
 - In `showTutupShiftModal()`: add textarea for `catatan-input` (Catatan Serah Terima Kasir, maks. 255 karakter).
 - In `submitTutupShift()`: pass `catatan` to API payload.
 - In `showHasilShift()`: display `catatan` if present.

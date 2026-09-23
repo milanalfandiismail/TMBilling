@@ -74,10 +74,15 @@ Berdasarkan audit mendalam menggunakan MCP `codebase-memory`:
   - Sistem menghitung `selisih = uang_fisik - total_seharusnya`.
 - **Cetak Struk Handover**: Format cetak thermal 58mm/80mm siap pakai (Kasir, Waktu, Modal, Billing, Kantin, Fisik, Selisih, Rincian Pembayaran).
 
-### C. Antarmuka Pengguna (UI) Shift Handover
-1. **Status Shift di Sidebar / Navbar**:
-   - Jika belum buka shift: Kotak/Pill peringatan *"Belum Buka Shift"* + tombol **BUKA SHIFT**.
-   - Jika shift aktif: Badge hijau berdenyut *"Shift Aktif: [Nama] | Buka: [Jam] | Modal: [Rp]"* + tombol **TUTUP SHIFT / SERAH TERIMA**.
+### C. Antarmuka Pengguna (UI) Shift Handover (Sidebar User Section)
+1. **Posisi & Integrasi UI/UX**:
+   - Ditempatkan di bagian footer sidebar user (`app/templates/kasir/components/sidebar.html`), tepat di antara profil user dan tombol **Keluar (Logout)**.
+   - Responsif untuk semua breakpoint (`sm, md, lg, xl, 2xl`), menggunakan tipografi dan padding proporsional.
+   - **Kondisi Belum Buka Shift**:
+     - Kotak informasi amber/oranye: *"Belum Buka Shift"* + tombol **`BUKA SHIFT`** yang membuka Modal Input Modal Awal.
+   - **Kondisi Shift Sedang Aktif**:
+     - Widget ringkas: Indikator hijau aktif berdenyut, jam mulai buka shift, dan nominal modal awal.
+     - Tombol **`PERTUKARAN / SERAH TERIMA SHIFT`** (ikon handover/refresh) berada tepat di atas tombol **Keluar**.
 2. **Modal Buka Shift**:
    - Input modal awal (kembalian di laci) Rp 0 - Rp 100.000.000.
 3. **Modal Tutup Shift (Blind Count)**:
