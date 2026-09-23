@@ -101,7 +101,21 @@ const API = {
         get: (id) => API.request(`/api/v1/kasir/user/${id}`),
         create: (data) => API.request('/api/v1/kasir/user/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/v1/kasir/user/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: (id) => API.request(`/api/v1/kasir/user/${id}`, { method: 'DELETE' })
+        delete: (id) => API.request(`/api/v1/kasir/user/${id}`, { method: 'DELETE' }),
+        resetKuota: (id) => API.request(`/api/v1/kasir/user/${id}/reset-kuota`, { method: 'POST' })
+    },
+
+    // 🔗 SHIFT KASIR (Handover & Blind Count)
+    shift: {
+        active: () => API.request('/api/v1/kasir/shift/active'),
+        start: (data) => API.request('/api/v1/kasir/shift/start', { method: 'POST', body: JSON.stringify(data) }),
+        end: (data) => API.request('/api/v1/kasir/shift/end', { method: 'POST', body: JSON.stringify(data) }),
+        summary: (shiftId = null) => API.request(shiftId ? `/api/v1/kasir/shift/${shiftId}/summary` : '/api/v1/kasir/shift/summary'),
+        history: (params = {}) => {
+            const q = new URLSearchParams(params).toString();
+            return API.request(`/api/v1/kasir/shift/history${q ? '?' + q : ''}`);
+        },
+        receipt: (id) => API.request(`/api/v1/kasir/shift/receipt/${id}`)
     },
 
     // 🔗 KELOLA MEMBER
@@ -352,6 +366,27 @@ const API = {
         inboundUnblock: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}/unblock`, { method: 'POST' }),
         inboundDelete: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}`, { method: 'DELETE' }),
         switchContext: (branchId) => API.request('/api/v1/kasir/branch/switch-context', { method: 'POST', body: JSON.stringify({ branch_id: branchId }) })
+    },
+
+    // 🔗 MANAJEMEN SHIFT KASIR
+    shift: {
+        active: () => API.request('/api/v1/kasir/shift/active'),
+        start: (data) => API.request('/api/v1/kasir/shift/start', { method: 'POST', body: JSON.stringify(data) }),
+        summary: () => API.request('/api/v1/kasir/shift/summary'),
+        getSummary: (shiftId) => API.request(`/api/v1/kasir/shift/${shiftId}/summary`),
+        end: (data) => API.request('/api/v1/kasir/shift/end', { method: 'POST', body: JSON.stringify(data) }),
+        forceClose: (data) => API.request('/api/v1/kasir/shift/force-close', { method: 'POST', body: JSON.stringify(data) }),
+        receipt: (shiftId) => API.request(`/api/v1/kasir/shift/receipt/${shiftId}`),
+        history: (params = {}) => {
+            const q = new URLSearchParams();
+            if (params.kasir_id) q.append('kasir_id', params.kasir_id);
+            if (params.limit) q.append('limit', params.limit);
+            if (params.offset) q.append('offset', params.offset);
+            if (params.tanggal_mulai) q.append('tanggal_mulai', params.tanggal_mulai);
+            if (params.tanggal_selesai) q.append('tanggal_selesai', params.tanggal_selesai);
+            const qs = q.toString();
+            return API.request('/api/v1/kasir/shift/history' + (qs ? `?${qs}` : ''));
+        }
     },
 
     resolveMediaUrl(url) {
