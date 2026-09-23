@@ -52,18 +52,26 @@ class IpWhitelistService:
         """Simpan domain publik tunnel."""
         SettingsService.set(IpWhitelistService.PUBLIC_URL_KEY, url.strip().rstrip('/'))
 
-    # ------------------------------------------------------------------
-    # 2. IP DETECTION & SCOPE
-    # ------------------------------------------------------------------
-
     @staticmethod
-    def extract_client_ip(headers=None, remote_addr=None):
-        """Ambil IP client dari headers/remote_addr (HTTP-agnostic)."""
-        if headers:
+    def extract_client_ip(headers=None, remote_addr=None, trusted_proxies=None):
+        """Ambil IP client dari remote_addr / headers dengan verifikasi proxy terpercaya."""
+        if not remote_addr:
+            remote_addr = '0.0.0.0'
+
+        # Default trusted proxies: loopback lokal
+        if trusted_proxies is None:
+            trusted_proxies = {'127.0.0.1', '::1', 'localhost'}
+
+        # Hanya percayai headers jika koneksi TCP berasal dari proxy terpercaya
+        if headers and remote_addr in trusted_proxies:
+            cf_ip = headers.get('CF-Connecting-IP')
+            if cf_ip:
+                return cf_ip.strip()
             xff = headers.get('X-Forwarded-For')
             if xff:
                 return xff.split(',')[0].strip()
-        return remote_addr or '0.0.0.0'
+
+        return remote_addr
 
     @staticmethod
     def is_path_in_scope(path):
