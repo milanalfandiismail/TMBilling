@@ -570,10 +570,12 @@ In `app/static/js/kasir/modules/user/index.js`:
 - [ ] **Step 3: Create shift_history.html and user_logs.html tabs**
 
 Create `app/templates/kasir/tabs/shift_history.html`:
-- Date filter, Kasir filter, table with shift details, and "Cetak Struk" button calling `Shift.printHandover()`.
+- Date filter (Dari - Sampai), Kasir filter, table with shift details.
+- Tombol **`Lihat Detail`**: Membuka popup modal digital lengkap berisi seluruh breakdown pendapatan, uang fisik, selisih, dan catatan di layar monitor (paperless, tanpa perlu cetak struk).
+- Tombol **`Cetak Struk`**: Opsi cetak fisik thermal jika kasir/owner menginginkannya (`Shift.printHandover()`).
 
 Create `app/templates/kasir/tabs/user_logs.html`:
-- Filter date, Kasir filter, audit log table for staff actions.
+- Filter date, Kasir filter, audit log table for staff actions (tambah jam bonus, reset kuota bulanan, sesi bermain PC kasir, edit profil, ganti password).
 
 Include tabs in `app/templates/kasir/dashboard.html`.
 

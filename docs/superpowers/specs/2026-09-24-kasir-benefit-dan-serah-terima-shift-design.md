@@ -89,9 +89,11 @@ Berdasarkan audit mendalam menggunakan MCP `codebase-memory`:
    - Sembunyikan total pendapatan.
    - Kasir menginput uang fisik di laci + catatan serah terima.
    - Konfirmasi penutupan shift.
-4. **Modal Hasil Shift & Struk**:
-   - Menampilkan selisih (SURPLUS / SESUAI / DEFISIT) dengan warna jelas.
-   - Tombol "Cetak Struk Handover".
+4. **Modal Hasil Shift & Rekap Digital di Layar**:
+   - Menampilkan ringkasan lengkap di layar monitor komputer tanpa kewajiban mencetak kertas (*paperless friendly*).
+   - Menampilkan modal awal, pendapatan billing, kantin, rincian per metode pembayaran (Tunai/QRIS/Transfer), uang fisik di laci, catatan kasir, dan selisih (SURPLUS / SESUAI / DEFISIT) dengan badge warna jelas.
+   - Tombol "Tutup" (untuk sekadar melihat di layar monitor komputer).
+   - Tombol "Cetak Struk Handover" (opsional jika kasir/owner ingin print fisik thermal 58mm/80mm).
 
 ---
 
@@ -104,7 +106,8 @@ Dropdown **Manajemen Staff** di `sidebar_admin.html` kini memiliki 3 sub-menu te
 2. **Riwayat Serah Terima Shift** (`data-tab="shift_history"`):
    - Tabel riwayat shift kasir: Tanggal, Nama Kasir, Modal Awal, Billing, Kantin, Total, Uang Fisik, Selisih, Catatan.
    - Filter tanggal & kasir.
-   - Tombol Cetak Ulang Struk Handover.
+   - Tombol **👁️ Lihat Detail**: Membuka modal popup rekapan digital lengkap di layar monitor kapan saja tanpa perlu cetak kertas.
+   - Tombol **🖨️ Cetak Struk**: Cetak ulang struk thermal jika sewaktu-waktu dibutuhkan fisik kertasnya.
 3. **Log & Audit Staf** (`data-tab="user_logs"`):
    - Riwayat audit khusus akun kasir: penambahan jam bonus, reset kuota bulanan, sesi bermain kasir di PC, ganti password, perubahan status/arsip akun.
 
