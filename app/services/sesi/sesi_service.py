@@ -219,11 +219,15 @@ class SesiService:
 
     @staticmethod
     def sync_waktu_member(sesi):
-        """Sinkronisasi saldo waktu di database Member dengan sisa waktu sesi."""
+        """Sinkronisasi saldo waktu di database Member atau kuota Kasir dengan sisa waktu sesi."""
         sisa = sesi.sisa_menit()
         if sesi.tipe == "member" and sesi.member:
             if sesi.member.waktu_tersimpan != sisa:
                 sesi.member.waktu_tersimpan = sisa
+                db.session.commit()
+        elif sesi.tipe == "kasir" and sesi.user:
+            if sesi.user.sisa_kuota_menit != sisa:
+                sesi.user.sisa_kuota_menit = sisa
                 db.session.commit()
         return sisa
 
@@ -243,10 +247,13 @@ class SesiService:
             # 1. Hitung sisa waktu final (Live calculation)
             sisa_final = sesi.sisa_menit()
 
-            # 2. Update Member (Jika ada)
+            # 2. Update Member atau Kasir (Jika ada)
             if sesi.tipe == "member" and sesi.member:
                 sesi.member.waktu_tersimpan = sisa_final
                 db.session.add(sesi.member)
+            elif sesi.tipe == "kasir" and sesi.user:
+                sesi.user.sisa_kuota_menit = sisa_final
+                db.session.add(sesi.user)
             
             # 3. Update status sesi
             sesi.status = "selesai"
@@ -295,13 +302,20 @@ class SesiService:
         pc_lama_kode = sesi.pc.kode
         sisa_waktu = sesi.sisa_menit()
 
-        # Update sisa terakhir ke member
+        # Update sisa terakhir ke member atau kasir
         if sesi.member:
             sesi.member.waktu_tersimpan = sisa_waktu
+        elif sesi.user:
+            sesi.user.sisa_kuota_menit = sisa_waktu
         
         # Tutup sesi lama secara manual (tanpa repo commit)
         if sesi.member_id:
             all_sesi = SesiRepository.get_all_aktif_by_member(sesi.member_id)
+            for s in all_sesi:
+                s.status = "selesai"
+                s.selesai_pada = now_local()
+        elif sesi.user_id:
+            all_sesi = Sesi.query.filter_by(user_id=sesi.user_id, status="aktif").all()
             for s in all_sesi:
                 s.status = "selesai"
                 s.selesai_pada = now_local()
@@ -311,7 +325,7 @@ class SesiService:
 
         # Buat sesi baru di unit tujuan
         sesi_baru = Sesi(
-            tipe=sesi.tipe, member_id=sesi.member_id, pc_id=pc_baru.id,
+            tipe=sesi.tipe, member_id=sesi.member_id, user_id=sesi.user_id, pc_id=pc_baru.id,
             paket_id=sesi.paket_id, nama_guest=sesi.nama_guest,
             token_sesi=secrets.token_hex(32), durasi_beli_menit=sisa_waktu,
             total_bayar=sesi.total_bayar, status="aktif",
