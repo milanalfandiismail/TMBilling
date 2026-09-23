@@ -4,6 +4,7 @@ Modul ini menangani business logic shift: buka shift, hitung pendapatan,
 tutup shift dengan hitung buta, dan cetak struk handover.
 """
 
+import json
 from app.models import db, now_local
 from app.models import ShiftRecord, Transaksi, TransaksiMenu, User
 from app.utils.timezone_utils import format_display
@@ -90,6 +91,9 @@ class ShiftService:
     def get_shift_summary(shift_id):
         """Hitung ringkasan pendapatan shift tanpa menyembunyikan angka.
 
+        Mendukung rincian multi-metode pembayaran dinamis (Tunai vs Non-Tunai)
+        sesuai konfigurasi dan transaksi aktual.
+
         Args:
             shift_id: ID shift.
 
@@ -111,7 +115,7 @@ class ShiftService:
             Transaksi.user_id == shift.kasir_id,
             Transaksi.is_refunded == False,
             Transaksi.jenis.notin_(["tutup_sesi", "pindah_pc", "refund_paket"]),
-        ).scalar()
+        ).scalar() or 0
 
         # Hitung refund dalam rentang shift
         total_refund = db.session.query(
@@ -121,7 +125,7 @@ class ShiftService:
             Transaksi.dibuat_pada <= waktu_akhir,
             Transaksi.user_id == shift.kasir_id,
             Transaksi.jenis == "refund_paket",
-        ).scalar()
+        ).scalar() or 0
 
         # Hitung kantin dalam rentang shift
         total_kantin = db.session.query(
@@ -130,9 +134,18 @@ class ShiftService:
             TransaksiMenu.tanggal >= shift.waktu_mulai,
             TransaksiMenu.tanggal <= waktu_akhir,
             TransaksiMenu.kasir_id == shift.kasir_id,
-        ).scalar()
+        ).scalar() or 0
 
-        # Hitung breakdown berdasarkan metode pembayaran
+        # Ambil konfigurasi metode pembayaran
+        from app.services.settings.settings_service import SettingsService
+        raw_methods = SettingsService.get("payment_methods", "Tunai, QRIS")
+        configured_methods = []
+        if isinstance(raw_methods, str):
+            configured_methods = [m.strip() for m in raw_methods.split(",") if m.strip()]
+        elif isinstance(raw_methods, list):
+            configured_methods = [str(m).strip() for m in raw_methods if str(m).strip()]
+
+        # Hitung breakdown berdasarkan metode pembayaran dari database
         billing_by_method = db.session.query(
             Transaksi.metode_pembayaran.label("method"),
             db.func.sum(Transaksi.jumlah).label("total")
@@ -153,28 +166,82 @@ class ShiftService:
             TransaksiMenu.kasir_id == shift.kasir_id,
         ).group_by(TransaksiMenu.metode_pembayaran).all()
 
-        breakdown = {}
+        billing_map = {}
         for row in billing_by_method:
-            method = row.method
-            if method in ["Cash", "Tunai", "None", None]:
-                method = "Tunai"
-            breakdown[method] = breakdown.get(method, 0) + row.total
+            m = row.method
+            if m in ["Cash", "Tunai", "None", None, ""]:
+                m = "Tunai"
+            billing_map[m] = billing_map.get(m, 0) + (row.total or 0)
 
+        kantin_map = {}
         for row in kantin_by_method:
-            method = row.method
-            if method in ["Cash", "Tunai", "None", None]:
-                method = "Tunai"
-            breakdown[method] = breakdown.get(method, 0) + row.total
+            m = row.method
+            if m in ["Cash", "Tunai", "None", None, ""]:
+                m = "Tunai"
+            kantin_map[m] = kantin_map.get(m, 0) + (row.total or 0)
 
-        # Subtract refund from Tunai
-        breakdown["Tunai"] = breakdown.get("Tunai", 0) - total_refund
+        billing_tunai = billing_map.get("Tunai", 0)
+        kantin_tunai = kantin_map.get("Tunai", 0)
+        total_tunai_bersih = billing_tunai + kantin_tunai - total_refund
+
+        # Kumpulkan semua metode non-tunai unik (dari konfigurasi dan transaksi aktual)
+        all_methods = set()
+        for m in configured_methods:
+            if m not in ["Cash", "Tunai", "None", None, ""]:
+                all_methods.add(m)
+        for m in billing_map:
+            if m != "Tunai":
+                all_methods.add(m)
+        for m in kantin_map:
+            if m != "Tunai":
+                all_methods.add(m)
+
+        # Urutkan: dahulukan yang ada di konfigurasi sesuai urutannya, lalu metode baru lainnya
+        ordered_non_tunai_keys = []
+        for m in configured_methods:
+            if m in all_methods and m not in ordered_non_tunai_keys:
+                ordered_non_tunai_keys.append(m)
+        for m in sorted(all_methods):
+            if m not in ordered_non_tunai_keys:
+                ordered_non_tunai_keys.append(m)
+
+        non_tunai_list = []
+        total_non_tunai = 0
+        breakdown = {"Tunai": total_tunai_bersih}
+
+        for m in ordered_non_tunai_keys:
+            b_val = billing_map.get(m, 0)
+            k_val = kantin_map.get(m, 0)
+            t_val = b_val + k_val
+            non_tunai_list.append({
+                "method": m,
+                "billing": b_val,
+                "kantin": k_val,
+                "total": t_val
+            })
+            total_non_tunai += t_val
+            breakdown[m] = t_val
+
+        rincian_pembayaran = {
+            "tunai": {
+                "billing": billing_tunai,
+                "kantin": kantin_tunai,
+                "refund": total_refund,
+                "total": total_tunai_bersih
+            },
+            "non_tunai": non_tunai_list,
+            "total_non_tunai": total_non_tunai
+        }
 
         # Update field di shift (disimpan untuk audit)
         shift.total_billing = total_billing - total_refund
         shift.total_kantin = total_kantin
         shift.total_qris = breakdown.get("QRIS", 0)
         shift.total_refund = total_refund
+        shift.detail_metode_json = json.dumps(rincian_pembayaran)
         db.session.commit()
+
+        total_seharusnya = shift.modal_awal + total_tunai_bersih
 
         return {
             "shift_id": shift.id,
@@ -186,12 +253,14 @@ class ShiftService:
             "total_refund": total_refund,
             "total_kantin": shift.total_kantin,
             "total_pendapatan": shift.total_billing + shift.total_kantin,
-            "total_seharusnya": shift.modal_awal + breakdown.get("Tunai", 0),
+            "total_seharusnya": total_seharusnya,
             "uang_fisik": shift.uang_fisik,
             "selisih": shift.selisih,
             "catatan": shift.catatan or "",
             "status": shift.status,
-            "breakdown": breakdown
+            "breakdown": breakdown,
+            "rincian_pembayaran": rincian_pembayaran,
+            "detail_metode": rincian_pembayaran
         }
 
     @staticmethod
@@ -239,6 +308,7 @@ class ShiftService:
         shift.catatan = (catatan or "").strip()
         shift.total_qris = summary["breakdown"].get("QRIS", 0)
         shift.total_refund = summary.get("total_refund", 0)
+        shift.detail_metode_json = json.dumps(summary["rincian_pembayaran"])
         shift.status = "SELESAI"
         db.session.commit()
 
@@ -281,10 +351,13 @@ class ShiftService:
             "total_qris": shift.total_qris,
             "total_refund": shift.total_refund,
             "total_pendapatan": shift.total_billing + shift.total_kantin,
+            "total_seharusnya": total_seharusnya,
             "uang_fisik": uang_fisik,
             "selisih": selisih,
             "catatan": shift.catatan or "",
             "status": "SELESAI",
+            "rincian_pembayaran": summary["rincian_pembayaran"],
+            "detail_metode": summary["rincian_pembayaran"]
         }
 
     @staticmethod
@@ -360,12 +433,33 @@ class ShiftService:
         lines.append(row("Modal Awal  :", f"Rp {shift.modal_awal:,.0f}"))
         lines.append(row("Pend.Billing:", f"Rp {shift.total_billing or 0:,.0f}"))
         lines.append(row("Pend.Kantin :", f"Rp {shift.total_kantin or 0:,.0f}"))
-        if (shift.total_qris or 0) > 0:
-            lines.append(row("Total QRIS  :", f"Rp {shift.total_qris:,.0f}"))
+
+        tunai_total = None
+        if shift.detail_metode_json:
+            try:
+                detail = json.loads(shift.detail_metode_json)
+                tunai_total = detail.get("tunai", {}).get("total", 0)
+                for item in detail.get("non_tunai", []):
+                    if (item.get("total") or 0) > 0:
+                        m_name = item.get("method", "Non-Tunai")
+                        label = f"{m_name[:14]}:"
+                        lines.append(row(label, f"Rp {item['total']:,.0f}"))
+            except Exception:
+                pass
+
+        if tunai_total is None:
+            if (shift.total_qris or 0) > 0:
+                lines.append(row("Total QRIS  :", f"Rp {shift.total_qris:,.0f}"))
+
         if (shift.total_refund or 0) > 0:
             lines.append(row("Total Refund:", f"Rp {shift.total_refund:,.0f}"))
         lines.append("-" * c_width)
-        tunai_seharusnya = shift.modal_awal + (shift.total_billing or 0) + (shift.total_kantin or 0) - (shift.total_qris or 0)
+
+        if tunai_total is not None:
+            tunai_seharusnya = shift.modal_awal + tunai_total
+        else:
+            tunai_seharusnya = shift.modal_awal + (shift.total_billing or 0) + (shift.total_kantin or 0) - (shift.total_qris or 0)
+
         lines.append(row("Uang Seharusnya:", f"Rp {tunai_seharusnya:,.0f}"))
         lines.append(row("Uang Fisik Laci:", f"Rp {shift.uang_fisik or 0:,.0f}"))
         
