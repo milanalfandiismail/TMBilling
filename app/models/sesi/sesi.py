@@ -55,6 +55,10 @@ class Sesi(db.Model):
     # Relasi ke Member
     member_id = db.Column(db.Integer, db.ForeignKey("member.id"), nullable=True)
     member = db.relationship("Member", backref="sesi_list")
+
+    # Relasi ke User (untuk sesi bermain staf kasir / benefit)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
+    user = db.relationship("User", backref=db.backref("sesi_kasir_list", lazy="dynamic"))
     
     # Relasi ke PC
     pc_id = db.Column(db.Integer, db.ForeignKey("pc.id", ondelete="SET NULL"), nullable=True)
@@ -153,7 +157,7 @@ class Sesi(db.Model):
         """Menghitung sisa menit secara real-time.
         
         Method utama yang dipanggil UI untuk menampilkan sisa waktu.
-        Memperhitungkan blackout pause dan tipe sesi (guest/member).
+        Memperhitungkan blackout pause dan tipe sesi (guest/member/kasir).
         
         Returns:
             int: Sisa menit yang tersedia, minimal 0.
@@ -161,6 +165,12 @@ class Sesi(db.Model):
         pause = self.menit_pause_total or 0
         if self.tipe == "guest":
             return max(0, self.durasi_beli_menit - self.menit_terpakai())
+        elif self.tipe == "kasir":
+            if self.waktu_mulai_sesi and self.waktu_tersimpan_awal > 0:
+                delta = now_local() - self.waktu_mulai_sesi
+                menit_terpakai = max(0, int(delta.total_seconds() / 60) - pause)
+                return max(0, self.waktu_tersimpan_awal - menit_terpakai)
+            return self.user.sisa_kuota_menit if self.user else 0
         else:
             if self.waktu_mulai_sesi and self.waktu_tersimpan_awal > 0:
                 delta = now_local() - self.waktu_mulai_sesi
@@ -177,6 +187,8 @@ class Sesi(db.Model):
         member_nama = None
         if self.member:
             member_nama = self.member.nama_lengkap or self.member.username
+        elif self.user:
+            member_nama = f"[Kasir] {self.user.nama_lengkap or self.user.username}"
         elif self.nama_guest:
             member_nama = self.nama_guest
         
@@ -184,6 +196,7 @@ class Sesi(db.Model):
             "id": self.id,
             "tipe": self.tipe,
             "member_id": self.member_id,
+            "user_id": self.user_id,
             "member_nama": member_nama,
             "nama_guest": self.nama_guest,
             "pc_kode": self.pc.kode if self.pc else None,

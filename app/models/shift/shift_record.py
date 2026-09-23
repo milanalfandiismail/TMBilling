@@ -36,8 +36,11 @@ class ShiftRecord(db.Model):
     modal_awal = db.Column(db.Integer, default=0, nullable=False)
     total_billing = db.Column(db.Integer, default=0)
     total_kantin = db.Column(db.Integer, default=0)
+    total_qris = db.Column(db.Integer, default=0)
+    total_refund = db.Column(db.Integer, default=0)
     uang_fisik = db.Column(db.Integer, nullable=True)
     selisih = db.Column(db.Integer, nullable=True)
+    catatan = db.Column(db.String(255), nullable=True)
 
     status = db.Column(db.String(10), default="AKTIF", nullable=False)
 
@@ -52,10 +55,13 @@ class ShiftRecord(db.Model):
             "waktu_mulai": format_display(self.waktu_mulai) if self.waktu_mulai else None,
             "waktu_selesai": format_display(self.waktu_selesai) if self.waktu_selesai else None,
             "modal_awal": self.modal_awal,
-            "total_billing": self.total_billing,
-            "total_kantin": self.total_kantin,
+            "total_billing": self.total_billing or 0,
+            "total_kantin": self.total_kantin or 0,
+            "total_qris": self.total_qris or 0,
+            "total_refund": self.total_refund or 0,
             "uang_fisik": self.uang_fisik,
             "selisih": self.selisih,
+            "catatan": self.catatan or "",
             "status": self.status,
-            "total_pendapatan": self.total_billing + self.total_kantin,
+            "total_pendapatan": (self.total_billing or 0) + (self.total_kantin or 0),
         }

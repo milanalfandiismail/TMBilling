@@ -37,6 +37,11 @@ class User(db.Model):
     aktif = db.Column(db.Boolean, default=True)
     dibuat_pada = db.Column(db.DateTime, default=now_local)
     
+    # Benefit bermain staf kasir (dalam menit)
+    kuota_main_bulanan = db.Column(db.Integer, default=0)
+    sisa_kuota_menit = db.Column(db.Integer, default=0)
+    terakhir_reset_kuota = db.Column(db.String(7), nullable=True)  # Format 'YYYY-MM'
+    
     def set_password(self, password):
         """Mengenkripsi dan menyimpan password.
         
@@ -58,6 +63,31 @@ class User(db.Model):
         """
         from werkzeug.security import check_password_hash
         return check_password_hash(self.password_hash, password)
+
+    def cek_dan_reset_kuota_bulanan(self):
+        """Memeriksa dan mereset sisa kuota jika sudah berganti bulan.
+        
+        Auto-reset terjadi saat login pertama di bulan baru:
+        sisa_kuota_menit dikembalikan ke nilai kuota_main_bulanan dasar.
+        
+        Returns:
+            bool: True jika reset terjadi, False jika masih di bulan yang sama.
+        """
+        bulan_sekarang = now_local().strftime("%Y-%m")
+        if self.terakhir_reset_kuota != bulan_sekarang:
+            self.sisa_kuota_menit = self.kuota_main_bulanan or 0
+            self.terakhir_reset_kuota = bulan_sekarang
+            return True
+        return False
+
+    def tambah_kuota_bonus(self, menit):
+        """Menambahkan kuota bonus (insentif) bermain kasir.
+        
+        Args:
+            menit (int): Jumlah menit bonus yang ditambahkan.
+        """
+        if menit and menit > 0:
+            self.sisa_kuota_menit = (self.sisa_kuota_menit or 0) + int(menit)
     
     def to_dict(self):
         """Mengkonversi data user ke dictionary untuk API response.
@@ -71,4 +101,7 @@ class User(db.Model):
             "nama_lengkap": self.nama_lengkap,
             "role": self.role,
             "aktif": self.aktif,
+            "kuota_main_bulanan": self.kuota_main_bulanan or 0,
+            "sisa_kuota_menit": self.sisa_kuota_menit or 0,
+            "terakhir_reset_kuota": self.terakhir_reset_kuota,
         }

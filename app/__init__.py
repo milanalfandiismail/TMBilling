@@ -302,16 +302,48 @@ def _init_app_context(app):
         except Exception as e:
             app.logger.error(f"Gagal membuat admin default saat bootstrap: {e}")
 
-        # Self-healing bootstrap: Buat tabel 'cabang' otomatis jika belum ada (Non-destructive)
+        # Self-healing bootstrap & schema auto-migration (Non-destructive)
         try:
-            from sqlalchemy import inspect
-            from app.models.branch import Branch
+            from sqlalchemy import inspect, text
             inspector = inspect(db.engine)
             if not inspector.has_table('cabang'):
+                from app.models.branch import Branch
                 Branch.__table__.create(db.engine)
                 app.logger.info("[OK] [TMBilling] Tabel 'cabang' berhasil dibuat secara otomatis.")
+
+            # Auto-migration v1.6.2: User kuota benefit columns
+            if inspector.has_table('user'):
+                user_cols = [c['name'] for c in inspector.get_columns('user')]
+                with db.engine.connect() as conn:
+                    if 'kuota_main_bulanan' not in user_cols:
+                        conn.execute(text("ALTER TABLE user ADD COLUMN kuota_main_bulanan INTEGER DEFAULT 0"))
+                    if 'sisa_kuota_menit' not in user_cols:
+                        conn.execute(text("ALTER TABLE user ADD COLUMN sisa_kuota_menit INTEGER DEFAULT 0"))
+                    if 'terakhir_reset_kuota' not in user_cols:
+                        conn.execute(text("ALTER TABLE user ADD COLUMN terakhir_reset_kuota VARCHAR(7)"))
+                    conn.commit()
+
+            # Auto-migration v1.6.2: Sesi user_id column
+            if inspector.has_table('sesi'):
+                sesi_cols = [c['name'] for c in inspector.get_columns('sesi')]
+                if 'user_id' not in sesi_cols:
+                    with db.engine.connect() as conn:
+                        conn.execute(text("ALTER TABLE sesi ADD COLUMN user_id INTEGER REFERENCES user(id)"))
+                        conn.commit()
+
+            # Auto-migration v1.6.2: ShiftRecord catatan, total_qris, total_refund columns
+            if inspector.has_table('shift_record'):
+                shift_cols = [c['name'] for c in inspector.get_columns('shift_record')]
+                with db.engine.connect() as conn:
+                    if 'catatan' not in shift_cols:
+                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN catatan VARCHAR(255)"))
+                    if 'total_qris' not in shift_cols:
+                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN total_qris INTEGER DEFAULT 0"))
+                    if 'total_refund' not in shift_cols:
+                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN total_refund INTEGER DEFAULT 0"))
+                    conn.commit()
         except Exception as e:
-            app.logger.warning(f"Pengecekan bootstrap tabel cabang: {e}")
+            app.logger.warning(f"Pengecekan bootstrap skema database: {e}")
 
 def create_app():
     """Membuat dan mengkonfigurasi instance aplikasi Flask.

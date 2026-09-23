@@ -244,6 +244,36 @@ def upload_update():
                     from app.models.game.game_kategori import GameKategori
                     GameKategori.__table__.create(db.engine)
 
+                # v1.6.2 Migration Safety: Kolom kuota user, user_id sesi, dan catatan shift_record
+                if inspector.has_table('user'):
+                    user_cols = [c['name'] for c in inspector.get_columns('user')]
+                    with db.engine.connect() as conn:
+                        if 'kuota_main_bulanan' not in user_cols:
+                            conn.execute(text("ALTER TABLE user ADD COLUMN kuota_main_bulanan INTEGER DEFAULT 0"))
+                        if 'sisa_kuota_menit' not in user_cols:
+                            conn.execute(text("ALTER TABLE user ADD COLUMN sisa_kuota_menit INTEGER DEFAULT 0"))
+                        if 'terakhir_reset_kuota' not in user_cols:
+                            conn.execute(text("ALTER TABLE user ADD COLUMN terakhir_reset_kuota VARCHAR(7)"))
+                        conn.commit()
+
+                if inspector.has_table('sesi'):
+                    sesi_cols = [c['name'] for c in inspector.get_columns('sesi')]
+                    if 'user_id' not in sesi_cols:
+                        with db.engine.connect() as conn:
+                            conn.execute(text("ALTER TABLE sesi ADD COLUMN user_id INTEGER REFERENCES user(id)"))
+                            conn.commit()
+
+                if inspector.has_table('shift_record'):
+                    shift_cols = [c['name'] for c in inspector.get_columns('shift_record')]
+                    with db.engine.connect() as conn:
+                        if 'catatan' not in shift_cols:
+                            conn.execute(text("ALTER TABLE shift_record ADD COLUMN catatan VARCHAR(255)"))
+                        if 'total_qris' not in shift_cols:
+                            conn.execute(text("ALTER TABLE shift_record ADD COLUMN total_qris INTEGER DEFAULT 0"))
+                        if 'total_refund' not in shift_cols:
+                            conn.execute(text("ALTER TABLE shift_record ADD COLUMN total_refund INTEGER DEFAULT 0"))
+                        conn.commit()
+
                 # Pastikan alembic_version tercatat HEAD
                 from flask_migrate import stamp
                 stamp(directory=migrations_dir, revision='head')
