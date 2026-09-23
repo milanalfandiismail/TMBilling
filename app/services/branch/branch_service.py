@@ -11,6 +11,8 @@ from app.models.branch import Branch
 from app.utils.logger import write_log
 
 
+from app.utils.validators import validate_string_length, validate_integer_range
+
 class BranchService:
     """Service untuk pengelolaan data cabang dan pengecekan koneksi."""
 
@@ -111,11 +113,12 @@ class BranchService:
     @staticmethod
     def add_branch(url: str, api_key: str, nama: str = None) -> tuple[bool, dict | str]:
         """Menambahkan koneksi cabang baru dengan auto-detect nama."""
-        clean_url = BranchService.normalize_url(url)
-        clean_key = (api_key or "").strip()
-
-        if not clean_url or not clean_key:
-            return False, "URL dan API Key cabang wajib diisi"
+        try:
+            clean_url = BranchService.normalize_url(url)
+            clean_url = validate_string_length(clean_url, min_len=4, max_len=255, field_name="URL Cabang", required=True)
+            clean_key = validate_string_length(api_key, min_len=16, max_len=128, field_name="Kunci API Cabang", required=True)
+        except ValueError as ve:
+            return False, str(ve)
 
         # Cek apakah URL sudah pernah didaftarkan
         existing = Branch.query.filter_by(url=clean_url).first()
@@ -137,6 +140,8 @@ class BranchService:
         if not final_nama:
             # Fallback jika tidak terdeteksi
             final_nama = clean_url.replace("https://", "").replace("http://", "").split("/")[0]
+
+        final_nama = validate_string_length(final_nama, min_len=2, max_len=50, field_name="Nama Cabang", required=False)
 
         try:
             branch = Branch(
@@ -167,15 +172,16 @@ class BranchService:
 
         try:
             if "nama" in data and data["nama"]:
-                branch.nama = data["nama"].strip()
+                branch.nama = validate_string_length(data["nama"], min_len=2, max_len=50, field_name="Nama Cabang", required=True)
             if "url" in data and data["url"]:
-                branch.url = BranchService.normalize_url(data["url"])
+                clean_url = BranchService.normalize_url(data["url"])
+                branch.url = validate_string_length(clean_url, min_len=4, max_len=255, field_name="URL Cabang", required=True)
             if "api_key" in data and data["api_key"]:
-                branch.api_key = data["api_key"].strip()
+                branch.api_key = validate_string_length(data["api_key"], min_len=16, max_len=128, field_name="Kunci API Cabang", required=True)
             if "aktif" in data:
                 branch.aktif = bool(data["aktif"])
             if "urutan" in data:
-                branch.urutan = int(data["urutan"])
+                branch.urutan = validate_integer_range(data["urutan"], 0, 10000, "Urutan Cabang")
 
             db.session.commit()
             return True, branch.to_dict(include_key=False)

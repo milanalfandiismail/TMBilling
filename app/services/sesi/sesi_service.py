@@ -17,7 +17,9 @@ from app.repositories import MemberRepository
 from app.repositories import PaketRepository
 from app.repositories import TransaksiRepository
 from app.services.transaksi.transaksi_service import TransaksiService
+from app.services.transaksi.transaksi_service import TransaksiService
 from app.utils.logger import write_log
+from app.utils.validators import validate_string_length
 
 from app.config import Config
 
@@ -34,6 +36,7 @@ class SesiService:
     @staticmethod
     def buka_guest(pc_kode, paket_id, nama_guest="Guest", operator="system", metode_pembayaran="Tunai"):
         """Buka sesi baru untuk guest dan generate nota pembelian."""
+        nama_guest = validate_string_length(nama_guest or "Guest", min_len=1, max_len=50, field_name="Nama Guest", required=True)
         pc = PCRepository.get_by_kode(pc_kode)
         if not pc: raise ValueError("PC tidak ditemukan")
         if SesiRepository.get_aktif_by_pc(pc.id): raise ValueError("PC sedang dipakai")
@@ -271,6 +274,7 @@ class SesiService:
         pc_baru = PCRepository.get_by_kode(pc_kode_baru)
         
         if not sesi or not pc_baru: raise ValueError("Data tidak valid")
+        if pc_baru.id == sesi.pc_id: raise ValueError("Tidak dapat memindahkan sesi ke unit PC yang sama")
         if sesi.pc.grup_id != pc_baru.grup_id: raise ValueError("Beda grup zona!")
         if SesiRepository.get_aktif_by_pc(pc_baru.id): raise ValueError("PC tujuan sedang dipakai")
 
