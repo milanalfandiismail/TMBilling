@@ -821,6 +821,19 @@ const BranchManager = {
             nama: nameInput ? nameInput.value.trim() : ''
         };
 
+        if (!payload.url || payload.url.length < 4 || payload.url.length > 255) {
+            if (window.Toast) window.Toast.error("URL server cabang harus antara 4 - 255 karakter");
+            return;
+        }
+        if (!payload.api_key || payload.api_key.length < 16 || payload.api_key.length > 128) {
+            if (window.Toast) window.Toast.error("API Key cabang harus antara 16 - 128 karakter");
+            return;
+        }
+        if (payload.nama && (payload.nama.length < 2 || payload.nama.length > 50)) {
+            if (window.Toast) window.Toast.error("Nama cabang harus antara 2 - 50 karakter");
+            return;
+        }
+
         const btnSubmit = document.getElementById('btn-submit-branch');
         const originalText = btnSubmit ? btnSubmit.textContent : '';
         if (btnSubmit) {

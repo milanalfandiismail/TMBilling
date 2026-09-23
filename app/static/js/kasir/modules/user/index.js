@@ -95,17 +95,17 @@ const User = {
                 <div class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider mb-1 block">Username</label>
-                            <input type="text" id="inp-user-username" placeholder="Username" value="${userData ? Utils.escapeHtml(userData.username) : ''}" class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                            <label class="text-[9px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider mb-1 block">Username <span class="text-[9px] text-neutral-500 font-normal font-sans">(3 - 30 karakter)</span></label>
+                            <input type="text" id="inp-user-username" maxlength="30" minlength="3" placeholder="Username" value="${userData ? Utils.escapeHtml(userData.username) : ''}" class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
                         </div>
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider mb-1 block">Nama Lengkap</label>
-                            <input type="text" id="inp-user-nama" placeholder="Nama" value="${userData ? Utils.escapeHtml(userData.nama_lengkap || '') : ''}" class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                            <label class="text-[9px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider mb-1 block">Nama Lengkap <span class="text-[9px] text-neutral-500 font-normal font-sans">(Maks. 100 karakter)</span></label>
+                            <input type="text" id="inp-user-nama" maxlength="100" placeholder="Nama" value="${userData ? Utils.escapeHtml(userData.nama_lengkap || '') : ''}" class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
                         </div>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider mb-1 block">Password ${isEdit ? '(kosongi jika tidak ganti)' : ''}</label>
-                        <input type="password" id="inp-user-pass" placeholder="${isEdit ? 'Kosongkan' : 'Password'}" class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                        <label class="text-[9px] lg:text-base text-neutral-500 font-bold uppercase tracking-wider mb-1 block">Password ${isEdit ? '(kosongi jika tidak ganti)' : ''} <span class="text-[9px] text-neutral-500 font-normal font-sans">(6 - 32 karakter)</span></label>
+                        <input type="password" id="inp-user-pass" maxlength="32" minlength="6" placeholder="${isEdit ? 'Kosongkan' : 'Password'}" class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
@@ -133,12 +133,15 @@ const User = {
     },
 
     async addOrupdate() {
-        const username = document.getElementById('inp-user-username').value;
-        const nama_lengkap = document.getElementById('inp-user-nama').value;
+        const username = document.getElementById('inp-user-username').value.trim();
+        const nama_lengkap = document.getElementById('inp-user-nama').value.trim();
         const password = document.getElementById('inp-user-pass').value;
         const role = document.getElementById('inp-user-role').value;
         const aktif = document.getElementById('inp-user-aktif').value === 'true';
-        if (!username || (!this.editingId && !password)) return Toast.error("Username dan Password wajib");
+        if (!username || (!this.editingId && !password)) return Toast.error("Username dan Password wajib diisi");
+        if (username.length < 3 || username.length > 30) return Toast.error("Username harus 3 - 30 karakter");
+        if (password && (password.length < 6 || password.length > 32)) return Toast.error("Password harus 6 - 32 karakter");
+        if (nama_lengkap && nama_lengkap.length > 100) return Toast.error("Nama lengkap maksimal 100 karakter");
 
         const data = { username, nama_lengkap, role, aktif };
         if (password) data.password = password;

@@ -102,6 +102,11 @@ const Member = {
             grup: (get('modal-mem-grup', 'inp-mem-grup') || {}).value || ''
         };
         if (!data.username || !data.password) return Toast.error('Username dan password wajib diisi');
+        if (data.username.length < 3 || data.username.length > 30) return Toast.error('Username harus 3 - 30 karakter');
+        if (data.password.length < 4 || data.password.length > 16) return Toast.error('Password PIN harus 4 - 16 karakter');
+        if (data.nama_lengkap && data.nama_lengkap.length > 100) return Toast.error('Nama lengkap maksimal 100 karakter');
+        if (data.email && data.email.length > 120) return Toast.error('Email maksimal 120 karakter');
+
         try {
             await API.member.create(data);
             Toast.success(`Member ${data.username} berhasil didaftarkan`);
@@ -128,13 +133,25 @@ const Member = {
     },
 
     async doEdit(id) {
+        const namaEl = document.getElementById('edit-member-nama');
+        const emailEl = document.getElementById('edit-member-email');
+        const passEl = document.getElementById('edit-member-password');
+
         const data = {
-            nama_lengkap: document.getElementById('edit-member-nama').value.trim(),
-            email: document.getElementById('edit-member-email').value.trim(),
-            grup: document.getElementById('edit-member-grup').value,
+            nama_lengkap: namaEl ? namaEl.value.trim() : '',
+            email: emailEl ? emailEl.value.trim() : '',
+            grup: document.getElementById('edit-member-grup')?.value || '',
         };
-        const password = document.getElementById('edit-member-password').value;
-        if (password) data.password = password;
+        const password = passEl ? passEl.value : '';
+        if (password) {
+            if (password.length < 4 || password.length > 16) {
+                return Toast.error('Password baru harus 4 - 16 karakter');
+            }
+            data.password = password;
+        }
+        if (data.nama_lengkap && data.nama_lengkap.length > 100) return Toast.error('Nama lengkap maksimal 100 karakter');
+        if (data.email && data.email.length > 120) return Toast.error('Email maksimal 120 karakter');
+
         try {
             await API.member.update(id, data);
             Toast.success('Berhasil diperbarui');

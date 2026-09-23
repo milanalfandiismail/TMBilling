@@ -936,8 +936,16 @@ const Menu = {
             Toast.error("Nama menu tidak boleh kosong!");
             return;
         }
-        if (!harga || isNaN(Number(harga)) || Number(harga) < 0) {
-            Toast.error("Harga harus berupa angka valid!");
+        if (nama.length < 2 || nama.length > 100) {
+            Toast.error("Nama menu harus 2 - 100 karakter!");
+            return;
+        }
+        if (!harga || isNaN(Number(harga)) || Number(harga) < 0 || Number(harga) > 10000000) {
+            Toast.error("Harga harus antara Rp0 - Rp10.000.000!");
+            return;
+        }
+        if (stok !== "-1" && (isNaN(Number(stok)) || Number(stok) < 0 || Number(stok) > 1000000)) {
+            Toast.error("Stok harus antara 0 - 1.000.000!");
             return;
         }
 

@@ -86,8 +86,10 @@ const Paket = {
             kadaluarsa_hari: parseInt((get('modal-paket-kadaluarsa', 'inp-paket-kadaluarsa') || {}).value || '30')
         };
         if (!data.nama) return Toast.error('Nama paket wajib diisi');
-        if (isNaN(data.durasi_menit) || data.durasi_menit <= 0) return Toast.error('Durasi tidak valid');
-        if (isNaN(data.harga) || data.harga < 0) return Toast.error('Harga tidak valid');
+        if (data.nama.length < 2 || data.nama.length > 50) return Toast.error('Nama paket harus 2 - 50 karakter');
+        if (isNaN(data.durasi_menit) || data.durasi_menit < 1 || data.durasi_menit > 14400) return Toast.error('Durasi harus antara 1 - 14.400 menit');
+        if (isNaN(data.harga) || data.harga < 0 || data.harga > 100000000) return Toast.error('Harga tidak valid (maks. Rp100.000.000)');
+        if (isNaN(data.kadaluarsa_hari) || data.kadaluarsa_hari < 1 || data.kadaluarsa_hari > 3650) return Toast.error('Masa aktif harus antara 1 - 3.650 hari');
 
         try {
             await API.paket.create(data);
@@ -117,12 +119,17 @@ const Paket = {
 
     async doEdit(id) {
         const data = {
-            nama: document.getElementById('edit-paket-nama').value.trim(),
-            durasi_menit: parseInt(document.getElementById('edit-paket-durasi').value),
-            harga: parseInt((document.getElementById('edit-paket-harga').value || '0').replace(/\./g, '')),
-            kadaluarsa_hari: parseInt(document.getElementById('edit-paket-kadaluarsa').value)
+            nama: document.getElementById('edit-paket-nama')?.value?.trim() || '',
+            durasi_menit: parseInt(document.getElementById('edit-paket-durasi')?.value || '0'),
+            harga: parseInt((document.getElementById('edit-paket-harga')?.value || '0').replace(/\./g, '')),
+            kadaluarsa_hari: parseInt(document.getElementById('edit-paket-kadaluarsa')?.value || '30')
         };
-        if (!data.nama || isNaN(data.durasi_menit) || isNaN(data.harga)) return Toast.error('Lengkapi data');
+        if (!data.nama) return Toast.error('Nama paket wajib diisi');
+        if (data.nama.length < 2 || data.nama.length > 50) return Toast.error('Nama paket harus 2 - 50 karakter');
+        if (isNaN(data.durasi_menit) || data.durasi_menit < 1 || data.durasi_menit > 14400) return Toast.error('Durasi harus antara 1 - 14.400 menit');
+        if (isNaN(data.harga) || data.harga < 0 || data.harga > 100000000) return Toast.error('Harga tidak valid (maks. Rp100.000.000)');
+        if (isNaN(data.kadaluarsa_hari) || data.kadaluarsa_hari < 1 || data.kadaluarsa_hari > 3650) return Toast.error('Masa aktif harus antara 1 - 3.650 hari');
+
         try {
             await API.paket.update(id, data);
             Toast.success('Paket berhasil diperbarui');

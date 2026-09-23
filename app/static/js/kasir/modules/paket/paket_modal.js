@@ -20,8 +20,8 @@ const PaketModal = {
                 </div>
                 <div class="space-y-4">
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Paket <span class="text-red-400">*</span></label>
-                        <input type="text" id="modal-paket-nama" placeholder="Misal: REGULER - 3 Jam" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Paket <span class="text-red-400">*</span> <span class="text-[9px] text-neutral-500 font-normal font-sans">(2 - 50 karakter)</span></label>
+                        <input type="text" id="modal-paket-nama" maxlength="50" minlength="2" placeholder="Misal: REGULER - 3 Jam" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
                         <p class="text-[9px] lg:text-base text-neutral-600 mt-1">Nama akan terisi otomatis saat Grup & Durasi dipilih</p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -30,18 +30,18 @@ const PaketModal = {
                             <select id="modal-paket-grup" onchange="Paket.suggestNameModal()" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">${grupOptions}</select>
                         </div>
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Durasi (menit) <span class="text-red-400">*</span></label>
-                            <input type="number" id="modal-paket-durasi" oninput="Paket.suggestNameModal()" placeholder="Contoh: 180" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Durasi (menit) <span class="text-red-400">*</span> <span class="text-[9px] text-neutral-500 font-normal font-sans">(1 - 14.400)</span></label>
+                            <input type="number" id="modal-paket-durasi" min="1" max="14400" oninput="Paket.suggestNameModal()" placeholder="Contoh: 180" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Harga (Rp) <span class="text-red-400">*</span></label>
-                            <input type="text" id="modal-paket-harga" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)" placeholder="Contoh: 12.000" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors font-mono">
+                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Harga (Rp) <span class="text-red-400">*</span> <span class="text-[9px] text-neutral-500 font-normal font-sans">(Maks. 100jt)</span></label>
+                            <input type="text" id="modal-paket-harga" maxlength="15" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)" placeholder="Contoh: 12.000" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors font-mono">
                         </div>
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Masa Aktif (hari)</label>
-                            <input type="number" id="modal-paket-kadaluarsa" value="30" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Masa Aktif (hari) <span class="text-[9px] text-neutral-500 font-normal font-sans">(1 - 3.650)</span></label>
+                            <input type="number" id="modal-paket-kadaluarsa" min="1" max="3650" value="30" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
                         </div>
                     </div>
                 </div>
@@ -85,22 +85,22 @@ const PaketModal = {
                 </div>
                 <div class="space-y-4">
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Paket</label>
-                        <input type="text" id="edit-paket-nama" value="${Utils.escapeHtml(paket.nama)}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Paket <span class="text-[9px] text-neutral-500 font-normal font-sans">(2 - 50 karakter)</span></label>
+                        <input type="text" id="edit-paket-nama" maxlength="50" minlength="2" value="${Utils.escapeHtml(paket.nama)}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Durasi (menit)</label>
-                            <input type="number" id="edit-paket-durasi" value="${paket.durasi_menit}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Durasi (menit) <span class="text-[9px] text-neutral-500 font-normal font-sans">(1 - 14.400)</span></label>
+                            <input type="number" id="edit-paket-durasi" min="1" max="14400" value="${paket.durasi_menit}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
                         </div>
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Harga (Rp)</label>
-                            <input type="text" id="edit-paket-harga" value="${Utils.formatRawRupiah(paket.harga)}" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors font-mono font-bold">
+                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Harga (Rp) <span class="text-[9px] text-neutral-500 font-normal font-sans">(Maks. 100jt)</span></label>
+                            <input type="text" id="edit-paket-harga" maxlength="15" value="${Utils.formatRawRupiah(paket.harga)}" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors font-mono font-bold">
                         </div>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Masa Aktif (hari)</label>
-                        <input type="number" id="edit-paket-kadaluarsa" value="${paket.kadaluarsa_hari || 30}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Masa Aktif (hari) <span class="text-[9px] text-neutral-500 font-normal font-sans">(1 - 3.650)</span></label>
+                        <input type="number" id="edit-paket-kadaluarsa" min="1" max="3650" value="${paket.kadaluarsa_hari || 30}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
                     </div>
                 </div>
                 <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#2a2a2a]">
