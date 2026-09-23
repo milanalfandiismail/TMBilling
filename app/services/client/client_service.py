@@ -238,8 +238,14 @@ class ClientService:
     # Emergency login selalu diterima server, dan mengaktifkan is_admin_mode.
 
     @staticmethod
-    def emergency_login(ip_address, mac_address, username="SYSTEM"):
-        """Login emergency dari PC client (bisa offline/online)."""
+    def emergency_login(ip_address, mac_address, username="SYSTEM", socket_ip=None):
+        """Login emergency dari PC client (bisa offline/online) dengan Strict Socket IP binding."""
+        # Validasi Strict Socket IP: IP koneksi fisik wajib sama dengan IP target
+        if socket_ip and socket_ip not in ("127.0.0.1", "::1", "localhost"):
+            if socket_ip != ip_address:
+                write_log("SECURITY_ALERT", f"Emergency login ditolak: IP fisik {socket_ip} tidak cocok dengan target {ip_address}")
+                raise PermissionError("Akses emergency login ditolak: IP soket fisik tidak cocok dengan IP PC terdaftar")
+
         pc = PCRepository.get_by_ip(ip_address)
         if not pc:
             raise ValueError("IP PC tidak terdaftar")

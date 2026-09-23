@@ -122,15 +122,18 @@ def admin_login():
 @client_api_bp.route("/emergency-login", methods=["POST"])
 @api_key_required
 def emergency_login():
-    """Login emergency dari PC client (bisa offline/online, selalu diterima)."""
+    """Login emergency dari PC client (bisa offline/online, selalu diterima jika identitas soket sah)."""
     data = request.get_json() or {}
     try:
         result = ClientService.emergency_login(
             ip_address=data.get("ip_address"),
             mac_address=data.get("mac_address", "").upper().strip(),
-            username=data.get("username", "SYSTEM").strip()
+            username=data.get("username", "SYSTEM").strip(),
+            socket_ip=request.remote_addr
         )
         return jsonify(result), 200
+    except PermissionError as e:
+        return jsonify({"success": False, "error": str(e)}), 403
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
