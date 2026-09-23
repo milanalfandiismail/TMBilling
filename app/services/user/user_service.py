@@ -9,6 +9,7 @@ dan hapus data staff yang mengoperasikan sistem billing.
 from app.models import db
 from app.repositories import UserRepository
 from app.utils.logger import write_log
+from app.utils.validators import validate_username, validate_password, validate_string_length
 
 class UserService:
     """Service untuk manajemen data User kasir/admin."""
@@ -30,14 +31,14 @@ class UserService:
     @staticmethod
     def create_user(data, operator="admin"):
         """Buat user / kasir baru."""
-        username = data.get("username", "").strip()
-        password = data.get("password", "")
-        nama_lengkap = data.get("nama_lengkap", "").strip()
-        role = data.get("role", "kasir")
-        aktif = str(data.get("aktif", "true")).lower() == "true"
+        username = validate_username(data.get("username", ""), min_len=3, max_len=30, lowercase_only=False)
+        password = validate_password(data.get("password", ""), min_len=6, max_len=32)
+        nama_lengkap = validate_string_length(data.get("nama_lengkap", ""), min_len=0, max_len=100, field_name="Nama lengkap", required=False)
+        role = str(data.get("role", "kasir")).strip().lower()
+        if role not in ["admin", "kasir"]:
+            raise ValueError("Role harus 'admin' atau 'kasir'")
 
-        if not username or not password:
-            raise ValueError("Username dan Password wajib diisi")
+        aktif = str(data.get("aktif", "true")).lower() == "true"
 
         if UserRepository.find_by_username(username):
             raise ValueError("Username sudah terdaftar")
@@ -69,27 +70,27 @@ class UserService:
         if not user:
             raise ValueError("User tidak ditemukan")
 
-        username = data.get("username", "").strip()
-        password = data.get("password", "")
-        nama_lengkap = data.get("nama_lengkap", "").strip()
-        role = data.get("role")
-        aktif = data.get("aktif")
+        if "username" in data and data["username"]:
+            username = validate_username(data["username"], min_len=3, max_len=30, lowercase_only=False)
+            if username != user.username:
+                if UserRepository.find_by_username(username):
+                    raise ValueError("Username sudah dipakai oleh orang lain")
+                user.username = username
 
-        if username and username != user.username:
-            if UserRepository.find_by_username(username):
-                raise ValueError("Username sudah dipakai oleh orang lain")
-            user.username = username
-
-        if nama_lengkap:
-            user.nama_lengkap = nama_lengkap
+        if "nama_lengkap" in data:
+            user.nama_lengkap = validate_string_length(data["nama_lengkap"], min_len=0, max_len=100, field_name="Nama lengkap", required=False)
             
-        if role:
+        if "role" in data and data["role"]:
+            role = str(data["role"]).strip().lower()
+            if role not in ["admin", "kasir"]:
+                raise ValueError("Role harus 'admin' atau 'kasir'")
             user.role = role
             
-        if aktif is not None:
-            user.aktif = str(aktif).lower() == "true"
+        if "aktif" in data and data["aktif"] is not None:
+            user.aktif = str(data["aktif"]).lower() == "true"
 
-        if password:
+        if "password" in data and data["password"]:
+            password = validate_password(data["password"], min_len=6, max_len=32)
             user.set_password(password)
         
         db.session.commit()
