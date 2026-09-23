@@ -100,9 +100,9 @@ const TambahModal = {
                         </div>
                         <!-- Qty input for this package -->
                         <div class="flex items-center bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg overflow-hidden h-8 opacity-45 pointer-events-none transition-all shrink-0" id="qty-container-${p.id}">
-                            <button onclick="TambahModal.adjustPaketQty(${p.id}, -1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs lg:text-base transition-colors flex items-center justify-center select-none">-</button>
-                            <input type="number" id="qty-paket-${p.id}" value="1" min="1" max="100" class="w-10 h-full text-center bg-transparent border-none text-xs lg:text-base font-mono font-bold focus:ring-0 focus:outline-none p-0 !border-0" style="background-color: transparent !important; border: 0 !important;">
-                            <button onclick="TambahModal.adjustPaketQty(${p.id}, 1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs lg:text-base transition-colors flex items-center justify-center select-none">+</button>
+                            <button onclick="TambahModal.adjustPaketQty(${p.id}, -1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs lg:text-base transition-colors flex items-center justify-center select-none" type="button">-</button>
+                            <input type="number" id="qty-paket-${p.id}" value="1" min="1" max="100" readonly class="no-spinners w-10 h-full text-center bg-transparent border-none text-xs lg:text-base font-mono font-bold focus:ring-0 focus:outline-none p-0 !border-0 cursor-default select-none pointer-events-none" style="background-color: transparent !important; border: 0 !important;">
+                            <button onclick="TambahModal.adjustPaketQty(${p.id}, 1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs lg:text-base transition-colors flex items-center justify-center select-none" type="button">+</button>
                         </div>
                     </div>
                 `;
@@ -247,7 +247,7 @@ const TambahModal = {
         if (!qtyInput) return;
 
         let currentVal = parseInt(qtyInput.value) || 1;
-        let newVal = Math.max(1, currentVal + delta);
+        let newVal = Math.max(1, Math.min(100, currentVal + delta));
         qtyInput.value = newVal;
 
         this.updateTotal();
@@ -261,7 +261,9 @@ const TambahModal = {
         document.querySelectorAll('input[type="checkbox"][id^="chk-paket-"]:checked').forEach(chk => {
             const paketId = parseInt(chk.value);
             const qtyInput = document.getElementById(`qty-paket-${paketId}`);
-            const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+            let qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+            qty = Math.max(1, Math.min(100, qty));
+            if (qtyInput) qtyInput.value = qty;
             
             const paket = (this._currentPaketList || []).find(p => p.id === paketId);
             if (paket) {
@@ -291,11 +293,15 @@ const TambahModal = {
         let totalMenit = 0;
         let totalHargaPerPc = 0;
         
+        let hasInvalidQty = false;
         document.querySelectorAll('input[type="checkbox"][id^="chk-paket-"]:checked').forEach(chk => {
             const paketId = parseInt(chk.value);
             const qtyInput = document.getElementById(`qty-paket-${paketId}`);
-            const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
-            selections.push({ paket_id: paketId, qty: qty });
+            let qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+            if (qty < 1 || qty > 100) {
+                hasInvalidQty = true;
+            }
+            selections.push({ paket_id: paketId, qty: Math.max(1, Math.min(100, qty)) });
             
             const paket = (this._currentPaketList || []).find(p => p.id === paketId);
             if (paket) {
@@ -303,6 +309,10 @@ const TambahModal = {
                 totalHargaPerPc += (paket.harga || 0) * qty;
             }
         });
+
+        if (hasInvalidQty) {
+            return Toast.error('Kuantitas paket harus antara 1 sampai 100');
+        }
 
         if (selections.length === 0) return Toast.error('Pilih minimal satu paket terlebih dahulu');
 

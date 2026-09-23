@@ -162,6 +162,7 @@ const Member = {
         const selections = [];
         let totalMenit = 0;
         let totalHarga = 0;
+        let hasInvalidQty = false;
         const paketList = (typeof MemberRefill !== 'undefined' ? MemberRefill._currentPaketList : (this._currentPaketList || [])) || [];
         
         if (typeof MemberRefill !== 'undefined' && MemberRefill._selections && Object.keys(MemberRefill._selections).length > 0) {
@@ -170,7 +171,10 @@ const Member = {
                 const sel = MemberRefill._selections[paketId];
                 if (sel && sel.checked) {
                     const qty = sel.qty || 1;
-                    selections.push({ paket_id: paketId, qty: qty });
+                    if (qty < 1 || qty > 100) {
+                        hasInvalidQty = true;
+                    }
+                    selections.push({ paket_id: paketId, qty: Math.max(1, Math.min(100, qty)) });
                     const paket = paketList.find(p => p.id === paketId);
                     if (paket) {
                         totalMenit += (paket.durasi_menit || 0) * qty;
@@ -183,7 +187,10 @@ const Member = {
                 const paketId = parseInt(chk.value);
                 const qtyInput = document.getElementById(`mem-qty-paket-${paketId}`);
                 const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
-                selections.push({ paket_id: paketId, qty: qty });
+                if (qty < 1 || qty > 100) {
+                    hasInvalidQty = true;
+                }
+                selections.push({ paket_id: paketId, qty: Math.max(1, Math.min(100, qty)) });
                 
                 const paket = paketList.find(p => p.id === paketId);
                 if (paket) {
@@ -191,6 +198,10 @@ const Member = {
                     totalHarga += (paket.harga || 0) * qty;
                 }
             });
+        }
+
+        if (hasInvalidQty) {
+            return Toast.error('Kuantitas paket harus antara 1 sampai 100');
         }
 
         if (selections.length === 0) return Toast.error('Pilih minimal satu paket terlebih dahulu');
