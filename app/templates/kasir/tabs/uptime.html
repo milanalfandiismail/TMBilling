@@ -16,6 +16,7 @@
             
             <!-- Date Filter -->
             <div class="flex flex-wrap items-center gap-2">
+                <label for="uptime-mode-select" class="sr-only">Mode Filter Statistik</label>
                 <select id="uptime-mode-select" onchange="UptimeTracker.toggleMode()" class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-bold cursor-pointer font-sans">
                     <option value="daily">Harian</option>
                     <option value="range">Rentang Tanggal</option>
@@ -23,13 +24,16 @@
                 
                 <!-- Daily Date Input -->
                 <div id="uptime-daily-filter" class="flex items-center gap-2">
+                    <label for="uptime-date" class="sr-only">Tanggal Harian</label>
                     <input type="date" id="uptime-date" onchange="UptimeTracker.load()" class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-bold">
                 </div>
 
                 <!-- Range Date Inputs -->
                 <div id="uptime-range-filter" class="hidden flex items-center gap-2">
+                    <label for="uptime-start" class="sr-only">Tanggal Mulai</label>
                     <input type="date" id="uptime-start" onchange="UptimeTracker.load()" class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-32 lg:max-xl:w-32 xl:w-36 font-bold">
                     <span class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold">s/d</span>
+                    <label for="uptime-end" class="sr-only">Tanggal Akhir</label>
                     <input type="date" id="uptime-end" onchange="UptimeTracker.load()" class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-32 lg:max-xl:w-32 xl:w-36 font-bold">
                 </div>
             </div>

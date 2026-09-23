@@ -40,12 +40,12 @@
     <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5 mb-5">
         <div class="flex items-center justify-between gap-4">
             <div>
-                <p class="font-bold text-neutral-200 text-sm lg:text-base">Status Whitelist IP</p>
+                <label for="whitelistToggle" class="font-bold text-neutral-200 text-sm lg:text-base block">Status Whitelist IP</label>
                 <p class="text-[10px] lg:text-xs text-neutral-500 mt-0.5">
                     Lindungi dashboard dari akses IP tidak dikenal
                 </p>
             </div>
-            <label class="relative inline-flex items-center cursor-pointer shrink-0" id="toggleContainer">
+            <label class="relative inline-flex items-center cursor-pointer shrink-0" id="toggleContainer" for="whitelistToggle">
                 <input type="checkbox" id="whitelistToggle" class="sr-only peer" onchange="WhitelistIP.toggle(this.checked)">
                 <div class="w-10 h-5 lg:w-11 lg:h-6 bg-neutral-700 peer-checked:bg-emerald-600 rounded-full 
                             peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 
@@ -61,7 +61,7 @@
 
         <!-- Domain Publik -->
         <div class="mb-4">
-            <label class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold block mb-1">Domain Publik (contoh: https://tmbilling.example.com)</label>
+            <label for="publicUrlInput" class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold block mb-1">Domain Publik (contoh: https://tmbilling.example.com)</label>
             <div class="flex gap-2">
                 <input type="text" id="publicUrlInput" placeholder="https://tmbilling.example.com"
                     class="flex-1 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 
@@ -72,6 +72,7 @@
                     Simpan
                 </button>
             </div>
+            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">URL domain atau subdomain publik yang aktif mengarah ke server billing</p>
         </div>
 
         <!-- URL Token + QR -->
@@ -144,9 +145,11 @@
     <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5">
         <h3 class="font-bold text-neutral-200 text-sm lg:text-base mb-3">➕ Tambah IP Baru</h3>
         <div class="flex flex-col sm:flex-row gap-2">
+            <label for="newIpInput" class="sr-only">Alamat IP Baru</label>
             <input type="text" id="newIpInput" placeholder="192.168.1.30"
                 class="flex-1 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 
                        placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 transition-colors font-mono">
+            <label for="newLabelInput" class="sr-only">Label IP Baru (Opsional)</label>
             <input type="text" id="newLabelInput" placeholder="Label (opsional)"
                 class="sm:w-48 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 
                        placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 transition-colors">
@@ -156,6 +159,7 @@
                 Tambah
             </button>
         </div>
+        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1.5 font-normal font-sans">Format IPv4 valid (contoh: 192.168.1.50) &bull; Label opsional maks. 50 karakter</p>
     </div>
 
     <!-- Current IP Info -->

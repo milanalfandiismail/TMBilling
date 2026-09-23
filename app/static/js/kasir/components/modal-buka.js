@@ -101,14 +101,15 @@ const BukaModal = {
                             </div>
 
                             <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-3.5">
-                                <label class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">${guestLabel}</label>
+                                <label for="buka-guest" class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">${guestLabel}</label>
                                 <input type="text" id="buka-guest" value="${defaultGuestName}" placeholder="${guestPlaceholder}"
                                     class="w-full px-3 py-2 bg-[#050505] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 font-bold font-mono transition-all"
                                     oninput="BukaModal.updatePreview()">
                                 ${this.isBatch ? `
-                                <p id="buka-guest-preview-text" class="text-[10px] text-neutral-500 mt-1.5 font-mono">
+                                <p id="buka-guest-preview-text" class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-mono">
                                     Format: ${defaultGuestName}-1, ${defaultGuestName}-2, ...
-                                </p>` : ''}
+                                </p>` : `
+                                <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Maksimal 30 karakter</p>`}
                             </div>
 
                             <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-3.5">
@@ -119,7 +120,7 @@ const BukaModal = {
                             </div>
 
                             <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-3.5">
-                                <label class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">Metode Pembayaran</label>
+                                <label for="buka-metode-pembayaran" class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">Metode Pembayaran</label>
                                 <select id="buka-metode-pembayaran" 
                                     class="w-full px-3 py-2 bg-[#050505] border border-[#2a2a2a] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 font-bold transition-all">
                                     ${paymentMethods.map(m => `<option value="${m}">${m}</option>`).join('')}

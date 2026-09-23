@@ -51,9 +51,12 @@
                 </div>
 
                 <!-- Search Box -->
-                <input type="text" id="filter-remote-op-search" oninput="BranchManager.filterOperatorsBySearch()"
-                    placeholder="Cari kasir / cabang..."
-                    class="w-full sm:w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono placeholder:text-neutral-600">
+                <div class="relative w-full sm:w-64">
+                    <label for="filter-remote-op-search" class="sr-only">Cari Kasir atau Cabang</label>
+                    <input type="text" id="filter-remote-op-search" oninput="BranchManager.filterOperatorsBySearch()"
+                        placeholder="Cari kasir / cabang..."
+                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono placeholder:text-neutral-600">
+                </div>
             </div>
         </div>
 

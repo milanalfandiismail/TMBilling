@@ -63,7 +63,7 @@ class PaketService:
         """Buat paket baru dengan validasi nama unik dan grup yang tersedia."""
         nama = validate_string_length(data.get("nama", ""), min_len=2, max_len=50, field_name="Nama paket", required=True)
         durasi_menit = validate_integer_range(data.get("durasi_menit", 0), 1, 14400, "Durasi paket (menit)")
-        harga = validate_integer_range(data.get("harga", 0), 0, 100_000_000, "Harga paket")
+        harga = validate_integer_range(data.get("harga", 0), 0, 1_000_000_000, "Harga paket")
         kadaluarsa_hari = validate_integer_range(data.get("kadaluarsa_hari", 30), 1, 3650, "Masa berlaku paket (hari)")
         
         # Validasi: Cek duplikasi nama
@@ -138,7 +138,7 @@ class PaketService:
                 perubahan["durasi_menit"] = {"lama": paket.durasi_menit, "baru": val}
                 paket.durasi_menit = val
         if "harga" in data:
-            val = validate_integer_range(data["harga"], 0, 100_000_000, "Harga paket")
+            val = validate_integer_range(data["harga"], 0, 1_000_000_000, "Harga paket")
             if val != paket.harga:
                 perubahan["harga"] = {"lama": paket.harga, "baru": val}
                 paket.harga = val

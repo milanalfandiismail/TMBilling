@@ -96,3 +96,43 @@ def test_sesi_tambah_waktu_rejects_out_of_bound_qty(db_session):
         # Coba tambah waktu dengan qty 150
         with pytest.raises(ValueError, match="1 sampai 100"):
             SesiService.tambah_waktu_sesi(sesi.id, paket, qty=150)
+
+
+def test_payment_method_validations(db_session):
+    app, member_id, paket_id, pc_id = db_session
+
+    with app.app_context():
+        paket = Paket.query.get(paket_id)
+
+        # Invalid payment method in buka_guest
+        with pytest.raises(ValueError, match="Metode pembayaran tidak valid"):
+            SesiService.buka_guest(
+                pc_kode="PC-TEST-01",
+                paket_id=paket_id,
+                metode_pembayaran="E-Wallet"
+            )
+
+        # Valid payment method with case insensitivity in buka_guest
+        sesi = SesiService.buka_guest(
+            pc_kode="PC-TEST-01",
+            paket_id=paket_id,
+            metode_pembayaran="qris"
+        )
+        assert sesi.tipe == "guest"
+
+        # Invalid payment method in tambah_waktu_sesi
+        with pytest.raises(ValueError, match="Metode pembayaran tidak valid"):
+            SesiService.tambah_waktu_sesi(
+                sesi.id,
+                paket,
+                metode_pembayaran="Kredit"
+            )
+
+        # Invalid payment method in member tambah_waktu
+        with pytest.raises(ValueError, match="Metode pembayaran tidak valid"):
+            MemberService.tambah_waktu(
+                member_id,
+                paket,
+                metode_pembayaran="PayLater"
+            )
+

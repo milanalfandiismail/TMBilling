@@ -56,3 +56,21 @@ def test_settings_auto_shutdown_validation():
 
     with pytest.raises(ValueError, match="Timer Auto-Shutdown"):
         validate_integer_range(10, 30, 600, "Timer Auto-Shutdown")
+
+
+def test_client_api_key_validation():
+    # Valid (4 to 128 characters)
+    assert validate_string_length("TM01", min_len=4, max_len=128, field_name="Client API Key") == "TM01"
+    assert validate_string_length("TM2026QWERTY-api-key", min_len=4, max_len=128, field_name="Client API Key") == "TM2026QWERTY-api-key"
+
+    # Too short (< 4 chars)
+    with pytest.raises(ValueError, match="Client API Key minimal 4 karakter"):
+        validate_string_length("TM1", min_len=4, max_len=128, field_name="Client API Key")
+
+    # Empty
+    with pytest.raises(ValueError, match="Client API Key tidak boleh kosong"):
+        validate_string_length("   ", min_len=4, max_len=128, field_name="Client API Key")
+
+    # Too long (> 128 chars)
+    with pytest.raises(ValueError, match="Client API Key maksimal 128 karakter"):
+        validate_string_length("A" * 129, min_len=4, max_len=128, field_name="Client API Key")

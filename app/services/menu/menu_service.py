@@ -11,7 +11,7 @@ from app.models import MenuItem, TransaksiMenu
 from app.repositories import MenuRepository
 from app.repositories import UserRepository
 from app.utils.logger import write_log
-from app.utils.validators import validate_string_length, validate_integer_range
+from app.utils.validators import validate_string_length, validate_integer_range, validate_choice
 
 class MenuService:
     """Service class untuk memproses data Menu dan Transaksinya."""
@@ -37,7 +37,7 @@ class MenuService:
         """
         try:
             nama = validate_string_length(data.get("nama", ""), min_len=2, max_len=100, field_name="Nama menu", required=True)
-            harga = validate_integer_range(data.get("harga", 0), 0, 10_000_000, "Harga menu")
+            harga = validate_integer_range(data.get("harga", 0), 0, 1_000_000_000, "Harga menu")
             stok = validate_integer_range(data.get("stok", 0), -1, 1_000_000, "Stok menu")
 
             # 1. Tolak hanya jika ada menu AKTIF dengan nama yang sama
@@ -120,6 +120,7 @@ class MenuService:
             raw_nama = data.get("nama")
             nama = raw_nama.strip() if isinstance(raw_nama, str) else ""
             if nama and nama != menu.nama:
+                nama = validate_string_length(nama, min_len=2, max_len=100, field_name="Nama menu", required=True)
                 existing = MenuRepository.get_by_name(nama)
                 if existing:
                     raise ValueError(f"Menu dengan nama '{nama}' sudah terdaftar")
@@ -130,9 +131,9 @@ class MenuService:
                 menu.nama = nama
 
             if "harga" in data:
-                menu.harga = int(data["harga"])
+                menu.harga = validate_integer_range(data["harga"], 0, 1_000_000_000, "Harga menu")
             if "stok" in data:
-                menu.stok = int(data["stok"])
+                menu.stok = validate_integer_range(data["stok"], -1, 1_000_000, "Stok menu")
             if "gambar_path" in data:
                 new_gambar = data["gambar_path"]
                 # Hapus file gambar lama jika gambar diubah atau dihapus (None / path berbeda)
@@ -329,8 +330,15 @@ class MenuService:
             if not parsed_items:
                 raise ValueError("Daftar pesanan tidak boleh kosong")
 
+            metode_pembayaran = validate_choice(
+                metode_pembayaran or "Tunai",
+                ["Tunai", "QRIS", "Transfer", "Transfer Bank", "Deposit"],
+                field_name="Metode pembayaran",
+                case_sensitive=False
+            )
+
             # Validasi Pembayaran Tunai
-            tunai_val = int(tunai) if (tunai is not None and str(tunai).isdigit()) else 0
+            tunai_val = validate_integer_range(tunai or 0, min_val=0, max_val=1_000_000_000, field_name="Uang tunai")
             kembalian_val = 0
             if metode_pembayaran == "Tunai" and tunai_val > 0:
                 if tunai_val < total_tagihan:

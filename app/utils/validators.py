@@ -275,7 +275,7 @@ def validate_choice(val, choices, field_name: str = "Pilihan", case_sensitive: b
         val_str = val.strip().lower()
         for c in choices_list:
             if isinstance(c, str) and c.lower() == val_str:
-                return c.lower()
+                return c
             elif str(c).lower() == val_str:
                 return c
         raise ValueError(f"{field_name} tidak valid. Pilihan yang tersedia: {', '.join(str(c) for c in choices_list)}")

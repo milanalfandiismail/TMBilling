@@ -39,6 +39,7 @@
             <!-- Search Filter Bar -->
             <div class="relative shrink-0">
                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-xs text-neutral-500"></i>
+                <label for="notes-search-input" class="sr-only">Cari Berkas Catatan</label>
                 <input type="text" id="notes-search-input" oninput="Catatan.filterNotes()" placeholder="Cari catatan (.txt)..."
                     class="w-full pl-9 pr-8 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-neutral-500">
                 <button id="notes-search-clear-btn" onclick="Catatan.clearSearch()" class="hidden absolute right-3 top-2.5 text-xs text-neutral-500 hover:text-neutral-200 transition-colors" title="Bersihkan pencarian">
@@ -76,6 +77,7 @@
                     </button>
                     <!-- Unified Title Input + .txt addon -->
                     <div class="flex-1 flex items-center min-w-0 bg-[#050505] border border-[#1c1c1c] focus-within:border-neutral-500 rounded overflow-hidden">
+                        <label for="note-title-input" class="sr-only">Judul Catatan</label>
                         <input type="text" id="note-title-input" oninput="Catatan.onTitleChange()" placeholder="Judul Catatan..."
                             class="flex-1 px-3 py-2 bg-transparent text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-200 focus:outline-none tracking-wider truncate">
                         <span class="px-2.5 py-2 text-xs lg:max-xl:text-xs xl:text-base font-mono font-bold bg-[#121212] border-l border-[#1c1c1c] text-neutral-500 shrink-0 select-none">.txt</span>
@@ -97,6 +99,7 @@
 
             <!-- Editor Body: Textarea Luas Fleksibel -->
             <div class="flex-1 min-h-0 flex flex-col relative">
+                <label for="note-content-editor" class="sr-only">Isi Catatan</label>
                 <textarea id="note-content-editor" oninput="Catatan.onContentChange()" onkeydown="Catatan.handleEditorKeydown(event)"
                     placeholder="Mulai menulis catatan bebas di sini...&#10;&#10;Dukungan:&#10;• Simpan otomatis saat mengetik (Auto-save)&#10;• Tekan Ctrl+S untuk simpan instan&#10;• Format berkas .txt standar murni yang fleksibel"
                     class="w-full flex-1 p-3 lg:max-xl:p-3 xl:p-4 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base font-mono text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 resize-none overflow-y-auto scrollbar-thin leading-relaxed"></textarea>

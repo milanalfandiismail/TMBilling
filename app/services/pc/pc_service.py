@@ -10,7 +10,7 @@ from app.repositories import PCRepository
 from app.repositories import SesiRepository
 from app.repositories import GrupRepository
 from app.utils.logger import write_log
-from app.utils.validators import validate_string_length, validate_integer_range
+from app.utils.validators import validate_string_length, validate_integer_range, validate_ip_address, validate_mac_address
 
 
 class PCService:
@@ -117,18 +117,14 @@ class PCService:
             raise ValueError(f"PC dengan kode {kode} sudah ada")
 
         # --- VALIDASI IP ADDRESS UNIK ---
-        ip_address = data.get("ip_address")
-        if ip_address:
-            ip_address = ip_address.strip()
-            if PCRepository.find_by_ip(ip_address):
-                raise ValueError(f"IP Address '{ip_address}' sudah digunakan oleh PC lain")
+        ip_address = validate_ip_address(data.get("ip_address"), allow_empty=True, version=4)
+        if ip_address and PCRepository.find_by_ip(ip_address):
+            raise ValueError(f"IP Address '{ip_address}' sudah digunakan oleh PC lain")
 
         # --- VALIDASI MAC ADDRESS UNIK ---
-        mac_address = data.get("mac_address")
-        if mac_address:
-            mac_address = mac_address.strip()
-            if PCRepository.find_by_mac(mac_address):
-                raise ValueError(f"MAC Address '{mac_address}' sudah digunakan oleh PC lain")
+        mac_address = validate_mac_address(data.get("mac_address"), allow_empty=True)
+        if mac_address and PCRepository.find_by_mac(mac_address):
+            raise ValueError(f"MAC Address '{mac_address}' sudah digunakan oleh PC lain")
 
         grup_nama = data.get("grup", "reguler")
         grup_obj = GrupRepository.find_by_nama(grup_nama)
@@ -162,6 +158,8 @@ class PCService:
     def update(pc_id, data, operator="system"):
         """Perbarui informasi teknis PC (Kode, Nama, IP, MAC, Grup) dengan validasi duplikasi."""
         pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            raise ValueError("PC tidak ditemukan")
         
         # 1. Validasi Kode Baru
         if "kode" in data:
@@ -185,9 +183,8 @@ class PCService:
         
         # 3. Validasi IP Address Baru
         if "ip_address" in data:
-            ip_baru = data["ip_address"]
+            ip_baru = validate_ip_address(data["ip_address"], allow_empty=True, version=4)
             if ip_baru:
-                ip_baru = ip_baru.strip()
                 if ip_baru != pc.ip_address:
                     if PCRepository.find_by_ip(ip_baru):
                         raise ValueError(f"IP Address '{ip_baru}' sudah digunakan oleh PC lain")
@@ -197,9 +194,8 @@ class PCService:
 
         # 4. Validasi MAC Address Baru
         if "mac_address" in data:
-            mac_baru = data["mac_address"]
+            mac_baru = validate_mac_address(data["mac_address"], allow_empty=True)
             if mac_baru:
-                mac_baru = mac_baru.strip()
                 if mac_baru != pc.mac_address:
                     if PCRepository.find_by_mac(mac_baru):
                         raise ValueError(f"MAC Address '{mac_baru}' sudah digunakan oleh PC lain")
@@ -207,7 +203,8 @@ class PCService:
             else:
                 pc.mac_address = None
         
-        pc.nama = data.get("nama", pc.nama)
+        if "nama" in data and data["nama"] is not None:
+            pc.nama = validate_string_length(data["nama"], min_len=1, max_len=50, field_name="Nama PC", required=False)
         
         db.session.commit()
         
@@ -284,8 +281,10 @@ class PCService:
     def update_position(pc_id, pos_x, pos_y):
         """Update posisi PC di floor plan."""
         pc = PCRepository.get_by_id(pc_id)
-        pc.pos_x = pos_x
-        pc.pos_y = pos_y
+        if not pc:
+            raise ValueError("PC tidak ditemukan")
+        pc.pos_x = validate_integer_range(pos_x, 0, 10000, "Posisi X")
+        pc.pos_y = validate_integer_range(pos_y, 0, 10000, "Posisi Y")
         db.session.commit()
         return pc
 

@@ -28,9 +28,11 @@
         <div class="flex flex-wrap items-center justify-between gap-4 mb-2">
             <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Katalog Aplikasi &amp; Game</h3>
             <div class="flex flex-wrap items-center gap-2">
+                <label for="game-search" class="sr-only">Cari Aplikasi atau Game</label>
                 <input type="text" id="game-search" oninput="GameManagement.handleSearch(this.value)"
                     placeholder="Cari nama atau genre..." 
                     class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 w-36 lg:max-xl:w-48 xl:w-60">
+                <label for="game-type-filter" class="sr-only">Filter Jenis</label>
                 <select id="game-type-filter"
                     class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
                     onchange="GameManagement.filterType(this.value)">
@@ -38,6 +40,7 @@
                     <option value="game">🎮 Game</option>
                     <option value="aplikasi">💻 Aplikasi</option>
                 </select>
+                <label for="game-category-filter" class="sr-only">Filter Kategori</label>
                 <select id="game-category-filter"
                     class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
                     onchange="GameManagement.filterCategory(this.value)">
@@ -94,7 +97,7 @@
             <!-- Jenis (Tipe) & Nama -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="space-y-1.5 sm:col-span-1">
-                    <label class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider">Jenis <span class="text-red-500">*</span></label>
+                    <label for="form-game-tipe" class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider">Jenis <span class="text-red-500">*</span></label>
                     <select id="form-game-tipe" required
                         class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200">
                         <option value="game">🎮 Game</option>
@@ -102,16 +105,17 @@
                     </select>
                 </div>
                 <div class="space-y-1.5 sm:col-span-2">
-                    <label class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider">Nama Game / Software <span class="text-red-500">*</span></label>
+                    <label for="form-game-nama" class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider">Nama Game / Software <span class="text-red-500">*</span></label>
                     <input type="text" id="form-game-nama" required placeholder="Contoh: Valorant / Discord / Steam"
                         class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200">
+                    <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">2 - 100 karakter</p>
                 </div>
             </div>
 
             <!-- Multi-Category / Unlimited Genre Selector -->
             <div class="space-y-2">
                 <div class="flex items-center justify-between">
-                    <label class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider">
+                    <label for="custom-tag-input" class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider">
                         Kategori / Genre <span class="text-neutral-500 text-[9px] lg:max-xl:text-xs xl:text-xs lowercase">(pilih banyak/unlimited)</span>
                     </label>
                     <span class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 font-mono" id="selected-count-badge">0 terpilih</span>
@@ -125,6 +129,7 @@
                 <!-- Quick Pick Available Categories & Custom Tag Input -->
                 <div class="space-y-2 pt-1">
                     <div class="flex items-center gap-2">
+                        <label for="custom-tag-input" class="sr-only">Ketik tag/genre baru</label>
                         <input type="text" id="custom-tag-input" placeholder="+ Ketik tag/genre baru lalu Enter..." 
                             class="flex-1 px-3 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500"
                             onkeydown="GameManagement.handleCustomTagKeydown(event)">
@@ -136,14 +141,15 @@
                     <div class="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 bg-[#050505] border border-[#1c1c1c] rounded scrollbar-thin" id="category-quick-pills">
                         <!-- Populated by JS -->
                     </div>
+                    <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Pilih satu atau lebih kategori, atau ketik tag baru (maks. 30 karakter per tag)</p>
                 </div>
             </div>
 
             <!-- Image Upload, Preview, Zoom & Crop (3:4 Aspect Ratio) -->
             <div class="space-y-2 pt-1 border-t border-[#1c1c1c]">
                 <div class="flex items-center justify-between">
-                    <label class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider">Icon / Poster Cover Art (Rasio 3:4)</label>
-                    <span class="text-[9px] lg:max-xl:text-xs xl:text-xs text-neutral-500">Bisa di-zoom &amp; disesuaikan posisinya</span>
+                    <label for="form-game-icon" class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider">Icon / Poster Cover Art (Rasio 3:4)</label>
+                    <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500">Maks. 5MB (JPG, PNG, WebP)</span>
                 </div>
                 
                 <input type="file" id="form-game-icon" accept="image/*" class="hidden" onchange="GameManagement.handleImageSelected(this)">
@@ -187,10 +193,10 @@
 
                         <!-- Zoom Slider -->
                         <div class="space-y-1.5" id="zoom-control-container">
-                            <div class="flex justify-between items-center text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-400 font-bold uppercase tracking-wider">
+                            <label for="cropper-zoom-slider" class="flex justify-between items-center text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-400 font-bold uppercase tracking-wider">
                                 <span>Zoom Gambar</span>
                                 <span id="zoom-level-text" class="font-mono text-neutral-300">1.0x</span>
-                            </div>
+                            </label>
                             <input type="range" id="cropper-zoom-slider" min="1" max="3" step="0.05" value="1"
                                 class="w-full accent-neutral-200 bg-[#1c1c1c] h-1.5 rounded cursor-pointer"
                                 oninput="GameManagement.handleZoomChange(this.value)">
@@ -207,20 +213,22 @@
             <!-- Executable Launcher Path & Arguments -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                 <div class="space-y-1.5">
-                    <label class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                    <label for="form-game-path" class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1">
                         <span>Launcher Path</span>
                         <span class="text-[9px] lg:max-xl:text-xs xl:text-xs text-neutral-500 font-normal lowercase">(manual)</span>
                     </label>
                     <input type="text" id="form-game-path" placeholder="Contoh: D:\Games\Valorant.exe"
                         class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 font-mono">
+                    <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Contoh: C:\Games\Game.exe atau D:\Launcher.exe</p>
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                    <label for="form-game-argumen" class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1">
                         <span>Launch Arguments</span>
                         <span class="text-[9px] lg:max-xl:text-xs xl:text-xs text-neutral-500 font-normal lowercase">(opsional)</span>
                     </label>
                     <input type="text" id="form-game-argumen" placeholder="Contoh: --launch-direct"
                         class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 font-mono">
+                    <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Parameter opsional, contoh: -novid -fullscreen</p>
                 </div>
             </div>
 
@@ -261,12 +269,16 @@
         </div>
         
         <div class="p-4 sm:p-5 overflow-y-auto space-y-4">
-            <form id="kategori-form" onsubmit="KategoriManagement.addKategori(event)" class="flex gap-2">
-                <input type="text" id="form-kategori-nama" required placeholder="Nama Kategori Baru"
-                    class="flex-1 px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200">
-                <button type="submit" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors whitespace-nowrap">
-                    Tambah
-                </button>
+            <form id="kategori-form" onsubmit="KategoriManagement.addKategori(event)" class="space-y-2">
+                <div class="flex gap-2">
+                    <label for="form-kategori-nama" class="sr-only">Nama Kategori Baru</label>
+                    <input type="text" id="form-kategori-nama" required placeholder="Nama Kategori Baru"
+                        class="flex-1 px-3 py-2 bg-[#050505] border border-[#1c1c1c] focus:border-neutral-500 focus:outline-none rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200">
+                    <button type="submit" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors whitespace-nowrap">
+                        Tambah
+                    </button>
+                </div>
+                <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">2 - 50 karakter</p>
             </form>
             
             <div class="border border-[#1c1c1c] rounded overflow-hidden bg-[#050505]">

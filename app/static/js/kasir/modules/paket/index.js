@@ -88,7 +88,7 @@ const Paket = {
         if (!data.nama) return Toast.error('Nama paket wajib diisi');
         if (data.nama.length < 2 || data.nama.length > 50) return Toast.error('Nama paket harus 2 - 50 karakter');
         if (isNaN(data.durasi_menit) || data.durasi_menit < 1 || data.durasi_menit > 14400) return Toast.error('Durasi harus antara 1 - 14.400 menit');
-        if (isNaN(data.harga) || data.harga < 0 || data.harga > 100000000) return Toast.error('Harga tidak valid (maks. Rp100.000.000)');
+        if (isNaN(data.harga) || data.harga < 0 || data.harga > 1000000000) return Toast.error('Harga tidak valid (maks. Rp1.000.000.000)');
         if (isNaN(data.kadaluarsa_hari) || data.kadaluarsa_hari < 1 || data.kadaluarsa_hari > 3650) return Toast.error('Masa aktif harus antara 1 - 3.650 hari');
 
         try {
@@ -127,7 +127,7 @@ const Paket = {
         if (!data.nama) return Toast.error('Nama paket wajib diisi');
         if (data.nama.length < 2 || data.nama.length > 50) return Toast.error('Nama paket harus 2 - 50 karakter');
         if (isNaN(data.durasi_menit) || data.durasi_menit < 1 || data.durasi_menit > 14400) return Toast.error('Durasi harus antara 1 - 14.400 menit');
-        if (isNaN(data.harga) || data.harga < 0 || data.harga > 100000000) return Toast.error('Harga tidak valid (maks. Rp100.000.000)');
+        if (isNaN(data.harga) || data.harga < 0 || data.harga > 1000000000) return Toast.error('Harga tidak valid (maks. Rp1.000.000.000)');
         if (isNaN(data.kadaluarsa_hari) || data.kadaluarsa_hari < 1 || data.kadaluarsa_hari > 3650) return Toast.error('Masa aktif harus antara 1 - 3.650 hari');
 
         try {

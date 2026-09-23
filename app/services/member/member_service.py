@@ -27,7 +27,8 @@ from app.utils.validators import (
     validate_phone_number,
     validate_email_format,
     validate_string_length,
-    validate_integer_range
+    validate_integer_range,
+    validate_choice
 )
 
 class MemberService:
@@ -249,8 +250,13 @@ class MemberService:
     @staticmethod
     def tambah_waktu(member_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
         """Tambah waktu member & suntik Nota Transaksi (TM)."""
-        if not isinstance(qty, int) or qty < 1 or qty > 100:
-            raise ValueError("Kuantitas paket harus berupa angka bulat antara 1 sampai 100")
+        qty = validate_integer_range(qty, 1, 100, field_name="Kuantitas paket")
+        metode_pembayaran = validate_choice(
+            metode_pembayaran or "Tunai",
+            ["Tunai", "QRIS", "Transfer", "Transfer Bank", "Deposit"],
+            field_name="Metode pembayaran",
+            case_sensitive=False
+        )
 
         member = MemberRepository.get_by_id(member_id)
         if SesiRepository.get_aktif_by_member(member.id):

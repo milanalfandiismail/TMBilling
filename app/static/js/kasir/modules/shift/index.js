@@ -69,14 +69,14 @@ const Shift = {
                 </div>
                 <div class="px-6 py-5 space-y-4">
                     <div>
-                        <label class="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">Modal Awal (Rp)</label>
+                        <label for="modal-awal-input" class="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">Modal Awal (Rp)</label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-sm">Rp</span>
                             <input type="number" id="modal-awal-input" min="0" value="0"
                                 class="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm font-mono focus:border-neutral-500 transition-colors"
                                 placeholder="0" />
                         </div>
-                        <p class="text-[10px] text-neutral-500 mt-1.5">Jumlah uang receh/kembalian yang disiapkan di laci kasir</p>
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Rp 0 - Rp 100.000.000 (uang receh/kembalian di laci)</p>
                     </div>
                 </div>
                 <div class="px-6 py-4 border-t border-[#2a2a2a] flex justify-end gap-2">
@@ -176,14 +176,14 @@ const Shift = {
                     </div>
 
                     <div>
-                        <label class="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">Uang Fisik di Laci (Rp)</label>
+                        <label for="uang-fisik-input" class="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">Uang Fisik di Laci (Rp)</label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-sm">Rp</span>
                             <input type="number" id="uang-fisik-input" min="0" value="0"
                                 class="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm font-mono focus:border-neutral-500 transition-colors"
                                 placeholder="0" autofocus />
                         </div>
-                        <p class="text-[10px] text-neutral-500 mt-1.5">Jumlah uang yang kamu hitung secara fisik di laci</p>
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Rp 0 - Rp 100.000.000 (hitung seluruh uang tunai fisik di laci)</p>
                     </div>
                 </div>
                 <div class="px-6 py-4 border-t border-[#2a2a2a] flex justify-end gap-2">

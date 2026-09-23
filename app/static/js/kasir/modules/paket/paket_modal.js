@@ -14,34 +14,37 @@ const PaketModal = {
                 <div class="flex items-center justify-between mb-5 pb-4 border-b border-[#2a2a2a]">
                     <div>
                         <h3 class="text-sm font-bold text-neutral-100 tracking-wide">Tambah Paket Billing</h3>
-                        <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Buat paket waktu bermain baru untuk grup PC</p>
+                        <p class="text-[10px] lg:text-xs xl:text-sm text-neutral-500 mt-0.5">Buat paket waktu bermain baru untuk grup PC</p>
                     </div>
                     <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
                 </div>
                 <div class="space-y-4">
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Paket <span class="text-red-400">*</span> <span class="text-[9px] text-neutral-500 font-normal font-sans">(2 - 50 karakter)</span></label>
+                        <label for="modal-paket-nama" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Nama Paket <span class="text-red-400">*</span></label>
                         <input type="text" id="modal-paket-nama" maxlength="50" minlength="2" placeholder="Misal: REGULER - 3 Jam" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
-                        <p class="text-[9px] lg:text-base text-neutral-600 mt-1">Nama akan terisi otomatis saat Grup & Durasi dipilih</p>
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">2 - 50 karakter &bull; Terisi otomatis saat Grup &amp; Durasi dipilih</p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Grup PC <span class="text-red-400">*</span></label>
+                            <label for="modal-paket-grup" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Grup PC <span class="text-red-400">*</span></label>
                             <select id="modal-paket-grup" onchange="Paket.suggestNameModal()" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">${grupOptions}</select>
                         </div>
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Durasi (menit) <span class="text-red-400">*</span> <span class="text-[9px] text-neutral-500 font-normal font-sans">(1 - 14.400)</span></label>
+                            <label for="modal-paket-durasi" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Durasi (Menit) <span class="text-red-400">*</span></label>
                             <input type="number" id="modal-paket-durasi" min="1" max="14400" oninput="Paket.suggestNameModal()" placeholder="Contoh: 180" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">1 - 14.400 menit (contoh: 180 = 3 jam)</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Harga (Rp) <span class="text-red-400">*</span> <span class="text-[9px] text-neutral-500 font-normal font-sans">(Maks. 100jt)</span></label>
+                            <label for="modal-paket-harga" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Harga (Rp) <span class="text-red-400">*</span></label>
                             <input type="text" id="modal-paket-harga" maxlength="15" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)" placeholder="Contoh: 12.000" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors font-mono">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Maksimal Rp 1.000.000.000</p>
                         </div>
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Masa Aktif (hari) <span class="text-[9px] text-neutral-500 font-normal font-sans">(1 - 3.650)</span></label>
+                            <label for="modal-paket-kadaluarsa" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Masa Aktif (Hari)</label>
                             <input type="number" id="modal-paket-kadaluarsa" min="1" max="3650" value="30" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">1 - 3.650 hari (default: 30 hari)</p>
                         </div>
                     </div>
                 </div>
@@ -80,27 +83,31 @@ const PaketModal = {
         const formHtml = `
             <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-6 max-w-md w-[calc(100%-2rem)] mx-auto md:w-full shadow-2xl">
                 <div class="flex items-center justify-between mb-5 pb-4 border-b border-[#2a2a2a]">
-                    <div><h3 class="text-sm font-bold text-neutral-100 tracking-wide">Edit Paket</h3><p class="text-[10px] lg:text-base text-neutral-500 font-mono mt-0.5">${paket.nama.toUpperCase()}</p></div>
+                    <div><h3 class="text-sm font-bold text-neutral-100 tracking-wide">Edit Paket</h3><p class="text-[10px] lg:text-xs xl:text-sm text-neutral-500 font-mono mt-0.5">${paket.nama.toUpperCase()}</p></div>
                     <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
                 </div>
                 <div class="space-y-4">
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Paket <span class="text-[9px] text-neutral-500 font-normal font-sans">(2 - 50 karakter)</span></label>
+                        <label for="edit-paket-nama" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Nama Paket <span class="text-red-400">*</span></label>
                         <input type="text" id="edit-paket-nama" maxlength="50" minlength="2" value="${Utils.escapeHtml(paket.nama)}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">2 - 50 karakter</p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Durasi (menit) <span class="text-[9px] text-neutral-500 font-normal font-sans">(1 - 14.400)</span></label>
+                            <label for="edit-paket-durasi" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Durasi (Menit) <span class="text-red-400">*</span></label>
                             <input type="number" id="edit-paket-durasi" min="1" max="14400" value="${paket.durasi_menit}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">1 - 14.400 menit</p>
                         </div>
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Harga (Rp) <span class="text-[9px] text-neutral-500 font-normal font-sans">(Maks. 100jt)</span></label>
+                            <label for="edit-paket-harga" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Harga (Rp) <span class="text-red-400">*</span></label>
                             <input type="text" id="edit-paket-harga" maxlength="15" value="${Utils.formatRawRupiah(paket.harga)}" required inputmode="numeric" oninput="Utils.formatInputRupiah(this)" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors font-mono font-bold">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Maksimal Rp 1.000.000.000</p>
                         </div>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Masa Aktif (hari) <span class="text-[9px] text-neutral-500 font-normal font-sans">(1 - 3.650)</span></label>
+                        <label for="edit-paket-kadaluarsa" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Masa Aktif (Hari)</label>
                         <input type="number" id="edit-paket-kadaluarsa" min="1" max="3650" value="${paket.kadaluarsa_hari || 30}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">1 - 3.650 hari (default: 30 hari)</p>
                     </div>
                 </div>
                 <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#2a2a2a]">

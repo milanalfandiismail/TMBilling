@@ -17,6 +17,7 @@ from app.services import SettingsService
 from app.utils.logger import write_log
 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
 from app.utils.scheduler_tasks import UNIT_MULTIPLIER
+from app.utils.validators import validate_string_length
 
 settings_api_bp = Blueprint("settings", __name__)
 
@@ -70,6 +71,8 @@ def update_auto_shutdown():
             detail_json={"timer_sebelum": old_val, "timer_baru": timer_seconds}
         )
         return jsonify({"success": True, "message": "Timer berhasil diperbarui"}), 200
+    except ValueError as ve:
+        return jsonify({"error": str(ve)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -139,10 +142,10 @@ def update_client_api_key():
         data = request.get_json() or {}
         value = data.get("value")
         
-        if not value or not value.strip():
-            return jsonify({"error": "API Key tidak boleh kosong"}), 400
-            
-        value = value.strip()
+        try:
+            value = validate_string_length(value, min_len=4, max_len=128, field_name="Client API Key", required=True)
+        except ValueError as val_err:
+            return jsonify({"error": str(val_err)}), 400
         
         # 1. Update active Flask config so it takes effect instantly without server restart
         current_app.config["CLIENT_API_KEY"] = value

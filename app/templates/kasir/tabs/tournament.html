@@ -88,20 +88,22 @@
 
         <form id="form-buat-turnamen" onsubmit="Tournament.handleCreate(event)" class="space-y-4">
             <div class="space-y-1.5">
-                <label class="text-xs lg:text-sm font-semibold text-neutral-400">Nama Turnamen</label>
+                <label for="create-t-name" class="text-xs lg:text-sm font-semibold text-neutral-400 block">Nama Turnamen</label>
                 <input type="text" id="create-t-name" placeholder="Contoh: TMBilling Valorant Cup" required
                     class="w-full px-4 py-2.5 text-xs lg:text-base bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
+                <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">2 - 100 karakter</p>
             </div>
 
             <div class="space-y-1.5">
-                <label class="text-xs lg:text-sm font-semibold text-neutral-400">Deskripsi / Aturan Singkat</label>
+                <label for="create-t-desc" class="text-xs lg:text-sm font-semibold text-neutral-400 block">Deskripsi / Aturan Singkat</label>
                 <input type="text" id="create-t-desc" placeholder="Contoh: 5v5 Mode, Map Bind/Haven, BO3 Semifinal"
                     class="w-full px-4 py-2.5 text-xs lg:text-base bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
+                <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Opsional, maksimal 255 karakter</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1.5">
-                    <label class="text-xs lg:text-sm font-semibold text-neutral-400">Format Tahap</label>
+                    <label for="create-t-format" class="text-xs lg:text-sm font-semibold text-neutral-400 block">Format Tahap</label>
                     <select id="create-t-format" class="w-full px-4 py-2.5 text-xs lg:text-base bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
                         <option value="playoff">Langsung Playoff (Single Elimination)</option>
                         <option value="swiss">Hanya Swiss Stage (Liga)</option>
@@ -109,7 +111,7 @@
                     </select>
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-xs lg:text-sm font-semibold text-neutral-400">Format Match Default</label>
+                    <label for="create-t-bo" class="text-xs lg:text-sm font-semibold text-neutral-400 block">Format Match Default</label>
                     <select id="create-t-bo" class="w-full px-4 py-2.5 text-xs lg:text-base bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
                         <option value="1">Best of 1 (BO1)</option>
                         <option value="3">Best of 3 (BO3)</option>
@@ -120,13 +122,14 @@
             </div>
 
             <div class="space-y-1.5">
-                <label class="text-xs lg:text-sm font-semibold text-neutral-400 flex justify-between">
+                <label for="create-t-teams" class="text-xs lg:text-sm font-semibold text-neutral-400 flex justify-between">
                     <span>Nama Tim Peserta (Satu nama tim per baris)</span>
                     <span id="tim-count" class="text-[10px] lg:text-xs text-neutral-500 font-mono">0 Tim terdeteksi</span>
                 </label>
                 <textarea id="create-t-teams" rows="5" oninput="Tournament.updateTimCount()"
                     placeholder="Masukkan minimal 2 tim, contoh:&#10;Tim Alpha&#10;Tim Beta&#10;Tim Charlie&#10;Tim Delta" required
                     class="w-full px-4 py-2.5 text-xs lg:text-base bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg font-mono focus:outline-none focus:border-neutral-500 scrollbar-thin"></textarea>
+                <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Minimal 2 tim, setiap baris berisi 1 nama tim</p>
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-4 border-t border-[#1f1f1f]">
@@ -162,7 +165,7 @@
             <div class="grid grid-cols-5 items-center gap-3 bg-[#050505] p-4 rounded-xl border border-[#2a2a2a]">
                 <!-- Team 1 -->
                 <div class="col-span-2 text-center">
-                    <p id="skor-team1-name" class="text-xs lg:text-base font-bold text-neutral-200 truncate">Tim 1</p>
+                    <label for="skor-team1-val" id="skor-team1-name" class="text-xs lg:text-base font-bold text-neutral-200 truncate block">Tim 1</label>
                     <input type="number" id="skor-team1-val" min="0" required
                         class="w-20 text-center text-lg lg:text-xl font-black px-2 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg mt-2 focus:border-neutral-500">
                 </div>
@@ -172,7 +175,7 @@
 
                 <!-- Team 2 -->
                 <div class="col-span-2 text-center">
-                    <p id="skor-team2-name" class="text-xs lg:text-base font-bold text-neutral-200 truncate">Tim 2</p>
+                    <label for="skor-team2-val" id="skor-team2-name" class="text-xs lg:text-base font-bold text-neutral-200 truncate block">Tim 2</label>
                     <input type="number" id="skor-team2-val" min="0" required
                         class="w-20 text-center text-lg lg:text-xl font-black px-2 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg mt-2 focus:border-neutral-500">
                 </div>
@@ -180,7 +183,7 @@
 
             <!-- Dynamic Winner Selector -->
             <div class="space-y-1.5">
-                <label class="text-xs lg:text-sm font-semibold text-neutral-400">Tim Pemenang</label>
+                <label for="skor-winner-id" class="text-xs lg:text-sm font-semibold text-neutral-400 block">Tim Pemenang</label>
                 <select id="skor-winner-id" class="w-full px-4 py-2.5 text-xs lg:text-base bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
                     <option value="">Deteksi Otomatis (Skor Tertinggi)</option>
                     <option id="skor-opt-t1" value="">Tim A</option>

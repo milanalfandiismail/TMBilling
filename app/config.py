@@ -29,7 +29,7 @@ class Config:
         DEBUG_MODE (bool): Flag mode debug aplikasi.
     """
     
-    SECRET_KEY = os.environ.get('SECRET_KEY')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'tm-billing-secret-key-default-2026')
     import sys
     if "pytest" in sys.modules or os.environ.get("FLASK_ENV") == "testing":
         SQLALCHEMY_DATABASE_URI = "sqlite:///test_warnet.db"

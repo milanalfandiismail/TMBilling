@@ -81,6 +81,7 @@
             <form id="plugin-upload-form" class="space-y-4" onsubmit="PluginsModule.submitUpload(event)">
                 <div
                     class="border-2 border-dashed border-[#262626] rounded-lg p-6 text-center hover:border-blue-500/50 transition-colors bg-[#0a0a0a] relative group">
+                    <label for="plugin-file" class="sr-only">Pilih File Plugin ZIP</label>
                     <input type="file" id="plugin-file" accept=".zip"
                         class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                         onchange="PluginsModule.handleFileSelect(event)">

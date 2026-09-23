@@ -20,24 +20,26 @@ const Grup = {
                 <div class="flex items-center justify-between mb-5 pb-4 border-b border-[#2a2a2a]">
                     <div>
                         <h3 class="text-sm font-bold text-neutral-100 tracking-wide">Tambah Grup Baru</h3>
-                        <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Buat zona / kelompok PC baru</p>
+                        <p class="text-[10px] lg:text-xs xl:text-sm text-neutral-500 mt-0.5">Buat zona / kelompok PC baru</p>
                     </div>
                     <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
                 </div>
                 <div class="space-y-4">
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Grup <span class="text-red-400">*</span> <span class="text-[9px] text-neutral-500 font-normal font-sans">(2 - 30 karakter)</span></label>
+                        <label for="modal-grup-nama" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Nama Grup <span class="text-red-400">*</span></label>
                         <input type="text" id="modal-grup-nama" maxlength="30" minlength="2" placeholder="Nama Grup" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">2 - 30 karakter</p>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Keterangan <span class="text-[9px] text-neutral-500 font-normal font-sans">(Maks. 200 karakter)</span></label>
+                        <label for="modal-grup-ket" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Keterangan <span class="text-neutral-500 text-[9px] font-normal lowercase">(opsional)</span></label>
                         <input type="text" id="modal-grup-ket" maxlength="200" placeholder="Deskripsi grup (opsional)" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Opsional, maksimal 200 karakter</p>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Warna Grup</label>
+                        <label for="modal-grup-warna" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Warna Grup</label>
                         <div class="flex items-center gap-3 px-4 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
                             <input type="color" id="modal-grup-warna" value="#888888" class="w-8 h-8 rounded border-0 bg-transparent cursor-pointer">
-                            <span class="text-[10px] lg:text-base text-neutral-500">Warna aksen untuk lencana grup ini</span>
+                            <span class="text-[10px] lg:text-xs xl:text-sm text-neutral-500">Warna aksen untuk lencana grup ini</span>
                         </div>
                     </div>
                 </div>
@@ -83,25 +85,27 @@ const Grup = {
                 <div class="flex items-center justify-between mb-5 pb-4 border-b border-[#2a2a2a]">
                     <div>
                         <h3 class="text-sm font-bold text-neutral-100 tracking-wide">Edit Grup</h3>
-                        <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Ubah data zona / kelompok PC</p>
+                        <p class="text-[10px] lg:text-xs xl:text-sm text-neutral-500 mt-0.5">Ubah data zona / kelompok PC</p>
                     </div>
                     <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
                 </div>
                 <div class="space-y-4">
                     <div>
                         <input type="hidden" id="modal-grup-old-nama" value="${nama}">
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Grup <span class="text-red-400">*</span> <span class="text-[9px] text-neutral-500 font-normal font-sans">(2 - 30 karakter)</span></label>
+                        <label for="modal-grup-nama" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Nama Grup <span class="text-red-400">*</span></label>
                         <input type="text" id="modal-grup-nama" maxlength="30" minlength="2" value="${nama}" placeholder="Nama Grup" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">2 - 30 karakter</p>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Keterangan <span class="text-[9px] text-neutral-500 font-normal font-sans">(Maks. 200 karakter)</span></label>
+                        <label for="modal-grup-ket" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Keterangan <span class="text-neutral-500 text-[9px] font-normal lowercase">(opsional)</span></label>
                         <input type="text" id="modal-grup-ket" maxlength="200" value="${keterangan}" placeholder="Deskripsi grup (opsional)" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Opsional, maksimal 200 karakter</p>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Warna Grup</label>
+                        <label for="modal-grup-warna" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Warna Grup</label>
                         <div class="flex items-center gap-3 px-4 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
                             <input type="color" id="modal-grup-warna" value="${warna}" class="w-8 h-8 rounded border-0 bg-transparent cursor-pointer">
-                            <span class="text-[10px] lg:text-base text-neutral-500">Warna aksen untuk lencana grup ini</span>
+                            <span class="text-[10px] lg:text-xs xl:text-sm text-neutral-500">Warna aksen untuk lencana grup ini</span>
                         </div>
                     </div>
                 </div>

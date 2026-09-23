@@ -24,7 +24,7 @@ def app_context():
 
 
 def test_create_paket_validation(app_context):
-    # Valid
+    # Valid normal & max 1 Miliar
     p = PaketService.create({
         "nama": "Paket 3 Jam",
         "durasi_menit": 180,
@@ -35,6 +35,15 @@ def test_create_paket_validation(app_context):
     assert p.nama == "Paket 3 Jam"
     assert p.durasi_menit == 180
 
+    p_max = PaketService.create({
+        "nama": "Paket Sultan 1M",
+        "durasi_menit": 600,
+        "harga": 1_000_000_000,
+        "kadaluarsa_hari": 30,
+        "grup": "reguler"
+    })
+    assert p_max.harga == 1_000_000_000
+
     # Invalid durasi (0 or negative)
     with pytest.raises(ValueError, match="Durasi paket"):
         PaketService.create({"nama": "Paket 0", "durasi_menit": 0, "harga": 5000, "grup": "reguler"})
@@ -43,12 +52,19 @@ def test_create_paket_validation(app_context):
     with pytest.raises(ValueError, match="Harga paket"):
         PaketService.create({"nama": "Paket Minus", "durasi_menit": 60, "harga": -1000, "grup": "reguler"})
 
+    # Invalid harga > 1 Miliar
+    with pytest.raises(ValueError, match="Harga paket"):
+        PaketService.create({"nama": "Paket Over 1M", "durasi_menit": 60, "harga": 1_000_000_001, "grup": "reguler"})
+
 
 def test_create_menu_validation(app_context):
-    # Valid
+    # Valid normal & max 1 Miliar
     m = MenuService.create_menu({"nama": "Es Teh Manis", "harga": 3000, "stok": 50})
     assert m.nama == "Es Teh Manis"
     assert m.harga == 3000
+
+    m_max = MenuService.create_menu({"nama": "Steak Wagyu A5", "harga": 1_000_000_000, "stok": 5})
+    assert m_max.harga == 1_000_000_000
 
     # Invalid nama length
     with pytest.raises(ValueError, match="Nama menu minimal 2 karakter"):
@@ -57,6 +73,10 @@ def test_create_menu_validation(app_context):
     # Invalid negative harga
     with pytest.raises(ValueError, match="Harga menu"):
         MenuService.create_menu({"nama": "Kopi Hitam", "harga": -500})
+
+    # Invalid harga > 1 Miliar
+    with pytest.raises(ValueError, match="Harga menu"):
+        MenuService.create_menu({"nama": "Kaviar Mewah", "harga": 1_000_000_001})
 
 
 def test_checkout_menu_order_validation(app_context):

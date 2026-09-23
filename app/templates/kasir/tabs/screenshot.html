@@ -26,14 +26,17 @@
         <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
             <h3 class="text-xs lg:max-xl:text-base xl:text-[22px] font-bold text-neutral-400 uppercase tracking-wider">Pantauan PC</h3>
             <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <label for="screenshot-search" class="sr-only">Cari PC</label>
                 <input type="text" id="screenshot-search" placeholder="Cari PC..."
                     class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 w-full sm:w-48 lg:max-xl:w-40 xl:w-48">
                 
+                <label for="screenshot-group-filter" class="sr-only">Filter Grup PC</label>
                 <select id="screenshot-group-filter"
                     class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-full sm:w-48 lg:max-xl:w-40 xl:w-48">
                     <option value="all">Semua Grup / Zona</option>
                 </select>
                 
+                <label for="screenshot-filter" class="sr-only">Filter Status Screenshot</label>
                 <select id="screenshot-filter"
                     class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-full sm:w-48 lg:max-xl:w-40 xl:w-48">
                     <option value="all">Semua Status</option>

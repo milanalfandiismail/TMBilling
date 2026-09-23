@@ -150,37 +150,42 @@ const MemberModal = {
                 <div class="flex items-center justify-between mb-5 pb-4 border-b border-[#2a2a2a]">
                     <div>
                         <h3 class="text-sm font-bold text-neutral-100 tracking-wide">Tambah Member Baru</h3>
-                        <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Daftarkan akun member warnet</p>
+                        <p class="text-[10px] lg:text-xs xl:text-sm text-neutral-500 mt-0.5">Daftarkan akun member warnet</p>
                     </div>
                     <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
                 </div>
                 <div class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Username <span class="text-red-400">*</span> <span class="text-[9px] text-neutral-500 font-normal font-sans">(3 - 30 karakter)</span></label>
+                            <label for="modal-mem-user" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Username <span class="text-red-400">*</span></label>
                             <input type="text" id="modal-mem-user" maxlength="30" minlength="3" placeholder="username" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">3 - 30 karakter</p>
                         </div>
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Password <span class="text-red-400">*</span> <span class="text-[9px] text-neutral-500 font-normal font-sans">(4 - 16 karakter)</span></label>
+                            <label for="modal-mem-pass" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Password <span class="text-red-400">*</span></label>
                             <input type="password" id="modal-mem-pass" maxlength="16" minlength="4" placeholder="••••••••" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">4 - 16 karakter</p>
                         </div>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Lengkap <span class="text-[9px] text-neutral-500 font-normal font-sans">(Maks. 100 karakter)</span></label>
+                        <label for="modal-mem-nama" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Nama Lengkap</label>
                         <input type="text" id="modal-mem-nama" maxlength="100" placeholder="Nama Lengkap" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Opsional, maksimal 100 karakter</p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Email <span class="text-[9px] text-neutral-500 font-normal font-sans">(Maks. 120 karakter)</span></label>
+                            <label for="modal-mem-email" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Email</label>
                             <input type="email" id="modal-mem-email" maxlength="120" placeholder="email@domain.com" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Opsional, maksimal 120 karakter</p>
                         </div>
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">No HP <span class="text-[9px] text-neutral-500 font-normal font-sans">(8 - 16 digit)</span></label>
+                            <label for="modal-mem-nohp" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">No HP</label>
                             <input type="text" id="modal-mem-nohp" maxlength="20" placeholder="08xx-xxxx-xxxx" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors font-mono">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Opsional, 8 - 16 digit</p>
                         </div>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Grup Member</label>
+                        <label for="modal-mem-grup" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Grup Member</label>
                         <select id="modal-mem-grup" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">${grupOptions}</select>
                     </div>
                 </div>
@@ -208,7 +213,7 @@ const MemberModal = {
                         </div>
                         <div>
                             <h3 class="text-sm font-bold text-neutral-100 tracking-wide">Edit Member</h3>
-                            <p class="text-[10px] lg:text-base text-neutral-500 font-mono mt-0.5">${member.username}</p>
+                            <p class="text-[10px] lg:text-xs xl:text-sm text-neutral-500 font-mono mt-0.5">${member.username}</p>
                         </div>
                     </div>
                     <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
@@ -216,21 +221,24 @@ const MemberModal = {
                 <div class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Lengkap <span class="text-[9px] text-neutral-500 font-normal font-sans">(Maks. 100 karakter)</span></label>
+                            <label for="edit-member-nama" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Nama Lengkap</label>
                             <input type="text" id="edit-member-nama" maxlength="100" value="${Utils.escapeHtml(member.nama_lengkap || '')}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Opsional, maksimal 100 karakter</p>
                         </div>
                         <div>
-                            <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Tipe Akun</label>
+                            <label for="edit-member-grup" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Tipe Akun</label>
                             <select id="edit-member-grup" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">${grupOptions}</select>
                         </div>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Email <span class="text-[9px] text-neutral-500 font-normal font-sans">(Maks. 120 karakter)</span></label>
+                        <label for="edit-member-email" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Email</label>
                         <input type="email" id="edit-member-email" maxlength="120" value="${member.email || ''}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Opsional, maksimal 120 karakter</p>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Password Baru (opsional) <span class="text-[9px] text-neutral-500 font-normal font-sans">(4 - 16 karakter)</span></label>
+                        <label for="edit-member-password" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Password Baru <span class="text-neutral-500 text-[9px] font-normal lowercase">(opsional)</span></label>
                         <input type="password" id="edit-member-password" maxlength="16" minlength="4" placeholder="Kosongkan jika tidak ganti" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Kosongkan jika tidak ingin mengubah (4 - 16 karakter)</p>
                     </div>
                 </div>
                 <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#2a2a2a]">

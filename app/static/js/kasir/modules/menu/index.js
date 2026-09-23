@@ -940,8 +940,8 @@ const Menu = {
             Toast.error("Nama menu harus 2 - 100 karakter!");
             return;
         }
-        if (!harga || isNaN(Number(harga)) || Number(harga) < 0 || Number(harga) > 10000000) {
-            Toast.error("Harga harus antara Rp0 - Rp10.000.000!");
+        if (!harga || isNaN(Number(harga)) || Number(harga) < 0 || Number(harga) > 1000000000) {
+            Toast.error("Harga harus antara Rp0 - Rp1.000.000.000!");
             return;
         }
         if (stok !== "-1" && (isNaN(Number(stok)) || Number(stok) < 0 || Number(stok) > 1000000)) {

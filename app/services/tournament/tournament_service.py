@@ -11,6 +11,7 @@ import random
 from app.models import Turnamen, TurnamenTahap, TurnamenTim, TurnamenMatch
 from app.repositories import TournamentRepository
 from app.utils.timezone_utils import format_display
+from app.utils.validators import validate_string_length, validate_choice, validate_integer_range
 
 
 class TournamentService:
@@ -447,8 +448,8 @@ class TournamentService:
         if not m:
             raise ValueError("Match tidak ditemukan")
 
-        skor1 = int(data.get("skor1", 0))
-        skor2 = int(data.get("skor2", 0))
+        skor1 = validate_integer_range(data.get("skor1", 0), 0, 999, "Skor tim 1")
+        skor2 = validate_integer_range(data.get("skor2", 0), 0, 999, "Skor tim 2")
         pemenang_id = data.get("pemenang_id")
 
         if pemenang_id:
@@ -540,7 +541,7 @@ class TournamentService:
         if not stage:
             raise ValueError("Tahap tidak ditemukan")
 
-        if not selected_team_ids:
+        if not selected_team_ids or not isinstance(selected_team_ids, list):
             raise ValueError("Harap pilih tim yang akan diloloskan ke babak berikutnya")
 
         try:

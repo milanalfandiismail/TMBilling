@@ -11,21 +11,18 @@ from flask import Blueprint, request, jsonify, current_app, session
 from werkzeug.utils import secure_filename
 from app.services import MenuService
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
+from app.utils.validators import validate_filename
 
 menu_api_bp = Blueprint("menu", __name__)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def handle_image_upload(file):
     """Fungsi helper untuk menyimpan file gambar yang diupload ke static/uploads/menu."""
     if not file or file.filename == '':
         return None
 
-    if not allowed_file(file.filename):
-        raise ValueError("Ekstensi file tidak diizinkan (Gunakan: png, jpg, jpeg, gif, webp)")
+    validate_filename(file.filename, allowed_extensions=ALLOWED_EXTENSIONS, field_name="Gambar Menu")
 
     # Buat direktori upload jika belum ada
     upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'menu')
