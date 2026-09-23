@@ -13,6 +13,7 @@ import requests
 def test_client():
     app = create_app()
     app.config['TESTING'] = True
+    app.config['WTF_CSRF_ENABLED'] = False
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     with app.app_context():
         db.create_all()
