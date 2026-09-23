@@ -11,6 +11,7 @@ from app.models import MenuItem, TransaksiMenu
 from app.repositories import MenuRepository
 from app.repositories import UserRepository
 from app.utils.logger import write_log
+from app.utils.validators import validate_string_length, validate_integer_range
 
 class MenuService:
     """Service class untuk memproses data Menu dan Transaksinya."""
@@ -35,10 +36,9 @@ class MenuService:
         'hapus permanen' dulu sebelum buat menu dengan nama sama.
         """
         try:
-            raw_nama = data.get("nama")
-            nama = raw_nama.strip() if isinstance(raw_nama, str) else ""
-            if not nama:
-                raise ValueError("Nama menu tidak boleh kosong")
+            nama = validate_string_length(data.get("nama", ""), min_len=2, max_len=100, field_name="Nama menu", required=True)
+            harga = validate_integer_range(data.get("harga", 0), 0, 10_000_000, "Harga menu")
+            stok = validate_integer_range(data.get("stok", 0), -1, 1_000_000, "Stok menu")
 
             # 1. Tolak hanya jika ada menu AKTIF dengan nama yang sama
             active_dup = MenuRepository.get_by_name(nama)
@@ -49,8 +49,8 @@ class MenuService:
             archived_dup = MenuRepository.get_by_name_including_archived(nama)
             if archived_dup and not archived_dup.is_active:
                 archived_dup.is_active = True
-                archived_dup.harga = int(data.get("harga", 0))
-                archived_dup.stok = int(data.get("stok", 0))
+                archived_dup.harga = harga
+                archived_dup.stok = stok
                 if data.get("gambar_path"):
                     archived_dup.gambar_path = data["gambar_path"]
                 db.session.commit()
@@ -70,8 +70,8 @@ class MenuService:
             # 3. Tidak ada duplikat sama sekali — buat baru
             menu = MenuItem(
                 nama=nama,
-                harga=int(data.get("harga", 0)),
-                stok=int(data.get("stok", 0)),
+                harga=harga,
+                stok=stok,
                 gambar_path=data.get("gambar_path")
             )
             MenuRepository.save(menu)
@@ -307,37 +307,57 @@ class MenuService:
             # Buat satu nomor nota untuk seluruh item dalam keranjang
             no_nota = f"{prefix}{str(count_today + 1).zfill(3)}"
 
-            transaksi_list = []
+            # Hitung total belanja dan validasi item
+            parsed_items = []
+            total_tagihan = 0
 
             for item in cart_items:
                 menu_id = item.get("menu_id")
-                jumlah = int(item.get("jumlah", 0))
-
-                if jumlah <= 0:
-                    continue
+                jumlah = validate_integer_range(item.get("jumlah", 0), 1, 1000, "Kuantitas pesanan")
 
                 menu = MenuRepository.get_by_id(menu_id)
                 if not menu:
                     raise ValueError(f"Menu dengan ID {menu_id} tidak ditemukan")
 
+                if menu.stok >= 0 and menu.stok < jumlah:
+                    raise ValueError(f"Stok '{menu.nama}' tidak mencukupi (Tersedia: {menu.stok}, Diminta: {jumlah})")
+
+                subtotal = menu.harga * jumlah
+                total_tagihan += subtotal
+                parsed_items.append({"menu": menu, "jumlah": jumlah, "subtotal": subtotal})
+
+            if not parsed_items:
+                raise ValueError("Daftar pesanan tidak boleh kosong")
+
+            # Validasi Pembayaran Tunai
+            tunai_val = int(tunai) if (tunai is not None and str(tunai).isdigit()) else 0
+            kembalian_val = 0
+            if metode_pembayaran == "Tunai" and tunai_val > 0:
+                if tunai_val < total_tagihan:
+                    raise ValueError(f"Uang tunai (Rp {tunai_val:,}) kurang dari total tagihan (Rp {total_tagihan:,})".replace(",", "."))
+                kembalian_val = tunai_val - total_tagihan
+
+            transaksi_list = []
+
+            for p_item in parsed_items:
+                menu = p_item["menu"]
+                jumlah = p_item["jumlah"]
+                subtotal = p_item["subtotal"]
+
                 # Kurangi stok jika tidak unlimited (stok >= 0)
                 if menu.stok >= 0:
-                    if menu.stok < jumlah:
-                        raise ValueError(f"Stok '{menu.nama}' tidak mencukupi (Tersedia: {menu.stok}, Diminta: {jumlah})")
                     menu.stok -= jumlah
-
-                total = menu.harga * jumlah
 
                 transaksi = TransaksiMenu(
                     no_nota=no_nota,
                     menu_id=menu.id,
                     jumlah=jumlah,
-                    total_harga=total,
+                    total_harga=subtotal,
                     pc_kode=pc_kode if pc_kode else None,
                     kasir_id=kasir.id,
                     operator=real_operator,
-                    tunai=tunai if tunai else None,
-                    kembalian=kembalian if kembalian else None,
+                    tunai=tunai_val if tunai_val else None,
+                    kembalian=kembalian_val if tunai_val else None,
                     metode_pembayaran=metode_pembayaran
                 )
                 MenuRepository.save(transaksi)
@@ -353,8 +373,8 @@ class MenuService:
                     "total_harga": t.total_harga,
                     "pc_kode": t.pc_kode,
                     "metode_pembayaran": t.metode_pembayaran,
-                    "tunai": tunai if tunai else None,
-                    "kembalian": kembalian if kembalian else None
+                    "tunai": tunai_val if tunai_val else None,
+                    "kembalian": kembalian_val if tunai_val else None
                 }
                 write_log("TRANSAKSI_MENU", f"Penjualan {t.menu.nama} x{t.jumlah} (Total: Rp{t.total_harga:,}) sukses via {no_nota}", user=operator, detail_json=order_details)
 

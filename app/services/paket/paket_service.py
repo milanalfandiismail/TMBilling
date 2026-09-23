@@ -12,7 +12,7 @@ from app.repositories import PaketRepository
 from app.repositories import SesiRepository
 from app.repositories import GrupRepository
 from app.utils.logger import write_log
-from app.models import db
+from app.utils.validators import validate_string_length, validate_integer_range
 
 
 class PaketService:
@@ -61,9 +61,10 @@ class PaketService:
     @staticmethod
     def create(data, operator="system"):
         """Buat paket baru dengan validasi nama unik dan grup yang tersedia."""
-        nama = data.get("nama", "").strip()
-        if not nama:
-            raise ValueError("Nama paket wajib diisi")
+        nama = validate_string_length(data.get("nama", ""), min_len=2, max_len=50, field_name="Nama paket", required=True)
+        durasi_menit = validate_integer_range(data.get("durasi_menit", 0), 1, 14400, "Durasi paket (menit)")
+        harga = validate_integer_range(data.get("harga", 0), 0, 100_000_000, "Harga paket")
+        kadaluarsa_hari = validate_integer_range(data.get("kadaluarsa_hari", 30), 1, 3650, "Masa berlaku paket (hari)")
         
         # Validasi: Cek duplikasi nama
         if PaketRepository.find_by_nama(nama):
@@ -77,9 +78,9 @@ class PaketService:
 
         paket = Paket(
             nama=nama,
-            durasi_menit=int(data.get("durasi_menit", 0)),
-            harga=int(data.get("harga", 0)),
-            kadaluarsa_hari=int(data.get("kadaluarsa_hari", 30)),
+            durasi_menit=durasi_menit,
+            harga=harga,
+            kadaluarsa_hari=kadaluarsa_hari,
             grup_id=grup_obj.id,
             aktif=True
         )
@@ -107,12 +108,14 @@ class PaketService:
     def update(paket_id, data, operator="system"):
         """Update detail paket (harga, durasi, status aktif, dll)."""
         paket = PaketRepository.get_by_id(paket_id)
+        if not paket:
+            raise ValueError("Paket tidak ditemukan")
         
         perubahan = {}
 
         # Update Nama (dengan pengecekan duplikasi selain ID ini sendiri)
         if "nama" in data:
-            nama_baru = data["nama"].strip()
+            nama_baru = validate_string_length(data["nama"], min_len=2, max_len=50, field_name="Nama paket", required=True)
             if nama_baru != paket.nama:
                 if PaketRepository.find_by_nama_exclude(nama_baru, paket_id):
                     raise ValueError(f"Nama paket '{nama_baru}' sudah dipakai paket lain")
@@ -130,17 +133,17 @@ class PaketService:
 
         # Update Field Lainnya
         if "durasi_menit" in data:
-            val = int(data["durasi_menit"])
+            val = validate_integer_range(data["durasi_menit"], 1, 14400, "Durasi paket (menit)")
             if val != paket.durasi_menit:
                 perubahan["durasi_menit"] = {"lama": paket.durasi_menit, "baru": val}
                 paket.durasi_menit = val
         if "harga" in data:
-            val = int(data["harga"])
+            val = validate_integer_range(data["harga"], 0, 100_000_000, "Harga paket")
             if val != paket.harga:
                 perubahan["harga"] = {"lama": paket.harga, "baru": val}
                 paket.harga = val
         if "kadaluarsa_hari" in data:
-            val = int(data["kadaluarsa_hari"])
+            val = validate_integer_range(data["kadaluarsa_hari"], 1, 3650, "Masa berlaku paket (hari)")
             if val != paket.kadaluarsa_hari:
                 perubahan["kadaluarsa_hari"] = {"lama": paket.kadaluarsa_hari, "baru": val}
                 paket.kadaluarsa_hari = val
