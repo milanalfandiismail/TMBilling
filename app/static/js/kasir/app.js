@@ -14,8 +14,8 @@ const App = {
         this.setupNavigation();
         this.switchTab('dash');
         await Grup.load();
-        // Shift Handover — under maintenance
-        // if (typeof Shift !== 'undefined') Shift.load();
+        // Shift Handover
+        if (typeof Shift !== 'undefined') await Shift.load();
         this.updatePageTitle('dash');
 
         // 5-second interval for Dashboard and Monitor
@@ -93,7 +93,7 @@ const App = {
         // RBAC: Kasir tidak boleh membuka tab admin-only
         const kasirOnlyRestricted = [
             'user', 'shift_history', 'user_logs', 'log',
-            'server_statistic', 'monitor', 'hardware_checker', 'uptime', 'maintenance', 'screenshot', 'blackout', 'remote_server',
+            'server_statistic', 'monitor', 'hardware_checker', 'uptime', 'maintenance', 'screenshot', 'remote_server',
             'settings', 'settings_general', 'settings_branch', 'settings_payment', 'settings_kiosk', 'settings_tv', 
             'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup', 
             'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'whitelist_ip',

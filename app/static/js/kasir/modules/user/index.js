@@ -45,14 +45,14 @@ const User = {
                                 ? '<span class="inline-flex items-center gap-1.5 text-xs lg:max-xl:text-xs xl:text-base text-neutral-300"><span class="w-1.5 h-1.5 rounded bg-neutral-200"></span>Aktif</span>'
                                 : '<span class="inline-flex items-center gap-1.5 text-xs lg:max-xl:text-xs xl:text-base text-neutral-500"><span class="w-1.5 h-1.5 rounded bg-neutral-700"></span>Nonaktif</span>';
                             const kuotaDisplay = u.role === 'kasir'
-                                ? `<div class="inline-flex items-center gap-1.5 font-mono text-xs">
-                                    <span class="text-neutral-200">${Math.floor((u.sisa_kuota_main || 0) / 60)}j ${(u.sisa_kuota_main || 0) % 60}m</span>
-                                    <span class="text-neutral-500">/ ${Math.floor((u.kuota_main_bulanan || 0) / 60)} Jam</span>
-                                    <button onclick="User.resetKuota(${u.id}, '${Utils.escapeHtml(u.username)}')" title="Reset Kuota Bermain" class="ml-1 p-1 hover:bg-neutral-800 rounded text-amber-400/80 hover:text-amber-400 transition-colors">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                ? `<div class="inline-flex items-center gap-1.5 font-mono text-xs lg:max-xl:text-xs xl:text-base">
+                                    <span class="text-neutral-200 font-mono font-medium">${Math.floor((u.sisa_kuota_main || 0) / 60)}j ${(u.sisa_kuota_main || 0) % 60}m</span>
+                                    <span class="text-neutral-500 font-mono text-[10px] lg:max-xl:text-xs xl:text-sm">/ ${Math.floor((u.kuota_main_bulanan || 0) / 60)} Jam</span>
+                                    <button onclick="User.resetKuota(${u.id}, '${Utils.escapeHtml(u.username)}')" title="Reset Kuota Bermain" class="ml-1 p-1 lg:max-xl:p-1 xl:p-1.5 hover:bg-neutral-800 rounded text-amber-400/80 hover:text-amber-400 transition-colors flex items-center justify-center">
+                                        <svg class="w-3.5 h-3.5 lg:max-xl:w-3.5 xl:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                     </button>
                                    </div>`
-                                : '<span class="text-neutral-600">-</span>';
+                                : '<span class="text-neutral-600 text-xs lg:max-xl:text-xs xl:text-base font-mono">-</span>';
                             return `
                                 <tr class="hover:bg-[#121212] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#2a2a2a] last:border-b-0 lg:border-b-0">
                                     <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 block lg:table-cell">
@@ -101,60 +101,60 @@ const User = {
         const isEdit = !!userData;
 
         const modalHtml = `
-            <div class="bg-[#0c0c0c] border border-[#222] rounded-xl p-5 md:p-6 max-w-lg lg:max-w-xl w-[calc(100%-2rem)] mx-auto md:w-full max-h-[90vh] overflow-y-auto scrollbar-thin my-auto shadow-2xl">
-                <div class="flex items-center justify-between mb-5 pb-4 border-b border-[#222]">
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-5 md:p-6 max-w-lg lg:max-w-xl w-[calc(100%-2rem)] mx-auto md:w-full max-h-[90vh] overflow-y-auto scrollbar-thin my-auto shadow-2xl">
+                <div class="flex items-center justify-between mb-5 pb-4 border-b border-[#1c1c1c]">
                     <div>
-                        <h3 class="text-sm lg:max-xl:text-sm xl:text-base font-bold text-neutral-100 uppercase tracking-wider">${isEdit ? 'Edit Akun Kasir / Admin' : 'Tambah User Kasir Baru'}</h3>
-                        <p class="text-[10px] lg:max-xl:text-[11px] xl:text-xs text-neutral-500 mt-0.5">${isEdit ? 'Perbarui informasi dan hak akses pengguna' : 'Daftarkan staf kasir atau administrator sistem'}</p>
+                        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-100 uppercase tracking-wider">${isEdit ? 'Edit Akun Kasir / Admin' : 'Tambah User Kasir Baru'}</h3>
+                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">${isEdit ? 'Perbarui informasi dan hak akses pengguna' : 'Daftarkan staf kasir atau administrator sistem'}</p>
                     </div>
                     <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#141414] border border-[#262626] text-neutral-400 hover:text-white hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
                 </div>
                 <div class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                         <div>
-                            <label for="inp-user-username" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Username <span class="text-red-400">*</span></label>
-                            <input type="text" id="inp-user-username" maxlength="30" minlength="3" placeholder="Contoh: kasir1" value="${userData ? Utils.escapeHtml(userData.username) : ''}" class="w-full px-3.5 py-2.5 bg-[#050505] border border-[#222] focus:border-neutral-500 rounded-lg text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none transition-colors">
+                            <label for="inp-user-username" class="block text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider mb-1">Username <span class="text-red-400">*</span></label>
+                            <input type="text" id="inp-user-username" maxlength="30" minlength="3" placeholder="Contoh: kasir1" value="${userData ? Utils.escapeHtml(userData.username) : ''}" class="w-full px-3 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
                             <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">3 - 30 karakter (huruf, angka, _, -, .)</p>
                         </div>
                         <div>
-                            <label for="inp-user-nama" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Nama Lengkap</label>
-                            <input type="text" id="inp-user-nama" maxlength="100" placeholder="Contoh: John Doe" value="${userData ? Utils.escapeHtml(userData.nama_lengkap || '') : ''}" class="w-full px-3.5 py-2.5 bg-[#050505] border border-[#222] focus:border-neutral-500 rounded-lg text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none transition-colors">
+                            <label for="inp-user-nama" class="block text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider mb-1">Nama Lengkap</label>
+                            <input type="text" id="inp-user-nama" maxlength="100" placeholder="Contoh: John Doe" value="${userData ? Utils.escapeHtml(userData.nama_lengkap || '') : ''}" class="w-full px-3 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
                             <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Opsional, maksimal 100 karakter</p>
                         </div>
                     </div>
                     <div>
-                        <label for="inp-user-pass" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Password ${isEdit ? '' : '<span class="text-red-400">*</span>'}</label>
-                        <input type="password" id="inp-user-pass" maxlength="32" minlength="6" placeholder="${isEdit ? '•••••••• (Biarkan kosong jika tidak diubah)' : 'Minimal 6 karakter'}" class="w-full px-3.5 py-2.5 bg-[#050505] border border-[#222] focus:border-neutral-500 rounded-lg text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none transition-colors">
+                        <label for="inp-user-pass" class="block text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider mb-1">Password ${isEdit ? '' : '<span class="text-red-400">*</span>'}</label>
+                        <input type="password" id="inp-user-pass" maxlength="32" minlength="6" placeholder="${isEdit ? '•••••••• (Biarkan kosong jika tidak diubah)' : 'Minimal 6 karakter'}" class="w-full px-3 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
                         <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">${isEdit ? 'Biarkan kosong jika tidak ingin mengubah (6 - 32 karakter)' : 'Minimal 6 karakter, maksimal 32 karakter'}</p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                         <div>
-                            <label for="inp-user-role" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Role Hak Akses</label>
-                            <select id="inp-user-role" class="w-full px-3.5 py-2.5 bg-[#050505] border border-[#222] focus:border-neutral-500 rounded-lg text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 focus:outline-none transition-colors">
+                            <label for="inp-user-role" class="block text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider mb-1">Role Hak Akses</label>
+                            <select id="inp-user-role" class="w-full px-3 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
                                 <option value="kasir" ${userData?.role === 'kasir' ? 'selected' : ''}>Staff Kasir</option>
                                 <option value="admin" ${userData?.role === 'admin' ? 'selected' : ''}>Administrator</option>
                             </select>
                         </div>
                         <div>
-                            <label for="inp-user-aktif" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Status Akun</label>
-                            <select id="inp-user-aktif" class="w-full px-3.5 py-2.5 bg-[#050505] border border-[#222] focus:border-neutral-500 rounded-lg text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 focus:outline-none transition-colors">
+                            <label for="inp-user-aktif" class="block text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider mb-1">Status Akun</label>
+                            <select id="inp-user-aktif" class="w-full px-3 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
                                 <option value="true" ${userData?.aktif !== false ? 'selected' : ''}>Aktif (Dapat Login)</option>
                                 <option value="false" ${userData?.aktif === false ? 'selected' : ''}>Nonaktif (Diblokir)</option>
                             </select>
                         </div>
                     </div>
                     <div id="wrapper-kuota-main" class="${userData?.role === 'admin' ? 'hidden' : ''}">
-                        <label for="inp-user-kuota" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Benefit Kuota Main Bulanan (Jam)</label>
+                        <label for="inp-user-kuota" class="block text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider mb-1">Benefit Kuota Main Bulanan (Jam)</label>
                         <div class="relative">
-                            <input type="number" id="inp-user-kuota" min="0" max="720" value="${userData ? Math.floor((userData.kuota_main_bulanan || 0) / 60) : 10}" class="w-full px-3.5 py-2.5 bg-[#050505] border border-[#222] focus:border-neutral-500 rounded-lg text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none transition-colors">
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 text-xs">Jam</span>
+                            <input type="number" id="inp-user-kuota" min="0" max="720" value="${userData ? Math.floor((userData.kuota_main_bulanan || 0) / 60) : 10}" class="w-full px-3 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors no-spinners [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 text-xs lg:max-xl:text-xs xl:text-base">Jam</span>
                         </div>
                         <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Benefit bermain gratis di luar jam kerja (0 - 720 Jam)</p>
                     </div>
                 </div>
-                <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#222]">
-                    <button onclick="Modal.closeModal()" class="px-4 py-2.5 bg-[#141414] border border-[#262626] hover:bg-[#222] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors">Batal</button>
-                    <button onclick="User.addOrupdate()" class="px-5 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors flex items-center gap-2">
+                <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#1c1c1c]">
+                    <button onclick="Modal.closeModal()" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#141414] border border-[#262626] hover:bg-[#222] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Batal</button>
+                    <button onclick="User.addOrupdate()" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
                         ${isEdit ? '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Simpan Perubahan' : '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Daftarkan User'}
                     </button>
                 </div>

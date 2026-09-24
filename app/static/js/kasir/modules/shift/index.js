@@ -120,18 +120,18 @@ const Shift = {
             <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in">
                 <div class="px-6 py-5 border-b border-[#2a2a2a] flex items-center justify-between">
                     <div>
-                        <h3 class="text-base font-bold text-red-400 flex items-center gap-2">
+                        <h3 class="text-sm lg:max-xl:text-base xl:text-lg font-bold text-red-400 flex items-center gap-2">
                             <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                             Force Close Shift (Admin)
                         </h3>
-                        <p class="text-xs text-neutral-400 mt-1">Tutup paksa shift kasir darurat / berhalangan</p>
+                        <p class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-400 mt-1">Tutup paksa shift kasir darurat / berhalangan</p>
                     </div>
                     <button onclick="Modal.closeModal()" class="text-neutral-500 hover:text-white transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
-                <div class="px-6 py-5 space-y-4">
-                    <div class="p-3.5 rounded-lg bg-neutral-900/80 border border-[#222] space-y-2 text-xs">
+                <div class="px-6 py-5 space-y-4 text-xs lg:max-xl:text-xs xl:text-sm">
+                    <div class="p-3.5 rounded-lg bg-neutral-900/80 border border-[#222] space-y-2">
                         <div class="flex justify-between">
                             <span class="text-neutral-500">Kasir:</span>
                             <span class="text-neutral-200 font-bold">${Utils.escapeHtml(shift.kasir_nama || 'Kasir')}</span>
@@ -147,20 +147,20 @@ const Shift = {
                     </div>
 
                     <div>
-                        <label for="admin-fc-alasan" class="text-xs font-bold text-neutral-300 uppercase tracking-wider block mb-2">
+                        <label for="admin-fc-alasan" class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-300 uppercase tracking-wider block mb-2">
                             Alasan Penutupan Paksa <span class="text-red-400">*</span>
                         </label>
                         <textarea id="admin-fc-alasan" rows="3" 
-                            class="w-full px-3.5 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-red-500/70 rounded-lg text-neutral-200 text-xs focus:outline-none transition-colors"
+                            class="w-full px-3.5 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-red-500/70 rounded-lg text-neutral-200 text-xs lg:max-xl:text-xs xl:text-sm focus:outline-none transition-colors"
                             placeholder="Contoh: Kasir pulang mendadak sakit, kasir lupa tutup shift, dll (min. 3 karakter)"></textarea>
-                        <p class="text-[10px] text-neutral-500 mt-1">Alasan wajib diisi untuk rekam jejak audit keamanan.</p>
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 mt-1">Alasan wajib diisi untuk rekam jejak audit keamanan.</p>
                     </div>
                 </div>
                 <div class="px-6 py-4 border-t border-[#2a2a2a] flex justify-end gap-2 bg-[#0c0c0c]">
                     <button onclick="Modal.closeModal()" 
-                        class="px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs font-bold rounded-lg transition-colors">Batal</button>
+                        class="px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors">Batal</button>
                     <button onclick="Shift.submitForceClose(${shift.id})" 
-                        class="px-5 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                        class="px-5 py-2 bg-red-600 hover:bg-red-500 text-white text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         Tutup Paksa Shift
                     </button>
@@ -202,16 +202,16 @@ const Shift = {
         const modalHtml = `
             <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in">
                 <div class="px-6 py-5 border-b border-[#2a2a2a]">
-                    <h3 class="text-base font-bold text-neutral-100">Buka Shift Kasir</h3>
-                    <p class="text-xs text-neutral-500 mt-1">Masukkan modal awal (uang receh/kembalian) di laci</p>
+                    <h3 class="text-sm lg:max-xl:text-base xl:text-lg font-bold text-neutral-100">Buka Shift Kasir</h3>
+                    <p class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 mt-1">Masukkan modal awal (uang receh/kembalian) di laci</p>
                 </div>
                 <div class="px-6 py-5 space-y-4">
                     <div>
-                        <label for="modal-awal-input" class="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">Modal Awal (Rp)</label>
+                        <label for="modal-awal-input" class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-400 uppercase tracking-wider block mb-2">Modal Awal (Rp)</label>
                         <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-sm">Rp</span>
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-sm lg:max-xl:text-sm xl:text-base">Rp</span>
                             <input type="number" id="modal-awal-input" min="0" value="0"
-                                class="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm font-mono focus:border-neutral-500 transition-colors"
+                                class="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm lg:max-xl:text-sm xl:text-base font-mono focus:border-neutral-500 transition-colors no-spinners [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 placeholder="0" />
                         </div>
                         <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Rp 0 - Rp 100.000.000 (uang receh/kembalian di laci)</p>
@@ -219,9 +219,9 @@ const Shift = {
                 </div>
                 <div class="px-6 py-4 border-t border-[#2a2a2a] flex justify-end gap-2">
                     <button onclick="Shift.cancelBukaShift()" 
-                        class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs font-bold rounded-lg transition-colors">Tutup</button>
+                        class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors">Tutup</button>
                     <button onclick="Shift.submitBukaShift()" 
-                        class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors">Mulai Shift</button>
+                        class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors">Mulai Shift</button>
                 </div>
             </div>
         `;
@@ -280,25 +280,25 @@ const Shift = {
                             <span class="text-amber-400 text-sm font-bold">!</span>
                         </div>
                         <div>
-                            <h3 class="text-sm font-bold text-neutral-100">Akhiri Shift Kasir</h3>
-                            <p class="text-[10px] text-neutral-500">Hitungan buta — hitung uang fisik dengan jujur</p>
+                            <h3 class="text-sm lg:max-xl:text-base xl:text-lg font-bold text-neutral-100">Akhiri Shift Kasir</h3>
+                            <p class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500">Hitungan buta — hitung uang fisik dengan jujur</p>
                         </div>
                     </div>
                 </div>
                 <div class="px-6 py-5 space-y-4">
                     <!-- Blind Count Info -->
                     <div class="p-3 rounded-lg bg-amber-900/10 border border-amber-800/20">
-                        <p class="text-xs text-amber-400 font-bold uppercase tracking-wider flex items-center gap-2">
+                        <p class="text-xs lg:max-xl:text-xs xl:text-sm text-amber-400 font-bold uppercase tracking-wider flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0 0v2m0-2h2m-2 0H10m9.364-7.364A9 9 0 115.636 5.636a9 9 0 0112.728 0z"/>
                             </svg>
                             Hitung Buta Aktif
                         </p>
-                        <p class="text-[10px] text-neutral-400 mt-1">Angka pendapatan disembunyikan. Hitung uang fisik di laci dan masukkan jumlahnya.</p>
+                        <p class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-400 mt-1">Angka pendapatan disembunyikan. Hitung uang fisik di laci dan masukkan jumlahnya.</p>
                     </div>
 
                     <!-- Shift Info (safe to show — waktu & modal awal saja) -->
-                    <div class="bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-3 text-xs space-y-1">
+                    <div class="bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-3 text-xs lg:max-xl:text-xs xl:text-sm space-y-1">
                         <div class="flex justify-between">
                             <span class="text-neutral-500">Waktu Mulai</span>
                             <span class="text-neutral-300 font-mono">${this.formatTime(this.activeShift.waktu_mulai)}</span>
@@ -314,29 +314,29 @@ const Shift = {
                     </div>
 
                     <div>
-                        <label for="uang-fisik-input" class="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">Uang Fisik di Laci (Rp)</label>
+                        <label for="uang-fisik-input" class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-400 uppercase tracking-wider block mb-2">Uang Fisik di Laci (Rp)</label>
                         <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-sm">Rp</span>
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-sm lg:max-xl:text-sm xl:text-base">Rp</span>
                             <input type="number" id="uang-fisik-input" min="0" value="0"
-                                class="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm font-mono focus:border-neutral-500 transition-colors"
+                                class="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm lg:max-xl:text-sm xl:text-base font-mono focus:border-neutral-500 transition-colors no-spinners [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 placeholder="0" autofocus />
                         </div>
                         <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Rp 0 - Rp 100.000.000 (hitung seluruh uang tunai fisik di laci)</p>
                     </div>
 
                     <div>
-                        <label for="catatan-shift-input" class="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">Catatan Serah Terima (Opsional)</label>
+                        <label for="catatan-shift-input" class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-400 uppercase tracking-wider block mb-2">Catatan Serah Terima (Opsional)</label>
                         <textarea id="catatan-shift-input" rows="2" maxlength="255"
-                            class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-xs focus:border-neutral-500 transition-colors resize-none"
+                            class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-xs lg:max-xl:text-xs xl:text-sm focus:border-neutral-500 transition-colors resize-none"
                             placeholder="Contoh: Selisih Rp2.000 karena pembulatan / titipan modal kasir selanjutnya"></textarea>
-                        <p class="text-[9px] text-neutral-500 mt-1 font-normal">Maksimal 255 karakter</p>
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 mt-1 font-normal">Maksimal 255 karakter</p>
                     </div>
                 </div>
                 <div class="px-6 py-4 border-t border-[#2a2a2a] flex justify-end gap-2">
                     <button onclick="Modal.closeModal()" 
-                        class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs font-bold rounded-lg transition-colors">Batal</button>
+                        class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors">Batal</button>
                     <button onclick="Shift.submitTutupShift()" 
-                        class="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-lg transition-colors">Selesaikan Shift</button>
+                        class="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors">Selesaikan Shift</button>
                 </div>
             </div>
         `;
@@ -434,22 +434,22 @@ const Shift = {
         if (selisih !== null && selisih !== undefined) {
             if (selisih > 0) {
                 selisihHtml = `
-                    <span class="text-emerald-400 font-mono font-bold text-sm flex items-center gap-1.5">
-                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/50 font-bold">SURPLUS (+)</span>
+                    <span class="text-emerald-400 font-mono font-bold text-xs lg:max-xl:text-xs xl:text-sm flex items-center gap-1.5">
+                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/50 font-bold">SURPLUS (+)</span>
                         Rp ${Utils.formatRawRupiah(selisih)}
                     </span>
                 `;
             } else if (selisih < 0) {
                 selisihHtml = `
-                    <span class="text-red-400 font-mono font-bold text-sm flex items-center gap-1.5">
-                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-red-950/80 text-red-400 border border-red-800/50 font-bold">DEFISIT (-)</span>
+                    <span class="text-red-400 font-mono font-bold text-xs lg:max-xl:text-xs xl:text-sm flex items-center gap-1.5">
+                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs px-1.5 py-0.5 rounded bg-red-950/80 text-red-400 border border-red-800/50 font-bold">DEFISIT (-)</span>
                         Rp ${Utils.formatRawRupiah(Math.abs(selisih))}
                     </span>
                 `;
             } else {
                 selisihHtml = `
-                    <span class="text-neutral-300 font-mono font-bold text-sm flex items-center gap-1.5">
-                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700 font-bold">SESUAI / PAS</span>
+                    <span class="text-neutral-300 font-mono font-bold text-xs lg:max-xl:text-xs xl:text-sm flex items-center gap-1.5">
+                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700 font-bold">SESUAI / PAS</span>
                         Rp 0
                     </span>
                 `;
@@ -461,7 +461,7 @@ const Shift = {
         let nonTunaiRowsHtml = '';
         if (nonTunaiList.length > 0) {
             nonTunaiRowsHtml = nonTunaiList.map(item => `
-                <div class="flex justify-between py-1 text-xs">
+                <div class="flex justify-between py-1 text-xs lg:max-xl:text-xs xl:text-sm">
                     <span class="text-neutral-400 flex items-center gap-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-cyan-400/80"></span>
                         ${Utils.escapeHtml(item.method)}
@@ -470,7 +470,7 @@ const Shift = {
                 </div>
             `).join('');
         } else {
-            nonTunaiRowsHtml = '<p class="text-neutral-500 text-[11px] italic py-0.5">Tidak ada penerimaan non-tunai</p>';
+            nonTunaiRowsHtml = '<p class="text-neutral-500 text-[10px] lg:max-xl:text-xs xl:text-sm italic py-0.5">Tidak ada penerimaan non-tunai</p>';
         }
 
         const isForceClose = (result.catatan || '').includes('[FORCE CLOSE');
@@ -481,17 +481,17 @@ const Shift = {
                 <div class="px-6 py-5 border-b border-[#2a2a2a] flex items-center justify-between">
                     <div>
                         <div class="flex items-center gap-2">
-                            <h3 class="text-base font-bold text-neutral-100">Rekapitulasi Shift Kasir</h3>
-                            ${isForceClose ? '<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-red-950/80 text-red-400 border border-red-800/60">FORCE CLOSE</span>' : '<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">SELESAI</span>'}
+                            <h3 class="text-sm lg:max-xl:text-base xl:text-lg font-bold text-neutral-100">Rekapitulasi Shift Kasir</h3>
+                            ${isForceClose ? '<span class="px-2 py-0.5 text-[10px] lg:max-xl:text-xs xl:text-xs font-bold rounded bg-red-950/80 text-red-400 border border-red-800/60">FORCE CLOSE</span>' : '<span class="px-2 py-0.5 text-[10px] lg:max-xl:text-xs xl:text-xs font-bold rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">SELESAI</span>'}
                         </div>
-                        <p class="text-xs text-neutral-500 mt-0.5">Laporan serah terima shift dan rekonsiliasi laci fisik</p>
+                        <p class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 mt-0.5">Laporan serah terima shift dan rekonsiliasi laci fisik</p>
                     </div>
                     <button onclick="Modal.closeModal()" class="text-neutral-500 hover:text-white transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
-                <div class="px-6 py-5 space-y-4 max-h-[75vh] overflow-y-auto scrollbar-thin text-xs">
+                <div class="px-6 py-5 space-y-4 max-h-[75vh] overflow-y-auto scrollbar-thin text-xs lg:max-xl:text-xs xl:text-sm">
                     <!-- Info Petugas & Waktu -->
                     <div class="p-3 rounded-lg bg-neutral-900/70 border border-[#222] space-y-1.5">
                         <div class="flex justify-between">
@@ -511,13 +511,13 @@ const Shift = {
                     <!-- 1. Rincian Penerimaan Tunai -->
                     <div class="p-3.5 rounded-lg bg-[#0d0d0d] border border-[#202020] space-y-2">
                         <div class="flex items-center justify-between pb-1.5 border-b border-[#1c1c1c]">
-                            <span class="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                                 <span class="w-2 h-2 rounded-full bg-amber-400"></span>
                                 Penerimaan Tunai (Cash)
                             </span>
-                            <span class="text-[11px] font-bold text-amber-400 font-mono">${Utils.formatRupiah(totalTunaiBersih)}</span>
+                            <span class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-amber-400 font-mono">${Utils.formatRupiah(totalTunaiBersih)}</span>
                         </div>
-                        <div class="space-y-1 pt-1 text-xs">
+                        <div class="space-y-1 pt-1 text-xs lg:max-xl:text-xs xl:text-sm">
                             <div class="flex justify-between">
                                 <span class="text-neutral-400">Billing Rental Tunai</span>
                                 <span class="text-neutral-200 font-mono">${Utils.formatRupiah(billingTunai)}</span>
@@ -537,11 +537,11 @@ const Shift = {
                     <!-- 2. Rincian Penerimaan Non-Tunai Dinamis -->
                     <div class="p-3.5 rounded-lg bg-[#0d0d0d] border border-[#202020] space-y-2">
                         <div class="flex items-center justify-between pb-1.5 border-b border-[#1c1c1c]">
-                            <span class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
                                 <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
                                 Penerimaan Non-Tunai (Digital)
                             </span>
-                            <span class="text-[11px] font-bold text-cyan-400 font-mono">${Utils.formatRupiah(totalNonTunai)}</span>
+                            <span class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-cyan-400 font-mono">${Utils.formatRupiah(totalNonTunai)}</span>
                         </div>
                         <div class="space-y-1 pt-1">
                             ${nonTunaiRowsHtml}
@@ -550,10 +550,10 @@ const Shift = {
 
                     <!-- 3. Rekonsiliasi Laci Kasir -->
                     <div class="p-3.5 rounded-lg bg-neutral-900/90 border border-[#262626] space-y-2">
-                        <div class="text-[11px] font-bold text-neutral-300 uppercase tracking-wider pb-1.5 border-b border-[#222]">
+                        <div class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-300 uppercase tracking-wider pb-1.5 border-b border-[#222]">
                             Rekonsiliasi Laci Kasir
                         </div>
-                        <div class="space-y-1.5 pt-1 text-xs">
+                        <div class="space-y-1.5 pt-1 text-xs lg:max-xl:text-xs xl:text-sm">
                             <div class="flex justify-between">
                                 <span class="text-neutral-400">Modal Awal di Laci</span>
                                 <span class="text-neutral-200 font-mono">${Utils.formatRupiah(modalAwal)}</span>
@@ -568,7 +568,7 @@ const Shift = {
                             </div>
                             <div class="flex justify-between font-bold pt-1">
                                 <span class="text-neutral-300">Uang Fisik Aktual di Laci</span>
-                                <span class="text-white font-mono text-sm">${uangFisik !== null && uangFisik !== undefined ? Utils.formatRupiah(uangFisik) : '-'}</span>
+                                <span class="text-white font-mono text-xs lg:max-xl:text-sm xl:text-base">${uangFisik !== null && uangFisik !== undefined ? Utils.formatRupiah(uangFisik) : '-'}</span>
                             </div>
                             <div class="flex justify-between items-center pt-1.5 border-t border-[#222]">
                                 <span class="text-neutral-400 font-semibold">Selisih Keuangan</span>
@@ -580,8 +580,8 @@ const Shift = {
                     <!-- Catatan Serah Terima -->
                     ${result.catatan ? `
                     <div class="p-3 rounded-lg bg-[#0e0e0e] border border-[#222] space-y-1">
-                        <span class="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Catatan Handover / Audit:</span>
-                        <p class="text-neutral-300 italic text-[11px] break-words whitespace-pre-wrap">${Utils.escapeHtml(result.catatan)}</p>
+                        <span class="text-[10px] lg:max-xl:text-xs xl:text-xs text-neutral-500 uppercase font-bold tracking-wider">Catatan Handover / Audit:</span>
+                        <p class="text-neutral-300 italic text-[11px] lg:max-xl:text-xs xl:text-sm break-words whitespace-pre-wrap">${Utils.escapeHtml(result.catatan)}</p>
                     </div>` : ''}
                 </div>
 
@@ -589,20 +589,20 @@ const Shift = {
                 <div class="px-6 py-4 border-t border-[#2a2a2a] flex flex-wrap justify-between items-center gap-2 bg-[#0c0c0c]">
                     <div class="flex gap-2">
                         <button onclick="Shift.printHandover(${JSON.stringify(result).replace(/"/g, "'")})" 
-                            class="px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5">
+                            class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                             Struk Browser
                         </button>
                         ${shiftId ? `
                         <button onclick="Shift.printThermalReceipt(${shiftId})" 
-                            class="px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5">
+                            class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                             Thermal 58mm
                         </button>
                         ` : ''}
                     </div>
                     <button onclick="Modal.closeModal()" 
-                        class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded-lg transition-colors">Tutup</button>
+                        class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors">Tutup</button>
                 </div>
             </div>
         `;
@@ -801,42 +801,42 @@ const Shift = {
                 let selisihBadge = '';
                 if (s.selisih !== null && s.selisih !== undefined) {
                     if (s.selisih > 0) {
-                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 font-mono">+${Utils.formatRawRupiah(s.selisih)}</span>`;
+                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-sm font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 font-mono">+${Utils.formatRawRupiah(s.selisih)}</span>`;
                     } else if (s.selisih < 0) {
-                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-950/70 text-red-400 border border-red-800/40 font-mono">-${Utils.formatRawRupiah(Math.abs(s.selisih))}</span>`;
+                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-sm font-bold bg-red-950/70 text-red-400 border border-red-800/40 font-mono">-${Utils.formatRawRupiah(Math.abs(s.selisih))}</span>`;
                     } else {
-                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-neutral-800 text-neutral-300 font-mono">Rp 0</span>`;
+                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-sm font-bold bg-neutral-800 text-neutral-300 font-mono">Rp 0</span>`;
                     }
                 } else {
-                    selisihBadge = '<span class="text-neutral-500 font-mono text-[10px]">-</span>';
+                    selisihBadge = '<span class="text-neutral-500 font-mono text-[10px] lg:max-xl:text-xs xl:text-sm">-</span>';
                 }
 
                 const statusBadge = isForceClose
-                    ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950/70 text-red-400 border border-red-800/40">FORCE CLOSE</span>'
-                    : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40">SELESAI</span>';
+                    ? '<span class="px-2 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-sm font-bold bg-red-950/70 text-red-400 border border-red-800/40">FORCE CLOSE</span>'
+                    : '<span class="px-2 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-sm font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40">SELESAI</span>';
 
                 return `
-                    <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs">
-                        <td class="px-3.5 py-3 font-mono text-neutral-400">#${s.id}</td>
-                        <td class="px-3.5 py-3">
+                    <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs lg:max-xl:text-xs xl:text-base">
+                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-mono text-neutral-400">#${s.id}</td>
+                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">
                             <div class="font-bold text-neutral-200">${Utils.escapeHtml(s.kasir_nama || 'Kasir')}</div>
-                            <div class="text-[10px] text-neutral-500 font-mono">${s.waktu_mulai || '-'} s/d ${s.waktu_selesai ? s.waktu_selesai.split(' ')[1] : '-'}</div>
+                            <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 font-mono">${s.waktu_mulai || '-'} s/d ${s.waktu_selesai ? s.waktu_selesai.split(' ')[1] : '-'}</div>
                         </td>
-                        <td class="px-3.5 py-3 font-mono text-neutral-300">${Utils.formatRupiah(s.modal_awal || 0)}</td>
-                        <td class="px-3.5 py-3 font-mono text-neutral-300">${Utils.formatRupiah(s.total_billing || 0)}</td>
-                        <td class="px-3.5 py-3 font-mono text-neutral-300">${Utils.formatRupiah(s.total_kantin || 0)}</td>
-                        <td class="px-3.5 py-3 font-mono font-bold text-neutral-100">${s.uang_fisik !== null && s.uang_fisik !== undefined ? Utils.formatRupiah(s.uang_fisik) : '-'}</td>
-                        <td class="px-3.5 py-3">${selisihBadge}</td>
-                        <td class="px-3.5 py-3">${statusBadge}</td>
-                        <td class="px-3.5 py-3 text-right">
+                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-mono text-neutral-300">${Utils.formatRupiah(s.modal_awal || 0)}</td>
+                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-mono text-neutral-300">${Utils.formatRupiah(s.total_billing || 0)}</td>
+                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-mono text-neutral-300">${Utils.formatRupiah(s.total_kantin || 0)}</td>
+                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-mono font-bold text-neutral-100">${s.uang_fisik !== null && s.uang_fisik !== undefined ? Utils.formatRupiah(s.uang_fisik) : '-'}</td>
+                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">${selisihBadge}</td>
+                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">${statusBadge}</td>
+                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-right">
                             <div class="flex items-center justify-end gap-1.5">
                                 <button onclick="Shift.viewShiftDetail(${s.id})" title="Lihat Rekapitulasi"
-                                    class="p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white transition-colors">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    class="p-1.5 lg:max-xl:p-2 xl:p-2.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white transition-colors">
+                                    <svg class="w-3.5 h-3.5 lg:max-xl:w-4 lg:max-xl:h-4 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                                 <button onclick="Shift.printThermalReceipt(${s.id})" title="Cetak Struk Thermal 58mm"
-                                    class="p-1.5 rounded bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/40 text-amber-400 hover:text-amber-300 transition-colors">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                    class="p-1.5 lg:max-xl:p-2 xl:p-2.5 rounded bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/40 text-amber-400 hover:text-amber-300 transition-colors">
+                                    <svg class="w-3.5 h-3.5 lg:max-xl:w-4 lg:max-xl:h-4 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                 </button>
                             </div>
                         </td>
@@ -846,7 +846,7 @@ const Shift = {
         } catch (err) {
             container.innerHTML = `
                 <tr>
-                    <td colspan="9" class="text-center py-6 text-red-400 text-xs">
+                    <td colspan="9" class="text-center py-6 text-red-400 text-xs lg:text-base">
                         Error memuat riwayat: ${Utils.escapeHtml(err.message)}
                     </td>
                 </tr>
@@ -872,7 +872,7 @@ const Shift = {
 
         container.innerHTML = `
             <tr>
-                <td colspan="5" class="text-center py-8 text-neutral-500 text-xs">
+                <td colspan="5" class="text-center py-8 text-neutral-500 text-xs lg:text-base">
                     <div class="inline-block w-5 h-5 border-2 border-neutral-600 border-t-cyan-400 rounded-full animate-spin mr-2 align-middle"></div>
                     Memuat log aktivitas staff...
                 </td>
@@ -899,7 +899,7 @@ const Shift = {
             if (staffLogs.length === 0) {
                 container.innerHTML = `
                     <tr>
-                        <td colspan="5" class="text-center py-8 text-neutral-500 text-xs">
+                        <td colspan="5" class="text-center py-8 text-neutral-500 text-xs lg:text-base">
                             Tidak ada log aktivitas staff yang cocok dengan filter
                         </td>
                     </tr>
@@ -917,23 +917,23 @@ const Shift = {
                 else if (act.includes('LOGIN')) badgeClass = 'bg-amber-950/70 text-amber-400 border-amber-800/40';
 
                 return `
-                    <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs">
-                        <td class="px-3.5 py-3 font-mono text-neutral-400 whitespace-nowrap">${log.timestamp || '-'}</td>
-                        <td class="px-3.5 py-3 font-bold text-neutral-200 whitespace-nowrap">
-                            <span class="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-700 font-mono text-[11px]">${Utils.escapeHtml(log.user || 'system')}</span>
+                    <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs lg:max-xl:text-xs xl:text-base">
+                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-mono text-neutral-400 whitespace-nowrap">${log.timestamp || '-'}</td>
+                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-bold text-neutral-200 whitespace-nowrap">
+                            <span class="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-700 font-mono text-[11px] lg:max-xl:text-xs xl:text-sm">${Utils.escapeHtml(log.user || 'system')}</span>
                         </td>
-                        <td class="px-3.5 py-3 whitespace-nowrap">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeClass}">${Utils.escapeHtml(log.action || '-')}</span>
+                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 whitespace-nowrap">
+                            <span class="px-2 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-sm font-bold border ${badgeClass}">${Utils.escapeHtml(log.action || '-')}</span>
                         </td>
-                        <td class="px-3.5 py-3 text-neutral-300 break-words whitespace-pre-wrap">${Utils.escapeHtml(log.detail || '-')}</td>
-                        <td class="px-3.5 py-3 font-mono text-[11px] text-neutral-500 whitespace-nowrap">${log.ip_address || '-'}</td>
+                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-neutral-300 break-words whitespace-pre-wrap">${Utils.escapeHtml(log.detail || '-')}</td>
+                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-mono text-[11px] lg:max-xl:text-xs xl:text-sm text-neutral-500 whitespace-nowrap">${log.ip_address || '-'}</td>
                     </tr>
                 `;
             }).join('');
         } catch (err) {
             container.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center py-6 text-red-400 text-xs">
+                    <td colspan="5" class="text-center py-6 text-red-400 text-xs lg:text-base">
                         Error memuat log: ${Utils.escapeHtml(err.message)}
                     </td>
                 </tr>

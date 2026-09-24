@@ -1,19 +1,19 @@
 <!-- ===== TAB: LOG & AUDIT STAFF ===== -->
 <div id="tab-user_logs" class="tab-content hidden space-y-6">
     <!-- Header Card -->
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h3 class="text-sm lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-100 tracking-wide flex items-center gap-2">
-                    <span class="text-cyan-400">🛡️</span> Log & Audit Staff
+                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-100 uppercase tracking-wider flex items-center gap-2">
+                    <span>🛡️</span> Log & Audit Staff
                 </h3>
-                <p class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-0.5">
+                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">
                     Rekam jejak aktivitas operasional kasir & admin (shift, manipulasi akun, reset benefit kuota, login/logout)
                 </p>
             </div>
             <div class="flex items-center gap-2">
                 <button onclick="Shift.loadUserLogs()"
-                    class="px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 border border-neutral-700/60">
+                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     Refresh
                 </button>
@@ -22,23 +22,24 @@
     </div>
 
     <!-- Filter Card -->
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-4">
-        <div class="flex flex-wrap items-center gap-3">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
+        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Filter Log & Aktivitas</h3>
+        <div class="flex flex-wrap items-end gap-3">
             <div class="flex-1 min-w-[200px]">
-                <label for="filter-user-logs-search" class="sr-only">Cari Log</label>
+                <label for="filter-user-logs-search" class="text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider block mb-1">Cari Log</label>
                 <div class="relative">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </span>
                     <input type="text" id="filter-user-logs-search" placeholder="Cari berdasarkan kasir, detail, aksi..."
-                        class="w-full pl-9 pr-3.5 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-xs focus:outline-none focus:border-neutral-500 transition-colors"
+                        class="w-full pl-9 pr-3.5 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors"
                         onkeyup="if(event.key==='Enter') Shift.loadUserLogs()">
                 </div>
             </div>
-            <div class="w-auto min-w-[150px]">
-                <label for="filter-user-logs-action" class="sr-only">Kategori Aksi</label>
+            <div class="w-auto min-w-[180px]">
+                <label for="filter-user-logs-action" class="text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider block mb-1">Kategori Aksi</label>
                 <select id="filter-user-logs-action" onchange="Shift.loadUserLogs()"
-                    class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-xs focus:outline-none focus:border-neutral-500 transition-colors">
+                    class="w-full px-3 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
                     <option value="">Semua Aksi Staff</option>
                     <option value="SHIFT">Shift (Buka / Tutup / Force)</option>
                     <option value="USER">Akun Staff (Tambah/Edit/Hapus)</option>
@@ -48,11 +49,11 @@
             </div>
             <div class="w-auto flex items-center gap-2">
                 <button onclick="Shift.loadUserLogs()"
-                    class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded-lg transition-colors shadow-sm">
+                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors shadow-sm">
                     Cari
                 </button>
                 <button onclick="document.getElementById('filter-user-logs-search').value=''; document.getElementById('filter-user-logs-action').value=''; Shift.loadUserLogs();"
-                    class="px-3 py-2 bg-[#1a1a1a] hover:bg-[#222] border border-[#262626] text-neutral-400 text-xs font-bold rounded-lg transition-colors">
+                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#1a1a1a] hover:bg-[#222] border border-[#262626] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">
                     Reset
                 </button>
             </div>
@@ -60,21 +61,22 @@
     </div>
 
     <!-- Table Card -->
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl overflow-hidden">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6 overflow-hidden">
+        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Daftar Rekam Jejak Aktivitas</h3>
         <div class="overflow-x-auto w-full">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-left border-collapse text-xs lg:max-xl:text-xs xl:text-base">
                 <thead>
-                    <tr class="border-b border-[#222] bg-[#0c0c0c] text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-                        <th class="px-3.5 py-3">Waktu</th>
-                        <th class="px-3.5 py-3">Operator</th>
-                        <th class="px-3.5 py-3">Aksi</th>
-                        <th class="px-3.5 py-3">Keterangan / Detail</th>
-                        <th class="px-3.5 py-3">IP Address</th>
+                    <tr class="border-b border-[#1c1c1c] text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 uppercase tracking-wider">
+                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">Waktu</th>
+                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">Operator</th>
+                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">Aksi</th>
+                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">Keterangan / Detail</th>
+                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">IP Address</th>
                     </tr>
                 </thead>
-                <tbody id="user-logs-rows" class="divide-y divide-[#181818]">
+                <tbody id="user-logs-rows" class="divide-y divide-[#1c1c1c]">
                     <tr>
-                        <td colspan="5" class="text-center py-8 text-neutral-500 text-xs">
+                        <td colspan="5" class="text-center py-8 text-neutral-500 text-xs lg:text-base">
                             Memuat log aktivitas staff...
                         </td>
                     </tr>
