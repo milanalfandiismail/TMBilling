@@ -33,7 +33,7 @@
    - [4.15 Floor Plan & Dynamic Visual Room Layout](#415-floor-plan--dynamic-visual-room-layout)
    - [4.16 Database Maintenance & Cloud/Local Backup UI](#416-database-maintenance--cloudlocal-backup-ui)
    - [4.17 Manajemen Member, Paket & Billing Rates](#417-manajemen-member-paket--billing-rates)
-   - [4.18 Shift Kasir & Manajemen Kas Fisik (Rencana Fitur Mendatang)](#418-shift-kasir--manajemen-kas-fisik-rencana-fitur-mendatang)
+   - [4.18 Shift Kasir & Serah Terima Shift (Hitung Buta / Blind Cash Reconciliation)](#418-shift-kasir--serah-terima-shift-hitung-buta--blind-cash-reconciliation)
    - [4.19 Catatan Kasir & Shift Handover Scratchpad](#419-catatan-kasir--shift-handover-scratchpad)
    - [4.20 Turnamen & Bracket eSports Engine](#420-turnamen--bracket-esports-engine)
    - [4.21 Public TV Billboard & Scoreboard Display](#421-public-tv-billboard--scoreboard-display)
@@ -352,6 +352,10 @@ c:\Project GIT\TMBilling
   - **Multi-Metode Pembayaran**: Tunai (Cash), QRIS Dinamis/Statis, dan Transfer Bank.
   - **Charge to PC**: Tagihan makanan/minuman bisa langsung dibebankan ke sesi PC pelanggan dan dibayar saat sesi selesai.
   - **Cetak Struk Thermal**: Format struk 58mm / 80mm ESC/POS dengan logo warnet, rincian pesanan, total rupiah, dan footer terima kasih.
+  - **Log Mutasi Stok Menu (`MenuStockLog`) & Restock Audit**:
+    - Riwayat mutasi inventaris secara real-time: pencatatan otomatis setiap penambahan stok (*Restock*), penjualan pesanan kantin, ataupun penyesuaian/koreksi audit fisik.
+    - Tab **Log Stok Menu** dengan filter rentang tanggal cepat (Hari Ini, 7 Hari, 30 Hari, Bulan Ini, Semua), filter operator, pagination server-side, dan fit-to-table responsive layout.
+    - Otorisasi RBAC: Kasir/Staff dapat melakukan restock barang dengan pencatatan audit log otomatis dan identitas operator.
 
 ### 4.11 Dynamic Tutorials CMS & Custom CKEditor Builder
 - **Deskripsi**: Sistem Content Management System (CMS) mandiri di dalam aplikasi kasir untuk membuat SOP, tutorial pemakaian, dan panduan operator warnet.
@@ -399,13 +403,16 @@ c:\Project GIT\TMBilling
   - Custom Group Rates: Tarif berbeda untuk tipe ruangan Reguler, VIP, Sofa, atau VVIP Simulator.
   - Reset State Sesi: Proteksi pembersihan data sesi sementara saat PC selesai digunakan.
 
-### 4.18 Shift Kasir & Manajemen Kas Fisik *(Rencana Fitur Mendatang / Dinonaktifkan Sementara)*
-> ⏳ **Status Fitur:** *Dalam Perancangan / Dinonaktifkan Sementara*. Modul backend (`shift_routes.py`, `shift_service.py`, `ShiftRecord`) telah diimplementasikan, namun alur UI dinonaktifkan sementara secara default pada rilis v1.6.2 demi simplifikasi alur kerja operasional kasir. Fitur ini direncanakan akan diaktifkan kembali pada pembaruan mendatang.
-- **Deskripsi Rencana**: Manajemen pergantian jam kerja operator/kasir warnet.
-- **Cakupan Rencana Fitur**:
-  - Kasir memasukkan nominal **Modal Awal Kas** saat membuka shift.
-  - Sistem menghitung total pendapatan tunai billing, pendapatan FnB, dan pembayaran digital selama jam kerja berlangsung.
-  - Saat tutup shift, kasir memasukkan **Uang Fisik di Laci**, dan sistem mencatat selisih (*selisih lebih / selisih kurang*) untuk pelaporan ke owner.
+### 4.18 Shift Kasir & Serah Terima Shift (Hitung Buta / Blind Cash Reconciliation)
+- **Deskripsi**: Sistem manajemen jam kerja dan serah terima shift kasir anti-manipulasi berbasis *Blind Count (Hitung Buta)*, rekonsiliasi laci fisik, dan struk handover thermal.
+- **Fitur & Alur Kerja**:
+  - **Buka Shift Kasir**: Kasir baru memasukkan nominal **Modal Awal Kas** (uang receh/kembalian fisik yang dihitung di laci) saat mulai bertugas. Modal awal bersifat dinamis per shift dan tidak menggelembungkan omzet toko.
+  - **Hitung Buta (Blind Reconciliation)**: Saat menekan tombol **Akhiri Shift**, sistem **menyembunyikan total pendapatan sistem**. Kasir wajib menghitung seluruh uang fisik nyata di laci dan mengetikkan nominalnya secara jujur.
+  - **Kalkulasi Selisih Otomatis**: Sistem membandingkan `Uang Fisik Aktual` vs `Modal Awal + Transaksi Tunai Bersih`. Status selisih (`PAS / Rp 0`, `SURPLUS (+)`, atau `DEFISIT (-)`) langsung terkunci permanen di database.
+  - **Pemisahan Tunai vs Non-Tunai**: Transaksi QRIS dan transfer otomatis dipisahkan dari perhitungan kas fisik laci kasir.
+  - **Admin Force Close Shift**: Administrator dapat menutup paksa shift kasir aktif dalam situasi darurat (kasir berhalangan/sakit mendadak) dengan alasan penutupan paksa yang tercatat di audit log.
+  - **Struk Thermal Handover 58mm / 80mm**: Pencetakan bukti serah terima shift fisik lengkap dengan rincian penerimaan tunai, non-tunai, modal awal, rekonsiliasi laci, dan selisih keuangan untuk ditandatangani kedua kasir.
+  - **Tab Riwayat Serah Terima Shift**: Menampilkan rekapitulasi seluruh shift sebelumnya dengan filter tanggal otomatis, badge status, modal detail, dan tata letak responsif (*fit-to-table* pada breakpoint LG/XL).
 
 ### 4.19 Catatan Kasir & Shift Handover Scratchpad
 - **Deskripsi**: Papan catatan (*scratchpad*) digital terintegrasi di dashboard kasir (`catatan`).
@@ -514,8 +521,8 @@ Logika bisnis diisolasi secara ketat dalam `app/services/`. Blueprint routes han
 - `vnc_service.py` & `fileexplorer_service.py`: Menangani komunikasi low-level dengan klien.
 - `sesi_service.py`: Menangani perhitungan tarif per detik, sisa waktu, dan promo paket.
 
-### 5.3 Skema Database & 25 Model SQLAlchemy
-TMBilling menggunakan 25 model ORM terdefinisi di `app/models/`:
+### 5.3 Skema Database & 26 Model SQLAlchemy
+TMBilling menggunakan 26 model ORM terdefinisi di `app/models/`:
 1. `User`: Akun pengguna dashboard kasir/admin (`id`, `username`, `password_hash`, `role`, `status`).
 2. `PC`: Data unit PC klien (`id`, `nama_pc`, `ip_address`, `mac_address`, `grup_id`, `pos_x`, `pos_y`, `status_pc`).
 3. `Sesi`: Sesi penggunaan PC (`id`, `pc_id`, `member_id`, `tipe_sesi`, `waktu_mulai`, `waktu_selesai`, `durasi_detik`, `total_biaya`, `status_sesi`).
@@ -523,26 +530,27 @@ TMBilling menggunakan 25 model ORM terdefinisi di `app/models/`:
 5. `Member`: Data pelanggan member (`id`, `username`, `password_hash`, `saldo`, `total_jam_main`, `status`).
 6. `Paket`: Paket tarif billing (`id`, `nama_paket`, `durasi_jam`, `harga`, `grup_id`, `unlimited_stock`).
 7. `Grup`: Kategori ruangan/tarif (`id`, `nama_grup`, `tarif_per_jam`, `deskripsi`).
-8. `MenuItem`: Katalog produk kantin/FnB (`id`, `nama_item`, `kategori`, `harga_jual`, `stok`, `is_unlimited`).
-9. `TransaksiMenu`: Transaksi pesanan kantin (`id`, `transaksi_id`, `sesi_id`, `total_harga`, `metode_pembayaran`, `status_bayar`).
-10. `ShiftRecord`: Rekam shift kasir (`id`, `user_id`, `waktu_buka`, `waktu_tutup`, `modal_awal`, `total_kas_fisik`, `selisih`).
-11. `HardwareMonitor`: Snapshot baseline hardware PC dan monitoring real-time (`id`, `pc_id`, `cpu_usage`, `cpu_temp`, `gpu_temp`, `cpu_name`, `gpu_name`, `total_ram`, `motherboard`, `nic_speed`, `active_window`, `last_update`).
+8. `MenuItem`: Katalog produk kantin/FnB (`id`, `nama`, `harga`, `stok`, `is_active`, `gambar_path`).
+9. `TransaksiMenu`: Transaksi pesanan kantin (`id`, `no_nota`, `menu_id`, `jumlah`, `total_harga`, `pc_kode`, `tanggal`, `kasir_id`, `tunai`, `kembalian`, `metode_pembayaran`, `operator`).
+10. `MenuStockLog`: Catatan audit riwayat mutasi stok menu (`id`, `menu_id`, `perubahan`, `stok_sebelum`, `stok_sesudah`, `jenis`, `keterangan`, `operator`, `created_at`).
+11. `ShiftRecord`: Rekam shift kasir & rekonsiliasi hitung buta (`id`, `kasir_id`, `waktu_mulai`, `waktu_selesai`, `modal_awal`, `total_billing`, `total_kantin`, `total_qris`, `total_refund`, `uang_fisik`, `selisih`, `catatan`, `status`, `detail_metode_json`).
+12. `HardwareMonitor`: Snapshot baseline hardware PC dan monitoring real-time (`id`, `pc_id`, `cpu_usage`, `cpu_temp`, `gpu_temp`, `cpu_name`, `gpu_name`, `total_ram`, `motherboard`, `nic_speed`, `active_window`, `last_update`).
     - *Audit Internal*: `hardware_baseline`, `hardware_current_specs`, `hardware_mismatch`, `hardware_mismatch_desc`, `hardware_mismatch_time`, `hardware_cctv_window`, `hardware_last_sync`.
     - *Audit Periferal*: `peripherals_baseline`, `peripherals_current`, `peripherals_mismatch`, `peripherals_mismatch_desc`, `peripherals_mismatch_time`, `peripherals_disconnect_tracker`.
-12. `PCProcess`: Snapshot proses yang sedang berjalan di klien.
-13. `PCUptimeLog`: Catatan uptime & downtime PC untuk toleransi blackout (`id`, `pc_id`, `status`, `timestamp`).
-14. `Branch`: Registrasi cabang warnet (`id`, `nama_cabang`, `api_url`, `api_key`, `timezone`).
-15. `BranchInbound`: Koneksi inbound proxy dari cabang remote.
-16. `SystemTutorial`: Artikel panduan CMS (`id`, `judul`, `konten_html`, `kategori`, `urutan`).
-17. `MaintenanceTicket`: Tiket kerusakan perangkat (`id`, `pc_id`, `judul_masalah`, `deskripsi`, `prioritas`, `status`).
-18. `Turnamen`: Data kompetisi game (`id`, `nama_turnamen`, `game`, `status`).
-19. `TurnamenTahap`: Babak turnamen (Penyisihan, Semi-Final, Grand Final).
-20. `TurnamenTim`: Tim peserta kompetisi.
-21. `TurnamenMatch`: Jadwal & hasil pertandingan.
-22. `MikroTikConfig`: Pengaturan RouterOS (`host`, `port`, `username`, `password_encrypted`).
-23. `Game`: Katalog launcher game (`id`, `nama_game`, `path_executable`, `icon_url`, `kategori_id`).
-24. `GameKategori`: Kategori game (FPS, MOBA, Battle Royale, RPG).
-25. `Settings`: Pengaturan global key-value (nama warnet, logo, Cloudflare token, opsi thermal printer).
+13. `PCProcess`: Snapshot proses yang sedang berjalan di klien.
+14. `PCUptimeLog`: Catatan uptime & downtime PC untuk toleransi blackout (`id`, `pc_id`, `status`, `timestamp`).
+15. `Branch`: Registrasi cabang warnet (`id`, `nama_cabang`, `api_url`, `api_key`, `timezone`).
+16. `BranchInbound`: Koneksi inbound proxy dari cabang remote.
+17. `SystemTutorial`: Artikel panduan CMS (`id`, `judul`, `konten_html`, `kategori`, `urutan`).
+18. `MaintenanceTicket`: Tiket kerusakan perangkat (`id`, `pc_id`, `judul_masalah`, `deskripsi`, `prioritas`, `status`).
+19. `Turnamen`: Data kompetisi game (`id`, `nama_turnamen`, `game`, `status`).
+20. `TurnamenTahap`: Babak turnamen (Penyisihan, Semi-Final, Grand Final).
+21. `TurnamenTim`: Tim peserta kompetisi.
+22. `TurnamenMatch`: Jadwal & hasil pertandingan.
+23. `MikroTikConfig`: Pengaturan RouterOS (`host`, `port`, `username`, `password_encrypted`).
+24. `Game`: Katalog launcher game (`id`, `nama_game`, `path_executable`, `icon_url`, `kategori_id`).
+25. `GameKategori`: Kategori game (FPS, MOBA, Battle Royale, RPG).
+26. `Settings`: Pengaturan global key-value (nama warnet, logo, Cloudflare token, opsi thermal printer).
 
 ---
 
@@ -563,7 +571,9 @@ Terletak di `app/static/js/kasir/modules/`:
 - `dashboard/map_view.js`: Canvas 2D interaktif denah ruangan meja warnet.
 - `hardware_checker/index.js`: Tab Hardware Checker & Audit Keamanan — merender kartu per-PC dengan status badge hardware (🛡️ Internal Aman / 🚨 Hardware Ditukar), kartu periferal gaming (Mouse, Keyboard, Headset + dinamis), accordion *Spesifikasi Lengkap* dengan pill tags RAM/Disk berwarna (baseline vs live), alert CCTV time window, dan indikator kecepatan NIC. Implementasi objek singleton `HardwareChecker` di `window.HardwareChecker`.
 - `remote/vnc_client.js`: Handler rendering layar RFB VNC dan listener clipboard dua arah.
-- `menu/index.js` & `struk/struk_preview.js`: UI pesanan FnB kasir dan antarmuka cetak struk kasir thermal ESC/POS.
+- `shift/index.js`: Lifecycle modul shift kasir, dialog buka/akhiri shift hitung buta, force close admin, polling status shift, dan printer struk handover thermal 58mm.
+- `menu/index.js` & `menu/stock_log.js`: UI pesanan FnB kasir, modal penyesuaian/restock barang, tabel audit mutasi stok menu, dan antarmuka cetak struk kasir thermal ESC/POS.
+- `struk/struk_preview.js`: Handler preview & cetak struk kasir thermal 58mm/80mm.
 - `owner/analytics.js`: Visualisasi grafik analitik bisnis owner.
 
 ---

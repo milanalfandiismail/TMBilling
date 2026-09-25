@@ -6,11 +6,24 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
-## [1.6.2] - 2026-09-22
+## [1.6.2] - 2026-09-25
 
 ### Ditambahkan
+- **Shift Kasir & Serah Terima Shift (Hitung Buta / Blind Cash Reconciliation)**:
+  - Sistem serah terima shift kasir anti-manipulasi berbasis *Blind Count*: angka pendapatan seharusnya disembunyikan saat kasir mengakhiri shift.
+  - Alur Buka Shift dengan modal awal dinamis dan validasi nominal `Rp 0 s/d Rp 100.000.000` (`Utils.formatInputRupiah`).
+  - Rekonsiliasi laci kas otomatis: pembandingan kas fisik aktual vs total modal awal + transaksi tunai bersih, menghasilkan status terkunci `PAS / Rp 0`, `SURPLUS (+)`, atau `DEFISIT (-)`.
+  - Pemisahan penerimaan tunai (Cash) vs non-tunai (QRIS / Bank) secara otomatis pada model `ShiftRecord`.
+  - Fitur **Admin Force Close Shift**: kemampuan administrator menutup paksa shift kasir aktif dalam situasi darurat dengan alasan yang terekam di audit log.
+  - Polling real-time status shift kasir aktif di sidebar admin dan kasir tanpa perlu reload halaman.
+  - Pencetakan **Struk Thermal Handover 58mm / 80mm** dan struk browser untuk bukti fisik serah terima kasir.
+  - Tab **Riwayat Serah Terima Shift** dengan filter tanggal cepat (Hari Ini, 7 Hari, 30 Hari, Bulan Ini, Semua), badge status, dan modal rincian shift.
+- **Log Mutasi Stok Menu (`MenuStockLog`) & Restock Audit**:
+  - Model database `MenuStockLog` dan migrasi `c9d8e7f6a5b4` untuk mencatat seluruh mutasi stok barang (Restock, Transaksi Penjualan, Penyesuaian Audit).
+  - Tab **Log Stok Menu** dengan filter tanggal cepat, filter operator, pagination server-side, dan ekspor data.
+  - Otorisasi RBAC untuk penambahan stok makanan/minuman oleh staff/kasir dengan pencatatan audit log otomatis.
 - **Konsolidasi Master Dokumentasi (Single Source of Truth)**: 
-  - Seluruh dokumentasi sistem dan arsitektur dilebur ke dalam [docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md) yang mencakup katalog lengkap 28 domain fitur, panduan backend (30 blueprints, 35+ services, 25 database models), frontend modular JS, serta panduan teknis agent Rust.
+  - Seluruh dokumentasi sistem dan arsitektur dilebur ke dalam [docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md) yang mencakup katalog lengkap 28 domain fitur, panduan backend (30 blueprints, 35+ services, 26 database models), frontend modular JS, serta panduan teknis agent Rust.
   - Pembaruan dokumen ringkas [README.md](file:///c:/Project%20GIT/TMBilling/README.md) dengan panduan Quick Start terstandarisasi.
 - **Dual-Hive Registry SHA-256 Binary Integrity**:
   - Penambahan verifikasi hash SHA-256 binary pada registry `HKCU` dan `HKLM` (`Hash_MGCTM`, `Hash_TMBilling`, `Hash_TMMonitor`, `Hash_mtm`, `Hash_Uninstaller`) untuk mencegah manipulasi binary klien oleh pihak ketiga.
@@ -24,8 +37,14 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Restrukturisasi Direktori Klien**:
   - Pemindahan seluruh modul klien dari `WarnetClient/TMBillingTauri` ke direktori terpusat `WarnetAgent/TMBillingTauri` untuk konsistensi penamaan arsitektur.
   - Penyesuaian skrip otomatisasi root `build_and_deploy.bat`, `developer_install.bat`, dan `WarnetAgent/Deploy/build_and_deploy.bat`.
+- **Label Tombol Shift Kasir**:
+  - Penggantian label tombol aksi di sidebar kasir dari `Serah Terima Shift` menjadi `Akhiri Shift`.
 
 ### Diperbaiki
+- **Modal Tutup Shift Layout**:
+  - Perbaikan struktur tag penutup HTML pada `showTutupShiftModal()` di `app/static/js/kasir/modules/shift/index.js` agar layout modal stabil dan rapi pada breakpoint `LG`, `XL`, dan `2XL`.
+- **Responsivitas Tabel Breakpoint LG**:
+  - Penyesuaian styling tata letak tabel agar *fit-to-table* (tidak terpotong) pada breakpoint `LG` untuk tab **Riwayat Serah Terima Shift**, **Log Stok Menu**, dan **Riwayat Transaksi (Struk)**.
 - **Batch Actions Multi-PC API**:
   - Konsolidasi deklarasi ganda namespace `API.monitor` pada `app/static/js/kasir/core/api.js` sehingga pemanggilan `API.monitor.remoteBatch` untuk aksi massal (>1 PC: Shutdown, Restart, Lock, Move PC, Clear Sesi) berjalan normal tanpa error JavaScript.
 
