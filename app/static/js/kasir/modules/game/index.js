@@ -708,7 +708,4 @@ const KategoriManagement = {
     }
 };
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    GameManagement.init();
-});
+window.GameManagement = GameManagement;

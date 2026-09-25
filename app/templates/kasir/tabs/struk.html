@@ -9,13 +9,13 @@
     </div>
 
     <!-- Grid Container with equal height columns matching receipt preview -->
-    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-12 gap-4 lg:max-xl:gap-4 xl:gap-6 items-stretch">
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-12 gap-4 lg:max-xl:gap-3 xl:gap-6 items-stretch">
         <!-- Left Column: Riwayat Transaksi & Filter Pencarian (8 Items per Page) -->
-        <div class="md:col-span-1 lg:col-span-5 xl:col-span-4 bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:p-6 flex flex-col justify-between h-full">
+        <div class="md:col-span-1 lg:col-span-5 xl:col-span-4 bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:max-xl:p-3.5 xl:p-6 flex flex-col justify-between h-full">
             <div class="flex-1 flex flex-col min-h-0">
                 <!-- Header -->
                 <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Riwayat Transaksi</h3>
+                    <h3 class="text-xs lg:max-xl:text-base xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Riwayat Transaksi</h3>
                     <button onclick="Struk.loadHistory()"
                         class="px-2.5 py-1 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs lg:max-xl:text-xs xl:text-sm text-neutral-300 font-bold transition-colors" title="Segarkan Riwayat">↻</button>
                 </div>
@@ -51,13 +51,13 @@
         </div>
 
         <!-- Right Column: Detail Struk Preview -->
-        <div class="md:col-span-2 lg:col-span-7 xl:col-span-8 bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:p-6 flex flex-col justify-between h-full">
+        <div class="md:col-span-2 lg:col-span-7 xl:col-span-8 bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:max-xl:p-3.5 xl:p-6 flex flex-col justify-between h-full">
             <div class="flex-1 flex flex-col min-h-0">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Detail Struk</h3>
+                    <h3 class="text-xs lg:max-xl:text-base xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Detail Struk</h3>
                 </div>
                 <div id="struk-preview"
-                    class="flex-1 bg-[#050505] border border-[#1c1c1c] rounded p-4 sm:p-6 text-xs lg:max-xl:text-xs xl:text-base min-h-[480px] flex items-center justify-center text-neutral-500 overflow-x-auto">
+                    class="flex-1 bg-[#050505] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:max-xl:p-3 xl:p-6 text-xs lg:max-xl:text-xs xl:text-base min-h-[480px] flex items-center justify-center text-neutral-500 overflow-x-auto">
                     <div class="text-center py-10 text-neutral-500 space-y-2">
                         <div class="text-3xl opacity-30">🧾</div>
                         <p class="text-xs lg:max-xl:text-xs xl:text-base font-medium">Pilih transaksi di samping untuk melihat preview struk</p>

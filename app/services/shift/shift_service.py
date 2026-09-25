@@ -364,7 +364,7 @@ class ShiftService:
         }
 
     @staticmethod
-    def force_close_shift(shift_id, admin_username, alasan):
+    def force_close_shift(shift_id, admin_username, alasan=""):
         """Emergency force-close shift aktif oleh admin.
 
         Digunakan saat kasir berhalangan hadir / pulang darurat dan shift masih menggantung.
@@ -372,14 +372,13 @@ class ShiftService:
         Args:
             shift_id: ID shift yang akan ditutup paksa.
             admin_username: Username admin yang menutup shift.
-            alasan: Alasan penutupan paksa (minimal 3 karakter).
+            alasan: Alasan penutupan paksa (opsional, maks 255 karakter).
 
         Returns:
             dict: Ringkasan data shift yang ditutup paksa.
         """
-        if not alasan or len(alasan.strip()) < 3:
-            raise ValueError("Alasan force-close shift minimal 3 karakter")
-        if len(alasan.strip()) > 255:
+        alasan_clean = (alasan or "").strip()
+        if len(alasan_clean) > 255:
             raise ValueError("Alasan force-close shift maksimal 255 karakter")
 
         shift = ShiftRecord.query.get(shift_id)
@@ -393,8 +392,10 @@ class ShiftService:
 
         summary = ShiftService.get_shift_summary(shift_id)
 
-        alasan_clean = alasan.strip()
-        catatan_lengkap = f"[FORCE CLOSE oleh {admin_username}] {alasan_clean}"
+        if alasan_clean:
+            catatan_lengkap = f"[FORCE CLOSE oleh {admin_username}] {alasan_clean}"
+        else:
+            catatan_lengkap = f"[FORCE CLOSE oleh {admin_username}]"
         if shift.catatan:
             catatan_lengkap = f"{shift.catatan} | {catatan_lengkap}"
 
@@ -408,18 +409,19 @@ class ShiftService:
         db.session.commit()
 
         from app.utils.logger import write_log
+        alasan_log = alasan_clean or "Penutupan paksa oleh Admin"
         detail_fc = {
             "shift_id": shift.id,
             "kasir_username": shift.kasir.username if shift.kasir else "Kasir",
             "admin_username": admin_username,
-            "alasan": alasan_clean,
+            "alasan": alasan_log,
             "total_billing": summary["total_billing"],
             "total_kantin": summary["total_kantin"],
             "total_seharusnya": summary["total_seharusnya"]
         }
         write_log(
             "SHIFT_FORCE_CLOSE",
-            f"Admin:{admin_username} FORCE CLOSE Shift #{shift.id} Kasir:{detail_fc['kasir_username']} | Alasan:{alasan_clean}",
+            f"Admin:{admin_username} FORCE CLOSE Shift #{shift.id} Kasir:{detail_fc['kasir_username']} | Alasan:{alasan_log}",
             user=admin_username,
             detail_json=detail_fc
         )
@@ -459,12 +461,18 @@ class ShiftService:
         if kasir_id:
             query = query.filter_by(kasir_id=kasir_id)
         if tanggal_mulai:
-            query = query.filter(ShiftRecord.waktu_mulai >= tanggal_mulai)
+            t_mulai = str(tanggal_mulai).strip()
+            if len(t_mulai) == 10:
+                t_mulai = f"{t_mulai} 00:00:00"
+            query = query.filter(ShiftRecord.waktu_mulai >= t_mulai)
         if tanggal_selesai:
-            query = query.filter(ShiftRecord.waktu_selesai <= tanggal_selesai)
+            t_selesai = str(tanggal_selesai).strip()
+            if len(t_selesai) == 10:
+                t_selesai = f"{t_selesai} 23:59:59"
+            query = query.filter(ShiftRecord.waktu_mulai <= t_selesai)
 
         total = query.count()
-        shifts = query.order_by(ShiftRecord.waktu_selesai.desc()).offset(offset).limit(limit).all()
+        shifts = query.order_by(ShiftRecord.id.desc()).offset(offset).limit(limit).all()
         return {
             "data": [s.to_dict() for s in shifts],
             "total": total

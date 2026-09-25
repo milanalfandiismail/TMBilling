@@ -276,6 +276,11 @@ def upload_update():
                             conn.execute(text("ALTER TABLE shift_record ADD COLUMN detail_metode_json TEXT"))
                         conn.commit()
 
+                # v1.6.2 Migration Safety: Tabel menu_stock_log
+                if not inspector.has_table('menu_stock_log'):
+                    from app.models.menu.menu import MenuStockLog
+                    MenuStockLog.__table__.create(db.engine)
+
                 # Pastikan alembic_version tercatat HEAD
                 from flask_migrate import stamp
                 stamp(directory=migrations_dir, revision='head')

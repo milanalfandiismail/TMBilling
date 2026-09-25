@@ -43,20 +43,23 @@ def test_admin_force_close_shift(force_close_ctx):
         sess["kasir_username"] = admin.username
         sess["kasir_role"] = "admin"
 
-    # Alasan kurang dari 3 karakter -> 400
-    res_short = client.post("/api/v1/kasir/shift/force-close", json={"shift_id": shift.id, "alasan": "ab"})
-    assert res_short.status_code == 400
-
-    # Alasan valid
-    res_ok = client.post("/api/v1/kasir/shift/force-close", json={"shift_id": shift.id, "alasan": "Kasir pulang darurat karena sakit"})
+    # Alasan opsional / kosong -> 200
+    res_ok = client.post("/api/v1/kasir/shift/force-close", json={"shift_id": shift.id, "alasan": ""})
     assert res_ok.status_code == 200
     assert res_ok.get_json()["success"] is True
 
     # Shift sekarang harus SELESAI
     saved = ShiftRecord.query.get(shift.id)
     assert saved.status == "SELESAI"
-    assert "Kasir pulang darurat" in saved.catatan
+    assert "FORCE CLOSE oleh admin_fc" in saved.catatan
 
     # Kasir berikutnya sekarang BISA buka shift baru
     shift2 = ShiftService.start_shift("kasir_next", modal_awal=50000, operator="kasir_next")
     assert shift2.status == "AKTIF"
+
+    # Force close shift2 dengan custom alasan
+    res_custom = client.post("/api/v1/kasir/shift/force-close", json={"shift_id": shift2.id, "alasan": "Kasir pulang darurat karena sakit"})
+    assert res_custom.status_code == 200
+    saved2 = ShiftRecord.query.get(shift2.id)
+    assert saved2.status == "SELESAI"
+    assert "Kasir pulang darurat" in saved2.catatan

@@ -37,6 +37,11 @@ const Menu = {
     },
 
     switchView(view) {
+        if (view === 'archived' && window.App && App.user && App.user.role === 'kasir') {
+            Toast.error("Akses Arsip Menu hanya untuk Administrator");
+            return;
+        }
+
         this.currentView = view;
         const activeBtn = document.getElementById("menu-tab-active-btn");
         const archivedBtn = document.getElementById("menu-tab-archived-btn");
@@ -73,9 +78,10 @@ const Menu = {
         if (!grid) return;
 
         try {
+            const isKasir = window.App && App.user && App.user.role === 'kasir';
             const [resActive, resArchived] = await Promise.all([
                 window.API.menu.list(),
-                window.API.menu.listArchived()
+                isKasir ? Promise.resolve({ success: true, data: [] }) : window.API.menu.listArchived()
             ]);
 
             if (resActive && resActive.success) {
@@ -86,13 +92,21 @@ const Menu = {
 
             if (resArchived && resArchived.success) {
                 this.archivedItems = resArchived.data || [];
+            } else {
+                this.archivedItems = [];
             }
 
             // Update badge counts
             const activeBadge = document.getElementById("menu-active-count-badge");
             const archivedBadge = document.getElementById("menu-archived-count-badge");
             if (activeBadge) activeBadge.textContent = this.items.length;
-            if (archivedBadge) archivedBadge.textContent = this.archivedItems.length;
+            if (archivedBadge) {
+                if (isKasir) {
+                    archivedBadge.textContent = "0";
+                } else {
+                    archivedBadge.textContent = this.archivedItems.length;
+                }
+            }
 
             this.filterCatalog();
         } catch (error) {
@@ -149,6 +163,9 @@ const Menu = {
                      <span class="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/85 backdrop-blur-sm border border-[#2a2a2a] ${stokColor} rounded text-[9px] lg:text-[10px] xl:text-xs font-mono shadow">${stokText}</span>
                    </div>`;
 
+            const isKasir = window.App && App.user && App.user.role === 'kasir';
+            const escapedName = (m.nama || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
             const btnHtml = isOutOfStock
                 ? `<button disabled class="w-full py-1.5 rounded bg-neutral-900 border border-[#1c1c1c] text-[10px] lg:text-xs xl:text-sm text-neutral-600 font-bold uppercase cursor-not-allowed">Stok Habis</button>`
                 : `<button onclick="Menu.addToCart(${m.id})" class="w-full py-1.5 rounded bg-neutral-100 hover:bg-white text-[#050505] text-[10px] lg:text-xs xl:text-sm font-bold uppercase transition-colors shadow">Tambah</button>`;
@@ -158,23 +175,27 @@ const Menu = {
                     <!-- Preview Button (Top Left - Hover Only: Icon on LG, Icon + Text on XL/2XL) -->
                     ${resolvedImg ? `
                     <div class="absolute top-2.5 left-2.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button type="button" onclick="Menu.openLightbox('${resolvedImg}', '${m.nama.replace(/'/g, "\\'")}', '${Utils.formatRupiah(m.harga)}')" class="p-1 xl:px-2 xl:py-1 rounded bg-black/75 hover:bg-neutral-800 text-neutral-200 hover:text-white border border-[#2a2a2a] transition-all shadow flex items-center gap-1 text-[10px] xl:text-xs font-bold" title="Lihat Fullscreen">
+                        <button type="button" onclick="Menu.openLightbox('${resolvedImg}', '${escapedName}', '${Utils.formatRupiah(m.harga)}')" class="p-1 xl:px-2 xl:py-1 rounded bg-black/75 hover:bg-neutral-800 text-neutral-200 hover:text-white border border-[#2a2a2a] transition-all shadow flex items-center gap-1 text-[10px] xl:text-xs font-bold" title="Lihat Fullscreen">
                             <svg class="w-3.5 h-3.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                             <span class="hidden xl:inline">Preview</span>
                         </button>
                     </div>
                     ` : ''}
 
-                    <!-- CRUD Quick Actions -->
+                    <!-- CRUD Quick Actions (Admin Only) -->
                     <div class="absolute top-2.5 right-2.5 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        ${(window.App && App.user && App.user.role === 'kasir') ? '' : `
+                        ${isKasir ? '' : `
+                        ${isUnlimited ? '' : `
+                        <button onclick="Menu.showRestockModal(${m.id})" class="p-1 rounded bg-black/70 hover:bg-emerald-950 text-neutral-300 hover:text-emerald-400 border border-[#2a2a2a] hover:border-emerald-800 transition-colors shadow" title="Tambah Stok">
+                            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                        </button>`}
                         <button onclick="Menu.showEditModal(${m.id})" class="p-1 rounded bg-black/70 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-[#2a2a2a] transition-colors shadow" title="Edit Menu">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                         </button>
-                        <button onclick="Menu.deleteItem(${m.id}, '${m.nama}')" class="p-1 rounded bg-black/70 hover:bg-amber-950 text-neutral-300 hover:text-amber-400 border border-[#2a2a2a] hover:border-amber-800 transition-colors shadow" title="Arsipkan Menu">
+                        <button onclick="Menu.deleteItem(${m.id}, '${escapedName}')" class="p-1 rounded bg-black/70 hover:bg-amber-950 text-neutral-300 hover:text-amber-400 border border-[#2a2a2a] hover:border-amber-800 transition-colors shadow" title="Arsipkan Menu">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
                         </button>
-                        <button onclick="Menu.hardDeleteItem(${m.id}, '${m.nama}')" class="p-1 rounded bg-black/70 hover:bg-red-700 text-neutral-300 hover:text-white border border-[#2a2a2a] hover:border-red-600 transition-colors shadow" title="Hapus Permanen">
+                        <button onclick="Menu.hardDeleteItem(${m.id}, '${escapedName}')" class="p-1 rounded bg-black/70 hover:bg-red-700 text-neutral-300 hover:text-white border border-[#2a2a2a] hover:border-red-600 transition-colors shadow" title="Hapus Permanen">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>`}
                     </div>
@@ -182,17 +203,135 @@ const Menu = {
                     <div class="space-y-2">
                         ${imgHtml}
                         <div>
-                            <h4 class="text-xs lg:text-xs xl:text-sm font-bold text-neutral-100 line-clamp-2 leading-snug" title="${m.nama}">${m.nama}</h4>
+                            <h4 class="text-xs lg:text-xs xl:text-sm font-bold text-neutral-100 line-clamp-2 leading-snug" title="${escapedName}">${m.nama}</h4>
                             <div class="mt-1.5 pt-1.5 border-t border-[#181818]">
                                 <span class="text-xs lg:text-xs xl:text-sm text-neutral-200 font-bold font-mono tabular-nums">${Utils.formatRupiah(m.harga)}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="mt-2.5">
-                        ${btnHtml}
+                    
+                    <!-- Bottom Action: Add to Cart + Restock Button -->
+                    <div class="mt-2.5 flex items-center gap-1.5">
+                        <div class="flex-1 min-w-0">
+                            ${btnHtml}
+                        </div>
+                        ${isUnlimited ? '' : `
+                        <button type="button" onclick="Menu.showRestockModal(${m.id})" class="px-2 py-1.5 rounded bg-[#171717] hover:bg-[#222] border border-[#262626] hover:border-emerald-500/50 text-neutral-300 hover:text-emerald-400 text-[10px] lg:text-xs xl:text-sm font-bold flex items-center justify-center gap-1 transition-all shrink-0 shadow" title="Tambah Stok (+)">
+                            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                            <span class="hidden sm:inline font-mono">Stok</span>
+                        </button>`}
                     </div>
                 </div>`;
         }).join('');
+    },
+
+    showRestockModal(menuId) {
+        event?.stopPropagation();
+        const menu = this.items.find(m => m.id === menuId);
+        if (!menu) return;
+
+        const isUnlimited = menu.stok < 0;
+        if (isUnlimited) {
+            Toast.info(`Menu '${menu.nama}' berstatus stok Unlimited (tidak terbatas)`);
+            return;
+        }
+
+        const modal = document.getElementById("menu-restock-modal");
+        const idInput = document.getElementById("menu-restock-id");
+        const namaEl = document.getElementById("menu-restock-nama");
+        const currStockEl = document.getElementById("menu-restock-current-stock");
+        const qtyInput = document.getElementById("menu-restock-qty-input");
+        const notesInput = document.getElementById("menu-restock-notes-input");
+
+        if (idInput) idInput.value = menu.id;
+        if (namaEl) namaEl.textContent = menu.nama;
+        if (currStockEl) currStockEl.textContent = `${menu.stok} unit`;
+        if (qtyInput) qtyInput.value = "10";
+        if (notesInput) notesInput.value = "";
+
+        this.calculateRestockPreview();
+        if (modal) modal.classList.remove("hidden");
+        if (qtyInput) {
+            setTimeout(() => {
+                qtyInput.focus();
+                qtyInput.select();
+            }, 50);
+        }
+    },
+
+    closeRestockModal() {
+        const modal = document.getElementById("menu-restock-modal");
+        if (modal) modal.classList.add("hidden");
+    },
+
+    quickAddRestock(amount) {
+        const qtyInput = document.getElementById("menu-restock-qty-input");
+        if (!qtyInput) return;
+        const current = parseInt(qtyInput.value) || 0;
+        qtyInput.value = current + amount;
+        this.calculateRestockPreview();
+    },
+
+    calculateRestockPreview() {
+        const idInput = document.getElementById("menu-restock-id");
+        const qtyInput = document.getElementById("menu-restock-qty-input");
+        const previewEl = document.getElementById("menu-restock-preview-total");
+        if (!idInput || !qtyInput || !previewEl) return;
+
+        const menuId = parseInt(idInput.value);
+        const menu = this.items.find(m => m.id === menuId);
+        if (!menu) return;
+
+        const addQty = parseInt(qtyInput.value) || 0;
+        const total = (menu.stok >= 0 ? menu.stok : 0) + addQty;
+        previewEl.textContent = `${total} unit (+${addQty})`;
+    },
+
+    async submitRestock(event) {
+        event?.preventDefault();
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
+
+        const idInput = document.getElementById("menu-restock-id");
+        const qtyInput = document.getElementById("menu-restock-qty-input");
+        const notesInput = document.getElementById("menu-restock-notes-input");
+        const btnSave = document.getElementById("menu-btn-save-restock");
+
+        if (!idInput || !qtyInput) return;
+        const menuId = parseInt(idInput.value);
+        const qty = parseInt(qtyInput.value);
+        const catatan = notesInput ? notesInput.value.trim() : "";
+
+        if (isNaN(qty) || qty <= 0) {
+            Toast.error("Jumlah penambahan stok harus minimal 1");
+            return;
+        }
+
+        try {
+            if (btnSave) {
+                btnSave.disabled = true;
+                btnSave.textContent = "Menyimpan...";
+            }
+
+            const res = await window.API.menu.tambahStok(menuId, qty, catatan);
+            if (res && res.success) {
+                Toast.success(res.message || "Stok berhasil ditambahkan!");
+                this.closeRestockModal();
+                await this.loadCatalog();
+            } else {
+                Toast.error(res?.error || "Gagal menambahkan stok");
+            }
+        } catch (error) {
+            console.error("Gagal submit tambah stok:", error);
+            Toast.error("Gagal menambahkan stok: error koneksi");
+        } finally {
+            if (btnSave) {
+                btnSave.disabled = false;
+                btnSave.innerHTML = `
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Simpan Tambah Stok
+                `;
+            }
+        }
     },
 
     renderArchivedCatalog(data) {
@@ -269,6 +408,10 @@ const Menu = {
 
     async restoreItem(menuId, nama) {
         event?.stopPropagation();
+        if (window.App && App.user && App.user.role === 'kasir') {
+            Toast.error("Akses terbatas hanya untuk Administrator");
+            return;
+        }
         try {
             const res = await window.API.menu.restore(menuId);
             if (res && res.success) {
@@ -823,6 +966,10 @@ const Menu = {
     },
 
     showAddModal() {
+        if (window.App && App.user && App.user.role === 'kasir') {
+            Toast.error("Akses terbatas hanya untuk Administrator");
+            return;
+        }
         const modal = document.getElementById("menu-modal");
         const title = document.getElementById("menu-modal-title");
         const form = document.getElementById("menu-form");
@@ -849,6 +996,10 @@ const Menu = {
 
     showEditModal(menuId) {
         event?.stopPropagation();
+        if (window.App && App.user && App.user.role === 'kasir') {
+            Toast.error("Akses terbatas hanya untuk Administrator");
+            return;
+        }
         const menu = this.items.find(m => m.id === menuId) || this.archivedItems.find(m => m.id === menuId);
         if (!menu) return;
 
@@ -1000,6 +1151,10 @@ const Menu = {
 
     async deleteItem(menuId, nama) {
         event.stopPropagation(); // Mencegah klik di card
+        if (window.App && App.user && App.user.role === 'kasir') {
+            Toast.error("Akses terbatas hanya untuk Administrator");
+            return;
+        }
         if (!confirm(`Apakah Anda yakin ingin mengarsipkan menu '${nama}' dari katalog aktif?\n\nMenu akan dipindahkan ke tab 'Arsip Menu' dan dapat dipulihkan kembali kapan saja.`)) {
             return;
         }
@@ -1021,6 +1176,10 @@ const Menu = {
 
     async hardDeleteItem(menuId, nama) {
         event.stopPropagation();
+        if (window.App && App.user && App.user.role === 'kasir') {
+            Toast.error("Akses terbatas hanya untuk Administrator");
+            return;
+        }
         const warning = `PERINGATAN KERAS!\n\nAnda akan menghapus menu '${nama}' BESERTA SELURUH transaksi penjualan terkait secara permanen.\n\nData F&B historis untuk menu ini akan HILANG TOTAL dan tidak dapat dipulihkan. Lanjutkan?`;
         if (!confirm(warning)) {
             return;

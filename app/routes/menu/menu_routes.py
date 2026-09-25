@@ -54,6 +54,7 @@ def get_menu_list():
 
 @menu_api_bp.route("/archived", methods=["GET"])
 @login_required
+@admin_required
 def get_archived_menu_list():
     """Mengambil daftar semua makanan dan minuman yang diarsipkan."""
     try:
@@ -142,6 +143,37 @@ def update_menu_item(menu_id):
         operator = session.get("kasir_username", "system")
         menu = MenuService.update_menu(menu_id, data, operator=operator)
         return jsonify({"success": True, "data": menu.to_dict(), "message": "Menu berhasil diperbarui!"}), 200
+    except ValueError as val_e:
+        return jsonify({"success": False, "error": str(val_e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@menu_api_bp.route("/<int:menu_id>/tambah-stok", methods=["POST"])
+@login_required
+@shift_required
+def tambah_stok_menu(menu_id):
+    """Menambahkan stok item menu (dapat dilakukan oleh kasir & admin saat shift aktif)."""
+    try:
+        payload = request.get_json(silent=True) or request.form.to_dict() or {}
+        jumlah_tambah = payload.get("jumlah_tambah") if payload.get("jumlah_tambah") is not None else payload.get("jumlah")
+        catatan = payload.get("catatan")
+
+        if jumlah_tambah is None or str(jumlah_tambah).strip() == "":
+            return jsonify({"success": False, "error": "Jumlah penambahan stok harus diisi"}), 400
+
+        try:
+            jumlah_tambah = int(jumlah_tambah)
+        except (ValueError, TypeError):
+            return jsonify({"success": False, "error": "Jumlah penambahan stok harus berupa angka valid"}), 400
+
+        operator = session.get("kasir_username", "system")
+        menu = MenuService.tambah_stok(menu_id, jumlah_tambah, operator=operator, catatan=catatan)
+        return jsonify({
+            "success": True,
+            "data": menu.to_dict(),
+            "message": f"Stok '{menu.nama}' berhasil ditambah sebanyak +{jumlah_tambah} (Total sekarang: {menu.stok})!"
+        }), 200
     except ValueError as val_e:
         return jsonify({"success": False, "error": str(val_e)}), 400
     except Exception as e:
@@ -250,3 +282,43 @@ def get_all_transactions():
         return jsonify({"success": True, "data": [t.to_dict() for t in transactions]}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@menu_api_bp.route("/stock-logs", methods=["GET"])
+@login_required
+def get_stock_logs():
+    """Mendapatkan riwayat mutasi / penambahan stok menu dengan filter dan pagination."""
+    try:
+        tanggal = request.args.get("tanggal")
+        menu_id = request.args.get("menu_id")
+        operator = request.args.get("operator")
+        search = request.args.get("search")
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 15, type=int)
+
+        data = MenuService.get_stock_logs(
+            tanggal=tanggal,
+            menu_id=menu_id,
+            operator=operator,
+            search=search,
+            page=page,
+            per_page=per_page
+        )
+        operators = MenuService.get_stock_log_operators()
+        return jsonify({
+            "success": True,
+            "data": data["items"],
+            "pagination": {
+                "total": data["total"],
+                "page": data["page"],
+                "pages": data["pages"],
+                "has_prev": data["has_prev"],
+                "has_next": data["has_next"]
+            },
+            "operators": operators
+        }), 200
+    except ValueError as val_e:
+        return jsonify({"success": False, "error": str(val_e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+

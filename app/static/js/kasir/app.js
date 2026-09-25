@@ -14,9 +14,14 @@ const App = {
         this.setupNavigation();
         this.switchTab('dash');
         await Grup.load();
-        // Shift Handover
-        if (typeof Shift !== 'undefined') await Shift.load();
+        // Shift Handover load awal
+        if (typeof Shift !== 'undefined') await Shift.load(true);
         this.updatePageTitle('dash');
+
+        // Polling shift status setiap 3 detik (sinkronisasi real-time Admin & Kasir tanpa reload)
+        setInterval(() => {
+            if (typeof Shift !== 'undefined') Shift.load(false);
+        }, 3000);
 
         // 5-second interval for Dashboard and Monitor
         setInterval(() => {
@@ -92,6 +97,7 @@ const App = {
 
         // RBAC: Kasir tidak boleh membuka tab admin-only
         const kasirOnlyRestricted = [
+            'game', 'game_management',
             'user', 'shift_history', 'user_logs', 'log',
             'server_statistic', 'monitor', 'hardware_checker', 'uptime', 'maintenance', 'screenshot', 'remote_server',
             'settings', 'settings_general', 'settings_branch', 'settings_payment', 'settings_kiosk', 'settings_tv', 
@@ -153,8 +159,9 @@ const App = {
 
         // Auto-expand/collapse submenus based on the active tab
         const tabToSubmenu = {
-            menu: 'operasional', tournament: 'operasional',
-            member: 'master', paket: 'master', pc: 'master', grup: 'master', game_management: 'master',
+            menu: 'operasional', menu_stock_log: 'operasional', tournament: 'operasional',
+            member: 'master', paket: 'master', pc: 'master', grup: 'master',
+            game_management: 'game',
             user: 'staff', shift_history: 'staff', user_logs: 'staff',
             laporan: 'laporan', laporan_menu: 'laporan', struk: 'laporan', laporan_maintenance: 'laporan',
             log: 'sistemlog',
@@ -179,7 +186,7 @@ const App = {
 
         const activeSubmenu = tabToSubmenu[tab];
         
-        const submenus = ['operasional', 'master', 'staff', 'laporan', 'sistemlog', 'system', 'settings', 'branch', 'plugins'];
+        const submenus = ['operasional', 'master', 'game', 'staff', 'laporan', 'sistemlog', 'system', 'settings', 'branch', 'plugins'];
         submenus.forEach(sub => {
             const submenuEl = document.getElementById(`${sub}-submenu`);
             const arrowEl = document.getElementById(`${sub}-arrow`);
@@ -225,7 +232,7 @@ const App = {
             monitor: 'Hardware Monitor', hardware_checker: 'Hardware Checker', maintenance: 'Perawatan PC', laporan_maintenance: 'Laporan Perawatan', blackout: 'Pemulihan Mati Lampu', screenshot: 'Screenshot Monitor',
             uptime: 'Uptime Tracker',
             user: 'Kelola User', shift_history: 'Riwayat Serah Terima Shift', user_logs: 'Log & Audit Staff', settings: 'Pengaturan', struk: 'Riwayat',
-            menu: 'Kantin / POS F&B', tournament: 'Manajemen Turnamen', catatan: 'Catatan',
+            menu: 'Kantin / POS F&B', menu_stock_log: 'Log & Riwayat Stok Menu (F&B)', tournament: 'Manajemen Turnamen', catatan: 'Catatan',
             settings_general: 'Pengaturan Umum & Keamanan',
             settings_payment: 'Metode Pembayaran',
             settings_kiosk: 'Info Warnet & Kiosk',
@@ -288,11 +295,17 @@ const App = {
             case 'uptime': if (typeof UptimeTracker !== 'undefined') await UptimeTracker.init(); break;
             case 'blackout': await Blackout.load(); break;
             case 'user': if (typeof User !== 'undefined') await User.load(); break;
-            case 'shift_history': if (typeof Shift !== 'undefined') await Shift.loadHistory(); break;
+            case 'shift_history':
+                if (typeof Shift !== 'undefined') {
+                    await Shift.loadHistoryKasirList();
+                    await Shift.loadHistory();
+                }
+                break;
             case 'user_logs': if (typeof Shift !== 'undefined') await Shift.loadUserLogs(); break;
             case 'struk': if (typeof Struk !== 'undefined') await Struk.init(); break;
             case 'settings': if (typeof Settings !== 'undefined') await Settings.load(); break;
             case 'menu': if (typeof Menu !== 'undefined') await Menu.load(); break;
+            case 'menu_stock_log': if (typeof MenuStockLog !== 'undefined') await MenuStockLog.load(); break;
             case 'tournament': if (typeof Tournament !== 'undefined') await Tournament.load(); break;
             case 'catatan': if (typeof Catatan !== 'undefined') await Catatan.loadNotes(); break;
             case 'analytics': if (typeof OwnerAnalytics !== 'undefined') await OwnerAnalytics.load(); break;
@@ -375,5 +388,6 @@ window.Modal = Modal;
 window.Toast = Toast;
 window.User = User;
 window.Menu = Menu;
+window.MenuStockLog = typeof MenuStockLog !== 'undefined' ? MenuStockLog : undefined;
 window.Tournament = Tournament;
 window.OwnerAnalytics = OwnerAnalytics;

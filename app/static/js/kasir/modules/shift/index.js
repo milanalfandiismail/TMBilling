@@ -4,20 +4,23 @@
 const Shift = {
     activeShift: null,
 
-    async load() {
+    async load(isInitial = false) {
         try {
-            const res = await fetch('/api/v1/kasir/shift/active', { credentials: 'include' });
-            const data = await res.json();
-            if (data.success && data.shift) {
-                this.activeShift = data.shift;
-            } else {
-                this.activeShift = null;
-            }
-            this.updateSidebarInfo();
+            const data = await API.shift.active();
+            const prevShift = this.activeShift;
+            const newShift = (data && data.success && data.shift) ? data.shift : null;
 
-            // Hanya kasir yang otomatis dipancing modal buka shift saat belum ada shift aktif
+            // Cek apakah ada perubahan status shift
+            const isChanged = JSON.stringify(prevShift) !== JSON.stringify(newShift);
+            this.activeShift = newShift;
+
+            if (isChanged || isInitial) {
+                this.updateSidebarInfo();
+            }
+
+            // Hanya kasir yang otomatis dipancing modal buka shift saat load awal dan belum ada shift aktif
             const role = (window.App && window.App.user && window.App.user.role) || '';
-            if (role === 'kasir' && !this.activeShift) {
+            if (isInitial && role === 'kasir' && !this.activeShift) {
                 this.showBukaShiftModal();
             }
         } catch (err) {
@@ -51,9 +54,7 @@ const Shift = {
         // Tampilan untuk Admin
         if (role === 'admin') {
             if (this.activeShift) {
-                const startTime = this.activeShift.waktu_mulai 
-                    ? new Date(this.activeShift.waktu_mulai + 'Z').toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-                    : '...';
+                const startTime = this.formatTimeOnly(this.activeShift.waktu_mulai);
                 el.innerHTML = `
                     <div class="px-2.5 py-2 rounded-lg bg-neutral-900/90 border border-[#222] text-xs">
                         <div class="flex items-center justify-between mb-1.5">
@@ -82,9 +83,7 @@ const Shift = {
 
         // Tampilan untuk Kasir
         if (this.activeShift) {
-            const startTime = this.activeShift.waktu_mulai 
-                ? new Date(this.activeShift.waktu_mulai + 'Z').toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-                : '...';
+            const startTime = this.formatTimeOnly(this.activeShift.waktu_mulai);
             el.innerHTML = `
                 <div class="px-2.5 py-2 rounded-lg bg-emerald-950/20 border border-emerald-800/30 text-xs">
                     <div class="flex items-center justify-between mb-1">
@@ -97,7 +96,7 @@ const Shift = {
                     <div class="text-[11px] text-neutral-400 font-mono mb-2">Modal: ${Utils.formatRupiah(this.activeShift.modal_awal || 0)}</div>
                     <button onclick="Shift.showTutupShiftModal()" class="w-full py-1.5 px-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 hover:text-white font-bold text-[10px] rounded border border-[#262626] transition-colors flex items-center justify-center gap-1">
                         <svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                        Serah Terima Shift
+                        Akhiri Shift
                     </button>
                 </div>
             `;
@@ -125,7 +124,7 @@ const Shift = {
 
         const shift = this.activeShift;
         const startTime = shift.waktu_mulai 
-            ? new Date(shift.waktu_mulai + 'Z').toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })
+            ? this.formatTime(shift.waktu_mulai)
             : '-';
 
         const modalHtml = `
@@ -160,12 +159,12 @@ const Shift = {
 
                     <div>
                         <label for="admin-fc-alasan" class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-300 uppercase tracking-wider block mb-2">
-                            Alasan Penutupan Paksa <span class="text-red-400">*</span>
+                            Alasan Penutupan Paksa <span class="text-neutral-500 text-[10px] font-normal lowercase">(opsional)</span>
                         </label>
                         <textarea id="admin-fc-alasan" rows="3" 
                             class="w-full px-3.5 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] focus:border-red-500/70 rounded-lg text-neutral-200 text-xs lg:max-xl:text-xs xl:text-sm focus:outline-none transition-colors"
-                            placeholder="Contoh: Kasir pulang mendadak sakit, kasir lupa tutup shift, dll (min. 3 karakter)"></textarea>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 mt-1">Alasan wajib diisi untuk rekam jejak audit keamanan.</p>
+                            placeholder="Contoh: Kasir pulang mendadak sakit, kasir lupa tutup shift, dll (opsional)"></textarea>
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 mt-1">Alasan opsional, akan dicatat dalam audit trail keamanan jika diisi.</p>
                     </div>
                 </div>
                 <div class="px-6 py-4 border-t border-[#2a2a2a] flex justify-end gap-2 bg-[#0c0c0c]">
@@ -184,10 +183,6 @@ const Shift = {
 
     async submitForceClose(shiftId) {
         const alasan = document.getElementById('admin-fc-alasan')?.value?.trim() || '';
-        if (!alasan || alasan.length < 3) {
-            Toast.error('Alasan force-close minimal 3 karakter');
-            return;
-        }
         if (alasan.length > 255) {
             Toast.error('Alasan force-close maksimal 255 karakter');
             return;
@@ -195,7 +190,7 @@ const Shift = {
 
         try {
             const res = await API.shift.forceClose({ shift_id: shiftId, alasan: alasan });
-            if (!res.success) throw new Error(res.error || 'Gagal menutup paksa shift');
+            if (!res || !res.success) throw new Error(res?.error || 'Gagal menutup paksa shift');
             
             Modal.closeModal();
             Toast.success('Shift berhasil ditutup paksa oleh Admin');
@@ -222,8 +217,8 @@ const Shift = {
                         <label for="modal-awal-input" class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-400 uppercase tracking-wider block mb-2">Modal Awal (Rp)</label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-sm lg:max-xl:text-sm xl:text-base">Rp</span>
-                            <input type="number" id="modal-awal-input" min="0" value="0"
-                                class="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm lg:max-xl:text-sm xl:text-base font-mono focus:border-neutral-500 transition-colors no-spinners [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            <input type="text" id="modal-awal-input" value="0" inputmode="numeric" oninput="Utils.formatInputRupiah(this)" onfocus="this.select()"
+                                class="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm lg:max-xl:text-sm xl:text-base font-mono focus:border-neutral-500 transition-colors"
                                 placeholder="0" />
                         </div>
                         <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Rp 0 - Rp 100.000.000 (uang receh/kembalian di laci)</p>
@@ -248,18 +243,8 @@ const Shift = {
         }
 
         try {
-            const res = await fetch('/api/v1/kasir/shift/start', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ modal_awal: modalAwal })
-            });
-            if (!res.ok) {
-                const errData = await res.json().catch(() => ({}));
-                throw new Error(errData.error || `HTTP ${res.status}`);
-            }
-            const data = await res.json();
-            if (!data.success) throw new Error(data.error || 'Gagal buka shift');
+            const data = await API.shift.start({ modal_awal: modalAwal });
+            if (!data || !data.success) throw new Error(data?.error || 'Gagal buka shift');
 
             this.activeShift = data.shift;
             this.updateSidebarInfo();
@@ -329,15 +314,15 @@ const Shift = {
                         <label for="uang-fisik-input" class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-400 uppercase tracking-wider block mb-2">Uang Fisik di Laci (Rp)</label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-sm lg:max-xl:text-sm xl:text-base">Rp</span>
-                            <input type="number" id="uang-fisik-input" min="0" value="0"
-                                class="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm lg:max-xl:text-sm xl:text-base font-mono focus:border-neutral-500 transition-colors no-spinners [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            <input type="text" id="uang-fisik-input" value="0" inputmode="numeric" oninput="Utils.formatInputRupiah(this)" onfocus="this.select()"
+                                class="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm lg:max-xl:text-sm xl:text-base font-mono focus:border-neutral-500 transition-colors"
                                 placeholder="0" autofocus />
                         </div>
                         <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Rp 0 - Rp 100.000.000 (hitung seluruh uang tunai fisik di laci)</p>
                     </div>
 
                     <div>
-                        <label for="catatan-shift-input" class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-400 uppercase tracking-wider block mb-2">Catatan Serah Terima (Opsional)</label>
+                        <label for="catatan-shift-input" class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-400 uppercase tracking-wider block mb-2">Catatan Akhiri Shift (Opsional)</label>
                         <textarea id="catatan-shift-input" rows="2" maxlength="255"
                             class="w-full px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-xs lg:max-xl:text-xs xl:text-sm focus:border-neutral-500 transition-colors resize-none"
                             placeholder="Contoh: Selisih Rp2.000 karena pembulatan / titipan modal kasir selanjutnya"></textarea>
@@ -348,7 +333,7 @@ const Shift = {
                     <button onclick="Modal.closeModal()" 
                         class="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors">Batal</button>
                     <button onclick="Shift.submitTutupShift()" 
-                        class="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors">Selesaikan Shift</button>
+                        class="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors">Akhiri Shift</button>
                 </div>
             </div>
         `;
@@ -384,18 +369,8 @@ const Shift = {
         }
 
         try {
-            const res = await fetch('/api/v1/kasir/shift/end', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ uang_fisik: uangFisik, catatan: catatan })
-            });
-            if (!res.ok) {
-                const errData = await res.json().catch(() => ({}));
-                throw new Error(errData.error || `HTTP ${res.status}`);
-            }
-            const data = await res.json();
-            if (!data.success) throw new Error(data.error || 'Gagal tutup shift');
+            const data = await API.shift.end({ uang_fisik: uangFisik, catatan: catatan });
+            if (!data || !data.success) throw new Error(data?.error || 'Gagal tutup shift');
 
             const r = data.result;
 
@@ -732,10 +707,9 @@ const Shift = {
             return;
         }
         try {
-            const res = await fetch(`/api/v1/kasir/shift/receipt/${shiftId}`, { credentials: 'include' });
-            const data = await res.json();
-            if (!data.success || !data.receipt_text) {
-                throw new Error(data.error || 'Gagal memuat struk thermal');
+            const data = await API.shift.receipt(shiftId);
+            if (!data || !data.success || !data.receipt_text) {
+                throw new Error(data?.error || 'Gagal memuat struk thermal');
             }
 
             const printContent = `
@@ -766,6 +740,159 @@ const Shift = {
             }, 300);
         } catch (err) {
             Toast.error('Gagal mencetak struk thermal: ' + err.message);
+        }
+    },
+
+    getDateRange(preset) {
+        const now = new Date();
+        const formatDate = (d) => {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        switch (preset) {
+            case 'today': {
+                const todayStr = formatDate(now);
+                return { mulai: todayStr, selesai: todayStr };
+            }
+            case 'yesterday': {
+                const y = new Date(now);
+                y.setDate(y.getDate() - 1);
+                const yStr = formatDate(y);
+                return { mulai: yStr, selesai: yStr };
+            }
+            case '7days': {
+                const start = new Date(now);
+                start.setDate(start.getDate() - 6);
+                return { mulai: formatDate(start), selesai: formatDate(now) };
+            }
+            case '30days': {
+                const start = new Date(now);
+                start.setDate(start.getDate() - 29);
+                return { mulai: formatDate(start), selesai: formatDate(now) };
+            }
+            case 'this_month': {
+                const first = new Date(now.getFullYear(), now.getMonth(), 1);
+                const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                return { mulai: formatDate(first), selesai: formatDate(last) };
+            }
+            case 'last_month': {
+                const first = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                const last = new Date(now.getFullYear(), now.getMonth(), 0);
+                return { mulai: formatDate(first), selesai: formatDate(last) };
+            }
+            case 'all':
+            default:
+                return { mulai: '', selesai: '' };
+        }
+    },
+
+    setPeriodePreset(preset) {
+        const select = document.getElementById('filter-shift-periode');
+        if (select) {
+            select.value = preset;
+        }
+
+        document.querySelectorAll('.shift-preset-btn').forEach(btn => {
+            const onclickAttr = btn.getAttribute('onclick') || '';
+            if (onclickAttr.includes(`'${preset}'`)) {
+                btn.className = 'shift-preset-btn px-2.5 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded text-[11px] lg:max-xl:text-xs xl:text-sm font-bold transition-colors';
+            } else {
+                btn.className = 'shift-preset-btn px-2.5 py-1 bg-[#161616] hover:bg-[#222] text-neutral-300 hover:text-white border border-[#262626] rounded text-[11px] lg:max-xl:text-xs xl:text-sm font-semibold transition-colors';
+            }
+        });
+
+        this.onPeriodeChange();
+    },
+
+    onPeriodeChange() {
+        const select = document.getElementById('filter-shift-periode');
+        const customContainer = document.getElementById('shift-custom-date-container');
+        const mulaiInput = document.getElementById('filter-shift-mulai');
+        const selesaiInput = document.getElementById('filter-shift-selesai');
+
+        const val = select ? select.value : 'all';
+
+        // Update pill highlight to match select value
+        document.querySelectorAll('.shift-preset-btn').forEach(btn => {
+            const onclickAttr = btn.getAttribute('onclick') || '';
+            if (onclickAttr.includes(`'${val}'`)) {
+                btn.className = 'shift-preset-btn px-2.5 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded text-[11px] lg:max-xl:text-xs xl:text-sm font-bold transition-colors';
+            } else {
+                btn.className = 'shift-preset-btn px-2.5 py-1 bg-[#161616] hover:bg-[#222] text-neutral-300 hover:text-white border border-[#262626] rounded text-[11px] lg:max-xl:text-xs xl:text-sm font-semibold transition-colors';
+            }
+        });
+
+        if (val === 'custom') {
+            if (customContainer) {
+                customContainer.classList.remove('hidden');
+                customContainer.classList.add('flex');
+            }
+        } else {
+            if (customContainer) {
+                customContainer.classList.add('hidden');
+                customContainer.classList.remove('flex');
+            }
+            const range = this.getDateRange(val);
+            if (mulaiInput) mulaiInput.value = range.mulai;
+            if (selesaiInput) selesaiInput.value = range.selesai;
+        }
+
+        this.loadHistory();
+    },
+
+    resetHistoryFilter() {
+        const periodeSelect = document.getElementById('filter-shift-periode');
+        if (periodeSelect) periodeSelect.value = 'all';
+
+        const kasirSelect = document.getElementById('filter-shift-kasir');
+        if (kasirSelect) kasirSelect.value = '';
+
+        const mulaiInput = document.getElementById('filter-shift-mulai');
+        if (mulaiInput) mulaiInput.value = '';
+
+        const selesaiInput = document.getElementById('filter-shift-selesai');
+        if (selesaiInput) selesaiInput.value = '';
+
+        const customContainer = document.getElementById('shift-custom-date-container');
+        if (customContainer) {
+            customContainer.classList.add('hidden');
+            customContainer.classList.remove('flex');
+        }
+
+        document.querySelectorAll('.shift-preset-btn').forEach(btn => {
+            const onclickAttr = btn.getAttribute('onclick') || '';
+            if (onclickAttr.includes("'all'")) {
+                btn.className = 'shift-preset-btn px-2.5 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded text-[11px] lg:max-xl:text-xs xl:text-sm font-bold transition-colors';
+            } else {
+                btn.className = 'shift-preset-btn px-2.5 py-1 bg-[#161616] hover:bg-[#222] text-neutral-300 hover:text-white border border-[#262626] rounded text-[11px] lg:max-xl:text-xs xl:text-sm font-semibold transition-colors';
+            }
+        });
+
+        this.loadHistory();
+    },
+
+    async loadHistoryKasirList() {
+        const select = document.getElementById('filter-shift-kasir');
+        if (!select) return;
+
+        try {
+            const data = await API.shift.kasirList();
+            const kasirList = data?.kasir || [];
+            const currentVal = select.value;
+
+            select.innerHTML = '<option value="">Semua Kasir</option>';
+            kasirList.forEach(k => {
+                select.innerHTML += `<option value="${k.id}">${Utils.escapeHtml(k.nama || k.username || 'Kasir #' + k.id)}</option>`;
+            });
+
+            if (currentVal) {
+                select.value = currentVal;
+            }
+        } catch (err) {
+            console.error('[Shift] Gagal memuat daftar kasir untuk filter:', err);
         }
     },
 
@@ -813,42 +940,42 @@ const Shift = {
                 let selisihBadge = '';
                 if (s.selisih !== null && s.selisih !== undefined) {
                     if (s.selisih > 0) {
-                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-sm font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 font-mono">+${Utils.formatRawRupiah(s.selisih)}</span>`;
+                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:max-xl:text-[9px] xl:text-xs font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 font-mono whitespace-nowrap">+${Utils.formatRawRupiah(s.selisih)}</span>`;
                     } else if (s.selisih < 0) {
-                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-sm font-bold bg-red-950/70 text-red-400 border border-red-800/40 font-mono">-${Utils.formatRawRupiah(Math.abs(s.selisih))}</span>`;
+                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:max-xl:text-[9px] xl:text-xs font-bold bg-red-950/70 text-red-400 border border-red-800/40 font-mono whitespace-nowrap">-${Utils.formatRawRupiah(Math.abs(s.selisih))}</span>`;
                     } else {
-                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-sm font-bold bg-neutral-800 text-neutral-300 font-mono">Rp 0</span>`;
+                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:max-xl:text-[9px] xl:text-xs font-bold bg-neutral-800 text-neutral-300 font-mono whitespace-nowrap">Rp 0</span>`;
                     }
                 } else {
-                    selisihBadge = '<span class="text-neutral-500 font-mono text-[10px] lg:max-xl:text-xs xl:text-sm">-</span>';
+                    selisihBadge = '<span class="text-neutral-500 font-mono text-[10px] lg:max-xl:text-[9px] xl:text-xs whitespace-nowrap">-</span>';
                 }
 
                 const statusBadge = isForceClose
-                    ? '<span class="px-2 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-sm font-bold bg-red-950/70 text-red-400 border border-red-800/40">FORCE CLOSE</span>'
-                    : '<span class="px-2 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-sm font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40">SELESAI</span>';
+                    ? '<span class="px-1.5 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-xs font-bold bg-red-950/70 text-red-400 border border-red-800/40 whitespace-nowrap">FORCE CLOSE</span>'
+                    : '<span class="px-1.5 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-xs font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 whitespace-nowrap">SELESAI</span>';
 
                 return `
-                    <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs lg:max-xl:text-xs xl:text-base">
-                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-mono text-neutral-400">#${s.id}</td>
-                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">
-                            <div class="font-bold text-neutral-200">${Utils.escapeHtml(s.kasir_nama || 'Kasir')}</div>
-                            <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 font-mono">${s.waktu_mulai || '-'} s/d ${s.waktu_selesai ? s.waktu_selesai.split(' ')[1] : '-'}</div>
+                    <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs lg:max-xl:text-[11px] xl:text-sm">
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-mono text-neutral-400 whitespace-nowrap">#${s.id}</td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">
+                            <div class="font-bold text-neutral-200 truncate max-w-[130px] lg:max-xl:max-w-[95px] xl:max-w-[160px]" title="${Utils.escapeHtml(s.kasir_nama || 'Kasir')}">${Utils.escapeHtml(s.kasir_nama || 'Kasir')}</div>
+                            <div class="text-[10px] lg:max-xl:text-[9px] xl:text-xs text-neutral-500 font-mono whitespace-nowrap">${s.waktu_mulai ? s.waktu_mulai.split(' ')[0] : ''} ${s.waktu_mulai ? s.waktu_mulai.split(' ')[1] : '-'} s/d ${s.waktu_selesai ? s.waktu_selesai.split(' ')[1] : '-'}</div>
                         </td>
-                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-mono text-neutral-300">${Utils.formatRupiah(s.modal_awal || 0)}</td>
-                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-mono text-neutral-300">${Utils.formatRupiah(s.total_billing || 0)}</td>
-                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-mono text-neutral-300">${Utils.formatRupiah(s.total_kantin || 0)}</td>
-                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-mono font-bold text-neutral-100">${s.uang_fisik !== null && s.uang_fisik !== undefined ? Utils.formatRupiah(s.uang_fisik) : '-'}</td>
-                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">${selisihBadge}</td>
-                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">${statusBadge}</td>
-                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-right">
-                            <div class="flex items-center justify-end gap-1.5">
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.modal_awal || 0)}</td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.total_billing || 0)}</td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.total_kantin || 0)}</td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-mono font-bold text-neutral-100 whitespace-nowrap">${s.uang_fisik !== null && s.uang_fisik !== undefined ? Utils.formatRupiah(s.uang_fisik) : '-'}</td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">${selisihBadge}</td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">${statusBadge}</td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 text-right whitespace-nowrap">
+                            <div class="flex items-center justify-end gap-1">
                                 <button onclick="Shift.viewShiftDetail(${s.id})" title="Lihat Rekapitulasi"
-                                    class="p-1.5 lg:max-xl:p-2 xl:p-2.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white transition-colors">
-                                    <svg class="w-3.5 h-3.5 lg:max-xl:w-4 lg:max-xl:h-4 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    class="p-1 lg:max-xl:p-1 xl:p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white transition-colors">
+                                    <svg class="w-3.5 h-3.5 lg:max-xl:w-3.5 lg:max-xl:h-3.5 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                                 <button onclick="Shift.printThermalReceipt(${s.id})" title="Cetak Struk Thermal 58mm"
-                                    class="p-1.5 lg:max-xl:p-2 xl:p-2.5 rounded bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/40 text-amber-400 hover:text-amber-300 transition-colors">
-                                    <svg class="w-3.5 h-3.5 lg:max-xl:w-4 lg:max-xl:h-4 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                    class="p-1 lg:max-xl:p-1 xl:p-1.5 rounded bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/40 text-amber-400 hover:text-amber-300 transition-colors">
+                                    <svg class="w-3.5 h-3.5 lg:max-xl:w-3.5 lg:max-xl:h-3.5 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                 </button>
                             </div>
                         </td>
@@ -929,16 +1056,16 @@ const Shift = {
                 else if (act.includes('LOGIN')) badgeClass = 'bg-amber-950/70 text-amber-400 border-amber-800/40';
 
                 return `
-                    <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs lg:max-xl:text-xs xl:text-base">
-                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-mono text-neutral-400 whitespace-nowrap">${log.timestamp || '-'}</td>
-                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-bold text-neutral-200 whitespace-nowrap">
-                            <span class="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-700 font-mono text-[11px] lg:max-xl:text-xs xl:text-sm">${Utils.escapeHtml(log.user || 'system')}</span>
+                    <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs lg:max-xl:text-[11px] xl:text-sm">
+                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-mono text-neutral-400 whitespace-nowrap">${log.timestamp || '-'}</td>
+                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-bold text-neutral-200 whitespace-nowrap">
+                            <span class="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-700 font-mono text-[11px] lg:max-xl:text-[10px] xl:text-xs">${Utils.escapeHtml(log.user || 'system')}</span>
                         </td>
-                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 whitespace-nowrap">
-                            <span class="px-2 py-0.5 rounded text-[10px] lg:max-xl:text-xs xl:text-sm font-bold border ${badgeClass}">${Utils.escapeHtml(log.action || '-')}</span>
+                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-2.5 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">
+                            <span class="px-2 py-0.5 rounded text-[10px] lg:max-xl:text-[9px] xl:text-xs font-bold border ${badgeClass}">${Utils.escapeHtml(log.action || '-')}</span>
                         </td>
-                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-neutral-300 break-words whitespace-pre-wrap">${Utils.escapeHtml(log.detail || '-')}</td>
-                        <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 font-mono text-[11px] lg:max-xl:text-xs xl:text-sm text-neutral-500 whitespace-nowrap">${log.ip_address || '-'}</td>
+                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-2.5 lg:max-xl:py-2 xl:py-3.5 text-neutral-300 break-words whitespace-pre-wrap">${Utils.escapeHtml(log.detail || '-')}</td>
+                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-mono text-[11px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 whitespace-nowrap">${log.ip_address || '-'}</td>
                     </tr>
                 `;
             }).join('');
@@ -955,11 +1082,31 @@ const Shift = {
 
     formatTime(dt) {
         if (!dt) return '-';
+        if (typeof dt === 'string' && (dt.includes('WITA') || dt.includes('WIB') || dt.includes('WIT') || dt.includes('/'))) {
+            return dt;
+        }
         try {
-            return new Date(dt + 'Z').toLocaleString('id-ID', {
+            const d = new Date(dt.endsWith('Z') ? dt : dt + 'Z');
+            if (isNaN(d.getTime())) return dt;
+            return d.toLocaleString('id-ID', {
                 year: 'numeric', month: '2-digit', day: '2-digit',
                 hour: '2-digit', minute: '2-digit'
             });
+        } catch (e) {
+            return dt;
+        }
+    },
+
+    formatTimeOnly(dt) {
+        if (!dt) return '...';
+        if (typeof dt === 'string') {
+            const match = dt.match(/\b(\d{1,2}:\d{2})\b/);
+            if (match) return match[1];
+        }
+        try {
+            const d = new Date(dt.endsWith('Z') ? dt : dt + 'Z');
+            if (isNaN(d.getTime())) return dt;
+            return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         } catch (e) {
             return dt;
         }

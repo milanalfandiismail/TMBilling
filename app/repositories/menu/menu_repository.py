@@ -5,7 +5,7 @@
 Modul ini mengelola kueri database langsung ke tabel menu_item dan transaksi_menu.
 """
 
-from app.models import MenuItem, TransaksiMenu
+from app.models import MenuItem, TransaksiMenu, MenuStockLog
 from app.models import db
 
 class MenuRepository:
@@ -188,3 +188,41 @@ class MenuRepository:
     def get_by_no_nota(no_nota):
         """Mencari transaksi menu berdasarkan nomor nota."""
         return TransaksiMenu.query.filter_by(no_nota=no_nota).first()
+
+    @staticmethod
+    def save_stock_log(stock_log):
+        """Menyimpan record log restock ke database (Tanpa Commit)."""
+        db.session.add(stock_log)
+
+    @staticmethod
+    def get_stock_logs_paginated(date_obj=None, menu_id=None, operator=None, search=None, page=1, per_page=15):
+        """Mengambil riwayat penambahan stok dengan filter dan pagination."""
+        query = MenuStockLog.query
+        if date_obj and str(date_obj).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(date_obj)
+            query = query.filter(
+                MenuStockLog.created_at >= start_utc,
+                MenuStockLog.created_at < end_utc
+            )
+        if menu_id and str(menu_id).isdigit() and int(menu_id) > 0:
+            query = query.filter(MenuStockLog.menu_id == int(menu_id))
+        if operator and str(operator).strip().lower() not in ("all", "semua", "none", ""):
+            query = query.filter(MenuStockLog.operator == operator.strip())
+        if search and str(search).strip():
+            s = f"%{search.strip()}%"
+            query = query.filter(
+                db.or_(
+                    MenuStockLog.menu_nama.ilike(s),
+                    MenuStockLog.catatan.ilike(s),
+                    MenuStockLog.operator.ilike(s)
+                )
+            )
+        return query.order_by(MenuStockLog.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+
+    @staticmethod
+    def get_distinct_stock_log_operators():
+        """Mengambil daftar operator yang pernah melakukan restock."""
+        results = db.session.query(MenuStockLog.operator).distinct().all()
+        return [r[0] for r in results if r[0]]
+

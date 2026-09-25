@@ -344,6 +344,12 @@ def _init_app_context(app):
                     if 'detail_metode_json' not in shift_cols:
                         conn.execute(text("ALTER TABLE shift_record ADD COLUMN detail_metode_json TEXT"))
                     conn.commit()
+
+            # Auto-migration v1.6.2: Tabel menu_stock_log
+            if not inspector.has_table('menu_stock_log'):
+                from app.models.menu.menu import MenuStockLog
+                MenuStockLog.__table__.create(db.engine)
+                app.logger.info("[OK] [TMBilling] Tabel 'menu_stock_log' berhasil dibuat secara otomatis.")
         except Exception as e:
             app.logger.warning(f"Pengecekan bootstrap skema database: {e}")
 

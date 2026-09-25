@@ -23,24 +23,78 @@
 
     <!-- Filter Card -->
     <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Filter Periode Shift</h3>
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Filter Periode Shift</h3>
+            
+            <!-- Quick Preset Pills -->
+            <div class="flex flex-wrap items-center gap-1.5">
+                <button type="button" onclick="Shift.setPeriodePreset('today')"
+                    class="shift-preset-btn px-2.5 py-1 bg-[#161616] hover:bg-[#222] text-neutral-300 hover:text-white border border-[#262626] rounded text-[11px] lg:max-xl:text-xs xl:text-sm font-semibold transition-colors">
+                    Hari Ini
+                </button>
+                <button type="button" onclick="Shift.setPeriodePreset('yesterday')"
+                    class="shift-preset-btn px-2.5 py-1 bg-[#161616] hover:bg-[#222] text-neutral-300 hover:text-white border border-[#262626] rounded text-[11px] lg:max-xl:text-xs xl:text-sm font-semibold transition-colors">
+                    Kemarin
+                </button>
+                <button type="button" onclick="Shift.setPeriodePreset('7days')"
+                    class="shift-preset-btn px-2.5 py-1 bg-[#161616] hover:bg-[#222] text-neutral-300 hover:text-white border border-[#262626] rounded text-[11px] lg:max-xl:text-xs xl:text-sm font-semibold transition-colors">
+                    7 Hari Terakhir
+                </button>
+                <button type="button" onclick="Shift.setPeriodePreset('this_month')"
+                    class="shift-preset-btn px-2.5 py-1 bg-[#161616] hover:bg-[#222] text-neutral-300 hover:text-white border border-[#262626] rounded text-[11px] lg:max-xl:text-xs xl:text-sm font-semibold transition-colors">
+                    Bulan Ini
+                </button>
+                <button type="button" onclick="Shift.setPeriodePreset('all')"
+                    class="shift-preset-btn px-2.5 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded text-[11px] lg:max-xl:text-xs xl:text-sm font-bold transition-colors">
+                    Semua
+                </button>
+            </div>
+        </div>
+
         <div class="flex flex-wrap items-end gap-3">
-            <div class="flex-1 min-w-[140px]">
-                <label for="filter-shift-mulai" class="text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider block mb-1">Dari Tanggal</label>
-                <input type="date" id="filter-shift-mulai" 
+            <div class="flex-1 min-w-[160px]">
+                <label for="filter-shift-periode" class="text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider block mb-1">Pilih Periode Otomatis</label>
+                <select id="filter-shift-periode" onchange="Shift.onPeriodeChange()"
                     class="w-full px-3 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                    <option value="all">Semua Tanggal / Periode</option>
+                    <option value="today">Hari Ini</option>
+                    <option value="yesterday">Kemarin</option>
+                    <option value="7days">7 Hari Terakhir</option>
+                    <option value="30days">30 Hari Terakhir</option>
+                    <option value="this_month">Bulan Ini</option>
+                    <option value="last_month">Bulan Lalu</option>
+                    <option value="custom">Rentang Tanggal Manual...</option>
+                </select>
             </div>
-            <div class="flex-1 min-w-[140px]">
-                <label for="filter-shift-selesai" class="text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider block mb-1">Sampai Tanggal</label>
-                <input type="date" id="filter-shift-selesai" 
+
+            <div class="flex-1 min-w-[160px]">
+                <label for="filter-shift-kasir" class="text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider block mb-1">Filter Kasir</label>
+                <select id="filter-shift-kasir" onchange="Shift.loadHistory()"
                     class="w-full px-3 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                    <option value="">Semua Kasir</option>
+                </select>
             </div>
+
+            <div id="shift-custom-date-container" class="hidden flex-wrap items-end gap-3 w-full md:w-auto">
+                <div class="flex-1 min-w-[130px]">
+                    <label for="filter-shift-mulai" class="text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider block mb-1">Dari</label>
+                    <input type="date" id="filter-shift-mulai" onchange="Shift.loadHistory()"
+                        class="w-full px-3 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                </div>
+                <div class="flex-1 min-w-[130px]">
+                    <label for="filter-shift-selesai" class="text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider block mb-1">Sampai</label>
+                    <input type="date" id="filter-shift-selesai" onchange="Shift.loadHistory()"
+                        class="w-full px-3 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                </div>
+            </div>
+
             <div class="w-auto flex items-center gap-2">
                 <button onclick="Shift.loadHistory()"
-                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors shadow-sm">
-                    Terapkan Filter
+                    class="px-3.5 lg:max-xl:px-4 xl:px-5 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors shadow-sm flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                    Filter
                 </button>
-                <button onclick="document.getElementById('filter-shift-mulai').value=''; document.getElementById('filter-shift-selesai').value=''; Shift.loadHistory();"
+                <button onclick="Shift.resetHistoryFilter()"
                     class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#1a1a1a] hover:bg-[#222] border border-[#262626] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">
                     Reset
                 </button>
@@ -49,21 +103,21 @@
     </div>
 
     <!-- Table Card -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6 overflow-hidden">
-        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Daftar Rekap Shift</h3>
-        <div class="overflow-x-auto w-full">
-            <table class="w-full text-left border-collapse text-xs lg:max-xl:text-xs xl:text-base">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:max-xl:p-3 xl:p-6 overflow-hidden">
+        <h3 class="text-xs lg:max-xl:text-base xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-3 lg:max-xl:mb-2.5 xl:mb-4">Daftar Rekap Shift</h3>
+        <div class="overflow-x-auto w-full scrollbar-thin">
+            <table class="w-full text-left border-collapse text-xs lg:max-xl:text-[11px] xl:text-sm">
                 <thead>
-                    <tr class="border-b border-[#1c1c1c] text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 uppercase tracking-wider">
-                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">ID</th>
-                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">Petugas & Waktu</th>
-                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">Modal Awal</th>
-                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">Billing</th>
-                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">Kantin</th>
-                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">Uang Fisik</th>
-                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">Selisih</th>
-                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4">Status</th>
-                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-2.5 xl:py-4 text-right">Aksi</th>
+                    <tr class="border-b border-[#1c1c1c] text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase tracking-wider">
+                        <th class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">ID</th>
+                        <th class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">Petugas & Waktu</th>
+                        <th class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">Modal Awal</th>
+                        <th class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">Billing</th>
+                        <th class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">Kantin</th>
+                        <th class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">Uang Fisik</th>
+                        <th class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">Selisih</th>
+                        <th class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">Status</th>
+                        <th class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5 text-right whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="shift-history-rows" class="divide-y divide-[#1c1c1c]">

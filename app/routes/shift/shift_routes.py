@@ -18,7 +18,11 @@ def start_shift():
     try:
         data = request.get_json() or {}
         modal_awal = int(data.get("modal_awal", 0))
-        kasir_username = session.get("kasir_username", "kasir")
+        
+        kasir_id = session.get("kasir_id")
+        from app.repositories import UserRepository
+        user = UserRepository.get_by_id(kasir_id) if kasir_id else None
+        kasir_username = user.username if user else session.get("kasir_username", "kasir")
 
         result = ShiftService.start_shift(
             kasir_username=kasir_username,
@@ -36,10 +40,23 @@ def start_shift():
 @shift_api_bp.route("/active", methods=["GET"])
 @login_required
 def get_active_shift():
-    """Cek apakah kasir punya shift aktif."""
+    """Cek status shift aktif.
+    
+    Untuk kasir: cek shift aktif miliknya sendiri.
+    Untuk admin: cek shift aktif warnet (shift kasir mana pun yang sedang bertugas).
+    """
     try:
-        kasir_username = session.get("kasir_username", "kasir")
-        shift = ShiftService.get_active_shift(kasir_username)
+        kasir_id = session.get("kasir_id")
+        role = session.get("kasir_role", "kasir")
+        from app.repositories import UserRepository
+        user = UserRepository.get_by_id(kasir_id) if kasir_id else None
+        kasir_username = user.username if user else session.get("kasir_username", "kasir")
+        
+        if role == "admin":
+            from app.models.shift.shift_record import ShiftRecord
+            shift = ShiftRecord.query.filter_by(status="AKTIF").first()
+        else:
+            shift = ShiftService.get_active_shift(kasir_username)
 
         if not shift:
             return jsonify({"success": True, "shift": None}), 200
@@ -51,17 +68,29 @@ def get_active_shift():
 
 
 @shift_api_bp.route("/summary", methods=["GET"])
+@shift_api_bp.route("/<int:shift_id>/summary", methods=["GET"])
 @login_required
-def get_shift_summary():
+def get_shift_summary(shift_id=None):
     """Ringkasan pendapatan shift aktif (HANYA untuk admin preview, bukan blind count)."""
     try:
-        kasir_username = session.get("kasir_username", "kasir")
-        shift = ShiftService.get_active_shift(kasir_username)
+        if not shift_id:
+            role = session.get("kasir_role", "kasir")
+            if role == "admin":
+                from app.models.shift.shift_record import ShiftRecord
+                active_s = ShiftRecord.query.filter_by(status="AKTIF").first()
+                shift_id = active_s.id if active_s else None
+            else:
+                kasir_id = session.get("kasir_id")
+                from app.repositories import UserRepository
+                user = UserRepository.get_by_id(kasir_id) if kasir_id else None
+                kasir_username = user.username if user else session.get("kasir_username", "kasir")
+                shift = ShiftService.get_active_shift(kasir_username)
+                shift_id = shift.id if shift else None
 
-        if not shift:
+        if not shift_id:
             return jsonify({"error": "Tidak ada shift aktif"}), 400
 
-        summary = ShiftService.get_shift_summary(shift.id)
+        summary = ShiftService.get_shift_summary(shift_id)
         return jsonify({"success": True, "summary": summary}), 200
 
     except Exception as e:
@@ -79,7 +108,11 @@ def end_shift():
         data = request.get_json() or {}
         uang_fisik = int(data.get("uang_fisik", 0))
         catatan = data.get("catatan")
-        kasir_username = session.get("kasir_username", "kasir")
+        
+        kasir_id = session.get("kasir_id")
+        from app.repositories import UserRepository
+        user = UserRepository.get_by_id(kasir_id) if kasir_id else None
+        kasir_username = user.username if user else session.get("kasir_username", "kasir")
 
         shift = ShiftService.get_active_shift(kasir_username)
         if not shift:
@@ -172,5 +205,18 @@ def get_shift_history():
         )
         return jsonify({"success": True, "shifts": shifts}), 200
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@shift_api_bp.route("/kasir-list", methods=["GET"])
+@login_required
+def get_shift_kasir_list():
+    """Ambil daftar akun kasir aktif untuk filter riwayat shift (hanya role kasir, admin tidak dimasukkan)."""
+    try:
+        from app.repositories import UserRepository
+        users = UserRepository.get_all_active_kasir()
+        result = [{"id": u.id, "nama": u.nama_lengkap or u.username, "username": u.username} for u in users]
+        return jsonify({"success": True, "kasir": result}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

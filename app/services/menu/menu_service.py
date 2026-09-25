@@ -7,7 +7,7 @@ Modul ini mengelola CRUD katalog makanan/minuman dan proses checkout transaksi F
 
 from datetime import datetime
 from app.models import db
-from app.models import MenuItem, TransaksiMenu
+from app.models import MenuItem, TransaksiMenu, MenuStockLog
 from app.repositories import MenuRepository
 from app.repositories import UserRepository
 from app.utils.logger import write_log
@@ -153,6 +153,88 @@ class MenuService:
         except Exception as e:
             db.session.rollback()
             raise e
+
+    @staticmethod
+    def tambah_stok(menu_id, jumlah_tambah, operator="system", catatan=None):
+        """Menambahkan stok item menu dan mencatat log aktivitas audit secara rinci."""
+        try:
+            menu = MenuRepository.get_by_id(menu_id)
+            if not menu:
+                raise ValueError("Menu tidak ditemukan atau tidak aktif")
+
+            jumlah = validate_integer_range(jumlah_tambah, 1, 1_000_000, "Jumlah penambahan stok")
+            
+            stok_lama = menu.stok
+            if stok_lama < 0:
+                raise ValueError(f"Menu '{menu.nama}' berstatus stok Unlimited (tidak terbatas)")
+
+            stok_baru = stok_lama + jumlah
+            if stok_baru > 1_000_000:
+                raise ValueError("Akumulasi total stok tidak boleh melebihi 1.000.000 unit")
+
+            menu.stok = stok_baru
+
+            catatan_clean = catatan.strip() if isinstance(catatan, str) and catatan.strip() else None
+
+            # Catat record mutasi stok ke tabel dedicated MenuStockLog
+            log_entry = MenuStockLog(
+                menu_id=menu.id,
+                menu_nama=menu.nama,
+                tipe="RESTOCK",
+                jumlah_masuk=jumlah,
+                stok_sebelum=stok_lama,
+                stok_sesudah=stok_baru,
+                operator=operator,
+                catatan=catatan_clean
+            )
+            MenuRepository.save_stock_log(log_entry)
+            db.session.commit()
+
+            pesan_log = f"Penambahan stok '{menu.nama}' sebanyak +{jumlah} unit (Stok: {stok_lama} -> {stok_baru})"
+            if catatan_clean:
+                pesan_log += f" | Catatan: {catatan_clean}"
+
+            detail_restock = {
+                "menu_id": menu.id,
+                "nama": menu.nama,
+                "jumlah_tambah": jumlah,
+                "stok_lama": stok_lama,
+                "stok_baru": stok_baru,
+                "catatan": catatan_clean or "-"
+            }
+            write_log("RESTOCK_MENU", pesan_log, user=operator, detail_json=detail_restock)
+            return menu
+        except Exception as e:
+            db.session.rollback()
+            raise e
+
+    @staticmethod
+    def get_stock_logs(tanggal=None, menu_id=None, operator=None, search=None, page=1, per_page=15):
+        """Mengambil data riwayat penambahan stok dengan filter & pagination."""
+        page_val = validate_integer_range(page, 1, 100000, "Halaman")
+        per_page_val = validate_integer_range(per_page, 1, 100, "Jumlah per halaman")
+        
+        pagination = MenuRepository.get_stock_logs_paginated(
+            date_obj=tanggal,
+            menu_id=menu_id,
+            operator=operator,
+            search=search,
+            page=page_val,
+            per_page=per_page_val
+        )
+        return {
+            "items": [item.to_dict() for item in pagination.items],
+            "total": pagination.total,
+            "page": pagination.page,
+            "pages": pagination.pages,
+            "has_prev": pagination.has_prev,
+            "has_next": pagination.has_next
+        }
+
+    @staticmethod
+    def get_stock_log_operators():
+        """Mengambil daftar operator yang tercatat di log stok menu."""
+        return MenuRepository.get_distinct_stock_log_operators()
 
     @staticmethod
     def get_archived_menu():

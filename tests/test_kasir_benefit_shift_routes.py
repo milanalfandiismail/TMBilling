@@ -107,3 +107,24 @@ def test_user_reset_kuota_errors(client):
     assert res_admin.status_code == 400
     assert "Hanya akun kasir" in res_admin.get_json()["error"]
 
+
+def test_shift_kasir_list_excludes_admin(client):
+    admin = User.query.filter_by(username="admin").first()
+    kasir = User(username="kasir_andi", role="kasir", nama_lengkap="Andi Kasir", aktif=True)
+    kasir.set_password("andi123")
+    db.session.add(kasir)
+    db.session.commit()
+
+    with client.session_transaction() as sess:
+        sess["kasir_id"] = admin.id
+        sess["kasir_username"] = "admin"
+        sess["kasir_role"] = "admin"
+
+    res = client.get("/api/v1/kasir/shift/kasir-list")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["success"] is True
+    usernames = [k["username"] for k in data["kasir"]]
+    assert "kasir_andi" in usernames
+    assert "admin" not in usernames
+

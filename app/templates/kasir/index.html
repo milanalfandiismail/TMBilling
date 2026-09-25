@@ -25,13 +25,14 @@
             {% include 'kasir/tabs/laporan_menu.html' %}
             {% include 'kasir/tabs/struk.html' %}
             {% include 'kasir/tabs/menu.html' %}
+            {% include 'kasir/tabs/menu_stock_log.html' %}
             {% include 'kasir/tabs/tournament.html' %}
-            {% include 'kasir/tabs/game.html' %}
             {% include 'kasir/tabs/laporan_maintenance.html' %}
             {% include 'kasir/tabs/catatan.html' %}
 
             <!-- Tabs Content (Khusus Admin - Server-Side Guarded) -->
             {% if session.get('kasir_role') == 'admin' %}
+            {% include 'kasir/tabs/game.html' %}
             {% include 'kasir/tabs/user.html' %}
             {% include 'kasir/tabs/shift_history.html' %}
             {% include 'kasir/tabs/user_logs.html' %}

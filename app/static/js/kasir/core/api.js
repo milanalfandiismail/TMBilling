@@ -60,8 +60,8 @@ const API = {
                     }
                     return data;
                 }
-                // Session expired atau IP block — redirect ke login (kecuali endpoint auth)
-                if ((res.status === 401 || res.status === 403) && !url.includes('/api/v1/kasir/auth/login') && !url.includes('/api/v1/kasir/auth/check')) {
+                // Session expired — redirect ke login (hanya 401 unauthenticated, bukan 403)
+                if (res.status === 401 && !url.includes('/api/v1/kasir/auth/login') && !url.includes('/api/v1/kasir/auth/check')) {
                     window.location.href = '/kasir/login';
                     return;
                 }
@@ -318,6 +318,21 @@ const API = {
         delete: (id) => API.request(`/api/v1/kasir/menu/${id}`, { method: 'DELETE' }),
         restore: (id) => API.request(`/api/v1/kasir/menu/${id}/restore`, { method: 'POST' }),
         deletePermanent: (id) => API.request(`/api/v1/kasir/menu/${id}/permanent`, { method: 'DELETE' }),
+        tambahStok: (id, jumlahTambah, catatan = '') => API.request(`/api/v1/kasir/menu/${id}/tambah-stok`, {
+            method: 'POST',
+            body: JSON.stringify({ jumlah_tambah: jumlahTambah, catatan })
+        }),
+        stockLogs: (params = {}) => {
+            const q = new URLSearchParams();
+            if (params.tanggal) q.append('tanggal', params.tanggal);
+            if (params.menu_id) q.append('menu_id', params.menu_id);
+            if (params.operator) q.append('operator', params.operator);
+            if (params.search) q.append('search', params.search);
+            if (params.page) q.append('page', params.page);
+            if (params.per_page) q.append('per_page', params.per_page);
+            const url = '/api/v1/kasir/menu/stock-logs' + (q.toString() ? `?${q}` : '');
+            return API.request(url);
+        },
         checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0, metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/menu/checkout', {
             method: 'POST',
             body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode, tunai, kembalian, metode_pembayaran: metodePembayaran })
@@ -394,7 +409,8 @@ const API = {
             if (params.tanggal_selesai) q.append('tanggal_selesai', params.tanggal_selesai);
             const qs = q.toString();
             return API.request('/api/v1/kasir/shift/history' + (qs ? `?${qs}` : ''));
-        }
+        },
+        kasirList: () => API.request('/api/v1/kasir/shift/kasir-list')
     },
 
     resolveMediaUrl(url) {
