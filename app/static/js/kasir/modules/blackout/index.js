@@ -200,6 +200,7 @@ const Blackout = {
     },
 
     async deteksi() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const thresholdSelect = document.getElementById('blackout-threshold');
         const threshold = thresholdSelect ? parseInt(thresholdSelect.value) : 60;
         try {

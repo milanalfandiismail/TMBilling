@@ -7,6 +7,7 @@
 
 const DashboardDetailModal = {
     showDetail(pcId, pcData) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         if (!pcData || !pcData.pc_list) return;
         const pc = pcData.pc_list.find(p => p.id === pcId);
         if (!pc) return;
@@ -370,6 +371,7 @@ const DashboardDetailModal = {
     },
 
     async takeScreenshot(pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const btn = document.getElementById(`btn-screenshot-${pcId}`);
         const text = document.getElementById(`text-screenshot-${pcId}`);
         if (!btn) return;
@@ -459,6 +461,7 @@ const DashboardDetailModal = {
     },
 
     remoteAction(pcId, action, pcKode = '') {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const actionLabel = action === 'shutdown' ? 'Shutdown (Matikan)' : 'Restart (Mulai Ulang)';
         const pcName = pcKode || `PC #${pcId}`;
 
@@ -498,6 +501,7 @@ const DashboardDetailModal = {
     },
 
     openRemoteView: function(pcId, pcKode) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         this.currentPcId = pcId;
         const modalBox = document.getElementById('pc-detail-modal-card');
         if (modalBox) {
@@ -541,6 +545,7 @@ const DashboardDetailModal = {
     },
 
     startRemote: async function(pcId, pcKode) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const loading = document.getElementById('modal-vnc-loading');
         if (loading) loading.classList.remove('hidden');
 
@@ -899,6 +904,7 @@ const DashboardDetailModal = {
     },
 
     showHardwareView(pcId, pcKode) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         document.getElementById('view-action-menu')?.classList.add('hidden');
         document.getElementById('view-process-list')?.classList.add('hidden');
         document.getElementById('view-remote-client')?.classList.add('hidden');
@@ -1524,6 +1530,7 @@ const DashboardDetailModal = {
     },
 
     registerBaselineFromModal(pcId, pcKode) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const targetKode = (pcKode || '').startsWith('PC') ? pcKode : `PC ${pcKode}`;
         
         const confirmOverlayId = 'hw-baseline-confirm-overlay';

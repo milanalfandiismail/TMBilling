@@ -54,15 +54,18 @@ const Dashboard = {
     },
 
     showDetail(pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         this._currentPcId = pcId;
         DashboardDetailModal.showDetail(pcId, this.lastData);
     },
 
     takeScreenshot(pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         DashboardDetailModal.takeScreenshot(pcId);
     },
 
     remoteAction(pcId, action, pcKode = '') {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         DashboardDetailModal.remoteAction(pcId, action, pcKode);
     },
 
@@ -71,6 +74,7 @@ const Dashboard = {
     },
 
     showProcesses() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         DashboardProcessMonitor.showProcesses(this._currentPcId);
     },
 
@@ -79,10 +83,12 @@ const Dashboard = {
     },
 
     loadProcesses(pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         DashboardProcessMonitor.loadProcesses(pcId);
     },
 
     killProcess(pcId, name) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         DashboardProcessMonitor.killProcess(pcId, name);
     },
 
@@ -442,6 +448,7 @@ const Dashboard = {
     },
 
     async logoutAdmin(pcId, sesiId = null) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         Modal.confirm('<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Tutup Sesi Admin?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Akses mode admin pada PC ini akan dicabut dan PC dikunci kembali ke mode Kiosk.</p></div>', async () => {
             try {
                 if (sesiId) {
@@ -460,6 +467,7 @@ const Dashboard = {
     },
 
     showContextMenu(event, pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         this.closeContextMenu();
 
         const pc = this.lastData?.pc_list?.find(p => p.id === pcId);
@@ -636,6 +644,7 @@ const Dashboard = {
     },
 
     async wolSingle(pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         try {
             const result = await API.pc.wol([pcId]);
             const ok = result.result?.success || [];
@@ -666,6 +675,7 @@ const Dashboard = {
     },
 
     async tambahWaktuMember() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         let groups = [];
         try {
             const [memberData, grupData] = await Promise.all([

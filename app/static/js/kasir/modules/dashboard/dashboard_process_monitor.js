@@ -9,6 +9,7 @@ const DashboardProcessMonitor = {
     _activeProcesses: [],
 
     showProcesses(currentPcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         document.getElementById('view-action-menu')?.classList.add('hidden');
         document.getElementById('view-hardware-specs')?.classList.add('hidden');
         document.getElementById('view-remote-client')?.classList.add('hidden');
@@ -49,6 +50,7 @@ const DashboardProcessMonitor = {
     },
 
     async loadProcesses(pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const container = document.getElementById('modal-process-list');
         if (container) container.innerHTML = '<div class="col-span-full py-12 text-center text-neutral-500 text-xs lg:text-sm font-mono">Memuat...</div>';
 
@@ -89,6 +91,7 @@ const DashboardProcessMonitor = {
     },
 
     async killProcess(pcId, name) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const overlay = document.createElement('div');
         overlay.className = 'fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200';
         overlay.innerHTML = `

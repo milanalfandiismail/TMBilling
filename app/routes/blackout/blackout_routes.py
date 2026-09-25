@@ -20,6 +20,7 @@ blackout_api_bp = Blueprint("blackout", __name__)
 
 @blackout_api_bp.route("/deteksi", methods=["POST"])
 @login_required
+@shift_required
 def deteksi():
     """Deteksi sesi aktif yang macet (last_sync > threshold)."""
     try:

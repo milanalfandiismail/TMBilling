@@ -108,6 +108,7 @@ const DashboardSelection = {
     },
 
     handleCardMouseDown(event, pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         if (!this.isDesktopBreakpoint()) return;
         if (event.button !== 0) return; // Only left click
 
@@ -124,6 +125,7 @@ const DashboardSelection = {
     },
 
     handleCardClick(event, pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         if (!this.isDesktopBreakpoint()) {
             Dashboard.showContextMenu(event, pcId);
             return;
@@ -166,6 +168,7 @@ const DashboardSelection = {
     },
 
     handleCardContextMenu(event, pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         if (!this.isDesktopBreakpoint()) {
             Dashboard.showContextMenu(event, pcId);
             return;
@@ -292,6 +295,7 @@ const DashboardSelection = {
     },
 
     showBatchContextMenu(event) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         Dashboard.closeContextMenu();
         const selectedPcs = this.getSelectedPcs();
         if (selectedPcs.length === 0) return;

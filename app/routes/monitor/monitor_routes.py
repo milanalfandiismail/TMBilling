@@ -10,7 +10,7 @@ from flask import Blueprint, request, jsonify, session
 import re
 from app.services import HardwareService
 from app.utils.logger import write_log
-from app.routes.auth.auth_kasir_routes import login_required, admin_required
+from app.middleware.auth import login_required, admin_required, shift_required
 from app.routes.client.client_routes import api_key_required
 
 monitor_api_bp = Blueprint("monitor", __name__)
@@ -82,6 +82,7 @@ def get_pc_processes(pc_id):
 @monitor_api_bp.route("/processes/<int:pc_id>/kill", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def kill_pc_process(pc_id):
     """Trigger request taskkill process ke client PC berdasarkan PC ID."""
     try:
@@ -107,6 +108,7 @@ def kill_pc_process(pc_id):
 @monitor_api_bp.route("/<int:hardware_id>", methods=["DELETE"])
 @login_required
 @admin_required
+@shift_required
 def delete_hardware_data(hardware_id):
     """Endpoint untuk menghapus data hardware monitor tertentu secara manual dari dashboard."""
     try:
@@ -140,6 +142,7 @@ def get_all_hardware_kasir():
 @monitor_kasir_bp.route("/<int:hardware_id>", methods=["DELETE"])
 @login_required
 @admin_required
+@shift_required
 def delete_hardware_data_kasir(hardware_id):
     """Endpoint kasir untuk menghapus data hardware monitor tertentu."""
     try:
@@ -153,6 +156,7 @@ def delete_hardware_data_kasir(hardware_id):
 
 @monitor_kasir_bp.route("/processes/<int:pc_id>", methods=["GET"])
 @login_required
+@shift_required
 def get_pc_processes_kasir(pc_id):
     """Endpoint kasir untuk mengambil daftar proses yang sedang berjalan di PC tertentu."""
     try:
@@ -169,6 +173,7 @@ def get_pc_processes_kasir(pc_id):
 @monitor_kasir_bp.route("/processes/<int:pc_id>/kill", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def kill_pc_process_kasir(pc_id):
     """Trigger request taskkill process ke client PC berdasarkan PC ID."""
     try:
@@ -195,6 +200,7 @@ def kill_pc_process_kasir(pc_id):
 @monitor_kasir_bp.route("/screenshot/trigger/<int:pc_id>", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def trigger_screenshot(pc_id):
     """Trigger request screenshot ke client PC berdasarkan PC ID."""
     try:
@@ -214,6 +220,7 @@ def trigger_screenshot(pc_id):
 @monitor_kasir_bp.route("/remote/<int:pc_id>/<string:action>", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def trigger_remote_action(pc_id, action):
     """Trigger remote action (shutdown atau restart) ke client PC berdasarkan PC ID."""
     try:
@@ -238,6 +245,7 @@ def trigger_remote_action(pc_id, action):
 @monitor_kasir_bp.route("/remote/batch", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def trigger_remote_action_batch():
     """Trigger remote action (shutdown atau restart) ke banyak PC client sekaligus."""
     try:
@@ -401,6 +409,7 @@ def get_all_screenshot_status():
 @monitor_kasir_bp.route("/register/<int:pc_id>", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def register_pc_hardware(pc_id):
     """Endpoint untuk mendaftarkan hardware saat ini sebagai baseline resmi PC (Update Baseline)."""
     try:
@@ -416,6 +425,7 @@ def register_pc_hardware(pc_id):
 @monitor_kasir_bp.route("/vnc_client/<int:pc_id>/start", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def start_vnc_client(pc_id):
     """Trigger VNC start di client + launch websockify proxy."""
     try:
@@ -479,6 +489,7 @@ def start_vnc_client(pc_id):
 @monitor_kasir_bp.route("/vnc_client/<int:pc_id>/stop", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def stop_vnc_client(pc_id):
     """Matikan proxy VNC server dan kirim command stop ke PC Client."""
     try:

@@ -2,6 +2,7 @@
 
 const MemberModal = {
     async showDetail(id) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         try {
             const [memberResponse, paketResponse] = await Promise.all([
                 API.member.get(id),

@@ -46,6 +46,7 @@ def list_member():
 
 @member_api_bp.route("/<int:member_id>", methods=["GET"])
 @login_required
+@shift_required
 def get_member_detail(member_id):
     """Ambil data lengkap satu member berdasarkan ID (untuk form edit)."""
     try:
@@ -155,6 +156,7 @@ def tambah_waktu():
 
 @member_api_bp.route("/<int:member_id>/paket", methods=["GET"])
 @login_required
+@shift_required
 def get_riwayat_paket(member_id):
     """Ambil histori pembelian paket member untuk keperluan audit/refund kasir."""
     try:
