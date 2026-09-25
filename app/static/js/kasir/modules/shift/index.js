@@ -25,6 +25,18 @@ const Shift = {
         }
     },
 
+    canOperate() {
+        const role = (window.App && window.App.user && window.App.user.role) || '';
+        if (role === 'kasir' && !this.activeShift) {
+            if (window.Toast) {
+                Toast.warning('Harap buka shift kasir terlebih dahulu untuk melayani operasional.');
+            }
+            this.showBukaShiftModal();
+            return false;
+        }
+        return true;
+    },
+
     // Cek di awal load apakah kasir perlu buka shift
     checkStartOfDay() {
         this.updateSidebarInfo();

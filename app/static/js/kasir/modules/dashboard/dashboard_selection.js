@@ -399,6 +399,7 @@ const DashboardSelection = {
     },
 
     openBatchBukaModal() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const selectedPcs = this.getSelectedPcs();
         const kosongPcs = selectedPcs.filter(p => p.status === 'kosong');
         if (kosongPcs.length === 0) {
@@ -410,6 +411,7 @@ const DashboardSelection = {
     },
 
     openBatchTambahModal() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const selectedPcs = this.getSelectedPcs();
         const aktifPcs = selectedPcs.filter(p => p.status === 'terpakai' && p.sesi_detail && p.sesi_detail.tipe !== 'admin');
         if (aktifPcs.length === 0) {
@@ -444,6 +446,7 @@ const DashboardSelection = {
     },
 
     tutupSesiBatchConfirm() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const selectedPcs = this.getSelectedPcs();
         const aktifPcs = selectedPcs.filter(p => p.status === 'terpakai' && p.sesi_detail && p.sesi_detail.tipe !== 'admin');
         if (aktifPcs.length === 0) return Toast.error('Tidak ada sesi aktif terpilih');

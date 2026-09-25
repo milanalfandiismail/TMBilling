@@ -7,7 +7,7 @@ dan resolusi sesi yang terkena gangguan listrik.
 """
 
 from flask import Blueprint, jsonify, request, session
-from app.routes.auth.auth_kasir_routes import login_required
+from app.middleware.auth import login_required, shift_required
 from app.services import BlackoutService
 
 blackout_api_bp = Blueprint("blackout", __name__)
@@ -66,6 +66,7 @@ def get_dates():
 
 @blackout_api_bp.route("/resolve/member/<int:sesi_id>", methods=["POST"])
 @login_required
+@shift_required
 def resolve_member(sesi_id):
     """Resolve member: Kembalikan saldo menit ke akun."""
     try:
@@ -82,6 +83,7 @@ def resolve_member(sesi_id):
 
 @blackout_api_bp.route("/resolve/guest/sama/<int:sesi_id>", methods=["POST"])
 @login_required
+@shift_required
 def resolve_guest_sama(sesi_id):
     """Resolve guest: Lanjutkan di PC yang sama."""
     try:
@@ -98,6 +100,7 @@ def resolve_guest_sama(sesi_id):
 
 @blackout_api_bp.route("/resolve/guest/lanjut/<int:sesi_id>", methods=["POST"])
 @login_required
+@shift_required
 def resolve_guest_lanjut(sesi_id):
     """Resolve guest: Pindahkan ke PC lain yang satu grup zona."""
     try:
@@ -119,6 +122,7 @@ def resolve_guest_lanjut(sesi_id):
 
 @blackout_api_bp.route("/resolve/guest/tutup/<int:sesi_id>", methods=["POST"])
 @login_required
+@shift_required
 def resolve_guest_tutup(sesi_id):
     """Resolve guest/member: Tutup sesi tanpa kompensasi."""
     try:
@@ -141,6 +145,7 @@ def resolve_guest_tutup(sesi_id):
 
 @blackout_api_bp.route("/force-all-and-detect", methods=["POST"])
 @login_required
+@shift_required
 def force_all_and_detect():
     """Tutup paksa semua sesi aktif dan masukkan ke daftar blackout."""
     try:
@@ -155,6 +160,7 @@ def force_all_and_detect():
 
 @blackout_api_bp.route("/clear", methods=["POST"])
 @login_required
+@shift_required
 def clear_audit():
     """Hapus history audit blackout yang sudah diselesaikan (Resolved)."""
     try:

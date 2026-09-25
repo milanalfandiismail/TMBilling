@@ -138,6 +138,7 @@ const MemberModal = {
     },
 
     async showAddModal() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         let grupOptions = '<option value="">- Pilih Grup -</option>';
         try {
             const grupData = await API.grup.list();
@@ -201,6 +202,7 @@ const MemberModal = {
     },
 
     showEditModal(member, groups) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const currentGrup = (typeof member.grup === 'object' ? member.grup.nama : member.grup) || 'reguler';
         const grupOptions = groups.map(g => `<option value="${g.nama}" ${currentGrup === g.nama ? 'selected' : ''}>${g.nama.toUpperCase()}</option>`).join('');
 

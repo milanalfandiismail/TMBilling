@@ -217,6 +217,7 @@ def tambah_waktu_sesi(sesi_id):
 
 @sesi_api_bp.route("/pindah-pc/<int:sesi_id>", methods=["POST"])
 @login_required
+@shift_required
 def pindah_pc(sesi_id):
     """Pindahkan sesi bermain ke unit PC lain dalam zona yang sama."""
     try:
@@ -242,6 +243,7 @@ def pindah_pc(sesi_id):
 
 @sesi_api_bp.route("/tutup/<int:sesi_id>", methods=["POST"])
 @login_required
+@shift_required
 def tutup_sesi(sesi_id):
     """Mengakhiri sesi bermain secara manual dari dashboard kasir."""
     try:
@@ -255,6 +257,7 @@ def tutup_sesi(sesi_id):
 
 @sesi_api_bp.route("/tutup-batch", methods=["POST"])
 @login_required
+@shift_required
 def tutup_sesi_batch():
     """Mengakhiri beberapa sesi bermain aktif sekaligus secara batch."""
     try:

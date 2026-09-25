@@ -87,6 +87,7 @@ const Dashboard = {
     },
 
     async tutupSesi(sesiId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         Modal.confirm('<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Tutup Sesi Billing?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Sesi transaksi ini akan dihentikan.</p></div>', async () => {
             try {
                 await API.sesi.tutup(sesiId);
@@ -103,6 +104,7 @@ const Dashboard = {
     },
 
     async showGuestRefundModal(sesiId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         try {
             const [sesiRes, paketRes] = await Promise.all([
                 API.sesi.detail(sesiId),
@@ -170,6 +172,7 @@ const Dashboard = {
     },
 
     async refundGuestPaket(sesiId, transaksiId, namaPaket, durasiMenit, dibuatPada, sisaWaktuSekarang) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const durasiFriendly = Utils.formatDurasiFriendly(durasiMenit);
         const sisaSekarangFriendly = Utils.formatDurasiFriendly(sisaWaktuSekarang);
         const setelahDeduction = Math.max(0, sisaWaktuSekarang - durasiMenit);
@@ -216,6 +219,7 @@ const Dashboard = {
     },
 
     async showMemberRefundModal(memberId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         try {
             const [memberRes, paketRes] = await Promise.all([
                 API.member.get(memberId),
@@ -277,6 +281,7 @@ const Dashboard = {
     },
 
     async refundMemberPaket(memberId, transaksiId, namaPaket, durasiMenit, dibuatPada, sisaWaktuSekarang) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const durasiFriendly = Utils.formatDurasiFriendly(durasiMenit);
         const sisaSekarangFriendly = Utils.formatDurasiFriendly(sisaWaktuSekarang);
         const setelahDeduction = Math.max(0, sisaWaktuSekarang - durasiMenit);
@@ -323,6 +328,7 @@ const Dashboard = {
     },
 
     async pindahPc(sesiId, tipe, pcGrup) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         try {
             const data = await API.pc.list();
             const kosong = (data.pc_list || []).filter(p => p.status === 'kosong' && p.grup === pcGrup);

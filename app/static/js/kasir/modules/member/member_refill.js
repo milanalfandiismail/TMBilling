@@ -4,6 +4,7 @@ const MemberRefill = {
     _currentPaketList: [],
 
     async tambahWaktu(memberId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         let paymentMethods = ["Tunai", "QRIS", "Transfer Bank"];
         try {
             const settingsData = await API.settings.getAll();

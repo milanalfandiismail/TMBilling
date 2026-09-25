@@ -284,6 +284,7 @@ const Menu = {
     },
 
     addToCart(menuId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const menu = this.items.find(m => m.id === menuId);
         if (!menu) return;
 
@@ -388,6 +389,7 @@ const Menu = {
     },
 
     async checkout() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         if (this.cart.length === 0) {
             Toast.error("Keranjang belanja kosong!");
             return;
@@ -581,6 +583,7 @@ const Menu = {
     },
 
     async submitPembayaran() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const tunaiInput = document.getElementById('payment-tunai-input');
         const tunai = parseInt(tunaiInput?.value.replace(/\D/g, '')) || 0;
         const total = this._checkoutTotal;

@@ -65,6 +65,14 @@ const API = {
                     window.location.href = '/kasir/login';
                     return;
                 }
+
+                // Jika error adalah belum buka shift (HTTP 400), picu modal buka shift kasir
+                if (res.status === 400 && data && data.error && typeof data.error === 'string' && data.error.toLowerCase().includes('buka shift')) {
+                    if (window.Shift && typeof window.Shift.showBukaShiftModal === 'function') {
+                        window.Shift.showBukaShiftModal();
+                    }
+                }
+
                 throw new Error(data.error || `HTTP ${res.status}`);
             }
             return data;

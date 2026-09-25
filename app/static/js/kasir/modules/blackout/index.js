@@ -217,6 +217,7 @@ const Blackout = {
     },
 
     async resolveMember(sesiId, username, sisa) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const message = `<div class="text-center"><p class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-400">Refund <span class="text-neutral-200 font-bold font-mono">${sisa} menit</span> ke member <span class="text-neutral-200 font-bold font-mono">"${username}"</span>?</p></div>`;
         Modal.confirm(message, async () => {
             try {
@@ -230,6 +231,7 @@ const Blackout = {
     },
 
     async resolveGuestSama(sesiId, namaGuest) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const message = `<div class="text-center"><p class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-400">Lanjutkan sesi <span class="text-neutral-200 font-bold font-mono">"${namaGuest}"</span> di PC yang sama?</p></div>`;
         Modal.confirm(message, async () => {
             try {
@@ -243,6 +245,7 @@ const Blackout = {
     },
 
     async showLanjutModal(sesiId, namaGuest, pcGrup) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const grup = pcGrup || 'reguler';
         try {
             const data = await API.pc.list();
@@ -299,6 +302,7 @@ const Blackout = {
     },
 
     async resolveGuestTutup(sesiId, namaGuest) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const message = `<div class="text-center"><p class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-400">Tutup sesi untuk guest <span class="text-red-400 font-bold">"${namaGuest}"</span>?</p></div>`;
         Modal.confirm(message, async () => {
             try {
@@ -312,6 +316,7 @@ const Blackout = {
     },
 
     async clearResolved() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         if (!this.currentDate) return;
         const message = `<div class="text-center"><p class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-400 font-bold uppercase tracking-wider">Hapus semua data terselesaikan?</p><p class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Tanggal: ${this.currentDate}</p></div>`;
         Modal.confirm(message, async () => {
@@ -326,6 +331,7 @@ const Blackout = {
     },
 
     async forceAllAndDetect() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         if (!confirm('⚠️ PERINGATAN: Tutup paksa semua sesi aktif?\n\nIni akan menutup semua sesi dan memindahkannya ke riwayat blackout.\n\nLanjutkan?')) return;
 
         try {

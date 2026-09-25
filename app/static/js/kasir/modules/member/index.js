@@ -88,6 +88,7 @@ const Member = {
     },
 
     async add() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const get = (modalId, legacyId) => {
             const m = document.getElementById(modalId);
             if (m) return m;
@@ -119,6 +120,7 @@ const Member = {
     },
 
     async edit(id) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         try {
             const [memberResponse, grupData] = await Promise.all([
                 API.member.get(id),
@@ -134,6 +136,7 @@ const Member = {
     },
 
     async doEdit(id) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const namaEl = document.getElementById('edit-member-nama');
         const emailEl = document.getElementById('edit-member-email');
         const passEl = document.getElementById('edit-member-password');
@@ -164,6 +167,7 @@ const Member = {
     },
 
     async delete(id) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold">Hapus member ini? Semua data dan sisa waktu akan <span class="text-red-400">dihapus permanen</span>.</p></div>`;
         Modal.confirm(message, async () => {
             try {
@@ -177,6 +181,7 @@ const Member = {
     },
 
     async doAddWaktu(memberId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const selections = [];
         let totalMenit = 0;
         let totalHarga = 0;
@@ -285,6 +290,7 @@ const Member = {
     },
 
     async refund(memberId, transaksiId, namaPaket, durasiMenit, dibuatPada, sisaWaktuSekarang) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const durasiFriendly = Utils.formatDurasiFriendly(durasiMenit);
         const sisaSekarangFriendly = Utils.formatDurasiFriendly(sisaWaktuSekarang);
         const setelahDeduction = Math.max(0, sisaWaktuSekarang - durasiMenit);

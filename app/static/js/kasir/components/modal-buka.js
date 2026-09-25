@@ -9,6 +9,7 @@ const BukaModal = {
     _selectedPaketId: null,
 
     async open(pcKode, pcGrup) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         this.isBatch = false;
         this.pcList = [];
         this.pcKode = pcKode;
@@ -18,6 +19,7 @@ const BukaModal = {
     },
 
     async openBatch(pcList) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         if (!pcList || pcList.length === 0) return;
         this.isBatch = true;
         this.pcList = pcList;

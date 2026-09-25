@@ -7,7 +7,7 @@ tambah waktu/saldo serta sistem refund paket.
 """
 
 from flask import Blueprint, request, jsonify, session
-from app.routes.auth.auth_kasir_routes import login_required, admin_required
+from app.middleware.auth import login_required, admin_required, shift_required
 from app.services import MemberService
 from app.services import PaketService
 
@@ -58,6 +58,7 @@ def get_member_detail(member_id):
 
 @member_api_bp.route("/", methods=["POST"])
 @login_required
+@shift_required
 def tambah_member():
     """Registrasi member baru ke database."""
     try:
@@ -75,6 +76,7 @@ def tambah_member():
 
 @member_api_bp.route("/<int:member_id>", methods=["PUT"])
 @login_required
+@shift_required
 def edit_member(member_id):
     """Perbarui informasi profil member (Nama, Email, No HP, Grup)."""
     try:
@@ -113,6 +115,7 @@ def delete_member(member_id):
 
 @member_api_bp.route("/tambah-waktu", methods=["POST"])
 @login_required
+@shift_required
 def tambah_waktu():
     """Proses pembelian paket untuk menambah saldo waktu member (mendukung multiple paket)."""
     try:
@@ -162,6 +165,7 @@ def get_riwayat_paket(member_id):
 
 @member_api_bp.route("/refund-paket", methods=["POST"])
 @login_required
+@shift_required
 def refund_paket():
     """Batalkan transaksi paket: Potong saldo waktu dan tandai transaksi direfund."""
     try:
