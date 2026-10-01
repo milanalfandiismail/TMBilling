@@ -231,7 +231,7 @@ c:\Project GIT\TMBilling
 
 ---
 
-## 4. Katalog & Spesifikasi Mendalam Seluruh Fitur (28 Domain Fitur)
+## 4. Katalog & Spesifikasi Mendalam Seluruh Fitur (29 Domain Fitur)
 
 ### 4.1 Multi-Branch Control Panel & Remote Proxy Relay
 - **Deskripsi**: Memungkinkan kasir atau owner di satu cabang (atau via Cloudflare Tunnel) mengelola dan beralih (*switch*) ke cabang lain secara instan tanpa perlu login ulang.
@@ -521,7 +521,9 @@ Logika bisnis diisolasi secara ketat dalam `app/services/`. Blueprint routes han
 TMBilling menggunakan 26 model ORM terdefinisi di `app/models/`:
 1. `User`: Akun pengguna dashboard kasir/admin (`id`, `username`, `password_hash`, `role`, `status`).
 2. `PC`: Data unit PC klien (`id`, `nama_pc`, `ip_address`, `mac_address`, `grup_id`, `pos_x`, `pos_y`, `status_pc`).
-3. `Sesi`: Sesi penggunaan PC (`id`, `pc_id`, `member_id`, `tipe_sesi`, `waktu_mulai`, `waktu_selesai`, `durasi_detik`, `total_biaya`, `status_sesi`, `is_afk`, `afk_pin`, `afk_sejak`).
+3. `Sesi`: Sesi penggunaan PC (`id`, `tipe`, `member_id`, `user_id`, `pc_id`, `paket_id`, `nama_guest`, `token_sesi`, `mulai_pada`, `selesai_pada`, `durasi_beli_menit`, `total_bayar`, `status`, `is_admin`, `waktu_mulai_sesi`, `waktu_tersimpan_awal`, `last_sync`, `menit_pause_total`, `sisa_menit_saat_mati`, `is_blackout_suspect`, `is_blackout_resolved`, `waktu_resolved`, `is_afk`, `afk_pin`, `afk_sejak`, `sesi_asal_id`).
+   - *`user_id`*: FK ke `User` untuk sesi kasir/staf benefit (nullable).
+   - *`sesi_asal_id`*: FK self-referential ke `Sesi.id` untuk pelacakan rantai sesi akibat pindah PC, digunakan di `sesi_service.py` dan `blackout_service.py` untuk recovery dan refund chain tracking.
 4. `Transaksi`: Data transaksi pembayaran billing (`id`, `sesi_id`, `total_bayar`, `metode_pembayaran`, `kasir_id`, `created_at`).
 5. `Member`: Data pelanggan member (`id`, `username`, `password_hash`, `saldo`, `total_jam_main`, `status`).
 6. `Paket`: Paket tarif billing (`id`, `nama_paket`, `durasi_jam`, `harga`, `grup_id`, `unlimited_stock`).
@@ -611,7 +613,10 @@ Klien warnet berlokasi di direktori `WarnetAgent/` dan terdiri dari 5 binary uta
 - **Mekanisme**:
   1. **Embedded Assets Auto-Extract**: Secara otomatis mengekstrak modul pustaka pendukung dari memory binary Rust untuk kebutuhan pembacaan sensor mendalam.
   2. **Hardware Telemetry**: Mengumpulkan snapshot serial motherboard, CPU ID, GPU PNP ID, RAM serials, disk serials, dan kecepatan NIC LAN secara berkala ke server billing.
+     - **Nama hardware** (CPU, GPU, Motherboard) dibaca *eksklusif* dari `hardware_temp.json` yang di-generate oleh `HardwareHelper.exe` (LibreHardwareMonitor kernel driver), mengeliminasi false positive `Win32_VideoController` seperti \"Microsoft Basic Display Adapter\".
+     - **Serial motherboard** dibaca via WMI `Win32_BaseBoard` menggunakan struct `BaseBoardInfo` (`SerialNumber`, `Product`, `Manufacturer`) untuk presisi identifikasi chassis.
   3. **Remote Task Management**: Menerima perintah penutupan aplikasi/proses yang bermasalah secara langsung dari dashboard kasir.
+
 
 ### 7.5 TMBilling_Uninstaller
 - **Source**: `WarnetAgent/TMBilling_Uninstaller/src/main.rs`.
