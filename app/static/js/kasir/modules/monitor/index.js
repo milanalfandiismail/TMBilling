@@ -1,17 +1,45 @@
 const Monitor = {
-    async load() {
+    _lastFingerprint: null,
+
+    async load(isSilent = false) {
+        const container = document.getElementById('monitor-table');
+        if (container && !isSilent && (!this._lastData || this._lastData.length === 0) && typeof Skeleton !== 'undefined') {
+            container.innerHTML = Skeleton.monitorRows(8);
+        }
+
         try {
             const result = await window.API.monitor.all();
             if (result.success) {
-                this.renderTable(result.data);
-            } else {
+                const data = result.data || [];
+                const newFingerprint = JSON.stringify(data.map(d => ({
+                    id: d.id,
+                    pc: d.pc_kode,
+                    cpu_temp: d.cpu_temp,
+                    cpu_usage: d.cpu_usage,
+                    ram_usage: d.ram_usage,
+                    gpu_temp: d.gpu_temp
+                })));
+                if (isSilent && this._lastFingerprint === newFingerprint) {
+                    return; // Data tidak berubah
+                }
+                this._lastFingerprint = newFingerprint;
+                this._lastData = data;
+
+                this.renderTable(data);
+            } else if (!isSilent) {
                 Toast.error("Gagal memuat hardware monitor");
             }
         } catch (error) {
-            Toast.error("Gagal memuat hardware monitor");
-            const container = document.getElementById('monitor-table');
-            if (container) container.innerHTML = '<div class="text-center py-10 text-red-400 text-sm">Gagal memuat data.</div>';
+            if (!isSilent) {
+                Toast.error("Gagal memuat hardware monitor");
+                if (container) container.innerHTML = '<div class="text-center py-10 text-red-400 text-sm">Gagal memuat data.</div>';
+            }
         }
+    },
+
+    refreshLive() {
+        if (App.currentTab !== 'monitor') return;
+        return this.load(true);
     },
 
     async deleteData(hardwareId, pcKode) {

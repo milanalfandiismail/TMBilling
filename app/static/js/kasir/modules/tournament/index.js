@@ -46,14 +46,46 @@ const Tournament = {
         this.renderDetail(tId);
     },
 
+    _lastListFingerprint: null,
+    _lastDetailFingerprint: null,
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'tournament') return;
+        const modalScore = document.getElementById('modal-input-skor');
+        const modalQualify = document.getElementById('modal-qualify-teams');
+        const modalCreate = document.getElementById('modal-create-tournament');
+        if ((modalScore && !modalScore.classList.contains('hidden')) ||
+            (modalQualify && !modalQualify.classList.contains('hidden')) ||
+            (modalCreate && !modalCreate.classList.contains('hidden'))) {
+            return;
+        }
+
+        if (this.activeTournamentId) {
+            return this.renderDetail(this.activeTournamentId, true);
+        } else {
+            return this.renderList(true);
+        }
+    },
+
     // ===== RENDER LIST TURNAMEN =====
-    async renderList() {
+    async renderList(isSilent = false) {
         const grid = document.getElementById('tournaments-grid');
-        grid.innerHTML = '<div class="col-span-full py-12 text-center text-neutral-500 text-xs lg:text-base">Memuat daftar turnamen...</div>';
+        if (!grid) return;
+        if (!isSilent && (!this._cachedList || this._cachedList.length === 0) && typeof Skeleton !== 'undefined') {
+            grid.innerHTML = Skeleton.tournamentCards(6);
+        }
 
         try {
             const res = await API.tournament.list();
-            if (!res.tournaments || res.tournaments.length === 0) {
+            const tournaments = res.tournaments || [];
+            const newFingerprint = JSON.stringify(tournaments.map(t => ({ id: t.id, status: t.status, teams: t.teams_count })));
+            if (isSilent && this._lastListFingerprint === newFingerprint) {
+                return; // Data list tidak berubah
+            }
+            this._lastListFingerprint = newFingerprint;
+            this._cachedList = tournaments;
+
+            if (tournaments.length === 0) {
                 grid.innerHTML = `
                     <div class="col-span-full py-16 border border-dashed border-[#2a2a2a] rounded-xl flex flex-col items-center justify-center text-center">
                         <p class="text-xs lg:text-base text-neutral-500">Belum ada turnamen yang dibuat.</p>
@@ -66,7 +98,7 @@ const Tournament = {
                 return;
             }
 
-            grid.innerHTML = res.tournaments.map(t => {
+            grid.innerHTML = tournaments.map(t => {
                 const isSelesai = t.status === 'selesai';
                 const statusColor = isSelesai 
                     ? 'bg-neutral-800 text-neutral-400' 
@@ -102,57 +134,101 @@ const Tournament = {
             }).join('');
 
         } catch (err) {
-            grid.innerHTML = `<div class="col-span-full py-12 text-center text-red-400 text-xs lg:text-base">Gagal memuat turnamen: ${err.message}</div>`;
+            if (!isSilent) {
+                grid.innerHTML = `<div class="col-span-full py-12 text-center text-red-400 text-xs lg:text-base">Gagal memuat turnamen: ${err.message}</div>`;
+            }
         }
     },
 
     // ===== RENDER DETAIL TURNAMEN =====
-    async renderDetail(tId) {
+    async renderDetail(tId, isSilent = false) {
         const stageContent = document.getElementById('stage-view-content');
-        stageContent.innerHTML = '<div class="py-16 text-center text-neutral-500 text-xs lg:text-base">Memuat rincian turnamen...</div>';
+        if (!stageContent) return;
+        if (!isSilent && (!this.activeData || this.activeTournamentId !== tId) && typeof Skeleton !== 'undefined') {
+            stageContent.innerHTML = Skeleton.tournamentBracket();
+        }
 
         try {
             const res = await API.tournament.get(tId);
+            const newFingerprint = JSON.stringify({
+                tId,
+                status: res.tournament?.status,
+                stages: (res.stages || []).map(s => ({ id: s.id, status: s.status, matches: s.matches_count || s.matches?.length }))
+            });
+            if (isSilent && this._lastDetailFingerprint === newFingerprint) {
+                return; // Detail tidak berubah
+            }
+            this._lastDetailFingerprint = newFingerprint;
             this.activeData = res;
 
-            document.getElementById('detail-tournament-name').innerText = res.tournament.nama;
-            document.getElementById('detail-tournament-desc').innerText = res.tournament.deskripsi || 'Tidak ada deskripsi.';
+            const nameEl = document.getElementById('detail-tournament-name');
+            const descEl = document.getElementById('detail-tournament-desc');
+            if (nameEl) nameEl.innerText = res.tournament.nama;
+            if (descEl) descEl.innerText = res.tournament.deskripsi || 'Tidak ada deskripsi.';
 
             // Status tag
             const statusEl = document.getElementById('detail-tournament-status');
-            statusEl.innerText = res.tournament.status;
-            statusEl.className = 'px-2 py-0.5 rounded text-[8px] lg:text-[10px] font-bold uppercase tracking-wider ' + 
-                (res.tournament.status === 'selesai' ? 'bg-neutral-800 text-neutral-400' : 'bg-emerald-950/40 text-emerald-400 border border-emerald-800/30');
+            if (statusEl) {
+                statusEl.innerText = res.tournament.status;
+                statusEl.className = 'px-2 py-0.5 rounded text-[8px] lg:text-[10px] font-bold uppercase tracking-wider ' + 
+                    (res.tournament.status === 'selesai' ? 'bg-neutral-800 text-neutral-400' : 'bg-emerald-950/40 text-emerald-400 border border-emerald-800/30');
+            }
 
             // Render Stage Selector Tabs
             const tabContainer = document.getElementById('detail-stage-tabs');
-            tabContainer.innerHTML = '';
-            
-            if (res.stages.length > 0) {
-                // Cari stage aktif atau default ke stage pertama
-                let activeStage = res.stages.find(s => s.status === 'aktif');
-                if (!activeStage) activeStage = res.stages[0];
-                this.activeStageId = activeStage.id;
+            if (tabContainer) {
+                tabContainer.innerHTML = '';
+                
+                if (res.stages.length > 0) {
+                    // Cari stage aktif atau pertahankan stage yang sedang dipilih jika masih valid
+                    let activeStage = res.stages.find(s => s.id === this.activeStageId);
+                    if (!activeStage) activeStage = res.stages.find(s => s.status === 'aktif');
+                    if (!activeStage) activeStage = res.stages[0];
+                    this.activeStageId = activeStage.id;
 
-                tabContainer.innerHTML = res.stages.map(s => {
-                    const isActive = s.id === this.activeStageId;
-                    const tabClass = isActive 
-                        ? 'bg-neutral-800 text-neutral-100 font-bold' 
-                        : 'text-neutral-400 hover:text-neutral-200 hover:bg-[#121212]';
-                    return `
-                        <button onclick="Tournament.switchStage(${s.id})" class="px-3.5 py-2 rounded-md text-xs lg:text-sm transition-colors ${tabClass}">
-                            ${s.nama} (${s.status})
-                        </button>
-                    `;
-                }).join('');
+                    tabContainer.innerHTML = res.stages.map(s => {
+                        const isActive = s.id === this.activeStageId;
+                        const tabClass = isActive 
+                            ? 'bg-neutral-800 text-neutral-100 font-bold' 
+                            : 'text-neutral-400 hover:text-neutral-200 hover:bg-[#121212]';
+                        return `
+                            <button onclick="Tournament.switchStage(${s.id})" class="px-3.5 py-2 rounded-md text-xs lg:text-sm transition-colors ${tabClass}">
+                                ${s.nama} (${s.status})
+                            </button>
+                        `;
+                    }).join('');
 
-                this.renderActiveStage();
-            } else {
-                stageContent.innerHTML = '<div class="py-16 text-center text-neutral-500 text-xs lg:text-base">Tidak ada tahapan turnamen ditemukan.</div>';
+                    this.renderActiveStage();
+                } else {
+                    stageContent.innerHTML = '<div class="py-16 text-center text-neutral-500 text-xs lg:text-base">Tidak ada tahapan turnamen ditemukan.</div>';
+                }
             }
 
         } catch (err) {
-            stageContent.innerHTML = `<div class="py-16 text-center text-red-400 text-xs lg:text-base">Gagal memuat detail turnamen: ${err.message}</div>`;
+            if (!isSilent) {
+                stageContent.innerHTML = `<div class="py-16 text-center text-red-400 text-xs lg:text-base">Gagal memuat detail turnamen: ${err.message}</div>`;
+            }
+        }
+    },
+
+    refreshLive() {
+        if (App.currentTab !== 'tournament') return;
+
+        // Cek apakah ada modal skor/create/qualify yang sedang terbuka
+        const modalBuat = document.getElementById('modal-buat-turnamen');
+        const modalSkor = document.getElementById('modal-input-skor');
+        const modalLolos = document.getElementById('modal-loloskan-playoff');
+
+        const isAnyModalOpen = (modalBuat && !modalBuat.classList.contains('hidden')) ||
+            (modalSkor && !modalSkor.classList.contains('hidden')) ||
+            (modalLolos && !modalLolos.classList.contains('hidden'));
+
+        if (isAnyModalOpen) return;
+
+        if (this.activeTournamentId) {
+            return this.renderDetail(this.activeTournamentId, true);
+        } else {
+            return this.renderList(true);
         }
     },
 

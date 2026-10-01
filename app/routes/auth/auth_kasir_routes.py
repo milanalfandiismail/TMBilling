@@ -77,6 +77,8 @@ def login():
 
         return jsonify(result), 200
 
+    except PermissionError as e:
+        return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 401
     except Exception as e:

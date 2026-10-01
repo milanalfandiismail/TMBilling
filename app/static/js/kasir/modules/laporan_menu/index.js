@@ -113,18 +113,44 @@ const LaporanMenu = {
         await this.fetchData();
     },
 
-    async fetchData() {
+    _lastFingerprint: null,
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'laporan-menu') return;
+        return this.fetchData(true);
+    },
+
+    async fetchData(isSilent = false) {
         const area = document.getElementById('laporan-menu-area');
         if (!area) return;
 
-        area.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
+        if (!isSilent && (!this.allData) && typeof Skeleton !== 'undefined') {
+            area.innerHTML = Skeleton.tableRows(8, 6);
+        }
 
         try {
             const data = await API.report.kantinByTanggal(this.currentDate, this.currentKasirId, this.currentPage, this.itemsPerPage, this.currentMetodePembayaran);
+            
+            const newFingerprint = JSON.stringify({
+                date: this.currentDate,
+                kasir: this.currentKasirId,
+                page: this.currentPage,
+                metode: this.currentMetodePembayaran,
+                total: data.total_pendapatan_menu,
+                items: (data.history_menu || []).map(m => m.id || m.no_nota)
+            });
+
+            if (isSilent && this._lastFingerprint === newFingerprint) {
+                return; // Data tidak berubah
+            }
+            this._lastFingerprint = newFingerprint;
             this.allData = data;
+
             this.render();
         } catch (err) {
-            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:max-xl:text-xs xl:text-base">Gagal memuat data laporan menu</div>';
+            if (!isSilent) {
+                area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:max-xl:text-xs xl:text-base">Gagal memuat data laporan menu</div>';
+            }
         }
     },
 

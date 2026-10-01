@@ -52,18 +52,26 @@ class IpWhitelistService:
         """Simpan domain publik tunnel."""
         SettingsService.set(IpWhitelistService.PUBLIC_URL_KEY, url.strip().rstrip('/'))
 
-    # ------------------------------------------------------------------
-    # 2. IP DETECTION & SCOPE
-    # ------------------------------------------------------------------
-
     @staticmethod
-    def extract_client_ip(headers=None, remote_addr=None):
-        """Ambil IP client dari headers/remote_addr (HTTP-agnostic)."""
-        if headers:
+    def extract_client_ip(headers=None, remote_addr=None, trusted_proxies=None):
+        """Ambil IP client dari remote_addr / headers dengan verifikasi proxy terpercaya."""
+        if not remote_addr:
+            remote_addr = '0.0.0.0'
+
+        # Default trusted proxies: loopback lokal
+        if trusted_proxies is None:
+            trusted_proxies = {'127.0.0.1', '::1', 'localhost'}
+
+        # Hanya percayai headers jika koneksi TCP berasal dari proxy terpercaya
+        if headers and remote_addr in trusted_proxies:
+            cf_ip = headers.get('CF-Connecting-IP')
+            if cf_ip:
+                return cf_ip.strip()
             xff = headers.get('X-Forwarded-For')
             if xff:
                 return xff.split(',')[0].strip()
-        return remote_addr or '0.0.0.0'
+
+        return remote_addr
 
     @staticmethod
     def is_path_in_scope(path):
@@ -107,26 +115,25 @@ class IpWhitelistService:
     @staticmethod
     def add(ip, label=''):
         """Tambah IP ke whitelist. Raise ValueError jika invalid/duplicate."""
-        try:
-            ipaddress.IPv4Address(ip)
-        except ipaddress.AddressValueError:
-            raise ValueError(f"IP address '{ip}' tidak valid (harus IPv4).")
+        from app.utils.validators import validate_ip_address, validate_string_length
+        clean_ip = validate_ip_address(ip, allow_empty=False, version=4)
+        clean_label = validate_string_length(label, min_len=1, max_len=100, field_name="Label IP Whitelist", required=False) if label else "Manual entry"
 
         entries = IpWhitelistService._load_entries()
-        if any(e['ip'] == ip for e in entries):
-            raise ValueError(f"IP '{ip}' sudah ada di whitelist.")
+        if any(e['ip'] == clean_ip for e in entries):
+            raise ValueError(f"IP '{clean_ip}' sudah ada di whitelist.")
 
         import datetime
         entries.append({
-            'ip': ip,
+            'ip': clean_ip,
             'added_at': datetime.datetime.now().isoformat(),
-            'label': label or 'Manual entry'
+            'label': clean_label
         })
         IpWhitelistService._save_entries(entries)
 
         write_log(
             aksi='IP_WHITELIST_ADD',
-            detail=f"IP {ip} ditambahkan ke whitelist (label: {label or '-'})",
+            detail=f"IP {clean_ip} ditambahkan ke whitelist (label: {clean_label})",
             user='admin'
         )
         return entries

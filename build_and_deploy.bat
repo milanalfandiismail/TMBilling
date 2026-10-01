@@ -9,8 +9,8 @@ echo.
 set "CURRENT_DIR=%~dp0"
 
 echo [1/5] Memulai kompilasi Tauri Client (TMBilling)...
-cd /d "%CURRENT_DIR%WarnetClient\TMBillingTauri"
-if not exist "%CURRENT_DIR%WarnetClient\TMBillingTauri\node_modules\" (
+cd /d "%CURRENT_DIR%WarnetAgent\TMBillingTauri"
+if not exist "%CURRENT_DIR%WarnetAgent\TMBillingTauri\node_modules\" (
     echo [INFO] node_modules belum ditemukan di TMBillingTauri, menjalankan npm install...
     call npm install
     if %ERRORLEVEL% NEQ 0 (
@@ -27,7 +27,7 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 echo Menyalin file TMBilling.exe ke folder Deploy...
-copy /Y "%CURRENT_DIR%WarnetClient\TMBillingTauri\src-tauri\target\release\TMBilling.exe" "%CURRENT_DIR%WarnetAgent\Deploy\TMBilling.exe"
+copy /Y "%CURRENT_DIR%WarnetAgent\TMBillingTauri\src-tauri\target\release\TMBilling.exe" "%CURRENT_DIR%WarnetAgent\Deploy\TMBilling.exe"
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Gagal menyalin TMBilling.exe!
     pause

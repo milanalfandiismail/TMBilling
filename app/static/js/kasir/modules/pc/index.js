@@ -15,10 +15,27 @@ const PC = {
         if (filterSelect) filterSelect.innerHTML = '<option value="">Semua Grup</option>';
     },
 
-    async load() {
+    _lastFingerprint: null,
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'pc') return;
+        const modalPC = document.getElementById('modal-tambah-pc');
+        const modalBatch = document.getElementById('modal-batch-pc');
+        const isAppModalOpen = document.getElementById('app-modal') && !document.getElementById('app-modal').classList.contains('hidden');
+        if ((modalPC && !modalPC.classList.contains('hidden')) ||
+            (modalBatch && !modalBatch.classList.contains('hidden')) ||
+            isAppModalOpen) {
+            return;
+        }
+        return this.load(true);
+    },
+
+    async load(isSilent = false) {
         const area = document.getElementById('pc-table');
         if (!area) return;
-        area.innerHTML = '<div class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
+        if (!isSilent && (!this._lastPcData || !this._lastPcData.pc_list || this._lastPcData.pc_list.length === 0) && typeof Skeleton !== 'undefined') {
+            area.innerHTML = Skeleton.tableRows(8, 5);
+        }
 
         try {
             const [grupResponse, data] = await Promise.all([
@@ -29,24 +46,39 @@ const PC = {
                 })
             ]);
 
+            const pcs = data.pc_list || [];
+            const newFingerprint = JSON.stringify({
+                q: this.searchQuery,
+                grup: this.currentGrupId,
+                pcs: pcs.map(p => ({ id: p.id, status: p.status, koneksi: p.status_koneksi, ip: p.ip_address, mode: p.is_admin_mode }))
+            });
+
+            if (isSilent && this._lastFingerprint === newFingerprint) {
+                return; // Data tidak berubah
+            }
+            this._lastFingerprint = newFingerprint;
+            this._lastPcData = data;
+
             const groups = grupResponse.grup || grupResponse.grup_list || [];
             const filterSelect = document.getElementById('pc-grup-filter-select');
-            if (filterSelect) {
+            if (filterSelect && !isSilent) {
                 filterSelect.innerHTML = '<option value="">Semua Grup</option>' + groups.map(g => `<option value="${g.id}" ${String(this.currentGrupId) === String(g.id) ? 'selected' : ''}>${g.nama.toUpperCase()}</option>`).join('');
             }
 
             const addSelect = document.getElementById('inp-pc-grup');
-            if (addSelect) {
+            if (addSelect && !isSilent) {
                 addSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
             }
             const batchSelect = document.getElementById('inp-batch-grup');
-            if (batchSelect) {
+            if (batchSelect && !isSilent) {
                 batchSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
             }
 
             this.render(data.grouped || {}, data);
         } catch (err) {
-            Toast.error('Gagal memuat daftar PC');
+            if (!isSilent) {
+                Toast.error('Gagal memuat daftar PC');
+            }
         }
     },
 
@@ -190,6 +222,8 @@ const PC = {
         if (!data.kode) return Toast.error('Kode PC wajib diisi');
         if (data.kode.length > 11) return Toast.error('Kode PC maksimal 11 karakter');
         if (!/^[A-Za-z0-9\-_]+$/.test(data.kode)) return Toast.error('Kode PC hanya boleh huruf, angka, (-), dan (_)');
+        if (data.ip_address && !Utils.isValidIP(data.ip_address)) return Toast.error('Format IP Address tidak valid (contoh: 192.168.1.10)');
+        if (data.mac_address && !Utils.isValidMAC(data.mac_address)) return Toast.error('Format MAC Address tidak valid (contoh: AA:BB:CC:DD:EE:FF)');
         try {
             await API.pc.create(data);
             Toast.success(`PC ${data.kode} berhasil ditambahkan`);
@@ -227,6 +261,8 @@ const PC = {
         if (!data.kode) return Toast.error('Kode PC wajib diisi');
         if (data.kode.length > 11) return Toast.error('Kode PC maksimal 11 karakter');
         if (!/^[A-Za-z0-9\-_]+$/.test(data.kode)) return Toast.error('Kode PC hanya boleh huruf, angka, (-), dan (_)');
+        if (data.ip_address && !Utils.isValidIP(data.ip_address)) return Toast.error('Format IP Address tidak valid (contoh: 192.168.1.10)');
+        if (data.mac_address && !Utils.isValidMAC(data.mac_address)) return Toast.error('Format MAC Address tidak valid (contoh: AA:BB:CC:DD:EE:FF)');
         try {
             await API.pc.update(id, data);
             Toast.success('Data PC berhasil diperbarui');

@@ -36,27 +36,31 @@ def get_mikrotik_config():
 def save_mikrotik_config():
     """Menyimpan konfigurasi MikroTik."""
     try:
+        from app.utils.validators import validate_integer_range, validate_string_length
         data = request.get_json() or {}
         config = MikroTikConfig.get_instance()
         
         # Update config fields
         config.enabled = bool(data.get("enabled", False))
-        config.host = data.get("host", "").strip()
-        config.port = int(data.get("port", 8728))
-        config.username = data.get("username", "").strip()
+        config.host = validate_string_length(data.get("host", ""), min_len=1, max_len=255, field_name="Host MikroTik", required=config.enabled) if config.enabled else data.get("host", "").strip()
+        config.port = validate_integer_range(data.get("port", 8728), min_val=1, max_val=65535, field_name="Port MikroTik")
+        config.username = validate_string_length(data.get("username", ""), min_len=1, max_len=64, field_name="Username MikroTik", required=config.enabled) if config.enabled else data.get("username", "").strip()
         
         # Jangan replace password jika kosong (agar tidak hilang)
         new_pass = data.get("password")
         if new_pass is not None and str(new_pass).strip() != "":
             config.password = str(new_pass).strip()
             
-        config.hotspot_profile = data.get("hotspot_profile", "default").strip()
+        config.hotspot_profile = validate_string_length(data.get("hotspot_profile", "default"), min_len=1, max_len=64, field_name="Profile Hotspot", required=False) or "default"
         
         db.session.commit()
         
         write_log("MIKROTIK_CONFIG", f"Konfigurasi MikroTik diperbarui (Enabled: {config.enabled})")
         return jsonify({"success": True, "message": "Pengaturan MikroTik berhasil disimpan"}), 200
         
+    except ValueError as ve:
+        db.session.rollback()
+        return jsonify({"error": str(ve)}), 400
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500

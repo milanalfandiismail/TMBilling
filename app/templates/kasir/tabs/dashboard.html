@@ -1,12 +1,12 @@
 <!-- ===== TAB: DASHBOARD ===== -->
 <div id="tab-dash" class="tab-content">
     <!-- ===== OMZET WIDGET (MOBILE, TABLET & LAPTOP: SM, MD, LG - DI ATAS SEMUA ZONA) ===== -->
-    <div id="dashboard-mobile-omzet" class="flex xl:hidden items-center justify-between gap-2.5 p-2.5 sm:p-3 bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl mb-3 mt-2 shadow-sm">
+    <div id="dashboard-mobile-omzet" class="flex xl:hidden items-center justify-between gap-2.5 p-2.5 sm:p-3 bg-[#0c0c0c] border border-[#1c1c1c] rounded mb-3 mt-2 shadow-sm">
         <!-- Billing Pill -->
-        <div onclick="App.switchTab('laporan')" class="flex-1 flex items-center justify-between gap-2 px-3 py-2 bg-[#070707] hover:bg-[#121212] border border-[#1a1a1a] hover:border-sky-500/40 rounded-lg transition-all cursor-pointer group" title="Lihat Laporan Omzet Billing Hari Ini">
+        <div onclick="App.switchTab('laporan')" class="flex-1 flex items-center justify-between gap-2 px-3 py-2 bg-[#050505] hover:bg-[#121212] border border-[#1c1c1c] hover:border-neutral-500 rounded transition-all cursor-pointer group" title="Lihat Laporan Omzet Billing Hari Ini">
             <div class="flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse shadow-sm shadow-sky-400/50 shrink-0"></span>
-                <span class="text-[10px] sm:text-xs font-bold text-neutral-400 uppercase tracking-wider">Billing Hari Ini</span>
+                <span class="text-[9px] sm:text-xs font-bold text-neutral-400 uppercase tracking-wider">Billing Hari Ini</span>
             </div>
             <span id="dashboard-omzet-billing-mobile" class="text-xs sm:text-sm font-black font-mono text-sky-400 tracking-tight group-hover:text-sky-300">
                 Rp 0
@@ -14,10 +14,10 @@
         </div>
 
         <!-- Kantin Pill -->
-        <div onclick="App.switchTab('laporan_menu')" class="flex-1 flex items-center justify-between gap-2 px-3 py-2 bg-[#070707] hover:bg-[#121212] border border-[#1a1a1a] hover:border-amber-500/40 rounded-lg transition-all cursor-pointer group" title="Lihat Laporan Omzet Kantin Hari Ini">
+        <div onclick="App.switchTab('laporan_menu')" class="flex-1 flex items-center justify-between gap-2 px-3 py-2 bg-[#050505] hover:bg-[#121212] border border-[#1c1c1c] hover:border-neutral-500 rounded transition-all cursor-pointer group" title="Lihat Laporan Omzet Kantin Hari Ini">
             <div class="flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shadow-sm shadow-amber-400/50 shrink-0"></span>
-                <span class="text-[10px] sm:text-xs font-bold text-neutral-400 uppercase tracking-wider">Kantin Hari Ini</span>
+                <span class="text-[9px] sm:text-xs font-bold text-neutral-400 uppercase tracking-wider">Kantin Hari Ini</span>
             </div>
             <span id="dashboard-omzet-kantin-mobile" class="text-xs sm:text-sm font-black font-mono text-amber-400 tracking-tight group-hover:text-amber-300">
                 Rp 0
@@ -27,15 +27,23 @@
 
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4 mt-2">
         <div id="dashboard-tabs" class="flex flex-wrap gap-2"></div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 items-center">
             <button onclick="Dashboard.tambahWaktuMember()"
-                class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded-lg transition-colors flex items-center gap-2">
+                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
                 + Tambah Waktu Member
             </button>
             <button onclick="Member.showAddModal()"
-                class="px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] hover:border-neutral-500 text-neutral-300 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2">
+                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Tambah Member
+            </button>
+            <button onclick="Dashboard.showSettingsModal()"
+                class="p-2 lg:max-xl:p-2.5 xl:p-2.5 bg-[#171717] border border-[#262626] hover:bg-[#222] hover:border-neutral-400 text-neutral-400 hover:text-neutral-100 rounded transition-all flex items-center justify-center"
+                title="Pengaturan Dashboard">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
             </button>
         </div>
     </div>
@@ -44,4 +52,4 @@
             <div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div>
         </div>
     </div>
-</div>
+</div>

@@ -33,6 +33,16 @@ def test_queue_command_dict_payload(client_app):
     data = res.get_json()
     assert data.get("command") == cmd_payload
 
+def test_fast_poll_endpoint(client_app):
+    client, pc_id = client_app
+    ClientService.queue_fast_command(pc_id, "refresh_processes")
+    
+    headers = {"X-Client-Key": "TM2026QWERTY-api-key"}
+    res = client.post("/api/v1/public/client/fast_poll", json={"ip_address": "192.168.1.101", "mac_address": "AA:BB:CC:DD:EE:01"}, headers=headers)
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data.get("command") == "refresh_processes"
+
 def test_vnc_ready_endpoint(client_app):
     client, pc_id = client_app
     headers = {"X-Client-Key": "TM2026QWERTY-api-key"}

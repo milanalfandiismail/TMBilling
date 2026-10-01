@@ -6,8 +6,10 @@ from app.repositories.game.game_repository import GameRepository
 from app.models.game.game import Game
 from app.utils.logger import write_log
 
+from app.utils.validators import validate_string_length, validate_choice, validate_filename
+
 UPLOAD_FOLDER = os.path.join('app', 'static', 'uploads', 'games')
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'ico', 'svg'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -18,13 +20,12 @@ class GameService:
         if not icon_file or not icon_file.filename:
             return None
             
-        if not allowed_file(icon_file.filename):
-            raise ValueError("Format file icon tidak diizinkan. Gunakan .png, .jpg, atau .webp")
+        clean_filename = validate_filename(icon_file.filename, allowed_extensions=ALLOWED_EXTENSIONS, field_name="Icon Game")
             
         if not os.path.exists(UPLOAD_FOLDER):
             os.makedirs(UPLOAD_FOLDER)
             
-        filename = secure_filename(icon_file.filename)
+        filename = secure_filename(clean_filename)
         # Tambahkan timestamp agar unik
         import time
         unique_filename = f"{int(time.time())}_{filename}"
@@ -50,10 +51,10 @@ class GameService:
         if not kat_val:
             return None
         if isinstance(kat_val, list):
-            items = [str(k).strip() for k in kat_val if str(k).strip()]
+            items = [validate_string_length(str(k), min_len=1, max_len=50, field_name="Kategori Game", required=False) for k in kat_val if str(k).strip()]
             return ", ".join(items) if items else None
         elif isinstance(kat_val, str):
-            items = [k.strip() for k in kat_val.split(",") if k.strip()]
+            items = [validate_string_length(k, min_len=1, max_len=50, field_name="Kategori Game", required=False) for k in kat_val.split(",") if k.strip()]
             return ", ".join(items) if items else None
         return str(kat_val)
 
@@ -63,24 +64,23 @@ class GameService:
 
     @staticmethod
     def create(data, icon_file=None, operator=None):
-        nama = data.get("nama")
-        if not nama:
-            raise ValueError("Nama game/aplikasi wajib diisi")
+        raw_nama = data.get("nama")
+        nama = validate_string_length(raw_nama, min_len=2, max_len=100, field_name="Nama Game/Aplikasi", required=True)
             
         icon_filename = GameService._save_icon(icon_file)
         kategori_str = GameService._normalize_kategori(data.get("kategori"))
-        tipe_val = (data.get("tipe") or "game").strip().lower()
-        if tipe_val not in ("game", "aplikasi"):
-            tipe_val = "game"
+        tipe_val = validate_choice(data.get("tipe") or "game", ["game", "aplikasi"], field_name="Tipe Game", case_sensitive=False)
+        exe_path = validate_string_length(data.get("exe_path"), min_len=1, max_len=255, field_name="Executable Path", required=False) if data.get("exe_path") else None
+        argumen = validate_string_length(data.get("argumen"), min_len=1, max_len=255, field_name="Argumen Eksekusi", required=False) if data.get("argumen") else None
         
         game = Game(
             nama=nama,
             tipe=tipe_val,
             kategori=kategori_str,
-            exe_path=data.get("exe_path"),
-            argumen=data.get("argumen"),
+            exe_path=exe_path,
+            argumen=argumen,
             icon=icon_filename,
-            aktif=data.get("aktif", True)
+            aktif=bool(data.get("aktif", True))
         )
         if operator:
             game.operator_id = operator
@@ -101,21 +101,20 @@ class GameService:
         if not game:
             raise ValueError("Data game/aplikasi tidak ditemukan")
             
-        if "nama" in data and not data["nama"]:
-            raise ValueError("Nama tidak boleh kosong")
-            
         old_nama = game.nama
         old_kategori = game.kategori
         old_tipe = getattr(game, "tipe", "game")
         
-        if "nama" in data: game.nama = data["nama"]
-        if "tipe" in data:
-            tipe_val = (data.get("tipe") or "game").strip().lower()
-            game.tipe = tipe_val if tipe_val in ("game", "aplikasi") else "game"
-        if "kategori" in data:
+        if "nama" in data and data["nama"] is not None:
+            game.nama = validate_string_length(data["nama"], min_len=2, max_len=100, field_name="Nama Game/Aplikasi", required=True)
+        if "tipe" in data and data["tipe"] is not None:
+            game.tipe = validate_choice(data["tipe"], ["game", "aplikasi"], field_name="Tipe Game", case_sensitive=False)
+        if "kategori" in data and data["kategori"] is not None:
             game.kategori = GameService._normalize_kategori(data["kategori"])
-        if "exe_path" in data: game.exe_path = data["exe_path"]
-        if "argumen" in data: game.argumen = data["argumen"]
+        if "exe_path" in data and data["exe_path"] is not None:
+            game.exe_path = validate_string_length(data["exe_path"], min_len=1, max_len=255, field_name="Executable Path", required=False) if str(data["exe_path"]).strip() else None
+        if "argumen" in data and data["argumen"] is not None:
+            game.argumen = validate_string_length(data["argumen"], min_len=1, max_len=255, field_name="Argumen Eksekusi", required=False) if str(data["argumen"]).strip() else None
         if "aktif" in data:
             val = data["aktif"]
             game.aktif = str(val).lower() in ("true", "1", "yes")

@@ -353,14 +353,40 @@ const Log = {
         });
     },
 
-    async load(filter = '', kategori = '') {
+    _lastFingerprint: null,
+
+    async load(filter = '', kategori = '', isSilent = false) {
+        const container = document.getElementById('log-content');
+        if (container && !isSilent && (!this._lastLogs || this._lastLogs.length === 0) && typeof Skeleton !== 'undefined') {
+            container.innerHTML = Skeleton.logRows(8);
+        }
+
         try {
             this.updateTabStyles(this.currentCategory);
             const data = await API.report.logs(filter, 500, kategori);
-            this.render(data.logs);
+            const logs = data.logs || [];
+            
+            const newFingerprint = JSON.stringify({ filter, kategori, count: logs.length, top: logs[0]?.timestamp });
+            if (isSilent && this._lastFingerprint === newFingerprint) {
+                return; // Data tidak berubah
+            }
+            this._lastFingerprint = newFingerprint;
+            this._lastLogs = logs;
+
+            this.render(logs);
         } catch (err) {
-            Toast.error('Gagal memuat log');
+            if (!isSilent) {
+                Toast.error('Gagal memuat log');
+            }
         }
+    },
+
+    refreshLive() {
+        if (App.currentTab !== 'log') return;
+        const filterInput = document.getElementById('filter-log');
+        const filterStr = filterInput ? filterInput.value.trim() : '';
+        const filterCat = this.currentCategory === 'Semua' ? '' : this.currentCategory;
+        return this.load(filterStr, filterCat, true);
     },
 
     switchCategory(category, btnEl) {

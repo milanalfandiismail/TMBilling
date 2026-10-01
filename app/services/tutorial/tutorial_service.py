@@ -58,15 +58,34 @@ class TutorialService:
 
     @staticmethod
     def create(data):
-        if "content" in data and data["content"]:
-            data["content"] = move_temp_images(data["content"])
-        return TutorialRepository.create(data)
+        from app.utils.validators import validate_string_length, validate_integer_range
+        clean_data = dict(data)
+        clean_data["title"] = validate_string_length(data.get("title"), min_len=3, max_len=150, field_name="Judul Panduan", required=True)
+        clean_data["category"] = validate_string_length(data.get("category"), min_len=2, max_len=50, field_name="Kategori Panduan", required=False) if data.get("category") else "Umum"
+        clean_data["content"] = validate_string_length(data.get("content"), min_len=5, max_len=100_000, field_name="Isi Panduan", required=True)
+        if "urutan" in data and data["urutan"] is not None:
+            clean_data["urutan"] = validate_integer_range(data["urutan"], min_val=0, max_val=10000, field_name="Urutan Panduan")
+
+        if "content" in clean_data and clean_data["content"]:
+            clean_data["content"] = move_temp_images(clean_data["content"])
+        return TutorialRepository.create(clean_data)
 
     @staticmethod
     def update(tutorial_id, data):
-        if "content" in data and data["content"]:
-            data["content"] = move_temp_images(data["content"])
-        return TutorialRepository.update(tutorial_id, data)
+        from app.utils.validators import validate_string_length, validate_integer_range
+        clean_data = dict(data)
+        if "title" in data and data["title"] is not None:
+            clean_data["title"] = validate_string_length(data["title"], min_len=3, max_len=150, field_name="Judul Panduan", required=True)
+        if "category" in data and data["category"] is not None:
+            clean_data["category"] = validate_string_length(data["category"], min_len=2, max_len=50, field_name="Kategori Panduan", required=False) if data["category"] else "Umum"
+        if "content" in data and data["content"] is not None:
+            clean_data["content"] = validate_string_length(data["content"], min_len=5, max_len=100_000, field_name="Isi Panduan", required=True)
+        if "urutan" in data and data["urutan"] is not None:
+            clean_data["urutan"] = validate_integer_range(data["urutan"], min_val=0, max_val=10000, field_name="Urutan Panduan")
+
+        if "content" in clean_data and clean_data["content"]:
+            clean_data["content"] = move_temp_images(clean_data["content"])
+        return TutorialRepository.update(tutorial_id, clean_data)
 
     @staticmethod
     def delete(tutorial_id):

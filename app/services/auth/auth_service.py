@@ -33,34 +33,85 @@ class AuthService:
         if not ip_address or not mac_address:
             raise ValueError("IP dan MAC address wajib diisi")
 
-        # B. Autentikasi Member
+        # B. Autentikasi Member atau Kasir (Benefit Bermain)
         member = MemberRepository.get_by_username(username)
-        if not member or not member.check_password(password):
-            raise ValueError("Username atau password salah")
+        user_kasir = None
+        if member:
+            if not member.check_password(password):
+                raise ValueError("Username atau password salah")
+        else:
+            from app.models.user.user import User
+            user_staff = User.query.filter_by(username=username).first()
+            if user_staff and user_staff.check_password(password):
+                if not user_staff.aktif:
+                    raise ValueError("Akun kasir nonaktif")
+                user_kasir = user_staff
+            else:
+                raise ValueError("Username atau password salah")
 
-        # C. Cek Double Login (Mencegah satu akun di dua PC)
+        # C. Validasi PC
+        pc = PCRepository.get_by_ip_and_mac(ip_address, mac_address)
+        if not pc:
+            raise ValueError("PC tidak terdaftar")
+
+        if SesiRepository.get_aktif_by_pc(pc.id):
+            raise ValueError(f"PC {pc.kode} sedang dipakai")
+
+        # D. Alur Sesi Khusus Kasir (Benefit Bermain Staff)
+        if user_kasir:
+            sesi_aktif = Sesi.query.filter_by(user_id=user_kasir.id, status="aktif").first()
+            if sesi_aktif:
+                pc_lain = sesi_aktif.pc
+                pc_kode_lain = pc_lain.kode if pc_lain else "lain"
+                raise ValueError(f"Kasir sedang bermain di PC {pc_kode_lain}. Logout dulu!")
+
+            user_kasir.cek_dan_reset_kuota_bulanan()
+            if (user_kasir.sisa_kuota_menit or 0) <= 0:
+                raise ValueError("Kuota bermain kasir bulan ini sudah habis. Hubungi Admin!")
+
+            sesi = Sesi(
+                tipe="kasir",
+                user_id=user_kasir.id,
+                pc_id=pc.id,
+                status="aktif",
+                token_sesi=secrets.token_hex(32),
+                waktu_mulai_sesi=now_local(),
+                waktu_tersimpan_awal=user_kasir.sisa_kuota_menit
+            )
+            pc.is_admin_mode = False
+            db.session.add(pc)
+            db.session.add(sesi)
+            db.session.commit()
+
+            write_log("LOGIN_KASIR_BENEFIT", f"Kasir {username} login di PC {pc.kode} | Sisa: {user_kasir.sisa_kuota_menit}m")
+
+            return {
+                "success": True,
+                "waktu_tersimpan": user_kasir.sisa_kuota_menit,
+                "nama": f"[Kasir] {user_kasir.nama_lengkap or user_kasir.username}",
+                "grup": pc.grup.nama if pc.grup else "Kasir",
+                "pc_kode": pc.kode,
+                "token_sesi": sesi.token_sesi,
+                "sesi_id": sesi.id,
+                "tipe": "kasir"
+            }
+
+        # E. Cek Double Login Member
         sesi_aktif = SesiRepository.get_aktif_by_member(member.id)
         if sesi_aktif:
             pc_lain = sesi_aktif.pc
             raise ValueError(f"Member sedang aktif di PC {pc_lain.kode}. Logout dulu!")
 
-        # D. Validasi PC & Grup Matching
-        pc = PCRepository.get_by_ip_and_mac(ip_address, mac_address)
-        if not pc:
-            raise ValueError("PC tidak terdaftar")
-
+        # F. Validasi Grup Matching Member
         if member.grup != pc.grup:
             raise ValueError(f"Member {member.grup.nama.upper()} tidak bisa di PC {pc.grup.nama.upper()}")
 
-        if SesiRepository.get_aktif_by_pc(pc.id):
-            raise ValueError(f"PC {pc.kode} sedang dipakai")
-
-        # E. Cek Saldo & Masa Aktif
+        # G. Cek Saldo & Masa Aktif Member
         member.cek_kadaluarsa()
         if member.waktu_tersimpan <= 0:
             raise ValueError("Waktu habis, silakan beli paket ke kasir")
 
-        # F. Generate Sesi & Token
+        # H. Generate Sesi & Token Member
         sesi = Sesi(
             tipe="member",
             member_id=member.id,
@@ -87,18 +138,19 @@ class AuthService:
             "grup": member.grup_nama,
             "pc_kode": pc.kode,
             "token_sesi": sesi.token_sesi,
-            "sesi_id": sesi.id
+            "sesi_id": sesi.id,
+            "tipe": "member"
         }
 
 
     # =========================================================================
-    # 2. MEMBER LOGOUT PROCESS
+    # 2. MEMBER / KASIR LOGOUT PROCESS
     # =========================================================================
     # Fokus: Validasi token dan penutupan sesi aktif secara aman.
 
     @staticmethod
     def logout(ip_address, mac_address, token_sesi=None):
-        """Logout member dan menutup sesi aktif di database."""
+        """Logout member atau kasir dan menutup sesi aktif di database."""
         pc = PCRepository.get_by_ip_and_mac(ip_address, mac_address)
         if not pc:
             raise ValueError("PC tidak terdaftar")
@@ -109,6 +161,13 @@ class AuthService:
             
         if token_sesi and sesi.token_sesi != token_sesi:
             raise ValueError("Token salah")
+
+        # Sinkronisasi sisa saldo / kuota
+        sisa = sesi.sisa_menit()
+        if sesi.tipe == "member" and sesi.member:
+            sesi.member.waktu_tersimpan = sisa
+        elif sesi.tipe == "kasir" and sesi.user:
+            sesi.user.sisa_kuota_menit = sisa
 
         SesiRepository.close_session(sesi)
         db.session.commit()

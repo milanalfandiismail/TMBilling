@@ -55,6 +55,10 @@ class Sesi(db.Model):
     # Relasi ke Member
     member_id = db.Column(db.Integer, db.ForeignKey("member.id"), nullable=True)
     member = db.relationship("Member", backref="sesi_list")
+
+    # Relasi ke User (untuk sesi bermain staf kasir / benefit)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
+    user = db.relationship("User", backref=db.backref("sesi_kasir_list", lazy="dynamic"))
     
     # Relasi ke PC
     pc_id = db.Column(db.Integer, db.ForeignKey("pc.id", ondelete="SET NULL"), nullable=True)
@@ -63,6 +67,9 @@ class Sesi(db.Model):
     # Relasi ke Paket
     paket_id = db.Column(db.Integer, db.ForeignKey("paket.id"), nullable=True)
     paket = db.relationship("Paket")
+
+    # Relasi sesi asal (untuk pelacakan riwayat pindah PC / chain sesi)
+    sesi_asal_id = db.Column(db.Integer, db.ForeignKey("sesi.id", ondelete="SET NULL"), nullable=True)
     
     nama_guest = db.Column(db.String(100), nullable=True)
     token_sesi = db.Column(db.String(64), unique=True, nullable=True)
@@ -89,6 +96,11 @@ class Sesi(db.Model):
     is_blackout_suspect = db.Column(db.Boolean, default=False)
     is_blackout_resolved = db.Column(db.Boolean, default=False)
     waktu_resolved = db.Column(db.DateTime, nullable=True)
+
+    # Kolom untuk Kunci Meja AFK / Istirahat Sementara
+    is_afk = db.Column(db.Boolean, default=False, nullable=False)
+    afk_pin = db.Column(db.String(100), nullable=True)
+    afk_sejak = db.Column(db.DateTime, nullable=True)
 
     def hitung_sisa_pada(self, waktu_acuan):
         """Menghitung sisa menit pada titik waktu tertentu.
@@ -136,7 +148,7 @@ class Sesi(db.Model):
         """
         pause = self.menit_pause_total or 0
         if self.tipe == "guest":
-            if self.selesai_pada:
+            if self.selesai_pada and self.mulai_pada:
                 delta = self.selesai_pada - self.mulai_pada
             else:
                 delta = now_local() - self.mulai_pada
@@ -144,7 +156,10 @@ class Sesi(db.Model):
             return max(0, raw - pause)
         else:
             if self.waktu_mulai_sesi:
-                delta = now_local() - self.waktu_mulai_sesi
+                if self.selesai_pada:
+                    delta = self.selesai_pada - self.waktu_mulai_sesi
+                else:
+                    delta = now_local() - self.waktu_mulai_sesi
                 raw = max(0, int(delta.total_seconds() / 60))
                 return max(0, raw - pause)
             return 0
@@ -153,7 +168,7 @@ class Sesi(db.Model):
         """Menghitung sisa menit secara real-time.
         
         Method utama yang dipanggil UI untuk menampilkan sisa waktu.
-        Memperhitungkan blackout pause dan tipe sesi (guest/member).
+        Memperhitungkan blackout pause dan tipe sesi (guest/member/kasir).
         
         Returns:
             int: Sisa menit yang tersedia, minimal 0.
@@ -161,9 +176,21 @@ class Sesi(db.Model):
         pause = self.menit_pause_total or 0
         if self.tipe == "guest":
             return max(0, self.durasi_beli_menit - self.menit_terpakai())
+        elif self.tipe == "kasir":
+            if self.waktu_mulai_sesi and self.waktu_tersimpan_awal > 0:
+                if self.selesai_pada:
+                    delta = self.selesai_pada - self.waktu_mulai_sesi
+                else:
+                    delta = now_local() - self.waktu_mulai_sesi
+                menit_terpakai = max(0, int(delta.total_seconds() / 60) - pause)
+                return max(0, self.waktu_tersimpan_awal - menit_terpakai)
+            return self.user.sisa_kuota_menit if self.user else 0
         else:
             if self.waktu_mulai_sesi and self.waktu_tersimpan_awal > 0:
-                delta = now_local() - self.waktu_mulai_sesi
+                if self.selesai_pada:
+                    delta = self.selesai_pada - self.waktu_mulai_sesi
+                else:
+                    delta = now_local() - self.waktu_mulai_sesi
                 menit_terpakai = max(0, int(delta.total_seconds() / 60) - pause)
                 return max(0, self.waktu_tersimpan_awal - menit_terpakai)
             return self.member.waktu_tersimpan if self.member else 0
@@ -177,6 +204,8 @@ class Sesi(db.Model):
         member_nama = None
         if self.member:
             member_nama = self.member.nama_lengkap or self.member.username
+        elif self.user:
+            member_nama = f"[Kasir] {self.user.nama_lengkap or self.user.username}"
         elif self.nama_guest:
             member_nama = self.nama_guest
         
@@ -184,6 +213,7 @@ class Sesi(db.Model):
             "id": self.id,
             "tipe": self.tipe,
             "member_id": self.member_id,
+            "user_id": self.user_id,
             "member_nama": member_nama,
             "nama_guest": self.nama_guest,
             "pc_kode": self.pc.kode if self.pc else None,
@@ -197,6 +227,8 @@ class Sesi(db.Model):
             "waktu_tersimpan_awal": self.waktu_tersimpan_awal,
             "menit_pause_total": self.menit_pause_total,
             "is_admin": self.is_admin,
+            "is_afk": self.is_afk or False,
+            "afk_sejak": format_display(self.afk_sejak) if self.afk_sejak else None,
             "last_sync": format_display(self.last_sync) if self.last_sync else None,
         }
     

@@ -141,9 +141,10 @@ class BlackoutService:
 
         sesi_baru = Sesi(
             tipe="guest", nama_guest=sesi.nama_guest, pc_id=pc.id,
-            paket_id=sesi.paket_id, durasi_beli_menit=sisa, total_bayar=0,
+            paket_id=sesi.paket_id, durasi_beli_menit=sisa, total_bayar=sesi.total_bayar or 0,
             status="aktif", token_sesi=secrets.token_hex(32), mulai_pada=now_local(),
-            waktu_mulai_sesi=now_local(), last_sync=now_local()
+            waktu_mulai_sesi=now_local(), last_sync=now_local(),
+            sesi_asal_id=sesi.sesi_asal_id or sesi.id
         )
         db.session.add(sesi)
         db.session.add(sesi_baru)
@@ -170,9 +171,10 @@ class BlackoutService:
 
         sesi_baru = Sesi(
             tipe="guest", nama_guest=sesi.nama_guest, pc_id=pc_baru.id,
-            paket_id=sesi.paket_id, durasi_beli_menit=sisa, total_bayar=0,
+            paket_id=sesi.paket_id, durasi_beli_menit=sisa, total_bayar=sesi.total_bayar or 0,
             status="aktif", token_sesi=secrets.token_hex(32), mulai_pada=now_local(),
-            waktu_mulai_sesi=now_local(), last_sync=now_local()
+            waktu_mulai_sesi=now_local(), last_sync=now_local(),
+            sesi_asal_id=sesi.sesi_asal_id or sesi.id
         )
         db.session.add(sesi)
         db.session.add(sesi_baru)

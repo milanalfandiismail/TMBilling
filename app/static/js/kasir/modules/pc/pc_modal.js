@@ -22,15 +22,17 @@ const PCModal = {
                     <!-- Row 1: Prefix, Nomor Unit, Grup (3 Kolom Selaras) -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4 xl:gap-5">
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Prefix Nama (Maks 6) <span class="text-red-400">*</span></label>
+                            <label for="modal-pc-prefix" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Prefix Nama <span class="text-red-400">*</span></label>
                             <input type="text" id="modal-pc-prefix" maxlength="6" value="PC" placeholder="PC" oninput="PC.updateAddPreview()" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all uppercase font-bold font-mono">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">1 - 6 karakter (contoh: PC, VIP)</p>
                         </div>
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Nomor Unit (Maks 4) <span class="text-red-400">*</span></label>
+                            <label for="modal-pc-number" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Nomor Unit <span class="text-red-400">*</span></label>
                             <input type="number" id="modal-pc-number" value="1" min="1" max="9999" placeholder="1" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4); PC.updateAddPreview()" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all font-bold font-mono">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">1 - 9999</p>
                         </div>
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Grup Unit</label>
+                            <label for="modal-pc-grup" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Grup Unit</label>
                             <select id="modal-pc-grup" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all">${grupOptions}</select>
                         </div>
                     </div>
@@ -44,16 +46,19 @@ const PCModal = {
                     <!-- Row 2: IP Address, MAC Address, Nama Tampil (3 Kolom Selaras) -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4 xl:gap-5">
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">IP Address</label>
+                            <label for="modal-pc-ip" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">IP Address</label>
                             <input type="text" id="modal-pc-ip" placeholder="192.168.1.101" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all font-mono">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Format IPv4 (contoh: 192.168.1.101)</p>
                         </div>
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">MAC Address (Opsional)</label>
+                            <label for="modal-pc-mac" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">MAC Address</label>
                             <input type="text" id="modal-pc-mac" placeholder="AA:BB:CC:DD:EE:FF" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all font-mono uppercase">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Opsional (AA:BB:CC:DD:EE:FF)</p>
                         </div>
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Nama Tampil (Opsional)</label>
+                            <label for="modal-pc-nama" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Nama Tampil</label>
                             <input type="text" id="modal-pc-nama" placeholder="Ikuti Kode PC" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Opsional, default mengikuti kode PC</p>
                         </div>
                     </div>
                 </div>
@@ -90,16 +95,19 @@ const PCModal = {
                     <!-- Row 1: Prefix, No Mulai, No Akhir (3 Kolom Selaras) -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4 xl:gap-5">
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Prefix Nama (Maks 6) <span class="text-red-400">*</span></label>
+                            <label for="modal-batch-prefix" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Prefix Nama <span class="text-red-400">*</span></label>
                             <input type="text" id="modal-batch-prefix" maxlength="6" value="PC" placeholder="PC" oninput="PC.updateBatchPreview()" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all uppercase font-bold font-mono">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">1 - 6 karakter</p>
                         </div>
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">No Mulai (Maks 4) <span class="text-red-400">*</span></label>
+                            <label for="modal-batch-start" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">No Mulai <span class="text-red-400">*</span></label>
                             <input type="number" id="modal-batch-start" value="1" min="1" max="9999" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4); PC.updateBatchPreview()" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all font-bold font-mono">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">1 - 9999</p>
                         </div>
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">No Akhir (Maks 4) <span class="text-red-400">*</span></label>
+                            <label for="modal-batch-end" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">No Akhir <span class="text-red-400">*</span></label>
                             <input type="number" id="modal-batch-end" value="10" min="1" max="9999" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4); PC.updateBatchPreview()" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all font-bold font-mono">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">1 - 9999</p>
                         </div>
                     </div>
 
@@ -112,15 +120,17 @@ const PCModal = {
                     <!-- Row 2: IP Awal, IP Akhir, Grup Unit (3 Kolom Selaras) -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4 xl:gap-5">
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">IP Awal <span class="text-red-400">*</span></label>
+                            <label for="modal-batch-ip-start" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">IP Awal <span class="text-red-400">*</span></label>
                             <input type="text" id="modal-batch-ip-start" placeholder="192.168.1.101" oninput="PC.updateBatchPreview()" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all font-mono">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Format IPv4 awal</p>
                         </div>
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">IP Akhir <span class="text-red-400">*</span></label>
+                            <label for="modal-batch-ip-end" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">IP Akhir <span class="text-red-400">*</span></label>
                             <input type="text" id="modal-batch-ip-end" placeholder="192.168.1.110" oninput="PC.updateBatchPreview()" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all font-mono">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Format IPv4 akhir</p>
                         </div>
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Grup Unit</label>
+                            <label for="modal-batch-grup" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Grup Unit</label>
                             <select id="modal-batch-grup" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all">${grupOptions}</select>
                         </div>
                     </div>
@@ -148,26 +158,30 @@ const PCModal = {
                 <div class="space-y-3.5 lg:space-y-4 xl:space-y-5">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 xl:gap-5">
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Kode PC (Maks 11) <span class="text-red-400">*</span></label>
+                            <label for="edit-pc-kode" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Kode PC <span class="text-red-400">*</span></label>
                             <input type="text" id="edit-pc-kode" maxlength="11" value="${pc.kode}" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all uppercase font-bold font-mono">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Maksimal 11 karakter</p>
                         </div>
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Grup Unit</label>
+                            <label for="edit-pc-grup" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Grup Unit</label>
                             <select id="edit-pc-grup" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all">${grupOptions}</select>
                         </div>
                     </div>
                     <div>
-                        <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Nama Unit</label>
+                        <label for="edit-pc-nama" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">Nama Unit</label>
                         <input type="text" id="edit-pc-nama" value="${Utils.escapeHtml(pc.nama || '')}" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all">
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Opsional, nama tampilan stasiun</p>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 xl:gap-5">
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">IP Address</label>
+                            <label for="edit-pc-ip" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">IP Address</label>
                             <input type="text" id="edit-pc-ip" value="${pc.ip_address || ''}" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 font-mono focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Format IPv4 valid</p>
                         </div>
                         <div>
-                            <label class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">MAC Address</label>
+                            <label for="edit-pc-mac" class="text-[9px] sm:text-[10px] lg:text-xs xl:text-sm text-neutral-400 mb-1.5 lg:mb-2 block uppercase font-bold tracking-wider truncate">MAC Address</label>
                             <input type="text" id="edit-pc-mac" value="${pc.mac_address || ''}" class="w-full px-3 py-2.5 lg:px-4 lg:py-3 xl:px-4.5 xl:py-3.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-sm xl:text-base text-neutral-200 font-mono uppercase focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-400 transition-all">
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Format: AA:BB:CC:DD:EE:FF</p>
                         </div>
                     </div>
                 </div>

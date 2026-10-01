@@ -32,10 +32,12 @@
             
             <!-- Filter Bar: Responsive without truncation at lg, xl, 2xl matching Tab Laporan -->
             <div class="flex flex-wrap items-center gap-2.5 w-full xl:w-auto">
+                <label for="maint-report-tanggal-select" class="sr-only">Filter Tanggal Perawatan</label>
                 <select id="maint-report-tanggal-select" onchange="LaporanMaintenance.filter()"
                     class="flex-1 sm:flex-initial w-full sm:w-44 lg:w-44 xl:w-48 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
                     <option value="">Semua Tanggal</option>
                 </select>
+                <label for="maint-report-kategori" class="sr-only">Filter Kategori Perawatan</label>
                 <select id="maint-report-kategori" onchange="LaporanMaintenance.filter()"
                     class="flex-1 sm:flex-initial w-full sm:w-44 lg:w-44 xl:w-48 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
                     <option value="">Semua Kategori</option>

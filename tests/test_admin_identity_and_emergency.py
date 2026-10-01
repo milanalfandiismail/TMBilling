@@ -75,5 +75,7 @@ def test_emergency_login_sets_system_identity(app, client):
 
         data = DashboardService.get_pc_list()
         pc_item = next(p for p in data["pc_list"] if p["kode"] == "PC-97")
-        assert pc_item["is_admin"] is True
+        assert pc_item["is_system"] is True
+        assert pc_item["is_admin"] is False
+        assert pc_item["status"] == "system"
         assert pc_item["sesi_detail"]["member_nama"] == "SYSTEM"

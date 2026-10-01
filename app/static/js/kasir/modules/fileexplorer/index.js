@@ -89,20 +89,43 @@ const FileExplorer = {
         }
     },
 
-    async openDirectory(path) {
+    _lastFingerprint: null,
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'fileexplorer') return;
+        const isAppModalOpen = document.getElementById('app-modal') && !document.getElementById('app-modal').classList.contains('hidden');
+        if (isAppModalOpen || !this.currentPath) return;
+        return this.openDirectory(this.currentPath, true);
+    },
+
+    async openDirectory(path, isSilent = false) {
+        const container = document.getElementById('fe-item-list');
+        if (container && !isSilent && (!this.items || this.items.length === 0) && typeof Skeleton !== 'undefined') {
+            container.innerHTML = Skeleton.tableRows(8, 4);
+        }
+
         try {
             const res = await API.fileexplorer.list(path);
             if (res && res.success) {
+                const items = res.items || [];
+                const newFingerprint = JSON.stringify({ path: res.current_path, items: items.map(i => ({ name: i.name, is_dir: i.is_dir, size: i.size, mtime: i.mtime })) });
+                if (isSilent && this._lastFingerprint === newFingerprint) {
+                    return; // Data tidak berubah
+                }
+                this._lastFingerprint = newFingerprint;
+
                 this.currentPath = res.current_path;
-                this.items = res.items;
+                this.items = items;
                 this.renderBreadcrumbs();
                 this.renderItemList();
                 this.updateRootSelectorSelection();
-            } else {
+            } else if (!isSilent) {
                 Toast.error('Gagal membuka folder: ' + res.error);
             }
         } catch (err) {
-            Toast.error('Gagal memuat isi folder: ' + err.message);
+            if (!isSilent) {
+                Toast.error('Gagal memuat isi folder: ' + err.message);
+            }
         }
     },
 

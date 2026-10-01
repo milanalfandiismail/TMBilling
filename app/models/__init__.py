@@ -31,7 +31,7 @@ from app.models.user.user import User
 from app.models.settings.settings import Settings
 from app.models.mikrotik.mikrotik import MikroTikConfig
 from app.models.hardware.hardware import HardwareMonitor, PCProcess
-from app.models.menu.menu import MenuItem, TransaksiMenu
+from app.models.menu.menu import MenuItem, TransaksiMenu, MenuStockLog
 from app.models.tournament.tournament import Turnamen, TurnamenTahap, TurnamenTim, TurnamenMatch
 from app.models.shift.shift_record import ShiftRecord
 from app.models.game.game import Game
@@ -45,6 +45,7 @@ from app.models.branch.branch_inbound import BranchInbound
 __all__ = [
     'db', 'now_local', 'Grup', 'Paket', 'Member', 'PC', 'Sesi', 'Transaksi', 
     'User', 'Settings', 'MikroTikConfig', 'HardwareMonitor', 'PCProcess', 'MenuItem', 'TransaksiMenu',
+    'MenuStockLog',
     'Turnamen', 'TurnamenTahap', 'TurnamenTim', 'TurnamenMatch',
     'ShiftRecord', 'Game', 'GameKategori', 'MaintenanceTicket', 'PCUptimeLog', 'SystemTutorial', 'Branch',
     'BranchInbound'

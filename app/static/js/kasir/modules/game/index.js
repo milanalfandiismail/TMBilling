@@ -40,16 +40,48 @@ const GameManagement = {
         }
     },
 
-    async fetchGames() {
+    _lastFingerprint: null,
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'game') return;
+        const modalForm = document.getElementById('game-modal');
+        const isAppModalOpen = document.getElementById('app-modal') && !document.getElementById('app-modal').classList.contains('hidden');
+        if ((modalForm && !modalForm.classList.contains('hidden')) || isAppModalOpen) {
+            return;
+        }
+        return this.fetchGames(true);
+    },
+
+    async fetchGames(isSilent = false) {
+        const tbody = document.getElementById('game-table-body');
+        if (tbody && !isSilent && (!this.games || this.games.length === 0) && typeof Skeleton !== 'undefined') {
+            tbody.innerHTML = Skeleton.tableRows(6, 6);
+        }
+
         try {
             const url = `/api/v1/kasir/game/?category=${this.currentCategory}&tipe=${this.currentType}&q=${encodeURIComponent(this.searchQuery)}`;
             const res = await API.request(url);
             if (res.success) {
-                this.games = res.data || [];
+                const games = res.data || [];
+                const newFingerprint = JSON.stringify({
+                    cat: this.currentCategory,
+                    type: this.currentType,
+                    q: this.searchQuery,
+                    games: games.map(g => ({ id: g.id, nama: g.nama, play_count: g.play_count, is_active: g.is_active }))
+                });
+
+                if (isSilent && this._lastFingerprint === newFingerprint) {
+                    return; // Data tidak berubah
+                }
+                this._lastFingerprint = newFingerprint;
+
+                this.games = games;
                 this.renderGames();
             }
         } catch (e) {
-            console.error('Error fetching games/apps:', e);
+            if (!isSilent) {
+                console.error('Error fetching games/apps:', e);
+            }
         }
     },
 
@@ -492,6 +524,18 @@ const GameManagement = {
     async handleSubmit(e) {
         e.preventDefault();
         const id = document.getElementById('form-game-id').value;
+        const nama = document.getElementById('form-game-nama').value.trim();
+        const exePath = document.getElementById('form-game-path').value.trim();
+
+        if (!nama || nama.length < 2 || nama.length > 100) {
+            Toast.error('Nama game/aplikasi harus antara 2 sampai 100 karakter');
+            return;
+        }
+        if (exePath.length > 255) {
+            Toast.error('Lokasi file (exe_path) maksimal 255 karakter');
+            return;
+        }
+
         const saveBtn = document.getElementById('btn-save-game');
         if (saveBtn) {
             saveBtn.disabled = true;
@@ -500,10 +544,10 @@ const GameManagement = {
 
         try {
             const form = new FormData();
-            form.append('nama', document.getElementById('form-game-nama').value.trim());
+            form.append('nama', nama);
             form.append('tipe', document.getElementById('form-game-tipe').value);
             form.append('kategori', this.selectedCategories.join(', '));
-            form.append('exe_path', document.getElementById('form-game-path').value.trim());
+            form.append('exe_path', exePath);
             form.append('argumen', document.getElementById('form-game-argumen').value.trim());
             form.append('aktif', document.getElementById('form-game-aktif').checked);
             
@@ -696,7 +740,4 @@ const KategoriManagement = {
     }
 };
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    GameManagement.init();
-});
+window.GameManagement = GameManagement;

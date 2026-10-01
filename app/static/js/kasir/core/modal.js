@@ -69,33 +69,36 @@ const Modal = {
 
     confirm(message, onConfirm, onCancel) {
         const content = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-2xl p-5 sm:p-6 max-w-md lg:max-w-lg xl:max-w-xl w-[calc(100%-2rem)] mx-auto shadow-2xl flex flex-col max-h-[90vh]">
-                <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[#222] shrink-0">
-                    <div class="w-10 h-10 rounded-xl bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
-                        <svg class="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-5 sm:p-6 max-w-md lg:max-w-lg xl:max-w-xl w-[calc(100%-2rem)] mx-auto shadow-2xl flex flex-col max-h-[90vh]">
+                <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[#1c1c1c] shrink-0">
+                    <div class="w-10 h-10 lg:max-xl:w-11 lg:max-xl:h-11 xl:w-12 xl:h-12 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 lg:max-xl:w-6 lg:max-xl:h-6 xl:w-6 xl:h-6 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                     </div>
-                    <h3 class="text-xs lg:text-sm font-bold text-neutral-100 uppercase tracking-wider font-mono">Konfirmasi Aksi</h3>
+                    <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider font-mono">Konfirmasi Aksi</h3>
                 </div>
-                <div class="text-xs text-neutral-300 mb-5 leading-relaxed flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">${message}</div>
-                <div class="flex gap-3 justify-end pt-3 border-t border-[#222] shrink-0">
-                    <button id="modal-cancel-btn" class="px-4 py-2.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-400 hover:text-neutral-200 text-xs font-bold rounded-xl transition-colors">Batal</button>
-                    <button id="modal-confirm-btn" class="px-5 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded-xl transition-colors flex items-center gap-2">
-                        Ya, Lanjutkan <span class="px-1.5 py-0.5 text-[9px] bg-neutral-900 text-neutral-300 rounded font-mono font-black">E</span>
+                <div class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 mb-5 leading-relaxed flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">${message}</div>
+                <div class="flex gap-3 justify-end pt-3 border-t border-[#1c1c1c] shrink-0">
+                    <button id="modal-cancel-btn" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Batal</button>
+                    <button id="modal-confirm-btn" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
+                        Ya, Lanjutkan <span class="px-1.5 py-0.5 text-[9px] lg:max-xl:text-[10px] xl:text-xs bg-neutral-900 text-neutral-300 rounded font-mono font-black">E</span>
                     </button>
                 </div>
             </div>
         `;
 
         // Keyboard Handler khusus tombol 'E'
-        const handleKeyDown = (e) => {
+        const handleKeyDown = async (e) => {
             // Abaikan jika user sedang mengetik di input text / textarea
             if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
 
             if (e.key.toLowerCase() === 'e') {
                 e.preventDefault();
+                if (onConfirm && typeof onConfirm === 'function') {
+                    const res = await onConfirm();
+                    if (res === false) return;
+                }
                 cleanup();
                 this.closeModal();
-                if (onConfirm && typeof onConfirm === 'function') onConfirm();
             }
         };
 
@@ -115,10 +118,13 @@ const Modal = {
             const cancelBtn = document.getElementById('modal-cancel-btn');
 
             if (confirmBtn) {
-                confirmBtn.onclick = () => {
+                confirmBtn.onclick = async () => {
+                    if (onConfirm && typeof onConfirm === 'function') {
+                        const res = await onConfirm();
+                        if (res === false) return;
+                    }
                     cleanup();
                     this.closeModal();
-                    if (onConfirm && typeof onConfirm === 'function') onConfirm();
                 };
             }
             if (cancelBtn) {

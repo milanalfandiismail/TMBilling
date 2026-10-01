@@ -3,32 +3,55 @@
  * Menangani fetch data, toggle status, dan upload ZIP.
  */
 const PluginsModule = {
+    _lastFingerprint: null,
+
     init: function() {
         this.fetchPlugins();
     },
 
-    fetchPlugins: async function() {
+    refreshLive: function() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'settings') return;
+        const subTab = document.getElementById('settings-subtab-plugins');
+        if (subTab && subTab.classList.contains('hidden')) return;
+        return this.fetchPlugins(true);
+    },
+
+    fetchPlugins: async function(isSilent = false) {
+        const grid = document.getElementById('plugins-grid');
+        if (grid && !isSilent && (!this._lastPlugins || this._lastPlugins.length === 0) && typeof Skeleton !== 'undefined') {
+            grid.innerHTML = Skeleton.tableRows(4, 3);
+        }
+
         try {
             const data = await API.request('/api/v1/kasir/settings/plugins/');
             
             if (data.success) {
-                this.renderPlugins(data.plugins);
-            } else {
+                const plugins = data.plugins || [];
+                const newFingerprint = JSON.stringify(plugins.map(p => ({ id: p.id, name: p.name, enabled: p.enabled })));
+                if (isSilent && this._lastFingerprint === newFingerprint) {
+                    return; // Data tidak berubah
+                }
+                this._lastFingerprint = newFingerprint;
+                this._lastPlugins = plugins;
+
+                this.renderPlugins(plugins);
+            } else if (!isSilent) {
                 Toast.error('Gagal memuat plugins: ' + data.error);
             }
         } catch (e) {
-            Toast.error('Gagal memuat plugins');
-            const grid = document.getElementById('plugins-grid');
-            if (grid) {
-                grid.innerHTML = `
-                    <div class="col-span-full py-12 flex flex-col items-center justify-center text-center border-2 border-red-500/20 border-dashed rounded-xl bg-red-500/5">
-                        <svg class="w-10 h-10 text-red-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <h3 class="text-sm font-semibold text-red-400">Terjadi Kesalahan</h3>
-                        <p class="text-xs text-red-400/70 mt-1">Gagal memuat daftar plugin. Silakan periksa koneksi atau log server.</p>
-                    </div>
-                `;
+            if (!isSilent) {
+                Toast.error('Gagal memuat plugins');
+                if (grid) {
+                    grid.innerHTML = `
+                        <div class="col-span-full py-12 flex flex-col items-center justify-center text-center border-2 border-red-500/20 border-dashed rounded-xl bg-red-500/5">
+                            <svg class="w-10 h-10 text-red-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <h3 class="text-sm font-semibold text-red-400">Terjadi Kesalahan</h3>
+                            <p class="text-xs text-red-400/70 mt-1">Gagal memuat daftar plugin. Silakan periksa koneksi atau log server.</p>
+                        </div>
+                    `;
+                }
+                console.error(e);
             }
-            console.error(e);
         }
     },
 

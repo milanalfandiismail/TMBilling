@@ -50,8 +50,9 @@ class DashboardService:
         for pc in pcs:
             pc_dict = pc.to_dict()
             
-             # Status Admin diambil dari DB
-            pc_dict['is_admin'] = pc.is_admin_mode
+            # Status Admin & System diambil dari DB / to_dict
+            pc_dict['is_admin'] = pc_dict.get('is_admin_mode', False)
+            pc_dict['is_system'] = pc_dict.get('is_system_mode', False)
             
             # C. Cek Status Online & Heartbeat (Online jika < 15s. Jika >= 15s dan ada sesi/admin -> Oranye/No Heartbeat, jika kosong -> Abu-abu/Offline)
             status_koneksi = "offline"
@@ -68,8 +69,11 @@ class DashboardService:
             pc_dict['online'] = online
             pc_dict['status_koneksi'] = status_koneksi
             
-            # --- NEW: Active Window for Dashboard Card ---
+            # --- Active Window & Hardware Telemetry for Dashboard Card ---
             pc_dict['active_window'] = pc.hardware.active_window if pc.hardware else ""
+            pc_dict['nic_speed'] = pc.hardware.nic_speed if pc.hardware else None
+            pc_dict['hardware_mismatch'] = bool(pc.hardware and pc.hardware.hardware_mismatch)
+            pc_dict['hardware_mismatch_desc'] = pc.hardware.hardware_mismatch_desc if pc.hardware else None
             
             # D. Detail Sesi Aktif (Mapping data sesi ke dalam dict PC)
             sesi_aktif = pc.sesi_aktif

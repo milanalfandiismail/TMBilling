@@ -8,8 +8,8 @@ untuk ditampilkan di dashboard kasir.
 """
 
 import re
-from datetime import datetime, timezone
-from app.utils.timezone_utils import now_utc
+from datetime import datetime, timezone, timedelta
+from app.utils.timezone_utils import now_utc, display_in_tz, get_tz_short_name
 from app.models import db
 from app.models import HardwareMonitor
 from app.repositories import HardwareRepository
@@ -102,6 +102,12 @@ class HardwareService:
             if serials and isinstance(serials, dict):
                 import json
                 
+                # Pastikan GpuName tersimpan di serials dictionary
+                if "GpuName" not in serials and hardware.gpu_name and hardware.gpu_name != "Unknown":
+                    serials["GpuName"] = hardware.gpu_name
+                elif "GpuName" not in serials and data.get("GpuName"):
+                    serials["GpuName"] = str(data.get("GpuName"))
+
                 # Simpan specs telemetry saat ini secara berkala
                 hardware.hardware_current_specs = json.dumps(serials)
                 
@@ -122,52 +128,99 @@ class HardwareService:
                         mismatch_reasons = []
                         
                         # 1. Motherboard
-                        base_mobo = baseline.get("MotherboardSerial", "Unknown")
-                        curr_mobo = serials.get("MotherboardSerial", "Unknown")
-                        if base_mobo != "Unknown" and curr_mobo != "Unknown" and base_mobo != curr_mobo:
-                            mismatch_reasons.append(f"Motherboard berubah (dari '{base_mobo}' ke '{curr_mobo}')")
+                        base_mobo = str(baseline.get("MotherboardSerial") or "Unknown").strip()
+                        curr_mobo = str(serials.get("MotherboardSerial") or "Unknown").strip()
+                        if base_mobo not in ("Unknown", "", "None"):
+                            if curr_mobo in ("Unknown", "", "None"):
+                                mismatch_reasons.append(f"Serial Motherboard hilang/tidak terdeteksi (sebelumnya '{base_mobo}')")
+                            elif base_mobo != curr_mobo:
+                                mismatch_reasons.append(f"Motherboard berubah (dari '{base_mobo}' ke '{curr_mobo}')")
                             
                         # 2. CPU
-                        base_cpu = baseline.get("CpuId", "Unknown")
-                        curr_cpu = serials.get("CpuId", "Unknown")
-                        if base_cpu != "Unknown" and curr_cpu != "Unknown" and base_cpu != curr_cpu:
-                            mismatch_reasons.append(f"Processor ID berubah (dari '{base_cpu}' ke '{curr_cpu}')")
+                        base_cpu = str(baseline.get("CpuId") or "Unknown").strip()
+                        curr_cpu = str(serials.get("CpuId") or "Unknown").strip()
+                        if base_cpu not in ("Unknown", "", "None"):
+                            if curr_cpu in ("Unknown", "", "None"):
+                                mismatch_reasons.append(f"Processor ID hilang/tidak terdeteksi (sebelumnya '{base_cpu}')")
+                            elif base_cpu != curr_cpu:
+                                mismatch_reasons.append(f"Processor ID berubah (dari '{base_cpu}' ke '{curr_cpu}')")
                             
-                        # 3. GPU
-                        base_gpu = baseline.get("GpuPnpId", "Unknown")
-                        curr_gpu = serials.get("GpuPnpId", "Unknown")
-                        if base_gpu != "Unknown" and curr_gpu != "Unknown" and base_gpu != curr_gpu:
-                            mismatch_reasons.append("GPU/VGA ditukar (PNP Device ID berbeda)")
+                        # 3. GPU (PNP Device ID & Nama Model GPU)
+                        base_gpu_pnp = str(baseline.get("GpuPnpId") or "Unknown").strip()
+                        curr_gpu_pnp = str(serials.get("GpuPnpId") or "Unknown").strip()
+                        base_gpu_name = str(baseline.get("GpuName") or "").strip()
+                        curr_gpu_name = str(serials.get("GpuName") or hardware.gpu_name or data.get("GpuName") or "").strip()
+
+                        def _is_generic_or_missing_gpu(pnp, name):
+                            pnp_str = str(pnp or "").lower()
+                            if not pnp_str or pnp_str in ("unknown", "none", "") or "root\\basicdisplay" in pnp_str:
+                                return True
+                            if name:
+                                lower_name = str(name).lower()
+                                if ("microsoft basic" in lower_name 
+                                        or "basic display" in lower_name 
+                                        or "standard vga" in lower_name 
+                                        or "remote display" in lower_name 
+                                        or lower_name in ("unknown", "none", "")):
+                                    return True
+                            return False
+
+                        base_has_physical_gpu = not _is_generic_or_missing_gpu(base_gpu_pnp, base_gpu_name)
+                        curr_has_physical_gpu = not _is_generic_or_missing_gpu(curr_gpu_pnp, curr_gpu_name)
+
+                        if base_has_physical_gpu and not curr_has_physical_gpu:
+                            # Kasus Pencurian/Pencopotan GPU
+                            display_prev = base_gpu_name if (base_gpu_name and base_gpu_name != "Unknown") else base_gpu_pnp
+                            mismatch_reasons.append(f"GPU/VGA fisik dicopot atau hilang (sebelumnya '{display_prev}')")
+                        elif base_has_physical_gpu and curr_has_physical_gpu:
+                            if base_gpu_pnp != "Unknown" and curr_gpu_pnp != "Unknown" and base_gpu_pnp != curr_gpu_pnp:
+                                mismatch_reasons.append("GPU/VGA ditukar (PNP Device ID berbeda)")
+                            elif base_gpu_name and curr_gpu_name and base_gpu_name.lower() != curr_gpu_name.lower():
+                                mismatch_reasons.append(f"Model GPU berubah (dari '{base_gpu_name}' ke '{curr_gpu_name}')")
                             
                         # 4. RAM Serials
                         base_rams = set(baseline.get("RamSerials") or [])
                         curr_rams = set(serials.get("RamSerials") or [])
-                        if base_rams and curr_rams:
+                        if base_rams:
                             missing_rams = base_rams - curr_rams
                             added_rams = curr_rams - base_rams
                             if missing_rams:
-                                mismatch_reasons.append(f"{len(missing_rams)} keping RAM dicopot/ditukar")
+                                mismatch_reasons.append(f"{len(missing_rams)} keping RAM dicopot/hilang")
                             elif added_rams:
                                 mismatch_reasons.append(f"Terdeteksi keping RAM baru terpasang")
                                 
                         # 5. Disk Serials
                         base_disks = set(baseline.get("DiskSerials") or [])
                         curr_disks = set(serials.get("DiskSerials") or [])
-                        if base_disks and curr_disks:
+                        if base_disks:
                             missing_disks = base_disks - curr_disks
                             if missing_disks:
-                                mismatch_reasons.append(f"Penyimpanan (SSD/HDD) dicopot/ditukar")
+                                mismatch_reasons.append(f"Penyimpanan (SSD/HDD) dicopot/hilang")
                                 
                         if mismatch_reasons:
-                            if not hardware.hardware_mismatch:
-                                hardware.hardware_mismatch = True
-                                hardware.hardware_mismatch_time = now_utc()
-                                hardware.hardware_mismatch_desc = "; ".join(mismatch_reasons)
-                                write_log("HARDWARE_ALERT", f"PC {pc.kode} terdeteksi mismatch: {hardware.hardware_mismatch_desc}")
+                            curr_now = now_utc()
+                            hardware.hardware_mismatch = True
+                            hardware.hardware_mismatch_time = curr_now
+                            hardware.hardware_mismatch_desc = "; ".join(mismatch_reasons)
+                            
+                            # Hitung referensi rentang waktu CCTV (estimasi waktu PC mati sebelum boot)
+                            try:
+                                from app.models import PCUptimeLog
+                                prev_log = PCUptimeLog.query.filter(
+                                    PCUptimeLog.pc_id == pc.id,
+                                    PCUptimeLog.last_seen < curr_now.replace(tzinfo=None) - timedelta(minutes=2)
+                                ).order_by(PCUptimeLog.last_seen.desc()).first()
+                                last_shutdown = prev_log.last_seen if (prev_log and prev_log.last_seen) else (curr_now - timedelta(hours=8))
+                                hardware.hardware_cctv_window = HardwareService.format_cctv_internal_window(last_shutdown, curr_now)
+                            except Exception:
+                                hardware.hardware_cctv_window = HardwareService.format_cctv_internal_window(curr_now - timedelta(hours=8), curr_now)
+                            
+                            write_log("HARDWARE_ALERT", f"PC {pc.kode} terdeteksi mismatch: {hardware.hardware_mismatch_desc} ({hardware.hardware_cctv_window})")
                         else:
                             hardware.hardware_mismatch = False
                             hardware.hardware_mismatch_desc = None
                             hardware.hardware_mismatch_time = None
+                            hardware.hardware_cctv_window = None
                             hardware.hardware_last_sync = now_utc()
 
             # 5. Sync Process List if provided
@@ -295,6 +348,7 @@ class HardwareService:
             hardware.hardware_mismatch = False
             hardware.hardware_mismatch_desc = None
             hardware.hardware_mismatch_time = None
+            hardware.hardware_cctv_window = None
             hardware.hardware_last_sync = now_utc()
             
             db.session.commit()
@@ -305,3 +359,35 @@ class HardwareService:
         except Exception as e:
             db.session.rollback()
             raise e
+
+    @staticmethod
+    def format_cctv_internal_window(start_dt, end_dt):
+        """Format rentang waktu estimasi kejadian saat PC dalam kondisi mati sebelum booting.
+        
+        Selalu menghasilkan format rentang waktu (start s/d end) agar operator CCTV
+        memiliki rentang waktu yang jelas untuk memeriksa arsip rekaman saat PC mati.
+        
+        Args:
+            start_dt (datetime|None): Waktu PC terakhir terlihat/shutdown sebelum mati.
+                                      Jika None, otomatis menggunakan estimasi 8 jam sebelum end_dt.
+            end_dt (datetime): Waktu PC pertama kali boot / terdeteksi mismatch.
+            
+        Returns:
+            str: String rentang waktu berlabel timezone.
+        """
+        if not end_dt:
+            return "-"
+            
+        if not start_dt:
+            start_dt = end_dt - timedelta(hours=8)
+            
+        start_local = display_in_tz(start_dt)
+        end_local = display_in_tz(end_dt)
+        tz_label = get_tz_short_name()
+        
+        if start_local.date() == end_local.date():
+            return f"{start_local.strftime('%d/%m/%Y %H:%M')} {tz_label} s/d {end_local.strftime('%H:%M')} {tz_label} (rentang PC mati sebelum boot)"
+        else:
+            return f"{start_local.strftime('%d/%m/%Y %H:%M')} {tz_label} s/d {end_local.strftime('%d/%m/%Y %H:%M')} {tz_label} (rentang PC mati sebelum boot)"
+
+

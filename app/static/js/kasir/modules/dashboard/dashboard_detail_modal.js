@@ -6,20 +6,195 @@
  */
 
 const DashboardDetailModal = {
+    currentPcId: null,
+    lastScreenshotTime: null,
+    lastScreenshotUrl: null,
+
+    renderActionButtonsHtml(pc, isOnline, sesi, isAfk, isSystemMode, isAdminMode) {
+        return `
+            <button onclick="DashboardProcessMonitor.showProcesses(${pc.id})"
+                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 rounded-lg transition-colors ${!isOnline ? 'opacity-40 cursor-not-allowed' : ''}"
+                ${!isOnline ? 'disabled' : ''}>
+                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase tracking-wider text-center leading-tight">Monitor Proses</span>
+            </button>
+
+            ${isOnline ? `
+            <button onclick="DashboardDetailModal.openRemoteView(${pc.id}, '${pc.kode}')"
+                class="flex flex-col items-center gap-2 p-4 bg-[#0a1520] border border-blue-900/40 hover:border-blue-500/60 hover:bg-[#0d1d2c] rounded-lg transition-colors">
+                <div class="w-9 h-9 rounded-lg bg-blue-950/50 border border-blue-900/50 flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-blue-400 uppercase tracking-wider text-center leading-tight">Remote Layar</span>
+            </button>` : `
+            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] rounded-lg opacity-25 cursor-not-allowed">
+                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Remote Layar</span>
+            </div>`}
+
+            ${pc.mac_address ? `
+            <button onclick="Modal.closeModal(); Dashboard.wolSingle(${pc.id})"
+                class="flex flex-col items-center gap-2 p-4 bg-[#0a1a0f] border border-green-900/40 hover:border-green-600/60 hover:bg-[#0d2014] rounded-lg transition-colors">
+                <div class="w-9 h-9 rounded-lg bg-green-950/50 border border-green-900/50 flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-green-500 uppercase tracking-wider text-center leading-tight">Wake-on-LAN</span>
+            </button>` : `
+            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-30 cursor-not-allowed" title="Tidak ada MAC Address">
+                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Wake-on-LAN</span>
+            </div>`}
+
+            ${sesi && sesi.tipe !== 'admin' && !isSystemMode ? `
+            <button onclick="Dashboard.pindahSesi(${sesi.id}, '${sesi.tipe}', '${pc.grup}')"
+                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-400 hover:bg-[#141414] rounded-lg transition-colors">
+                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase tracking-wider text-center leading-tight">Pindah PC</span>
+            </button>` : `
+            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed">
+                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Pindah PC</span>
+            </div>`}
+
+            <button onclick="DashboardDetailModal.showHardwareView(${pc.id}, '${pc.kode}')"
+                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 hover:bg-[#141414] rounded-lg transition-colors group">
+                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] group-hover:border-neutral-500 flex items-center justify-center transition-colors">
+                    <svg class="w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-neutral-400 group-hover:text-neutral-200 uppercase tracking-wider text-center leading-tight transition-colors">Hardware</span>
+            </button>
+
+            <button id="btn-screenshot-${pc.id}" onclick="DashboardDetailModal.takeScreenshot(${pc.id})"
+                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 rounded-lg transition-colors ${!isOnline ? 'opacity-40 cursor-not-allowed' : ''}"
+                ${!isOnline ? 'disabled' : ''}>
+                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </div>
+                <span id="text-screenshot-${pc.id}" class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase tracking-wider text-center leading-tight">Ambil Gambar</span>
+            </button>
+
+            ${isOnline && !isSystemMode ? `
+            <button onclick="Modal.closeModal(); DashboardDetailModal.remoteAction(${pc.id}, 'restart', '${pc.kode}')"
+                class="flex flex-col items-center gap-2 p-4 bg-[#1a0a0f] border border-red-900/40 hover:border-red-600/60 hover:bg-[#200d14] rounded-lg transition-colors">
+                <div class="w-9 h-9 rounded-lg bg-red-950/50 border border-red-900/50 flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5" />
+                    </svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-red-400 uppercase tracking-wider text-center leading-tight">Restart PC</span>
+            </button>` : `
+            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed" title="${isSystemMode ? 'Operasional dinonaktifkan untuk mode SYSTEM' : 'PC Offline'}">
+                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5" />
+                    </svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Restart PC</span>
+            </div>`}
+
+            ${isOnline && !isSystemMode ? `
+            <button onclick="Modal.closeModal(); DashboardDetailModal.remoteAction(${pc.id}, 'shutdown', '${pc.kode}')"
+                class="flex flex-col items-center gap-2 p-4 bg-[#1f0a0f] border border-red-900/50 hover:border-red-600/70 hover:bg-[#280d14] rounded-lg transition-colors">
+                <div class="w-9 h-9 rounded-lg bg-red-950/60 border border-red-900/60 flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L12 12m0-6v6" />
+                    </svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-red-500 uppercase tracking-wider text-center leading-tight">Shutdown PC</span>
+            </button>` : `
+            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed" title="${isSystemMode ? 'Operasional dinonaktifkan untuk mode SYSTEM' : 'PC Offline'}">
+                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L12 12m0-6v6" />
+                    </svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Shutdown PC</span>
+            </div>`}
+
+            ${isSystemMode ? `
+            <button onclick="Modal.closeModal(); Dashboard.clearSesiSystem(${pc.id}, ${sesi ? sesi.id : 'null'})"
+                class="flex flex-col items-center gap-2 p-4 bg-[#0f121d] border border-indigo-900/50 hover:border-indigo-500/70 hover:bg-[#151928] rounded-lg transition-colors">
+                <div class="w-9 h-9 rounded-lg bg-indigo-950/60 border border-indigo-900/60 flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-indigo-400 uppercase tracking-wider text-center leading-tight">Clear Sesi System</span>
+            </button>` : (isAdminMode ? `
+            <button onclick="Modal.closeModal(); Dashboard.logoutAdmin(${pc.id}, ${sesi ? sesi.id : 'null'})"
+                class="flex flex-col items-center gap-2 p-4 bg-[#1f150a] border border-amber-900/50 hover:border-amber-500/70 hover:bg-[#2a1d0e] rounded-lg transition-colors">
+                <div class="w-9 h-9 rounded-lg bg-amber-950/60 border border-amber-900/60 flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-amber-400 uppercase tracking-wider text-center leading-tight">Logout Admin</span>
+            </button>` : (isAfk ? `
+            <button onclick="Modal.closeModal(); DashboardDetailModal.remoteAfkUnlock(${pc.id}, '${pc.kode}')"
+                class="flex flex-col items-center gap-2 p-4 bg-[#1f1608] border border-amber-500/60 hover:border-amber-400 hover:bg-[#2e210c] rounded-lg transition-colors group">
+                <div class="w-9 h-9 rounded-lg bg-amber-950/70 border border-amber-500/60 flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-amber-400 group-hover:text-amber-300 uppercase tracking-wider text-center leading-tight">Buka Kunci AFK</span>
+            </button>` : (sesi && isOnline ? `
+            <button onclick="Modal.closeModal(); DashboardDetailModal.remoteAfkLock(${pc.id}, '${pc.kode}')"
+                class="flex flex-col items-center gap-2 p-4 bg-[#14120c] border border-amber-900/40 hover:border-amber-600/60 hover:bg-[#1e1a10] rounded-lg transition-colors group">
+                <div class="w-9 h-9 rounded-lg bg-amber-950/50 border border-amber-900/50 flex items-center justify-center">
+                    <svg class="w-[18px] h-[18px] text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="2"/>
+                    </svg>
+                </div>
+                <span class="text-[10px] lg:text-base font-bold text-amber-500 group-hover:text-amber-400 uppercase tracking-wider text-center leading-tight">Kunci Meja AFK</span>
+            </button>` : `
+            <div class="flex flex-col items-center gap-2 p-4 bg-[#0a0a0a] border border-dashed border-[#1a1a1a] rounded-lg opacity-20"><span class="text-[9px] lg:text-base text-neutral-700 uppercase tracking-widest mt-4">—</span></div>`)))}
+        `;
+    },
+
     showDetail(pcId, pcData) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         if (!pcData || !pcData.pc_list) return;
         const pc = pcData.pc_list.find(p => p.id === pcId);
         if (!pc) return;
 
+        this.currentPcId = pcId;
+        this.lastScreenshotTime = pc.screenshot_time || null;
+        this.lastScreenshotUrl = pc.screenshot_url || null;
+
         const isOnline = pc.status !== 'offline';
         const sesi = pc.sesi_detail;
-        const isAdminMode = pc.is_admin_mode || (sesi?.tipe === 'admin');
+        const isAfk = pc.is_afk || sesi?.is_afk;
+        const isSystemMode = pc.is_system_mode || pc.status === 'system' || (sesi?.tipe === 'admin' && ((sesi?.nama_guest || '').toUpperCase() === 'SYSTEM' || (sesi?.member_nama || '').toUpperCase() === 'SYSTEM'));
+        const isAdminMode = !isSystemMode && (pc.is_admin_mode || pc.status === 'admin' || (sesi?.tipe === 'admin'));
 
         const modalHtml = `
             <div id="pc-detail-modal-card" class="bg-[#111] border border-[#2a2a2a] rounded-xl w-[calc(100%-2rem)] lg:w-[92vw] xl:w-[88vw] 2xl:w-[84vw] max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[1500px] h-[85vh] xl:h-[90vh] 2xl:h-[92vh] max-h-[94vh] xl:max-h-[94vh] 2xl:max-h-[96vh] flex flex-col overflow-hidden shadow-2xl animate-in transition-all duration-300">
                 <div class="px-5 md:px-6 py-3.5 md:py-4 border-b border-[#2a2a2a] flex items-center justify-between shrink-0">
                     <div>
-                        <h3 class="text-xs md:text-sm lg:text-base font-bold text-neutral-100 tracking-wide font-mono">${pc.kode}</h3>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-xs md:text-sm lg:text-base font-bold text-neutral-100 tracking-wide font-mono">${pc.kode}</h3>
+                            <div id="pc-detail-modal-mode-badge" class="inline-flex items-center">
+                                ${isAfk ? '<span class="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded">🔒 AFK / Istirahat</span>' : (isSystemMode ? '<span class="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 rounded">SYSTEM MODE</span>' : (isAdminMode ? '<span class="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded">ADMIN MODE</span>' : ''))}
+                            </div>
+                        </div>
                         <div class="flex items-center gap-2 mt-0.5">
                             <span class="text-[10px] lg:text-xs font-bold text-neutral-400 uppercase font-mono">${pc.grup}</span>
                             <span class="text-[9px] lg:text-xs text-neutral-600 font-mono">${pc.ip_address}</span>
@@ -33,134 +208,9 @@ const DashboardDetailModal = {
                         <!-- Left Column: Action Buttons -->
                         <div class="lg:col-span-7 xl:col-span-5 2xl:col-span-5 space-y-2.5 flex flex-col justify-start">
                             <div class="text-[10px] lg:text-xs text-neutral-400 uppercase font-bold tracking-wider font-mono">Aksi & Kontrol PC</div>
-                            <div class="grid grid-cols-3 gap-2.5 md:gap-3">
-                            <button onclick="DashboardProcessMonitor.showProcesses(${pc.id})"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 rounded-lg transition-colors ${!isOnline ? 'opacity-40 cursor-not-allowed' : ''}"
-                                ${!isOnline ? 'disabled' : ''}>
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase tracking-wider text-center leading-tight">Monitor Proses</span>
-                            </button>
-
-                            ${isOnline ? `
-                            <button onclick="DashboardDetailModal.openRemoteView(${pc.id}, '${pc.kode}')"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#0a1520] border border-blue-900/40 hover:border-blue-500/60 hover:bg-[#0d1d2c] rounded-lg transition-colors">
-                                <div class="w-9 h-9 rounded-lg bg-blue-950/50 border border-blue-900/50 flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                    </svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-blue-400 uppercase tracking-wider text-center leading-tight">Remote Layar</span>
-                            </button>` : `
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] rounded-lg opacity-25 cursor-not-allowed">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Remote Layar</span>
-                            </div>`}
-
-                            ${pc.mac_address ? `
-                            <button onclick="Modal.closeModal(); Dashboard.wolSingle(${pc.id})"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#0a1a0f] border border-green-900/40 hover:border-green-600/60 hover:bg-[#0d2014] rounded-lg transition-colors">
-                                <div class="w-9 h-9 rounded-lg bg-green-950/50 border border-green-900/50 flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-green-500 uppercase tracking-wider text-center leading-tight">Wake-on-LAN</span>
-                            </button>` : `
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-30 cursor-not-allowed" title="Tidak ada MAC Address">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Wake-on-LAN</span>
-                            </div>`}
-
-                            ${sesi && sesi.tipe !== 'admin' ? `
-                            <button onclick="Dashboard.pindahSesi(${sesi.id}, '${sesi.tipe}', '${pc.grup}')"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-400 hover:bg-[#141414] rounded-lg transition-colors">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase tracking-wider text-center leading-tight">Pindah PC</span>
-                            </button>` : `
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Pindah PC</span>
-                            </div>`}
-
-                            <button onclick="DashboardDetailModal.showHardwareView(${pc.id}, '${pc.kode}')"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 hover:bg-[#141414] rounded-lg transition-colors group">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] group-hover:border-neutral-500 flex items-center justify-center transition-colors">
-                                    <svg class="w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-400 group-hover:text-neutral-200 uppercase tracking-wider text-center leading-tight transition-colors">Hardware</span>
-                            </button>
-
-                            <button id="btn-screenshot-${pc.id}" onclick="DashboardDetailModal.takeScreenshot(${pc.id})"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 rounded-lg transition-colors ${!isOnline ? 'opacity-40 cursor-not-allowed' : ''}"
-                                ${!isOnline ? 'disabled' : ''}>
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    </svg>
-                                </div>
-                                <span id="text-screenshot-${pc.id}" class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase tracking-wider text-center leading-tight">Ambil Gambar</span>
-                            </button>
-
-                            ${isOnline ? `
-                            <button onclick="Modal.closeModal(); DashboardDetailModal.remoteAction(${pc.id}, 'restart', '${pc.kode}')"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#1a0a0f] border border-red-900/40 hover:border-red-600/60 hover:bg-[#200d14] rounded-lg transition-colors">
-                                <div class="w-9 h-9 rounded-lg bg-red-950/50 border border-red-900/50 flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5" />
-                                    </svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-red-400 uppercase tracking-wider text-center leading-tight">Restart PC</span>
-                            </button>` : `
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5" />
-                                    </svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Restart PC</span>
-                            </div>`}
-
-                            ${isOnline ? `
-                            <button onclick="Modal.closeModal(); DashboardDetailModal.remoteAction(${pc.id}, 'shutdown', '${pc.kode}')"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#1f0a0f] border border-red-900/50 hover:border-red-600/70 hover:bg-[#280d14] rounded-lg transition-colors">
-                                <div class="w-9 h-9 rounded-lg bg-red-950/60 border border-red-900/60 flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L12 12m0-6v6" />
-                                    </svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-red-500 uppercase tracking-wider text-center leading-tight">Shutdown PC</span>
-                            </button>` : `
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed">
-                                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L12 12m0-6v6" />
-                                    </svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-neutral-600 uppercase tracking-wider text-center leading-tight">Shutdown PC</span>
-                            </div>`}
-
-                            ${isAdminMode ? `
-                            <button onclick="Modal.closeModal(); Dashboard.logoutAdmin(${pc.id}, ${sesi ? sesi.id : 'null'})"
-                                class="flex flex-col items-center gap-2 p-4 bg-[#1f150a] border border-amber-900/50 hover:border-amber-500/70 hover:bg-[#2a1d0e] rounded-lg transition-colors">
-                                <div class="w-9 h-9 rounded-lg bg-amber-950/60 border border-amber-900/60 flex items-center justify-center">
-                                    <svg class="w-[18px] h-[18px] text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                                    </svg>
-                                </div>
-                                <span class="text-[10px] lg:text-base font-bold text-amber-400 uppercase tracking-wider text-center leading-tight">Logout Admin</span>
-                            </button>` : `
-                            <div class="flex flex-col items-center gap-2 p-4 bg-[#0a0a0a] border border-dashed border-[#1a1a1a] rounded-lg opacity-20"><span class="text-[9px] lg:text-base text-neutral-700 uppercase tracking-widest mt-4">—</span></div>`}
-                        </div>
+                            <div id="modal-action-buttons-grid" class="grid grid-cols-3 gap-2.5 md:gap-3">
+                                ${this.renderActionButtonsHtml(pc, isOnline, sesi, isAfk, isSystemMode, isAdminMode)}
+                            </div>
                         </div>
 
                         <!-- Right Column: Screenshot Preview -->
@@ -202,11 +252,11 @@ const DashboardDetailModal = {
                         </div>
                         <div class="flex-1 min-h-0 overflow-y-auto scrollbar-thin p-4">
                             <div id="modal-process-list" class="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
-                                <div class="col-span-full py-12 text-center text-neutral-500 text-xs lg:text-sm font-mono">Memuat...</div>
+                                ${typeof DashboardProcessMonitor !== 'undefined' && typeof DashboardProcessMonitor.renderSkeleton === 'function' ? DashboardProcessMonitor.renderSkeleton(8) : '<div class="col-span-full py-12 text-center text-neutral-500 text-xs lg:text-sm font-mono">Memuat...</div>'}
                             </div>
                         </div>
                         <div class="p-3.5 md:p-4 border-t border-[#2a2a2a] flex justify-end shrink-0 bg-[#0c0c0c]">
-                            <button id="btn-refresh-processes" onclick="DashboardProcessMonitor.loadProcesses(${pc.id})" class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-sm font-bold rounded-lg transition-colors">Segarkan</button>
+                            <button id="btn-refresh-processes" onclick="DashboardProcessMonitor.loadProcesses(${pc.id}, true)" class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-sm font-bold rounded-lg transition-colors">Segarkan</button>
                         </div>
                     </div>
 
@@ -344,7 +394,7 @@ const DashboardDetailModal = {
                         </div>
                         <div class="flex-1 min-h-0 overflow-y-auto scrollbar-thin p-4 md:p-6" id="modal-hw-scroll-container">
                             <div id="modal-hw-content" class="space-y-4">
-                                <div class="py-16 text-center text-neutral-500 text-xs lg:max-xl:text-sm xl:text-base font-mono">Memuat data hardware...</div>
+                                ${typeof Skeleton !== 'undefined' && typeof Skeleton.hardwareDetailView === 'function' ? Skeleton.hardwareDetailView() : '<div class="py-16 text-center text-neutral-500 text-xs lg:max-xl:text-sm xl:text-base font-mono">Memuat data hardware...</div>'}
                             </div>
                         </div>
                         <div class="p-3.5 md:p-4 border-t border-[#2a2a2a] flex items-center justify-between shrink-0 bg-[#0c0c0c]">
@@ -370,6 +420,7 @@ const DashboardDetailModal = {
     },
 
     async takeScreenshot(pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const btn = document.getElementById(`btn-screenshot-${pcId}`);
         const text = document.getElementById(`text-screenshot-${pcId}`);
         if (!btn) return;
@@ -459,6 +510,7 @@ const DashboardDetailModal = {
     },
 
     remoteAction(pcId, action, pcKode = '') {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const actionLabel = action === 'shutdown' ? 'Shutdown (Matikan)' : 'Restart (Mulai Ulang)';
         const pcName = pcKode || `PC #${pcId}`;
 
@@ -483,6 +535,80 @@ const DashboardDetailModal = {
         });
     },
 
+    remoteAfkLock(pcId, pcKode = '') {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
+        const pcName = pcKode || `PC #${pcId}`;
+
+        setTimeout(() => {
+            document.getElementById('remote-afk-pin-input')?.focus();
+        }, 50);
+
+        Modal.confirm(`
+            <div class="space-y-3">
+                <div class="text-center">
+                    <p class="text-xs lg:text-base text-neutral-200 font-bold uppercase tracking-wider">Kunci Layar AFK PC ${pcName}</p>
+                    <p class="text-[11px] lg:text-sm text-neutral-400 mt-1">Layar PC client akan dikunci. Tentukan PIN / Password untuk membuka kunci PC ini.</p>
+                </div>
+                <div class="text-left pt-2">
+                    <label class="block text-xs font-semibold text-neutral-300 mb-1">PIN / Password Kunci Layar:</label>
+                    <input type="password" id="remote-afk-pin-input" maxlength="32" placeholder="Masukkan PIN atau password bebas"
+                        class="w-full bg-[#161616] border border-[#333] rounded-lg px-3 py-2.5 text-center text-sm font-mono tracking-widest text-white focus:border-amber-500 focus:outline-none">
+                </div>
+            </div>
+        `, async () => {
+            const pinInput = document.getElementById('remote-afk-pin-input');
+            const pin = (pinInput?.value || '').trim();
+            if (!pin) {
+                Toast.error('PIN / Password kunci layar tidak boleh kosong!');
+                return false;
+            }
+
+            try {
+                const result = await API.request(`/api/v1/kasir/monitor/remote/${pcId}/afk-lock`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin: pin })
+                });
+                if (!result.success) {
+                    throw new Error(result.error || 'Gagal mengunci PC');
+                }
+                Toast.success(`PC ${pcName} berhasil dikunci!`);
+                if (window.Dashboard) window.Dashboard._render(window.Dashboard.lastData);
+                return true;
+            } catch (err) {
+                console.error('[DashboardDetailModal] Remote AFK Lock error:', err);
+                Toast.error(err.message || 'Gagal mengunci PC');
+                return false;
+            }
+        });
+    },
+
+    remoteAfkUnlock(pcId, pcKode = '') {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
+        const pcName = pcKode || `PC #${pcId}`;
+
+        Modal.confirm(`
+            <div class="text-center">
+                <p class="text-xs lg:text-base text-amber-400 font-bold uppercase tracking-wider">Buka Kunci Layar (Master Unlock) PC ${pcName}?</p>
+                <p class="text-[11px] lg:text-sm text-neutral-300 mt-2">Layar PC client akan langsung dibuka kuncinya dan kembali ke sesi aktif pengguna.</p>
+            </div>
+        `, async () => {
+            try {
+                const result = await API.request(`/api/v1/kasir/monitor/remote/${pcId}/afk-unlock`, {
+                    method: 'POST'
+                });
+                if (!result.success) {
+                    throw new Error(result.error || 'Gagal membuka kunci AFK');
+                }
+                Toast.success(`Kunci layar PC ${pcName} berhasil dibuka (Master Unlock)!`);
+                if (window.Dashboard) window.Dashboard._render(window.Dashboard.lastData);
+            } catch (err) {
+                console.error('[DashboardDetailModal] Remote AFK Unlock error:', err);
+                Toast.error(err.message || 'Gagal membuka kunci AFK');
+            }
+        });
+    },
+
     viewFullscreen(imgEl) {
         if (!imgEl || !imgEl.src) return;
         const overlay = document.createElement('div');
@@ -498,6 +624,7 @@ const DashboardDetailModal = {
     },
 
     openRemoteView: function(pcId, pcKode) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         this.currentPcId = pcId;
         const modalBox = document.getElementById('pc-detail-modal-card');
         if (modalBox) {
@@ -541,6 +668,7 @@ const DashboardDetailModal = {
     },
 
     startRemote: async function(pcId, pcKode) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const loading = document.getElementById('modal-vnc-loading');
         if (loading) loading.classList.remove('hidden');
 
@@ -899,55 +1027,364 @@ const DashboardDetailModal = {
     },
 
     showHardwareView(pcId, pcKode) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         document.getElementById('view-action-menu')?.classList.add('hidden');
         document.getElementById('view-process-list')?.classList.add('hidden');
         document.getElementById('view-remote-client')?.classList.add('hidden');
         document.getElementById('view-hardware-specs')?.classList.remove('hidden');
         document.getElementById('modal-card-main-footer')?.classList.add('hidden');
-        this.loadHardwareData(pcId, pcKode);
+        
+        this.currentHardwarePcId = pcId;
+        this.currentHardwarePcKode = pcKode;
+        this.loadHardwareData(pcId, pcKode, false);
+
+        if (this._hardwarePollingTimer) clearInterval(this._hardwarePollingTimer);
+        this._hardwarePollingTimer = setInterval(() => {
+            const hwView = document.getElementById('view-hardware-specs');
+            if (hwView && !hwView.classList.contains('hidden') && this.currentPcId && this.currentHardwarePcId === this.currentPcId) {
+                this.loadHardwareData(this.currentHardwarePcId, this.currentHardwarePcKode || pcKode, true);
+            }
+        }, 3000);
     },
 
     backFromHardware() {
+        if (this._hardwarePollingTimer) {
+            clearInterval(this._hardwarePollingTimer);
+            this._hardwarePollingTimer = null;
+        }
+        this.currentHardwarePcId = null;
+        this.currentHardwarePcKode = null;
+        this._lastHwFingerprint = null;
+        this._lastHwStructureKey = null;
+        this._lastHwData = null;
+        this._lastHwPcId = null;
+
         document.getElementById('view-hardware-specs')?.classList.add('hidden');
         document.getElementById('view-action-menu')?.classList.remove('hidden');
         document.getElementById('modal-card-main-footer')?.classList.remove('hidden');
     },
 
-    async loadHardwareData(pcId, pcKode) {
+    getHwTempBadge(temp) {
+        const escapeHtml = (str) => {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        if (temp == null || temp === '-' || temp === 0) return `<span class="text-neutral-600 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>`;
+        const tempVal = parseFloat(temp);
+        if (isNaN(tempVal)) return `<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">${escapeHtml(temp)}</span>`;
+        if (tempVal >= 78) {
+            return `<span class="px-2 py-0.5 rounded bg-red-950/80 border border-red-500 text-red-200 font-mono font-black text-xs lg:max-xl:text-xs xl:text-base uppercase animate-pulse shadow-sm shadow-red-950/50 flex items-center gap-1">🔥 ${tempVal}°C (HOT)</span>`;
+        }
+        if (tempVal >= 65) {
+            return `<span class="px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/80 text-amber-300 font-mono font-bold text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1">⚠️ ${tempVal}°C (WARM)</span>`;
+        }
+        return `<span class="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/60 text-emerald-300 font-mono font-bold text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1">❄️ ${tempVal}°C (NORMAL)</span>`;
+    },
+
+    getHwNicBadge(speed) {
+        const escapeHtml = (str) => {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        if (!speed || speed === '-' || speed === 'Unknown') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
+        const s = String(speed).toLowerCase();
+        let isGigabitOrMore = false;
+        if (s.includes('gbps')) {
+            const val = parseFloat(s.replace(/[^0-9.]/g, ''));
+            isGigabitOrMore = !isNaN(val) && val >= 1.0;
+        } else if (s.includes('mbps')) {
+            const val = parseFloat(s.replace(/[^0-9.]/g, ''));
+            isGigabitOrMore = !isNaN(val) && val >= 1000.0;
+        }
+
+        if (isGigabitOrMore) {
+            return `<span class="px-2 py-0.5 rounded border border-emerald-500/60 bg-emerald-950/60 text-emerald-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1 shadow-sm shadow-emerald-950/40">⚡ ${escapeHtml(speed)} (Gigabit OK)</span>`;
+        } else {
+            return `<span class="px-2 py-0.5 rounded border border-red-500 bg-red-950/80 text-red-200 font-black font-mono text-xs lg:max-xl:text-xs xl:text-base animate-pulse flex items-center gap-1 shadow-sm shadow-red-950/50">⚠️ ${escapeHtml(speed)} (< 1 Gbps)</span>`;
+        }
+    },
+
+    getHwCpuBadge(name) {
+        const escapeHtml = (str) => {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        if (!name || name === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
+        const n = String(name).toLowerCase();
+        if (n.includes('intel') || n.includes('core') || n.includes('i3') || n.includes('i5') || n.includes('i7') || n.includes('i9') || n.includes('xeon')) {
+            return `<span class="text-sky-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(name)}">🔹 ${escapeHtml(name)}</span>`;
+        }
+        if (n.includes('amd') || n.includes('ryzen') || n.includes('threadripper') || n.includes('athlon')) {
+            return `<span class="text-amber-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(name)}">🔸 ${escapeHtml(name)}</span>`;
+        }
+        return `<span class="text-neutral-200 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(name)}">🖥️ ${escapeHtml(name)}</span>`;
+    },
+
+    getHwGpuBadge(name) {
+        const escapeHtml = (str) => {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        if (!name || name === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
+        const n = String(name).toLowerCase();
+        if (n.includes('nvidia') || n.includes('geforce') || n.includes('rtx') || n.includes('gtx')) {
+            return `<span class="text-emerald-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(name)}">🟢 ${escapeHtml(name)}</span>`;
+        }
+        if (n.includes('radeon') || n.includes('rx') || n.includes('amd')) {
+            return `<span class="text-rose-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(name)}">🔴 ${escapeHtml(name)}</span>`;
+        }
+        if (n.includes('arc') || n.includes('iris') || n.includes('intel')) {
+            return `<span class="text-cyan-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(name)}">🔵 ${escapeHtml(name)}</span>`;
+        }
+        return `<span class="text-emerald-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(name)}">🎮 ${escapeHtml(name)}</span>`;
+    },
+
+    getHwRamBadge(ram) {
+        const escapeHtml = (str) => {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        if (!ram || ram === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
+        return `<span class="px-2 py-0.5 rounded border border-purple-800/60 bg-purple-950/50 text-purple-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1 w-fit">💾 ${escapeHtml(ram)}</span>`;
+    },
+
+    getHwMbBadge(mb) {
+        const escapeHtml = (str) => {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        if (!mb || mb === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
+        return `<span class="text-amber-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${escapeHtml(mb)}">🎛️ ${escapeHtml(mb)}</span>`;
+    },
+
+    getHwStatusBadge(hwData) {
+        if (!hwData) {
+            return `<span class="px-2.5 py-1 rounded bg-amber-900/40 border border-amber-600/50 text-amber-300 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider font-mono">⚙️ Menunggu Telemetry</span>`;
+        }
+        const isHwMismatch = hwData.hardware_mismatch === true;
+        const hasBaseline = !!hwData.hardware_baseline;
+
+        if (isHwMismatch) {
+            return `
+                <span class="px-2.5 py-1 rounded bg-red-900/60 border border-red-500 text-red-200 text-[10px] lg:max-xl:text-xs xl:text-xs font-black uppercase tracking-wider animate-pulse flex items-center gap-1 font-mono shadow-sm shadow-red-950/50">
+                    🚨 Hardware Ditukar / Hilang
+                </span>`;
+        } else if (hasBaseline) {
+            return `
+                <span class="px-2.5 py-1 rounded bg-green-950/60 border border-green-500/60 text-green-300 text-[10px] lg:max-xl:text-xs xl:text-xs font-black uppercase tracking-wider flex items-center gap-1 font-mono shadow-sm shadow-green-950/40">
+                    🛡️ Internal Aman
+                </span>`;
+        } else {
+            return `
+                <span class="px-2.5 py-1 rounded bg-amber-900/50 border border-amber-600/50 text-amber-300 text-[10px] lg:max-xl:text-xs xl:text-xs font-black uppercase tracking-wider font-mono">
+                    ⚙️ Menunggu Telemetry
+                </span>`;
+        }
+    },
+
+    renderRamPills(serials, isBaseline, baselineSpecs) {
+        const escapeHtml = (str) => {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        if (!serials || !serials.length) return '<span class="text-neutral-600 font-mono text-xs lg:max-xl:text-xs xl:text-base">N/A</span>';
+        return serials.map(r => {
+            let isMatched = true;
+            if (!isBaseline && baselineSpecs && baselineSpecs.RamSerials && baselineSpecs.RamSerials.length) {
+                isMatched = baselineSpecs.RamSerials.includes(r);
+            }
+            if (!isMatched) {
+                return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono animate-pulse">🚨 ${escapeHtml(r)} (Tukar!)</span>`;
+            }
+            return `<span class="inline-block bg-[#121212] text-purple-300 border border-purple-900/50 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">🏷️ ${escapeHtml(r)}</span>`;
+        }).join('');
+    },
+
+    renderDiskPills(serials, isBaseline, baselineSpecs) {
+        const escapeHtml = (str) => {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        if (!serials || !serials.length) return '<span class="text-neutral-600 font-mono text-xs lg:max-xl:text-xs xl:text-base">N/A</span>';
+        return serials.map(d => {
+            let isMatched = true;
+            if (!isBaseline && baselineSpecs && baselineSpecs.DiskSerials && baselineSpecs.DiskSerials.length) {
+                isMatched = baselineSpecs.DiskSerials.includes(d);
+            }
+            if (!isMatched) {
+                return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono animate-pulse">🚨 ${escapeHtml(d)} (Tukar!)</span>`;
+            }
+            return `<span class="inline-block bg-[#121212] text-cyan-300 border border-cyan-900/50 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">💽 ${escapeHtml(d)}</span>`;
+        }).join('');
+    },
+
+    updateHardwareTelemetryInPlace(pcId, pcKode, hwData) {
+        if (!hwData) return false;
+        const lastUpdateEl = document.getElementById('modal-hw-last-update');
+        const cpuUsageValEl = document.getElementById('modal-hw-cpu-usage-val');
+        const cpuUsageBarEl = document.getElementById('modal-hw-cpu-usage-bar');
+        const cpuTempEl = document.getElementById('modal-hw-cpu-temp-val');
+        const gpuTempEl = document.getElementById('modal-hw-gpu-temp-val');
+        const activeWinEl = document.getElementById('modal-hw-active-window-val');
+        const lastSyncEl = document.getElementById('modal-hw-last-sync-val');
+        const cctvHintEl = document.getElementById('modal-hw-cctv-hint');
+
+        if (!lastUpdateEl || !cpuUsageValEl || !cpuUsageBarEl || !cpuTempEl || !gpuTempEl) {
+            return false;
+        }
+
+        const cpuUsage = typeof hwData.cpu_usage === 'number' ? hwData.cpu_usage : (parseInt(hwData.cpu_usage, 10) || 0);
+        let cpuLoadTextColor = 'text-cyan-400';
+        let cpuBarColor = 'bg-cyan-500';
+        if (cpuUsage >= 80) {
+            cpuLoadTextColor = 'text-red-400';
+            cpuBarColor = 'bg-red-500';
+        } else if (cpuUsage >= 50) {
+            cpuLoadTextColor = 'text-amber-400';
+            cpuBarColor = 'bg-amber-500';
+        }
+
+        lastUpdateEl.textContent = hwData.last_update || 'Baru saja';
+        cpuUsageValEl.textContent = `${cpuUsage}%`;
+        cpuUsageValEl.className = `text-base lg:max-xl:text-xl xl:text-2xl 2xl:text-3xl font-black font-mono ${cpuLoadTextColor} mt-0.5`;
+        cpuUsageBarEl.className = `${cpuBarColor} h-full rounded-full transition-all duration-300`;
+        cpuUsageBarEl.style.width = `${Math.min(100, Math.max(0, cpuUsage))}%`;
+        cpuTempEl.innerHTML = this.getHwTempBadge(hwData.cpu_temp);
+        gpuTempEl.innerHTML = this.getHwTempBadge(hwData.gpu_temp);
+
+        if (activeWinEl) {
+            const winTitle = hwData.active_window || '-';
+            activeWinEl.textContent = `🪟 ${winTitle}`;
+            activeWinEl.setAttribute('title', winTitle);
+        }
+        if (lastSyncEl) {
+            lastSyncEl.textContent = hwData.last_update || hwData.hardware_last_sync || '-';
+        }
+        if (cctvHintEl) {
+            cctvHintEl.textContent = `> ${hwData.last_update || hwData.hardware_last_sync || 'Waktu PC Mati'}`;
+        }
+        return true;
+    },
+
+    async loadHardwareData(pcId, pcKode, isSilent = false) {
         const contentEl = document.getElementById('modal-hw-content');
         const statusEl = document.getElementById('modal-hw-header-status');
-        if (contentEl) {
-            contentEl.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-20 text-neutral-500 gap-3">
-                    <div class="w-8 h-8 border-2 border-[#222] border-t-neutral-100 rounded-full animate-spin"></div>
-                    <span class="text-xs lg:text-sm font-mono text-neutral-400">Memuat telemetri & spesifikasi hardware PC ${pcKode}...</span>
-                </div>
-            `;
+        const refreshBtn = document.getElementById('btn-hw-refresh');
+
+        if (!isSilent && (!this._lastHwData || this._lastHwPcId !== pcId)) {
+            if (contentEl && typeof Skeleton !== 'undefined' && typeof Skeleton.hardwareDetailView === 'function') {
+                contentEl.innerHTML = Skeleton.hardwareDetailView();
+            }
+        }
+
+        if (!isSilent && refreshBtn) {
+            refreshBtn.disabled = true;
+            refreshBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            refreshBtn.innerText = 'Menyegarkan...';
         }
 
         try {
             const res = await API.monitor.all();
+            if (refreshBtn) {
+                refreshBtn.disabled = false;
+                refreshBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                refreshBtn.innerText = 'Segarkan Data';
+            }
+
             if (res && res.success && Array.isArray(res.data)) {
                 const hwData = res.data.find(item => item.pc_id === pcId);
+                const newFingerprint = JSON.stringify(hwData || {});
+
+                if (isSilent && this._lastHwFingerprint === newFingerprint && this._lastHwPcId === pcId) {
+                    return; // Data identik, skip DOM touch
+                }
+
+                this._lastHwFingerprint = newFingerprint;
+                this._lastHwData = hwData;
+                this._lastHwPcId = pcId;
+
+                const structureKey = hwData ? `${hwData.hardware_mismatch}_${Boolean(hwData.hardware_baseline)}_${Boolean(hwData.hardware_current_specs)}_${hwData.cpu_name}_${hwData.gpu_name}_${hwData.motherboard}` : 'empty';
+
+                if (this._lastHwStructureKey === structureKey && this.updateHardwareTelemetryInPlace(pcId, pcKode, hwData)) {
+                    if (statusEl) statusEl.innerHTML = this.getHwStatusBadge(hwData);
+                    return;
+                }
+
+                this._lastHwStructureKey = structureKey;
                 this.renderHardwareView(pcId, pcKode, hwData);
-            } else {
+            } else if (!isSilent) {
                 throw new Error((res && res.error) || 'Gagal mengambil data hardware');
             }
         } catch (err) {
-            console.error('[DashboardDetailModal] Load hardware error:', err);
-            if (contentEl) {
-                contentEl.innerHTML = `
-                    <div class="py-16 text-center text-red-400 text-xs lg:text-sm font-mono space-y-2">
-                        <p class="font-bold">Gagal memuat data hardware PC ${pcKode}</p>
-                        <p class="text-neutral-500 text-[11px]">${err.message || 'Koneksi ke server terputus'}</p>
-                        <button onclick="DashboardDetailModal.loadHardwareData(${pcId}, '${pcKode}')" class="mt-2 px-3 py-1.5 bg-[#1a1a1a] hover:bg-[#252525] border border-[#333] text-neutral-200 text-xs rounded-lg transition-colors font-mono">
-                            Coba Lagi
-                        </button>
-                    </div>
-                `;
+            if (refreshBtn) {
+                refreshBtn.disabled = false;
+                refreshBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                refreshBtn.innerText = 'Segarkan Data';
             }
-            if (statusEl) {
-                statusEl.innerHTML = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-950/60 border border-red-800 text-red-400">ERROR</span>`;
+            if (!isSilent) {
+                console.error('[DashboardDetailModal] Load hardware error:', err);
+                if (contentEl) {
+                    contentEl.innerHTML = `
+                        <div class="py-16 text-center text-red-400 text-xs lg:text-sm font-mono space-y-2">
+                            <p class="font-bold">Gagal memuat data hardware PC ${pcKode}</p>
+                            <p class="text-neutral-500 text-[11px]">${err.message || 'Koneksi ke server terputus'}</p>
+                            <button onclick="DashboardDetailModal.loadHardwareData(${pcId}, '${pcKode}', false)" class="mt-2 px-3 py-1.5 bg-[#1a1a1a] hover:bg-[#252525] border border-[#333] text-neutral-200 text-xs rounded-lg transition-colors font-mono">
+                                Coba Lagi
+                            </button>
+                        </div>
+                    `;
+                }
+                if (statusEl) {
+                    statusEl.innerHTML = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-950/60 border border-red-800 text-red-400">ERROR</span>`;
+                }
             }
         }
     },
@@ -957,44 +1394,35 @@ const DashboardDetailModal = {
         const statusEl = document.getElementById('modal-hw-header-status');
         if (!contentEl) return;
 
+        const escapeHtml = (str) => {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        if (statusEl) {
+            statusEl.innerHTML = this.getHwStatusBadge(hwData);
+        }
+
         if (!hwData) {
-            if (statusEl) {
-                statusEl.innerHTML = `<span class="px-2.5 py-1 rounded bg-amber-900/40 border border-amber-600/50 text-amber-300 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider font-mono">⚙️ Menunggu Telemetry</span>`;
-            }
             contentEl.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-20 text-neutral-500 gap-2 text-center p-6 border border-dashed border-[#222] rounded-xl bg-[#0a0a0a]">
                     <div class="w-12 h-12 rounded-xl bg-[#141414] border border-[#222] flex items-center justify-center text-xl mb-1">🖥️</div>
                     <p class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider font-mono">Belum Ada Data Telemetri</p>
-                    <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 max-w-md">PC ${pcKode} belum mengirimkan log hardware atau agent Hardware Monitor belum aktif di client.</p>
+                    <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 max-w-md">PC ${escapeHtml(pcKode)} belum mengirimkan log hardware atau agent Hardware Monitor belum aktif di client.</p>
                 </div>
             `;
             return;
         }
 
-        const isMismatch = hwData.hardware_mismatch === true;
-        const hasBaseline = !!hwData.hardware_baseline;
-
-        let statusBadgeHtml = '';
-        if (isMismatch) {
-            statusBadgeHtml = `
-                <span class="px-2.5 py-1 rounded bg-red-900/60 border border-red-500 text-red-200 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider animate-pulse flex items-center gap-1 font-mono shadow-sm shadow-red-950/50">
-                    🚨 Swapped / Mismatch Alert
-                </span>`;
-        } else if (hasBaseline) {
-            statusBadgeHtml = `
-                <span class="px-2.5 py-1 rounded bg-green-950/60 border border-green-500/60 text-green-300 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider flex items-center gap-1 font-mono shadow-sm shadow-green-950/40">
-                    🛡️ Protected (Aman)
-                </span>`;
-        } else {
-            statusBadgeHtml = `
-                <span class="px-2.5 py-1 rounded bg-amber-900/50 border border-amber-600/50 text-amber-300 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider font-mono">
-                    ⚙️ Menunggu Telemetry
-                </span>`;
-        }
-        if (statusEl) statusEl.innerHTML = statusBadgeHtml;
-
+        const isHwMismatch = hwData.hardware_mismatch === true;
         let baselineSpecs = null;
         let currentSpecs = null;
+
         try {
             if (hwData.hardware_baseline) {
                 baselineSpecs = typeof hwData.hardware_baseline === 'string' ? JSON.parse(hwData.hardware_baseline) : hwData.hardware_baseline;
@@ -1007,29 +1435,26 @@ const DashboardDetailModal = {
         }
 
         let alertBannerHtml = '';
-        if (isMismatch) {
-            alertBannerHtml = `
-                <div class="p-4 bg-red-950/40 border border-red-500/40 rounded-xl text-xs lg:max-xl:text-xs xl:text-sm text-red-200 space-y-2.5 shadow-lg shadow-red-950/30 animate-in">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2 font-bold text-red-400">
-                            <span class="text-base">⚠️</span>
-                            <span class="text-xs lg:max-xl:text-base xl:text-lg uppercase tracking-wider font-mono">PERINGATAN: Deteksi Perubahan Hardware!</span>
+        if (isHwMismatch) {
+            const cctvWindowDisplay = hwData.hardware_cctv_window || `${hwData.hardware_mismatch_time || '--:--'} (saat booting)`;
+            alertBannerHtml += `
+                <div class="p-3.5 sm:p-4 bg-red-950/30 border border-red-500/40 rounded-xl text-xs lg:max-xl:text-xs xl:text-sm text-red-200 space-y-2 shadow-lg shadow-red-950/30 animate-in min-w-0 w-full">
+                    <div class="flex items-center justify-between min-w-0">
+                        <div class="flex items-center gap-2 font-bold text-red-400 min-w-0">
+                            <span class="text-base shrink-0">🚨</span>
+                            <span class="text-xs lg:max-xl:text-base xl:text-lg uppercase tracking-wider font-mono truncate">DETEKSI PERUBAHAN HARDWARE INTERNAL:</span>
                         </div>
-                        <span class="px-2 py-0.5 rounded bg-red-900/80 border border-red-500 text-red-100 text-[10px] lg:max-xl:text-xs xl:text-sm font-black uppercase tracking-wider font-mono">
+                        <span class="px-2 py-0.5 rounded bg-red-900/80 border border-red-500 text-red-100 text-[10px] lg:max-xl:text-xs xl:text-xs font-black uppercase tracking-wider font-mono shrink-0">
                             MISMATCH
                         </span>
                     </div>
-                    <div class="font-mono text-xs lg:max-xl:text-xs xl:text-sm pl-3 border-l-2 border-red-500 bg-red-950/60 p-2.5 rounded text-red-200 leading-relaxed">
-                        ${hwData.hardware_mismatch_desc || 'Terdeteksi komponen fisik PC tidak cocok dengan baseline yang telah diverifikasi.'}
-                    </div>
-                    <div class="flex flex-wrap items-center justify-between gap-2 text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-400 font-mono pt-1">
-                        <div class="flex items-center gap-1.5">
-                            <span>🎥</span>
-                            <span>Waktu Kejadian (Referensi CCTV): <strong class="text-neutral-200">${hwData.hardware_mismatch_time || '--:--'}</strong></span>
-                        </div>
-                        <div class="text-neutral-500">
-                            Terakhir Sinkron: <span class="text-neutral-300">${hwData.hardware_last_sync || hwData.last_update || '-'}</span>
-                        </div>
+                    <p class="font-mono text-xs lg:max-xl:text-xs xl:text-sm pl-2.5 border-l-2 border-red-500 bg-red-950/50 p-2.5 rounded text-red-200 leading-relaxed break-all min-w-0 w-full">
+                        ${escapeHtml(hwData.hardware_mismatch_desc || 'Terdeteksi komponen fisik PC tidak cocok dengan baseline yang telah diverifikasi.')}
+                    </p>
+                    <div class="text-[11px] lg:max-xl:text-xs xl:text-sm text-neutral-400 flex flex-wrap items-center gap-1.5 min-w-0 pt-1">
+                        <span>🎥</span>
+                        <strong class="text-neutral-300 uppercase shrink-0">Rentang Waktu Estimasi (Referensi CCTV):</strong>
+                        <span class="font-mono font-bold text-red-300 break-all min-w-0">${escapeHtml(cctvWindowDisplay)}</span>
                     </div>
                 </div>
             `;
@@ -1038,116 +1463,13 @@ const DashboardDetailModal = {
         const cpuUsage = typeof hwData.cpu_usage === 'number' ? hwData.cpu_usage : (parseInt(hwData.cpu_usage, 10) || 0);
         let cpuLoadTextColor = 'text-cyan-400';
         let cpuBarColor = 'bg-cyan-500';
-        let cpuStatusText = 'NORMAL';
-        let cpuStatusBadge = 'bg-cyan-950/60 border-cyan-800/60 text-cyan-300';
         if (cpuUsage >= 80) {
             cpuLoadTextColor = 'text-red-400';
             cpuBarColor = 'bg-red-500';
-            cpuStatusText = 'HIGH';
-            cpuStatusBadge = 'bg-red-950/80 border-red-500 text-red-200 animate-pulse';
         } else if (cpuUsage >= 50) {
             cpuLoadTextColor = 'text-amber-400';
             cpuBarColor = 'bg-amber-500';
-            cpuStatusText = 'MODERATE';
-            cpuStatusBadge = 'bg-amber-950/70 border-amber-600 text-amber-300';
         }
-
-        const getTempBadge = (temp) => {
-            if (temp == null || temp === '-' || temp === 0) return `<span class="text-neutral-600 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>`;
-            const tempVal = parseFloat(temp);
-            if (isNaN(tempVal)) return `<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">${temp}</span>`;
-            if (tempVal >= 78) {
-                return `<span class="px-2 py-0.5 rounded bg-red-950/80 border border-red-500 text-red-200 font-mono font-black text-xs lg:max-xl:text-xs xl:text-base uppercase animate-pulse shadow-sm shadow-red-950/50 flex items-center gap-1">🔥 ${tempVal}°C (HOT)</span>`;
-            }
-            if (tempVal >= 65) {
-                return `<span class="px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/80 text-amber-300 font-mono font-bold text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1">⚠️ ${tempVal}°C (WARM)</span>`;
-            }
-            return `<span class="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/60 text-emerald-300 font-mono font-bold text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1">❄️ ${tempVal}°C (NORMAL)</span>`;
-        };
-
-        const getNicBadge = (speed) => {
-            if (!speed || speed === '-' || speed === 'Unknown') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
-            const s = String(speed).toLowerCase();
-            if (s.includes('gbps') || s.includes('1000') || s.includes('2500') || s.includes('10000') || s.includes('2.5') || s.includes('10 gbps')) {
-                return `<span class="px-2 py-0.5 rounded border border-emerald-500/60 bg-emerald-950/60 text-emerald-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1 shadow-sm shadow-emerald-950/40">⚡ ${speed} (Gigabit OK)</span>`;
-            }
-            if (s.includes('100') && !s.includes('1000')) {
-                return `<span class="px-2 py-0.5 rounded border border-red-500 bg-red-950/80 text-red-200 font-black font-mono text-xs lg:max-xl:text-xs xl:text-base animate-pulse flex items-center gap-1 shadow-sm shadow-red-950/50">⚠️ ${speed} (100M Bottleneck!)</span>`;
-            }
-            if (s.includes('10') && !s.includes('100')) {
-                return `<span class="px-2 py-0.5 rounded border border-red-700 bg-red-950 text-red-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1">❌ ${speed} (Slow)</span>`;
-            }
-            return `<span class="px-2 py-0.5 rounded border border-[#262626] bg-[#141414] text-neutral-300 font-mono text-xs lg:max-xl:text-xs xl:text-base font-bold">${speed}</span>`;
-        };
-
-        const getCpuBadge = (name) => {
-            if (!name || name === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
-            const n = String(name).toLowerCase();
-            if (n.includes('intel') || n.includes('core') || n.includes('i3') || n.includes('i5') || n.includes('i7') || n.includes('i9') || n.includes('xeon')) {
-                return `<span class="text-sky-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🔹 ${name}</span>`;
-            }
-            if (n.includes('amd') || n.includes('ryzen') || n.includes('threadripper') || n.includes('athlon')) {
-                return `<span class="text-amber-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🔸 ${name}</span>`;
-            }
-            return `<span class="text-neutral-200 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🖥️ ${name}</span>`;
-        };
-
-        const getGpuBadge = (name) => {
-            if (!name || name === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
-            const n = String(name).toLowerCase();
-            if (n.includes('nvidia') || n.includes('geforce') || n.includes('rtx') || n.includes('gtx')) {
-                return `<span class="text-emerald-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🟢 ${name}</span>`;
-            }
-            if (n.includes('radeon') || n.includes('rx') || n.includes('amd')) {
-                return `<span class="text-rose-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🔴 ${name}</span>`;
-            }
-            if (n.includes('arc') || n.includes('iris') || n.includes('intel')) {
-                return `<span class="text-cyan-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🔵 ${name}</span>`;
-            }
-            return `<span class="text-emerald-400 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${name}">🎮 ${name}</span>`;
-        };
-
-        const getRamBadge = (ram) => {
-            if (!ram || ram === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
-            return `<span class="px-2 py-0.5 rounded border border-purple-800/60 bg-purple-950/50 text-purple-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1 w-fit">💾 ${ram}</span>`;
-        };
-
-        const getMbBadge = (mb) => {
-            if (!mb || mb === '-') return '<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">-</span>';
-            return `<span class="text-amber-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base truncate max-w-[180px] sm:max-w-[260px] lg:max-w-[220px] xl:max-w-[280px]" title="${mb}">🎛️ ${mb}</span>`;
-        };
-
-        const isMbMatch = !baselineSpecs || !currentSpecs || !baselineSpecs.MotherboardSerial || !currentSpecs.MotherboardSerial || (baselineSpecs.MotherboardSerial === currentSpecs.MotherboardSerial);
-        const isCpuMatch = !baselineSpecs || !currentSpecs || !baselineSpecs.CpuId || !currentSpecs.CpuId || (baselineSpecs.CpuId === currentSpecs.CpuId);
-        const isGpuMatch = !baselineSpecs || !currentSpecs || !baselineSpecs.GpuPnpId || !currentSpecs.GpuPnpId || (baselineSpecs.GpuPnpId === currentSpecs.GpuPnpId);
-
-        const renderRamPills = (serials, isBaseline) => {
-            if (!serials || !serials.length) return '<span class="text-neutral-600 font-mono text-xs lg:max-xl:text-xs xl:text-base">N/A</span>';
-            return serials.map(r => {
-                let isMatched = true;
-                if (!isBaseline && baselineSpecs && baselineSpecs.RamSerials && baselineSpecs.RamSerials.length) {
-                    isMatched = baselineSpecs.RamSerials.includes(r);
-                }
-                if (!isMatched) {
-                    return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono animate-pulse">🚨 ${r} (Tukar!)</span>`;
-                }
-                return `<span class="inline-block bg-[#121212] text-purple-300 border border-purple-900/50 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">🏷️ ${r}</span>`;
-            }).join('');
-        };
-
-        const renderDiskPills = (serials, isBaseline) => {
-            if (!serials || !serials.length) return '<span class="text-neutral-600 font-mono text-xs lg:max-xl:text-xs xl:text-base">N/A</span>';
-            return serials.map(d => {
-                let isMatched = true;
-                if (!isBaseline && baselineSpecs && baselineSpecs.DiskSerials && baselineSpecs.DiskSerials.length) {
-                    isMatched = baselineSpecs.DiskSerials.includes(d);
-                }
-                if (!isMatched) {
-                    return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono animate-pulse">🚨 ${d} (Tukar!)</span>`;
-                }
-                return `<span class="inline-block bg-[#121212] text-cyan-300 border border-cyan-900/50 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">💽 ${d}</span>`;
-            }).join('');
-        };
 
         contentEl.innerHTML = `
             <div class="space-y-4 md:space-y-5">
@@ -1160,37 +1482,41 @@ const DashboardDetailModal = {
                             <span class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider font-mono flex items-center gap-2">
                                 <span>⚡</span> Telemetri Real-Time
                             </span>
-                            <span class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-mono">${hwData.last_update || 'Baru saja'}</span>
+                            <span class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-mono" id="modal-hw-last-update">${escapeHtml(hwData.last_update || 'Baru saja')}</span>
                         </div>
 
                         <div class="grid grid-cols-3 gap-2.5">
                             <div class="p-2.5 bg-[#070707] border border-[#181818] rounded-lg flex flex-col justify-between">
                                 <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 font-mono uppercase font-bold tracking-wider">CPU Load</div>
-                                <div class="text-base lg:max-xl:text-xl xl:text-2xl 2xl:text-3xl font-black font-mono ${cpuLoadTextColor} mt-0.5">${cpuUsage}%</div>
+                                <div id="modal-hw-cpu-usage-val" class="text-base lg:max-xl:text-xl xl:text-2xl 2xl:text-3xl font-black font-mono ${cpuLoadTextColor} mt-0.5">${cpuUsage}%</div>
                                 <div class="w-full bg-[#181818] h-1.5 lg:max-xl:h-2 xl:h-2 rounded-full overflow-hidden mt-1.5">
-                                    <div class="${cpuBarColor} h-full rounded-full transition-all duration-300" style="width: ${Math.min(100, Math.max(0, cpuUsage))}%"></div>
+                                    <div id="modal-hw-cpu-usage-bar" class="${cpuBarColor} h-full rounded-full transition-all duration-300" style="width: ${Math.min(100, Math.max(0, cpuUsage))}%"></div>
                                 </div>
                             </div>
 
                             <div class="p-2.5 bg-[#070707] border border-[#181818] rounded-lg flex flex-col justify-between">
                                 <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 font-mono uppercase font-bold tracking-wider">Suhu CPU</div>
-                                <div class="mt-1">${getTempBadge(hwData.cpu_temp)}</div>
+                                <div id="modal-hw-cpu-temp-val" class="mt-1">${this.getHwTempBadge(hwData.cpu_temp)}</div>
                             </div>
 
                             <div class="p-2.5 bg-[#070707] border border-[#181818] rounded-lg flex flex-col justify-between">
                                 <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 font-mono uppercase font-bold tracking-wider">Suhu GPU</div>
-                                <div class="mt-1">${getTempBadge(hwData.gpu_temp)}</div>
+                                <div id="modal-hw-gpu-temp-val" class="mt-1">${this.getHwTempBadge(hwData.gpu_temp)}</div>
                             </div>
                         </div>
 
                         <div class="p-2.5 bg-[#070707] border border-[#181818] rounded-lg font-mono space-y-1.5">
                             <div class="flex items-center justify-between text-[10px] lg:max-xl:text-xs xl:text-sm">
                                 <span class="text-neutral-500 font-semibold uppercase tracking-wider">Jendela Aktif:</span>
-                                <span class="text-xs lg:max-xl:text-xs xl:text-base text-sky-300 font-semibold truncate max-w-[200px] sm:max-w-[280px] lg:max-w-[240px] xl:max-w-[320px]" title="${hwData.active_window || '-'}">🪟 ${hwData.active_window || '-'}</span>
+                                <span id="modal-hw-active-window-val" class="text-xs lg:max-xl:text-xs xl:text-base text-sky-300 font-semibold truncate max-w-[200px] sm:max-w-[280px] lg:max-w-[240px] xl:max-w-[320px]" title="${escapeHtml(hwData.active_window || '-')}">🪟 ${escapeHtml(hwData.active_window || '-')}</span>
                             </div>
                             <div class="flex items-center justify-between text-[10px] lg:max-xl:text-xs xl:text-sm">
-                                <span class="text-neutral-500 font-semibold uppercase tracking-wider">Verifikasi Terakhir:</span>
-                                <span class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-400 font-mono">${hwData.hardware_last_sync || '-'}</span>
+                                <span class="text-neutral-500 font-semibold uppercase tracking-wider">Terakhir PC Aktif / Sinkron:</span>
+                                <span id="modal-hw-last-sync-val" class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 font-bold font-mono">${escapeHtml(hwData.last_update || hwData.hardware_last_sync || '-')}</span>
+                            </div>
+                            <div class="pt-1.5 border-t border-[#181818] text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 flex items-start gap-1 leading-snug">
+                                <span class="shrink-0">💡</span>
+                                <span>Jika PC tidak dapat menyala/booting (indikasi RAM/komponen dilepas), cek CCTV mulai: <strong id="modal-hw-cctv-hint" class="text-amber-300">&gt; ${escapeHtml(hwData.last_update || hwData.hardware_last_sync || 'Waktu PC Mati')}</strong></span>
                             </div>
                         </div>
                     </div>
@@ -1201,141 +1527,154 @@ const DashboardDetailModal = {
                             <span class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider font-mono flex items-center gap-2">
                                 <span>⚙️</span> Komponen Utama
                             </span>
-                            <span class="text-xs lg:max-xl:text-sm xl:text-base font-mono font-bold text-neutral-400 uppercase tracking-wider">${hwData.pc_kode || pcKode}</span>
+                            <span class="text-xs lg:max-xl:text-sm xl:text-base font-mono font-bold text-neutral-400 uppercase tracking-wider">${escapeHtml(hwData.pc_kode || pcKode)}</span>
                         </div>
 
                         <div class="space-y-2 font-mono">
                             <div class="flex items-center justify-between p-2 bg-[#070707] border border-[#181818] rounded-lg">
                                 <span class="text-neutral-400 font-semibold text-[10px] lg:max-xl:text-xs xl:text-sm uppercase tracking-wider">Processor (CPU)</span>
-                                ${getCpuBadge(hwData.cpu_name)}
+                                ${this.getHwCpuBadge(hwData.cpu_name)}
                             </div>
                             <div class="flex items-center justify-between p-2 bg-[#070707] border border-[#181818] rounded-lg">
                                 <span class="text-neutral-400 font-semibold text-[10px] lg:max-xl:text-xs xl:text-sm uppercase tracking-wider">Kartu Grafis (GPU)</span>
-                                ${getGpuBadge(hwData.gpu_name)}
+                                ${this.getHwGpuBadge(hwData.gpu_name)}
                             </div>
                             <div class="flex items-center justify-between p-2 bg-[#070707] border border-[#181818] rounded-lg">
                                 <span class="text-neutral-400 font-semibold text-[10px] lg:max-xl:text-xs xl:text-sm uppercase tracking-wider">Total Memori RAM</span>
-                                ${getRamBadge(hwData.total_ram)}
+                                ${this.getHwRamBadge(hwData.total_ram)}
                             </div>
                             <div class="flex items-center justify-between p-2 bg-[#070707] border border-[#181818] rounded-lg">
                                 <span class="text-neutral-400 font-semibold text-[10px] lg:max-xl:text-xs xl:text-sm uppercase tracking-wider">Motherboard</span>
-                                ${getMbBadge(hwData.motherboard)}
+                                ${this.getHwMbBadge(hwData.motherboard)}
                             </div>
                             <div class="flex items-center justify-between p-2 bg-[#070707] border border-[#181818] rounded-lg">
                                 <span class="text-neutral-400 font-semibold text-[10px] lg:max-xl:text-xs xl:text-sm uppercase tracking-wider">Kecepatan Jaringan (NIC)</span>
-                                ${getNicBadge(hwData.nic_speed)}
+                                ${this.getHwNicBadge(hwData.nic_speed)}
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Card 3: Baseline Terkunci -->
-                    <div class="p-4 sm:p-5 bg-[#0c0c0c] border border-[#202020] rounded-xl flex flex-col justify-between space-y-3">
-                        <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2.5">
-                            <span class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-300 uppercase tracking-wider font-mono flex items-center gap-2">
-                                <span>🔒</span> Baseline Terkunci (Official)
-                            </span>
-                            <span class="text-[10px] lg:max-xl:text-xs xl:text-sm font-mono text-emerald-400 bg-emerald-950/50 px-2.5 py-0.5 rounded border border-emerald-900/60 font-bold uppercase tracking-wider">
-                                ${baselineSpecs ? 'TERDAFTAR' : 'KOSONG'}
-                            </span>
+                <!-- Split Matrix: Baseline Terkunci vs Terdeteksi Saat Ini -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5 min-w-0">
+                    <!-- Card 4: Baseline Terkunci -->
+                    <div class="p-4 sm:p-5 bg-[#0c0c0c] border border-[#202020] rounded-xl flex flex-col justify-between space-y-4 min-w-0 overflow-hidden">
+                        <div class="min-w-0 w-full">
+                            <div class="flex flex-wrap items-center border-b border-[#1c1c1c] pb-2.5 min-w-0 mb-3 gap-x-2 gap-y-1 min-h-[52px]">
+                                <span class="text-xs font-bold text-neutral-300 uppercase tracking-wider font-mono flex items-center gap-1.5 flex-1 min-w-0">
+                                    <span>🔒</span> Baseline Resmi (Terkunci)
+                                </span>
+                                <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-900/60 font-bold uppercase tracking-wider shrink-0">
+                                    ${baselineSpecs ? 'TERDAFTAR' : 'KOSONG'}
+                                </span>
+                            </div>
+
+                            ${baselineSpecs ? `
+                                <div class="space-y-3 font-mono min-w-0 w-full">
+                                    <div class="min-w-0 w-full">
+                                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">🛠️ Komponen Internal:</span>
+                                        <ul class="text-xs lg:max-xl:text-xs xl:text-sm space-y-2 font-mono text-neutral-400 min-w-0 w-full">
+                                            <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">Motherboard:</strong>
+                                                <span class="break-all text-neutral-300 min-w-0">${escapeHtml(baselineSpecs.MotherboardSerial || 'N/A')}</span>
+                                            </li>
+                                            <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">CPU ID:</strong>
+                                                <span class="break-all text-neutral-300 min-w-0">${escapeHtml(baselineSpecs.CpuId || 'N/A')}</span>
+                                            </li>
+                                            <li class="flex flex-col gap-1 min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">GPU PNP:</strong>
+                                                <span class="break-all text-neutral-300 font-mono text-[10px] sm:text-[11px] lg:max-xl:text-[11px] xl:text-xs bg-[#070707] border border-[#181818] p-2 rounded block w-full select-all leading-relaxed min-w-0 overflow-hidden" title="${escapeHtml(baselineSpecs.GpuPnpId || 'N/A')}">${escapeHtml(baselineSpecs.GpuPnpId || 'N/A')}</span>
+                                            </li>
+                                            <li class="min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">RAM Serials:</strong>
+                                                <div class="pt-1 min-w-0">
+                                                    ${this.renderRamPills(baselineSpecs.RamSerials, true, baselineSpecs)}
+                                                </div>
+                                            </li>
+                                            <li class="min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">Disks:</strong>
+                                                <div class="pt-1 min-w-0">
+                                                    ${this.renderDiskPills(baselineSpecs.DiskSerials, true, baselineSpecs)}
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="py-10 text-center text-neutral-500 font-mono text-xs lg:max-xl:text-sm xl:text-base">
+                                    <p>Belum ada baseline terdaftar.</p>
+                                    <p class="text-[9px] lg:max-xl:text-xs xl:text-sm text-neutral-600 mt-1">Klik tombol <b>Update Baseline</b> di bawah untuk mendaftarkan spesifikasi resmi.</p>
+                                </div>
+                            `}
                         </div>
-
-                        ${baselineSpecs ? `
-                            <div class="space-y-2 font-mono">
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">Motherboard Serial</div>
-                                    <div class="text-xs lg:max-xl:text-xs xl:text-base text-amber-200 font-bold truncate" title="${baselineSpecs.MotherboardSerial || 'N/A'}">${baselineSpecs.MotherboardSerial || 'N/A'}</div>
-                                </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">CPU ID</div>
-                                    <div class="text-xs lg:max-xl:text-xs xl:text-base text-sky-200 font-bold truncate" title="${baselineSpecs.CpuId || 'N/A'}">${baselineSpecs.CpuId || 'N/A'}</div>
-                                </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">GPU PNP ID</div>
-                                    <div class="text-xs lg:max-xl:text-xs xl:text-base text-emerald-200 font-bold truncate" title="${baselineSpecs.GpuPnpId || 'N/A'}">${baselineSpecs.GpuPnpId || 'N/A'}</div>
-                                </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">RAM Serial(s)</div>
-                                    <div class="pt-0.5">
-                                        ${renderRamPills(baselineSpecs.RamSerials, true)}
-                                    </div>
-                                </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">Storage / Disk Serial(s)</div>
-                                    <div class="pt-0.5">
-                                        ${renderDiskPills(baselineSpecs.DiskSerials, true)}
-                                    </div>
-                                </div>
-                            </div>
-                        ` : `
-                            <div class="py-10 text-center text-neutral-500 font-mono text-xs lg:max-xl:text-sm xl:text-base">
-                                <p>Belum ada baseline terdaftar.</p>
-                                <p class="text-[9px] lg:max-xl:text-xs xl:text-sm text-neutral-600 mt-1">Klik tombol <b>Update Baseline</b> di bawah untuk mendaftarkan spesifikasi resmi.</p>
-                            </div>
-                        `}
                     </div>
 
-                    <!-- Card 4: Terdeteksi Saat Ini -->
-                    <div class="p-4 sm:p-5 bg-[#0c0c0c] border border-[#202020] rounded-xl flex flex-col justify-between space-y-3">
-                        <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2.5">
-                            <span class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-300 uppercase tracking-wider font-mono flex items-center gap-2">
-                                <span>🔍</span> Terdeteksi Saat Ini (Live Agent)
-                            </span>
-                            <span class="text-[10px] lg:max-xl:text-xs xl:text-sm font-mono text-blue-400 bg-blue-950/50 px-2.5 py-0.5 rounded border border-blue-900/60 font-bold uppercase tracking-wider">
-                                ${currentSpecs ? 'LIVE SPECS' : 'KOSONG'}
-                            </span>
-                        </div>
+                    <!-- Card 5: Terdeteksi Saat Ini -->
+                    <div class="p-4 sm:p-5 bg-[#0c0c0c] border border-[#202020] rounded-xl flex flex-col justify-between space-y-4 min-w-0 overflow-hidden">
+                        <div class="min-w-0 w-full">
+                            <div class="flex flex-wrap items-center border-b border-[#1c1c1c] pb-2.5 min-w-0 mb-3 gap-x-2 gap-y-1 min-h-[52px]">
+                                <span class="text-xs font-bold text-neutral-300 uppercase tracking-wider font-mono flex items-center gap-1.5 flex-1 min-w-0">
+                                    <span>🔍</span> Terdeteksi Saat Ini (Live Telemetry)
+                                </span>
+                                <span class="text-[10px] font-mono text-blue-400 bg-blue-950/50 px-2 py-0.5 rounded border border-blue-900/60 font-bold uppercase tracking-wider shrink-0">
+                                    ${currentSpecs ? 'LIVE SPECS' : 'KOSONG'}
+                                </span>
+                            </div>
 
-                        ${currentSpecs ? `
-                            <div class="space-y-2 font-mono">
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">Motherboard Serial</div>
-                                    ${!isMbMatch ? `
-                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-red-300 font-bold truncate bg-red-950/60 border border-red-500 px-1.5 py-0.5 rounded">🚨 ${currentSpecs.MotherboardSerial || 'N/A'} (TUKAR!)</div>
-                                    ` : `
-                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-emerald-300 font-bold truncate" title="${currentSpecs.MotherboardSerial || 'N/A'}">✓ ${currentSpecs.MotherboardSerial || 'N/A'}</div>
-                                    `}
-                                </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">CPU ID</div>
-                                    ${!isCpuMatch ? `
-                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-red-300 font-bold truncate bg-red-950/60 border border-red-500 px-1.5 py-0.5 rounded">🚨 ${currentSpecs.CpuId || 'N/A'} (TUKAR!)</div>
-                                    ` : `
-                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-emerald-300 font-bold truncate" title="${currentSpecs.CpuId || 'N/A'}">✓ ${currentSpecs.CpuId || 'N/A'}</div>
-                                    `}
-                                </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">GPU PNP ID</div>
-                                    ${!isGpuMatch ? `
-                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-red-300 font-bold truncate bg-red-950/60 border border-red-500 px-1.5 py-0.5 rounded">🚨 ${currentSpecs.GpuPnpId || 'N/A'} (TUKAR!)</div>
-                                    ` : `
-                                        <div class="text-xs lg:max-xl:text-xs xl:text-base text-emerald-300 font-bold truncate" title="${currentSpecs.GpuPnpId || 'N/A'}">✓ ${currentSpecs.GpuPnpId || 'N/A'}</div>
-                                    `}
-                                </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">RAM Serial(s)</div>
-                                    <div class="pt-0.5">
-                                        ${renderRamPills(currentSpecs.RamSerials, false)}
+                            ${currentSpecs ? `
+                                <div class="space-y-3 font-mono min-w-0 w-full">
+                                    <div class="min-w-0 w-full">
+                                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">🛠️ Komponen Internal:</span>
+                                        <ul class="text-xs lg:max-xl:text-xs xl:text-sm space-y-2 font-mono text-neutral-400 min-w-0 w-full">
+                                            <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">Motherboard:</strong>
+                                                <span class="break-all text-neutral-300 min-w-0">${escapeHtml(currentSpecs.MotherboardSerial || 'N/A')}</span>
+                                            </li>
+                                            <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">CPU ID:</strong>
+                                                <span class="break-all text-neutral-300 min-w-0">${escapeHtml(currentSpecs.CpuId || 'N/A')}</span>
+                                            </li>
+                                            <li class="flex flex-col gap-1 min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">GPU PNP:</strong>
+                                                <span class="break-all text-neutral-300 font-mono text-[10px] sm:text-[11px] lg:max-xl:text-[11px] xl:text-xs bg-[#070707] border border-[#181818] p-2 rounded block w-full select-all leading-relaxed min-w-0 overflow-hidden" title="${escapeHtml(currentSpecs.GpuPnpId || 'N/A')}">${escapeHtml(currentSpecs.GpuPnpId || 'N/A')}</span>
+                                            </li>
+                                            <li class="min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">RAM Serials:</strong>
+                                                <div class="pt-1 min-w-0">
+                                                    ${this.renderRamPills(currentSpecs.RamSerials, false, baselineSpecs)}
+                                                </div>
+                                            </li>
+                                            <li class="min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">Disks:</strong>
+                                                <div class="pt-1 min-w-0">
+                                                    ${this.renderDiskPills(currentSpecs.DiskSerials, false, baselineSpecs)}
+                                                </div>
+                                            </li>
+                                        </ul>
                                     </div>
                                 </div>
-                                <div class="p-2 bg-[#070707] border border-[#181818] rounded-lg space-y-0.5">
-                                    <div class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 uppercase font-semibold tracking-wider">Storage / Disk Serial(s)</div>
-                                    <div class="pt-0.5">
-                                        ${renderDiskPills(currentSpecs.DiskSerials, false)}
-                                    </div>
+                            ` : `
+                                <div class="py-10 text-center text-neutral-500 font-mono text-xs lg:max-xl:text-sm xl:text-base">
+                                    <p>Belum ada data komponen live terdeteksi.</p>
                                 </div>
-                            </div>
-                        ` : `
-                            <div class="py-10 text-center text-neutral-500 font-mono text-xs lg:max-xl:text-sm xl:text-base">
-                                <p>Belum ada data komponen live terdeteksi.</p>
-                            </div>
-                        `}
+                            `}
+                        </div>
                     </div>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button onclick="DashboardDetailModal.registerBaselineFromModal(${pcId}, '${escapeHtml(pcKode)}')"
+                        class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors flex items-center gap-1.5 font-mono shadow-md">
+                        🔄 Update Baseline Resmi
+                    </button>
                 </div>
             </div>
         `;
     },
 
     registerBaselineFromModal(pcId, pcKode) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const targetKode = (pcKode || '').startsWith('PC') ? pcKode : `PC ${pcKode}`;
         
         const confirmOverlayId = 'hw-baseline-confirm-overlay';
@@ -1392,7 +1731,7 @@ const DashboardDetailModal = {
                     if (res && res.success) {
                         Toast.success(`Baseline hardware ${targetKode} berhasil diperbarui!`);
                         closeOverlay();
-                        DashboardDetailModal.loadHardwareData(pcId, pcKode);
+                        DashboardDetailModal.loadHardwareData(pcId, pcKode, false);
                     } else {
                         Toast.error((res && res.error) || 'Gagal memperbarui baseline');
                         confirmBtn.disabled = false;
@@ -1407,7 +1746,87 @@ const DashboardDetailModal = {
         }
     },
 
+    syncLive: function(pcList) {
+        const modalEl = document.getElementById('pc-detail-modal-card');
+        if (!modalEl || !this.currentPcId) return;
+
+        let targetPcList = pcList;
+        if (!targetPcList && typeof Dashboard !== 'undefined' && Dashboard.lastData) {
+            targetPcList = Dashboard.lastData.pc_list;
+        }
+        if (!targetPcList || !Array.isArray(targetPcList)) return;
+
+        const pc = targetPcList.find(p => p.id === this.currentPcId);
+        if (!pc) return;
+
+        const isOnline = pc.status !== 'offline';
+        const sesi = pc.sesi_detail;
+        const isAfk = pc.is_afk || sesi?.is_afk;
+        const isSystemMode = pc.is_system_mode || pc.status === 'system' || (sesi?.tipe === 'admin' && ((sesi?.nama_guest || '').toUpperCase() === 'SYSTEM' || (sesi?.member_nama || '').toUpperCase() === 'SYSTEM'));
+        const isAdminMode = !isSystemMode && (pc.is_admin_mode || pc.status === 'admin' || (sesi?.tipe === 'admin'));
+
+        // 1. In-place Update Header Mode Badge
+        const badgeContainer = document.getElementById('pc-detail-modal-mode-badge');
+        if (badgeContainer) {
+            badgeContainer.innerHTML = isAfk ? '<span class="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded">🔒 AFK / Istirahat</span>' : (isSystemMode ? '<span class="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 rounded">SYSTEM MODE</span>' : (isAdminMode ? '<span class="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded">ADMIN MODE</span>' : ''));
+        }
+
+        // 2. In-place Update Action Buttons Grid (kunci dengan state fingerprint agar 0 flicker pada tombol)
+        const actionGrid = document.getElementById('modal-action-buttons-grid');
+        const viewActionMenu = document.getElementById('view-action-menu');
+        if (actionGrid && viewActionMenu && !viewActionMenu.classList.contains('hidden')) {
+            const stateKey = `${pc.status}_${isOnline}_${Boolean(sesi)}_${Boolean(isAfk)}_${Boolean(isSystemMode)}_${Boolean(isAdminMode)}`;
+            if (this._lastActionStateKey !== stateKey) {
+                this._lastActionStateKey = stateKey;
+                actionGrid.innerHTML = this.renderActionButtonsHtml(pc, isOnline, sesi, isAfk, isSystemMode, isAdminMode);
+            }
+        }
+
+        // 3. In-place Update Screenshot Preview (delta-check anti-flicker)
+        if (pc.screenshot_time && pc.screenshot_time !== this.lastScreenshotTime) {
+            this.lastScreenshotTime = pc.screenshot_time;
+            const timeEl = document.getElementById('screenshot-time');
+            if (timeEl) timeEl.innerText = pc.screenshot_time;
+
+            const imgEl = document.getElementById('screenshot-img');
+            const placeholderEl = document.getElementById('screenshot-placeholder');
+            const hintEl = document.getElementById('screenshot-fullscreen-hint');
+
+            if (pc.screenshot_url) {
+                const resolvedUrl = window.API ? API.resolveMediaUrl(pc.screenshot_url) : pc.screenshot_url;
+                if (imgEl) {
+                    imgEl.src = `${resolvedUrl}?t=${Date.now()}`;
+                    imgEl.classList.remove('hidden');
+                }
+                if (placeholderEl) placeholderEl.classList.add('hidden');
+                if (hintEl) hintEl.classList.remove('hidden');
+            }
+        }
+
+        // 4. In-place Update Live Hardware Telemetry jika Tab Hardware Specs sedang aktif
+        const hwView = document.getElementById('view-hardware-specs');
+        if (hwView && !hwView.classList.contains('hidden') && this.currentPcId) {
+            this.loadHardwareData(this.currentPcId, this.currentHardwarePcKode || pc.kode, true);
+        }
+    },
+
     onModalClose: function(pcId) {
+        this.currentPcId = null;
+        this.lastScreenshotTime = null;
+        this.lastScreenshotUrl = null;
+        this._lastActionStateKey = null;
+
+        if (this._hardwarePollingTimer) {
+            clearInterval(this._hardwarePollingTimer);
+            this._hardwarePollingTimer = null;
+        }
+        this.currentHardwarePcId = null;
+        this.currentHardwarePcKode = null;
+        this._lastHwFingerprint = null;
+        this._lastHwStructureKey = null;
+        this._lastHwData = null;
+        this._lastHwPcId = null;
+
         if (this.vncSession) {
             this.stopRemote(pcId);
         }

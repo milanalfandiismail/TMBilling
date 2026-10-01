@@ -44,9 +44,11 @@ class NoteService:
     @classmethod
     def validate_path(cls, filename: str) -> str:
         """Validasi path untuk memastikan berkas berada di dalam folder notes (mencegah directory traversal)."""
+        from app.utils.validators import validate_filename
         if not filename or ".." in filename or filename.startswith("/") or filename.startswith("\\"):
             raise ValueError("Akses tidak sah: Nama berkas tidak valid atau mencoba traversal!")
-        clean_filename = cls.sanitize_filename(filename)
+
+        clean_filename = validate_filename(filename, allowed_extensions={'txt'}, field_name="Catatan")
         notes_dir = cls.get_notes_dir()
         target_path = os.path.realpath(os.path.join(notes_dir, clean_filename))
 

@@ -1,6 +1,7 @@
 [package]
 name = "mgctm"
-version = "1.6.1"
+version = "1.6.2"
+authors = ["Milan Alfandi Ismail"]
 edition = "2021"
 
 [[bin]]

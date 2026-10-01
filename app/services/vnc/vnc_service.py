@@ -185,7 +185,7 @@ class VNCClientProxyService:
             # Symmetrical backup queueing to make sure client stops
             try:
                 from app.services import ClientService
-                ClientService.queue_vnc_command(pc_id, "vnc_stop")
+                ClientService.queue_fast_command(pc_id, "vnc_stop")
             except Exception:
                 pass
             return True, "Proxy tidak aktif"
@@ -196,7 +196,7 @@ class VNCClientProxyService:
 
         try:
             from app.services import ClientService
-            ClientService.queue_vnc_command(pc_id, "vnc_stop")
+            ClientService.queue_fast_command(pc_id, "vnc_stop")
         except Exception as e:
             logger.error(f"Gagal mengantrekan vnc_stop untuk PC {pc_id}: {e}")
                 

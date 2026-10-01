@@ -32,17 +32,39 @@ const Tutorials = {
     tutorialsData: [],
     activeTutorialCategory: 'Semua',
     selectedTutorialId: null,
-    ckeditorInstance: null,
+    _lastFingerprint: null,
 
-    async load() {
-        await this.loadTutorials();
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'tutorials') return;
+        const modalForm = document.getElementById('tutorial-modal');
+        const isAppModalOpen = document.getElementById('app-modal') && !document.getElementById('app-modal').classList.contains('hidden');
+        if ((modalForm && !modalForm.classList.contains('hidden')) || isAppModalOpen) {
+            return;
+        }
+        return this.loadTutorials(true);
     },
 
-    async loadTutorials() {
+    async load(isSilent = false) {
+        await this.loadTutorials(isSilent);
+    },
+
+    async loadTutorials(isSilent = false) {
+        const sidebar = document.getElementById('tutorial-sidebar-items');
+        if (sidebar && !isSilent && (!this.tutorialsData || this.tutorialsData.length === 0) && typeof Skeleton !== 'undefined') {
+            sidebar.innerHTML = Skeleton.notesList(4);
+        }
+
         try {
             const res = await API.request('/api/v1/kasir/tutorials');
             if (res.success) {
-                this.tutorialsData = res.tutorials || [];
+                const tutorials = res.tutorials || [];
+                const newFingerprint = JSON.stringify(tutorials.map(t => ({ id: t.id, judul: t.judul, updated: t.updated_at })));
+                if (isSilent && this._lastFingerprint === newFingerprint) {
+                    return; // Data tidak berubah
+                }
+                this._lastFingerprint = newFingerprint;
+
+                this.tutorialsData = tutorials;
                 // Auto select first tutorial if not set
                 if (!this.selectedTutorialId && this.tutorialsData.length > 0) {
                     this.selectedTutorialId = this.tutorialsData[0].id;
@@ -50,7 +72,9 @@ const Tutorials = {
                 this.renderTutorialsList();
             }
         } catch (err) {
-            Toast.error('Gagal memuat daftar panduan: ' + err.message);
+            if (!isSilent) {
+                Toast.error('Gagal memuat daftar panduan: ' + err.message);
+            }
         }
     },
 

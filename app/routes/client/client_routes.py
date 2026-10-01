@@ -6,6 +6,7 @@ Blueprint ini menangani endpoint yang diakses oleh aplikasi
 client di PC warnet, termasuk identifikasi dan polling status.
 """
 
+import hmac
 from flask import Blueprint, request, jsonify, current_app
 from app.services import ClientService
 from app.utils.logger import write_log
@@ -20,7 +21,7 @@ client_api_bp = Blueprint("client", __name__)
 # Fokus: Memastikan request hanya datang dari aplikasi Client C# yang sah.
 
 def api_key_required(f):
-    """Decorator untuk validasi header X-Client-Key."""
+    """Decorator untuk validasi header X-Client-Key dengan proteksi timing attack."""
     @wraps(f)
     def decorated(*args, **kwargs):
         """Wrapper untuk memastikan request memiliki API Key valid."""
@@ -28,7 +29,7 @@ def api_key_required(f):
         # Ambil key dari config, fallback ke key default jika tidak diset
         expected_key = current_app.config.get("CLIENT_API_KEY")
         
-        if not api_key or not expected_key or api_key != expected_key:
+        if not api_key or not expected_key or not hmac.compare_digest(str(api_key), str(expected_key)):
             write_log("API_KEY_GAGAL", f"Invalid/Missing API Key from {request.remote_addr}")
             return jsonify({"error": "Akses ditolak. API Key tidak valid atau belum dikonfigurasi"}), 401
         return f(*args, **kwargs)
@@ -122,19 +123,65 @@ def admin_login():
 @client_api_bp.route("/emergency-login", methods=["POST"])
 @api_key_required
 def emergency_login():
-    """Login emergency dari PC client (bisa offline/online, selalu diterima)."""
+    """Login emergency dari PC client (bisa offline/online, selalu diterima jika identitas soket sah)."""
     data = request.get_json() or {}
     try:
         result = ClientService.emergency_login(
             ip_address=data.get("ip_address"),
             mac_address=data.get("mac_address", "").upper().strip(),
-            username=data.get("username", "SYSTEM").strip()
+            username=data.get("username", "SYSTEM").strip(),
+            socket_ip=request.remote_addr
+        )
+        return jsonify(result), 200
+    except PermissionError as e:
+        return jsonify({"success": False, "error": str(e)}), 403
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Internal Error: {str(e)}"}), 500
+
+
+# =========================================================================
+# 4. KUNCI MEJA AFK / ISTIRAHAT SEMENTARA
+# =========================================================================
+# Fokus: Kunci layar PC sementara dari klien dan buka kunci via PIN/Password.
+
+@client_api_bp.route("/afk-lock", methods=["POST"])
+@api_key_required
+def afk_lock():
+    """Mengunci PC untuk istirahat (AFK) atas permintaan dari Client."""
+    data = request.get_json() or {}
+    try:
+        result = ClientService.afk_lock(
+            ip_address=data.get("ip_address"),
+            mac_address=data.get("mac_address", "").upper().strip(),
+            pin=data.get("pin")
         )
         return jsonify(result), 200
     except ValueError as e:
         return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": f"Internal Error: {str(e)}"}), 500
+
+
+@client_api_bp.route("/afk-unlock", methods=["POST"])
+@api_key_required
+def afk_unlock():
+    """Membuka kunci PC yang sedang AFK menggunakan Password Akun (Member) atau PIN (Guest)."""
+    data = request.get_json() or {}
+    try:
+        result = ClientService.afk_unlock(
+            ip_address=data.get("ip_address"),
+            mac_address=data.get("mac_address", "").upper().strip(),
+            credential=data.get("credential")
+        )
+        return jsonify(result), 200
+    except PermissionError as e:
+        return jsonify({"success": False, "error": str(e)}), 401
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Internal Error: {str(e)}"}), 500
 
 
 @client_api_bp.route("/warnet", methods=["GET"])
@@ -227,19 +274,20 @@ def vnc_stopped():
     return jsonify({"success": True, "message": "Status VNC stopped diperbarui"}), 200
 
 
+@client_api_bp.route("/fast_poll", methods=["POST"])
 @client_api_bp.route("/vnc_poll", methods=["POST"])
 @api_key_required
-def vnc_poll():
-    """Endpoint bagi background monitor agent untuk mengecek perintah VNC masuk."""
+def fast_poll():
+    """Endpoint bagi background monitor agent untuk mengecek perintah cepat masuk (VNC, Refresh, Kill, dll)."""
     data = request.get_json() or {}
     pc, ip_address, mac_address = _resolve_client_pc(data)
         
     if not pc:
         return jsonify({"success": False, "error": "PC tidak dikenal"}), 404
         
-    from app.services.client.client_service import PENDING_VNC_COMMANDS
-    cmd = PENDING_VNC_COMMANDS.pop(pc.id, None)
+    from app.services.client.client_service import ClientService
+    cmd = ClientService.pop_fast_command(pc.id)
     if cmd:
-        write_log("VNC_COMMAND_DISPATCHED", f"Perintah VNC [{cmd}] diambil oleh PC {pc.kode} ({ip_address})", detail_json={"pc_id": pc.id, "cmd": cmd})
+        write_log("FAST_COMMAND_DISPATCHED", f"Perintah cepat [{cmd}] diambil oleh PC {pc.kode} ({ip_address})", detail_json={"pc_id": pc.id, "cmd": cmd})
     
     return jsonify({"success": True, "command": cmd}), 200

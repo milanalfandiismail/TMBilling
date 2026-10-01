@@ -60,11 +60,19 @@ const API = {
                     }
                     return data;
                 }
-                // Session expired atau IP block — redirect ke login (kecuali endpoint auth)
-                if ((res.status === 401 || res.status === 403) && !url.includes('/api/v1/kasir/auth/login') && !url.includes('/api/v1/kasir/auth/check')) {
+                // Session expired — redirect ke login (hanya 401 unauthenticated, bukan 403)
+                if (res.status === 401 && !url.includes('/api/v1/kasir/auth/login') && !url.includes('/api/v1/kasir/auth/check')) {
                     window.location.href = '/kasir/login';
                     return;
                 }
+
+                // Jika error adalah belum buka shift (HTTP 400), picu modal buka shift kasir
+                if (res.status === 400 && data && data.error && typeof data.error === 'string' && data.error.toLowerCase().includes('buka shift')) {
+                    if (window.Shift && typeof window.Shift.showBukaShiftModal === 'function') {
+                        window.Shift.showBukaShiftModal();
+                    }
+                }
+
                 throw new Error(data.error || `HTTP ${res.status}`);
             }
             return data;
@@ -101,7 +109,21 @@ const API = {
         get: (id) => API.request(`/api/v1/kasir/user/${id}`),
         create: (data) => API.request('/api/v1/kasir/user/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/v1/kasir/user/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: (id) => API.request(`/api/v1/kasir/user/${id}`, { method: 'DELETE' })
+        delete: (id) => API.request(`/api/v1/kasir/user/${id}`, { method: 'DELETE' }),
+        resetKuota: (id) => API.request(`/api/v1/kasir/user/${id}/reset-kuota`, { method: 'POST' })
+    },
+
+    // 🔗 SHIFT KASIR (Handover & Blind Count)
+    shift: {
+        active: () => API.request('/api/v1/kasir/shift/active'),
+        start: (data) => API.request('/api/v1/kasir/shift/start', { method: 'POST', body: JSON.stringify(data) }),
+        end: (data) => API.request('/api/v1/kasir/shift/end', { method: 'POST', body: JSON.stringify(data) }),
+        summary: (shiftId = null) => API.request(shiftId ? `/api/v1/kasir/shift/${shiftId}/summary` : '/api/v1/kasir/shift/summary'),
+        history: (params = {}) => {
+            const q = new URLSearchParams(params).toString();
+            return API.request(`/api/v1/kasir/shift/history${q ? '?' + q : ''}`);
+        },
+        receipt: (id) => API.request(`/api/v1/kasir/shift/receipt/${id}`)
     },
 
     // 🔗 KELOLA MEMBER
@@ -218,6 +240,7 @@ const API = {
             method: 'POST',
             body: JSON.stringify({ process_name: processName })
         }),
+        processesTrigger: (pcId) => API.request(`/api/v1/kasir/monitor/processes/${pcId}/trigger`, { method: 'POST' }),
         registerBaseline: (pcId) => API.request(`/api/v1/kasir/monitor/register/${pcId}`, { method: 'POST' })
     },
 
@@ -282,6 +305,10 @@ const API = {
             method: 'PUT',
             body: JSON.stringify({ timer_seconds: timerSeconds })
         }),
+        updateClientPollingInterval: (intervalSeconds) => API.request('/api/v1/kasir/settings/client-polling-interval', {
+            method: 'PUT',
+            body: JSON.stringify({ interval_seconds: intervalSeconds })
+        }),
         manualBackup: () => API.request('/api/v1/kasir/settings/backup/manual', {
             method: 'POST'
         }),
@@ -296,6 +323,21 @@ const API = {
         delete: (id) => API.request(`/api/v1/kasir/menu/${id}`, { method: 'DELETE' }),
         restore: (id) => API.request(`/api/v1/kasir/menu/${id}/restore`, { method: 'POST' }),
         deletePermanent: (id) => API.request(`/api/v1/kasir/menu/${id}/permanent`, { method: 'DELETE' }),
+        tambahStok: (id, jumlahTambah, catatan = '') => API.request(`/api/v1/kasir/menu/${id}/tambah-stok`, {
+            method: 'POST',
+            body: JSON.stringify({ jumlah_tambah: jumlahTambah, catatan })
+        }),
+        stockLogs: (params = {}) => {
+            const q = new URLSearchParams();
+            if (params.tanggal) q.append('tanggal', params.tanggal);
+            if (params.menu_id) q.append('menu_id', params.menu_id);
+            if (params.operator) q.append('operator', params.operator);
+            if (params.search) q.append('search', params.search);
+            if (params.page) q.append('page', params.page);
+            if (params.per_page) q.append('per_page', params.per_page);
+            const url = '/api/v1/kasir/menu/stock-logs' + (q.toString() ? `?${q}` : '');
+            return API.request(url);
+        },
         checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0, metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/menu/checkout', {
             method: 'POST',
             body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode, tunai, kembalian, metode_pembayaran: metodePembayaran })
@@ -354,6 +396,28 @@ const API = {
         switchContext: (branchId) => API.request('/api/v1/kasir/branch/switch-context', { method: 'POST', body: JSON.stringify({ branch_id: branchId }) })
     },
 
+    // 🔗 MANAJEMEN SHIFT KASIR
+    shift: {
+        active: () => API.request('/api/v1/kasir/shift/active'),
+        start: (data) => API.request('/api/v1/kasir/shift/start', { method: 'POST', body: JSON.stringify(data) }),
+        summary: () => API.request('/api/v1/kasir/shift/summary'),
+        getSummary: (shiftId) => API.request(`/api/v1/kasir/shift/${shiftId}/summary`),
+        end: (data) => API.request('/api/v1/kasir/shift/end', { method: 'POST', body: JSON.stringify(data) }),
+        forceClose: (data) => API.request('/api/v1/kasir/shift/force-close', { method: 'POST', body: JSON.stringify(data) }),
+        receipt: (shiftId) => API.request(`/api/v1/kasir/shift/receipt/${shiftId}`),
+        history: (params = {}) => {
+            const q = new URLSearchParams();
+            if (params.kasir_id) q.append('kasir_id', params.kasir_id);
+            if (params.limit) q.append('limit', params.limit);
+            if (params.offset) q.append('offset', params.offset);
+            if (params.tanggal_mulai) q.append('tanggal_mulai', params.tanggal_mulai);
+            if (params.tanggal_selesai) q.append('tanggal_selesai', params.tanggal_selesai);
+            const qs = q.toString();
+            return API.request('/api/v1/kasir/shift/history' + (qs ? `?${qs}` : ''));
+        },
+        kasirList: () => API.request('/api/v1/kasir/shift/kasir-list')
+    },
+
     resolveMediaUrl(url) {
         if (!url || typeof url !== 'string') return '';
         if (url.startsWith('data:') || url.startsWith('blob:')) return url;
@@ -392,7 +456,7 @@ const API = {
             console.warn('[Session Polling] Jaringan terputus sementara atau request dibatalkan.');
         };
         xhr.send();
-    }, 5000);
+    }, 30000);
 })();
 
 // Pastikan object API bisa diakses secara global oleh file JS lainnya
