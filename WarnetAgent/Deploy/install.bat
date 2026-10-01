@@ -54,6 +54,12 @@ echo 1. Menghentikan proses lama yang berjalan (jika ada)...
 taskkill /F /IM MGCTM.exe /IM TMMonitor.exe /IM HardwareHelper.exe /IM TMBilling.exe /IM mtm.exe /IM tvnserver.exe >nul 2>&1
 timeout /t 2 /nobreak >nul
 
+:: Bersihkan file cache/temp hardware lama dari mesin sebelumnya
+del /f /q "%INSTALL_DIR%\hardware_temp.json" >nul 2>&1
+del /f /q "%INSTALL_DIR%\hardware_temp.json.tmp" >nul 2>&1
+del /f /q "%INSTALL_DIR%\hardware_interval.txt" >nul 2>&1
+del /f /q "%INSTALL_DIR%\tmmonitor.lock" >nul 2>&1
+
 echo 2. Lokasi instalasi: %INSTALL_DIR%
 echo.
 

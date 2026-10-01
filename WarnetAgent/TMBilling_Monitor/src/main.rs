@@ -51,44 +51,41 @@ struct StaticSpecs {
 }
 
 static CACHED_SPECS: Lazy<RwLock<StaticSpecs>> = Lazy::new(|| {
-    let (_, _, mobo_opt, cpu_opt, gpu_opt) = read_cached_temperature_and_specs();
-
     RwLock::new(StaticSpecs {
-        motherboard: mobo_opt.unwrap_or_else(|| "Unknown".to_string()),
-        cpu_name: cpu_opt.unwrap_or_else(|| "Unknown".to_string()),
-        gpu_name: gpu_opt.unwrap_or_else(|| "Unknown".to_string()),
+        motherboard: "Unknown".to_string(),
+        cpu_name: "Unknown".to_string(),
+        gpu_name: "Unknown".to_string(),
     })
 });
+
+fn cleanup_runtime_temp_files() {
+    let _ = fs::remove_file("hardware_temp.json");
+    let _ = fs::remove_file("hardware_temp.json.tmp");
+    let _ = fs::remove_file("hardware_interval.txt");
+}
 
 fn get_effective_hardware_specs(
     mobo_cache: Option<String>,
     cpu_cache: Option<String>,
     gpu_cache: Option<String>,
 ) -> (String, String, String) {
-    if let Ok(guard) = CACHED_SPECS.read() {
-        let mobo_valid = guard.motherboard != "Unknown" && !guard.motherboard.is_empty();
-        let cpu_valid = guard.cpu_name != "Unknown" && !guard.cpu_name.is_empty();
-        let gpu_valid = guard.gpu_name != "Unknown" && !guard.gpu_name.is_empty();
-
-        if mobo_valid && cpu_valid && gpu_valid {
-            return (guard.motherboard.clone(), guard.cpu_name.clone(), guard.gpu_name.clone());
-        }
-    }
-
     if let Ok(mut guard) = CACHED_SPECS.write() {
-        if let Some(m) = mobo_cache.clone() {
-            if guard.motherboard == "Unknown" || guard.motherboard.is_empty() {
-                guard.motherboard = m;
+        if let Some(m) = mobo_cache {
+            let trimmed = m.trim();
+            if !trimmed.is_empty() && trimmed != "Unknown" {
+                guard.motherboard = trimmed.to_string();
             }
         }
-        if let Some(c) = cpu_cache.clone() {
-            if guard.cpu_name == "Unknown" || guard.cpu_name.is_empty() {
-                guard.cpu_name = c;
+        if let Some(c) = cpu_cache {
+            let trimmed = c.trim();
+            if !trimmed.is_empty() && trimmed != "Unknown" {
+                guard.cpu_name = trimmed.to_string();
             }
         }
-        if let Some(g) = gpu_cache.clone() {
-            if guard.gpu_name == "Unknown" || guard.gpu_name.is_empty() {
-                guard.gpu_name = g;
+        if let Some(g) = gpu_cache {
+            let trimmed = g.trim();
+            if !trimmed.is_empty() && trimmed != "Unknown" && !is_generic_display_adapter(trimmed) {
+                guard.gpu_name = trimmed.to_string();
             }
         }
 
@@ -1317,6 +1314,10 @@ fn main() {
         return;
     }
     log_debug("Single-instance lock (tmmonitor.lock) berhasil didapatkan.");
+    
+    // Bersihkan file runtime sementara dari sesi/mesin sebelumnya agar tidak terbaca salah
+    cleanup_runtime_temp_files();
+    
     extract_embedded_files();
     ensure_hardware_helper_daemon();
     stop_tightvnc_portable();
