@@ -30,7 +30,7 @@ const Paket = {
     async load(isSilent = false) {
         const area = document.getElementById('paket-table');
         if (area && !isSilent && (!this._lastPaketList || this._lastPaketList.length === 0) && typeof Skeleton !== 'undefined') {
-            area.innerHTML = Skeleton.paketCards(6);
+            area.innerHTML = Skeleton.paketTable(2, 3);
         }
 
         try {

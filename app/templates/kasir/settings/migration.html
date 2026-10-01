@@ -56,10 +56,15 @@
                         <th class="pb-2 text-right">Status</th>
                     </tr>
                 </thead>
-                <tbody id="migration-history-table" class="text-neutral-300 text-xs lg:max-xl:text-xs xl:text-sm font-mono">
-                    <tr>
-                        <td colspan="4" class="py-4 text-center text-neutral-500">Memuat riwayat migrasi...</td>
+                <tbody id="migration-history-table" class="text-neutral-300 text-xs lg:max-xl:text-xs xl:text-sm font-mono divide-y divide-[#1c1c1c]">
+                    {% for _ in range(4) %}
+                    <tr class="border-b border-[#1c1c1c] animate-pulse">
+                        <td class="py-3"><div class="h-3.5 bg-[#262626] rounded w-24"></div></td>
+                        <td class="py-3"><div class="h-3 bg-[#202020] rounded w-24"></div></td>
+                        <td class="py-3"><div class="h-3 bg-[#1e1e1e] rounded w-48"></div></td>
+                        <td class="py-3 text-right"><div class="h-5 w-16 bg-[#202020] rounded-full ml-auto"></div></td>
                     </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>

@@ -63,8 +63,20 @@
         </div>
         <div id="log-content"
             class="bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base max-h-[600px] overflow-auto scrollbar-mono p-4">
-            <div class="flex justify-center py-10">
-                <div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div>
+            <div class="divide-y divide-[#1c1c1c]">
+                {% for i in range(8) %}
+                <div class="border-b border-[#1c1c1c] py-3.5 px-4 animate-pulse space-y-2 {% if i % 2 == 0 %}bg-[#0a0a0a]{% endif %}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="h-3 bg-[#262626] rounded w-8"></div>
+                            <div class="h-3 bg-[#202020] rounded w-24"></div>
+                            <div class="h-3 bg-[#1e1e1e] rounded w-16"></div>
+                        </div>
+                        <div class="h-3 bg-[#202020] rounded w-20"></div>
+                    </div>
+                    <div class="h-3.5 bg-[#262626] rounded w-1/2"></div>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>

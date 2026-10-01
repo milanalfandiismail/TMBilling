@@ -108,6 +108,11 @@ def test_pc_service_validates_position(app_ctx):
         assert pc.pos_x == 150
         assert pc.pos_y == 300
 
+        # Valid unmapped position (-1, -1)
+        pc_unmapped = PCService.update_position(pc_id, -1, -1)
+        assert pc_unmapped.pos_x == -1
+        assert pc_unmapped.pos_y == -1
+
         # Out of bounds X
         with pytest.raises(ValueError, match="Posisi X"):
             PCService.update_position(pc_id, -5, 300)
@@ -117,7 +122,7 @@ def test_pc_service_validates_position(app_ctx):
 
         # Out of bounds Y
         with pytest.raises(ValueError, match="Posisi Y"):
-            PCService.update_position(pc_id, 150, -1)
+            PCService.update_position(pc_id, 150, -5)
 
         with pytest.raises(ValueError, match="Posisi Y"):
             PCService.update_position(pc_id, 150, 15000)

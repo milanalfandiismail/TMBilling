@@ -125,7 +125,7 @@ const LaporanMenu = {
         if (!area) return;
 
         if (!isSilent && (!this.allData) && typeof Skeleton !== 'undefined') {
-            area.innerHTML = Skeleton.tableRows(8, 6);
+            area.innerHTML = Skeleton.laporanMenu(6);
         }
 
         try {

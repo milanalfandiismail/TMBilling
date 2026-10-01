@@ -16,8 +16,20 @@
 
         <!-- Detail Grid/Tabel PC Hardware Checker -->
         <div id="hardware-checker-container" class="space-y-4">
-            <div class="flex justify-center py-10">
-                <div class="w-8 h-8 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div>
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-4">
+                <table class="w-full">
+                    <tbody class="divide-y divide-[#1c1c1c]">
+                        {% for _ in range(6) %}
+                        <tr class="border-b border-[#1c1c1c] animate-pulse">
+                            <td class="px-4 py-3.5 text-left"><div class="h-3 bg-[#202020] rounded w-20"></div></td>
+                            <td class="px-4 py-3.5 text-left"><div class="h-3 bg-[#202020] rounded w-28"></div></td>
+                            <td class="px-4 py-3.5 text-left"><div class="h-3 bg-[#202020] rounded w-28"></div></td>
+                            <td class="px-4 py-3.5 text-left"><div class="h-3 bg-[#202020] rounded w-28"></div></td>
+                            <td class="px-4 py-3.5 text-left"><div class="h-3 bg-[#202020] rounded w-16"></div></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
