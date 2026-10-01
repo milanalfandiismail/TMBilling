@@ -6,7 +6,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
-## [1.6.2] - 2026-09-25
+## [1.6.2] - 2026-10-01
 
 ### Ditambahkan
 - **Fitur Kunci Meja AFK / Istirahat Sementara (Temporary AFK Screen Lock)**:
@@ -41,6 +41,19 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
   - Penyediaan skrip otomatisasi firewall Windows Defender `allow_firewall.bat` dan `tightvnc_settings.reg`.
 - **Blackout Auto-Recovery System**:
   - Toleransi pemadaman listrik otomatis dengan pencatatan heartbeat `PCUptimeLog` dan pemulihan sisa waktu pelanggan secara otomatis saat PC kembali menyala (*Auto Session Resume*).
+- **Chain Sesi Pindah PC (`sesi_asal_id`)**:
+  - Penambahan kolom `sesi_asal_id` (ForeignKey ke `sesi.id`) pada model `Sesi` untuk melacak rantai sesi akibat perpindahan PC (*pindah PC*), memungkinkan penelusuran seluruh riwayat sesi pelanggan dari satu PC ke PC lain dalam satu grup yang sama.
+  - Dimanfaatkan oleh `sesi_service.py` dan `blackout_service.py` untuk menjaga konsistensi data refund dan recovery saat sesi dipindahkan.
+  - Skema database di-upgrade otomatis via *Self-Healing Auto-Migration* di `app/__init__.py` dan `migration_routes.py` (migrasi `a8f1b2c3d4e5`).
+- **Sesi Kasir Benefit (`user_id` pada Model `Sesi`)**:
+  - Penambahan kolom `user_id` (ForeignKey ke `user.id`) pada model `Sesi` untuk mendukung sesi bermain staf kasir / benefit internal, dipisahkan dari sesi member reguler.
+- **Overhaul Deteksi Hardware TMMonitor (LibreHardwareMonitor Exclusive)**:
+  - `TMBilling_Monitor` (`TMMonitor.exe`) kini menggunakan `HardwareHelper.exe` (berbasis LibreHardwareMonitor kernel driver) sebagai *sumber tunggal* untuk nama hardware (CPU, GPU, Motherboard), menggantikan fallback WMI `Win32_VideoController` yang rentan terhadap GPU display adapter palsu.
+  - Serial number motherboard kini dibaca via WMI `Win32_BaseBoard` (struct `BaseBoardInfo`: `SerialNumber`, `Product`, `Manufacturer`) untuk presisi identifikasi yang lebih akurat.
+  - Eliminasi false positive GPU "Microsoft Basic Display Adapter" atau adapter palsu pada hasil Hardware Checker.
+- **Modul Validasi Input Terpusat (`app/utils/validators.py`)**:
+  - Penambahan modul utilitas validasi dan sanitasi input pengguna yang digunakan oleh seluruh domain sistem (User, Member, PC, Grup, Paket, Menu, Sesi, Branch).
+  - Fungsi tersedia: `validate_username`, `validate_password`, `validate_integer_range`, `validate_string_length`, `validate_hex_color`, `validate_phone_number`, `validate_ip_address`, `validate_url`, `validate_choice`, `validate_filename`, dan lainnya.
 
 ### Diubah
 - **Restrukturisasi Direktori Klien**:
