@@ -1,6 +1,6 @@
 {
   "name": "tmbilling",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "<!-- markdownlint-disable MD033 MD041 -->\r <h1 align=\"center\">🖥️ TMBilling</h1>",
   "main": "index.js",
   "directories": {
@@ -16,8 +16,8 @@
     "url": "git+https://github.com/milanalfandiismail/TMBilling.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Milan Alfandi Ismail",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/milanalfandiismail/TMBilling/issues"
   },

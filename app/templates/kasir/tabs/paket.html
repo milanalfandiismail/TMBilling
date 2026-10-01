@@ -21,10 +21,12 @@
         <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
             <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-400 uppercase tracking-wider">Daftar Paket</h3>
             <div class="flex flex-wrap items-center gap-2">
+                <label for="paket-search-input" class="sr-only">Cari Nama Paket</label>
                 <input type="text" id="paket-search-input" placeholder="Cari nama paket..."
                     class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 w-40"
                     oninput="Paket.debouncedSearch()"
                     onkeypress="if(event.key === 'Enter') Paket.doSearch()">
+                <label for="paket-grup-filter-select" class="sr-only">Filter Grup Paket</label>
                 <select id="paket-grup-filter-select"
                     class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
                     onchange="Paket.doSearch()">

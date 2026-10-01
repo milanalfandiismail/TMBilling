@@ -27,12 +27,15 @@ const Dashboard = {
         DashboardSidebar.toggleSidebar();
     },
 
-    async load() {
+    async load(isSilent = false) {
         const container = document.getElementById('pc-area');
+        if (!this.lastData && !isSilent && container && !document.querySelector('.pc-card-item') && typeof Skeleton !== 'undefined') {
+            container.innerHTML = Skeleton.pcCards(12);
+        }
         try {
             const data = await API.dashboard.pcList();
             if (!data || !data.by_grup) throw new Error('Data format invalid - missing by_grup');
-            this.lastData = data;
+            this.lastData = data; // Set dulu sebelum render agar renderCompactCard() bisa akses grup_meta saat render pertama
             this._render(data);
             this.updateTime();
             if (data.omzet_billing !== undefined || data.omzet_kantin !== undefined || data.omzet_hari_ini !== undefined) {
@@ -40,7 +43,7 @@ const Dashboard = {
             }
         } catch (err) {
             console.error('[Dashboard] Error:', err);
-            if (container) {
+            if (container && !this.lastData) {
                 container.innerHTML = `<div class="text-center py-20 text-red-400 text-sm">Gagal memuat dashboard: ${err.message}<br><button onclick="Dashboard.load()" class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs lg:text-base font-semibold">Coba Lagi</button></div>`;
             }
         }
@@ -49,20 +52,23 @@ const Dashboard = {
     setGrup(grupKey) {
         this.activeGrup = grupKey;
         if (this.lastData) {
-            this._render(this.lastData);
+            this._render(this.lastData, true);
         }
     },
 
     showDetail(pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         this._currentPcId = pcId;
         DashboardDetailModal.showDetail(pcId, this.lastData);
     },
 
     takeScreenshot(pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         DashboardDetailModal.takeScreenshot(pcId);
     },
 
     remoteAction(pcId, action, pcKode = '') {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         DashboardDetailModal.remoteAction(pcId, action, pcKode);
     },
 
@@ -71,6 +77,7 @@ const Dashboard = {
     },
 
     showProcesses() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         DashboardProcessMonitor.showProcesses(this._currentPcId);
     },
 
@@ -79,14 +86,17 @@ const Dashboard = {
     },
 
     loadProcesses(pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         DashboardProcessMonitor.loadProcesses(pcId);
     },
 
     killProcess(pcId, name) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         DashboardProcessMonitor.killProcess(pcId, name);
     },
 
     async tutupSesi(sesiId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         Modal.confirm('<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Tutup Sesi Billing?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Sesi transaksi ini akan dihentikan.</p></div>', async () => {
             try {
                 await API.sesi.tutup(sesiId);
@@ -103,6 +113,7 @@ const Dashboard = {
     },
 
     async showGuestRefundModal(sesiId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         try {
             const [sesiRes, paketRes] = await Promise.all([
                 API.sesi.detail(sesiId),
@@ -170,6 +181,7 @@ const Dashboard = {
     },
 
     async refundGuestPaket(sesiId, transaksiId, namaPaket, durasiMenit, dibuatPada, sisaWaktuSekarang) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const durasiFriendly = Utils.formatDurasiFriendly(durasiMenit);
         const sisaSekarangFriendly = Utils.formatDurasiFriendly(sisaWaktuSekarang);
         const setelahDeduction = Math.max(0, sisaWaktuSekarang - durasiMenit);
@@ -216,6 +228,7 @@ const Dashboard = {
     },
 
     async showMemberRefundModal(memberId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         try {
             const [memberRes, paketRes] = await Promise.all([
                 API.member.get(memberId),
@@ -277,6 +290,7 @@ const Dashboard = {
     },
 
     async refundMemberPaket(memberId, transaksiId, namaPaket, durasiMenit, dibuatPada, sisaWaktuSekarang) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const durasiFriendly = Utils.formatDurasiFriendly(durasiMenit);
         const sisaSekarangFriendly = Utils.formatDurasiFriendly(sisaWaktuSekarang);
         const setelahDeduction = Math.max(0, sisaWaktuSekarang - durasiMenit);
@@ -323,6 +337,7 @@ const Dashboard = {
     },
 
     async pindahPc(sesiId, tipe, pcGrup) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         try {
             const data = await API.pc.list();
             const kosong = (data.pc_list || []).filter(p => p.status === 'kosong' && p.grup === pcGrup);
@@ -436,6 +451,7 @@ const Dashboard = {
     },
 
     async logoutAdmin(pcId, sesiId = null) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         Modal.confirm('<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">Tutup Sesi Admin?</p><p class="text-[10px] lg:text-base text-neutral-500 mt-1">Akses mode admin pada PC ini akan dicabut dan PC dikunci kembali ke mode Kiosk.</p></div>', async () => {
             try {
                 if (sesiId) {
@@ -453,15 +469,41 @@ const Dashboard = {
         });
     },
 
+    async clearSesiSystem(pcId, sesiId = null) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
+        Modal.confirm(`
+            <div class="text-center">
+                <p class="text-xs lg:text-base text-indigo-400 font-bold uppercase tracking-wider">Clear Sesi System?</p>
+                <p class="text-[10px] lg:text-base text-neutral-400 mt-1">Sesi system darurat pada PC ini akan dibersihkan dan PC dikembalikan ke mode Kiosk (Terkunci).</p>
+            </div>
+        `, async () => {
+            try {
+                if (sesiId) {
+                    await API.sesi.tutup(sesiId);
+                }
+                const res = await API.request(`/api/v1/kasir/pc/reset-admin/${pcId}`, {
+                    method: 'POST'
+                });
+                if (res && res.error) throw new Error(res.error);
+                Toast.success('Sesi system berhasil dibersihkan & PC dikunci');
+                this.load();
+            } catch (err) {
+                Toast.error(err.message || 'Gagal membersihkan sesi system');
+            }
+        });
+    },
+
     showContextMenu(event, pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         this.closeContextMenu();
 
         const pc = this.lastData?.pc_list?.find(p => p.id === pcId);
         if (!pc) return;
 
+        const isSystemMode = pc.is_system_mode || pc.status === 'system' || (pc.sesi_detail?.tipe === 'admin' && ((pc.sesi_detail?.nama_guest || '').toUpperCase() === 'SYSTEM' || (pc.sesi_detail?.member_nama || '').toUpperCase() === 'SYSTEM'));
+        const isAdminMode = !isSystemMode && (pc.is_admin_mode || pc.status === 'admin' || pc.sesi_detail?.tipe === 'admin');
         const hasMac = !!pc.mac_address;
-        const hasSesi = !!(pc.sesi_detail && pc.sesi_detail.tipe !== 'admin');
-        const isAdminMode = pc.is_admin_mode || (pc.sesi_detail?.tipe === 'admin');
+        const hasSesi = !isSystemMode && !isAdminMode && !!(pc.sesi_detail && pc.sesi_detail.tipe !== 'admin');
 
         const menu = document.createElement('div');
         menu.id = 'pc-context-menu';
@@ -471,110 +513,141 @@ const Dashboard = {
             'animate-in fade-in slide-in-from-top-1 duration-100'
         ].join(' ');
 
-        menu.innerHTML = `
-            <div class="px-4 py-2 border-b border-[#222] mb-1">
-                <div class="text-xs lg:text-base font-bold text-neutral-200 font-mono">${pc.kode}</div>
-                <div class="text-[10px] lg:text-base text-neutral-500 font-mono">${pc.ip_address || 'Tidak ada IP'}</div>
-            </div>
+        // Context Menu khusus untuk Mode SYSTEM (Operasional dinonaktifkan, hanya Clear Sesi & Detail)
+        if (isSystemMode) {
+            menu.innerHTML = `
+                <div class="px-4 py-2 border-b border-[#222] mb-1">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs lg:text-base font-bold text-indigo-300 font-mono">${pc.kode}</span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-950 border border-indigo-700/50 text-indigo-300 font-bold tracking-wider">SYSTEM</span>
+                    </div>
+                    <div class="text-[10px] lg:text-xs text-neutral-500 font-mono mt-0.5">${pc.ip_address || 'Tidak ada IP'}</div>
+                </div>
 
-            <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
-                    onclick="Dashboard.closeContextMenu(); Dashboard.showDetail(${pcId})">
-                <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span>Detail PC</span>
-            </button>
+                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
+                        onclick="Dashboard.closeContextMenu(); Dashboard.showDetail(${pcId})">
+                    <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Detail PC</span>
+                </button>
 
-            ${!pc.sesi_detail && !isAdminMode ? `
-            <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
-                    onclick="Dashboard.closeContextMenu(); BukaModal.open('${pc.kode}', '${pc.grup}')">
-                <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                <span>Buka Sesi</span>
-            </button>` : ''}
+                <div class="border-t border-[#222] my-1"></div>
 
-            ${isAdminMode ? `
-            <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-amber-400 hover:bg-amber-950/40 hover:text-amber-300 transition-colors text-left font-mono"
-                    onclick="Dashboard.closeContextMenu(); Dashboard.logoutAdmin(${pcId}, ${pc.sesi_detail ? pc.sesi_detail.id : 'null'})">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
-                <span>Logout Sesi Admin</span>
-            </button>` : ''}
+                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-indigo-400 hover:bg-indigo-950/40 hover:text-indigo-300 transition-colors text-left font-mono"
+                        onclick="Dashboard.closeContextMenu(); Dashboard.clearSesiSystem(${pcId}, ${pc.sesi_detail ? pc.sesi_detail.id : 'null'})">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    <span class="font-bold">Clear Sesi System</span>
+                </button>
+            `;
+        } else {
+            menu.innerHTML = `
+                <div class="px-4 py-2 border-b border-[#222] mb-1">
+                    <div class="text-xs lg:text-base font-bold text-neutral-200 font-mono">${pc.kode}</div>
+                    <div class="text-[10px] lg:text-base text-neutral-500 font-mono">${pc.ip_address || 'Tidak ada IP'}</div>
+                </div>
 
-            ${hasSesi ? `
-            <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
-                    onclick="Dashboard.closeContextMenu(); TambahModal.open(${pc.sesi_detail.id}, '${pc.grup}')">
-                <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span>Tambah Waktu</span>
-            </button>` : ''}
+                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
+                        onclick="Dashboard.closeContextMenu(); Dashboard.showDetail(${pcId})">
+                    <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Detail PC</span>
+                </button>
 
-            ${hasSesi ? `
-            <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left font-mono"
-                    onclick="Dashboard.closeContextMenu(); ${pc.sesi_detail.tipe === 'guest' ? `Dashboard.showGuestRefundModal(${pc.sesi_detail.id})` : `Dashboard.showMemberRefundModal(${pc.sesi_detail.member_id})`}">
-                <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"/>
-                </svg>
-                <span>Refund Paket</span>
-            </button>` : ''}
+                ${!pc.sesi_detail && !isAdminMode ? `
+                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
+                        onclick="Dashboard.closeContextMenu(); BukaModal.open('${pc.kode}', '${pc.grup}')">
+                    <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span>Buka Sesi</span>
+                </button>` : ''}
 
-            ${hasSesi ? `
-            <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left"
-                    onclick="Dashboard.closeContextMenu(); Dashboard.tutupSesi(${pc.sesi_detail.id})">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-                <span>Tutup Sesi</span>
-            </button>` : ''}
+                ${isAdminMode ? `
+                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-amber-400 hover:bg-amber-950/40 hover:text-amber-300 transition-colors text-left font-mono"
+                        onclick="Dashboard.closeContextMenu(); Dashboard.logoutAdmin(${pcId}, ${pc.sesi_detail ? pc.sesi_detail.id : 'null'})">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    <span>Logout Sesi Admin</span>
+                </button>` : ''}
 
-            ${hasSesi ? `
-            <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
-                    onclick="Dashboard.closeContextMenu(); Dashboard.pindahSesi(${pc.sesi_detail.id}, '${pc.sesi_detail.tipe}', '${pc.grup}')">
-                <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                </svg>
-                <span>Pindah PC</span>
-            </button>` : ''}
+                ${hasSesi ? `
+                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
+                        onclick="Dashboard.closeContextMenu(); TambahModal.open(${pc.sesi_detail.id}, '${pc.grup}')">
+                    <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Tambah Waktu</span>
+                </button>` : ''}
 
-            <div class="border-t border-[#222] my-1"></div>
+                ${hasSesi ? `
+                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left font-mono"
+                        onclick="Dashboard.closeContextMenu(); ${pc.sesi_detail.tipe === 'guest' ? `Dashboard.showGuestRefundModal(${pc.sesi_detail.id})` : `Dashboard.showMemberRefundModal(${pc.sesi_detail.member_id})`}">
+                    <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"/>
+                    </svg>
+                    <span>Refund Paket</span>
+                </button>` : ''}
 
-            ${hasMac ? `
-            <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-green-400 hover:bg-green-950/40 hover:text-green-300 transition-colors text-left"
-                    onclick="Dashboard.closeContextMenu(); Dashboard.wolSingle(${pcId})">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/>
-                </svg>
-                <span>Wake-on-LAN</span>
-                <span class="ml-auto text-[9px] lg:text-base text-green-700 font-mono">${pc.mac_address}</span>
-            </button>` : `
-            <div class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-600 cursor-not-allowed text-left" title="Tambahkan MAC Address di tab PC terlebih dahulu">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/>
-                </svg>
-                <span>Wake-on-LAN</span>
-                <span class="ml-auto text-[9px] lg:text-base text-neutral-700">No MAC</span>
-            </div>`}
+                ${hasSesi ? `
+                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left"
+                        onclick="Dashboard.closeContextMenu(); Dashboard.tutupSesi(${pc.sesi_detail.id})">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    <span>Tutup Sesi</span>
+                </button>` : ''}
 
-            ${pc.status !== 'offline' ? `
-            <div class="border-t border-[#222] my-1"></div>
-            <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left"
-                    onclick="Dashboard.closeContextMenu(); Dashboard.remoteAction(${pcId}, 'restart')">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5" />
-                </svg>
-                <span>Restart PC</span>
-            </button>
-            <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-500 hover:bg-red-950/50 hover:text-red-400 transition-colors text-left"
-                    onclick="Dashboard.closeContextMenu(); Dashboard.remoteAction(${pcId}, 'shutdown')">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L12 12m0-6v6" />
-                </svg>
-                <span>Shutdown PC</span>
-            </button>` : ''}
-        `;
+                ${hasSesi ? `
+                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
+                        onclick="Dashboard.closeContextMenu(); Dashboard.pindahSesi(${pc.sesi_detail.id}, '${pc.sesi_detail.tipe}', '${pc.grup}')">
+                    <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                    </svg>
+                    <span>Pindah PC</span>
+                </button>` : ''}
+
+                <div class="border-t border-[#222] my-1"></div>
+
+                ${hasMac ? `
+                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-green-400 hover:bg-green-950/40 hover:text-green-300 transition-colors text-left"
+                        onclick="Dashboard.closeContextMenu(); Dashboard.wolSingle(${pcId})">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/>
+                    </svg>
+                    <span>Wake-on-LAN</span>
+                    <span class="ml-auto text-[9px] lg:text-base text-green-700 font-mono">${pc.mac_address}</span>
+                </button>` : `
+                <div class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-600 cursor-not-allowed text-left" title="Tambahkan MAC Address di tab PC terlebih dahulu">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/>
+                    </svg>
+                    <span>Wake-on-LAN</span>
+                    <span class="ml-auto text-[9px] lg:text-base text-neutral-700">No MAC</span>
+                </div>`}
+
+                ${pc.status !== 'offline' ? `
+                <div class="border-t border-[#222] my-1"></div>
+                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left"
+                        onclick="Dashboard.closeContextMenu(); Dashboard.remoteAction(${pcId}, 'restart')">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5" />
+                    </svg>
+                    <span>Restart PC</span>
+                </button>
+                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-500 hover:bg-red-950/50 hover:text-red-400 transition-colors text-left"
+                        onclick="Dashboard.closeContextMenu(); Dashboard.remoteAction(${pcId}, 'shutdown')">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L12 12m0-6v6" />
+                    </svg>
+                    <span>Shutdown PC</span>
+                </button>` : ''}
+            `;
+        }
 
         document.body.appendChild(menu);
         const mw = menu.offsetWidth || 210;
@@ -630,6 +703,7 @@ const Dashboard = {
     },
 
     async wolSingle(pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         try {
             const result = await API.pc.wol([pcId]);
             const ok = result.result?.success || [];
@@ -645,14 +719,54 @@ const Dashboard = {
         }
     },
 
-    _render(data) {
+    _hasStructureChanged(oldData, newData) {
+        if (!oldData || !newData) return true;
+        if (!oldData.pc_list || !newData.pc_list) return true;
+        if (oldData.pc_list.length !== newData.pc_list.length) return true;
+
+        const oldGroups = Object.keys(oldData.by_grup || {}).sort().join(',');
+        const newGroups = Object.keys(newData.by_grup || {}).sort().join(',');
+        if (oldGroups !== newGroups) return true;
+
+        for (let i = 0; i < newData.pc_list.length; i++) {
+            const oldPc = oldData.pc_list[i];
+            const newPc = newData.pc_list[i];
+            if (!oldPc || oldPc.id !== newPc.id || oldPc.grup !== newPc.grup) {
+                return true;
+            }
+        }
+        return false;
+    },
+
+    _render(data, forceFull = false) {
         const container = document.getElementById('pc-area');
         const mapContainer = document.getElementById('map-view-container');
         if (mapContainer) mapContainer.classList.add('hidden');
         if (container) container.classList.remove('hidden');
-        this.render(data);
-        this.renderTabs(data);
+
+        const hasRenderedCards = Boolean(document.querySelector('.pc-card-item'));
+        const structureChanged = forceFull || !hasRenderedCards || this._hasStructureChanged(this.lastData, data);
+
+        if (structureChanged) {
+            this.render(data);
+            this.renderTabs(data);
+            // Segera sync border color setelah full re-render agar warna grup tampil langsung tanpa jeda
+            if (typeof this.syncLiveCards === 'function') {
+                this.syncLiveCards(data);
+            }
+        } else if (typeof this.syncLiveCards === 'function') {
+            this.syncLiveCards(data);
+        }
+
         this.updateStats();
+
+        // Live In-Place Sync ke modal detail PC dan modal tambah waktu jika sedang terbuka
+        if (typeof DashboardDetailModal !== 'undefined' && DashboardDetailModal.syncLive) {
+            DashboardDetailModal.syncLive(data.pc_list);
+        }
+        if (typeof TambahModal !== 'undefined' && TambahModal.syncLive) {
+            TambahModal.syncLive(data.pc_list);
+        }
     },
 
     openPcModal(pcId, kode) {
@@ -660,6 +774,7 @@ const Dashboard = {
     },
 
     async tambahWaktuMember() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         let groups = [];
         try {
             const [memberData, grupData] = await Promise.all([
@@ -889,6 +1004,66 @@ const Dashboard = {
 
         if (billingMobileEl) billingMobileEl.innerText = formattedBilling;
         if (kantinMobileEl) kantinMobileEl.innerText = formattedKantin;
+    },
+
+    showSettingsModal() {
+        const modal = document.getElementById('modal-dashboard-settings');
+        if (!modal) return;
+
+        // 1. Sync Toggle NIC Drop
+        const nicToggle = document.getElementById('setting-nic-drop-toggle');
+        if (nicToggle) {
+            nicToggle.checked = localStorage.getItem('dashboard_nic_drop_detection') !== 'false';
+        }
+
+        // 2. Sync Polling Interval
+        this._updatePollingButtonUI(this.getRefreshInterval());
+
+        modal.classList.remove('hidden');
+    },
+
+    closeSettingsModal() {
+        const modal = document.getElementById('modal-dashboard-settings');
+        if (modal) modal.classList.add('hidden');
+    },
+
+    toggleNicDropDetection(enabled) {
+        localStorage.setItem('dashboard_nic_drop_detection', enabled ? 'true' : 'false');
+        if (this.lastData) {
+            this._render(this.lastData);
+        }
+        if (typeof Toast !== 'undefined') {
+            Toast.success(enabled ? 'Deteksi LAN Drop diaktifkan' : 'Deteksi LAN Drop dinonaktifkan');
+        }
+    },
+
+    getRefreshInterval() {
+        const val = parseInt(localStorage.getItem('dashboard_refresh_interval'), 10);
+        return (!isNaN(val) && val >= 1000) ? val : 1000;
+    },
+
+    setPollingInterval(intervalMs) {
+        localStorage.setItem('dashboard_refresh_interval', String(intervalMs));
+        this._updatePollingButtonUI(intervalMs);
+        if (typeof App !== 'undefined' && App.restartDashboardPolling) {
+            App.restartDashboardPolling();
+        }
+        if (typeof Toast !== 'undefined') {
+            Toast.success(`Interval dashboard diset ke ${intervalMs / 1000} detik`);
+        }
+    },
+
+    _updatePollingButtonUI(activeMs) {
+        [1000, 2000, 3000, 5000].forEach(ms => {
+            const btn = document.getElementById(`btn-poll-${ms}`);
+            if (btn) {
+                if (ms === activeMs) {
+                    btn.className = "px-3 sm:px-3.5 py-2.5 sm:py-3 rounded-xl border text-xs sm:text-sm lg:text-base font-semibold transition-all text-center flex flex-col items-center justify-center gap-0.5 border-emerald-500/60 bg-emerald-500/10 text-emerald-300 shadow-md shadow-emerald-950/20";
+                } else {
+                    btn.className = "px-3 sm:px-3.5 py-2.5 sm:py-3 rounded-xl border text-xs sm:text-sm lg:text-base font-semibold transition-all text-center flex flex-col items-center justify-center gap-0.5 border-[#2a2a2a] bg-[#141414] text-neutral-400 hover:border-neutral-500";
+                }
+            }
+        });
     }
 };
 

@@ -24,40 +24,54 @@ const Catatan = {
         });
     },
 
-    async loadNotes(preserveSelection = true) {
+    _lastFingerprint: null,
+
+    async loadNotes(preserveSelection = true, isSilent = false) {
         const container = document.getElementById('notes-list-container');
-        if (container) {
-            container.innerHTML = `
-                <div class="flex justify-center items-center py-16">
-                    <div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div>
-                </div>
-            `;
+        if (container && !isSilent && (!this.notes || this.notes.length === 0) && typeof Skeleton !== 'undefined') {
+            container.innerHTML = Skeleton.notesList(5);
         }
 
         try {
             const res = await API.request('/api/v1/kasir/notes');
             if (res && res.success) {
-                this.notes = res.notes || [];
+                const fetchedNotes = res.notes || [];
+                const newFingerprint = JSON.stringify(fetchedNotes.map(n => ({ f: n.filename, p: n.is_pinned, m: n.modified })));
+                if (isSilent && this._lastFingerprint === newFingerprint) {
+                    return; // Data tidak berubah
+                }
+                this._lastFingerprint = newFingerprint;
+
+                this.notes = fetchedNotes;
                 this.renderList();
 
                 if (this.notes.length > 0) {
                     if (!preserveSelection || !this.activeFilename || !this.notes.some(n => n.filename === this.activeFilename)) {
-                        this.selectNote(this.notes[0].filename);
+                        if (!this.isDirty) {
+                            this.selectNote(this.notes[0].filename);
+                        }
                     }
-                } else {
+                } else if (!this.isDirty) {
                     this.renderEmptyEditor();
                 }
             }
         } catch (err) {
-            console.error('[Catatan] Gagal memuat catatan:', err);
-            if (container) {
-                container.innerHTML = `
-                    <div class="p-4 text-center text-xs text-red-400">
-                        Gagal memuat catatan: ${err.message || 'Kesalahan jaringan'}
-                    </div>
-                `;
+            if (!isSilent) {
+                console.error('[Catatan] Gagal memuat catatan:', err);
+                if (container) {
+                    container.innerHTML = `
+                        <div class="p-4 text-center text-xs text-red-400">
+                            Gagal memuat catatan: ${err.message || 'Kesalahan jaringan'}
+                        </div>
+                    `;
+                }
             }
         }
+    },
+
+    refreshLive() {
+        if (App.currentTab !== 'catatan') return;
+        return this.loadNotes(true, true);
     },
 
     renderList() {

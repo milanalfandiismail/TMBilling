@@ -34,7 +34,21 @@ const LaporanMaintenance = {
         }
     },
 
-    async loadReport() {
+    _lastFingerprint: null,
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'maintenance') return;
+        const subTab = document.getElementById('maintenance-tab-report');
+        if (subTab && subTab.classList.contains('hidden')) return;
+        return this.loadReport(true);
+    },
+
+    async loadReport(isSilent = false) {
+        const tbody = document.getElementById('report-maint-tbody');
+        if (tbody && !isSilent && (!this.reportData) && typeof Skeleton !== 'undefined') {
+            tbody.innerHTML = Skeleton.tableRows(6, 3);
+        }
+
         try {
             const tanggal = document.getElementById('maint-report-tanggal-select')?.value || '';
             const kategori = document.getElementById('maint-report-kategori')?.value || '';
@@ -47,11 +61,28 @@ const LaporanMaintenance = {
 
             const res = await API.request(url);
             if (res && res.success) {
-                this.reportData = res.report;
+                const report = res.report || {};
+                const newFingerprint = JSON.stringify({
+                    tanggal,
+                    kategori,
+                    pcId,
+                    total_biaya: report.total_biaya,
+                    total_kasus: report.total_kasus,
+                    list: (report.list_tiket || []).map(t => ({ id: t.id, biaya: t.biaya }))
+                });
+
+                if (isSilent && this._lastFingerprint === newFingerprint) {
+                    return; // Data tidak berubah
+                }
+                this._lastFingerprint = newFingerprint;
+
+                this.reportData = report;
                 this.renderReport();
             }
         } catch (err) {
-            Toast.error('Gagal memuat laporan perawatan.');
+            if (!isSilent) {
+                Toast.error('Gagal memuat laporan perawatan.');
+            }
         }
     },
 

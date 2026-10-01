@@ -2,6 +2,7 @@
 
 from app.repositories.game.game_kategori_repository import GameKategoriRepository
 from app.models.game.game_kategori import GameKategori
+from app.utils.validators import validate_string_length
 
 class GameKategoriService:
     @staticmethod
@@ -10,9 +11,7 @@ class GameKategoriService:
 
     @staticmethod
     def create(data, operator=None):
-        nama = data.get("nama")
-        if not nama:
-            raise ValueError("Nama kategori wajib diisi")
+        nama = validate_string_length(data.get("nama"), min_len=2, max_len=50, field_name="Nama Kategori Game", required=True)
             
         existing = GameKategoriRepository.get_by_nama(nama)
         if existing:

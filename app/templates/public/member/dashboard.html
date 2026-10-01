@@ -293,11 +293,11 @@
                             </div>
 
                             <div class="space-y-2">
-                                <label class="text-sm font-bold text-neutral-400 uppercase tracking-wider">Nama
-                                    Lengkap</label>
+                                <label class="text-sm font-bold text-neutral-400 uppercase tracking-wider">Nama Lengkap</label>
                                 <input type="text" id="prof_nama" value="{{ member.nama_lengkap or '' }}"
                                     placeholder="Nama Lengkap"
                                     class="w-full bg-[#0a0a0a] border border-[#2a2a2a] text-neutral-200 rounded px-4 py-3 text-base focus:border-neutral-500 focus:outline-none transition-colors">
+                                <p class="text-xs text-neutral-500 mt-1">Maksimal 100 karakter</p>
                             </div>
 
                             <div class="space-y-2">
@@ -305,21 +305,21 @@
                                 <input type="email" id="prof_email" value="{{ member.email or '' }}"
                                     placeholder="Alamat Email"
                                     class="w-full bg-[#0a0a0a] border border-[#2a2a2a] text-neutral-200 rounded px-4 py-3 text-base focus:border-neutral-500 focus:outline-none transition-colors">
+                                <p class="text-xs text-neutral-500 mt-1">Format email valid (contoh: user@example.com)</p>
                             </div>
 
                             <div class="space-y-2">
-                                <label class="text-sm font-bold text-neutral-400 uppercase tracking-wider">Nomor HP /
-                                    WhatsApp</label>
+                                <label class="text-sm font-bold text-neutral-400 uppercase tracking-wider">Nomor HP / WhatsApp</label>
                                 <input type="tel" id="prof_hp" value="{{ member.no_hp or '' }}"
                                     placeholder="08xxxxxxxxxx"
                                     class="w-full bg-[#0a0a0a] border border-[#2a2a2a] text-neutral-200 rounded px-4 py-3 text-base font-mono focus:border-neutral-500 focus:outline-none transition-colors">
+                                <p class="text-xs text-neutral-500 mt-1">Format nomor telepon atau WhatsApp (opsional)</p>
                             </div>
                         </div>
 
                         <div class="border-t border-[#1f1f1f] pt-6">
                             <button type="submit"
-                                class="w-full bg-white hover:bg-neutral-300 text-black font-bold py-3.5 px-6 rounded-lg transition-all duration-200 text-base uppercase tracking-wider">Simpan
-                                Perubahan</button>
+                                class="w-full bg-white hover:bg-neutral-300 text-black font-bold py-3.5 px-6 rounded-lg transition-all duration-200 text-base uppercase tracking-wider">Simpan Perubahan</button>
                         </div>
                     </form>
                 </div>

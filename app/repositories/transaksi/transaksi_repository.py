@@ -63,9 +63,17 @@ class TransaksiRepository:
 
     @staticmethod
     def get_riwayat_paket_sesi(sesi_id):
-        """Ambil riwayat paket sesi yang belum direfund (untuk guest refund)."""
+        """Ambil riwayat paket sesi yang belum direfund (untuk guest refund).
+        
+        Mendukung single sesi_id (int) maupun kumpulan sesi_id (list/tuple/set).
+        """
+        if isinstance(sesi_id, (list, tuple, set)):
+            filter_cond = Transaksi.sesi_id.in_(sesi_id)
+        else:
+            filter_cond = (Transaksi.sesi_id == sesi_id)
+
         return Transaksi.query.filter(
-            Transaksi.sesi_id == sesi_id,
+            filter_cond,
             Transaksi.jenis.in_(["beli_paket_guest", "tambah_waktu_guest"]),
             Transaksi.is_refunded == False
         ).order_by(Transaksi.dibuat_pada.desc()).all()

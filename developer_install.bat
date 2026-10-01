@@ -39,9 +39,9 @@ if errorlevel 1 (
 :: [3] Pengecekan NPM Tauri Client
 echo.
 echo [3/3] Memeriksa dependensi NPM Tauri Client...
-if not exist "WarnetClient\TMBillingTauri\node_modules\" (
+if not exist "WarnetAgent\TMBillingTauri\node_modules\" (
     echo [INFO] Folder node_modules belum ditemukan di TMBillingTauri, menjalankan npm install...
-    cd /d "%~dp0WarnetClient\TMBillingTauri"
+    cd /d "%~dp0WarnetAgent\TMBillingTauri"
     call npm install
     cd /d "%~dp0"
     if errorlevel 1 (

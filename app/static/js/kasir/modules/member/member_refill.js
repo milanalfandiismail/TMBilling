@@ -4,6 +4,7 @@ const MemberRefill = {
     _currentPaketList: [],
 
     async tambahWaktu(memberId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         let paymentMethods = ["Tunai", "QRIS", "Transfer Bank"];
         try {
             const settingsData = await API.settings.getAll();
@@ -29,6 +30,7 @@ const MemberRefill = {
             if (!paketList.length) return Toast.error(`Tidak ada paket aktif untuk zona ${mGrup.toUpperCase()}`);
 
             this._currentPaketList = paketList;
+            MemberRefill._currentPaketList = paketList;
             if (typeof Member !== 'undefined') {
                 Member._currentPaketList = paketList;
             }
@@ -50,9 +52,9 @@ const MemberRefill = {
                         </div>
                         <!-- Qty input for this package -->
                         <div class="flex items-center bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg overflow-hidden h-8 opacity-45 pointer-events-none transition-all shrink-0" id="mem-qty-container-${p.id}">
-                            <button onclick="MemberRefill.adjustPaketQty(${p.id}, -1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs lg:text-base transition-colors flex items-center justify-center select-none">-</button>
-                            <input type="number" id="mem-qty-paket-${p.id}" value="1" min="1" max="100" class="w-10 h-full text-center bg-transparent border-none text-xs lg:text-base font-mono font-bold focus:ring-0 focus:outline-none p-0 !border-0" style="background-color: transparent !important; border: 0 !important;">
-                            <button onclick="MemberRefill.adjustPaketQty(${p.id}, 1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs lg:text-base transition-colors flex items-center justify-center select-none">+</button>
+                            <button onclick="MemberRefill.adjustPaketQty(${p.id}, -1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs lg:text-base transition-colors flex items-center justify-center select-none" type="button">-</button>
+                            <input type="number" id="mem-qty-paket-${p.id}" value="1" min="1" max="100" readonly class="no-spinners w-10 h-full text-center bg-transparent border-none text-xs lg:text-base font-mono font-bold focus:ring-0 focus:outline-none p-0 !border-0 cursor-default select-none pointer-events-none" style="background-color: transparent !important; border: 0 !important;">
+                            <button onclick="MemberRefill.adjustPaketQty(${p.id}, 1)" class="w-7 h-full bg-[#1a1a1a] hover:bg-[#222] text-neutral-300 font-bold text-xs lg:text-base transition-colors flex items-center justify-center select-none" type="button">+</button>
                         </div>
                     </div>
                 `;
@@ -190,16 +192,22 @@ const MemberRefill = {
         let totalHarga = 0;
         let checkedCount = 0;
         
-        const paketList = MemberRefill._currentPaketList || [];
+        const paketList = (MemberRefill._currentPaketList && MemberRefill._currentPaketList.length > 0)
+            ? MemberRefill._currentPaketList
+            : ((typeof Member !== 'undefined' && Member._currentPaketList && Member._currentPaketList.length > 0)
+                ? Member._currentPaketList
+                : (this._currentPaketList || []));
         
         document.querySelectorAll('input[type="checkbox"][id^="mem-chk-paket-"]:checked').forEach(chk => {
             const paketId = parseInt(chk.value);
             const qtyInput = document.getElementById(`mem-qty-paket-${paketId}`);
-            const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+            let qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+            qty = Math.max(1, Math.min(100, qty));
+            if (qtyInput) qtyInput.value = qty;
             const paket = (paketList || []).find(p => p.id === paketId);
             
             if (paket) {
-                const durasi = paket.durasi || paket.durasi_menit || 0;
+                const durasi = (paket.durasi_menit !== undefined ? paket.durasi_menit : (paket.durasi || 0));
                 totalMenit += durasi * qty;
                 totalHarga += (paket.harga || 0) * qty;
                 checkedCount++;

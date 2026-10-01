@@ -32,8 +32,8 @@ class DBMaintenanceService:
             ValueError: Jika retention_months tidak valid.
             FileNotFoundError: Jika file database warnet.db tidak ditemukan.
         """
-        if retention_months not in (1, 3, 6, 12):
-            raise ValueError("Masa retensi harus 1, 3, 6, atau 12 bulan.")
+        from app.utils.validators import validate_choice
+        retention_months = validate_choice(retention_months, [1, 3, 6, 12], field_name="Masa Retensi")
 
         # 1. Lokasi folder archive cadangan khusus
         archive_dir = os.path.join(os.getcwd(), "backups", "archive")

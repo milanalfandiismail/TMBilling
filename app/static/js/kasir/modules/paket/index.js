@@ -15,9 +15,23 @@ const Paket = {
         if (filterSelect) filterSelect.innerHTML = '<option value="">Semua Grup</option>';
     },
 
-    async load() {
+    _lastFingerprint: null,
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'paket') return;
+        const modalPaket = document.getElementById('modal-tambah-paket');
+        const isAppModalOpen = document.getElementById('app-modal') && !document.getElementById('app-modal').classList.contains('hidden');
+        if ((modalPaket && !modalPaket.classList.contains('hidden')) || isAppModalOpen) {
+            return;
+        }
+        return this.load(true);
+    },
+
+    async load(isSilent = false) {
         const area = document.getElementById('paket-table');
-        if (area) area.innerHTML = '<div class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
+        if (area && !isSilent && (!this._lastPaketList || this._lastPaketList.length === 0) && typeof Skeleton !== 'undefined') {
+            area.innerHTML = Skeleton.paketCards(6);
+        }
 
         try {
             const [grupResponse, data] = await Promise.all([
@@ -28,21 +42,35 @@ const Paket = {
                 })
             ]);
 
+            const list = data.paket || [];
+            const newFingerprint = JSON.stringify({
+                q: this.searchQuery,
+                grup: this.currentGrupId,
+                items: list.map(p => ({ id: p.id, nama: p.nama, harga: p.harga, durasi: p.durasi_menit, aktif: p.is_active }))
+            });
+
+            if (isSilent && this._lastFingerprint === newFingerprint) {
+                return; // Data tidak berubah
+            }
+            this._lastFingerprint = newFingerprint;
+            this._lastPaketList = list;
+
             const groups = grupResponse.grup || grupResponse.grup_list || [];
             const filterSelect = document.getElementById('paket-grup-filter-select');
-            if (filterSelect) {
+            if (filterSelect && !isSilent) {
                 filterSelect.innerHTML = '<option value="">Semua Grup</option>' + groups.map(g => `<option value="${g.id}" ${String(this.currentGrupId) === String(g.id) ? 'selected' : ''}>${g.nama.toUpperCase()}</option>`).join('');
             }
 
             const addSelect = document.getElementById('inp-paket-grup');
-            if (addSelect) {
+            if (addSelect && !isSilent) {
                 addSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
             }
 
-            const list = data.paket || [];
             this.render(list, data);
         } catch (err) {
-            Toast.error('Gagal memuat paket');
+            if (!isSilent) {
+                Toast.error('Gagal memuat paket');
+            }
         }
     },
 
@@ -86,8 +114,10 @@ const Paket = {
             kadaluarsa_hari: parseInt((get('modal-paket-kadaluarsa', 'inp-paket-kadaluarsa') || {}).value || '30')
         };
         if (!data.nama) return Toast.error('Nama paket wajib diisi');
-        if (isNaN(data.durasi_menit) || data.durasi_menit <= 0) return Toast.error('Durasi tidak valid');
-        if (isNaN(data.harga) || data.harga < 0) return Toast.error('Harga tidak valid');
+        if (data.nama.length < 2 || data.nama.length > 50) return Toast.error('Nama paket harus 2 - 50 karakter');
+        if (isNaN(data.durasi_menit) || data.durasi_menit < 1 || data.durasi_menit > 14400) return Toast.error('Durasi harus antara 1 - 14.400 menit');
+        if (isNaN(data.harga) || data.harga < 0 || data.harga > 1000000000) return Toast.error('Harga tidak valid (maks. Rp1.000.000.000)');
+        if (isNaN(data.kadaluarsa_hari) || data.kadaluarsa_hari < 1 || data.kadaluarsa_hari > 3650) return Toast.error('Masa aktif harus antara 1 - 3.650 hari');
 
         try {
             await API.paket.create(data);
@@ -117,12 +147,17 @@ const Paket = {
 
     async doEdit(id) {
         const data = {
-            nama: document.getElementById('edit-paket-nama').value.trim(),
-            durasi_menit: parseInt(document.getElementById('edit-paket-durasi').value),
-            harga: parseInt((document.getElementById('edit-paket-harga').value || '0').replace(/\./g, '')),
-            kadaluarsa_hari: parseInt(document.getElementById('edit-paket-kadaluarsa').value)
+            nama: document.getElementById('edit-paket-nama')?.value?.trim() || '',
+            durasi_menit: parseInt(document.getElementById('edit-paket-durasi')?.value || '0'),
+            harga: parseInt((document.getElementById('edit-paket-harga')?.value || '0').replace(/\./g, '')),
+            kadaluarsa_hari: parseInt(document.getElementById('edit-paket-kadaluarsa')?.value || '30')
         };
-        if (!data.nama || isNaN(data.durasi_menit) || isNaN(data.harga)) return Toast.error('Lengkapi data');
+        if (!data.nama) return Toast.error('Nama paket wajib diisi');
+        if (data.nama.length < 2 || data.nama.length > 50) return Toast.error('Nama paket harus 2 - 50 karakter');
+        if (isNaN(data.durasi_menit) || data.durasi_menit < 1 || data.durasi_menit > 14400) return Toast.error('Durasi harus antara 1 - 14.400 menit');
+        if (isNaN(data.harga) || data.harga < 0 || data.harga > 1000000000) return Toast.error('Harga tidak valid (maks. Rp1.000.000.000)');
+        if (isNaN(data.kadaluarsa_hari) || data.kadaluarsa_hari < 1 || data.kadaluarsa_hari > 3650) return Toast.error('Masa aktif harus antara 1 - 3.650 hari');
+
         try {
             await API.paket.update(id, data);
             Toast.success('Paket berhasil diperbarui');

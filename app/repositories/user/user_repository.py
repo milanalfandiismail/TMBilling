@@ -31,6 +31,11 @@ class UserRepository:
         """Mengambil semua kasir/admin yang aktif."""
         return User.query.filter_by(aktif=True).order_by(User.id.asc()).all()
 
+    @staticmethod
+    def get_all_active_kasir():
+        """Mengambil semua kasir (role='kasir') yang aktif."""
+        return User.query.filter_by(role='kasir', aktif=True).order_by(User.id.asc()).all()
+
 
     @staticmethod
     def get_by_id(user_id):

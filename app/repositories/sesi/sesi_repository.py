@@ -114,6 +114,9 @@ class SesiRepository:
         """Menandai sesi selesai (Tanpa Commit)."""
         sesi.status = "selesai"
         sesi.selesai_pada = now_local()
+        sesi.is_afk = False
+        sesi.afk_pin = None
+        sesi.afk_sejak = None
 
     @staticmethod
     def force_close_all_sesi(now):
@@ -122,6 +125,9 @@ class SesiRepository:
         for sesi in sesi_list:
             sesi.status = "selesai"
             sesi.selesai_pada = now
+            sesi.is_afk = False
+            sesi.afk_pin = None
+            sesi.afk_sejak = None
         return len(sesi_list)
 
 

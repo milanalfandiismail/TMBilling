@@ -1,7 +1,14 @@
 // Owner Analytics Dashboard — 7 Card Text KPI
 
 const OwnerAnalytics = {
-    async load() {
+    _lastFingerprint: null,
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'analytics') return;
+        return this.load(true);
+    },
+
+    async load(isSilent = false) {
         const s = document.getElementById('filter-start');
         const e = document.getElementById('filter-end');
         if (!s.value || !e.value) {
@@ -11,14 +18,27 @@ const OwnerAnalytics = {
             e.value = t.toISOString().slice(0, 10);
         }
 
-        document.getElementById('analytics-loading').classList.remove('hidden');
-        document.getElementById('analytics-cards').classList.add('hidden');
+        const loadingEl = document.getElementById('analytics-loading');
+        const cardsEl = document.getElementById('analytics-cards');
+
+        if (!isSilent) {
+            if (loadingEl) loadingEl.classList.remove('hidden');
+            if (cardsEl) cardsEl.classList.add('hidden');
+        }
 
         try {
             const p = new URLSearchParams({start: s.value, end: e.value});
             const res = await API.request('/api/v1/kasir/dashboard/analytics?' + p);
             if (!res.success) throw new Error(res.error);
-            const d = res.data, pd = d.pendapatan_harian;
+            const d = res.data;
+
+            const newFingerprint = JSON.stringify({ start: s.value, end: e.value, data: d });
+            if (isSilent && this._lastFingerprint === newFingerprint) {
+                return; // Data tidak berubah
+            }
+            this._lastFingerprint = newFingerprint;
+
+            const pd = d.pendapatan_harian;
 
             // 1. Pendapatan Billing
             const totalB = pd.billing.reduce((a,b)=>a+b,0);

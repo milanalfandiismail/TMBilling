@@ -61,6 +61,7 @@ class HardwareMonitor(db.Model):
     hardware_mismatch = db.Column(db.Boolean, default=False)
     hardware_mismatch_desc = db.Column(db.Text, nullable=True)
     hardware_mismatch_time = db.Column(db.DateTime, nullable=True)
+    hardware_cctv_window = db.Column(db.Text, nullable=True)
     hardware_last_sync = db.Column(db.DateTime, nullable=True)
     
     last_update = db.Column(db.DateTime, default=now_local, onupdate=now_local)
@@ -90,12 +91,13 @@ class HardwareMonitor(db.Model):
             "last_update": format_display(self.last_update) if self.last_update else None,
             "last_update_ts": self.last_update.replace(tzinfo=timezone.utc).timestamp() * 1000 if self.last_update else None,
             
-            # Security fields
+            # Security fields (Internal Hardware)
             "hardware_baseline": self.hardware_baseline,
             "hardware_current_specs": self.hardware_current_specs,
             "hardware_mismatch": self.hardware_mismatch,
             "hardware_mismatch_desc": self.hardware_mismatch_desc,
             "hardware_mismatch_time": format_display(self.hardware_mismatch_time) if self.hardware_mismatch_time else None,
+            "hardware_cctv_window": self.hardware_cctv_window,
             "hardware_last_sync": format_display(self.hardware_last_sync) if self.hardware_last_sync else None
         }
 

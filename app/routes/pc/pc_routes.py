@@ -7,7 +7,7 @@ bulk creation untuk penambahan massal unit.
 """
 
 from flask import Blueprint, request, jsonify, session
-from app.routes.auth.auth_kasir_routes import login_required, admin_required
+from app.middleware.auth import login_required, admin_required, shift_required
 from app.services import PCService
 
 pc_api_bp = Blueprint("pc", __name__)
@@ -131,6 +131,7 @@ def hapus_pc(pc_id):
 
 @pc_api_bp.route("/reset-admin/<int:pc_id>", methods=["POST"])
 @login_required
+@shift_required
 def reset_admin(pc_id):
     """Matiin mode admin secara paksa di PC."""
     try:
@@ -169,6 +170,7 @@ def update_pc_position(pc_id):
 
 @pc_api_bp.route("/wol", methods=["POST"])
 @login_required
+@shift_required
 def wol_pc():
     """Kirim Magic Packet WoL ke satu atau beberapa PC berdasarkan ID atau MAC Address."""
     try:

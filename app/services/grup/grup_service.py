@@ -6,10 +6,12 @@ Modul ini menangani business logic CRUD grup dengan proteksi
 penghapusan (tidak bisa hapus grup yang masih punya relasi).
 """
 
+import re
 from app.models import db
 from app.models import Grup
 from app.repositories import GrupRepository
 from app.utils.logger import write_log
+from app.utils.validators import validate_hex_color, validate_string_length
 
 
 class GrupService:
@@ -21,6 +23,14 @@ class GrupService:
     # Fokus: Mengambil daftar grup dan validasi pembuatan grup baru agar tidak duplikat.
 
     @staticmethod
+    def _validate_nama_grup(nama: str) -> str:
+        """Validasi format dan panjang nama grup."""
+        cleaned = validate_string_length(nama, min_len=2, max_len=30, field_name="Nama grup", required=True).lower()
+        if not re.match(r'^[a-z0-9 _-]+$', cleaned):
+            raise ValueError("Nama grup hanya boleh berisi huruf, angka, spasi, garis bawah (_), atau minus (-)")
+        return cleaned
+
+    @staticmethod
     def get_all():
         """Ambil semua grup melalui repository."""
         return GrupRepository.get_all()
@@ -28,7 +38,9 @@ class GrupService:
     @staticmethod
     def create(data, operator="system"):
         """Buat grup baru dengan validasi keunikan nama."""
-        nama = data.get("nama", "").strip().lower()
+        nama = GrupService._validate_nama_grup(data.get("nama", ""))
+        warna = validate_hex_color(data.get("warna"), default="#888888")
+        keterangan = validate_string_length(data.get("keterangan", ""), min_len=0, max_len=200, field_name="Keterangan", required=False)
         
         # Validasi: Cek apakah nama sudah terpakai
         if GrupRepository.find_by_nama(nama):
@@ -36,8 +48,8 @@ class GrupService:
         
         grup = Grup(
             nama=nama, 
-            keterangan=data.get("keterangan"),
-            warna=data.get("warna")
+            keterangan=keterangan,
+            warna=warna
         )
         db.session.add(grup)
         db.session.commit()
@@ -89,23 +101,25 @@ class GrupService:
         if not grup:
             raise ValueError("Grup tidak ditemukan")
 
-        nama = data.get("nama", "").strip().lower()
-        if not nama:
-            raise ValueError("Nama grup tidak boleh kosong")
+        if "nama" in data:
+            nama = GrupService._validate_nama_grup(data["nama"])
+            if nama != grup.nama.lower():
+                if GrupRepository.find_by_nama(nama):
+                    raise ValueError("Nama grup sudah digunakan oleh grup lain")
+            grup.nama = nama
 
-        if nama != grup.nama.lower():
-            if GrupRepository.find_by_nama(nama):
-                raise ValueError("Nama grup sudah digunakan oleh grup lain")
+        if "keterangan" in data:
+            grup.keterangan = validate_string_length(data.get("keterangan", ""), min_len=0, max_len=200, field_name="Keterangan", required=False)
 
-        grup.nama = nama
-        grup.keterangan = data.get("keterangan")
-        grup.warna = data.get("warna")
+        if "warna" in data:
+            grup.warna = validate_hex_color(data.get("warna"), default="#888888")
+
         db.session.commit()
 
         detail_grup = {
-            "nama": nama,
+            "nama": grup.nama,
             "keterangan": grup.keterangan,
             "warna": grup.warna
         }
-        write_log("EDIT_GRUP", f"Grup {nama} diupdate", user=operator, detail_json=detail_grup)
+        write_log("EDIT_GRUP", f"Grup {grup.nama} diupdate", user=operator, detail_json=detail_grup)
         return grup

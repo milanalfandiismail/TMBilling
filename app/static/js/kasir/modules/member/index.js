@@ -19,9 +19,26 @@ const Member = {
         if (filterSelect) filterSelect.innerHTML = '<option value="">Semua Grup</option>';
     },
 
-    async load() {
+    _lastFingerprint: null,
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'member') return;
+        const modalTambah = document.getElementById('modal-tambah-member');
+        const modalPaket = document.getElementById('modal-tambah-paket-member');
+        const isAppModalOpen = document.getElementById('app-modal') && !document.getElementById('app-modal').classList.contains('hidden');
+        if ((modalTambah && !modalTambah.classList.contains('hidden')) ||
+            (modalPaket && !modalPaket.classList.contains('hidden')) ||
+            isAppModalOpen) {
+            return;
+        }
+        return this.load(true);
+    },
+
+    async load(isSilent = false) {
         const area = document.getElementById('member-table');
-        if (area) area.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div></div>';
+        if (area && !isSilent && (!this.allMembers || this.allMembers.length === 0) && typeof Skeleton !== 'undefined') {
+            area.innerHTML = Skeleton.tableRows(8, 6);
+        }
 
         try {
             const [memberData, grupData] = await Promise.all([
@@ -33,7 +50,20 @@ const Member = {
                 API.grup.list()
             ]);
 
-            this.allMembers = memberData.members || [];
+            const fetchedMembers = memberData.members || [];
+            const newFingerprint = JSON.stringify({
+                q: this.searchQuery,
+                page: this.currentPage,
+                grup: this.currentGrupId,
+                members: fetchedMembers.map(m => ({ id: m.id, saldo: m.saldo, sisa_waktu: m.sisa_waktu, status: m.status }))
+            });
+
+            if (isSilent && this._lastFingerprint === newFingerprint) {
+                return; // Data tidak berubah
+            }
+            this._lastFingerprint = newFingerprint;
+
+            this.allMembers = fetchedMembers;
             this.totalPages = memberData.pages || 1;
             this.totalRecords = memberData.total || 0;
             this.currentPage = memberData.current_page || 1;
@@ -41,19 +71,21 @@ const Member = {
             const groups = grupData.grup || grupData || [];
 
             const filterSelect = document.getElementById('member-grup-filter-select');
-            if (filterSelect) {
+            if (filterSelect && !isSilent) {
                 filterSelect.innerHTML = '<option value="">Semua Grup</option>' +
                     groups.map(g => `<option value="${g.id}" ${String(this.currentGrupId) === String(g.id) ? 'selected' : ''}>${g.nama.toUpperCase()}</option>`).join('');
             }
 
             const addGrupSelect = document.getElementById('inp-mem-grup');
-            if (addGrupSelect) {
+            if (addGrupSelect && !isSilent) {
                 addGrupSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
             }
 
             this.render(this.allMembers, memberData);
         } catch (err) {
-            Toast.error('Gagal memuat member');
+            if (!isSilent) {
+                Toast.error('Gagal memuat member');
+            }
         }
     },
 
@@ -88,6 +120,7 @@ const Member = {
     },
 
     async add() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const get = (modalId, legacyId) => {
             const m = document.getElementById(modalId);
             if (m) return m;
@@ -102,6 +135,12 @@ const Member = {
             grup: (get('modal-mem-grup', 'inp-mem-grup') || {}).value || ''
         };
         if (!data.username || !data.password) return Toast.error('Username dan password wajib diisi');
+        if (!Utils.isValidUsername(data.username, 3, 30)) return Toast.error('Username harus 3 - 30 karakter (hanya huruf, angka, _, -, .)');
+        if (!Utils.isValidPassword(data.password, 4, 16)) return Toast.error('Password PIN harus 4 - 16 karakter');
+        if (data.nama_lengkap && data.nama_lengkap.length > 100) return Toast.error('Nama lengkap maksimal 100 karakter');
+        if (data.email && !Utils.isValidEmail(data.email)) return Toast.error('Format email tidak valid atau melebihi 120 karakter');
+        if (data.no_hp && !Utils.isValidPhone(data.no_hp)) return Toast.error('Nomor HP tidak valid (8-16 digit angka)');
+
         try {
             await API.member.create(data);
             Toast.success(`Member ${data.username} berhasil didaftarkan`);
@@ -113,6 +152,7 @@ const Member = {
     },
 
     async edit(id) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         try {
             const [memberResponse, grupData] = await Promise.all([
                 API.member.get(id),
@@ -128,13 +168,26 @@ const Member = {
     },
 
     async doEdit(id) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
+        const namaEl = document.getElementById('edit-member-nama');
+        const emailEl = document.getElementById('edit-member-email');
+        const passEl = document.getElementById('edit-member-password');
+
         const data = {
-            nama_lengkap: document.getElementById('edit-member-nama').value.trim(),
-            email: document.getElementById('edit-member-email').value.trim(),
-            grup: document.getElementById('edit-member-grup').value,
+            nama_lengkap: namaEl ? namaEl.value.trim() : '',
+            email: emailEl ? emailEl.value.trim() : '',
+            grup: document.getElementById('edit-member-grup')?.value || '',
         };
-        const password = document.getElementById('edit-member-password').value;
-        if (password) data.password = password;
+        const password = passEl ? passEl.value : '';
+        if (password) {
+            if (!Utils.isValidPassword(password, 4, 16)) {
+                return Toast.error('Password baru harus 4 - 16 karakter');
+            }
+            data.password = password;
+        }
+        if (data.nama_lengkap && data.nama_lengkap.length > 100) return Toast.error('Nama lengkap maksimal 100 karakter');
+        if (data.email && !Utils.isValidEmail(data.email)) return Toast.error('Format email tidak valid atau melebihi 120 karakter');
+
         try {
             await API.member.update(id, data);
             Toast.success('Berhasil diperbarui');
@@ -146,6 +199,7 @@ const Member = {
     },
 
     async delete(id) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold">Hapus member ini? Semua data dan sisa waktu akan <span class="text-red-400">dihapus permanen</span>.</p></div>`;
         Modal.confirm(message, async () => {
             try {
@@ -159,10 +213,16 @@ const Member = {
     },
 
     async doAddWaktu(memberId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const selections = [];
         let totalMenit = 0;
         let totalHarga = 0;
-        const paketList = (typeof MemberRefill !== 'undefined' ? MemberRefill._currentPaketList : (this._currentPaketList || [])) || [];
+        let hasInvalidQty = false;
+        const paketList = (typeof MemberRefill !== 'undefined' && MemberRefill._currentPaketList && MemberRefill._currentPaketList.length > 0)
+            ? MemberRefill._currentPaketList
+            : ((typeof Member !== 'undefined' && Member._currentPaketList && Member._currentPaketList.length > 0)
+                ? Member._currentPaketList
+                : (this._currentPaketList || []));
         
         if (typeof MemberRefill !== 'undefined' && MemberRefill._selections && Object.keys(MemberRefill._selections).length > 0) {
             Object.keys(MemberRefill._selections).forEach(idStr => {
@@ -170,10 +230,14 @@ const Member = {
                 const sel = MemberRefill._selections[paketId];
                 if (sel && sel.checked) {
                     const qty = sel.qty || 1;
-                    selections.push({ paket_id: paketId, qty: qty });
-                    const paket = paketList.find(p => p.id === paketId);
+                    if (qty < 1 || qty > 100) {
+                        hasInvalidQty = true;
+                    }
+                    selections.push({ paket_id: paketId, qty: Math.max(1, Math.min(100, qty)) });
+                    const paket = (paketList || []).find(p => p.id === paketId);
                     if (paket) {
-                        totalMenit += (paket.durasi_menit || 0) * qty;
+                        const durasi = (paket.durasi_menit !== undefined ? paket.durasi_menit : (paket.durasi || 0));
+                        totalMenit += durasi * qty;
                         totalHarga += (paket.harga || 0) * qty;
                     }
                 }
@@ -183,14 +247,22 @@ const Member = {
                 const paketId = parseInt(chk.value);
                 const qtyInput = document.getElementById(`mem-qty-paket-${paketId}`);
                 const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
-                selections.push({ paket_id: paketId, qty: qty });
+                if (qty < 1 || qty > 100) {
+                    hasInvalidQty = true;
+                }
+                selections.push({ paket_id: paketId, qty: Math.max(1, Math.min(100, qty)) });
                 
-                const paket = paketList.find(p => p.id === paketId);
+                const paket = (paketList || []).find(p => p.id === paketId);
                 if (paket) {
-                    totalMenit += (paket.durasi_menit || 0) * qty;
+                    const durasi = (paket.durasi_menit !== undefined ? paket.durasi_menit : (paket.durasi || 0));
+                    totalMenit += durasi * qty;
                     totalHarga += (paket.harga || 0) * qty;
                 }
             });
+        }
+
+        if (hasInvalidQty) {
+            return Toast.error('Kuantitas paket harus antara 1 sampai 100');
         }
 
         if (selections.length === 0) return Toast.error('Pilih minimal satu paket terlebih dahulu');
@@ -209,7 +281,6 @@ const Member = {
             ];
 
             selections.forEach(sel => {
-                let paketList = typeof MemberRefill !== 'undefined' ? MemberRefill._currentPaketList : (this._currentPaketList || []);
                 const paket = (paketList || []).find(p => p.id === sel.paket_id);
                 if (paket) {
                     dataLines.push({
@@ -256,6 +327,7 @@ const Member = {
     },
 
     async refund(memberId, transaksiId, namaPaket, durasiMenit, dibuatPada, sisaWaktuSekarang) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const durasiFriendly = Utils.formatDurasiFriendly(durasiMenit);
         const sisaSekarangFriendly = Utils.formatDurasiFriendly(sisaWaktuSekarang);
         const setelahDeduction = Math.max(0, sisaWaktuSekarang - durasiMenit);

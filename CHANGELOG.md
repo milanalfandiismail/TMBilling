@@ -6,6 +6,59 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [1.6.2] - 2026-09-25
+
+### Ditambahkan
+- **Fitur Kunci Meja AFK / Istirahat Sementara (Temporary AFK Screen Lock)**:
+  - Fitur penguncian layar PC klien sementara saat pengguna meninggalkan meja (istirahat, makan, ibadah, dll) dengan proteksi keyboard hook & penyembunyian taskbar.
+  - Tampilan layar AFK minimalis bertema hitam polos murni (`bg-black`, `#000000`) dengan mono timer countdown billing yang tetap berjalan aktif.
+  - Alur autentikasi unlock aman:
+    - Akun **Member**: Langsung mengunci meja tanpa form PIN; membuka kunci menggunakan password akun member.
+    - Sesi **Guest**: Meminta pembuatan 4–6 digit PIN angka sementara saat mengunci; membuka kunci menggunakan PIN tersebut.
+  - Remote control & **Master Unlock** dari Kasir: Tombol `🔒 Kunci Meja AFK` dan `🔓 Buka Kunci AFK (Master Unlock)` di dalam Detail Modal PC pada Dashboard Kasir untuk membantu pelanggan yang lupa PIN/password.
+  - Indikator status real-time di Dashboard Kasir: Badge amber menyala `🔒 AFK / Istirahat` pada kartu grid PC dengan timer dan nama pengguna tetap tampil lengkap.
+  - **100% Backward Compatibility**: Kolom `is_afk`, `afk_pin`, `afk_sejak` di-upgrade otomatis via *Self-Healing Auto-Migration* di `app/__init__.py` dan `migration_routes.py`.
+- **Shift Kasir & Serah Terima Shift (Hitung Buta / Blind Cash Reconciliation)**:
+  - Sistem serah terima shift kasir anti-manipulasi berbasis *Blind Count*: angka pendapatan seharusnya disembunyikan saat kasir mengakhiri shift.
+  - Alur Buka Shift dengan modal awal dinamis dan validasi nominal `Rp 0 s/d Rp 100.000.000` (`Utils.formatInputRupiah`).
+  - Rekonsiliasi laci kas otomatis: pembandingan kas fisik aktual vs total modal awal + transaksi tunai bersih, menghasilkan status terkunci `PAS / Rp 0`, `SURPLUS (+)`, atau `DEFISIT (-)`.
+  - Pemisahan penerimaan tunai (Cash) vs non-tunai (QRIS / Bank) secara otomatis pada model `ShiftRecord`.
+  - Fitur **Admin Force Close Shift**: kemampuan administrator menutup paksa shift kasir aktif dalam situasi darurat dengan alasan yang terekam di audit log.
+  - Polling real-time status shift kasir aktif di sidebar admin dan kasir tanpa perlu reload halaman.
+  - Pencetakan **Struk Thermal Handover 58mm / 80mm** dan struk browser untuk bukti fisik serah terima kasir.
+  - Tab **Riwayat Serah Terima Shift** dengan filter tanggal cepat (Hari Ini, 7 Hari, 30 Hari, Bulan Ini, Semua), badge status, dan modal rincian shift.
+- **Log Mutasi Stok Menu (`MenuStockLog`) & Restock Audit**:
+  - Model database `MenuStockLog` dan migrasi `c9d8e7f6a5b4` untuk mencatat seluruh mutasi stok barang (Restock, Transaksi Penjualan, Penyesuaian Audit).
+  - Tab **Log Stok Menu** dengan filter tanggal cepat, filter operator, pagination server-side, dan ekspor data.
+  - Otorisasi RBAC untuk penambahan stok makanan/minuman oleh staff/kasir dengan pencatatan audit log otomatis.
+- **Konsolidasi Master Dokumentasi (Single Source of Truth)**: 
+  - Seluruh dokumentasi sistem dan arsitektur dilebur ke dalam [docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md) yang mencakup katalog lengkap 28 domain fitur, panduan backend (30 blueprints, 35+ services, 26 database models), frontend modular JS, serta panduan teknis agent Rust.
+  - Pembaruan dokumen ringkas [README.md](file:///c:/Project%20GIT/TMBilling/README.md) dengan panduan Quick Start terstandarisasi.
+- **Dual-Hive Registry SHA-256 Binary Integrity**:
+  - Penambahan verifikasi hash SHA-256 binary pada registry `HKCU` dan `HKLM` (`Hash_MGCTM`, `Hash_TMBilling`, `Hash_TMMonitor`, `Hash_mtm`, `Hash_Uninstaller`) untuk mencegah manipulasi binary klien oleh pihak ketiga.
+- **Bi-directional Clipboard Sync & Auto-Firewall TightVNC**:
+  - Sinkronisasi clipboard dua arah otomatis antara browser kasir dan desktop Windows PC klien melalui WebSocket VNC proxy port `5900` loopback.
+  - Penyediaan skrip otomatisasi firewall Windows Defender `allow_firewall.bat` dan `tightvnc_settings.reg`.
+- **Blackout Auto-Recovery System**:
+  - Toleransi pemadaman listrik otomatis dengan pencatatan heartbeat `PCUptimeLog` dan pemulihan sisa waktu pelanggan secara otomatis saat PC kembali menyala (*Auto Session Resume*).
+
+### Diubah
+- **Restrukturisasi Direktori Klien**:
+  - Pemindahan seluruh modul klien dari `WarnetClient/TMBillingTauri` ke direktori terpusat `WarnetAgent/TMBillingTauri` untuk konsistensi penamaan arsitektur.
+  - Penyesuaian skrip otomatisasi root `build_and_deploy.bat`, `developer_install.bat`, dan `WarnetAgent/Deploy/build_and_deploy.bat`.
+- **Label Tombol Shift Kasir**:
+  - Penggantian label tombol aksi di sidebar kasir dari `Serah Terima Shift` menjadi `Akhiri Shift`.
+
+### Diperbaiki
+- **Modal Tutup Shift Layout**:
+  - Perbaikan struktur tag penutup HTML pada `showTutupShiftModal()` di `app/static/js/kasir/modules/shift/index.js` agar layout modal stabil dan rapi pada breakpoint `LG`, `XL`, dan `2XL`.
+- **Responsivitas Tabel Breakpoint LG**:
+  - Penyesuaian styling tata letak tabel agar *fit-to-table* (tidak terpotong) pada breakpoint `LG` untuk tab **Riwayat Serah Terima Shift**, **Log Stok Menu**, dan **Riwayat Transaksi (Struk)**.
+- **Batch Actions Multi-PC API**:
+  - Konsolidasi deklarasi ganda namespace `API.monitor` pada `app/static/js/kasir/core/api.js` sehingga pemanggilan `API.monitor.remoteBatch` untuk aksi massal (>1 PC: Shutdown, Restart, Lock, Move PC, Clear Sesi) berjalan normal tanpa error JavaScript.
+
+---
+
 ## [1.6.1] - 2026-09-15
 
 ### Ditambahkan
@@ -19,7 +72,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **VNC Relay Synchronization**: Sinkronisasi rute relay multi-cabang untuk remote monitor mouse, keyboard, dan framebuffer events.
 
 ### Ditingkatkan
-- **Pembersihan Dashboard Kasir**: Penghapusan 4 kartu ringkasan statistik (Pendapatan Hari Ini, PC Aktif, Member Terdaftar, Kasir Aktif) dari bagian atas tab Dashboard kasir untuk antarmuka yang lebih bersih, cepat, dan fokus pada status grid PC.
+- **Pembersihan Dashboard Kasir**: Penghapusan 4 kartu ringkasan statistik dari bagian atas tab Dashboard kasir untuk antarmuka yang lebih bersih, cepat, dan fokus pada status grid PC.
 - **Modal Tambah Waktu Member**: Perluasan modal pencarian & pengisian waktu member pada Dashboard (`max-w-4xl`) dengan grid 2-kolom responsif dan list 5 hasil member tanpa scrollbar.
 
 ---
@@ -42,7 +95,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 ## [1.5.8] - 2026-08-25
 
 ### Ditambahkan
-- **Natural Sorting Screenshot Monitor**: Pengurutan nama PC secara alami (contoh: PC-1, PC-2, ..., PC-10) pada monitor screenshot kasir.
+- **Natural Sorting Screenshot Monitor**: Pengurutan nama PC secara alami (contoh: PC-01, PC-02, ..., PC-10) pada monitor screenshot kasir.
 - **Overlay Properties Enhancement**: Sinkronisasi properti overlay informasi sisa waktu pada client Tauri.
 
 ---

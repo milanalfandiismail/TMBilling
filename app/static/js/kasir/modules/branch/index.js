@@ -59,6 +59,26 @@ const BranchManager = {
         }
     },
 
+    async refreshLive() {
+        const userRole = document.body.getAttribute('data-kasir-role');
+        if (userRole !== 'admin') return;
+
+        await this.loadBranches();
+        const listContainer = document.getElementById('branch-selector-list');
+        const isDropdownOpen = listContainer && !listContainer.classList.contains('hidden');
+        if (!isDropdownOpen) {
+            this.renderNavbarDropdown();
+        }
+
+        if (App.currentTab === 'branch') {
+            const modalBranch = document.getElementById('modal-tambah-cabang');
+            const isModalOpen = modalBranch && !modalBranch.classList.contains('hidden');
+            if (!isModalOpen) {
+                this.renderBranchList();
+            }
+        }
+    },
+
     renderNavbarDropdown() {
         const btn = document.getElementById('branch-selector-btn');
         const listContainer = document.getElementById('branch-selector-list');
@@ -102,7 +122,7 @@ const BranchManager = {
         }
 
         // Render daftar item dropdown
-        const displayVersion = window.APP_VERSION || document.querySelector('meta[name="app-version"]')?.content || 'v1.6.1';
+        const displayVersion = window.APP_VERSION || document.querySelector('meta[name="app-version"]')?.content || 'v1.6.2';
         let html = `
             <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-neutral-400 border-b border-white/5 flex items-center justify-between">
                 <span>Pilih Cabang</span>
@@ -820,6 +840,19 @@ const BranchManager = {
             api_key: keyInput.value.trim(),
             nama: nameInput ? nameInput.value.trim() : ''
         };
+
+        if (!payload.url || payload.url.length < 4 || payload.url.length > 255) {
+            if (window.Toast) window.Toast.error("URL server cabang harus antara 4 - 255 karakter");
+            return;
+        }
+        if (!payload.api_key || payload.api_key.length < 16 || payload.api_key.length > 128) {
+            if (window.Toast) window.Toast.error("API Key cabang harus antara 16 - 128 karakter");
+            return;
+        }
+        if (payload.nama && (payload.nama.length < 2 || payload.nama.length > 50)) {
+            if (window.Toast) window.Toast.error("Nama cabang harus antara 2 - 50 karakter");
+            return;
+        }
 
         const btnSubmit = document.getElementById('btn-submit-branch');
         const originalText = btnSubmit ? btnSubmit.textContent : '';

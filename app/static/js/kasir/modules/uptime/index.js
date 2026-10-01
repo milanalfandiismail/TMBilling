@@ -51,32 +51,38 @@ const UptimeTracker = {
         this.load();
     },
 
-    async load() {
+    _lastFingerprint: null,
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'uptime') return;
+        return this.load(true);
+    },
+
+    async load(isSilent = false) {
         const tbody = document.getElementById('uptime-table-body');
         if (!tbody) return;
         
-        // Show loading spinner
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" class="text-center py-10">
-                    <div class="flex justify-center items-center gap-2">
-                        <div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div>
-                        <span class="text-neutral-500 text-xs">Memuat laporan...</span>
-                    </div>
-                </td>
-            </tr>
-        `;
+        if (!isSilent && (!this._lastData) && typeof Skeleton !== 'undefined') {
+            tbody.innerHTML = Skeleton.tableRows(8, 6);
+        }
 
         try {
             if (this.mode === 'daily') {
                 const date = document.getElementById('uptime-date')?.value;
                 if (!date) {
-                    Toast.error('Tanggal wajib dipilih');
+                    if (!isSilent) Toast.error('Tanggal wajib dipilih');
                     return;
                 }
                 
                 const res = await API.uptime.daily(date);
                 if (res.success) {
+                    const newFingerprint = JSON.stringify({ mode: 'daily', date, data: res.pcs || res.data });
+                    if (isSilent && this._lastFingerprint === newFingerprint) {
+                        return; // Data tidak berubah
+                    }
+                    this._lastFingerprint = newFingerprint;
+                    this._lastData = res;
+
                     this.renderDaily(res);
                 } else {
                     throw new Error(res.error || 'Gagal memuat data');
@@ -86,26 +92,35 @@ const UptimeTracker = {
                 const end = document.getElementById('uptime-end')?.value;
                 
                 if (!start || !end) {
-                    Toast.error('Tanggal mulai dan akhir wajib dipilih');
+                    if (!isSilent) Toast.error('Tanggal mulai dan akhir wajib dipilih');
                     return;
                 }
                 
                 const res = await API.uptime.range(start, end);
                 if (res.success) {
+                    const newFingerprint = JSON.stringify({ mode: 'range', start, end, data: res.pcs || res.data });
+                    if (isSilent && this._lastFingerprint === newFingerprint) {
+                        return; // Data tidak berubah
+                    }
+                    this._lastFingerprint = newFingerprint;
+                    this._lastData = res;
+
                     this.renderRange(res, start, end);
                 } else {
                     throw new Error(res.error || 'Gagal memuat data');
                 }
             }
         } catch (err) {
-            console.error('UptimeTracker Error:', err);
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="8" class="text-center py-10 text-red-500 font-medium">
-                        ⚠️ Gagal memuat data: ${err.message}
-                    </td>
-                </tr>
-            `;
+            if (!isSilent) {
+                console.error('UptimeTracker Error:', err);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-10 text-red-500 font-medium">
+                            ⚠️ Gagal memuat data: ${err.message}
+                        </td>
+                    </tr>
+                `;
+            }
         }
     },
 

@@ -11,6 +11,7 @@ game_kasir_api_bp = Blueprint("game_kasir", __name__)
 
 @game_kasir_api_bp.route("/", methods=["GET"])
 @login_required
+@admin_required
 def list_games():
     try:
         category = request.args.get("category")
@@ -93,6 +94,7 @@ def hapus_game(game_id):
 
 @game_kasir_api_bp.route("/kategori", methods=["GET"])
 @login_required
+@admin_required
 def list_kategori():
     try:
         kategori_list = GameKategoriService.get_all()

@@ -45,7 +45,8 @@ class SettingsService:
             "screenshot_auto_enabled": "0",
             "screenshot_auto_value": "60",
             "screenshot_auto_unit": "detik",
-            "payment_methods": "Tunai,QRIS,Transfer Bank"
+            "payment_methods": "Tunai,QRIS,Transfer Bank",
+            "client_polling_interval_seconds": "5"
         }
         for k, v in defaults.items():
             if k not in data or not data[k]:
@@ -57,6 +58,40 @@ class SettingsService:
     # 2. KONFIGURASI SPESIFIK & UPDATE (SPECIFIC & WRITE)
     # =========================================================================
     # Fokus: Menangani logic pengaturan khusus (seperti Timer) dan update data.
+
+    @staticmethod
+    def get_client_polling_interval():
+        """
+        Mengambil interval polling PC client dalam detik (1, 5, atau 10 detik).
+        Jika belum diset atau di luar preset, fallback ke 5 detik.
+        """
+        val = SettingsService.get("client_polling_interval_seconds")
+        if val is None:
+            SettingsService.set("client_polling_interval_seconds", "5")
+            return 5
+        try:
+            interval = int(val)
+            if interval in (1, 5, 10):
+                return interval
+            return 5
+        except (ValueError, TypeError):
+            return 5
+
+    @staticmethod
+    def set_client_polling_interval(interval_seconds):
+        """
+        Menyimpan interval polling PC client dengan validasi ketat (hanya 1, 5, atau 10).
+        """
+        try:
+            val = int(interval_seconds)
+        except (ValueError, TypeError):
+            raise ValueError("Interval polling client harus berupa angka (1, 5, atau 10 detik)")
+        
+        if val not in (1, 5, 10):
+            raise ValueError("Interval polling client hanya boleh 1, 5, atau 10 detik")
+
+        SettingsService.set("client_polling_interval_seconds", str(val))
+        return val
 
     @staticmethod
     def get_auto_shutdown_timer():

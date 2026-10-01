@@ -31,6 +31,7 @@ dist/
 
 # AI Agent internal directory (not source code)
 .commandcode/
+.superpowers/
 
 # Design document (internal documentation, not source code)
 DESIGN.md

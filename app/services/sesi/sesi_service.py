@@ -18,6 +18,11 @@ from app.repositories import PaketRepository
 from app.repositories import TransaksiRepository
 from app.services.transaksi.transaksi_service import TransaksiService
 from app.utils.logger import write_log
+from app.utils.validators import (
+    validate_string_length,
+    validate_integer_range,
+    validate_choice
+)
 
 from app.config import Config
 
@@ -34,6 +39,13 @@ class SesiService:
     @staticmethod
     def buka_guest(pc_kode, paket_id, nama_guest="Guest", operator="system", metode_pembayaran="Tunai"):
         """Buka sesi baru untuk guest dan generate nota pembelian."""
+        nama_guest = validate_string_length(nama_guest or "Guest", min_len=1, max_len=50, field_name="Nama Guest", required=True)
+        metode_pembayaran = validate_choice(
+            metode_pembayaran or "Tunai",
+            ["Tunai", "QRIS", "Transfer", "Transfer Bank", "Deposit"],
+            field_name="Metode pembayaran",
+            case_sensitive=False
+        )
         pc = PCRepository.get_by_kode(pc_kode)
         if not pc: raise ValueError("PC tidak ditemukan")
         if SesiRepository.get_aktif_by_pc(pc.id): raise ValueError("PC sedang dipakai")
@@ -141,6 +153,14 @@ class SesiService:
     @staticmethod
     def tambah_waktu_sesi(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
         """Tambah durasi pada sesi berjalan (Guest/Member) + Suntik Nota TM."""
+        qty = validate_integer_range(qty, 1, 100, field_name="Kuantitas paket")
+        metode_pembayaran = validate_choice(
+            metode_pembayaran or "Tunai",
+            ["Tunai", "QRIS", "Transfer", "Transfer Bank", "Deposit"],
+            field_name="Metode pembayaran",
+            case_sensitive=False
+        )
+
         sesi = SesiRepository.get_aktif_by_id(sesi_id)
         if not sesi: raise ValueError("Sesi tidak aktif")
 
@@ -148,8 +168,7 @@ class SesiService:
             raise ValueError(f"Paket zona {paket.grup.nama.upper()} tidak cocok dengan PC!")
         
         if sesi.tipe == "member" and sesi.member:
-            for _ in range(qty):
-                sesi.member.tambah_waktu(paket.durasi_menit, paket.kadaluarsa_hari)
+            sesi.member.tambah_waktu(paket.durasi_menit * qty, (paket.kadaluarsa_hari or 0) * qty)
             sesi.waktu_tersimpan_awal += (paket.durasi_menit * qty)
             
             transaksi = Transaksi(
@@ -200,11 +219,15 @@ class SesiService:
 
     @staticmethod
     def sync_waktu_member(sesi):
-        """Sinkronisasi saldo waktu di database Member dengan sisa waktu sesi."""
+        """Sinkronisasi saldo waktu di database Member atau kuota Kasir dengan sisa waktu sesi."""
         sisa = sesi.sisa_menit()
         if sesi.tipe == "member" and sesi.member:
             if sesi.member.waktu_tersimpan != sisa:
                 sesi.member.waktu_tersimpan = sisa
+                db.session.commit()
+        elif sesi.tipe == "kasir" and sesi.user:
+            if sesi.user.sisa_kuota_menit != sisa:
+                sesi.user.sisa_kuota_menit = sisa
                 db.session.commit()
         return sisa
 
@@ -224,14 +247,20 @@ class SesiService:
             # 1. Hitung sisa waktu final (Live calculation)
             sisa_final = sesi.sisa_menit()
 
-            # 2. Update Member (Jika ada)
+            # 2. Update Member atau Kasir (Jika ada)
             if sesi.tipe == "member" and sesi.member:
                 sesi.member.waktu_tersimpan = sisa_final
                 db.session.add(sesi.member)
+            elif sesi.tipe == "kasir" and sesi.user:
+                sesi.user.sisa_kuota_menit = sisa_final
+                db.session.add(sesi.user)
             
             # 3. Update status sesi
             sesi.status = "selesai"
             sesi.selesai_pada = now_local()
+            sesi.is_afk = False
+            sesi.afk_pin = None
+            sesi.afk_sejak = None
             
             # Reset mode admin jika yang ditutup adalah sesi admin
             if sesi.tipe == "admin" and sesi.pc:
@@ -269,15 +298,18 @@ class SesiService:
         pc_baru = PCRepository.get_by_kode(pc_kode_baru)
         
         if not sesi or not pc_baru: raise ValueError("Data tidak valid")
+        if pc_baru.id == sesi.pc_id: raise ValueError("Tidak dapat memindahkan sesi ke unit PC yang sama")
         if sesi.pc.grup_id != pc_baru.grup_id: raise ValueError("Beda grup zona!")
         if SesiRepository.get_aktif_by_pc(pc_baru.id): raise ValueError("PC tujuan sedang dipakai")
 
         pc_lama_kode = sesi.pc.kode
         sisa_waktu = sesi.sisa_menit()
 
-        # Update sisa terakhir ke member
+        # Update sisa terakhir ke member atau kasir
         if sesi.member:
             sesi.member.waktu_tersimpan = sisa_waktu
+        elif sesi.user:
+            sesi.user.sisa_kuota_menit = sisa_waktu
         
         # Tutup sesi lama secara manual (tanpa repo commit)
         if sesi.member_id:
@@ -285,17 +317,32 @@ class SesiService:
             for s in all_sesi:
                 s.status = "selesai"
                 s.selesai_pada = now_local()
+                s.is_afk = False
+                s.afk_pin = None
+                s.afk_sejak = None
+        elif sesi.user_id:
+            all_sesi = Sesi.query.filter_by(user_id=sesi.user_id, status="aktif").all()
+            for s in all_sesi:
+                s.status = "selesai"
+                s.selesai_pada = now_local()
+                s.is_afk = False
+                s.afk_pin = None
+                s.afk_sejak = None
         else:
             sesi.status = "selesai"
             sesi.selesai_pada = now_local()
+            sesi.is_afk = False
+            sesi.afk_pin = None
+            sesi.afk_sejak = None
 
         # Buat sesi baru di unit tujuan
         sesi_baru = Sesi(
-            tipe=sesi.tipe, member_id=sesi.member_id, pc_id=pc_baru.id,
+            tipe=sesi.tipe, member_id=sesi.member_id, user_id=sesi.user_id, pc_id=pc_baru.id,
             paket_id=sesi.paket_id, nama_guest=sesi.nama_guest,
             token_sesi=secrets.token_hex(32), durasi_beli_menit=sisa_waktu,
             total_bayar=sesi.total_bayar, status="aktif",
-            waktu_mulai_sesi=now_local(), waktu_tersimpan_awal=sisa_waktu
+            waktu_mulai_sesi=now_local(), waktu_tersimpan_awal=sisa_waktu,
+            sesi_asal_id=sesi.sesi_asal_id or sesi.id
         )
         db.session.add(sesi_baru)
         db.session.flush() # Ambil ID sesi baru
@@ -338,8 +385,31 @@ class SesiService:
                 continue
                 
             if sesi.sisa_menit() <= 0:
+                # Update sisa saldo member atau kasir ke 0
+                if sesi.tipe == "member" and sesi.member:
+                    sesi.member.waktu_tersimpan = 0
+                    db.session.add(sesi.member)
+                elif sesi.tipe == "kasir" and sesi.user:
+                    sesi.user.sisa_kuota_menit = 0
+                    db.session.add(sesi.user)
+
                 sesi.status = "selesai"
-                sesi.selesai_pada = now_local()
+                sesi.selesai_pada = now
+                sesi.is_afk = False
+                sesi.afk_pin = None
+                sesi.afk_sejak = None
+
+                try:
+                    transaksi = Transaksi(
+                        sesi_id=sesi.id, member_id=sesi.member_id,
+                        jenis="tutup_sesi", keterangan=f"Sesi {sesi.tipe} habis otomatis (Auto-cleanup)",
+                        user_id=None,
+                        operator="system"
+                    )
+                    db.session.add(transaksi)
+                except Exception:
+                    pass
+
                 count += 1
         if count > 0: db.session.commit()
         return count
@@ -370,6 +440,9 @@ class SesiService:
     def get_detail(sesi_id):
         """Mengambil data ringkas sesi untuk kebutuhan internal (ID, tipe, grup)."""
         sesi = SesiRepository.get_by_id(sesi_id)
+        if not sesi:
+            raise ValueError(f"Sesi dengan ID {sesi_id} tidak ditemukan")
+        sisa = sesi.sisa_menit() if hasattr(sesi, 'sisa_menit') else 0
         return {
             "id": sesi.id, "tipe": sesi.tipe,
             "grup": sesi.pc.grup.nama if sesi.pc and sesi.pc.grup else "reguler",
@@ -378,8 +451,21 @@ class SesiService:
             "member_nama": sesi.member.nama_lengkap if sesi.member else None,
             "username": sesi.member.username if sesi.member else None,
             "guest_nama": sesi.nama_guest,
-            "sisa_waktu": sesi.sisa_menit() if hasattr(sesi, 'sisa_menit') else 0
+            "sisa_waktu": sisa,
+            "sisa_menit": sisa
         }
+
+    @staticmethod
+    def get_sesi_chain_ids(sesi):
+        """Mendapatkan seluruh ID sesi dalam satu rantai (sebelum & sesudah pindah PC)."""
+        if not sesi:
+            return []
+        root_id = sesi.sesi_asal_id if sesi.sesi_asal_id else sesi.id
+        from sqlalchemy import or_
+        chain_sessions = Sesi.query.filter(
+            or_(Sesi.id == root_id, Sesi.sesi_asal_id == root_id)
+        ).all()
+        return [s.id for s in chain_sessions] if chain_sessions else [sesi.id]
 
     @staticmethod
     def get_riwayat_paket_sesi(sesi_id):
@@ -388,7 +474,8 @@ class SesiService:
         if not sesi or sesi.tipe != "guest":
             return []
 
-        transaksi_list = TransaksiRepository.get_riwayat_paket_sesi(sesi_id)
+        chain_ids = SesiService.get_sesi_chain_ids(sesi)
+        transaksi_list = TransaksiRepository.get_riwayat_paket_sesi(chain_ids)
         result = []
         
         # Sisa waktu sesi saat ini
@@ -427,7 +514,8 @@ class SesiService:
             raise ValueError("Sesi tidak aktif atau bukan tipe guest")
 
         transaksi = TransaksiRepository.get_by_id(transaksi_id)
-        if not transaksi or transaksi.sesi_id != sesi.id or transaksi.is_refunded:
+        chain_ids = SesiService.get_sesi_chain_ids(sesi)
+        if not transaksi or (transaksi.sesi_id not in chain_ids) or transaksi.is_refunded:
             raise ValueError("Transaksi tidak valid atau sudah direfund")
 
         durasi = transaksi.menit or (transaksi.paket.durasi_menit if transaksi.paket else 0)

@@ -17,6 +17,7 @@ from app.services import SettingsService
 from app.utils.logger import write_log
 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
 from app.utils.scheduler_tasks import UNIT_MULTIPLIER
+from app.utils.validators import validate_string_length
 
 settings_api_bp = Blueprint("settings", __name__)
 
@@ -56,18 +57,8 @@ def update_auto_shutdown():
         if not data:
             return jsonify({"error": "Request body diperlukan"}), 400
         
-        timer_seconds = data.get("timer_seconds")
-        if timer_seconds is None:
-            return jsonify({"error": "timer_seconds wajib diisi"}), 400
-        
-        # Validasi Tipe Data & Range
-        try:
-            timer_seconds = int(timer_seconds)
-        except ValueError:
-            return jsonify({"error": "timer_seconds harus berupa angka"}), 400
-        
-        if timer_seconds < 30 or timer_seconds > 600:
-            return jsonify({"error": "Range timer harus antara 30 s/d 600 detik"}), 400
+        from app.utils.validators import validate_integer_range
+        timer_seconds = validate_integer_range(data.get("timer_seconds"), min_val=30, max_val=600, field_name="Timer Auto-Shutdown")
         
         # Simpan ke Database via Service
         old_val = SettingsService.get("auto_shutdown_timer_seconds", "180")
@@ -80,6 +71,45 @@ def update_auto_shutdown():
             detail_json={"timer_sebelum": old_val, "timer_baru": timer_seconds}
         )
         return jsonify({"success": True, "message": "Timer berhasil diperbarui"}), 200
+    except ValueError as ve:
+        return jsonify({"error": str(ve)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@settings_api_bp.route("/client-polling-interval", methods=["PUT"])
+@login_required
+@admin_required
+def update_client_polling_interval():
+    """
+    Update interval polling PC Client.
+    Validasi: Hanya boleh nilai 1, 5, atau 10 detik.
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Request body diperlukan"}), 400
+        
+        interval_raw = data.get("interval_seconds")
+        if interval_raw is None:
+            interval_raw = data.get("value")
+
+        old_val = SettingsService.get_client_polling_interval()
+        new_val = SettingsService.set_client_polling_interval(interval_raw)
+        
+        operator = session.get("kasir_username", "admin")
+        write_log(
+            "SETTINGS_CLIENT_POLLING_INTERVAL",
+            f"Interval polling client diubah dari {old_val}s menjadi {new_val}s",
+            user=operator,
+            detail_json={"interval_sebelum": old_val, "interval_baru": new_val}
+        )
+        return jsonify({
+            "success": True,
+            "message": f"Interval polling client berhasil diset ke {new_val} detik",
+            "interval_seconds": new_val
+        }), 200
+    except ValueError as ve:
+        return jsonify({"error": str(ve)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -149,10 +179,10 @@ def update_client_api_key():
         data = request.get_json() or {}
         value = data.get("value")
         
-        if not value or not value.strip():
-            return jsonify({"error": "API Key tidak boleh kosong"}), 400
-            
-        value = value.strip()
+        try:
+            value = validate_string_length(value, min_len=4, max_len=128, field_name="Client API Key", required=True)
+        except ValueError as val_err:
+            return jsonify({"error": str(val_err)}), 400
         
         # 1. Update active Flask config so it takes effect instantly without server restart
         current_app.config["CLIENT_API_KEY"] = value

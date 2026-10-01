@@ -42,6 +42,31 @@ class AuthKasirService:
         if not user or not user.check_password(password):
             write_log("LOGIN_GAGAL", f"Username:{username} - Password salah / tidak ditemukan", user=username, detail_json={"attempted_username": username, "reason": "Password salah atau user tidak ditemukan"})
             raise ValueError("Username atau password salah")
+
+        # Proteksi eksklusif kasir (Opsi A: Anti-Fitnah & Single Shift System-wide)
+        # Jika ada shift aktif oleh kasir lain, tolak login kasir ini.
+        # Pemegang shift aktif bebas login ulang tanpa batas waktu. Admin selalu bebas masuk.
+        if user.role == "kasir":
+            from app.models.shift.shift_record import ShiftRecord
+            from app.utils.timezone_utils import format_display
+            active_shift = ShiftRecord.query.filter_by(status="AKTIF").first()
+            if active_shift and active_shift.kasir_id != user.id:
+                kasir_aktif_nama = active_shift.kasir.nama_lengkap or active_shift.kasir.username if active_shift.kasir else "Kasir Lain"
+                waktu_str = format_display(active_shift.waktu_mulai)
+                write_log(
+                    "LOGIN_DITOLAK_SHIFT",
+                    f"Kasir {username} ditolak masuk karena shift aktif dipegang oleh {kasir_aktif_nama}",
+                    user=username,
+                    detail_json={
+                        "attempted_username": username,
+                        "active_shift_kasir": kasir_aktif_nama,
+                        "shift_id": active_shift.id
+                    }
+                )
+                raise PermissionError(
+                    f"Akses Ditolak: Shift kasir saat ini sedang aktif oleh '{kasir_aktif_nama}' sejak {waktu_str}. "
+                    f"Kasir lain tidak dapat masuk sampai shift tersebut ditutup."
+                )
         
         # Catat log sukses dan return data user
         write_log("LOGIN", f"Kasir:{username} ({user.nama_lengkap or ''}) login", user=username, detail_json={"role": user.role, "nama_lengkap": user.nama_lengkap})

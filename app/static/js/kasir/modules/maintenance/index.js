@@ -183,7 +183,29 @@ const Maintenance = {
         this.closeSelectPCModal();
     },
 
-    async load() {
+    _lastFingerprint: null,
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'maintenance') return;
+        const modalCreate = document.getElementById('modal-tambah-tiket');
+        const modalDetail = document.getElementById('modal-detail-tiket');
+        const modalPC = document.getElementById('modal-select-pc');
+        const isAppModalOpen = document.getElementById('app-modal') && !document.getElementById('app-modal').classList.contains('hidden');
+        if ((modalCreate && !modalCreate.classList.contains('hidden')) ||
+            (modalDetail && !modalDetail.classList.contains('hidden')) ||
+            (modalPC && !modalPC.classList.contains('hidden')) ||
+            isAppModalOpen) {
+            return;
+        }
+        return this.load(true);
+    },
+
+    async load(isSilent = false) {
+        const tbody = document.getElementById('maintenance-tickets-tbody');
+        if (tbody && !isSilent && (!this.tickets || this.tickets.length === 0) && typeof Skeleton !== 'undefined') {
+            tbody.innerHTML = Skeleton.tableRows(6, 5);
+        }
+
         try {
             const status = document.getElementById('maint-filter-status')?.value || '';
             const pcId = document.getElementById('maint-filter-pc-val')?.value || '';
@@ -194,12 +216,26 @@ const Maintenance = {
             
             const res = await API.request(url);
             if (res && res.success) {
-                this.tickets = res.tickets;
+                const tickets = res.tickets || [];
+                const newFingerprint = JSON.stringify({
+                    status,
+                    pcId,
+                    tickets: tickets.map(t => ({ id: t.id, status: t.status, prioritas: t.prioritas, updated: t.updated_at }))
+                });
+
+                if (isSilent && this._lastFingerprint === newFingerprint) {
+                    return; // Data tidak berubah
+                }
+                this._lastFingerprint = newFingerprint;
+
+                this.tickets = tickets;
                 this.renderTickets();
                 this.updateStats();
             }
         } catch (err) {
-            Toast.error('Gagal mengambil data tiket perawatan.');
+            if (!isSilent) {
+                Toast.error('Gagal mengambil data tiket perawatan.');
+            }
         }
     },
 
@@ -343,6 +379,14 @@ const Maintenance = {
                 Toast.error('Harap pilih unit PC.');
                 return;
             }
+            if (!judul || judul.length < 3 || judul.length > 150) {
+                Toast.error('Judul kendala harus antara 3 sampai 150 karakter.');
+                return;
+            }
+            if (deskripsi.length > 5000) {
+                Toast.error('Deskripsi kendala maksimal 5000 karakter.');
+                return;
+            }
 
             const res = await API.request('/api/v1/kasir/maintenance/create', {
                 method: 'POST',
@@ -439,7 +483,17 @@ const Maintenance = {
             const ticketId = document.getElementById('maint-update-id').value;
             const status = document.getElementById('maint-update-status').value;
             const resolusi = document.getElementById('maint-update-resolusi').value.trim();
-            const biaya = document.getElementById('maint-update-biaya').value || 0;
+            const rawBiaya = document.getElementById('maint-update-biaya').value;
+            const biaya = Utils.parseRupiah(rawBiaya);
+
+            if (status === 'SELESAI' && !resolusi) {
+                Toast.error('Catatan perbaikan (resolusi) wajib diisi jika status Selesai.');
+                return;
+            }
+            if (biaya < 0 || biaya > 100000000) {
+                Toast.error('Biaya perbaikan harus antara Rp 0 sampai Rp 100.000.000.');
+                return;
+            }
 
             const res = await API.request(`/api/v1/kasir/maintenance/${ticketId}/status`, {
                 method: 'PUT',

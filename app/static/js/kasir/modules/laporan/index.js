@@ -102,7 +102,14 @@ const Laporan = {
         }
     },
 
-    async loadByDate(tanggal = '', kasirId = '', page = 1, metodePembayaran = '') {
+    _lastFingerprint: null,
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'laporan') return;
+        return this.loadByDate(this.currentDate, this.currentKasirId, this.currentPage, this.currentMetodePembayaran, true);
+    },
+
+    async loadByDate(tanggal = '', kasirId = '', page = 1, metodePembayaran = '', isSilent = false) {
         this.currentDate = tanggal || '';
         this.currentKasirId = kasirId;
         this.currentMetodePembayaran = metodePembayaran;
@@ -111,13 +118,33 @@ const Laporan = {
         const area = document.getElementById('laporan-area');
         if (!area) return;
 
-        area.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
+        if (!isSilent && (!this._lastData) && typeof Skeleton !== 'undefined') {
+            area.innerHTML = Skeleton.tableRows(8, 6);
+        }
 
         try {
             const data = await API.report.byTanggal(this.currentDate, kasirId, page, 12, metodePembayaran);
+            
+            const newFingerprint = JSON.stringify({
+                date: this.currentDate,
+                kasir: kasirId,
+                page,
+                metode: metodePembayaran,
+                total: data.total_pendapatan_billing,
+                history: (data.history || []).map(h => h.id || h.no_nota)
+            });
+
+            if (isSilent && this._lastFingerprint === newFingerprint) {
+                return; // Data tidak berubah
+            }
+            this._lastFingerprint = newFingerprint;
+            this._lastData = data;
+
             this.render(data);
         } catch (err) {
-            area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:text-base">Gagal memuat laporan</div>';
+            if (!isSilent) {
+                area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:text-base">Gagal memuat laporan</div>';
+            }
         }
     },
 

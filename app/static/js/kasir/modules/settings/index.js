@@ -1,5 +1,6 @@
 const Settings = {
     currentSubTab: 'general',
+    selectedPollingInterval: 5,
     ckeditorAnnouncementInstance: null,
 
     async initCKEditor() {
@@ -78,6 +79,8 @@ const Settings = {
                 if (timerInput && res.settings.auto_shutdown_timer_seconds !== undefined) {
                     timerInput.value = res.settings.auto_shutdown_timer_seconds;
                 }
+                const pollingVal = res.settings.client_polling_interval_seconds !== undefined ? parseInt(res.settings.client_polling_interval_seconds, 10) : 5;
+                this.selectPollingInterval(pollingVal);
                 const tokenInput = document.getElementById('uninstall-token-input');
                 if (tokenInput && res.settings.uninstall_token !== undefined) {
                     tokenInput.value = res.settings.uninstall_token;
@@ -221,13 +224,72 @@ const Settings = {
         }
     },
 
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'settings') return;
+        const isAppModalOpen = document.getElementById('app-modal') && !document.getElementById('app-modal').classList.contains('hidden');
+        if (isAppModalOpen) return;
+        if (this.currentSubTab === 'plugins' && typeof PluginsModule !== 'undefined' && typeof PluginsModule.refreshLive === 'function') {
+            return PluginsModule.refreshLive();
+        }
+        if (this.currentSubTab === 'branches' && typeof BranchManager !== 'undefined' && typeof BranchManager.refreshLive === 'function') {
+            return BranchManager.refreshLive();
+        }
+    },
+
     async saveAutoShutdown() {
-        const val = document.getElementById('shutdown-timer').value;
+        const rawVal = document.getElementById('shutdown-timer')?.value;
+        const val = parseInt(rawVal, 10);
+        if (isNaN(val) || val < 30 || val > 600) {
+            Toast.error('Timer auto-shutdown harus antara 30 s/d 600 detik (10 menit)');
+            return;
+        }
         try {
             await API.settings.updateAutoShutdown(val);
             Toast.success('Pengaturan auto-shutdown disimpan');
         } catch (err) {
             Toast.error('Gagal menyimpan: ' + err.message);
+        }
+    },
+
+    selectPollingInterval(val) {
+        val = parseInt(val, 10);
+        if (![1, 5, 10].includes(val)) {
+            val = 5;
+        }
+        this.selectedPollingInterval = val;
+        [1, 5, 10].forEach(opt => {
+            const btn = document.getElementById(`polling-interval-btn-${opt}`);
+            if (!btn) return;
+            const indicator = btn.querySelector('.polling-indicator');
+            if (opt === val) {
+                btn.classList.add('border-emerald-500/80', 'bg-emerald-950/20', 'ring-1', 'ring-emerald-500/50');
+                btn.classList.remove('border-[#222]', 'bg-[#080808]');
+                if (indicator) {
+                    indicator.classList.add('bg-emerald-400', 'shadow-[0_0_8px_rgba(52,211,153,0.8)]');
+                    indicator.classList.remove('bg-neutral-600');
+                }
+            } else {
+                btn.classList.remove('border-emerald-500/80', 'bg-emerald-950/20', 'ring-1', 'ring-emerald-500/50');
+                btn.classList.add('border-[#222]', 'bg-[#080808]');
+                if (indicator) {
+                    indicator.classList.remove('bg-emerald-400', 'shadow-[0_0_8px_rgba(52,211,153,0.8)]');
+                    indicator.classList.add('bg-neutral-600');
+                }
+            }
+        });
+    },
+
+    async saveClientPollingInterval() {
+        const val = this.selectedPollingInterval || 5;
+        if (![1, 5, 10].includes(val)) {
+            Toast.error('Interval polling client hanya boleh bernilai 1, 5, atau 10 detik');
+            return;
+        }
+        try {
+            await API.settings.updateClientPollingInterval(val);
+            Toast.success(`Interval polling client berhasil disetel ke ${val} detik`);
+        } catch (err) {
+            Toast.error('Gagal menyimpan interval polling: ' + err.message);
         }
     },
 
@@ -313,14 +375,19 @@ const Settings = {
 
     async saveClientApiKey() {
         const val = document.getElementById('client-apikey-input').value;
-        if (!val.trim()) {
+        const cleanVal = (val || '').trim();
+        if (!cleanVal) {
             Toast.error('API Key tidak boleh kosong');
+            return;
+        }
+        if (cleanVal.length < 4 || cleanVal.length > 128) {
+            Toast.error('Client API Key minimal 4 karakter dan maksimal 128 karakter');
             return;
         }
         try {
             await API.request('/api/v1/kasir/settings/apikey', {
                 method: 'PUT',
-                body: JSON.stringify({ value: val })
+                body: JSON.stringify({ value: cleanVal })
             });
             Toast.success('API Key berhasil disimpan ke .env server');
         } catch (err) {
@@ -959,10 +1026,10 @@ const Settings = {
             <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5">
                 <div class="flex items-center justify-between gap-4">
                     <div>
-                        <p class="font-bold text-neutral-200 text-sm lg:text-base">Status Whitelist IP</p>
+                        <label for="wlToggle" class="font-bold text-neutral-200 text-sm lg:text-base block">Status Whitelist IP</label>
                         <p class="text-[10px] lg:text-xs text-neutral-500 mt-0.5">Lindungi dashboard dari akses IP tidak dikenal</p>
                     </div>
-                    <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                    <label class="relative inline-flex items-center cursor-pointer shrink-0" for="wlToggle">
                         <input type="checkbox" id="wlToggle" class="sr-only peer" onchange="Settings._wlToggle(this.checked)">
                         <div class="w-10 h-5 lg:w-11 lg:h-6 bg-neutral-700 peer-checked:bg-emerald-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 lg:after:h-5 lg:after:w-5 after:transition-all"></div>
                     </label>
@@ -973,13 +1040,14 @@ const Settings = {
             <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5">
                 <h3 class="font-bold text-neutral-200 text-sm lg:text-base mb-3">🔗 Akses dari HP / Remote (via Tunnel)</h3>
                 <div class="mb-4">
-                    <label class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold block mb-1">Domain Publik</label>
+                    <label for="wlPublicUrl" class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold block mb-1">Domain Publik</label>
                     <div class="flex gap-2">
                         <input type="text" id="wlPublicUrl" placeholder="https://tmbilling.example.com"
                             class="flex-1 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 transition-colors">
                         <button onclick="Settings._wlSavePublicUrl()"
                             class="px-4 py-2 bg-neutral-800 border border-[#1c1c1c] rounded text-sm text-neutral-300 hover:bg-neutral-700 transition-colors font-semibold">Simpan</button>
                     </div>
+                    <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Contoh: https://billing.domainanda.com atau IP publik statis</p>
                 </div>
                 <div class="bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg overflow-hidden">
                     <div class="flex flex-col lg:flex-row">
@@ -1020,12 +1088,16 @@ const Settings = {
             <div class="bg-[#050505] border border-[#1c1c1c] rounded-xl p-4 lg:p-5">
                 <h3 class="font-bold text-neutral-200 text-sm lg:text-base mb-3">➕ Tambah IP Baru</h3>
                 <div class="flex flex-col sm:flex-row gap-2">
+                    <label for="wlNewIp" class="sr-only">Alamat IP Baru</label>
                     <input type="text" id="wlNewIp" placeholder="192.168.1.30"
                         class="flex-1 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 font-mono">
+                    <label for="wlNewLabel" class="sr-only">Label IP Baru (Opsional)</label>
                     <input type="text" id="wlNewLabel" placeholder="Label (opsional)"
                         class="sm:w-48 bg-[#0a0a0a] border border-[#1c1c1c] rounded px-3 py-2 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none">
                     <button onclick="Settings._wlAddIp()" class="px-5 py-2 bg-neutral-800 border border-[#1c1c1c] rounded text-sm text-neutral-200 hover:bg-neutral-700 font-bold shrink-0">Tambah</button>
                 </div>
+                <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Masukkan format IPv4 yang valid (contoh: 192.168.1.50) dan label pengenal opsional</p>
+            </div>
             </div>
         </div>`;
     },

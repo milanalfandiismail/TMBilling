@@ -100,9 +100,30 @@ class PC(db.Model):
                 from datetime import timezone
                 mtime = os.path.getmtime(screenshot_path)
                 dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
-                screenshot_time = format_display(dt_utc)
+                screenshot_time = format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
             except Exception:
                 pass
+
+        is_system = False
+        is_admin = False
+        if s and s.tipe == "admin":
+            if (s.nama_guest or "").strip().upper() == "SYSTEM":
+                is_system = True
+            else:
+                is_admin = True
+        elif self.is_admin_mode:
+            is_admin = True
+
+        status_val = "kosong"
+        if s:
+            if is_system:
+                status_val = "system"
+            elif is_admin:
+                status_val = "admin"
+            else:
+                status_val = "terpakai"
+        elif is_admin:
+            status_val = "admin"
 
         return {
             "id": self.id,
@@ -114,9 +135,11 @@ class PC(db.Model):
             "grup_warna": self.grup.warna if self.grup else "#888888",
             "zona": self.zona_nama,
             "aktif": self.aktif,
-            "status": "terpakai" if s else ("admin" if self.is_admin_mode else "kosong"),
+            "status": status_val,
             "sesi_id": s.id if s else None,
-            "is_admin_mode": self.is_admin_mode,
+            "is_admin_mode": is_admin,
+            "is_system_mode": is_system,
+            "is_afk": s.is_afk if s else False,
             "screenshot_url": f"/static/uploads/screenshots/{self.kode}.png" if has_screenshot else None,
             "screenshot_time": screenshot_time,
             "pos_x": self.pos_x if self.pos_x is not None else -1,

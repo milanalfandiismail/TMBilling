@@ -82,10 +82,18 @@ def _apply_branch_relay_identity():
 
     from app.repositories import UserRepository
     first_admin = UserRepository.get_first_admin()
-    if first_admin:
-        session["kasir_id"] = first_admin.id
+    admin_id = first_admin.id if first_admin else 1
+
+    g.kasir_id = admin_id
+    g.kasir_username = full_operator
+    g.kasir_role = "admin"
+    g.kasir_nama = full_operator
+
+    # Sinkronisasi ke session in-memory untuk kompatibilitas route tanpa mencemari cookie sesi
+    session["kasir_id"] = admin_id
     session["kasir_username"] = full_operator
     session["kasir_role"] = "admin"
+    session.modified = False
 
 
 def login_required(f):
@@ -167,3 +175,30 @@ def login_required_html(f):
             
         return f(*args, **kwargs)
     return decorated_function
+
+
+def shift_required(f):
+    """Decorator untuk mewajibkan shift aktif bagi pengguna ber-role kasir sebelum bertransaksi.
+
+    Role admin dibebaskan dari kewajiban membuka shift (dapat bertransaksi kapan saja).
+    Jika pengguna adalah kasir dan belum memiliki shift aktif, request ditolak dengan HTTP 400.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Admin / branch relay otomatis dibebaskan
+        if getattr(g, "is_branch_api_call", False) or session.get("kasir_role") == "admin":
+            return f(*args, **kwargs)
+
+        # Cek jika pengguna adalah kasir
+        if session.get("kasir_role") == "kasir":
+            kasir_username = session.get("kasir_username")
+            from app.services.shift.shift_service import ShiftService
+            active_shift = ShiftService.get_active_shift(kasir_username)
+            if not active_shift:
+                return jsonify({
+                    "error": "Harap buka shift terlebih dahulu sebelum melayani transaksi."
+                }), 400
+
+        return f(*args, **kwargs)
+    return decorated_function
+

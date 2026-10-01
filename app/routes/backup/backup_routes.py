@@ -41,11 +41,14 @@ def trigger_backup():
 def test_connection():
     """Test connection for a specific provider with temporary parameters."""
     try:
+        from app.utils.validators import validate_choice
         data = request.get_json() or {}
-        provider_type = data.get("provider")
+        raw_provider = data.get("provider")
         
-        if not provider_type:
+        if not raw_provider:
             return jsonify({"success": False, "error": "Provider type is required"}), 400
+
+        provider_type = validate_choice(raw_provider, ["discord", "webdav", "gdrive", "nas"], field_name="Provider Backup", case_sensitive=False)
             
         from app.services.backup.providers import (
             DiscordWebhookProvider, WebDAVProvider, GoogleDriveProvider, NASBackupProvider
@@ -81,9 +84,6 @@ def test_connection():
                 return jsonify({"success": False, "error": "NAS path is required"}), 400
             provider = NASBackupProvider(path)
             
-        else:
-            return jsonify({"success": False, "error": f"Unknown provider: {provider_type}"}), 400
-            
         success = provider.test_connection()
         from flask import session
         operator = session.get("kasir_username", "admin")
@@ -98,6 +98,8 @@ def test_connection():
         else:
             return jsonify({"success": False, "error": f"Koneksi ke {provider.name} Gagal! Silakan cek kredensial Anda."}), 400
             
+    except ValueError as ve:
+        return jsonify({"success": False, "error": str(ve)}), 400
     except Exception as e:
         from flask import session
         operator = session.get("kasir_username", "admin")
@@ -144,24 +146,28 @@ def list_backups():
 def download_backup(filename):
     """Download a specific backup ZIP file."""
     try:
+        from app.utils.validators import validate_filename
+        clean_filename = validate_filename(filename, allowed_extensions={"zip"}, field_name="Berkas Backup")
         backup_dir = os.path.abspath(os.path.join(current_app.instance_path, '..', 'backups'))
-        file_path = os.path.join(backup_dir, filename)
+        file_path = os.path.join(backup_dir, clean_filename)
         
         # Security check to prevent Directory Traversal
         if not os.path.abspath(file_path).startswith(backup_dir):
             return jsonify({"success": False, "error": "Akses ditolak"}), 403
             
-        if not os.path.exists(file_path) or not filename.endswith(".zip"):
+        if not os.path.exists(file_path):
             return jsonify({"success": False, "error": "File tidak ditemukan"}), 404
             
-        write_log("DATABASE_DOWNLOAD", f"User mendownload backup: {filename}", user="admin")
+        write_log("DATABASE_DOWNLOAD", f"User mendownload backup: {clean_filename}", user="admin")
         
         return send_file(
             file_path,
             as_attachment=True,
-            download_name=filename,
+            download_name=clean_filename,
             mimetype='application/zip'
         )
+    except ValueError as ve:
+        return jsonify({"success": False, "error": str(ve)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -172,19 +178,23 @@ def download_backup(filename):
 def delete_backup(filename):
     """Delete a specific backup file from local storage."""
     try:
+        from app.utils.validators import validate_filename
+        clean_filename = validate_filename(filename, allowed_extensions={"zip"}, field_name="Berkas Backup")
         backup_dir = os.path.abspath(os.path.join(current_app.instance_path, '..', 'backups'))
-        file_path = os.path.join(backup_dir, filename)
+        file_path = os.path.join(backup_dir, clean_filename)
         
         # Security check to prevent Directory Traversal
         if not os.path.abspath(file_path).startswith(backup_dir):
             return jsonify({"success": False, "error": "Akses ditolak"}), 403
             
-        if not os.path.exists(file_path) or not filename.endswith(".zip"):
+        if not os.path.exists(file_path):
             return jsonify({"success": False, "error": "File tidak ditemukan"}), 404
             
         os.remove(file_path)
-        write_log("BACKUP_DELETE", f"User menghapus backup lokal: {filename}", user="admin")
+        write_log("BACKUP_DELETE", f"User menghapus backup lokal: {clean_filename}", user="admin")
         
         return jsonify({"success": True, "message": "File backup berhasil dihapus!"}), 200
+    except ValueError as ve:
+        return jsonify({"success": False, "error": str(ve)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

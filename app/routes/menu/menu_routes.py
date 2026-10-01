@@ -10,22 +10,19 @@ import os
 from flask import Blueprint, request, jsonify, current_app, session
 from werkzeug.utils import secure_filename
 from app.services import MenuService
-from app.routes.auth.auth_kasir_routes import login_required, admin_required
+from app.middleware.auth import login_required, admin_required, shift_required
+from app.utils.validators import validate_filename
 
 menu_api_bp = Blueprint("menu", __name__)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def handle_image_upload(file):
     """Fungsi helper untuk menyimpan file gambar yang diupload ke static/uploads/menu."""
     if not file or file.filename == '':
         return None
 
-    if not allowed_file(file.filename):
-        raise ValueError("Ekstensi file tidak diizinkan (Gunakan: png, jpg, jpeg, gif, webp)")
+    validate_filename(file.filename, allowed_extensions=ALLOWED_EXTENSIONS, field_name="Gambar Menu")
 
     # Buat direktori upload jika belum ada
     upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'menu')
@@ -57,6 +54,7 @@ def get_menu_list():
 
 @menu_api_bp.route("/archived", methods=["GET"])
 @login_required
+@admin_required
 def get_archived_menu_list():
     """Mengambil daftar semua makanan dan minuman yang diarsipkan."""
     try:
@@ -151,6 +149,37 @@ def update_menu_item(menu_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@menu_api_bp.route("/<int:menu_id>/tambah-stok", methods=["POST"])
+@login_required
+@shift_required
+def tambah_stok_menu(menu_id):
+    """Menambahkan stok item menu (dapat dilakukan oleh kasir & admin saat shift aktif)."""
+    try:
+        payload = request.get_json(silent=True) or request.form.to_dict() or {}
+        jumlah_tambah = payload.get("jumlah_tambah") if payload.get("jumlah_tambah") is not None else payload.get("jumlah")
+        catatan = payload.get("catatan")
+
+        if jumlah_tambah is None or str(jumlah_tambah).strip() == "":
+            return jsonify({"success": False, "error": "Jumlah penambahan stok harus diisi"}), 400
+
+        try:
+            jumlah_tambah = int(jumlah_tambah)
+        except (ValueError, TypeError):
+            return jsonify({"success": False, "error": "Jumlah penambahan stok harus berupa angka valid"}), 400
+
+        operator = session.get("kasir_username", "system")
+        menu = MenuService.tambah_stok(menu_id, jumlah_tambah, operator=operator, catatan=catatan)
+        return jsonify({
+            "success": True,
+            "data": menu.to_dict(),
+            "message": f"Stok '{menu.nama}' berhasil ditambah sebanyak +{jumlah_tambah} (Total sekarang: {menu.stok})!"
+        }), 200
+    except ValueError as val_e:
+        return jsonify({"success": False, "error": str(val_e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @menu_api_bp.route("/<int:menu_id>", methods=["DELETE"])
 @login_required
 @admin_required
@@ -215,6 +244,7 @@ def hard_delete_menu_item(menu_id):
 
 @menu_api_bp.route("/checkout", methods=["POST"])
 @login_required
+@shift_required
 def checkout_order():
     """Checkout pesanan makanan/minuman."""
     try:
@@ -252,3 +282,43 @@ def get_all_transactions():
         return jsonify({"success": True, "data": [t.to_dict() for t in transactions]}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@menu_api_bp.route("/stock-logs", methods=["GET"])
+@login_required
+def get_stock_logs():
+    """Mendapatkan riwayat mutasi / penambahan stok menu dengan filter dan pagination."""
+    try:
+        tanggal = request.args.get("tanggal")
+        menu_id = request.args.get("menu_id")
+        operator = request.args.get("operator")
+        search = request.args.get("search")
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 15, type=int)
+
+        data = MenuService.get_stock_logs(
+            tanggal=tanggal,
+            menu_id=menu_id,
+            operator=operator,
+            search=search,
+            page=page,
+            per_page=per_page
+        )
+        operators = MenuService.get_stock_log_operators()
+        return jsonify({
+            "success": True,
+            "data": data["items"],
+            "pagination": {
+                "total": data["total"],
+                "page": data["page"],
+                "pages": data["pages"],
+                "has_prev": data["has_prev"],
+                "has_next": data["has_next"]
+            },
+            "operators": operators
+        }), 200
+    except ValueError as val_e:
+        return jsonify({"success": False, "error": str(val_e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+

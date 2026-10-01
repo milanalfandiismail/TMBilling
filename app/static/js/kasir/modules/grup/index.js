@@ -1,16 +1,35 @@
 const Grup = {
-    async load() {
+    _lastFingerprint: null,
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'grup') return;
+        const isAppModalOpen = document.getElementById('app-modal') && !document.getElementById('app-modal').classList.contains('hidden');
+        if (isAppModalOpen) return;
+        return this.load(true);
+    },
+
+    async load(isSilent = false) {
         const area = document.getElementById('grup-table');
-        if (area && !area.closest('.tab-content').classList.contains('hidden')) {
-            area.innerHTML = '<div class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
+        if (area && !isSilent && (!this._lastGrupList || this._lastGrupList.length === 0) && typeof Skeleton !== 'undefined') {
+            area.innerHTML = Skeleton.tableRows(5, 4);
         }
         try {
             const data = await API.grup.list();
             const list = data.grup || data.grup_list || [];
+            
+            const newFingerprint = JSON.stringify(list.map(g => ({ id: g.id, nama: g.nama, warna: g.warna, count: g.pc_count })));
+            if (isSilent && this._lastFingerprint === newFingerprint) {
+                return; // Data tidak berubah
+            }
+            this._lastFingerprint = newFingerprint;
+            this._lastGrupList = list;
+
             this.updateAllDropdowns(list);
             if (area) this.render(list);
         } catch (err) {
-            console.error("Grup Load Error:", err);
+            if (!isSilent) {
+                console.error("Grup Load Error:", err);
+            }
         }
     },
 
@@ -20,24 +39,26 @@ const Grup = {
                 <div class="flex items-center justify-between mb-5 pb-4 border-b border-[#2a2a2a]">
                     <div>
                         <h3 class="text-sm font-bold text-neutral-100 tracking-wide">Tambah Grup Baru</h3>
-                        <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Buat zona / kelompok PC baru</p>
+                        <p class="text-[10px] lg:text-xs xl:text-sm text-neutral-500 mt-0.5">Buat zona / kelompok PC baru</p>
                     </div>
                     <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
                 </div>
                 <div class="space-y-4">
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Grup <span class="text-red-400">*</span></label>
-                        <input type="text" id="modal-grup-nama" placeholder="Nama Grup" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <label for="modal-grup-nama" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Nama Grup <span class="text-red-400">*</span></label>
+                        <input type="text" id="modal-grup-nama" maxlength="30" minlength="2" placeholder="Nama Grup" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">2 - 30 karakter</p>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Keterangan</label>
-                        <input type="text" id="modal-grup-ket" placeholder="Deskripsi grup (opsional)" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <label for="modal-grup-ket" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Keterangan <span class="text-neutral-500 text-[9px] font-normal lowercase">(opsional)</span></label>
+                        <input type="text" id="modal-grup-ket" maxlength="200" placeholder="Deskripsi grup (opsional)" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Opsional, maksimal 200 karakter</p>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Warna Grup</label>
+                        <label for="modal-grup-warna" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Warna Grup</label>
                         <div class="flex items-center gap-3 px-4 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
                             <input type="color" id="modal-grup-warna" value="#888888" class="w-8 h-8 rounded border-0 bg-transparent cursor-pointer">
-                            <span class="text-[10px] lg:text-base text-neutral-500">Warna aksen untuk lencana grup ini</span>
+                            <span class="text-[10px] lg:text-xs xl:text-sm text-neutral-500">Warna aksen untuk lencana grup ini</span>
                         </div>
                     </div>
                 </div>
@@ -64,6 +85,9 @@ const Grup = {
             warna: (get('modal-grup-warna', 'inp-grup-warna') || {}).value || '#888888'
         };
         if (!data.nama) return Toast.error("Nama grup wajib diisi");
+        if (data.nama.length < 2 || data.nama.length > 30) return Toast.error("Nama grup harus 2 - 30 karakter");
+        if (data.keterangan && data.keterangan.length > 200) return Toast.error("Keterangan grup maksimal 200 karakter");
+
         try {
             await API.grup.create(data);
             Toast.success(`Grup ${data.nama} berhasil disimpan`);
@@ -80,25 +104,27 @@ const Grup = {
                 <div class="flex items-center justify-between mb-5 pb-4 border-b border-[#2a2a2a]">
                     <div>
                         <h3 class="text-sm font-bold text-neutral-100 tracking-wide">Edit Grup</h3>
-                        <p class="text-[10px] lg:text-base text-neutral-500 mt-0.5">Ubah data zona / kelompok PC</p>
+                        <p class="text-[10px] lg:text-xs xl:text-sm text-neutral-500 mt-0.5">Ubah data zona / kelompok PC</p>
                     </div>
                     <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg leading-none">&times;</button>
                 </div>
                 <div class="space-y-4">
                     <div>
                         <input type="hidden" id="modal-grup-old-nama" value="${nama}">
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Nama Grup <span class="text-red-400">*</span></label>
-                        <input type="text" id="modal-grup-nama" value="${nama}" placeholder="Nama Grup" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <label for="modal-grup-nama" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Nama Grup <span class="text-red-400">*</span></label>
+                        <input type="text" id="modal-grup-nama" maxlength="30" minlength="2" value="${nama}" placeholder="Nama Grup" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">2 - 30 karakter</p>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Keterangan</label>
-                        <input type="text" id="modal-grup-ket" value="${keterangan}" placeholder="Deskripsi grup (opsional)" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <label for="modal-grup-ket" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Keterangan <span class="text-neutral-500 text-[9px] font-normal lowercase">(opsional)</span></label>
+                        <input type="text" id="modal-grup-ket" maxlength="200" value="${keterangan}" placeholder="Deskripsi grup (opsional)" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors">
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Opsional, maksimal 200 karakter</p>
                     </div>
                     <div>
-                        <label class="text-[9px] lg:text-base text-neutral-500 mb-1.5 block uppercase font-bold tracking-wider">Warna Grup</label>
+                        <label for="modal-grup-warna" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Warna Grup</label>
                         <div class="flex items-center gap-3 px-4 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
                             <input type="color" id="modal-grup-warna" value="${warna}" class="w-8 h-8 rounded border-0 bg-transparent cursor-pointer">
-                            <span class="text-[10px] lg:text-base text-neutral-500">Warna aksen untuk lencana grup ini</span>
+                            <span class="text-[10px] lg:text-xs xl:text-sm text-neutral-500">Warna aksen untuk lencana grup ini</span>
                         </div>
                     </div>
                 </div>
@@ -122,6 +148,9 @@ const Grup = {
         const oldNama = get('modal-grup-old-nama')?.value;
 
         if (!data.nama) return Toast.error("Nama grup wajib diisi");
+        if (data.nama.length < 2 || data.nama.length > 30) return Toast.error("Nama grup harus 2 - 30 karakter");
+        if (data.keterangan && data.keterangan.length > 200) return Toast.error("Keterangan grup maksimal 200 karakter");
+
         try {
             await API.grup.update(id, data);
             

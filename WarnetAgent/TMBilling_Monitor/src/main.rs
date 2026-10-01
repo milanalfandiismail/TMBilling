@@ -1,6 +1,6 @@
 #![windows_subsystem = "windows"]
 #![allow(non_snake_case)]
-use sysinfo::System;
+#![allow(unused_imports)]
 
 use std::process::Command;
 use std::os::windows::process::CommandExt;
@@ -21,11 +21,110 @@ use des::cipher::{generic_array::GenericArray, BlockEncrypt, KeyInit};
 use des::Des;
 use sha2::{Sha256, Digest};
 use once_cell::sync::Lazy;
-use std::sync::Mutex;
+use std::sync::{Mutex, RwLock};
 use std::time::Instant;
 
 static VNC_ACTIVE: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 static VNC_LAST_ACTIVE: Lazy<Mutex<Instant>> = Lazy::new(|| Mutex::new(Instant::now()));
+
+static SYSTEM_MONITOR: Lazy<Mutex<sysinfo::System>> = Lazy::new(|| {
+    let mut sys = sysinfo::System::new_all();
+    sys.refresh_all();
+    Mutex::new(sys)
+});
+
+#[derive(Clone, Debug)]
+struct ClientConfig {
+    server_base_url: String,
+    api_key: String,
+    em_user: String,
+    em_token: String,
+}
+
+static CACHED_CONFIG: Lazy<RwLock<Option<ClientConfig>>> = Lazy::new(|| RwLock::new(None));
+
+#[derive(Clone, Debug)]
+struct StaticSpecs {
+    motherboard: String,
+    cpu_name: String,
+    gpu_name: String,
+}
+
+static CACHED_SPECS: Lazy<RwLock<StaticSpecs>> = Lazy::new(|| {
+    let (_, _, mobo_opt, cpu_opt, gpu_opt) = read_cached_temperature_and_specs();
+
+    RwLock::new(StaticSpecs {
+        motherboard: mobo_opt.unwrap_or_else(|| "Unknown".to_string()),
+        cpu_name: cpu_opt.unwrap_or_else(|| "Unknown".to_string()),
+        gpu_name: gpu_opt.unwrap_or_else(|| "Unknown".to_string()),
+    })
+});
+
+fn get_effective_hardware_specs(
+    mobo_cache: Option<String>,
+    cpu_cache: Option<String>,
+    gpu_cache: Option<String>,
+) -> (String, String, String) {
+    if let Ok(guard) = CACHED_SPECS.read() {
+        let mobo_valid = guard.motherboard != "Unknown" && !guard.motherboard.is_empty();
+        let cpu_valid = guard.cpu_name != "Unknown" && !guard.cpu_name.is_empty();
+        let gpu_valid = guard.gpu_name != "Unknown" && !guard.gpu_name.is_empty();
+
+        if mobo_valid && cpu_valid && gpu_valid {
+            return (guard.motherboard.clone(), guard.cpu_name.clone(), guard.gpu_name.clone());
+        }
+    }
+
+    if let Ok(mut guard) = CACHED_SPECS.write() {
+        if let Some(m) = mobo_cache.clone() {
+            if guard.motherboard == "Unknown" || guard.motherboard.is_empty() {
+                guard.motherboard = m;
+            }
+        }
+        if let Some(c) = cpu_cache.clone() {
+            if guard.cpu_name == "Unknown" || guard.cpu_name.is_empty() {
+                guard.cpu_name = c;
+            }
+        }
+        if let Some(g) = gpu_cache.clone() {
+            if guard.gpu_name == "Unknown" || guard.gpu_name.is_empty() {
+                guard.gpu_name = g;
+            }
+        }
+
+        return (guard.motherboard.clone(), guard.cpu_name.clone(), guard.gpu_name.clone());
+    }
+
+    (
+        mobo_cache.unwrap_or_else(|| "Unknown".to_string()),
+        cpu_cache.unwrap_or_else(|| "Unknown".to_string()),
+        gpu_cache.unwrap_or_else(|| "Unknown".to_string()),
+    )
+}
+
+#[derive(Clone, Debug, serde::Serialize)]
+struct CachedHardwareSerials {
+    motherboard_serial: String,
+    cpu_id: String,
+    gpu_pnp_id: String,
+    ram_serials: Vec<String>,
+    disk_serials: Vec<String>,
+}
+
+static STATIC_SERIALS: Lazy<CachedHardwareSerials> = Lazy::new(|| {
+    let mobo = get_motherboard_serial();
+    let cpu_id = get_cpu_id();
+    let gpu_pnp = get_gpu_pnp_id();
+    let ram = get_ram_serials();
+    let disk = get_disk_serials();
+    CachedHardwareSerials {
+        motherboard_serial: mobo,
+        cpu_id,
+        gpu_pnp_id: gpu_pnp,
+        ram_serials: ram,
+        disk_serials: disk,
+    }
+});
 
 // =========================================================================
 // 1. EMBEDDED FILES ENGINE (Auto-Extract File Pendukung dari dalam Rust!)
@@ -45,92 +144,212 @@ fn extract_embedded_files() {
 }
 
 // =========================================================================
-// 2. DATA STRUCTURE DARI HARDWARE HELPER (LibreHardwareMonitor JSON Output)
-// =========================================================================
-#[derive(Deserialize, Debug, Clone)]
-struct HardwareHelperOutput {
-    CpuUsage: f32,
-    CpuTemp: f32,
-    GpuTemp: f32,
-    TotalRam: String,
-    Motherboard: String,
-    CpuName: String,
-    GpuName: String,
-}
-
-fn get_hardware_helper_data() -> Option<HardwareHelperOutput> {
-    let helper_path = std::env::current_exe()
-        .ok()
-        .and_then(|mut p| { p.set_file_name("HardwareHelper.exe"); Some(p) })
-        .unwrap_or_else(|| std::path::PathBuf::from(".\\HardwareHelper.exe"));
-
-    let output = Command::new(helper_path)
-        .creation_flags(0x08000000) // 🔥 Sembunyikan Jendela CMD/Console dari Layar User!
-        .output()
-        .ok()?;
-    
-    if output.status.success() {
-        let stdout_str = String::from_utf8_lossy(&output.stdout);
-        serde_json::from_str::<HardwareHelperOutput>(stdout_str.trim()).ok()
-    } else {
-        None
-    }
-}
-
-// =========================================================================
-// 3. DETEKSI IDENTITAS JARINGAN AKTIF (IP & MAC fisik)
+// 2. HARDWARE IDENTIFIERS & SENSORS ENGINE
 // =========================================================================
 #[derive(Deserialize, Debug)]
-struct NetConfig {
-    IPAddress: Option<Vec<String>>,
-    MACAddress: Option<String>,
+struct BaseBoardInfo {
+    SerialNumber: Option<String>,
+    Product: Option<String>,
+    Manufacturer: Option<String>,
 }
 
-fn get_active_ip_and_mac() -> (String, String) {
+fn get_motherboard_serial() -> String {
     if let Ok(com) = COMLibrary::new() {
         if let Ok(con) = WMIConnection::with_namespace_path("ROOT\\CIMV2", com) {
-            let query = "SELECT IPAddress, MACAddress FROM Win32_NetworkAdapterConfiguration WHERE IPEnabled = True";
-            if let Ok(list) = con.raw_query::<NetConfig>(query) {
-                for item in list {
-                    if let (Some(ips), Some(mac)) = (item.IPAddress, item.MACAddress) {
-                        for ip in ips {
-                            if ip.contains('.') && ip != "127.0.0.1" {
-                                return (ip, mac);
-                            }
+            let query = "SELECT SerialNumber, Product, Manufacturer FROM Win32_BaseBoard";
+            if let Ok(list) = con.raw_query::<BaseBoardInfo>(query) {
+                if let Some(bb) = list.first() {
+                    if let Some(sn) = &bb.SerialNumber {
+                        let trimmed = sn.trim();
+                        if !trimmed.is_empty() && trimmed != "Unknown" && trimmed != "Default string" && trimmed != "None" {
+                            return trimmed.to_string();
                         }
                     }
-                }
-            }
-        }
-    }
-    ("Unknown".to_string(), "Unknown".to_string())
-}
-
-#[derive(Deserialize, Debug)]
-struct NetworkAdapter {
-    Speed: Option<u64>,
-}
-
-fn get_nic_speed() -> String {
-    if let Ok(com) = COMLibrary::new() {
-        if let Ok(con) = WMIConnection::with_namespace_path("ROOT\\CIMV2", com) {
-            let query = "SELECT Speed FROM Win32_NetworkAdapter WHERE NetConnectionStatus = 2 AND Speed > 0";
-            if let Ok(list) = con.raw_query::<NetworkAdapter>(query) {
-                if let Some(adapter) = list.first() {
-                    if let Some(speed) = adapter.Speed {
-                        return if speed >= 1_000_000_000 {
-                            format!("{:.1} Gbps", speed as f64 / 1_000_000_000.0)
-                        } else if speed >= 1_000_000 {
-                            format!("{} Mbps", speed / 1_000_000)
-                        } else {
-                            format!("{} bps", speed)
-                        };
+                    let mfg = bb.Manufacturer.as_deref().unwrap_or("").trim();
+                    let prod = bb.Product.as_deref().unwrap_or("").trim();
+                    if !prod.is_empty() {
+                        return format!("{} {}", mfg, prod).trim().to_string();
                     }
                 }
             }
         }
     }
     "Unknown".to_string()
+}
+
+fn is_generic_display_adapter(name: &str) -> bool {
+    let lower = name.to_lowercase();
+    lower.contains("basic display")
+        || lower.contains("standard vga")
+        || lower.contains("microsoft basic")
+        || lower.contains("remote desktop")
+        || lower.contains("virtual display")
+        || lower.contains("vbox")
+        || lower.contains("vmware")
+}
+
+fn ensure_hardware_helper_daemon() {
+    let helper_path = std::env::current_exe()
+        .ok()
+        .and_then(|mut p| { p.set_file_name("HardwareHelper.exe"); Some(p) })
+        .unwrap_or_else(|| std::path::PathBuf::from(".\\HardwareHelper.exe"));
+
+    if helper_path.exists() {
+        let _ = Command::new(&helper_path)
+            .arg("--daemon")
+            .creation_flags(0x08000000 | 0x00000008) // CREATE_NO_WINDOW | DETACHED_PROCESS
+            .spawn();
+    }
+}
+
+fn read_cached_temperature_and_specs() -> (f32, f32, Option<String>, Option<String>, Option<String>) {
+    #[derive(Deserialize, Default)]
+    struct TempData {
+        #[serde(default)]
+        CpuTemp: f32,
+        #[serde(default)]
+        GpuTemp: f32,
+        #[serde(default)]
+        Motherboard: String,
+        #[serde(default)]
+        CpuName: String,
+        #[serde(default)]
+        GpuName: String,
+    }
+
+    if let Ok(content) = fs::read_to_string("hardware_temp.json") {
+        if let Ok(data) = serde_json::from_str::<TempData>(&content) {
+            let mobo = {
+                let t = data.Motherboard.trim();
+                if !t.is_empty() && t != "Unknown" {
+                    Some(t.to_string())
+                } else {
+                    None
+                }
+            };
+            let cpu = {
+                let t = data.CpuName.trim();
+                if !t.is_empty() && t != "Unknown" {
+                    Some(t.to_string())
+                } else {
+                    None
+                }
+            };
+            let gpu = {
+                let t = data.GpuName.trim();
+                if !t.is_empty() && t != "Unknown" && !is_generic_display_adapter(t) {
+                    Some(t.to_string())
+                } else {
+                    None
+                }
+            };
+            return (data.CpuTemp, data.GpuTemp, mobo, cpu, gpu);
+        }
+    }
+    (0.0, 0.0, None, None, None)
+}
+
+#[allow(dead_code)]
+fn read_cached_temperature() -> (f32, f32) {
+    let (cpu, gpu, _, _, _) = read_cached_temperature_and_specs();
+    (cpu, gpu)
+}
+
+// =========================================================================
+// 3. DETEKSI IDENTITAS JARINGAN AKTIF NATIVE WIN32 (IP, MAC & SPEED LAN REAL-TIME)
+// =========================================================================
+fn get_active_network_telemetry() -> (String, String, String) {
+    use winapi::shared::ws2def::AF_INET;
+    use winapi::um::iptypes::{IP_ADAPTER_ADDRESSES_LH, GAA_FLAG_SKIP_ANYCAST, GAA_FLAG_SKIP_MULTICAST, GAA_FLAG_SKIP_DNS_SERVER};
+    use winapi::um::iphlpapi::GetAdaptersAddresses;
+    use std::net::Ipv4Addr;
+
+    let mut buf_len = 16384u32;
+    let mut buf: Vec<u8> = vec![0u8; buf_len as usize];
+    let flags = GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_DNS_SERVER;
+
+    let mut ret = unsafe {
+        GetAdaptersAddresses(
+            AF_INET as u32,
+            flags,
+            std::ptr::null_mut(),
+            buf.as_mut_ptr() as *mut IP_ADAPTER_ADDRESSES_LH,
+            &mut buf_len,
+        )
+    };
+
+    if ret == 111 { // ERROR_BUFFER_OVERFLOW
+        buf.resize(buf_len as usize, 0);
+        ret = unsafe {
+            GetAdaptersAddresses(
+                AF_INET as u32,
+                flags,
+                std::ptr::null_mut(),
+                buf.as_mut_ptr() as *mut IP_ADAPTER_ADDRESSES_LH,
+                &mut buf_len,
+            )
+        };
+    }
+
+    if ret == 0 {
+        let mut curr = buf.as_ptr() as *const IP_ADAPTER_ADDRESSES_LH;
+        while !curr.is_null() {
+            unsafe {
+                let adapter = &*curr;
+                // IfOperStatusUp = 1, IF_TYPE_SOFTWARE_LOOPBACK = 24
+                if adapter.OperStatus == 1 && adapter.IfType != 24 {
+                    let mac_len = adapter.PhysicalAddressLength as usize;
+                    if mac_len == 6 {
+                        let mac_bytes = &adapter.PhysicalAddress[..6];
+                        let mac_str = format!("{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}",
+                            mac_bytes[0], mac_bytes[1], mac_bytes[2], mac_bytes[3], mac_bytes[4], mac_bytes[5]);
+
+                        let mut p_addr = adapter.FirstUnicastAddress;
+                        while !p_addr.is_null() {
+                            let uni = &*p_addr;
+                            let lp_sock = uni.Address.lpSockaddr;
+                            if !lp_sock.is_null() && (*lp_sock).sa_family == AF_INET as u16 {
+                                let sin = lp_sock as *const winapi::shared::ws2def::SOCKADDR_IN;
+                                let s_addr = u32::from_be(*(*sin).sin_addr.S_un.S_addr());
+                                let ip_obj = Ipv4Addr::from(s_addr);
+                                let ip_str = ip_obj.to_string();
+
+                                if ip_str != "127.0.0.1" && !ip_str.starts_with("169.254.") {
+                                    let speed_bps = adapter.TransmitLinkSpeed;
+                                    let speed_str = if speed_bps >= 1_000_000_000 {
+                                        format!("{:.1} Gbps", speed_bps as f64 / 1_000_000_000.0)
+                                    } else if speed_bps >= 1_000_000 {
+                                        format!("{} Mbps", speed_bps / 1_000_000)
+                                    } else if speed_bps > 0 {
+                                        format!("{} bps", speed_bps)
+                                    } else {
+                                        "Unknown".to_string()
+                                    };
+
+                                    return (ip_str, mac_str, speed_str);
+                                }
+                            }
+                            p_addr = uni.Next;
+                        }
+                    }
+                }
+                curr = adapter.Next;
+            }
+        }
+    }
+
+    ("Unknown".to_string(), "Unknown".to_string(), "Unknown".to_string())
+}
+
+fn get_active_ip_and_mac() -> (String, String) {
+    let (ip, mac, _) = get_active_network_telemetry();
+    (ip, mac)
+}
+
+#[allow(dead_code)]
+fn get_nic_speed() -> String {
+    let (_, _, speed) = get_active_network_telemetry();
+    speed
 }
 
 
@@ -156,16 +375,33 @@ fn get_cpu_id() -> String {
 
 #[derive(Deserialize, Debug)]
 struct VideoControllerPnp {
-    PNPDeviceID: String,
+    PNPDeviceID: Option<String>,
+    Name: Option<String>,
 }
 
 fn get_gpu_pnp_id() -> String {
     if let Ok(com) = COMLibrary::new() {
         if let Ok(con) = WMIConnection::with_namespace_path("ROOT\\CIMV2", com) {
-            let query = "SELECT PNPDeviceID FROM Win32_VideoController";
+            let query = "SELECT PNPDeviceID, Name FROM Win32_VideoController";
             if let Ok(list) = con.raw_query::<VideoControllerPnp>(query) {
-                if let Some(gpu) = list.first() {
-                    return gpu.PNPDeviceID.trim().to_string();
+                let mut fallback_pnp = None;
+                for gpu in list {
+                    if let Some(pnp) = gpu.PNPDeviceID {
+                        let trimmed = pnp.trim();
+                        if trimmed.is_empty() {
+                            continue;
+                        }
+                        let name = gpu.Name.unwrap_or_default();
+                        if trimmed.starts_with("PCI\\") && !is_generic_display_adapter(&name) {
+                            return trimmed.to_string();
+                        }
+                        if fallback_pnp.is_none() {
+                            fallback_pnp = Some(trimmed.to_string());
+                        }
+                    }
+                }
+                if let Some(fb) = fallback_pnp {
+                    return fb;
                 }
             }
         }
@@ -241,6 +477,7 @@ fn get_disk_serials() -> Vec<String> {
 // =========================================================================
 // 4. HEX-XOR OBFUSCATION SYSTEM
 // =========================================================================
+#[allow(dead_code)]
 fn obfuscate(input: &str) -> String {
     let key = b"TMBillingSecretKey2026SecureObfuscation";
     let hex_chars: Vec<String> = input.as_bytes().iter().enumerate().map(|(i, &b)| {
@@ -395,6 +632,24 @@ fn load_config() -> (String, String, String, String) {
     let em_token = reg_em_token.or(ini_em_token).unwrap_or_else(|| sha256_hex("TM123qaz!@#"));
 
     (url, api_key, em_user, em_token)
+}
+
+fn get_cached_config() -> (String, String, String, String) {
+    if let Ok(guard) = CACHED_CONFIG.read() {
+        if let Some(cfg) = &*guard {
+            return (cfg.server_base_url.clone(), cfg.api_key.clone(), cfg.em_user.clone(), cfg.em_token.clone());
+        }
+    }
+    let (url, key, u, t) = load_config();
+    if let Ok(mut guard) = CACHED_CONFIG.write() {
+        *guard = Some(ClientConfig {
+            server_base_url: url.clone(),
+            api_key: key.clone(),
+            em_user: u.clone(),
+            em_token: t.clone(),
+        });
+    }
+    (url, key, u, t)
 }
 
 fn get_uninstall_token_from_temp() -> String {
@@ -812,9 +1067,122 @@ fn stop_tightvnc_portable() {
     }
 }
 
-fn poll_and_execute_vnc_commands(server_base_url: &str, api_key: &str) {
+#[derive(serde::Deserialize)]
+struct TelemetryResponse {
+    #[serde(default)]
+    polling_interval: Option<u64>,
+}
+
+fn send_telemetry_snapshot(server_base_url: &str, api_key: &str) -> Option<u64> {
+    if server_base_url.is_empty() {
+        return None;
+    }
+
+    let (ip_address, mac_address, nic_speed) = get_active_network_telemetry();
+    let (cpu_temp, gpu_temp, mobo_cache, cpu_cache, gpu_cache) = read_cached_temperature_and_specs();
+
+    let mut cpu_usage = 0.0f32;
+    let mut total_ram = "Unknown".to_string();
+    let mut process_list = Vec::new();
+
+    if let Ok(mut sys) = SYSTEM_MONITOR.lock() {
+        sys.refresh_cpu_usage();
+        sys.refresh_processes();
+
+        cpu_usage = sys.global_cpu_info().cpu_usage();
+        total_ram = format!("{:.2} GB", sys.total_memory() as f64 / 1024.0 / 1024.0 / 1024.0);
+
+        for (_pid, process) in sys.processes() {
+            let memory_bytes = process.memory();
+            if memory_bytes > 10_485_760 { // 10 MB
+                process_list.push(json!({
+                    "Name": process.name().to_string(),
+                    "Title": format!("Mem: {} MB", memory_bytes / 1024 / 1024)
+                }));
+            }
+        }
+    }
+
+    let (final_mobo, final_cpu, final_gpu) = get_effective_hardware_specs(mobo_cache, cpu_cache, gpu_cache);
+    let serials = &*STATIC_SERIALS;
+
+    let payload = json!({
+        "IpAddress": ip_address,
+        "MacAddress": mac_address,
+        "CpuUsage": cpu_usage,
+        "CpuTemp": cpu_temp,
+        "GpuTemp": gpu_temp,
+        "TotalRam": total_ram,
+        "NicSpeed": nic_speed,
+        "Motherboard": final_mobo,
+        "CpuName": final_cpu,
+        "GpuName": final_gpu,
+        "ActiveWindow": get_active_window_title(),
+        "ProcessList": process_list,
+        "HardwareSerials": {
+            "MotherboardSerial": serials.motherboard_serial,
+            "CpuId": serials.cpu_id,
+            "GpuPnpId": serials.gpu_pnp_id,
+            "RamSerials": serials.ram_serials,
+            "DiskSerials": serials.disk_serials
+        }
+    });
+
+    let server_url = format!("{}/api/v1/public/monitor", server_base_url.trim_end_matches('/'));
+    let resp = ureq::post(&server_url)
+        .set("X-Client-Key", api_key)
+        .send_json(payload);
+
+    match resp {
+        Ok(response) => {
+            log_debug(&format!("Telemetry snapshot terkirim ke server! IP: {}, MAC: {}, Speed: {}", ip_address, mac_address, nic_speed));
+            if let Ok(data) = response.into_json::<TelemetryResponse>() {
+                return data.polling_interval;
+            }
+            None
+        }
+        Err(e) => {
+            log_debug(&format!("Gagal kirim telemetry snapshot: {}", e));
+            None
+        }
+    }
+}
+
+fn execute_windows_taskkill(process_name: &str) {
+    let name_clean = process_name.trim();
+    if name_clean.is_empty() {
+        return;
+    }
+
+    log_debug(&format!("Mengeksekusi Windows taskkill: '{}'", name_clean));
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        
+        let target_exe = if name_clean.to_lowercase().ends_with(".exe") {
+            name_clean.to_string()
+        } else {
+            format!("{}.exe", name_clean)
+        };
+
+        let _ = std::process::Command::new("taskkill")
+            .args(["/f", "/im", &target_exe])
+            .creation_flags(0x08000000) // CREATE_NO_WINDOW
+            .spawn();
+
+        if target_exe != name_clean {
+            let _ = std::process::Command::new("taskkill")
+                .args(["/f", "/im", name_clean])
+                .creation_flags(0x08000000) // CREATE_NO_WINDOW
+                .spawn();
+        }
+    }
+}
+
+fn poll_and_execute_fast_commands(server_base_url: &str, api_key: &str) {
     let (ip_address, mac_address) = get_active_ip_and_mac();
-    let poll_url = format!("{}/api/v1/public/client/vnc_poll", server_base_url.trim_end_matches('/'));
+    let poll_url = format!("{}/api/v1/public/client/fast_poll", server_base_url.trim_end_matches('/'));
     let poll_payload = json!({
         "ip_address": ip_address,
         "mac_address": mac_address
@@ -824,12 +1192,12 @@ fn poll_and_execute_vnc_commands(server_base_url: &str, api_key: &str) {
         .send_json(poll_payload);
     if let Ok(response) = resp {
         #[derive(serde::Deserialize)]
-        struct VncPollResponse {
+        struct FastPollResponse {
             #[serde(rename = "success")]
             _success: bool,
             command: Option<serde_json::Value>,
         }
-        if let Ok(res_data) = response.into_json::<VncPollResponse>() {
+        if let Ok(res_data) = response.into_json::<FastPollResponse>() {
             if let Some(cmd_val) = res_data.command {
                 if let Some(cmd_str) = cmd_val.as_str() {
                     if cmd_str == "vnc_stop" {
@@ -843,6 +1211,15 @@ fn poll_and_execute_vnc_commands(server_base_url: &str, api_key: &str) {
                                 "mac_address": mac_address,
                                 "ready": false
                             }));
+                    } else if cmd_str == "refresh_processes" {
+                        log_debug("Menerima perintah on-demand REFRESH PROCESSES...");
+                        send_telemetry_snapshot(server_base_url, api_key);
+                    } else if cmd_str.starts_with("kill:") {
+                        let process_name = cmd_str.trim_start_matches("kill:").trim().to_string();
+                        log_debug(&format!("Menerima perintah on-demand KILL PROCESS: {}", process_name));
+                        execute_windows_taskkill(&process_name);
+                        thread::sleep(Duration::from_millis(500));
+                        send_telemetry_snapshot(server_base_url, api_key);
                     }
                 } else if let Some(cmd_obj) = cmd_val.as_object() {
                     if let Some(type_val) = cmd_obj.get("type").and_then(|v| v.as_str()) {
@@ -907,6 +1284,15 @@ fn lock_executable_file() -> Result<File, std::io::Error> {
 #[cfg(not(debug_assertions))]
 static FILE_LOCK: OnceCell<File> = OnceCell::new();
 
+fn update_hardware_helper_interval(interval_secs: u64) {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static LAST_WRITTEN_INTERVAL: AtomicU64 = AtomicU64::new(0);
+
+    if LAST_WRITTEN_INTERVAL.swap(interval_secs, Ordering::Relaxed) != interval_secs {
+        let _ = fs::write("hardware_interval.txt", interval_secs.to_string());
+    }
+}
+
 fn main() {
     log_debug("=========================================");
     log_debug("=== TMBilling Monitor Starting Up... ===");
@@ -932,7 +1318,12 @@ fn main() {
     }
     log_debug("Single-instance lock (tmmonitor.lock) berhasil didapatkan.");
     extract_embedded_files();
+    ensure_hardware_helper_daemon();
     stop_tightvnc_portable();
+
+    // Inisialisasi cached specs & serials di awal saat startup
+    let _ = &*CACHED_SPECS;
+    let _ = &*STATIC_SERIALS;
 
     // AUTO-BOOTSTRAP: Cek apakah MGCTM.exe sudah berjalan di awal startup.
     {
@@ -980,99 +1371,35 @@ fn main() {
         }
     });
 
-    // Thread mandiri untuk polling VNC command setiap 2 detik (bebas lag WMI)
+    // Thread mandiri untuk polling perintah remote & kontrol cepat setiap 2 detik
     thread::spawn(move || {
         loop {
-            let (server_base_url, api_key, _, _) = load_config();
+            let (server_base_url, api_key, _, _) = get_cached_config();
             if !server_base_url.is_empty() {
-                poll_and_execute_vnc_commands(&server_base_url, &api_key);
+                poll_and_execute_fast_commands(&server_base_url, &api_key);
             }
             thread::sleep(Duration::from_secs(2));
         }
     });
 
-    let mut sys = System::new_all();
-    println!("TMBilling Monitor AKTIF (Obfuscated & 5-Second Guard). Mengirim telemetry tiap 1 menit...");
-
-    let mut tick = 0;
+    let mut telemetry_interval_secs: u64 = 1;
+    update_hardware_helper_interval(1);
+    println!("TMBilling Monitor AKTIF (Dynamic Interval & 1-Second Fallback Guard)...");
 
     loop {
-        // 1. Ambil & pulihkan konfigurasi ter-obfuscate registry-first serta jalankan perbaikan otomatis
-        let (server_base_url, api_key, _em_user, _em_token) = load_config();
+        // 1. Ambil konfigurasi dari in-memory cache
+        let (server_base_url, api_key, _em_user, _em_token) = get_cached_config();
 
-        let server_url = format!("{}/api/v1/public/monitor", server_base_url.trim_end_matches('/'));
-
-        // 2. Kirim telemetry setiap 60 detik (12 ticks x 5 detik)
-        if tick % 12 == 0 {
-            sys.refresh_all();
-
-            let (ip_address, mac_address) = get_active_ip_and_mac();
-            let helper = get_hardware_helper_data();
-
-            let cpu_usage = helper.as_ref().map(|h| h.CpuUsage).unwrap_or_else(|| {
-                sys.global_cpu_info().cpu_usage()
-            });
-
-            let cpu_temp = helper.as_ref().map(|h| h.CpuTemp).unwrap_or(0.0);
-            let gpu_temp = helper.as_ref().map(|h| h.GpuTemp).unwrap_or(0.0);
-            
-            let cpu_name = helper.as_ref().map(|h| h.CpuName.clone()).unwrap_or_else(|| "Unknown".to_string());
-            let gpu_name = helper.as_ref().map(|h| h.GpuName.clone()).unwrap_or_else(|| "Unknown".to_string());
-            let motherboard = helper.as_ref().map(|h| h.Motherboard.clone()).unwrap_or_else(|| "Unknown".to_string());
-
-            let total_ram = helper.as_ref().map(|h| h.TotalRam.clone()).unwrap_or_else(|| {
-                format!("{:.2} GB", sys.total_memory() as f64 / 1024.0 / 1024.0 / 1024.0)
-            });
-
-            let nic_speed = get_nic_speed();
-
-            let mut process_list = Vec::new();
-            for (_pid, process) in sys.processes() {
-                let memory_bytes = process.memory();
-                if memory_bytes > 10_485_760 { // 10 MB
-                    process_list.push(json!({
-                        "Name": process.name().to_string(),
-                        "Title": format!("Mem: {} MB", memory_bytes / 1024 / 1024)
-                    }));
-                }
+        // 2. Kirim telemetry (dengan interval dinamis dari server & fallback 1 detik)
+        if let Some(interval) = send_telemetry_snapshot(&server_base_url, &api_key) {
+            if interval >= 1 && interval <= 60 {
+                telemetry_interval_secs = interval;
+                update_hardware_helper_interval(interval);
             }
-
-            let mobo_serial = motherboard.clone();
-            let cpu_id = get_cpu_id();
-            let gpu_pnp_id = get_gpu_pnp_id();
-            let ram_serials = get_ram_serials();
-            let disk_serials = get_disk_serials();
-
-            let payload = json!({
-                "IpAddress": ip_address,
-                "MacAddress": mac_address,
-                "CpuUsage": cpu_usage,
-                "CpuTemp": cpu_temp,
-                "GpuTemp": gpu_temp,
-                "TotalRam": total_ram,
-                "NicSpeed": nic_speed,
-                "Motherboard": motherboard,
-                "CpuName": cpu_name,
-                "GpuName": gpu_name,
-                "ActiveWindow": get_active_window_title(),
-                "ProcessList": process_list,
-                "HardwareSerials": {
-                    "MotherboardSerial": mobo_serial,
-                    "CpuId": cpu_id,
-                    "GpuPnpId": gpu_pnp_id,
-                    "RamSerials": ram_serials,
-                    "DiskSerials": disk_serials
-                }
-            });
-
-            let resp = ureq::post(&server_url)
-                .set("X-Client-Key", &api_key)
-                .send_json(payload);
-
-            match resp {
-                Ok(_) => println!("Telemetry terkirim ke server! IP: {}, MAC: {} (Motherboard: {})", ip_address, mac_address, motherboard),
-                Err(e) => eprintln!("Gagal kirim telemetry: {}", e),
-            }
+        } else {
+            // Fallback ke 1 detik saat server offline atau respon gagal
+            telemetry_interval_secs = 1;
+            update_hardware_helper_interval(1);
         }
 
         // 3. VNC Active & Inactivity Timeout Check
@@ -1104,9 +1431,8 @@ fn main() {
             }
         }
 
-        tick += 1;
-        // Ticks setiap 5 detik secara seragam
-        thread::sleep(Duration::from_secs(5));
+        // Ticks setiap interval dinamis (1s - 60s dengan fallback 1s)
+        thread::sleep(Duration::from_secs(telemetry_interval_secs));
     }
 }
 

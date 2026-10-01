@@ -12,6 +12,7 @@ const DashboardSelection = {
     // Card-to-Card Drag state
     isMouseDown: false,
     dragStartPcId: null,
+    dragStartGrup: null,
     currentHoverPcId: null,
     hasDragged: false,
     _justFinishedDrag: false,
@@ -47,7 +48,7 @@ const DashboardSelection = {
             }
         });
 
-        // Global mousemove to track card-to-card drag smoothly using elementFromPoint
+        // Global mousemove to track card-to-card brush / trail drag smoothly across cards
         window.addEventListener('mousemove', (e) => {
             if (!this.isMouseDown || !this.dragStartPcId || !this.isDesktopBreakpoint()) return;
 
@@ -57,13 +58,20 @@ const DashboardSelection = {
             const card = el.closest('.pc-card-item');
             if (!card || !card.dataset.pcId) return;
 
+            // Group isolation: only select cards in the same group where drag started
+            const grup = card.dataset.pcGrup || '';
+            if (this.dragStartGrup && grup !== this.dragStartGrup) return;
+
             const targetPcId = parseInt(card.dataset.pcId);
             if (targetPcId && targetPcId !== this.currentHoverPcId) {
                 this.currentHoverPcId = targetPcId;
                 if (targetPcId !== this.dragStartPcId) {
                     this.hasDragged = true;
                 }
-                this.selectRange(this.dragStartPcId, targetPcId);
+                // Brush Trail Mode: Add every card the mouse actually touches / sweeps over
+                this.selectedPcIds.add(targetPcId);
+                this.lastSelectedId = targetPcId;
+                this.updateUI();
             }
         });
 
@@ -78,6 +86,7 @@ const DashboardSelection = {
                     }, 120);
                 }
                 this.dragStartPcId = null;
+                this.dragStartGrup = null;
                 this.currentHoverPcId = null;
                 this.hasDragged = false;
             }
@@ -96,9 +105,10 @@ const DashboardSelection = {
         });
     },
 
-    // Get list of PC IDs in order as currently displayed in the DOM
-    getDisplayedPcIds() {
-        const cards = document.querySelectorAll('.pc-card-item');
+    // Get list of PC IDs in order as currently displayed in the DOM (optionally per group)
+    getDisplayedPcIds(grupKey = null) {
+        const selector = grupKey ? `.pc-card-item[data-pc-grup="${grupKey}"]` : '.pc-card-item';
+        const cards = document.querySelectorAll(selector);
         const ids = [];
         cards.forEach(c => {
             const id = parseInt(c.dataset.pcId);
@@ -108,6 +118,7 @@ const DashboardSelection = {
     },
 
     handleCardMouseDown(event, pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         if (!this.isDesktopBreakpoint()) return;
         if (event.button !== 0) return; // Only left click
 
@@ -117,13 +128,26 @@ const DashboardSelection = {
         // Prevent native browser text selection/drag ghost
         event.preventDefault();
 
+        const card = document.querySelector(`.pc-card-item[data-pc-id="${pcId}"]`);
+        const grup = card ? (card.dataset.pcGrup || '') : '';
+
         this.isMouseDown = true;
         this.dragStartPcId = pcId;
+        this.dragStartGrup = grup;
         this.currentHoverPcId = pcId;
         this.hasDragged = false;
+
+        // If card is not already selected in a multi-selection, start new brush trail with this card
+        if (!this.selectedPcIds.has(pcId) || this.selectedPcIds.size <= 1) {
+            this.selectedPcIds.clear();
+            this.selectedPcIds.add(pcId);
+            this.lastSelectedId = pcId;
+            this.updateUI();
+        }
     },
 
     handleCardClick(event, pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         if (!this.isDesktopBreakpoint()) {
             Dashboard.showContextMenu(event, pcId);
             return;
@@ -166,6 +190,7 @@ const DashboardSelection = {
     },
 
     handleCardContextMenu(event, pcId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         if (!this.isDesktopBreakpoint()) {
             Dashboard.showContextMenu(event, pcId);
             return;
@@ -202,19 +227,68 @@ const DashboardSelection = {
     },
 
     selectRange(fromPcId, toPcId) {
-        const displayedIds = this.getDisplayedPcIds();
-        const fromIdx = displayedIds.indexOf(fromPcId);
-        const toIdx = displayedIds.indexOf(toPcId);
+        const fromCard = document.querySelector(`.pc-card-item[data-pc-id="${fromPcId}"]`);
+        const toCard = document.querySelector(`.pc-card-item[data-pc-id="${toPcId}"]`);
 
-        if (fromIdx === -1 || toIdx === -1) return;
+        if (!fromCard || !toCard) return;
 
-        const start = Math.min(fromIdx, toIdx);
-        const end = Math.max(fromIdx, toIdx);
+        const fromGrup = fromCard.dataset.pcGrup || '';
+        const toGrup = toCard.dataset.pcGrup || '';
+
+        // Multi-select/range drag strictly isolated within the same group
+        if (fromGrup !== toGrup) return;
+
+        const fromGrid = fromCard.closest('.auto-grid-container, .manual-grid-container');
+        const toGrid = toCard.closest('.auto-grid-container, .manual-grid-container');
+
+        // Ensure both cards are within the same grid container
+        if (fromGrid !== toGrid) return;
+
+        const isAutoSort = fromGrid && fromGrid.classList.contains('auto-grid-container');
+        const fromPosX = parseInt(fromCard.dataset.posX);
+        const fromPosY = parseInt(fromCard.dataset.posY);
+        const toPosX = parseInt(toCard.dataset.posX);
+        const toPosY = parseInt(toCard.dataset.posY);
+
+        const isBothMapped = !isAutoSort && (fromPosX >= 0 && fromPosY >= 0 && toPosX >= 0 && toPosY >= 0);
 
         this.selectedPcIds.clear();
-        for (let i = start; i <= end; i++) {
-            this.selectedPcIds.add(displayedIds[i]);
+
+        if (isBothMapped && fromGrid) {
+            // 2D Spatial Range Selection (Denah Manual Layout Bounding Box)
+            const minX = Math.min(fromPosX, toPosX);
+            const maxX = Math.max(fromPosX, toPosX);
+            const minY = Math.min(fromPosY, toPosY);
+            const maxY = Math.max(fromPosY, toPosY);
+
+            const cards = fromGrid.querySelectorAll('.pc-card-item');
+            cards.forEach(c => {
+                const px = parseInt(c.dataset.posX);
+                const py = parseInt(c.dataset.posY);
+                const id = parseInt(c.dataset.pcId);
+                if (px >= minX && px <= maxX && py >= minY && py <= maxY) {
+                    if (id) this.selectedPcIds.add(id);
+                }
+            });
+        } else {
+            // Linear / Auto-Sort / Unmapped Selection within container
+            const container = fromGrid || fromCard.parentElement;
+            if (!container) return;
+
+            const cards = Array.from(container.querySelectorAll('.pc-card-item'));
+            const fromIdx = cards.indexOf(fromCard);
+            const toIdx = cards.indexOf(toCard);
+
+            if (fromIdx !== -1 && toIdx !== -1) {
+                const start = Math.min(fromIdx, toIdx);
+                const end = Math.max(fromIdx, toIdx);
+                for (let i = start; i <= end; i++) {
+                    const id = parseInt(cards[i].dataset.pcId);
+                    if (id) this.selectedPcIds.add(id);
+                }
+            }
         }
+
         this.lastSelectedId = toPcId;
         this.updateUI();
     },
@@ -225,6 +299,7 @@ const DashboardSelection = {
         this.isMouseDown = false;
         this.hasDragged = false;
         this.dragStartPcId = null;
+        this.dragStartGrup = null;
         this.currentHoverPcId = null;
         this.updateUI();
     },
@@ -292,6 +367,7 @@ const DashboardSelection = {
     },
 
     showBatchContextMenu(event) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         Dashboard.closeContextMenu();
         const selectedPcs = this.getSelectedPcs();
         if (selectedPcs.length === 0) return;
@@ -399,6 +475,7 @@ const DashboardSelection = {
     },
 
     openBatchBukaModal() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const selectedPcs = this.getSelectedPcs();
         const kosongPcs = selectedPcs.filter(p => p.status === 'kosong');
         if (kosongPcs.length === 0) {
@@ -410,6 +487,7 @@ const DashboardSelection = {
     },
 
     openBatchTambahModal() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const selectedPcs = this.getSelectedPcs();
         const aktifPcs = selectedPcs.filter(p => p.status === 'terpakai' && p.sesi_detail && p.sesi_detail.tipe !== 'admin');
         if (aktifPcs.length === 0) {
@@ -444,6 +522,7 @@ const DashboardSelection = {
     },
 
     tutupSesiBatchConfirm() {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const selectedPcs = this.getSelectedPcs();
         const aktifPcs = selectedPcs.filter(p => p.status === 'terpakai' && p.sesi_detail && p.sesi_detail.tipe !== 'admin');
         if (aktifPcs.length === 0) return Toast.error('Tidak ada sesi aktif terpilih');

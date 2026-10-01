@@ -147,7 +147,14 @@ const Struk = {
         });
     },
 
-    async loadHistory(selectedDate = null, page = 1) {
+    _lastFingerprint: null,
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'struk') return;
+        return this.loadHistory(this.currentDate, this.currentPage, true);
+    },
+
+    async loadHistory(selectedDate = null, page = 1, isSilent = false) {
         try {
             const container = document.getElementById('struk-history-list');
             if (!container) return;
@@ -158,7 +165,9 @@ const Struk = {
             this.currentDate = targetDate || '';
             this.currentPage = page;
 
-            container.innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
+            if (!isSilent && (!this.currentData && !document.querySelector('.struk-history-card')) && typeof Skeleton !== 'undefined') {
+                container.innerHTML = Skeleton.strukList(6);
+            }
 
             const apiFn = this.currentSubTab === 'kantin' ? window.API.report.kantinByTanggal : window.API.report.byTanggal;
             const res = await apiFn(this.currentDate, '', page, 8, '', this.searchQuery || '');
@@ -168,6 +177,12 @@ const Struk = {
             } else {
                 listData = res.history_menu || [];
             }
+
+            const newFingerprint = JSON.stringify({ tab: this.currentSubTab, date: this.currentDate, page: this.currentPage, items: listData.map(x => x.no_nota || x.id) });
+            if (isSilent && this._lastFingerprint === newFingerprint) {
+                return; // Data tidak berubah
+            }
+            this._lastFingerprint = newFingerprint;
 
             if (!listData || listData.length === 0) {
                 container.innerHTML = `
@@ -220,9 +235,16 @@ const Struk = {
             }
 
         } catch (err) {
-            const container = document.getElementById('struk-history-list');
-            if (container) container.innerHTML = '<p class="text-xs text-red-400 text-center py-4">Gagal memuat riwayat</p>';
+            if (!isSilent) {
+                const container = document.getElementById('struk-history-list');
+                if (container) container.innerHTML = '<p class="text-xs text-red-400 text-center py-4">Gagal memuat riwayat</p>';
+            }
         }
+    },
+
+    refreshLive() {
+        if (App.currentTab !== 'struk') return;
+        return this.loadHistory(this.currentDate, this.currentPage, true);
     },
 
     async cetak(sesiId) {

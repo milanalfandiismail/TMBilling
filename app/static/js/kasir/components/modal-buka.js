@@ -9,6 +9,7 @@ const BukaModal = {
     _selectedPaketId: null,
 
     async open(pcKode, pcGrup) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         this.isBatch = false;
         this.pcList = [];
         this.pcKode = pcKode;
@@ -18,6 +19,7 @@ const BukaModal = {
     },
 
     async openBatch(pcList) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         if (!pcList || pcList.length === 0) return;
         this.isBatch = true;
         this.pcList = pcList;
@@ -101,14 +103,15 @@ const BukaModal = {
                             </div>
 
                             <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-3.5">
-                                <label class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">${guestLabel}</label>
+                                <label for="buka-guest" class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">${guestLabel}</label>
                                 <input type="text" id="buka-guest" value="${defaultGuestName}" placeholder="${guestPlaceholder}"
                                     class="w-full px-3 py-2 bg-[#050505] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 font-bold font-mono transition-all"
                                     oninput="BukaModal.updatePreview()">
                                 ${this.isBatch ? `
-                                <p id="buka-guest-preview-text" class="text-[10px] text-neutral-500 mt-1.5 font-mono">
+                                <p id="buka-guest-preview-text" class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-mono">
                                     Format: ${defaultGuestName}-1, ${defaultGuestName}-2, ...
-                                </p>` : ''}
+                                </p>` : `
+                                <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Maksimal 30 karakter</p>`}
                             </div>
 
                             <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-3.5">
@@ -119,7 +122,7 @@ const BukaModal = {
                             </div>
 
                             <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-3.5">
-                                <label class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">Metode Pembayaran</label>
+                                <label for="buka-metode-pembayaran" class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">Metode Pembayaran</label>
                                 <select id="buka-metode-pembayaran" 
                                     class="w-full px-3 py-2 bg-[#050505] border border-[#2a2a2a] rounded text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 font-bold transition-all">
                                     ${paymentMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
@@ -137,10 +140,7 @@ const BukaModal = {
 
                         <!-- Package List Container with smooth scrollbar -->
                         <div id="paket-grid-container" class="space-y-2 flex-1 overflow-y-auto pr-1.5 scrollbar-thin max-h-[380px] md:max-h-[460px] lg:max-h-[520px] xl:max-h-[580px] min-h-[220px]">
-                            <div class="flex items-center justify-center py-12 text-neutral-500 text-xs lg:text-base">
-                                <div class="w-4 h-4 border-2 border-neutral-600 border-t-neutral-100 rounded-full animate-spin mr-2"></div>
-                                Memuat paket...
-                            </div>
+                            ${typeof Skeleton !== 'undefined' ? Skeleton.modalTambahPaket(4) : '<div class="text-neutral-500 text-xs py-8 text-center">Memuat paket...</div>'}
                         </div>
                         <input type="hidden" id="buka-paket" value="">
                     </div>

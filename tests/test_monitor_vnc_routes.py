@@ -72,4 +72,14 @@ def test_kasir_monitor_processes_endpoint(admin_client):
     data = res.get_json()
     assert data["success"] is True
     assert "data" in data
+    assert "last_updated_ts" in data
+
+
+def test_kasir_trigger_refresh_processes_endpoint(admin_client):
+    client, pc_id = admin_client
+    res = client.post(f"/api/v1/kasir/monitor/processes/{pc_id}/trigger")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["success"] is True
+    assert "berhasil dikirim" in data["message"]
 

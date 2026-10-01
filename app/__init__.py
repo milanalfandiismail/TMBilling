@@ -12,7 +12,7 @@ Exports:
     create_app: Factory function untuk membuat instance Flask app.
 """
 
-from flask import Flask, current_app, redirect, render_template, request
+from flask import Flask, current_app, redirect, render_template, request, g
 from flask_cors import CORS
 import os
 
@@ -133,10 +133,7 @@ def _register_blueprints(app):
     csrf.exempt(client_api_bp)
     csrf.exempt(auth_api_bp)
     csrf.exempt(monitor_api_bp)
-    csrf.exempt(shift_api_bp)
     csrf.exempt(server_monitor_bp)
-    csrf.exempt(tutorial_api_bp)
-    csrf.exempt(branch_api_bp)
 
 def _register_public_routes(app):
     """Mendaftarkan route publik."""
@@ -305,16 +302,64 @@ def _init_app_context(app):
         except Exception as e:
             app.logger.error(f"Gagal membuat admin default saat bootstrap: {e}")
 
-        # Self-healing bootstrap: Buat tabel 'cabang' otomatis jika belum ada (Non-destructive)
+        # Self-healing bootstrap & schema auto-migration (Non-destructive)
         try:
-            from sqlalchemy import inspect
-            from app.models.branch import Branch
+            from sqlalchemy import inspect, text
             inspector = inspect(db.engine)
             if not inspector.has_table('cabang'):
+                from app.models.branch import Branch
                 Branch.__table__.create(db.engine)
                 app.logger.info("[OK] [TMBilling] Tabel 'cabang' berhasil dibuat secara otomatis.")
+
+            # Auto-migration v1.6.2: User kuota benefit columns
+            if inspector.has_table('user'):
+                user_cols = [c['name'] for c in inspector.get_columns('user')]
+                with db.engine.connect() as conn:
+                    if 'kuota_main_bulanan' not in user_cols:
+                        conn.execute(text("ALTER TABLE user ADD COLUMN kuota_main_bulanan INTEGER DEFAULT 0"))
+                    if 'sisa_kuota_menit' not in user_cols:
+                        conn.execute(text("ALTER TABLE user ADD COLUMN sisa_kuota_menit INTEGER DEFAULT 0"))
+                    if 'terakhir_reset_kuota' not in user_cols:
+                        conn.execute(text("ALTER TABLE user ADD COLUMN terakhir_reset_kuota VARCHAR(7)"))
+                    conn.commit()
+
+            # Auto-migration v1.6.2: Sesi user_id, kolom AFK, dan sesi_asal_id
+            if inspector.has_table('sesi'):
+                sesi_cols = [c['name'] for c in inspector.get_columns('sesi')]
+                with db.engine.connect() as conn:
+                    if 'user_id' not in sesi_cols:
+                        conn.execute(text("ALTER TABLE sesi ADD COLUMN user_id INTEGER REFERENCES user(id)"))
+                    if 'is_afk' not in sesi_cols:
+                        conn.execute(text("ALTER TABLE sesi ADD COLUMN is_afk BOOLEAN DEFAULT 0"))
+                    if 'afk_pin' not in sesi_cols:
+                        conn.execute(text("ALTER TABLE sesi ADD COLUMN afk_pin VARCHAR(100)"))
+                    if 'afk_sejak' not in sesi_cols:
+                        conn.execute(text("ALTER TABLE sesi ADD COLUMN afk_sejak DATETIME"))
+                    if 'sesi_asal_id' not in sesi_cols:
+                        conn.execute(text("ALTER TABLE sesi ADD COLUMN sesi_asal_id INTEGER REFERENCES sesi(id)"))
+                    conn.commit()
+
+            # Auto-migration v1.6.2: ShiftRecord catatan, total_qris, total_refund columns
+            if inspector.has_table('shift_record'):
+                shift_cols = [c['name'] for c in inspector.get_columns('shift_record')]
+                with db.engine.connect() as conn:
+                    if 'catatan' not in shift_cols:
+                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN catatan VARCHAR(255)"))
+                    if 'total_qris' not in shift_cols:
+                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN total_qris INTEGER DEFAULT 0"))
+                    if 'total_refund' not in shift_cols:
+                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN total_refund INTEGER DEFAULT 0"))
+                    if 'detail_metode_json' not in shift_cols:
+                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN detail_metode_json TEXT"))
+                    conn.commit()
+
+            # Auto-migration v1.6.2: Tabel menu_stock_log
+            if not inspector.has_table('menu_stock_log'):
+                from app.models.menu.menu import MenuStockLog
+                MenuStockLog.__table__.create(db.engine)
+                app.logger.info("[OK] [TMBilling] Tabel 'menu_stock_log' berhasil dibuat secara otomatis.")
         except Exception as e:
-            app.logger.warning(f"Pengecekan bootstrap tabel cabang: {e}")
+            app.logger.warning(f"Pengecekan bootstrap skema database: {e}")
 
 def create_app():
     """Membuat dan mengkonfigurasi instance aplikasi Flask.
@@ -341,6 +386,20 @@ def create_app():
     from app.middleware import check_ip_whitelist, handle_branch_proxy_relay
     app.before_request(check_ip_whitelist)
     app.before_request(handle_branch_proxy_relay)
+
+    @app.after_request
+    def _isolate_stateless_bearer_sessions(response):
+        """Mencegah pencemaran cookie sesi browser pada request API stateless Bearer relay."""
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer ") or getattr(g, "is_branch_api_call", False):
+            from flask import session as flask_sess
+            flask_sess.modified = False
+            if "Set-Cookie" in response.headers:
+                cookie_name = app.config.get("SESSION_COOKIE_NAME", "session")
+                cookies = response.headers.getlist("Set-Cookie")
+                filtered = [c for c in cookies if not c.strip().startswith(f"{cookie_name}=")]
+                response.headers.setlist("Set-Cookie", filtered)
+        return response
 
     os.makedirs("logs", exist_ok=True)
 

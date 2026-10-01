@@ -10,7 +10,7 @@ from flask import Blueprint, request, jsonify, session
 import re
 from app.services import HardwareService
 from app.utils.logger import write_log
-from app.routes.auth.auth_kasir_routes import login_required, admin_required
+from app.middleware.auth import login_required, admin_required, shift_required
 from app.routes.client.client_routes import api_key_required
 
 monitor_api_bp = Blueprint("monitor", __name__)
@@ -58,7 +58,14 @@ def receive_hardware_data():
         client_ip = request.remote_addr
         pc = HardwareService.process_hardware_metric(client_ip, data)
 
-        return jsonify({"success": True, "message": f"Metrics for {pc.kode} saved"}), 200
+        from app.services.settings.settings_service import SettingsService
+        polling_interval = SettingsService.get_client_polling_interval()
+
+        return jsonify({
+            "success": True, 
+            "message": f"Metrics for {pc.kode} saved",
+            "polling_interval": polling_interval
+        }), 200
 
     except ValueError as val_e:
         return jsonify({"error": str(val_e)}), 404
@@ -82,6 +89,7 @@ def get_pc_processes(pc_id):
 @monitor_api_bp.route("/processes/<int:pc_id>/kill", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def kill_pc_process(pc_id):
     """Trigger request taskkill process ke client PC berdasarkan PC ID."""
     try:
@@ -96,7 +104,7 @@ def kill_pc_process(pc_id):
             return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
 
         from app.services.client.client_service import ClientService
-        ClientService.queue_command(pc.id, f"kill:{process_name}")
+        ClientService.queue_fast_command(pc.id, f"kill:{process_name}")
 
         operator = session.get("kasir_username", "admin")
         write_log("REMOTE_KILL", f"Perintah Kill Process '{process_name}' dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode, "process_name": process_name})
@@ -107,6 +115,7 @@ def kill_pc_process(pc_id):
 @monitor_api_bp.route("/<int:hardware_id>", methods=["DELETE"])
 @login_required
 @admin_required
+@shift_required
 def delete_hardware_data(hardware_id):
     """Endpoint untuk menghapus data hardware monitor tertentu secara manual dari dashboard."""
     try:
@@ -140,6 +149,7 @@ def get_all_hardware_kasir():
 @monitor_kasir_bp.route("/<int:hardware_id>", methods=["DELETE"])
 @login_required
 @admin_required
+@shift_required
 def delete_hardware_data_kasir(hardware_id):
     """Endpoint kasir untuk menghapus data hardware monitor tertentu."""
     try:
@@ -153,15 +163,47 @@ def delete_hardware_data_kasir(hardware_id):
 
 @monitor_kasir_bp.route("/processes/<int:pc_id>", methods=["GET"])
 @login_required
+@shift_required
 def get_pc_processes_kasir(pc_id):
     """Endpoint kasir untuk mengambil daftar proses yang sedang berjalan di PC tertentu."""
     try:
+        from datetime import timezone
+        from app.utils.timezone_utils import format_display
+        from app.repositories import HardwareRepository
         processes = HardwareService.get_processes_by_pc(pc_id)
+        hw = HardwareRepository.get_by_pc_id(pc_id)
+        
+        last_updated_ts = int(hw.last_update.replace(tzinfo=timezone.utc).timestamp() * 1000) if (hw and hw.last_update) else 0
+        last_updated_str = format_display(hw.last_update) if (hw and hw.last_update) else None
+
         return jsonify({
             "success": True, 
             "data": processes,
-            "count": len(processes)
+            "count": len(processes),
+            "last_updated": last_updated_str,
+            "last_updated_ts": last_updated_ts
         })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@monitor_kasir_bp.route("/processes/<int:pc_id>/trigger", methods=["POST"])
+@login_required
+@shift_required
+def trigger_refresh_processes(pc_id):
+    """Memicu permintaan pengambilan daftar proses terbaru on-demand ke client PC."""
+    try:
+        from app.repositories import PCRepository
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+
+        from app.services.client.client_service import ClientService
+        ClientService.queue_fast_command(pc.id, "refresh_processes")
+
+        operator = session.get("kasir_username", "admin")
+        write_log("REMOTE_REFRESH_PROCESSES_TRIGGER", f"Permintaan Refresh Proses dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode})
+        return jsonify({"success": True, "message": f"Permintaan pembaruan proses berhasil dikirim ke {pc.kode}"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -169,6 +211,7 @@ def get_pc_processes_kasir(pc_id):
 @monitor_kasir_bp.route("/processes/<int:pc_id>/kill", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def kill_pc_process_kasir(pc_id):
     """Trigger request taskkill process ke client PC berdasarkan PC ID."""
     try:
@@ -183,7 +226,7 @@ def kill_pc_process_kasir(pc_id):
             return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
 
         from app.services.client.client_service import ClientService
-        ClientService.queue_command(pc.id, f"kill:{process_name}")
+        ClientService.queue_fast_command(pc.id, f"kill:{process_name}")
 
         operator = session.get("kasir_username", "admin")
         write_log("REMOTE_KILL", f"Perintah Kill Process '{process_name}' dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode, "process_name": process_name})
@@ -195,6 +238,7 @@ def kill_pc_process_kasir(pc_id):
 @monitor_kasir_bp.route("/screenshot/trigger/<int:pc_id>", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def trigger_screenshot(pc_id):
     """Trigger request screenshot ke client PC berdasarkan PC ID."""
     try:
@@ -211,19 +255,96 @@ def trigger_screenshot(pc_id):
         return jsonify({"success": True, "message": f"Perintah screenshot berhasil dikirim ke {pc.kode}"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+@monitor_kasir_bp.route("/remote/<int:pc_id>/afk-lock", methods=["POST"])
+@login_required
+@admin_required
+@shift_required
+def trigger_remote_afk_lock(pc_id):
+    """Trigger remote AFK lock ke PC client dari Kasir dengan PIN."""
+    try:
+        from app.repositories import PCRepository, SesiRepository
+        from app.models import db, now_local
+        from app.services import ClientService
+        from werkzeug.security import generate_password_hash
+
+        data = request.get_json() or {}
+        pin = str(data.get("pin", "")).strip()
+        if not pin:
+            return jsonify({"success": False, "error": "PIN / Password kunci layar tidak boleh kosong"}), 400
+
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+
+        sesi = SesiRepository.get_aktif_by_pc(pc.id)
+        if not sesi:
+            return jsonify({"success": False, "error": "Tidak ada sesi aktif di PC ini"}), 400
+
+        sesi.is_afk = True
+        sesi.afk_pin = generate_password_hash(pin)
+        sesi.afk_sejak = now_local()
+        db.session.commit()
+
+        ClientService.queue_command(pc.id, "afk_lock")
+        operator = session.get("kasir_username", "admin")
+        write_log("REMOTE_AFK_LOCK", f"PC {pc.kode} dikunci AFK secara remote oleh kasir dengan PIN", user=operator, detail_json={"pc_kode": pc.kode, "sesi_id": sesi.id})
+        return jsonify({"success": True, "message": f"Perintah kunci AFK berhasil dikirim ke {pc.kode}"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@monitor_kasir_bp.route("/remote/<int:pc_id>/afk-unlock", methods=["POST"])
+@login_required
+@admin_required
+@shift_required
+def trigger_remote_afk_unlock(pc_id):
+    """Trigger master unlock AFK ke PC client dari Kasir."""
+    try:
+        from app.repositories import PCRepository, SesiRepository
+        from app.models import db
+        from app.services import ClientService
+
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+
+        sesi = SesiRepository.get_aktif_by_pc(pc.id)
+        if not sesi:
+            return jsonify({"success": False, "error": "Tidak ada sesi aktif di PC ini"}), 400
+
+        sesi.is_afk = False
+        sesi.afk_pin = None
+        sesi.afk_sejak = None
+        db.session.commit()
+
+        ClientService.queue_command(pc.id, "afk_unlock")
+        operator = session.get("kasir_username", "admin")
+        write_log("REMOTE_AFK_UNLOCK", f"PC {pc.kode} dibuka kunci AFK secara remote (Master Unlock) oleh kasir", user=operator, detail_json={"pc_kode": pc.kode, "sesi_id": sesi.id})
+        return jsonify({"success": True, "message": f"Kunci AFK PC {pc.kode} berhasil dibuka oleh kasir"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @monitor_kasir_bp.route("/remote/<int:pc_id>/<string:action>", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def trigger_remote_action(pc_id, action):
     """Trigger remote action (shutdown atau restart) ke client PC berdasarkan PC ID."""
     try:
         if action not in ["shutdown", "restart"]:
             return jsonify({"success": False, "error": "Aksi tidak valid"}), 400
 
-        from app.repositories import PCRepository
+        from app.repositories import PCRepository, SesiRepository
         pc = PCRepository.get_by_id(pc_id)
         if not pc:
             return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+
+        # Cegah aksi operasional (shutdown/restart) jika PC sedang dalam sesi SYSTEM
+        sesi = SesiRepository.get_aktif_by_pc(pc.id)
+        is_system = pc.is_admin_mode and sesi and (sesi.nama_guest or "").strip().upper() == "SYSTEM"
+        if is_system:
+            return jsonify({"success": False, "error": "Aksi operasional (Restart/Shutdown) tidak diizinkan pada PC dalam mode SYSTEM"}), 403
 
         from app.services import ClientService
         ClientService.queue_command(pc.id, action)
@@ -238,6 +359,7 @@ def trigger_remote_action(pc_id, action):
 @monitor_kasir_bp.route("/remote/batch", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def trigger_remote_action_batch():
     """Trigger remote action (shutdown atau restart) ke banyak PC client sekaligus."""
     try:
@@ -250,7 +372,7 @@ def trigger_remote_action_batch():
         if not pc_ids or not isinstance(pc_ids, list):
             return jsonify({"success": False, "error": "Daftar PC (pc_ids) harus berupa array non-kosong"}), 400
 
-        from app.repositories import PCRepository
+        from app.repositories import PCRepository, SesiRepository
         from app.services import ClientService
 
         action_label = "Shutdown" if action == "shutdown" else "Restart"
@@ -263,6 +385,13 @@ def trigger_remote_action_batch():
             if not pc:
                 errors.append({"pc_id": pc_id, "error": "PC tidak ditemukan"})
                 continue
+            
+            # Skip jika PC dalam mode SYSTEM
+            sesi = SesiRepository.get_aktif_by_pc(pc.id)
+            if pc.is_admin_mode and sesi and (sesi.nama_guest or "").strip().upper() == "SYSTEM":
+                errors.append({"pc_id": pc_id, "pc_kode": pc.kode, "error": "Aksi operasional tidak diizinkan pada PC mode SYSTEM"})
+                continue
+
             try:
                 ClientService.queue_command(pc.id, action)
                 write_log("REMOTE_ACTION_BATCH", f"Perintah {action_label} batch dikirim ke PC {pc.kode}", user=operator, detail_json={"pc_kode": pc.kode, "action": action})
@@ -401,6 +530,7 @@ def get_all_screenshot_status():
 @monitor_kasir_bp.route("/register/<int:pc_id>", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def register_pc_hardware(pc_id):
     """Endpoint untuk mendaftarkan hardware saat ini sebagai baseline resmi PC (Update Baseline)."""
     try:
@@ -416,6 +546,7 @@ def register_pc_hardware(pc_id):
 @monitor_kasir_bp.route("/vnc_client/<int:pc_id>/start", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def start_vnc_client(pc_id):
     """Trigger VNC start di client + launch websockify proxy."""
     try:
@@ -447,7 +578,7 @@ def start_vnc_client(pc_id):
         
         # Queue command ke PC
         cmd_payload = {"type": "vnc_start", "vnc_password": vnc_password}
-        ClientService.queue_vnc_command(pc.id, cmd_payload)
+        ClientService.queue_fast_command(pc.id, cmd_payload)
         write_log("VNC_COMMAND_QUEUED", f"Perintah VNC START masuk antrean untuk PC {pc.kode}", detail_json={"pc_id": pc.id})
         
         # Tunggu ready flag dari agent
@@ -479,6 +610,7 @@ def start_vnc_client(pc_id):
 @monitor_kasir_bp.route("/vnc_client/<int:pc_id>/stop", methods=["POST"])
 @login_required
 @admin_required
+@shift_required
 def stop_vnc_client(pc_id):
     """Matikan proxy VNC server dan kirim command stop ke PC Client."""
     try:
@@ -491,7 +623,7 @@ def stop_vnc_client(pc_id):
         from app.services import ClientService
         
         VNCClientProxyService.stop_proxy(pc.id)
-        ClientService.queue_vnc_command(pc.id, "vnc_stop")
+        ClientService.queue_fast_command(pc.id, "vnc_stop")
         
         operator = session.get("kasir_username", "admin")
         write_log("VNC_CLIENT_STOP", f"Proxy VNC client PC {pc.kode} dihentikan", user=operator, detail_json={"pc_kode": pc.kode})

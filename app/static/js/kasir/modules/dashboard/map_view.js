@@ -85,7 +85,7 @@ const MapView = {
             +self._editGrid(cols,rows)+placedDots+'</div></div></div>'
 
             +'<div class="px-6 py-3 border-t border-[#1c1c1c] flex items-center justify-between shrink-0 bg-[#0a0a0a] flex-wrap gap-2">'
-            +'<div class="flex items-center gap-2 text-xs lg:text-base text-neutral-400">Kolom <input type="number" id="edit-cols" value="'+gs.cols+'" min="1" max="12" class="w-16 px-2 py-1 bg-[#0a0a0a] border border-[#222] rounded text-neutral-200 text-center text-xs lg:text-base"> Baris <input type="number" id="edit-rows" value="'+gs.rows+'" min="1" max="100" class="w-16 px-2 py-1 bg-[#0a0a0a] border border-[#222] rounded text-neutral-200 text-center text-xs lg:text-base"> <button onclick="MapView._applyGrid(\''+self._esc(grup)+'\')" class="px-3 py-1 bg-neutral-700 border border-neutral-600 hover:bg-neutral-500 rounded text-xs lg:text-base text-neutral-200 font-semibold transition-colors">Terapkan</button></div>'
+            +'<div class="flex items-center gap-2 text-xs lg:text-base text-neutral-400"><label for="edit-cols" class="cursor-pointer">Kolom</label> <input type="number" id="edit-cols" value="'+gs.cols+'" min="1" max="12" class="w-16 px-2 py-1 bg-[#0a0a0a] border border-[#222] rounded text-neutral-200 text-center text-xs lg:text-base"> <label for="edit-rows" class="cursor-pointer">Baris</label> <input type="number" id="edit-rows" value="'+gs.rows+'" min="1" max="100" class="w-16 px-2 py-1 bg-[#0a0a0a] border border-[#222] rounded text-neutral-200 text-center text-xs lg:text-base"> <button onclick="MapView._applyGrid(\''+self._esc(grup)+'\')" class="px-3 py-1 bg-neutral-700 border border-neutral-600 hover:bg-neutral-500 rounded text-xs lg:text-base text-neutral-200 font-semibold transition-colors">Terapkan</button></div>'
             +'<div class="flex gap-2"><button onclick="Modal.closeModal()" class="px-4 py-2 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-400 text-xs lg:text-base font-bold rounded">Batal</button>'
             +'<button onclick="MapView._save()" class="px-5 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded">Simpan Denah</button></div></div></div>';
 
@@ -242,13 +242,17 @@ const MapView = {
             return { dot:'bg-red-400 animate-pulse', text:'text-red-300', label:'⚠ TERPUTUS' };
         if (pc.status==='terpakai'&&pc.sesi_detail) {
             var sesi=pc.sesi_detail;
-            if ((sesi.tipe||'').toLowerCase()==='admin') return { dot:'bg-amber-400', text:'text-amber-300', label:'ADMIN' };
+            if ((sesi.tipe||'').toLowerCase()==='admin') {
+                var isSys = pc.is_system_mode || pc.status === 'system' || (sesi.nama_guest||'').toUpperCase() === 'SYSTEM' || (sesi.member_nama||'').toUpperCase() === 'SYSTEM';
+                return isSys ? { dot:'bg-indigo-400', text:'text-indigo-300', label:'SYSTEM' } : { dot:'bg-amber-400', text:'text-amber-300', label:'ADMIN' };
+            }
             var m=(sesi.sisa_menit!=null)?parseInt(sesi.sisa_menit):0;
             if(m<=0)return{dot:'bg-emerald-300',text:'text-emerald-200',label:'SEKARANG'};
             var j=Math.floor(m/60),s=m%60;
             return{dot:'bg-emerald-300',text:'text-emerald-200',label:j>0?j+'j '+s+'m':s+'m'};
         }
-        if(pc.is_admin_mode)return{dot:'bg-amber-400',text:'text-amber-300',label:'ADMIN'};
+        if(pc.is_system_mode || pc.status === 'system') return { dot:'bg-indigo-400', text:'text-indigo-300', label:'SYSTEM' };
+        if(pc.is_admin_mode || pc.status === 'admin') return { dot:'bg-amber-400', text:'text-amber-300', label:'ADMIN' };
         if(pc.status_koneksi==='online')return{dot:'bg-neutral-300',text:'text-neutral-200',label:'KOSONG'};
         return{dot:'bg-neutral-600 opacity-50',text:'text-neutral-500',label:'OFFLINE'};
     },
