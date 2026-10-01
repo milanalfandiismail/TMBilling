@@ -46,9 +46,29 @@
             </div>
         </div>
         <div id="pc-table" class="overflow-x-auto w-full">
-            <div class="flex justify-center py-10">
-                <div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div>
+            {% for _ in range(2) %}
+            <div class="space-y-3 {% if not loop.first %}mt-6{% endif %}">
+                <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[#1c1c1c] animate-pulse">
+                    <div class="h-4 bg-[#262626] rounded w-28"></div>
+                    <div class="h-4 bg-[#1e1e1e] rounded w-14"></div>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:max-xl:grid-cols-4 xl:grid-cols-6 gap-3">
+                    {% for _ in range(6) %}
+                    <div class="bg-[#0c0c0c] border border-[#262626] rounded p-3 relative flex flex-col justify-between min-h-[92px] animate-pulse">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="h-4 bg-[#262626] rounded w-16"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-[#262626]"></div>
+                        </div>
+                        <div class="h-3 bg-[#1e1e1e] rounded w-24 my-1"></div>
+                        <div class="flex items-center justify-between pt-1 border-t border-[#181818]">
+                            <div class="h-4 bg-[#202020] rounded w-16"></div>
+                            <div class="h-4 w-4 bg-[#202020] rounded"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
+            {% endfor %}
         </div>
     </div>
 </div>

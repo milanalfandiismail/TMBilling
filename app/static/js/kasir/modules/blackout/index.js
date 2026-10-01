@@ -50,7 +50,7 @@ const Blackout = {
         const area = document.getElementById('blackout-list');
         if (!area) return;
         if (!isSilent && (!this.allData || this.allData.length === 0) && typeof Skeleton !== 'undefined') {
-            area.innerHTML = Skeleton.tableRows(6, 6);
+            area.innerHTML = Skeleton.blackoutCards ? Skeleton.blackoutCards(4) : Skeleton.tableRows(6, 6);
         }
 
         try {
@@ -288,7 +288,7 @@ const Blackout = {
             cardsHtml += '</div>';
 
             Modal.show(`
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 max-w-2xl w-[calc(100%-2rem)] mx-auto md:w-full">
+                <div class="bg-[#0c0c0c] border border-[#262626] rounded-xl p-5 sm:p-6 max-w-2xl w-[calc(100%-2rem)] mx-auto md:w-full">
                     <div class="flex items-center justify-between mb-4 pb-4 border-b border-[#1c1c1c]">
                         <div>
                             <h3 class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-200 uppercase tracking-wider">Pindahkan Sesi</h3>

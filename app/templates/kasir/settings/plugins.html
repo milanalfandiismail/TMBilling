@@ -49,12 +49,22 @@
 
             <!-- Plugins Grid -->
             <div id="plugins-grid" class="grid grid-cols-1 md:grid-cols-2 lg:max-xl:grid-cols-2 xl:grid-cols-3 gap-4">
-                <!-- RENDERED VIA JS -->
-                <div class="col-span-full py-12 flex flex-col items-center justify-center text-center">
-                    <div class="w-8 h-8 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin mb-4">
+                {% for _ in range(6) %}
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-5 animate-pulse flex flex-col justify-between space-y-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="space-y-1.5 flex-1">
+                            <div class="h-4 bg-[#262626] rounded w-32"></div>
+                            <div class="h-3 bg-[#1e1e1e] rounded w-48"></div>
+                        </div>
+                        <div class="h-5 w-12 bg-[#202020] rounded-full"></div>
                     </div>
-                    <p class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-500">Memuat plugins...</p>
+                    <div class="h-3 bg-[#1a1a1a] rounded w-24"></div>
+                    <div class="pt-3 border-t border-[#181818] flex justify-between items-center">
+                        <div class="h-7 w-20 bg-[#202020] rounded"></div>
+                        <div class="h-7 w-16 bg-[#202020] rounded"></div>
+                    </div>
                 </div>
+                {% endfor %}
             </div>
         </div>
     </div>

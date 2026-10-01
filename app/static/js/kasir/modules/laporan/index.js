@@ -119,7 +119,7 @@ const Laporan = {
         if (!area) return;
 
         if (!isSilent && (!this._lastData) && typeof Skeleton !== 'undefined') {
-            area.innerHTML = Skeleton.tableRows(8, 6);
+            area.innerHTML = Skeleton.laporanBilling(6);
         }
 
         try {

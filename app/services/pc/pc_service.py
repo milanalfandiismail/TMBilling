@@ -283,8 +283,8 @@ class PCService:
         pc = PCRepository.get_by_id(pc_id)
         if not pc:
             raise ValueError("PC tidak ditemukan")
-        pc.pos_x = validate_integer_range(pos_x, 0, 10000, "Posisi X")
-        pc.pos_y = validate_integer_range(pos_y, 0, 10000, "Posisi Y")
+        pc.pos_x = validate_integer_range(pos_x, -1, 10000, "Posisi X")
+        pc.pos_y = validate_integer_range(pos_y, -1, 10000, "Posisi Y")
         db.session.commit()
         return pc
 

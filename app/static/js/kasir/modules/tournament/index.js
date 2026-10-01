@@ -51,14 +51,17 @@ const Tournament = {
 
     refreshLive() {
         if (typeof App !== 'undefined' && App.currentTab !== 'tournament') return;
-        const modalScore = document.getElementById('modal-input-skor');
-        const modalQualify = document.getElementById('modal-qualify-teams');
-        const modalCreate = document.getElementById('modal-create-tournament');
-        if ((modalScore && !modalScore.classList.contains('hidden')) ||
-            (modalQualify && !modalQualify.classList.contains('hidden')) ||
-            (modalCreate && !modalCreate.classList.contains('hidden'))) {
-            return;
-        }
+        const modalBuat = document.getElementById('modal-buat-turnamen');
+        const modalSkor = document.getElementById('modal-input-skor');
+        const modalLolos = document.getElementById('modal-loloskan-playoff');
+        const isAppModalOpen = document.getElementById('app-modal') && !document.getElementById('app-modal').classList.contains('hidden');
+
+        const isAnyModalOpen = (modalBuat && !modalBuat.classList.contains('hidden')) ||
+            (modalSkor && !modalSkor.classList.contains('hidden')) ||
+            (modalLolos && !modalLolos.classList.contains('hidden')) ||
+            isAppModalOpen;
+
+        if (isAnyModalOpen) return;
 
         if (this.activeTournamentId) {
             return this.renderDetail(this.activeTournamentId, true);
@@ -208,27 +211,6 @@ const Tournament = {
             if (!isSilent) {
                 stageContent.innerHTML = `<div class="py-16 text-center text-red-400 text-xs lg:text-base">Gagal memuat detail turnamen: ${err.message}</div>`;
             }
-        }
-    },
-
-    refreshLive() {
-        if (App.currentTab !== 'tournament') return;
-
-        // Cek apakah ada modal skor/create/qualify yang sedang terbuka
-        const modalBuat = document.getElementById('modal-buat-turnamen');
-        const modalSkor = document.getElementById('modal-input-skor');
-        const modalLolos = document.getElementById('modal-loloskan-playoff');
-
-        const isAnyModalOpen = (modalBuat && !modalBuat.classList.contains('hidden')) ||
-            (modalSkor && !modalSkor.classList.contains('hidden')) ||
-            (modalLolos && !modalLolos.classList.contains('hidden'));
-
-        if (isAnyModalOpen) return;
-
-        if (this.activeTournamentId) {
-            return this.renderDetail(this.activeTournamentId, true);
-        } else {
-            return this.renderList(true);
         }
     },
 

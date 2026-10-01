@@ -205,31 +205,88 @@ const MapView = {
 
     _editCtx: function(e,pcId,kode){e.preventDefault();if(typeof Dashboard!=='undefined'&&Dashboard.showContextMenu)Dashboard.showContextMenu(e,pcId);},
 
-    _save: function() {
+    _save: async function() {
         var grup = this._editorGrup;
         var colEl = document.getElementById('edit-cols'), rowEl = document.getElementById('edit-rows');
-        var cols = colEl ? Math.max(1,Math.min(12,parseInt(colEl.value)||12)) : 12;
-        var rows = rowEl ? Math.max(1,Math.min(100,parseInt(rowEl.value)||7)) : 7;
+        var cols = colEl ? Math.max(1, Math.min(12, parseInt(colEl.value) || 12)) : 12;
+        var rows = rowEl ? Math.max(1, Math.min(100, parseInt(rowEl.value) || 7)) : 7;
         this._setGridSize(grup, cols, rows);
 
         var grid = document.getElementById('editor-grid');
         if (!grid) return;
+
+        // Kumpulkan posisi PC dari elemen grid editor
         var dots = grid.querySelectorAll('[data-editor-pc]');
-        var ps = [];
-        dots.forEach(function(d){
-            var pcId = parseInt(d.getAttribute('data-editor-pc'));
-            var gx = Math.max(0,Math.round((parseInt(d.style.left)-MapView.editorCellW/2)/MapView.editorCellW));
-            var gy = Math.max(0,Math.round((parseInt(d.style.top)-MapView.editorCellH/2)/MapView.editorCellH));
-            // Update lastData cache supaya re-render instan
-            var pc = (window.Dashboard.lastData&&window.Dashboard.lastData.pc_list||[]).find(function(p){return p.id===pcId;});
-            if (pc) { pc.pos_x = gx; pc.pos_y = gy; }
-            ps.push(API.request('/api/v1/kasir/pc/'+pcId+'/position',{method:'PUT',body:JSON.stringify({pos_x:gx,pos_y:gy})}));
+        var placedMap = {};
+        dots.forEach(function(d) {
+            var pcId = parseInt(d.getAttribute('data-editor-pc'), 10);
+            var gx = Math.max(0, Math.round((parseInt(d.style.left, 10) - MapView.editorCellW / 2) / MapView.editorCellW));
+            var gy = Math.max(0, Math.round((parseInt(d.style.top, 10) - MapView.editorCellH / 2) / MapView.editorCellH));
+            placedMap[pcId] = { pos_x: gx, pos_y: gy };
         });
 
-        // Re-render langsung — gak nunggu API response
+        // Ambil semua PC dalam grup yang sedang diedit
+        var data = (window.Dashboard && window.Dashboard.lastData) || null;
+        var pcsInGroup = [];
+        if (data) {
+            if (data.by_grup && data.by_grup[grup]) {
+                pcsInGroup = data.by_grup[grup];
+            } else if (data.pc_list) {
+                pcsInGroup = data.pc_list.filter(function(p) { return p.grup === grup; });
+            }
+        }
+
+        // Siapkan batch request update posisi untuk SEMUA PC di grup (termasuk yang dikeluarkan/unmapped)
+        var ps = [];
+        pcsInGroup.forEach(function(pc) {
+            var target = placedMap[pc.id] || { pos_x: -1, pos_y: -1 };
+            if (pc.pos_x !== target.pos_x || pc.pos_y !== target.pos_y) {
+                pc.pos_x = target.pos_x;
+                pc.pos_y = target.pos_y;
+                ps.push(API.request('/api/v1/kasir/pc/' + pc.id + '/position', {
+                    method: 'PUT',
+                    body: JSON.stringify({ pos_x: target.pos_x, pos_y: target.pos_y })
+                }));
+            }
+        });
+
+        // Sinkronisasi data lokal pada pc_list Dashboard.lastData jika ada
+        if (data && data.pc_list) {
+            data.pc_list.forEach(function(p) {
+                if (p.grup === grup) {
+                    if (placedMap[p.id]) {
+                        p.pos_x = placedMap[p.id].pos_x;
+                        p.pos_y = placedMap[p.id].pos_y;
+                    } else {
+                        p.pos_x = -1;
+                        p.pos_y = -1;
+                    }
+                }
+            });
+        }
+
+        // Tutup modal denah
         Modal.closeModal();
-        if (window.Dashboard && window.Dashboard.lastData) window.Dashboard._render(window.Dashboard.lastData);
-        Toast.success('Denah disimpan');
+
+        // Render instan tampilan dashboard dengan forceFull = true
+        if (window.Dashboard && typeof window.Dashboard._render === 'function' && window.Dashboard.lastData) {
+            window.Dashboard._render(window.Dashboard.lastData, true);
+        }
+
+        // Tunggu semua request ke database selesai & refresh data backend secara seamless
+        try {
+            if (ps.length > 0) {
+                await Promise.all(ps);
+            }
+            Toast.success('Denah berhasil disimpan dan diperbarui');
+        } catch (err) {
+            console.error('[MapView] Error saving positions:', err);
+            Toast.error('Gagal menyimpan beberapa posisi: ' + (err.message || 'Error'));
+        } finally {
+            if (window.Dashboard && typeof window.Dashboard.load === 'function') {
+                await window.Dashboard.load(true);
+            }
+        }
     },
 
     // =========================================================================

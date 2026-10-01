@@ -35,8 +35,9 @@ const Dashboard = {
         try {
             const data = await API.dashboard.pcList();
             if (!data || !data.by_grup) throw new Error('Data format invalid - missing by_grup');
+            const oldData = this.lastData;
             this.lastData = data; // Set dulu sebelum render agar renderCompactCard() bisa akses grup_meta saat render pertama
-            this._render(data);
+            this._render(data, false, oldData);
             this.updateTime();
             if (data.omzet_billing !== undefined || data.omzet_kantin !== undefined || data.omzet_hari_ini !== undefined) {
                 this.updateHeaderOmzet(data.omzet_billing, data.omzet_kantin, data.omzet_hari_ini);
@@ -724,28 +725,36 @@ const Dashboard = {
         if (!oldData.pc_list || !newData.pc_list) return true;
         if (oldData.pc_list.length !== newData.pc_list.length) return true;
 
-        const oldGroups = Object.keys(oldData.by_grup || {}).sort().join(',');
-        const newGroups = Object.keys(newData.by_grup || {}).sort().join(',');
+        const oldGroups = Array.isArray(oldData.by_grup)
+            ? oldData.by_grup.slice().sort().join(',')
+            : Object.keys(oldData.by_grup || {}).sort().join(',');
+        const newGroups = Array.isArray(newData.by_grup)
+            ? newData.by_grup.slice().sort().join(',')
+            : Object.keys(newData.by_grup || {}).sort().join(',');
         if (oldGroups !== newGroups) return true;
 
+        const oldMap = {};
+        oldData.pc_list.forEach(p => { if (p && p.id != null) oldMap[p.id] = p; });
+
         for (let i = 0; i < newData.pc_list.length; i++) {
-            const oldPc = oldData.pc_list[i];
             const newPc = newData.pc_list[i];
-            if (!oldPc || oldPc.id !== newPc.id || oldPc.grup !== newPc.grup) {
+            const oldPc = oldMap[newPc.id];
+            if (!oldPc || oldPc.grup !== newPc.grup || oldPc.pos_x !== newPc.pos_x || oldPc.pos_y !== newPc.pos_y) {
                 return true;
             }
         }
         return false;
     },
 
-    _render(data, forceFull = false) {
+    _render(data, forceFull = false, previousData = null) {
         const container = document.getElementById('pc-area');
         const mapContainer = document.getElementById('map-view-container');
         if (mapContainer) mapContainer.classList.add('hidden');
         if (container) container.classList.remove('hidden');
 
+        const prev = previousData || this._prevRenderedData || this.lastData;
         const hasRenderedCards = Boolean(document.querySelector('.pc-card-item'));
-        const structureChanged = forceFull || !hasRenderedCards || this._hasStructureChanged(this.lastData, data);
+        const structureChanged = forceFull || !hasRenderedCards || this._hasStructureChanged(prev, data);
 
         if (structureChanged) {
             this.render(data);
@@ -757,6 +766,11 @@ const Dashboard = {
         } else if (typeof this.syncLiveCards === 'function') {
             this.syncLiveCards(data);
         }
+
+        this._prevRenderedData = JSON.parse(JSON.stringify({
+            pc_list: data.pc_list ? data.pc_list.map(p => ({ id: p.id, grup: p.grup, pos_x: p.pos_x, pos_y: p.pos_y })) : [],
+            by_grup: data.by_grup ? Object.keys(data.by_grup) : []
+        }));
 
         this.updateStats();
 

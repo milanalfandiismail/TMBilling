@@ -39,9 +39,49 @@
             </div>
         </div>
         <div id="paket-table" class="overflow-x-auto w-full">
-            <div class="flex justify-center py-10">
-                <div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div>
+            {% for _ in range(2) %}
+            <div class="space-y-3 {% if not loop.first %}mt-8{% endif %}">
+                <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[#1c1c1c] animate-pulse">
+                    <div class="h-4 bg-[#262626] rounded w-32"></div>
+                    <div class="h-4 bg-[#1e1e1e] rounded w-16"></div>
+                </div>
+                <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
+                    <thead class="hidden lg:table-header-group">
+                        <tr class="border-b border-[#262626] text-neutral-400">
+                            <th class="px-4 py-3 text-left font-medium w-2/5">Nama</th>
+                            <th class="px-4 py-3 text-left font-medium w-1/5">Durasi</th>
+                            <th class="px-4 py-3 text-left font-medium w-1/5">Harga</th>
+                            <th class="px-4 py-3 text-left font-medium w-1/6">Masa Aktif</th>
+                            <th class="px-4 py-3 text-right font-medium w-24">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="block lg:table-row-group divide-y divide-[#1c1c1c]">
+                        {% for _ in range(3) %}
+                        <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
+                            <td class="px-4 py-3 text-left">
+                                <div class="h-3.5 bg-[#262626] rounded w-36"></div>
+                            </td>
+                            <td class="px-4 py-3 text-left">
+                                <div class="h-3 bg-[#202020] rounded w-20"></div>
+                            </td>
+                            <td class="px-4 py-3 text-left">
+                                <div class="h-3.5 bg-[#262626] rounded w-24"></div>
+                            </td>
+                            <td class="px-4 py-3 text-left">
+                                <div class="h-3 bg-[#1e1e1e] rounded w-16"></div>
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <div class="h-7 w-7 bg-[#202020] rounded"></div>
+                                    <div class="h-7 w-7 bg-[#202020] rounded"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+            {% endfor %}
         </div>
     </div>
 </div>

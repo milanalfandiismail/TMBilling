@@ -48,8 +48,22 @@
         </div>
     </div>
     <div id="pc-area">
-        <div class="flex items-center justify-center py-20">
-            <div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div>
+        <div class="grid gap-2 grid-cols-2 md:grid-cols-4 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 auto-rows-fr p-1">
+            {% for _ in range(12) %}
+            <div class="skeleton-pc-card bg-[#141414] border border-transparent rounded-xl p-2 lg:p-2 xl:p-2.5 2xl:p-3 min-h-[96px] lg:min-h-[102px] xl:min-h-[108px] 2xl:min-h-[120px] flex flex-col justify-between animate-pulse select-none">
+                <!-- Row 1: PC Code & Status Dot -->
+                <div class="flex items-center justify-between gap-2">
+                    <div class="h-3.5 bg-[#262626] rounded w-12"></div>
+                    <div class="w-2 h-2 rounded-full bg-[#262626]"></div>
+                </div>
+                <!-- Row 2: Active App / Status -->
+                <div class="h-2.5 bg-[#202020] rounded w-20 mt-1"></div>
+                <!-- Row 3: Timer -->
+                <div class="h-4 bg-[#262626] rounded w-16 my-1"></div>
+                <!-- Row 4: Member / User -->
+                <div class="h-2.5 bg-[#202020] rounded w-14"></div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
