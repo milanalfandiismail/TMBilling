@@ -6,7 +6,9 @@
 ---
 
 ## 📑 DAFTAR ISI (TABLE OF CONTENTS)
-1. [SOP & Dua Cara Melakukan Eksekusi & Planning](#1-sop--dua-cara-melakukan-eksekusi--planning)
+1. [SOP & Aturan Wajib Planning & Eksekusi](#1-sop--aturan-wajib-planning--eksekusi)
+   - 1.1 [Aturan Wajib Planning (Plugin `superpowers`)](#11-aturan-wajib-planning-plugin-superpowers)
+   - 1.2 [Aturan Wajib Eksekusi (MCP `codebase-memory`)](#12-aturan-wajib-eksekusi-mcp-codebase-memory)
 2. [Arsitektur Sistem Terpadu (3-Layer SoC)](#2-arsitektur-sistem-terpadu-3-layer-soc)
 3. [Audit & Pemetaan Root & Infrastruktur Proyek](#3-audit--pemetaan-root--infrastruktur-proyek)
 4. [Audit & Pemetaan Lengkap Backend Flask (`app/`)](#4-audit--pemetaan-lengkap-backend-flask-app)
@@ -40,9 +42,11 @@
 
 ---
 
-## ⚡ 1. SOP & DUA CARA MELAKUKAN EKSEKUSI & PLANNING
+## ⚡ 1. SOP & ATURAN WAJIB PLANNING & EKSEKUSI
 
-Untuk mencegah pemborosan token dan menghindari salah tebak relasi kode, seluruh agen AI dan developer **WAJIB** menggunakan pendekatan **Double-Layered Protection**:
+Untuk mencegah pemborosan token, memastikan akurasi 100%, dan mengeliminasi halusinasi kode, seluruh agen AI dan developer **WAJIB** menerapkan pembagian peran yang ketat:
+* **Fase Planning**: **WAJIB MENGGUNAKAN PLUGIN `superpowers`** (brainstorming, writing-plans, TDD, debugging).
+* **Fase Eksekusi**: **WAJIB MENGGUNAKAN MCP `codebase-memory`** (index_status, search_graph, search_code, trace_path, get_code_snippet, index_repository).
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -64,45 +68,73 @@ Untuk mencegah pemborosan token dan menghindari salah tebak relasi kode, seluruh
                                       │
                                       ▼
              ┌─────────────────────────────────────────────────┐
-             │       PLANNING (Superpowers / Brainstorming)    │
-             │       - Perjelas scope perubahan                │
-             │       - Buat rencana langkah-demi-langkah       │
+             │    📋 FASE 1: PLANNING (PLUGIN `superpowers`)   │
+             │    - brainstorming (eksplorasi intent & arsitektur)│
+             │    - writing-plans (buat rencana bertahap & spec) │
+             │    - test-driven-development (skenario tes awal)│
              └────────────────────────┬────────────────────────┘
                                       │
                                       ▼
              ┌─────────────────────────────────────────────────┐
-             │       EKSEKUSI MINIMALIS & TARGETED             │
-             │       - view_file HANYA dengan baris terbatas   │
-             │       - replace_file_content (single block)     │
+             │    ⚙️ FASE 2: EKSEKUSI (MCP `codebase-memory`)   │
+             │    - trace_path (cek caller & blast radius)     │
+             │    - get_code_snippet (baca symbol target)      │
+             │    - view_file HANYA baris terbatas             │
+             │    - replace_file_content (atomic minimalis)    │
              └────────────────────────┬────────────────────────┘
                                       │
                                       ▼
              ┌─────────────────────────────────────────────────┐
-             │       VERIFIKASI WAJIB (EVIDENCE FIRST)         │
-             │       - python -m pytest tests/ -q (264 pass)   │
-             │       - npm run build:css (jika sentuh UI)      │
-             │       - index_repository (re-index graph)       │
+             │    ✅ FASE 3: VERIFIKASI (EVIDENCE FIRST)       │
+             │    - python -m pytest tests/ -q (264 pass)      │
+             │    - npm run build:css (jika menyentuh UI)      │
+             │    - index_repository (sinkronisasi graph MCP)  │
+             │    - Update Changelog di ANTIGRAVITY.md         │
              └─────────────────────────────────────────────────┘
 ```
 
-### Panduan Khusus MCP `codebase-memory`:
-1. `index_status(project="C-Project-GIT-TMBilling")`: Cek status indeks graph sebelum mulai. Pastikan graph berstatus `ready`.
-2. `search_code(project="C-Project-GIT-TMBilling", pattern="...")`: Temukan deklarasi symbol atau penggunaan kode spesifik.
-3. `search_graph(project="C-Project-GIT-TMBilling", name_pattern="...")`: Temukan Qualified Name dari Class, Function, atau Route.
-4. `trace_path(project="C-Project-GIT-TMBilling", function_name="...")`: Telusuri rantai pemanggilan (callers/callees) secara transitif untuk mengetahui blast-radius dan dampak perubahan.
-5. `get_code_snippet(project="C-Project-GIT-TMBilling", qualified_name="...")`: Baca isi fungsi/metode tanpa perlu membaca seluruh file ribuan baris.
-6. `index_repository(project="C-Project-GIT-TMBilling")`: Jalankan setiap kali selesai melakukan refactor/penambahan fitur besar.
+---
 
-### SOP Planning (Sebelum Menulis Kode)
-1. **Identifikasi Domain**: Buka `ANTIGRAVITY.md` untuk memahami konteks umum, nama file, dan batasan teknis terkait.
-2. **Kueri MCP `codebase-memory`**: Gunakan `search_graph` dan `trace_path` untuk memvalidasi implementasi live di codebase aktif.
-3. **Penyusunan Plan**: Buat daftar file target, fungsi yang akan diubah, dan skenario pengujian unit test.
+### 📋 1.1 ATURAN WAJIB PLANNING (PLUGIN `superpowers`)
 
-### SOP Eksekusi (Saat Mengubah Kode)
-1. **Dilarang keras membaca seluruh file ribuan baris**: Gunakan `view_file` dengan argumen `StartLine` dan `EndLine` terbatas.
-2. **Atomic Modification**: Gunakan `replace_file_content` untuk perubahan spesifik. Pertahankan komentar kode existing.
-3. **Verifikasi**: Jalankan `python -m pytest tests/ -q` (semua 264 test wajib lolos).
-4. **Update Memory**: Tambahkan dokumentasi perubahan ke Bagian 13 (Changelog) berkas ini.
+Sebelum menulis atau mengubah baris kode apa pun, agen AI **WAJIB** menggunakan kemampuan dan alur kerja dari **Plugin `superpowers`**:
+
+1. **Eksplorasi & Intent (`brainstorming`)**:
+   - **WAJIB** digunakan sebelum pekerjaan kreatif, pembuatan fitur baru, penambahan komponen, atau perubahan perilaku sistem yang signifikan.
+   - Klarifikasi kebutuhan pengguna, eksplorasi opsi arsitektur, dan diskusikan trade-off desain sebelum membuat keputusan teknis.
+2. **Penyusunan Rencana Bertahap (`writing-plans`)**:
+   - **WAJIB** membuat implementation plan tertulis yang terstruktur (step-by-step) untuk setiap task non-trivial.
+   - Rencana harus mencantumkan: target file/fungsi spesifik, dependensi, kriteria keberhasilan (acceptance criteria), dan langkah verifikasi otomatis.
+3. **Pembangunan Berbasis Tes (`test-driven-development`)**:
+   - Siapkan skenario pengujian unit test di folder `tests/` sebelum atau bersamaan dengan penulisan implementasi fitur baru (Red-Green-Refactor).
+4. **Investigasi Masalah Sistematis (`systematic-debugging`)**:
+   - Jika menemukan bug atau kegagalan test, dilarang keras menebak-nebak perbaikan secara acak. Lakukan isolasi akar masalah (root-cause analysis) dan periksa alur data sebelum mengajukan perubahan kode.
+5. **Bukti Sebelum Asersi (`verification-before-completion`)**:
+   - Dilarang menyatakan suatu pekerjaan selesai, lolos, atau aman sebelum menjalankan perintah verifikasi riil (pytest, build css, git status) dan membaca output langsungnya. Bukti eksekusi selalu mendahului klaim keberhasilan.
+
+---
+
+### ⚙️ 1.2 ATURAN WAJIB EKSEKUSI (MCP `codebase-memory`)
+
+Selama proses eksekusi kode, agen AI **WAJIB** menggunakan **MCP `codebase-memory`** untuk mencari, membaca, memahami, dan memvalidasi codebase secara langsung. Dilarang keras mengandalkan tebakan nama file atau asumsi struktur kode.
+
+#### Toolset MCP `codebase-memory` yang Wajib Digunakan:
+* `index_status(project="C-Project-GIT-TMBilling")`: Cek status index sebelum mulai. Pastikan graph berstatus `ready` dan catat jika ada file yang `parse_partial` atau `skipped`.
+* `check_index_coverage(project="C-Project-GIT-TMBilling", files=[...])`: Pastikan file yang akan dibaca atau diubah benar-benar tercakup dalam index graph.
+* `get_architecture(project="C-Project-GIT-TMBilling")`: Pahami struktur hierarki, layer aplikasi, dan boundaries modul yang berkaitan.
+* `search_graph(project="C-Project-GIT-TMBilling", name_pattern="...")`: Cari fungsi, class, route, variable, atau symbol yang berkaitan untuk memperoleh *Qualified Name*.
+* `search_code(project="C-Project-GIT-TMBilling", pattern="...")`: Temukan penggunaan kode, string literal, atau deklarasi eksak di seluruh codebase.
+* `get_code_snippet(project="C-Project-GIT-TMBilling", qualified_name="...")`: Baca isi fungsi atau method secara tepat sebelum memodifikasinya tanpa perlu membuang token membaca file utuh.
+* `trace_path(project="C-Project-GIT-TMBilling", function_name="...")`: **WAJIB** dipanggil saat menyentuh fungsi/method untuk menelusuri siapa yang memanggil (callers), siapa yang dipanggil (callees), dependency, data flow, dan *blast radius* / dampak perubahan.
+* `query_graph(project="C-Project-GIT-TMBilling", query="...")`: Gunakan jika memerlukan analisis relasi graph yang rumit antar-komponen.
+* `index_repository(project="C-Project-GIT-TMBilling")`: **WAJIB** dijalankan setelah implementasi selesai untuk menyinkronkan kembali knowledge graph MCP.
+
+#### Disiplin Eksekusi Kode:
+1. **No Guessing**: Jangan pernah menebak nama field model, nama route, atau parameter service. Selalu verifikasi via `search_graph` atau `ANTIGRAVITY.md`.
+2. **Hemat Token & Targeted Reading**: Dilarang keras membaca seluruh file ribuan baris dengan `view_file`. Gunakan `get_code_snippet` atau `view_file` dengan range baris `StartLine` dan `EndLine` terbatas.
+3. **Impact Verification**: Sebelum mengubah fungsi publik/service, jalankan `trace_path` untuk memastikan tidak ada pemanggil di route atau modul lain yang rusak karena perubahan signature/return value.
+4. **Preserve Existing Integrity**: Gunakan `replace_file_content` secara atomic pada blok kode yang dituju. Pertahankan komentar kode, docstrings, dan penanganan error existing.
+5. **Post-Execution Sync**: Setelah tes lolos, jalankan `index_repository` dan perbarui riwayat penambahan fitur di Bagian 13 (Changelog) berkas ini.
 
 ---
 
@@ -759,7 +791,7 @@ Direktori `docs/` menyimpan dokumentasi sistem dan riwayat blueprint implementas
 ### [1.6.3] — 2026-10-04 (Branch: `1.6.3`)
 * **Exhaustive Codebase Audit & Master Memory**:
   - Audit menyeluruh 100% file dan folder di seluruh repositori (tanpa terkecuali): Backend Flask (25 models, 15 repositories, 41 services, 31 routes, 8 utils), Frontend (37 modul JS, 26 tab templates, public portal), WarnetAgent klien (Tauri v1.5 Rust, Monitor C#, Dual Watchdog MGCTM/mtm, Uninstaller, Deploy scripts), 18 database migrations, 5 tools developer, dan 81 unit test files (264 specs).
-  - Pemuatan aturan wajib integrasi MCP `codebase-memory` (`index_status`, `search_graph`, `search_code`, `trace_path`, `get_code_snippet`, `index_repository`).
+  - Pemuatan aturan wajib pemisahan peran: **Fase Planning WAJIB Plugin `superpowers`** (`brainstorming`, `writing-plans`, `test-driven-development`, `systematic-debugging`, `verification-before-completion`) dan **Fase Eksekusi WAJIB MCP `codebase-memory`** (`index_status`, `check_index_coverage`, `get_architecture`, `search_graph`, `search_code`, `trace_path`, `get_code_snippet`, `index_repository`).
 * **Floor Plan (Denah)**:
   - Perbaikan `MapView._save()` menjadi `async` dengan `await Promise.all()` dan sinkronisasi `Dashboard.load(true)`.
   - Dukungan penyimpanan unmapped PC (`pos_x = -1, pos_y = -1`) ke database backend.
