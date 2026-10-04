@@ -118,16 +118,27 @@ Sebelum menulis atau mengubah baris kode apa pun, agen AI **WAJIB** menggunakan 
 
 Selama proses eksekusi kode, agen AI **WAJIB** menggunakan **MCP `codebase-memory`** untuk mencari, membaca, memahami, dan memvalidasi codebase secara langsung. Dilarang keras mengandalkan tebakan nama file atau asumsi struktur kode.
 
+#### 💡 Portabilitas Antar-PC & Deteksi Nama Project MCP:
+Nama project MCP secara default diturunkan dari root path lokal (contoh di PC ini: `C-Project-GIT-TMBilling`). **Jika Anda berpindah PC atau path folder berbeda (misal `D:/Work/TMBilling`):**
+1. **Langkah 1 (Cek Proyek)**: Jalankan `list_projects()`. Periksa apakah direktori workspace saat ini sudah terdaftar.
+2. **Langkah 2 (Jika Belum / PC Baru)**: Jalankan inisialisasi indeks untuk folder saat ini:
+   ```json
+   index_repository(repo_path=".")
+   ```
+   MCP akan membuat knowledge graph lokal baru dan mengembalikan nama project yang sesuai.
+3. **Langkah 3 (Pakai Project Name Terdeteksi)**: Gunakan nama project tersebut sebagai argumen `project` pada seluruh tool MCP di bawah.
+
 #### Toolset MCP `codebase-memory` yang Wajib Digunakan:
-* `index_status(project="C-Project-GIT-TMBilling")`: Cek status index sebelum mulai. Pastikan graph berstatus `ready` dan catat jika ada file yang `parse_partial` atau `skipped`.
-* `check_index_coverage(project="C-Project-GIT-TMBilling", files=[...])`: Pastikan file yang akan dibaca atau diubah benar-benar tercakup dalam index graph.
-* `get_architecture(project="C-Project-GIT-TMBilling")`: Pahami struktur hierarki, layer aplikasi, dan boundaries modul yang berkaitan.
-* `search_graph(project="C-Project-GIT-TMBilling", name_pattern="...")`: Cari fungsi, class, route, variable, atau symbol yang berkaitan untuk memperoleh *Qualified Name*.
-* `search_code(project="C-Project-GIT-TMBilling", pattern="...")`: Temukan penggunaan kode, string literal, atau deklarasi eksak di seluruh codebase.
-* `get_code_snippet(project="C-Project-GIT-TMBilling", qualified_name="...")`: Baca isi fungsi atau method secara tepat sebelum memodifikasinya tanpa perlu membuang token membaca file utuh.
-* `trace_path(project="C-Project-GIT-TMBilling", function_name="...")`: **WAJIB** dipanggil saat menyentuh fungsi/method untuk menelusuri siapa yang memanggil (callers), siapa yang dipanggil (callees), dependency, data flow, dan *blast radius* / dampak perubahan.
-* `query_graph(project="C-Project-GIT-TMBilling", query="...")`: Gunakan jika memerlukan analisis relasi graph yang rumit antar-komponen.
-* `index_repository(project="C-Project-GIT-TMBilling")`: **WAJIB** dijalankan setelah implementasi selesai untuk menyinkronkan kembali knowledge graph MCP.
+* `list_projects()`: Cek daftar project yang terdaftar di mesin lokal saat ini untuk menemukan identifier `project` yang tepat.
+* `index_status(project="<detected_project_name>")`: Cek status index sebelum mulai. Pastikan graph berstatus `ready` dan catat jika ada file yang `parse_partial` atau `skipped`.
+* `check_index_coverage(project="<detected_project_name>", files=[...])`: Pastikan file yang akan dibaca atau diubah benar-benar tercakup dalam index graph.
+* `get_architecture(project="<detected_project_name>")`: Pahami struktur hierarki, layer aplikasi, dan boundaries modul yang berkaitan.
+* `search_graph(project="<detected_project_name>", name_pattern="...")`: Cari fungsi, class, route, variable, atau symbol yang berkaitan untuk memperoleh *Qualified Name*.
+* `search_code(project="<detected_project_name>", pattern="...")`: Temukan penggunaan kode, string literal, atau deklarasi eksak di seluruh codebase.
+* `get_code_snippet(project="<detected_project_name>", qualified_name="...")`: Baca isi fungsi atau method secara tepat sebelum memodifikasinya tanpa perlu membuang token membaca file utuh.
+* `trace_path(project="<detected_project_name>", function_name="...")`: **WAJIB** dipanggil saat menyentuh fungsi/method untuk menelusuri siapa yang memanggil (callers), siapa yang dipanggil (callees), dependency, data flow, dan *blast radius* / dampak perubahan.
+* `query_graph(project="<detected_project_name>", query="...")`: Gunakan jika memerlukan analisis relasi graph yang rumit antar-komponen.
+* `index_repository(project="<detected_project_name>")` / `index_repository(repo_path=".")`: **WAJIB** dijalankan setelah implementasi selesai untuk menyinkronkan kembali knowledge graph MCP.
 
 #### Disiplin Eksekusi Kode:
 1. **No Guessing**: Jangan pernah menebak nama field model, nama route, atau parameter service. Selalu verifikasi via `search_graph` atau `ANTIGRAVITY.md`.
