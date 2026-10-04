@@ -6,9 +6,10 @@
 ---
 
 ## 📑 DAFTAR ISI (TABLE OF CONTENTS)
-1. [SOP & Aturan Wajib Planning & Eksekusi](#1-sop--aturan-wajib-planning--eksekusi)
+1. [SOP & Aturan Wajib Planning, Eksekusi & Debugging](#1-sop--aturan-wajib-planning-eksekusi--debugging)
    - 1.1 [Aturan Wajib Planning (Plugin `superpowers`)](#11-aturan-wajib-planning-plugin-superpowers)
    - 1.2 [Aturan Wajib Eksekusi (MCP `codebase-memory`)](#12-aturan-wajib-eksekusi-mcp-codebase-memory)
+   - 1.3 [Aturan Wajib Debugging & Root Cause Analysis](#13-aturan-wajib-debugging--root-cause-analysis)
 2. [Arsitektur Sistem Terpadu (3-Layer SoC)](#2-arsitektur-sistem-terpadu-3-layer-soc)
 3. [Audit & Pemetaan Root & Infrastruktur Proyek](#3-audit--pemetaan-root--infrastruktur-proyek)
 4. [Audit & Pemetaan Lengkap Backend Flask (`app/`)](#4-audit--pemetaan-lengkap-backend-flask-app)
@@ -42,11 +43,12 @@
 
 ---
 
-## ⚡ 1. SOP & ATURAN WAJIB PLANNING & EKSEKUSI
+## ⚡ 1. SOP & ATURAN WAJIB PLANNING, EKSEKUSI & DEBUGGING
 
 Untuk mencegah pemborosan token, memastikan akurasi 100%, dan mengeliminasi halusinasi kode, seluruh agen AI dan developer **WAJIB** menerapkan pembagian peran yang ketat:
-* **Fase Planning**: **WAJIB MENGGUNAKAN PLUGIN `superpowers`** (brainstorming, writing-plans, TDD, debugging).
-* **Fase Eksekusi**: **WAJIB MENGGUNAKAN MCP `codebase-memory`** (index_status, search_graph, search_code, trace_path, get_code_snippet, index_repository).
+* **Fase Planning**: **WAJIB MENGGUNAKAN PLUGIN `superpowers`** (`brainstorming`, `writing-plans`, `test-driven-development`).
+* **Fase Eksekusi**: **WAJIB MENGGUNAKAN MCP `codebase-memory`** (`index_status`, `search_graph`, `search_code`, `trace_path`, `get_code_snippet`, `index_repository`).
+* **Fase Debugging**: **WAJIB MENGGUNAKAN `systematic-debugging` + MCP `trace_path`** (Dilarang tebak-tebak perbaikan tanpa investigasi akar masalah).
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -83,9 +85,20 @@ Untuk mencegah pemborosan token, memastikan akurasi 100%, dan mengeliminasi halu
              │    - replace_file_content (atomic minimalis)    │
              └────────────────────────┬────────────────────────┘
                                       │
+                                      ├────────────────────────┐
+                                      │ (Jika Ada Bug/Test Fail)│
+                                      ▼                        ▼
+             ┌─────────────────────────────────────────────────┐
+             │    🐞 FASE 3: DEBUGGING (ROOT CAUSE FIRST)      │
+             │    - systematic-debugging (No fix without root) │
+             │    - trace_path inbound (lacak asal data korup) │
+             │    - Isolasi tes: pytest tests/test_x.py -k ... │
+             │    - Perbaiki akar masalah (bukan gejala)       │
+             └────────────────────────┬────────────────────────┘
+                                      │
                                       ▼
              ┌─────────────────────────────────────────────────┐
-             │    ✅ FASE 3: VERIFIKASI (EVIDENCE FIRST)       │
+             │    ✅ FASE 4: VERIFIKASI (EVIDENCE FIRST)       │
              │    - python -m pytest tests/ -q (264 pass)      │
              │    - npm run build:css (jika menyentuh UI)      │
              │    - index_repository (sinkronisasi graph MCP)  │
@@ -146,6 +159,61 @@ Nama project MCP secara default diturunkan dari root path lokal (contoh di PC in
 3. **Impact Verification**: Sebelum mengubah fungsi publik/service, jalankan `trace_path` untuk memastikan tidak ada pemanggil di route atau modul lain yang rusak karena perubahan signature/return value.
 4. **Preserve Existing Integrity**: Gunakan `replace_file_content` secara atomic pada blok kode yang dituju. Pertahankan komentar kode, docstrings, dan penanganan error existing.
 5. **Post-Execution Sync**: Setelah tes lolos, jalankan `index_repository` dan perbarui riwayat penambahan fitur di Bagian 13 (Changelog) berkas ini.
+
+---
+
+### 🐞 1.3 ATURAN WAJIB DEBUGGING & ROOT CAUSE ANALYSIS
+
+Ketika menghadapi bug, kegagalan unit test, anomali data, atau perilaku tak terduga, agen AI **DILARANG KERAS** langsung melakukan "quick fix" atau menebak-nebak perbaikan tanpa melalui investigasi sistematis.
+
+#### ⚖️ The Iron Law of Debugging:
+> **"NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST"**  
+> *(Dilarang mengajukan atau mengedit kode perbaikan sebelum akar masalah ditemukan dan dibuktikan secara empiris).*
+
+#### 4 Fase Wajib Penanganan Bug / Error:
+
+1. **Fase 1: Investigasi Akar Masalah (Root Cause Investigation)**
+   - **Baca Stack Trace Utuh**: Perhatikan file path, nomor baris, jenis Exception (`KeyError`, `ValueError`, `IntegrityError`, dsb.), dan parameter yang diteruskan.
+   - **Reproduksi Secara Terisolasi**: Jalankan test spesifik yang gagal secara mandiri dengan mode verbose:
+     ```bash
+     python -m pytest tests/test_file.py -k "test_function_name" -vv -s
+     ```
+   - **Telusuri Alur Data (Data Flow Tracing)**: Gunakan MCP `trace_path` untuk melacak dari mana nilai variabel yang salah itu masuk:
+     ```json
+     trace_path(project="<detected_project_name>", function_name="<broken_function>", mode="calls")
+     ```
+   - **Periksa Perubahan Terakhir**: Gunakan `git diff` atau `git log -n 5` untuk melihat modifikasi terakhir yang berpotensi memicu regresi.
+
+2. **Fase 2: Analisis Pola & Komparasi (Pattern Analysis)**
+   - Cari implementasi serupa di codebase yang bekerja dengan baik menggunakan `search_code` atau `search_graph`.
+   - Bandingkan perbedaan perlakuan input, decorator, transaction rollback, atau session context antara kode yang berjalan normal vs kode yang error.
+
+3. **Fase 3: Hipotesis & Minimal Reproduction**
+   - Formulasikan satu hipotesis yang jelas dan dapat diuji: *"Fungsi X gagal karena variabel Y bernilai None saat kondisi Z."*
+   - Uji hipotesis tersebut dengan test minimal atau log terarah sebelum menyentuh kode produksi.
+
+4. **Fase 4: Perbaikan Presisi & Regresi Verifikasi**
+   - Lakukan perbaikan pada **akar masalah**, bukan menambal gejala (symptom patching) dengan `try-except pass` yang membungkam error.
+   - Jalankan test spesifik: pastikan berhasil (PASSED).
+   - **Regresi Wajib**: Jalankan seluruh test suite untuk memastikan perbaikan tidak merusak 263 modul lainnya:
+     ```bash
+     python -m pytest tests/ -q
+     ```
+     *(Hasil wajib: 264 passed, 0 failed).*
+
+#### 🛠️ Checklist Debugging Khusus Berdasarkan Layer TMBilling:
+* **Backend Flask & Database SQLite**:
+  - **Database Lock & Rollback**: Pastikan setiap error di dalam blok `try-except` memanggil `db.session.rollback()` agar transaksi SQLite tidak terkunci (*database is locked*).
+  - **Timezone UTC Normalization**: Pastikan tanggal disimpan dalam UTC via `now_utc()`, bukan naive local time.
+  - **Audit Logging**: Periksa tabel `AuditLog` atau folder `logs/` jika terjadi anomali transaksi atau auth failure.
+* **Frontend Kasir (Vanilla JS & Dashboard)**:
+  - **HTTP Status Check**: Status HTTP 400 (sering kali karena Shift belum dibuka), 401 (sesi kasir habis), atau 403 (CSRF token missing).
+  - **State Reaktif**: Periksa `Dashboard.lastData` dan snapshot `_prevRenderedData` di console browser.
+  - **CSS Styling**: Jika style tidak muncul, jalankan `npm run build:css` (Tailwind purge mungkin belum memuat class baru).
+* **WarnetAgent Klien (Rust Tauri & Watchdog)**:
+  - **Response Polling**: Pastikan server mengembalikan format JSON valid pada endpoint `POST /api/v1/public/client/status`.
+  - **File Lock & Token**: Pastikan tidak ada `stop.token` tertinggal jika watchdog `MGCTM` tidak mau menyala.
+  - **Registry TightVNC**: Pastikan binding loopback `127.0.0.1` port 5900 aktif via `reg query "HKLM\Software\TightVNC\Server"`.
 
 ---
 
@@ -802,7 +870,7 @@ Direktori `docs/` menyimpan dokumentasi sistem dan riwayat blueprint implementas
 ### [1.6.3] — 2026-10-04 (Branch: `1.6.3`)
 * **Exhaustive Codebase Audit & Master Memory**:
   - Audit menyeluruh 100% file dan folder di seluruh repositori (tanpa terkecuali): Backend Flask (25 models, 15 repositories, 41 services, 31 routes, 8 utils), Frontend (37 modul JS, 26 tab templates, public portal), WarnetAgent klien (Tauri v1.5 Rust, Monitor C#, Dual Watchdog MGCTM/mtm, Uninstaller, Deploy scripts), 18 database migrations, 5 tools developer, dan 81 unit test files (264 specs).
-  - Pemuatan aturan wajib pemisahan peran: **Fase Planning WAJIB Plugin `superpowers`** (`brainstorming`, `writing-plans`, `test-driven-development`, `systematic-debugging`, `verification-before-completion`) dan **Fase Eksekusi WAJIB MCP `codebase-memory`** (`index_status`, `check_index_coverage`, `get_architecture`, `search_graph`, `search_code`, `trace_path`, `get_code_snippet`, `index_repository`).
+  - Pemuatan aturan wajib tri-fase: **Fase Planning WAJIB Plugin `superpowers`** (`brainstorming`, `writing-plans`, `test-driven-development`), **Fase Eksekusi WAJIB MCP `codebase-memory`** (`index_status`, `check_index_coverage`, `get_architecture`, `search_graph`, `search_code`, `trace_path`, `get_code_snippet`, `index_repository`), dan **Fase Debugging WAJIB `systematic-debugging` + MCP `trace_path`** (The Iron Law: No fix without root cause investigation first).
 * **Floor Plan (Denah)**:
   - Perbaikan `MapView._save()` menjadi `async` dengan `await Promise.all()` dan sinkronisasi `Dashboard.load(true)`.
   - Dukungan penyimpanan unmapped PC (`pos_x = -1, pos_y = -1`) ke database backend.
