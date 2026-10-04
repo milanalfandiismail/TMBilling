@@ -1575,7 +1575,11 @@ const DashboardDetailModal = {
                                         <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">🛠️ Komponen Internal:</span>
                                         <ul class="text-xs lg:max-xl:text-xs xl:text-sm space-y-2 font-mono text-neutral-400 min-w-0 w-full">
                                             <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
-                                                <strong class="text-neutral-500 shrink-0">Motherboard:</strong>
+                                                <strong class="text-neutral-500 shrink-0">Mobo Model:</strong>
+                                                <span class="break-all text-emerald-300 min-w-0">${escapeHtml(baselineSpecs.Motherboard || baselineSpecs.MotherboardName || hwData.motherboard || 'N/A')}</span>
+                                            </li>
+                                            <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">Mobo Serial:</strong>
                                                 <span class="break-all text-neutral-300 min-w-0">${escapeHtml(baselineSpecs.MotherboardSerial || 'N/A')}</span>
                                             </li>
                                             <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
@@ -1628,7 +1632,11 @@ const DashboardDetailModal = {
                                         <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-bold tracking-wider block mb-1.5">🛠️ Komponen Internal:</span>
                                         <ul class="text-xs lg:max-xl:text-xs xl:text-sm space-y-2 font-mono text-neutral-400 min-w-0 w-full">
                                             <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
-                                                <strong class="text-neutral-500 shrink-0">Motherboard:</strong>
+                                                <strong class="text-neutral-500 shrink-0">Mobo Model:</strong>
+                                                <span class="break-all text-emerald-300 min-w-0">${escapeHtml(currentSpecs.Motherboard || currentSpecs.MotherboardName || hwData.motherboard || 'N/A')}</span>
+                                            </li>
+                                            <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
+                                                <strong class="text-neutral-500 shrink-0">Mobo Serial:</strong>
                                                 <span class="break-all text-neutral-300 min-w-0">${escapeHtml(currentSpecs.MotherboardSerial || 'N/A')}</span>
                                             </li>
                                             <li class="flex flex-wrap items-baseline gap-1.5 min-w-0 w-full">
