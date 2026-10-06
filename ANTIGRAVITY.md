@@ -124,6 +124,10 @@ Sebelum menulis atau mengubah baris kode apa pun, agen AI **WAJIB** menggunakan 
    - Jika menemukan bug atau kegagalan test, dilarang keras menebak-nebak perbaikan secara acak. Lakukan isolasi akar masalah (root-cause analysis) dan periksa alur data sebelum mengajukan perubahan kode.
 5. **Bukti Sebelum Asersi (`verification-before-completion`)**:
    - Dilarang menyatakan suatu pekerjaan selesai, lolos, atau aman sebelum menjalankan perintah verifikasi riil (pytest, build css, git status) dan membaca output langsungnya. Bukti eksekusi selalu mendahului klaim keberhasilan.
+6. **Disiplin Git Commit & Push (USER Command Only)**:
+   - **DILARANG KERAS** melakukan `git commit` maupun `git push` secara sepihak/otomatis setelah menyelesaikan suatu rencana, tugas, atau perbaikan kode.
+   - Commit dan push **HANYA** boleh dilakukan jika USER telah secara eksplisit memerintahkan atau meminta untuk commit dan push (misal: *"commit dan push"*, *"simpan ke git"*, *"GAS commit"*, dll.).
+   - Setelah implementasi dan verifikasi selesai, cukup tampilkan ringkasan hasil perubahan dan tunggu instruksi commit/push dari USER.
 
 ---
 
@@ -159,6 +163,7 @@ Nama project MCP secara default diturunkan dari root path lokal (contoh di PC in
 3. **Impact Verification**: Sebelum mengubah fungsi publik/service, jalankan `trace_path` untuk memastikan tidak ada pemanggil di route atau modul lain yang rusak karena perubahan signature/return value.
 4. **Preserve Existing Integrity**: Gunakan `replace_file_content` secara atomic pada blok kode yang dituju. Pertahankan komentar kode, docstrings, dan penanganan error existing.
 5. **Post-Execution Sync**: Setelah tes lolos, jalankan `index_repository` dan perbarui riwayat penambahan fitur di Bagian 13 (Changelog) berkas ini.
+6. **No Autonomous Commit/Push**: DILARANG KERAS menjalankan `git commit` maupun `git push` sebelum ada perintah atau instruksi eksplisit dari USER. Laporkan hasil pekerjaan dan tunggu aba-aba USER.
 
 ---
 
@@ -200,6 +205,7 @@ Ketika menghadapi bug, kegagalan unit test, anomali data, atau perilaku tak terd
      python -m pytest tests/ -q
      ```
      *(Hasil wajib: 264 passed, 0 failed).*
+   - **No Autonomous Commit/Push**: Setelah perbaikan terbukti lolos dan tidak ada regresi, laporkan ringkasan akar masalah dan perbaikan kepada USER. **DILARANG KERAS melakukan `git commit` maupun `git push`** sebelum ada perintah atau instruksi eksplisit dari USER.
 
 #### 🛠️ Checklist Debugging Khusus Berdasarkan Layer TMBilling:
 * **Backend Flask & Database SQLite**:

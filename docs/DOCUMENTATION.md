@@ -1147,8 +1147,9 @@ Seluruh aktivitas rekayasa perangkat lunak wajib mematuhi protokol **Dual-Engine
 1. **Engine 1 - Planning & Brainstorming (Plugin `superpowers`)**:
    - `brainstorming`: Menganalisis kebutuhan pengguna dan merancang arsitektur sebelum coding.
    - `writing-plans`: Menyusun rencana kerja bertahap yang modular dan terverifikasi.
-   - `systematic-debugging`: Investigasi akar masalah secara mendalam sebelum mengajukan perbaikan.
+   - `systematic-debugging`: Investigasi akar masalah secara mendalam sebelum perbaikan; verifikasi regresi (264 test specs) dan jangan commit/push otomatis setelah bugfix.
    - `test-driven-development`: Memastikan spesifikasi pengujian ada untuk setiap perubahan fitur krusial.
+   - `git-discipline`: Dilarang keras melakukan `git commit` maupun `git push` secara sepihak/otomatis (baik saat fitur baru maupun setelah debugging/bugfix) sebelum ada perintah eksplisit dari USER. Selalu laporkan hasil pekerjaan dan tunggu aba-aba USER.
 2. **Engine 2 - Execution & Verification (MCP `codebase-memory`)**:
    - `index_status` / `check_index_coverage`: Memeriksa kelengkapan graf indeks kode.
    - `search_graph` / `search_code`: Melakukan navigasi dependensi relasional antar fungsi/class.
