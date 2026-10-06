@@ -6,6 +6,25 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [1.6.3] - 2026-10-05
+
+### Ditambahkan
+- **Floor Plan Engine v1.6.3 (Denah Meja Asinkronus & Unmapped Coordinates)**:
+  - Optimasi penyimpanan posisi meja dengan async batching `Promise.all()` di `map_view.js` dan sinkronisasi instan via `Dashboard.load(true)`.
+  - Dukungan koordinat meja unmapped (`pos_x = -1, pos_y = -1`) dengan validasi skema database `-1..10000`.
+  - Mekanisme reactive rerender di tempat (`_hasStructureChanged`) tanpa melakukan reload halaman browser penuh.
+- **Hardware Checker & Security Audit v1.6.3**:
+  - Pemisahan entri Motherboard menjadi **Mobo Model** (model papan) dan **Mobo Serial** (serial anti-theft unik) pada baseline dan live telemetry.
+  - Sinkronisasi payload dictionary `"Motherboard"` dan `"MotherboardSerial"` di `HardwareService.process_hardware_metric`.
+  - Referensi estimasi rentang jam rekaman CCTV (*Smart CCTV Time Window*) untuk setiap indikasi pergantian/pencopotan komponen internal PC.
+- **Standardized Skeleton Loading Engine**:
+  - Engine shimmer loading terpusat di `app/static/js/kasir/core/skeleton.js` yang terintegrasi di seluruh 26 tab antarmuka kasir.
+  - Mengeliminasi spinner berputar usang (`fa-spin`, `animate-spin`).
+- **Arsitektur Proteksi Triple-Layer Session Expiry**:
+  - Layer 1: Background Server Scheduler (APScheduler 60 detik di `run.py`).
+  - Layer 2: Realtime Client Polling (Tauri Kiosk 1–3 detik di `ClientService.get_status`).
+  - Layer 3: Frontend Dashboard Polling (Kasir web 1, 2, 3, 5 detik di `DashboardService.get_pc_list`).
+
 ## [1.6.2] - 2026-10-01
 
 ### Ditambahkan
