@@ -102,11 +102,16 @@ class HardwareService:
             if serials and isinstance(serials, dict):
                 import json
                 
-                # Pastikan GpuName tersimpan di serials dictionary
+                # Pastikan GpuName dan Motherboard tersimpan di serials dictionary
                 if "GpuName" not in serials and hardware.gpu_name and hardware.gpu_name != "Unknown":
                     serials["GpuName"] = hardware.gpu_name
                 elif "GpuName" not in serials and data.get("GpuName"):
                     serials["GpuName"] = str(data.get("GpuName"))
+
+                if "Motherboard" not in serials and hardware.motherboard and hardware.motherboard != "Unknown":
+                    serials["Motherboard"] = hardware.motherboard
+                elif "Motherboard" not in serials and data.get("Motherboard"):
+                    serials["Motherboard"] = str(data.get("Motherboard"))
 
                 # Simpan specs telemetry saat ini secara berkala
                 hardware.hardware_current_specs = json.dumps(serials)

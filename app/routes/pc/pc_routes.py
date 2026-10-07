@@ -152,8 +152,8 @@ def update_pc_position(pc_id):
     """Update posisi PC di floor plan (pos_x, pos_y)."""
     try:
         data = request.get_json() or {}
-        pos_x = int(data.get("pos_x", 0))
-        pos_y = int(data.get("pos_y", 0))
+        pos_x = int(data.get("pos_x", -1))
+        pos_y = int(data.get("pos_y", -1))
         from app.services import PCService
         pc = PCService.update_position(pc_id, pos_x, pos_y)
         return jsonify({"success": True, "pc": pc.to_dict()}), 200

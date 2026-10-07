@@ -23,9 +23,53 @@
     <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
         <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Daftar Akun</h3>
         <div id="user-table" class="overflow-x-auto w-full">
-            <div class="flex justify-center py-10">
-                <div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div>
-            </div>
+            <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
+                <thead class="hidden lg:table-header-group">
+                    <tr class="border-b border-[#262626] text-neutral-400">
+                        <th class="px-4 py-3 text-left font-medium w-1/4">Operator</th>
+                        <th class="px-4 py-3 text-left font-medium">Role</th>
+                        <th class="px-4 py-3 text-left font-medium">Benefit Bermain</th>
+                        <th class="px-4 py-3 text-left font-medium">Status</th>
+                        <th class="px-4 py-3 text-right font-medium w-28">Kelola</th>
+                    </tr>
+                </thead>
+                <tbody class="block lg:table-row-group divide-y divide-[#1c1c1c]">
+                    {% for _ in range(5) %}
+                    <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
+                        <td class="px-4 py-3 text-left">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-[#1c1c1c] flex-shrink-0"></div>
+                                <div class="space-y-1 flex-1">
+                                    <div class="h-3.5 bg-[#262626] rounded w-24"></div>
+                                    <div class="h-2.5 bg-[#1a1a1a] rounded w-32"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-left">
+                            <div class="h-5 bg-[#202020] rounded w-16"></div>
+                        </td>
+                        <td class="px-4 py-3 text-left">
+                            <div class="space-y-1">
+                                <div class="h-3 bg-[#262626] rounded w-24"></div>
+                                <div class="h-2 bg-[#1a1a1a] rounded w-16"></div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-left">
+                            <div class="flex items-center gap-2">
+                                <div class="w-2 h-2 rounded-full bg-[#262626]"></div>
+                                <div class="h-3 bg-[#202020] rounded w-12"></div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <div class="h-7 w-7 bg-[#202020] rounded"></div>
+                                <div class="h-7 w-7 bg-[#202020] rounded"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
