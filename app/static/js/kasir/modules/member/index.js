@@ -37,7 +37,7 @@ const Member = {
     async load(isSilent = false) {
         const area = document.getElementById('member-table');
         if (area && !isSilent && (!this.allMembers || this.allMembers.length === 0) && typeof Skeleton !== 'undefined') {
-            area.innerHTML = Skeleton.tableRows(8, 6);
+            area.innerHTML = Skeleton.memberTable(6);
         }
 
         try {

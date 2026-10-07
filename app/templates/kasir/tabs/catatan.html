@@ -56,10 +56,15 @@
 
             <!-- Notes List Scroll Container -->
             <div id="notes-list-container" class="flex-1 overflow-y-auto space-y-2.5 scrollbar-thin pr-1">
-                <!-- Loading Spinner persis seperti tab lain (pc, member, paket, struk) -->
-                <div class="flex justify-center items-center py-16">
-                    <div class="w-6 h-6 border-2 border-[#2a2a2a] border-t-neutral-100 rounded-full animate-spin"></div>
+                {% for _ in range(5) %}
+                <div class="p-3 bg-[#111] border border-[#1c1c1c] rounded-lg animate-pulse space-y-2">
+                    <div class="flex justify-between items-center">
+                        <div class="h-3.5 bg-[#262626] rounded w-32"></div>
+                        <div class="h-2.5 bg-[#1e1e1e] rounded w-12"></div>
+                    </div>
+                    <div class="h-2.5 bg-[#1a1a1a] rounded w-3/4"></div>
                 </div>
+                {% endfor %}
             </div>
         </div>
 

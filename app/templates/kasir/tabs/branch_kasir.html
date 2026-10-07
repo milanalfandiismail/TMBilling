@@ -72,9 +72,14 @@
                     </tr>
                 </thead>
                 <tbody id="branch-operators-tbody" class="text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-mono block lg:table-row-group divide-y divide-[#2a2a2a] lg:divide-transparent">
-                    <tr class="block lg:table-row">
-                        <td colspan="4" class="py-8 text-center text-xs lg:max-xl:text-xs xl:text-base text-neutral-500 block lg:table-cell">Memuat data akun kasir cabang...</td>
+                    {% for _ in range(4) %}
+                    <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
+                        <td class="py-3 px-3"><div class="h-3 bg-[#202020] rounded w-16"></div></td>
+                        <td class="py-3 px-3"><div class="h-3.5 bg-[#262626] rounded w-36"></div></td>
+                        <td class="py-3 px-3"><div class="h-3 bg-[#1e1e1e] rounded w-28"></div></td>
+                        <td class="py-3 px-3 text-right"><div class="h-7 w-20 bg-[#202020] rounded ml-auto"></div></td>
                     </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>

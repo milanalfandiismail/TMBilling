@@ -13,7 +13,7 @@ const User = {
         const area = document.getElementById('user-table');
         if (!area) return;
         if (!isSilent && (!this._lastUsers || this._lastUsers.length === 0) && typeof Skeleton !== 'undefined') {
-            area.innerHTML = Skeleton.tableRows(5, 5);
+            area.innerHTML = Skeleton.userTable(5);
         }
 
         try {

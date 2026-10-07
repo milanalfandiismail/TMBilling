@@ -78,14 +78,17 @@
                     </tr>
                 </thead>
                 <tbody id="stock-log-table-body" class="divide-y divide-[#171717] text-neutral-300 bg-[#080808]">
-                    <tr>
-                        <td colspan="7" class="py-12 text-center text-neutral-500">
-                            <div class="flex flex-col items-center justify-center gap-2">
-                                <div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div>
-                                <span class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400">Memuat riwayat stok...</span>
-                            </div>
-                        </td>
+                    {% for _ in range(6) %}
+                    <tr class="border-b border-[#1c1c1c] animate-pulse">
+                        <td class="py-3.5 px-4"><div class="h-3 bg-[#1e1e1e] rounded w-28"></div></td>
+                        <td class="py-3.5 px-4"><div class="h-3.5 bg-[#262626] rounded w-36"></div></td>
+                        <td class="py-3.5 px-4 text-center"><div class="h-5 bg-[#202020] rounded-full w-14 mx-auto"></div></td>
+                        <td class="py-3.5 px-4 text-center"><div class="h-3.5 bg-[#262626] rounded w-12 mx-auto"></div></td>
+                        <td class="py-3.5 px-4 text-center"><div class="h-3 bg-[#202020] rounded w-16 mx-auto"></div></td>
+                        <td class="py-3.5 px-4"><div class="h-3 bg-[#1e1e1e] rounded w-20"></div></td>
+                        <td class="py-3.5 px-4"><div class="h-3 bg-[#1a1a1a] rounded w-32"></div></td>
                     </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>

@@ -34,7 +34,7 @@ const PC = {
         const area = document.getElementById('pc-table');
         if (!area) return;
         if (!isSilent && (!this._lastPcData || !this._lastPcData.pc_list || this._lastPcData.pc_list.length === 0) && typeof Skeleton !== 'undefined') {
-            area.innerHTML = Skeleton.tableRows(8, 5);
+            area.innerHTML = Skeleton.pcManagementGrid(2, 6);
         }
 
         try {

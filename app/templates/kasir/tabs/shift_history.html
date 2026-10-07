@@ -121,11 +121,19 @@
                     </tr>
                 </thead>
                 <tbody id="shift-history-rows" class="divide-y divide-[#1c1c1c]">
-                    <tr>
-                        <td colspan="9" class="text-center py-8 text-neutral-500 text-xs lg:text-base">
-                            Memuat data riwayat shift...
-                        </td>
+                    {% for _ in range(6) %}
+                    <tr class="border-b border-[#1c1c1c] animate-pulse">
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5"><div class="h-3 bg-[#1e1e1e] rounded w-20"></div></td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5"><div class="h-3.5 bg-[#262626] rounded w-20"></div></td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5"><div class="h-3 bg-[#1e1e1e] rounded w-24"></div></td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5"><div class="h-3.5 bg-[#262626] rounded w-16"></div></td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5"><div class="h-3.5 bg-[#262626] rounded w-16"></div></td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5"><div class="h-3.5 bg-[#262626] rounded w-16"></div></td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5"><div class="h-3 bg-[#1e1e1e] rounded w-12"></div></td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5"><div class="h-5 bg-[#202020] rounded-full w-14"></div></td>
+                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-3 lg:max-xl:py-2 xl:py-3.5 text-right"><div class="h-7 w-12 bg-[#202020] rounded ml-auto"></div></td>
                     </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>

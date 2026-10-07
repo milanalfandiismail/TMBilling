@@ -28,8 +28,54 @@
             </div>
         </div>
         <div id="laporan-area">
-            <div class="flex justify-center py-10">
-                <div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 animate-pulse">
+                <div class="bg-[#111] border border-[#222] p-4 rounded-xl space-y-2">
+                    <div class="h-2.5 bg-[#202020] rounded w-24"></div>
+                    <div class="h-5 bg-[#262626] rounded w-32"></div>
+                </div>
+                <div class="bg-[#111] border border-[#222] p-4 rounded-xl space-y-2">
+                    <div class="h-2.5 bg-[#202020] rounded w-20"></div>
+                    <div class="h-5 bg-[#262626] rounded w-16"></div>
+                </div>
+                <div class="bg-[#111] border border-[#222] p-4 rounded-xl space-y-2">
+                    <div class="h-2.5 bg-[#202020] rounded w-20"></div>
+                    <div class="h-5 bg-[#262626] rounded w-16"></div>
+                </div>
+                <div class="bg-[#111] border border-[#222] p-4 rounded-xl space-y-2">
+                    <div class="h-2.5 bg-[#202020] rounded w-20"></div>
+                    <div class="h-5 bg-[#262626] rounded w-16"></div>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="h-4 bg-[#202020] rounded w-48 mb-3 animate-pulse"></div>
+                <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
+                    <thead class="hidden lg:table-header-group">
+                        <tr class="border-b border-[#262626] text-neutral-400">
+                            <th class="px-4 py-3 text-left font-medium">Waktu</th>
+                            <th class="px-4 py-3 text-left font-medium">Nota</th>
+                            <th class="px-4 py-3 text-left font-medium">Pelanggan</th>
+                            <th class="px-4 py-3 text-left font-medium">Jumlah</th>
+                            <th class="px-4 py-3 text-left font-medium">PC</th>
+                            <th class="px-4 py-3 text-left font-medium">Kasir</th>
+                            <th class="px-4 py-3 text-left font-medium">Metode</th>
+                            <th class="px-4 py-3 text-right font-medium">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="block lg:table-row-group divide-y divide-[#1c1c1c]">
+                        {% for _ in range(6) %}
+                        <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
+                            <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-24"></div></td>
+                            <td class="px-4 py-3 text-left"><div class="h-3.5 bg-[#262626] rounded w-28"></div></td>
+                            <td class="px-4 py-3 text-left"><div class="h-3 bg-[#202020] rounded w-20"></div></td>
+                            <td class="px-4 py-3 text-left"><div class="h-3.5 bg-[#262626] rounded w-24"></div></td>
+                            <td class="px-4 py-3 text-left"><div class="h-3 bg-[#202020] rounded w-12"></div></td>
+                            <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-16"></div></td>
+                            <td class="px-4 py-3 text-left"><div class="h-4 bg-[#202020] rounded w-14"></div></td>
+                            <td class="px-4 py-3 text-right"><div class="h-7 w-7 bg-[#202020] rounded ml-auto"></div></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

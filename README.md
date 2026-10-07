@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/Version-v1.6.2-blue.svg?style=flat-square" />
+  <img alt="Version" src="https://img.shields.io/badge/Version-v1.6.3-blue.svg?style=flat-square" />
   <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python" />
   <img alt="Flask" src="https://img.shields.io/badge/Flask-3.0-000000?style=flat-square&logo=flask" />
   <img alt="Tauri" src="https://img.shields.io/badge/Tauri-v2.0-FFC131?style=flat-square&logo=tauri" />
@@ -28,7 +28,7 @@
 
 ---
 
-## ✨ Sorotan Fitur Utama (v1.6.2)
+## ✨ Sorotan Fitur Utama (v1.6.3)
 
 - 🌐 **Multi-Branch Control Panel**: Akses, kelola, dan pantau banyak cabang warnet dari satu dashboard terpusat tanpa memerlukan IP publik statis.
 - ⚡ **Multi-PC Selection & Batch Actions (`remoteBatch`)**: Seleksi banyak PC sekaligus (drag select/checkbox) untuk Shutdown, Restart, Kunci, Pindah PC, atau Terapkan Paket promosi secara massal.
@@ -51,7 +51,7 @@
 ```text
 c:\Project GIT\TMBilling
 ├── app/                        # Backend Server Flask & Frontend Kasir Web
-│   ├── config.py               # Single Source of Version Truth (v1.6.2)
+│   ├── config.py               # Single Source of Version Truth (v1.6.3)
 │   ├── models/                 # 26 Database Model SQLAlchemy
 │   ├── routes/                 # 30 Blueprint REST & WebSocket (250 Endpoints)
 │   ├── services/               # 35+ Service Layer Logika Bisnis
@@ -89,7 +89,7 @@ c:\Project GIT\TMBilling
 ### 1. Setup & Menjalankan Server Billing (Komputer Server / Kasir)
 
 1. **Unduh Paket Server**:
-   Unduh paket rilis server terbaru (misal: `TMBilling_Server_v1.6.2.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak di komputer server/kasir Anda (contoh: `C:\TMBilling`). *(Bagi developer, silakan gunakan `git clone` pada [Panduan Pengembang](#3-panduan-pengembang-developer--build-pipeline))*.
+   Unduh paket rilis server terbaru (misal: `TMBilling_Server_v1.6.3.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak di komputer server/kasir Anda (contoh: `C:\TMBilling`). *(Bagi developer, silakan gunakan `git clone` pada [Panduan Pengembang](#3-panduan-pengembang-developer--build-pipeline))*.
 
 2. **Instalasi Server 1-Klik**:
    Jalankan file `install.bat` di direktori utama:
@@ -115,7 +115,7 @@ c:\Project GIT\TMBilling
 ### 2. Setup & Instalasi WarnetAgent (PC Klien Warnet)
 
 1. **Unduh Paket Klien**:
-   Unduh paket rilis klien terbaru (misal: `TMBilling_Client_v1.6.2.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak ke PC Klien *(atau salin isi folder `WarnetAgent\Deploy` jika Anda mengunduh full repository)*.
+   Unduh paket rilis klien terbaru (misal: `TMBilling_Client_v1.6.3.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak ke PC Klien *(atau salin isi folder `WarnetAgent\Deploy` jika Anda mengunduh full repository)*.
 2. Klik kanan **`install.bat`** lalu pilih **Run as administrator** (atau jalankan biasa).
 3. Masukkan **IP Server Billing** saat diminta (contoh: `192.168.1.100`). Port default `7015` akan otomatis digunakan *(kecuali jika Anda mengubah port server billing, Anda dapat memasukkan format `IP:PORT`, contoh: `192.168.1.100:8080`)*. Masukkan juga **API Key** yang dapat Anda cek dan kelola di dashboard server melalui menu **Sidebar > Pengaturan > Umum & Keamanan > API Key System (Client API Key)**.
 
@@ -175,7 +175,7 @@ c:\Project GIT\TMBilling
 | Dokumen | Deskripsi |
 | :--- | :--- |
 | **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog lengkap 28 fitur, katalog 250 endpoint REST API, skema 25 database models, panduan backend/frontend/Rust, dan spesifikasi protokol WebSocket. |
-| **[CHANGELOG.md](file:///c:/Project%20GIT/TMBilling/CHANGELOG.md)** | **Catatan Rilis** — Riwayat log perubahan dan rilis dari `v1.0.0` hingga `v1.6.2`. |
+| **[CHANGELOG.md](file:///c:/Project%20GIT/TMBilling/CHANGELOG.md)** | **Catatan Rilis** — Riwayat log perubahan dan rilis dari `v1.0.0` hingga `v1.6.3`. |
 
 ---
 
