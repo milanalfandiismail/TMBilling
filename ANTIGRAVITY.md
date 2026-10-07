@@ -1,6 +1,6 @@
 # 🧠 ANTIGRAVITY.md — Master Project Memory & Dual-Engine Playbook
 > **Single Source of Truth (SSOT) & Local Brain Memory for TMBilling**  
-> *Versi Rilis Saat Ini:* `v1.6.3` | *Branch:* `1.6.3` | *Status:* **Master AI Memory & Execution SOP**  
+> *Versi Rilis Saat Ini:* `v1.6.3` (Stabil) | *Sprint Aktif:* `v1.6.4` | *Branch:* `v1.6.4` | *Status:* **Active Sprint — Multi-Branch Hardening**  
 > *Tujuan:* Eliminasi total halusinasi kode, penghematan token, dan eksekusi secepat kilat dengan menggabungkan **Local Memory Document (`ANTIGRAVITY.md`)** + **MCP `codebase-memory`**.
 
 ---
@@ -872,6 +872,14 @@ Direktori `docs/` menyimpan dokumentasi sistem dan riwayat blueprint implementas
 ## 📝 13. CHANGELOG & RIWAYAT PENAMBAHAN FITUR
 
 *Catatan: Agen AI dan Pengembang WAJIB menambahkan catatan entri baru di bawah ini setiap kali melakukan perubahan/fitur baru agar memori agen tetap up-to-date.*
+
+### [1.6.4] — In Progress / Sprint Aktif (Branch: `v1.6.4`)
+* **Multi-Branch Nexus Hardening & Atomic Loading Handshake**:
+  - **Pembersihan Sidebar Flat**: Menghapus grup menu `Multi Cabang` (`sidebar-branch-section`, `branch`, `branch_inbound`, `branch_kasir`) dari [`sidebar_admin.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/components/sidebar_admin.html) agar sidebar kembali bersih flat 100% seperti sidebar lama. Pengelolaan cabang dipusatkan via dropdown navbar selector ("Kelola Cabang") dan tab Settings.
+  - **Atomic Loading Handshake (Zero-Glitch Transition)**: Menerapkan komponen `BranchSwitchOverlay` (transisi loading layar penuh berlatar gelap blur dengan status progress dinamis).
+  - **Reordering Eksekusi Switch & Notifikasi**: Toast sukses (`Berhasil terhubung ke [Cabang]`) HANYA dimunculkan setelah seluruh data cabang (PC, grup, sesi, transaksi) selesai di-fetch dan ter-render di antarmuka DOM (`await refreshAllModulesAfterBranchSwitch()`).
+  - **Zero-Flicker Disconnect Failover**: Penanganan pemutusan koneksi cabang remote otomatis dengan transisi loading terproteksi sebelum data lokal tampil kembali.
+  - **Dokumentasi & Perencanaan**: Spec di [`2026-10-07-branch-switching-atomic-loading-and-sidebar-cleanup-design.md`](file:///c:/Project%20GIT/TMBilling/docs/superpowers/specs/2026-10-07-branch-switching-atomic-loading-and-sidebar-cleanup-design.md) dan Implementation Plan di [`2026-10-07-branch-switching-atomic-loading-and-sidebar-cleanup-plan.md`](file:///c:/Project%20GIT/TMBilling/docs/superpowers/plans/2026-10-07-branch-switching-atomic-loading-and-sidebar-cleanup-plan.md).
 
 ### [1.6.3] — 2026-10-04 (Branch: `1.6.3`)
 * **Exhaustive Codebase Audit & Master Memory**:
