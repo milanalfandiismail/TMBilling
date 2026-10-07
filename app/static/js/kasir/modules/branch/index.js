@@ -200,12 +200,42 @@ const BranchManager = {
         }
     },
 
+    showSwitchLoading(targetName, statusText = 'Menghubungkan ke server cabang...') {
+        const overlay = document.getElementById('branch-switch-overlay');
+        const titleEl = document.getElementById('branch-switch-title');
+        const statusEl = document.getElementById('branch-switch-status');
+        if (titleEl) {
+            titleEl.textContent = targetName ? `Menghubungkan: ${targetName}` : 'Menghubungkan Cabang...';
+        }
+        if (statusEl) {
+            statusEl.textContent = statusText;
+        }
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+        }
+    },
+
+    updateSwitchStatus(statusText) {
+        const statusEl = document.getElementById('branch-switch-status');
+        if (statusEl) {
+            statusEl.textContent = statusText;
+        }
+    },
+
+    hideSwitchLoading() {
+        const overlay = document.getElementById('branch-switch-overlay');
+        if (overlay) {
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+        }
+    },
+
     updateBrandAndSidebarVisibility() {
         const titleEl = document.getElementById('sidebar-brand-title');
         const subTitleEl = document.getElementById('sidebar-brand-subtitle');
         const badgeContainer = document.getElementById('sidebar-brand-badge-container');
         const badgeText = document.getElementById('sidebar-brand-badge-text');
-        const branchSection = document.getElementById('sidebar-branch-section');
         const fileExplorerBtn = document.getElementById('sidebar-fileexplorer-btn');
         const documentationBtn = document.getElementById('sidebar-documentation-btn');
 
@@ -228,9 +258,6 @@ const BranchManager = {
             if (badgeText) {
                 badgeText.className = 'text-[#050505] font-black text-sm';
                 badgeText.textContent = defaultTitle.slice(0, 2).toUpperCase() || 'TM';
-            }
-            if (branchSection) {
-                branchSection.classList.remove('hidden');
             }
             // Tampilkan kembali File Explorer saat di cabang lokal
             if (fileExplorerBtn) {
@@ -261,10 +288,6 @@ const BranchManager = {
             if (badgeText) {
                 badgeText.className = 'text-black font-black text-sm uppercase';
                 badgeText.textContent = branchName.replace(/[^a-zA-Z0-9]/g, '').slice(0, 2).toUpperCase() || 'RM';
-            }
-            // Sembunyikan menu sidebar Multi Cabang saat sedang di cabang remote!
-            if (branchSection) {
-                branchSection.classList.add('hidden');
             }
             // Sembunyikan File Explorer saat di cabang remote (filesystem lokal saja)
             if (fileExplorerBtn) {
@@ -335,30 +358,39 @@ const BranchManager = {
         // KASUS 1: Beralih kembali ke Cabang Lokal (ID = '0')
         if (targetIdStr === '0') {
             if (btn) btn.disabled = true;
+            this.showSwitchLoading(this.localWarnetTitle + ' (Lokal)', 'Mengembalikan koneksi ke server database lokal...');
+
             try {
                 if (API.branch && API.branch.switchContext) {
                     await API.branch.switchContext(0);
                 }
+
+                this.activeBranchId = '0';
+                this.activeBranchName = this.localWarnetTitle;
+                sessionStorage.setItem('active_branch_id', '0');
+                sessionStorage.setItem('active_branch_name', this.localWarnetTitle);
+
+                this.renderNavbarDropdown();
+                this.updateBrandAndSidebarVisibility();
+                this.removeActiveBranchBanner();
+
+                this.updateSwitchStatus('Memuat ulang seluruh data PC, grup & transaksi lokal...');
+                await this.refreshAllModulesAfterBranchSwitch();
+
+                this.hideSwitchLoading();
+                if (window.Toast) {
+                    window.Toast.show(`Kembali ke ${this.localWarnetTitle} (Lokal)`, "info");
+                }
             } catch (e) {
                 console.warn('[BranchManager] Sync server context lokal warn:', e);
+                this.hideSwitchLoading();
+                if (window.Toast) {
+                    window.Toast.show('Terjadi kendala saat memuat data lokal: ' + (e.message || e), 'warning');
+                }
             } finally {
                 if (btn) btn.disabled = false;
+                this.renderNavbarDropdown();
             }
-
-            this.activeBranchId = '0';
-            this.activeBranchName = this.localWarnetTitle;
-            sessionStorage.setItem('active_branch_id', '0');
-            sessionStorage.setItem('active_branch_name', this.localWarnetTitle);
-
-            this.renderNavbarDropdown();
-            this.updateBrandAndSidebarVisibility();
-            this.removeActiveBranchBanner();
-
-            if (window.Toast) {
-                window.Toast.show(`Beralih ke ${this.localWarnetTitle} (Lokal)`, "info");
-            }
-
-            await this.refreshAllModulesAfterBranchSwitch();
             return;
         }
 
@@ -369,20 +401,20 @@ const BranchManager = {
             return;
         }
 
-        // Tampilkan feedback visual & loading handshake saat menguji koneksi
+        // Tampilkan feedback visual & loading overlay saat menguji koneksi
         if (btn) btn.disabled = true;
         if (iconElem) {
             iconElem.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
         }
-        if (window.Toast) {
-            window.Toast.show(`Menguji koneksi ke ${targetBranch.nama}...`, "info");
-        }
+
+        this.showSwitchLoading(targetBranch.nama, 'Menguji koneksi & verifikasi kunci API cabang...');
 
         try {
             const res = await API.branch.switchContext(targetBranch.id);
             if (!res || !res.success) {
                 // KONEKSI GAGAL: BATALKAN PERPINDAHAN CABANG!
                 targetBranch.status_online = false;
+                this.hideSwitchLoading();
                 this.renderNavbarDropdown();
                 if (window.Toast) {
                     window.Toast.show(res?.error || `Cabang '${targetBranch.nama}' tidak dapat terhubung. Pergantian cabang dibatalkan.`, "error");
@@ -390,7 +422,7 @@ const BranchManager = {
                 return;
             }
 
-            // KONEKSI BERHASIL: Beralih ke cabang remote
+            // KONEKSI BERHASIL: Siapkan data cabang remote
             targetBranch.status_online = true;
             this.activeBranchId = targetIdStr;
             this.activeBranchName = res.data?.branch_name || targetBranch.nama;
@@ -401,19 +433,24 @@ const BranchManager = {
             this.updateBrandAndSidebarVisibility();
             this.removeActiveBranchBanner();
 
-            if (window.Toast) {
-                window.Toast.show(`Berhasil beralih ke ${this.activeBranchName}`, "success");
-            }
-
-            // Jika beralih ke cabang remote dan sedang membuka tab manajemen cabang, otomatis alihkan ke Dashboard
+            // Jika beralih ke cabang remote dan sedang membuka tab manajemen cabang/lokal, otomatis alihkan ke Dashboard
             if (window.App && ['branch', 'branch_inbound', 'branch_kasir', 'fileexplorer', 'tutorials'].includes(App.currentTab)) {
                 App.switchTab('dash');
             }
 
+            this.updateSwitchStatus('Menyinkronkan data PC, grup & transaksi cabang...');
             await this.refreshAllModulesAfterBranchSwitch();
+
+            this.hideSwitchLoading();
+
+            // Toast sukses HANYA dimunculkan setelah data 100% selesai di-fetch dan ter-render
+            if (window.Toast) {
+                window.Toast.show(`Berhasil beralih ke ${this.activeBranchName}`, "success");
+            }
 
         } catch (err) {
             targetBranch.status_online = false;
+            this.hideSwitchLoading();
             this.renderNavbarDropdown();
             if (window.Toast) {
                 window.Toast.show(`Gagal terhubung ke ${targetBranch.nama}: ${err.message || 'Server offline'}`, "error");
@@ -437,7 +474,7 @@ const BranchManager = {
             window.Toast.show(`Koneksi ke cabang '${disconnectedName}' terputus. Mengembalikan kontrol panel ke Cabang Lokal...`, "warning");
         }
 
-        // Failover aman kembali ke Cabang Lokal
+        // Failover aman kembali ke Cabang Lokal dengan perlindungan loading overlay
         this.switchBranch('0');
     },
 
