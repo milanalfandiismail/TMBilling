@@ -7,8 +7,12 @@ const CompactGrid = {
         const container = document.getElementById('dashboard-tabs');
         if (!container) return;
 
-        const groups = Object.keys(data.by_grup || {}).sort();
         const meta = data.grup_meta || {};
+        const groups = Object.keys(data.by_grup || {}).sort((a, b) => {
+            const idA = Number(meta[a]?.id || 0);
+            const idB = Number(meta[b]?.id || 0);
+            return idA !== idB ? idA - idB : a.localeCompare(b);
+        });
 
         let html = `
             <button onclick="Dashboard.setGrup('semua')" 
@@ -506,9 +510,14 @@ const CompactGrid = {
         }
 
         let html = '';
+        const meta = data.grup_meta || {};
         const allGroups = Object.keys(data.by_grup || {});
         const groupsToRender = Dashboard.activeGrup === 'semua'
-            ? allGroups.sort()
+            ? allGroups.sort((a, b) => {
+                const idA = Number(meta[a]?.id || 0);
+                const idB = Number(meta[b]?.id || 0);
+                return idA !== idB ? idA - idB : a.localeCompare(b);
+            })
             : [Dashboard.activeGrup];
 
         const isAdmin = (document.body.dataset.kasirRole || '') === 'admin';

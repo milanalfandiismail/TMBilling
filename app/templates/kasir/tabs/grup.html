@@ -5,11 +5,11 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h3 class="text-sm lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-100 tracking-wide">Grup PC / Zona</h3>
-                <p class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-0.5">Buat kelompok zona PC — setiap grup memiliki paket billing dan tarif tersendiri</p>
+                <p class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-0.5">Buat kelompok zona PC: setiap grup memiliki paket billing dan tarif tersendiri</p>
             </div>
             {% if session.get('kasir_role') == 'admin' %}
             <button onclick="Grup.showAddModal()"
-                class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
+                class="remote-hide-action px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Tambah Grup
             </button>
@@ -26,7 +26,7 @@
                         <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-left">ID</th>
                         <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-left">Nama Grup</th>
                         <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-left">Keterangan</th>
-                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-right">Aksi</th>
+                        <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-right remote-hide-action">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] block lg:table-row-group">

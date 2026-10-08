@@ -327,6 +327,10 @@ const Member = {
     },
 
     async refund(memberId, transaksiId, namaPaket, durasiMenit, dibuatPada, sisaWaktuSekarang) {
+        if (window.BranchManager && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0') {
+            Toast.error('Akses Ditolak: Transaksi bersifat read-only di cabang remote.');
+            return;
+        }
         if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const durasiFriendly = Utils.formatDurasiFriendly(durasiMenit);
         const sisaSekarangFriendly = Utils.formatDurasiFriendly(sisaWaktuSekarang);

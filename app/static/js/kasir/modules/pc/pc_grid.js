@@ -5,7 +5,19 @@ const PCGrid = {
         const container = document.getElementById('pc-table');
         if (!container) return;
 
-        const groups = Object.keys(groupedData);
+        const groupMap = {};
+        Object.keys(groupedData).forEach(grupKey => {
+            const pcs = groupedData[grupKey] || [];
+            const firstPc = pcs[0];
+            groupMap[grupKey] = firstPc ? Number(firstPc.grup_id || 0) : 0;
+        });
+
+        const groups = Object.keys(groupedData).sort((a, b) => {
+            const idA = groupMap[a] || 0;
+            const idB = groupMap[b] || 0;
+            return idA !== idB ? idA - idB : a.localeCompare(b);
+        });
+
         if (groups.length === 0) {
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-20 text-neutral-500 bg-[#0c0c0c] border border-dashed border-[#1c1c1c] rounded">
@@ -17,8 +29,10 @@ const PCGrid = {
 
         let html = '';
         groups.forEach(grupKey => {
-            const pcs = groupedData[grupKey] || [];
+            const pcs = (groupedData[grupKey] || []).slice();
             if (pcs.length === 0) return;
+
+            pcs.sort((a, b) => (a.kode || '').localeCompare(b.kode || '', undefined, { numeric: true, sensitivity: 'base' }));
 
             html += `
                 <div class="mb-8 last:mb-0">
@@ -37,7 +51,7 @@ const PCGrid = {
                                     </div>
                                     <div class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-mono mb-2">${pc.ip_address || '-'}</div>
                                     <span class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-400 bg-[#171717] border border-[#262626] px-1.5 py-0.5 rounded font-bold">${pcGrupNama.toUpperCase()}</span>
-                                    <div class="absolute inset-0 bg-[#0c0c0c]/95 rounded flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div class="absolute inset-0 bg-[#0c0c0c]/95 rounded flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity remote-hide-action">
                                         ${(window.App && App.user && App.user.role === 'kasir') ? '' : `
                                         <button onclick="PC.edit(${pc.id})" class="w-7 h-7 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-8 xl:h-8 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center" title="Edit PC">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>

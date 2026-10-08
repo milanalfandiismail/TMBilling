@@ -43,7 +43,7 @@ const GameManagement = {
     _lastFingerprint: null,
 
     refreshLive() {
-        if (typeof App !== 'undefined' && App.currentTab !== 'game') return;
+        if (typeof App !== 'undefined' && !['game', 'game_management'].includes(App.currentTab)) return;
         const modalForm = document.getElementById('game-modal');
         const isAppModalOpen = document.getElementById('app-modal') && !document.getElementById('app-modal').classList.contains('hidden');
         if ((modalForm && !modalForm.classList.contains('hidden')) || isAppModalOpen) {
@@ -168,7 +168,7 @@ const GameManagement = {
                             ${g.aktif ? 'YA' : 'TIDAK'}
                         </span>
                     </td>
-                    <td class="px-3 lg:max-xl:px-4 xl:px-4 py-2 lg:max-xl:py-3 xl:py-2 text-right flex lg:table-cell justify-between items-center">
+                    <td class="px-3 lg:max-xl:px-4 xl:px-4 py-2 lg:max-xl:py-3 xl:py-2 text-right flex lg:table-cell justify-between items-center remote-hide-action">
                         <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
                         <div class="flex justify-end gap-1.5">
                             ${g.icon ? `
@@ -176,10 +176,10 @@ const GameManagement = {
                                 <svg class="w-3.5 h-3.5 lg:max-xl:w-3.5 lg:max-xl:h-3.5 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                             </button>
                             ` : ''}
-                            <button onclick="GameManagement.openEditModal(${JSON.stringify(g).replace(/"/g, '&quot;')})" class="w-7 h-7 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-8 xl:h-8 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center shadow-sm" title="Edit">
+                            <button onclick="GameManagement.openEditModal(${JSON.stringify(g).replace(/"/g, '&quot;')})" class="w-7 h-7 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-8 xl:h-8 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center shadow-sm remote-hide-action" title="Edit">
                                 <svg class="w-3.5 h-3.5 lg:max-xl:w-3.5 lg:max-xl:h-3.5 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                             </button>
-                            <button onclick="GameManagement.deleteGame(${g.id}, '${g.nama}')" class="w-7 h-7 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-8 xl:h-8 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center shadow-sm" title="Hapus">
+                            <button onclick="GameManagement.deleteGame(${g.id}, '${g.nama}')" class="w-7 h-7 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-8 xl:h-8 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center shadow-sm remote-hide-action" title="Hapus">
                                 <svg class="w-3.5 h-3.5 lg:max-xl:w-3.5 lg:max-xl:h-3.5 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
                         </div>

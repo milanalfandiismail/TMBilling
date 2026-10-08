@@ -35,7 +35,7 @@ const MemberModal = {
                                     <span class="text-xs lg:text-base font-mono font-bold text-neutral-300">${Utils.formatRupiah(t.harga)}</span>
                                     ${(t.jenis === 'beli_paket_member' || t.jenis === 'tambah_waktu_sesi') ? `
                                         <button onclick="Member.refund(${member.id}, ${t.id}, '${t.nama.replace(/'/g, "\\'")}', ${t.durasi_menit}, '${t.dibuat_pada}', ${member.waktu_saved || member.waktu_tersimpan || 0})" 
-                                            class="px-2 py-1 text-[9px] lg:text-xs font-bold bg-[#3b1216] border border-[#ef4444]/30 text-red-200 hover:bg-red-600 hover:text-white rounded transition-colors uppercase shrink-0">
+                                            class="remote-hide-action px-2 py-1 text-[9px] lg:text-xs font-bold bg-[#3b1216] border border-[#ef4444]/30 text-red-200 hover:bg-red-600 hover:text-white rounded transition-colors uppercase shrink-0">
                                             REFUND
                                         </button>
                                     ` : ''}

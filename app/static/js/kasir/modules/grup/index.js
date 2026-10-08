@@ -225,7 +225,7 @@ const Grup = {
                             <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-left">ID</th>
                             <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-left">Nama Grup</th>
                             <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-left">Keterangan</th>
-                            <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-right">Aksi</th>
+                            <th class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-right remote-hide-action">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] block lg:table-row-group">
@@ -243,10 +243,10 @@ const Grup = {
                                     <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Keterangan</span>
                                     <span class="text-neutral-400">${g.keterangan || '-'}</span>
                                 </td>
-                                <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-right flex lg:table-cell justify-between items-center">
+                                <td class="px-4 lg:max-xl:px-4 xl:px-6 py-3 lg:max-xl:py-3 xl:py-4 text-right flex lg:table-cell justify-between items-center remote-hide-action">
                                     <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
                                     ${(window.App && App.user && App.user.role === 'kasir') ? '' : `
-                                    <div class="flex items-center justify-end gap-1">
+                                    <div class="flex items-center justify-end gap-1 remote-hide-action">
                                         <button onclick="Grup.showEditModal(${g.id}, '${g.nama}', '${(g.keterangan || '').replace(/'/g, "\\'")}', '${g.warna}')" class="w-7 h-7 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-8 xl:h-8 rounded bg-[#171717] border border-[#262626] text-blue-400 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center text-xs" title="Edit Grup">
                                             ✏️
                                         </button>

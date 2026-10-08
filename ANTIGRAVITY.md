@@ -35,7 +35,7 @@
    - 6.5 Deploy Scripts, Provisioning & TightVNC Server
 7. [Audit Database Migrations (`migrations/` — 18 Revisions)](#7-audit-database-migrations-migrations--18-revisions)
 8. [Audit Tools Developer & DevOps (`tools/`)](#8-audit-tools-developer--devops-tools)
-9. [Audit Test Suites (`tests/` — 81 Test Files, 264 Specs)](#9-audit-test-suites-tests--81-test-files-264-specs)
+9. [Audit Test Suites (`tests/` — 82 Test Files, 270 Specs)](#9-audit-test-suites-tests--82-test-files-270-specs)
 10. [Dokumentasi & Superpowers Specs (`docs/`)](#10-dokumentasi--superpowers-specs-docs)
 11. [Katalog Lengkap API Endpoints (Quick Reference)](#11-katalog-lengkap-api-endpoints-quick-reference)
 12. [Aturan Krusial, Bug-Traps, & Codebase Gotchas](#12-aturan-krusial-bug-traps--codebase-gotchas)
@@ -708,15 +708,15 @@ Folder `tools/` menyediakan script otomatisasi untuk testing, seeding data skena
 
 ---
 
-## 🧪 9. AUDIT TEST SUITES (`tests/` — 81 TEST FILES, 264 SPECS)
+## 🧪 9. AUDIT TEST SUITES (`tests/` — 82 TEST FILES, 270 SPECS)
 
-Sistem backend TMBilling dilindungi oleh **264 unit/integration test** di folder `tests/`. Seluruh test wajib lolos:
+Sistem backend TMBilling dilindungi oleh **270 unit/integration test** di folder `tests/`. Seluruh test wajib lolos:
 ```bash
 python -m pytest tests/ -q
 ```
-*Expected Result:* `264 passed, 0 failed` (Exit code: 0).
+*Expected Result:* `270 passed, 0 failed` (Exit code: 0).
 
-### Kategorisasi 81 Berkas Unit Test:
+### Kategorisasi 82 Berkas Unit Test:
 * **PC & Koordinat Denah**:
   - `test_pc_validation.py`: Validasi kode PC, format IP, format MAC address, penolakan input invalid.
   - `test_pc_grup_validation.py`: Validasi relasi grup dan tarif PC.
@@ -755,6 +755,7 @@ python -m pytest tests/ -q
   - `test_branch_inbound_connections.py`: Pengujian koneksi masuk via Cloudflare Ingress.
   - `test_branch_remote_kasir_management.py`: Pengendalian PC cabang dari server pusat.
   - `test_branch_relay_csrf_and_logging.py`: Penanganan CSRF token pada request proxy relay.
+  - `test_branch_remote_readonly_sidebar.py`: Pengujian proteksi dual-layer read-only pada cabang remote (pencegatan 403 untuk POST/PUT/DELETE/PATCH relay, izin GET) dan audit penandaan selektor visibilitas sidebar (`sidebar-remote-hidden`) serta aksi CRUD (`remote-hide-action`).
 * **Member, Menu, & Game Management**:
   - `test_member_validation.py` & `test_member_deletion.py`: Validasi saldo, RFID card, dan proteksi hapus member aktif.
   - `test_menu_crud_robustness.py` & `test_menu_archive_and_restore.py`: Operasional katalog kantin dan soft-delete (arsip).
@@ -866,6 +867,11 @@ Direktori `docs/` menyimpan dokumentasi sistem dan riwayat blueprint implementas
    - Semua penyimpanan ke database SQLite harus menggunakan UTC via `now_utc()`. Format tanggal untuk tampilan UI wajib diproses via `format_display()` di `timezone_utils.py`.
 7. **Pencegahan Zombie Process Klien**:
    - Dual watchdog (`MGCTM.exe` dan `mtm.exe`) menggunakan file lock dan polling 1 detik. Jangan menghapus file `stop.token` secara manual jika sedang melakukan debugging.
+8. **Dual-Layer Read-Only Mode pada Remote Branch**:
+   - Saat `activeBranchId !== '0'`, seluruh aksi mutasi (Create, Update, Delete) di dashboard, PC, paket, grup, member, menu, tournament, game, dan struk disembunyikan menggunakan kelas CSS `.remote-hide-action` via penanda `body[data-branch-mode="remote"]`.
+   - Backend reverse proxy `BranchProxyService.relay_request` secara ketat mencegat method mutasi (`POST`, `PUT`, `DELETE`, `PATCH`) dan mengembalikan `403 Forbidden` jika ada usaha manipulasi data via request relay.
+9. **Isolasi Cache & Pagination Riwayat Struk Antar-Cabang**:
+   - Tab Struk menyimpan cache struk terakhir dengan key dinamis atau mereset `localStorage.removeItem('lastStrukData')` serta mengosongkan kontainer `#struk-pagination` pada `resetState()` agar tidak terjadi ghost pagination (`1 / 63`) saat berpindah ke cabang dengan riwayat kosong.
 
 ---
 
@@ -875,11 +881,127 @@ Direktori `docs/` menyimpan dokumentasi sistem dan riwayat blueprint implementas
 
 ### [1.6.4] — In Progress / Sprint Aktif (Branch: `v1.6.4`)
 * **Multi-Branch Nexus Hardening & Atomic Loading Handshake**:
-  - **Pembersihan Sidebar Flat**: Menghapus grup menu `Multi Cabang` (`sidebar-branch-section`, `branch`, `branch_inbound`, `branch_kasir`) dari [`sidebar_admin.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/components/sidebar_admin.html) agar sidebar kembali bersih flat 100% seperti sidebar lama. Pengelolaan cabang dipusatkan via dropdown navbar selector ("Kelola Cabang") dan tab Settings.
+  - **Manajemen Visibilitas Sidebar Multi Cabang**: Grup menu `Multi Cabang` (`sidebar-branch-section`, `branch`, `branch_inbound`, `branch_kasir`) di [`sidebar_admin.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/components/sidebar_admin.html) tampil untuk admin pada cabang lokal dan disembunyikan secara dinamis (`updateBrandAndSidebarVisibility`) saat beralih ke cabang remote agar kasir/admin cabang remote tidak mengakses konfigurasi cabang pusat.
   - **Atomic Loading Handshake (Zero-Glitch Transition)**: Menerapkan komponen `BranchSwitchOverlay` (transisi loading layar penuh berlatar gelap blur dengan status progress dinamis).
   - **Reordering Eksekusi Switch & Notifikasi**: Toast sukses (`Berhasil terhubung ke [Cabang]`) HANYA dimunculkan setelah seluruh data cabang (PC, grup, sesi, transaksi) selesai di-fetch dan ter-render di antarmuka DOM (`await refreshAllModulesAfterBranchSwitch()`).
   - **Zero-Flicker Disconnect Failover**: Penanganan pemutusan koneksi cabang remote otomatis dengan transisi loading terproteksi sebelum data lokal tampil kembali.
-  - **Dokumentasi & Perencanaan**: Spec di [`2026-10-07-branch-switching-atomic-loading-and-sidebar-cleanup-design.md`](file:///c:/Project%20GIT/TMBilling/docs/superpowers/specs/2026-10-07-branch-switching-atomic-loading-and-sidebar-cleanup-design.md) dan Implementation Plan di [`2026-10-07-branch-switching-atomic-loading-and-sidebar-cleanup-plan.md`](file:///c:/Project%20GIT/TMBilling/docs/superpowers/plans/2026-10-07-branch-switching-atomic-loading-and-sidebar-cleanup-plan.md).
+* **Audit Eliminasi Sidebar & Proteksi Read-Only Cabang Remote**:
+  - **Penataan & Eliminasi Elemen Sidebar di Mode Remote**:
+    - Pengaturan Server (seluruh 11 sub-menu dihilangkan via pembungkus `.sidebar-remote-hidden`).
+    - Remote Server, Hardware Checker, File Explorer, Log Sistem, Ekstensi & Plugin, serta Dokumentasi dihilangkan via `.sidebar-remote-hidden`.
+    - Sistem & Utilitas: Seluruh menu dihilangkan KECUALI **Analitik Owner** (`analytics`) yang tetap aktif dalam mode pantau.
+    - Manajemen Staff (seluruh 3 sub-menu dihilangkan via `.sidebar-remote-hidden`).
+    - Catatan Shift & Pemulihan Mati Lampu dihilangkan via `.sidebar-remote-hidden`.
+  - **Dual-Layer Anti-Mutation & Read-Only Enforcement**:
+    - Frontend: Seluruh tombol aksi mutasi CRUD di halaman Dashboard, PC, Paket, Grup, Menu, Member, Turnamen, Game, Maintenance, dan Struk ditandai dengan kelas CSS `.remote-hide-action` yang secara otomatis di-`display: none !important` ketika `body[data-branch-mode="remote"]` atau `[data-branch-mode="remote"]`.
+    - Backend: `BranchProxyService.relay_request` mencegat request HTTP mutasi (`POST`, `PUT`, `DELETE`, `PATCH`) dan menolaknya dengan respon `403 Forbidden` sebelum diteruskan ke jaringan cabang remote.
+    - Penyesuaian middleware di `app/__init__.py` memastikan pendaftaran `handle_branch_proxy_relay` berjalan sebelum `csrf.init_app` untuk proteksi relay menyeluruh.
+  - **Frontend Mutation Buttons Elimination & Tailwind CSS Root Non-Purge Compilation**:
+    - **CSS Architecture**: Aturan selektor `[data-branch-mode="remote"] .remote-hide-action` dan `body[data-branch-mode="remote"] .remote-hide-action` dipindahkan ke luar `@layer` pada level root `app/static/css/input.css` agar tidak di-purge oleh compiler Tailwind CSS v3 saat build minified lokal (`npm run build:css`).
+    - **Early Inline State Initialization**: Ditambahkan script inline synchronous di tag `<head>` [`app/templates/kasir/base.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/base.html) untuk segera menyematkan `data-branch-mode="remote"` pada `<html>` dan `<body>` saat `sessionStorage.getItem('active_branch_id') !== '0'` sebelum rendering DOM dimulai (meniadakan flicker).
+    - **Modul Menu Kantin (`menu`)**: Tagged `.remote-hide-action` pada Admin Quick Actions (tambah stok, edit, arsip, hard delete) di katalog aktif, Action container tombol Tambah ke Keranjang & Tambah Stok, serta Action container Pulihkan & Hapus Permanen di katalog arsip.
+    - **Modul Turnamen (`tournament`)**: Tagged `.remote-hide-action` pada tombol Hapus Turnamen, tombol Selesaikan Turnamen, Buat Ronde Swiss, dan Loloskan ke Playoffs. Ditambahkan guard `isReadOnly()` pada `openCreateModal()`, `openSkorModal()`, `triggerNextSwiss()`, `openQualifyModal()`, `finishStage()`, dan `deleteTournament()`, serta eliminasi event click modal skor pada bracket/swiss match cards.
+    - **Modul Game & Aplikasi (`game_management`)**: Tagged `.remote-hide-action` pada header tabel `<th>Aksi</th>`, kolom table cell `<td>`, dan tombol edit/delete game. Preview icon tetap dapat diakses melalui thumbnail gambar langsung.
+    - **Modul Perawatan PC (`maintenance`)**: Tagged `.remote-hide-action` pada tombol aksi tabel tiket (Proses, Tolak, Selesaikan, Hapus) dan penambahan guard `isRemote` pada method handler terkait.
+    - **Modal Detail PC (`dashboard_detail_modal.js`)**: Tagged `.remote-hide-action` pada tombol dan placeholder Wake-on-LAN (WOL) dan Pindah PC.
+    - **Modal Detail Member (`member_modal.js` & `member/index.js`)**: Tagged `.remote-hide-action` pada tombol Refund di riwayat paket aktif dan guard di method `Member.refund`.
+    - **Skeleton Table Headers**: Tagged `.remote-hide-action` pada skeleton `<th ...>Aksi</th>` di [`grup.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/tabs/grup.html) dan [`paket.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/tabs/paket.html).
+  - **Perbaikan Tuntas Bug Riwayat & Struk (`struk`)**:
+    - Mengeliminasi ghost pagination `1 / 63` saat data riwayat transaksi kosong di cabang remote.
+    - Mengosongkan kontainer `#struk-pagination` dan mereset `_lastFingerprint` serta cache `localStorage.lastStrukData` di `Struk.resetState()` dan `Struk.loadHistory()`.
+    - Sinkronisasi opsi filter tanggal dan riwayat struk saat perpindahan cabang pada `BranchManager.refreshAllModulesAfterBranchSwitch()`.
+  - **Automated Test Coverage**:
+    - Penambahan `tests/test_branch_remote_readonly_sidebar.py` (6 skenario uji: blokir POST 403, blokir PUT 403, blokir DELETE 403, izin GET 200, keberadaan class `.sidebar-remote-hidden` pada sidebar, keberadaan class `.remote-hide-action` pada tombol aksi).
+  - **Dokumentasi & Perencanaan**: Spec di [`2026-10-08-frontend-mutation-buttons-elimination-and-backend-validation-design.md`](file:///c:/Project%20GIT/TMBilling/docs/superpowers/specs/2026-10-08-frontend-mutation-buttons-elimination-and-backend-validation-design.md) dan Implementation Plan di [`2026-10-08-frontend-mutation-buttons-elimination-and-backend-validation-plan.md`](file:///c:/Project%20GIT/TMBilling/docs/superpowers/plans/2026-10-08-frontend-mutation-buttons-elimination-and-backend-validation-plan.md).
+* **PC Detail Remote Elimination, Group Sorting Alignment & Hardware Checker 2-Column UI/UX**:
+  - **PC Detail Card Modal (Eliminasi Aksi Remote Branch)**:
+    - Menyematkan kelas CSS non-purged `.remote-hide-action` pada tombol **Monitor Proses**, **Remote Layar** (beserta offline placeholder), **Ambil Gambar**, dan panel **Tangkapan Layar Client** (preview screenshot kanan) di [`dashboard_detail_modal.js`](file:///c:/Project%20GIT/TMBilling/app/static/js/kasir/modules/dashboard/dashboard_detail_modal.js).
+    - Saat berada di mode cabang remote (`activeBranchId !== '0'`), hanya tombol **Hardware** yang tersisa ("cukup hardware aja") dan sisi aksi membentang rapi (`col-span-full`).
+    - Saat berada di mode lokal (`activeBranchId === '0'`), seluruh tombol aksi dan panel screenshot tetap utuh dan fungsional 100%.
+  - **Penyelarasan Pengurutan Grup Berbasis ID Pembuatan Database (1, 2, 3...)**:
+    - **Backend Dashboard**: Menyertakan `id` grup pada dictionary `grup_meta` di [`dashboard_service.py`](file:///c:/Project%20GIT/TMBilling/app/services/dashboard/dashboard_service.py).
+    - **Frontend Dashboard**: Mengurutkan tab zona dan kartu grup PC di [`dashboard_compact.js`](file:///c:/Project%20GIT/TMBilling/app/static/js/kasir/modules/dashboard/dashboard_compact.js) berdasarkan `grup_meta[group].id` (`idA - idB`), memastikan grup `reguler` (ID 1) selalu berada di urutan teratas diikuti ID berikutnya.
+    - **Hardware Checker (`hardware_checker/index.js`)**: Mengurutkan kartu PC berdasarkan `pc_grup_id` kemudian `pc_kode`, menyematkan badge nama grup pada header kartu, dan menandai tombol *Update Baseline* dengan `.remote-hide-action`.
+    - **Monitoring Screenshot (`monitor_routes.py` & `screenshot/index.js`)**: Menyertakan `pc_grup_id` pada output `/screenshot/all`, mengurutkan opsi dropdown filter grup dan kartu screenshot berdasarkan ID grup database.
+    - **Paket Billing (`paket.py` & `paket_table.js`)**: Menyertakan `grup_id` pada `Paket.to_dict()` dan mengurutkan tabel paket berdasarkan ID grup.
+    - **Maintenance (`maintenance/index.js`)**: Mengurutkan grup PC pada modal tiket maintenance berdasarkan ID grup database.
+  - **Optimasi UI/UX Hardware Checker (2 Kolom Kompak 2x2 Responsif `lg`, `xl`, `2xl`)**:
+    - Di [`hardware_checker.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/tabs/hardware_checker.html), mengubah container menjadi `grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4 items-start` untuk mengeliminasi kartu 1 kolom penuh yang terlalu lebar pada layar desktop kasir.
+    - Menata ulang kartu hardware checker menjadi format kompak (~160px tinggi terlipat) sehingga pada breakpoint `lg`, `xl`, dan `2xl` dapat langsung menampilkan susunan **2x2 (4 unit PC)** dalam 1 layar tanpa perlu banyak scroll.
+    - Di [`hardware_checker/index.js`](file:///c:/Project%20GIT/TMBilling/app/static/js/kasir/modules/hardware_checker/index.js), membersihkan header bar dari string gabungan CPU/GPU/RAM yang panjang dan menyebabkan teks berantakan/wrapping bertumpuk di `lg` & `xl`, menyisakan Kode PC, Badge Grup, Status Badge ringkas (`🛡️ Aman` / `🚨 Ditukar` / `⚙️ Pending`), serta tombol aksi yang pas.
+    - Kotak ringkasan internal specs ditata rapi dalam 3 kolom (Processor, GPU, Memory) dengan font mono `text-[11px] sm:text-xs`, `truncate` tooltip `title`, serta footer last sync & status NIC Gigabit (`NIC: 1 Gbps` hijau).
+    - Menyesuaikan layout Accordion Spesifikasi (Baseline vs Live Specs) menjadi `grid grid-cols-1 sm:grid-cols-2 gap-3` dengan font mono `text-[11px]` yang sangat rapi dan presisi.
+    - Sinkronisasi skeleton loader 4 kartu kompak 2x2 pada template HTML dan method `load()` di JS.
+  - **Penyelarasan Pengurutan Grup & Unit PC (Grup ID 1, 2, 3... & Alphanumeric Natural Sort)**:
+    - **Backend Grup Repository**: `GrupRepository.get_all()` menggunakan `Grup.query.order_by(Grup.id.asc()).all()`.
+    - **Model PC**: `PC.to_dict()` selalu menyertakan `"grup_id": self.grup_id or 0`.
+    - **Tab Manajemen PC (`pc_grid.js`)**: Mengurutkan zona/grup berdasarkan `grup_id` (`idA - idB`), dan mengurutkan unit PC di dalam tiap grup secara alami berdasarkan `kode` (`PC-01`, `PC-02`...).
+    - **Hardware Checker (`hardware_checker/index.js`)**: Mengurutkan data PC secara otomatis berdasarkan `pc_grup_id` (creation order) kemudian `pc_kode` (natural sort).
+  - **Automated Test Coverage**:
+    - Penambahan `test_pc_detail_modal_actions_have_remote_hide_action` di `tests/test_branch_remote_readonly_sidebar.py`.
+    - Seluruh test suite (82 files, 271 specs) lulus 100% tanpa kegagalan (`271 passed`).
+  - **Dokumentasi & Perencanaan**: Spec di [`2026-10-08-pc-detail-group-order-hardware-checker-design.md`](file:///c:/Project%20GIT/TMBilling/docs/superpowers/specs/2026-10-08-pc-detail-group-order-hardware-checker-design.md) dan Implementation Plan di [`2026-10-08-pc-detail-group-order-hardware-checker-plan.md`](file:///c:/Project%20GIT/TMBilling/docs/superpowers/plans/2026-10-08-pc-detail-group-order-hardware-checker-plan.md).
+* **Hardware Checker Detail Modal, ID-Based Grouping & Refresh Buttons Cleanup**:
+  - **Hardware Checker Detail Modal (`Modal.show`)**:
+    - Mengeliminasi accordion inline pada kartu hardware checker yang sebelumnya meregangkan kartu dan memotong teks serial/PNP ID.
+    - Menggantinya dengan Modal Detail Spesifikasi (`Modal.show`) yang responsif dari `sm` hingga `2xl`, menampilkan data komparasi lengkap tanpa `truncate` dalam container scrollable (`max-h-[90vh]`).
+    - Modal memuat: Header (Kode PC, Badge Grup, Status Keamanan), Alert CCTV Mismatch (jika ada) lengkap dengan estimasi jam rebooting, 2 Kolom Komparasi Spesifikasi (🔒 *Baseline Resmi* vs 🔍 *Live Telemetry*: Mobo Model & Serial, CPU Name & ID, GPU Name & Full PNP ID dengan block `select-all`, RAM Serial Pills, Disk Serial Pills), Footer dengan status last sync, status Gigabit NIC, serta tombol `🔄 Perbarui Baseline` (berkelas `.remote-hide-action`) dan tombol `Tutup`.
+  - **Group Filter & Sectional Grouping Berbasis ID Database**:
+    - Menambahkan dropdown `<select id="hc-group-filter">` pada header tab Hardware Checker yang diisi otomatis secara unik dan terurut berdasarkan `grup_id` ascending.
+    - Saat opsi *"Semua Grup"* aktif (`filterGroup === 'all'`), kartu PC dikelompokkan ke dalam seksi zona per-grup berlabel `[ NAMA GRUP • X UNIT ]` yang diurutkan berdasarkan `grup_id` (ID pembuatan database 1, 2, 3...) dan kartu unit PC di dalamnya diurutkan secara natural alphanumeric (`PC-01`, `PC-02`...).
+    - Saat grup tertentu dipilih, tampilan disaring secara instan ke dalam grid 2-kolom ringkas unit PC milik grup tersebut.
+  - **Pembersihan Tombol Refresh Manual Usang di 9 Template Tab**:
+    - Menghapus tombol refresh manual dan icon spinning di 9 template tab kasir ([`hardware_checker.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/tabs/hardware_checker.html), [`monitor.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/tabs/monitor.html), [`screenshot.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/tabs/screenshot.html), [`blackout.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/tabs/blackout.html), [`maintenance.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/tabs/maintenance.html), [`laporan_maintenance.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/tabs/laporan_maintenance.html), [`menu_stock_log.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/tabs/menu_stock_log.html), [`shift_history.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/tabs/shift_history.html), [`user_logs.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/tabs/user_logs.html)).
+    - Seluruh modul tab tersebut kini disinkronkan ke auto-refresh polling interval global di [`app.js`](file:///c:/Project%20GIT/TMBilling/app/static/js/kasir/app.js) (`startDashboardPolling`) sesuai frekuensi dashboard (1s, 2s, 3s, 5s) secara silent dan tanpa flicker.
+    - Tab `fileexplorer` sengaja dipertahankan manual demi efisiensi CPU dan I/O disk client.
+  - **Automated Test Coverage & Build**:
+    - Re-build CSS Tailwind minified (`npm run build:css`).
+    - 271 test specs pada test suite pytest lulus 100% (`271 passed`).
+  - **Dokumentasi & Perencanaan**: Spec di [`2026-10-08-hardware-checker-modal-grouping-and-refresh-cleanup-design.md`](file:///c:/Project%20GIT/TMBilling/docs/superpowers/specs/2026-10-08-hardware-checker-modal-grouping-and-refresh-cleanup-design.md) dan Plan di [`2026-10-08-hardware-checker-modal-grouping-and-refresh-cleanup-plan.md`](file:///c:/Project%20GIT/TMBilling/docs/superpowers/plans/2026-10-08-hardware-checker-modal-grouping-and-refresh-cleanup-plan.md).
+* **Comprehensive Auto-Refresh Audit, Broken Tab Guard Bugfixes & Server Monitor Cleanup**:
+  - **Eliminasi Tombol Manual Refresh `server_statistic`**:
+    - Menghapus tombol manual "Refresh" dari header [`server_statistic.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/server_monitor/server_statistic.html).
+    - Menambahkan method `refreshLive()` pada [`ServerMonitor`](file:///c:/Project%20GIT/TMBilling/app/static/js/kasir/modules/server_monitor/server_monitor.js) dan mendaftarkannya pada loop polling global `app.js` (`startDashboardPolling`).
+  - **Perbaikan Broken Tab Guards di 4 Modul JS**:
+    - **`laporan_menu` (`laporan_menu/index.js`)**: Memperbaiki guard dari `laporan-menu` menjadi `['laporan_menu', 'laporan-menu']` sehingga polling omzet kantin berjalan realtime.
+    - **`game_management` (`game/index.js`)**: Memperbaiki guard dari `game` menjadi `['game', 'game_management']` sehingga daftar game & aplikasi ter-refresh otomatis.
+    - **`plugins` (`settings/plugins.js`)**: Memperbaiki guard dari `settings` menjadi `['settings', 'plugins']` sehingga ekstensi & plugin ter-refresh otomatis saat tab dibuka.
+    - **`branch` (`branch/index.js`)**: Memperluas `refreshLive()` untuk mengeksekusi `loadInboundBranches()` dan `loadRemoteOperators()` saat tab `branch_inbound` atau `branch_kasir` aktif.
+  - **Isolasi Beban CPU & I/O Disk (`fileexplorer`)**:
+    - Menghapus `case 'fileexplorer':` dari `startDashboardPolling` di [`app.js`](file:///c:/Project%20GIT/TMBilling/app/static/js/kasir/app.js) dan menonaktifkan polling internal di [`fileexplorer/index.js`](file:///c:/Project%20GIT/TMBilling/app/static/js/kasir/modules/fileexplorer/index.js).
+    - Memastikan tab File Explorer murni berjalan on-demand manual melalui tombol Refresh di toolbar untuk mencegah spike I/O disk dan pemborosan CPU server/client.
+  - **Automated Test Coverage & Build**:
+    - Re-build CSS Tailwind minified (`npm run build:css`).
+    - Seluruh test suite (82 files, 271 specs) lulus 100% (`271 passed`).
+  - **Dokumentasi & Perencanaan**: Spec di [`2026-10-08-comprehensive-auto-refresh-and-manual-button-audit-design.md`](file:///c:/Project%20GIT/TMBilling/docs/superpowers/specs/2026-10-08-comprehensive-auto-refresh-and-manual-button-audit-design.md) dan Plan di [`2026-10-08-comprehensive-auto-refresh-and-manual-button-audit-plan.md`](file:///c:/Project%20GIT/TMBilling/docs/superpowers/plans/2026-10-08-comprehensive-auto-refresh-and-manual-button-audit-plan.md).
+* **Dashboard Settings Modal Dynamic Rendering (`Modal.show`)**:
+  - Merefaktor `Dashboard.showSettingsModal()` di [`dashboard/index.js`](file:///c:/Project%20GIT/TMBilling/app/static/js/kasir/modules/dashboard/index.js) agar menggunakan engine perenderan dinamis `Modal.show(html, null, { disableBackdropClose: false })` seperti standar modal modern lainnya di TMBilling (Buka Sesi, Tambah Paket, Member Modal, Hardware Checker).
+  - Mengeliminasi modal statis usang `#modal-dashboard-settings` dari [`modals.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/components/modals.html) sehingga modal terinjeksi langsung ke level `document.body` tanpa terperangkap dalam batas scroll/overflow `#main-scroll`.
+* **Master Role-Based (Admin & Kasir) Multi-Tab & Multi-Entity CRUD + Styling Audit (Sprint v1.6.4)**:
+  - **Objektif**: Audit holistik seluruh antarmuka Kasir untuk role **Admin** dan **Kasir** tanpa terkecuali, validasi end-to-end CRUD terhadap entitas utama (PC, Paket, Member, Grup, Menu, Catatan, Turnamen, Maintenance), audit proteksi RBAC, verifikasi styling Chamber Noir, dan antislop compliance.
+  - **Fase 1: Audit Role Admin**:
+    - Verifikasi akses 43 tab & sub-tab (Dashboard, POS, Member, Paket, PC, Grup, Game, Turnamen, Laporan Keuangan, Staff, Server & Hardware, Cabang, Sistem & Utilitas, 11 Pengaturan).
+    - Eksekusi siklus CRUD interaktif di browser via Playwright MCP:
+      - Unit PC: Create (`PC-TEST-99`), Read, Update, Delete.
+      - Paket Billing: Create (`PAKET-TEST-99`), Read, Update, Delete.
+      - Member: Create (`testmem99`), Read, Topup Saldo, Delete.
+      - Grup PC: Create (`GRUP-TEST-99`), Read, Update, Delete.
+      - Menu Kantin: Create (`MENU-TEST-99`), Read, Restock, Delete.
+      - Catatan Shift: Create (`NOTE-TEST-99`), Read, Edit, Delete.
+      - Tiket Maintenance: Create (`TIKET-TEST-99`), Read, Resolve, Delete.
+  - **Fase 2: Audit Role Kasir & RBAC Boundary Protection**:
+    - Login sebagai user `kasir` (Role: `kasir`).
+    - Verifikasi sidebar kasir: Menu admin (Staff, Server Hardware, Multi Cabang, Pengaturan) otomatis tersembunyi.
+    - Pengujian bypass direct navigation via JavaScript (`App.switchTab('settings')`, `App.switchTab('user')`, `App.switchTab('hardware_checker')`, dll.): Wajib ditolak seketika dengan `Toast.error('Akses Ditolak: Hanya untuk Admin!')` dan redirect kembali ke dashboard.
+    - Verifikasi operasional kasir (Buka billing, topup member, pesan menu POS, lihat struk, pemulihan mati lampu).
+  - **Fase 3: Audit Styling, Ergonomi & Kepatuhan Antislop**:
+    - Konsistensi palette Chamber Noir (`#050505` background, `#0c0c0c` container, `#1c1c1c` border, `#262626` hover).
+    - Kontras teks WCAG AA (`text-neutral-100`/`text-neutral-200` pada permukaan gelap).
+    - Eliminasi em dash (`—`) di seluruh antarmuka.
+    - Responsivitas mobile (375x812) dengan 0 horizontal overflow.
+  - **Fase 4: Verifikasi & Test Suite**:
+    - 0 runtime JavaScript console error di browser Playwright.
+    - 271 passing unit test specs di backend pytest.
 
 ### [1.6.3] — 2026-10-04 (Branch: `1.6.3`)
 * **Exhaustive Codebase Audit & Master Memory**:

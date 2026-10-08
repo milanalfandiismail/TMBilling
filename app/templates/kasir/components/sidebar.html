@@ -64,8 +64,8 @@
             </button>
 
             <!-- Pemulihan Mati Lampu -->
-            <button onclick="App.switchTab('blackout')" data-tab="blackout" title="Pemulihan Mati Lampu"
-                class="tab-btn w-full flex items-start gap-2 px-2.5 py-1.5 rounded text-xs font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+            <button onclick="App.switchTab('blackout')" data-tab="blackout" id="sidebar-tab-blackout" title="Pemulihan Mati Lampu"
+                class="tab-btn sidebar-remote-hidden w-full flex items-start gap-2 px-2.5 py-1.5 rounded text-xs font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
                 <svg class="w-3.5 h-3.5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
                         d="M13 10V3L4 14h7v7l9-11h-7z">
@@ -75,7 +75,7 @@
             </button>
 
             <!-- Riwayat & Struk -->
-            <button onclick="App.switchTab('struk')" data-tab="struk" title="Riwayat & Struk"
+            <button onclick="App.switchTab('struk')" data-tab="struk" id="sidebar-tab-struk" title="Riwayat & Struk"
                 class="tab-btn w-full flex items-start gap-2 px-2.5 py-1.5 rounded text-xs font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
                 <svg class="w-3.5 h-3.5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
@@ -86,8 +86,8 @@
             </button>
 
             <!-- Catatan Shift -->
-            <button onclick="App.switchTab('catatan')" data-tab="catatan" title="Catatan"
-                class="tab-btn w-full flex items-start gap-2 px-2.5 py-1.5 rounded text-xs font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+            <button onclick="App.switchTab('catatan')" data-tab="catatan" id="sidebar-tab-catatan" title="Catatan"
+                class="tab-btn sidebar-remote-hidden w-full flex items-start gap-2 px-2.5 py-1.5 rounded text-xs font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
                 <svg class="w-3.5 h-3.5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">

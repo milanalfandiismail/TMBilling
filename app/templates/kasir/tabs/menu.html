@@ -8,7 +8,7 @@
                 <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Kelola menu makanan/minuman dan catat transaksi penjualan kantin warnet</p>
             </div>
             {% if session.get('kasir_role') == 'admin' %}
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2 remote-hide-action">
                 <button onclick="Menu.showAddModal()"
                     class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
@@ -34,7 +34,7 @@
                         </button>
                         {% if session.get('kasir_role') == 'admin' %}
                         <button id="menu-tab-archived-btn" type="button" onclick="Menu.switchView('archived')"
-                            class="px-3 py-1.5 rounded text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] transition-all flex items-center gap-1.5">
+                            class="remote-hide-action px-3 py-1.5 rounded text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] transition-all flex items-center gap-1.5">
                             <span>📦 Arsip Menu</span>
                             <span id="menu-archived-count-badge" class="px-1.5 py-0.5 bg-[#1c1c1c] text-neutral-400 rounded-full text-[10px] font-mono font-bold">0</span>
                         </button>
@@ -111,7 +111,7 @@
                     </div>
 
                     <button onclick="Menu.checkout()"
-                        class="w-full py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center justify-center gap-2 shadow">
+                        class="remote-hide-action w-full py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center justify-center gap-2 shadow">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                         Proses &amp; Cetak Transaksi
                     </button>
@@ -167,7 +167,7 @@
                 <div class="flex items-center gap-2 pt-1">
                     <input type="checkbox" id="menu-stok-unlimited" onchange="Menu.toggleStokUnlimited(this.checked)"
                         class="w-4 h-4 rounded border-[#1c1c1c] bg-[#050505] text-neutral-100 focus:ring-0 focus:ring-offset-0 cursor-pointer">
-                    <label for="menu-stok-unlimited" class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 select-none">Stok Unlimited (∞) — tidak terbatas</label>
+                    <label for="menu-stok-unlimited" class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 select-none">Stok Unlimited (∞), tidak terbatas</label>
                 </div>
 
                 <!-- Image Upload, Preview, Zoom & Crop (4:3 Aspect Ratio) -->

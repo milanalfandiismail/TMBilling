@@ -54,6 +54,7 @@ class Paket(db.Model):
             "durasi_menit": self.durasi_menit,
             "harga": self.harga,
             "kadaluarsa_hari": self.kadaluarsa_hari,
+            "grup_id": self.grup_id,
             "grup": self.grup.nama if self.grup else "reguler", 
             "aktif": self.aktif,
         }

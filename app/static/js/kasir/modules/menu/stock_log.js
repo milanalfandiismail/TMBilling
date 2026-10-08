@@ -18,7 +18,10 @@ const MenuStockLog = {
     },
 
     refreshLive() {
-        if (typeof App !== 'undefined' && App.currentTab !== 'menu') return;
+        if (typeof App !== 'undefined' && !['menu', 'menu_stock_log'].includes(App.currentTab)) return;
+        if (typeof App !== 'undefined' && App.currentTab === 'menu_stock_log') {
+            return this.fetchLogs(true);
+        }
         const subTab = document.getElementById('menu-tab-stock-log');
         if (subTab && subTab.classList.contains('hidden')) return;
         return this.fetchLogs(true);
