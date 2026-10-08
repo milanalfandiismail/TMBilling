@@ -70,3 +70,35 @@ def test_update_user_validation(app_context):
     # Valid update
     updated = UserService.update_user(user_id, {"nama_lengkap": "Kasir Hebat", "password": "newpassword123"})
     assert updated["nama_lengkap"] == "Kasir Hebat"
+
+
+def test_create_and_update_user_kuota_benefit(app_context):
+    # 1. Create kasir with kuota 600 menit (10 jam)
+    data = {
+        "username": "kasir_kuota",
+        "password": "password123",
+        "nama_lengkap": "Kasir Kuota Test",
+        "role": "kasir",
+        "kuota_main_bulanan": 600
+    }
+    user_dict = UserService.create_user(data)
+    assert user_dict["kuota_main_bulanan"] == 600
+    assert user_dict["sisa_kuota_menit"] == 600
+    user_id = user_dict["id"]
+
+    # 2. Update kuota to 1200 menit (20 jam)
+    updated = UserService.update_user(user_id, {"kuota_main_bulanan": 1200})
+    assert updated["kuota_main_bulanan"] == 1200
+    assert updated["sisa_kuota_menit"] == 1200
+
+    # 3. Create admin with kuota -> should be 0
+    admin_data = {
+        "username": "admin_kuota",
+        "password": "password123",
+        "role": "admin",
+        "kuota_main_bulanan": 600
+    }
+    admin_dict = UserService.create_user(admin_data)
+    assert admin_dict["kuota_main_bulanan"] == 0
+    assert admin_dict["sisa_kuota_menit"] == 0
+
