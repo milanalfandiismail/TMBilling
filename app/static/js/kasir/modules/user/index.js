@@ -19,7 +19,7 @@ const User = {
         try {
             const data = await API.user.list();
             const users = data || [];
-            const newFingerprint = JSON.stringify(users.map(u => ({ id: u.id, username: u.username, role: u.role, aktif: u.aktif, kuota: u.sisa_kuota_main })));
+            const newFingerprint = JSON.stringify(users.map(u => ({ id: u.id, username: u.username, role: u.role, aktif: u.aktif, kuota_dasar: u.kuota_main_bulanan, kuota_sisa: u.sisa_kuota_menit })));
 
             if (isSilent && this._lastFingerprint === newFingerprint) {
                 return; // Data tidak berubah
@@ -67,7 +67,7 @@ const User = {
                                 : '<span class="inline-flex items-center gap-1.5 text-xs lg:max-xl:text-xs xl:text-base text-neutral-500"><span class="w-1.5 h-1.5 rounded bg-neutral-700"></span>Nonaktif</span>';
                             const kuotaDisplay = u.role === 'kasir'
                                 ? `<div class="inline-flex items-center gap-1.5 font-mono text-xs lg:max-xl:text-xs xl:text-base">
-                                    <span class="text-neutral-200 font-mono font-medium">${Math.floor((u.sisa_kuota_main || 0) / 60)}j ${(u.sisa_kuota_main || 0) % 60}m</span>
+                                    <span class="text-neutral-200 font-mono font-medium">${Math.floor((u.sisa_kuota_menit || 0) / 60)}j ${(u.sisa_kuota_menit || 0) % 60}m</span>
                                     <span class="text-neutral-500 font-mono text-[10px] lg:max-xl:text-xs xl:text-sm">/ ${Math.floor((u.kuota_main_bulanan || 0) / 60)} Jam</span>
                                     <button onclick="User.resetKuota(${u.id}, '${Utils.escapeHtml(u.username)}')" title="Reset Kuota Bermain" class="ml-1 p-1 lg:max-xl:p-1 xl:p-1.5 hover:bg-neutral-800 rounded text-amber-400/80 hover:text-amber-400 transition-colors flex items-center justify-center">
                                         <svg class="w-3.5 h-3.5 lg:max-xl:w-3.5 xl:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
