@@ -74,8 +74,12 @@ const BranchManager = {
             const modalBranch = document.getElementById('modal-tambah-cabang');
             const isModalOpen = modalBranch && !modalBranch.classList.contains('hidden');
             if (!isModalOpen) {
-                this.renderBranchList();
+                this.renderBranchesSettingsTable();
             }
+        } else if (App.currentTab === 'branch_inbound') {
+            await this.loadInboundBranches();
+        } else if (App.currentTab === 'branch_kasir') {
+            await this.loadRemoteOperators();
         }
     },
 
@@ -238,12 +242,14 @@ const BranchManager = {
         const badgeText = document.getElementById('sidebar-brand-badge-text');
         const fileExplorerBtn = document.getElementById('sidebar-fileexplorer-btn');
         const documentationBtn = document.getElementById('sidebar-documentation-btn');
+        const remoteHiddenElements = document.querySelectorAll('.sidebar-remote-hidden, .sidebar-branch-group, #sidebar-branch-wrapper, #sidebar-branch-section, #sidebar-staff-group, #sidebar-settings-group');
 
         const defaultTitle = (titleEl && titleEl.getAttribute('data-default-title')) || this.localWarnetTitle || 'TMBilling';
         const defaultSubtitle = (subTitleEl && subTitleEl.getAttribute('data-default-subtitle')) || 'Kasir Panel';
 
         if (this.activeBranchId === '0') {
             // MODE CABANG LOKAL
+            document.body.setAttribute('data-branch-mode', 'local');
             if (titleEl) {
                 titleEl.textContent = defaultTitle;
                 titleEl.title = defaultTitle;
@@ -259,27 +265,25 @@ const BranchManager = {
                 badgeText.className = 'text-[#050505] font-black text-sm';
                 badgeText.textContent = defaultTitle.slice(0, 2).toUpperCase() || 'TM';
             }
-            // Tampilkan kembali File Explorer saat di cabang lokal
-            if (fileExplorerBtn) {
-                fileExplorerBtn.classList.remove('hidden');
-            }
-            // Tampilkan kembali Dokumentasi & Tutorial saat di cabang lokal
-            if (documentationBtn) {
-                documentationBtn.classList.remove('hidden');
-            }
+            // Tampilkan kembali seluruh elemen lokal di sidebar
+            remoteHiddenElements.forEach(el => el.classList.remove('hidden'));
+            if (fileExplorerBtn) fileExplorerBtn.classList.remove('hidden');
+            if (documentationBtn) documentationBtn.classList.remove('hidden');
+
             document.title = `${defaultTitle} - Kasir`;
         } else {
-            // MODE CABANG REMOTE
+            // MODE CABANG REMOTE (READ-ONLY)
+            document.body.setAttribute('data-branch-mode', 'remote');
             let branchName = this.activeBranchName || 'Cabang Remote';
             const b = this.branches.find(x => String(x.id) === String(this.activeBranchId));
             if (b && b.nama) branchName = b.nama;
 
             if (titleEl) {
                 titleEl.textContent = branchName;
-                titleEl.title = `${branchName} (Remote)`;
+                titleEl.title = `${branchName} (Remote - Read Only)`;
             }
             if (subTitleEl) {
-                subTitleEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-emerald-400 font-bold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Cabang Remote</span>`;
+                subTitleEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-emerald-400 font-bold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Cabang Remote (Read-Only)</span>`;
                 subTitleEl.className = 'text-[10px] leading-tight mt-0.5';
             }
             if (badgeContainer) {
@@ -289,15 +293,26 @@ const BranchManager = {
                 badgeText.className = 'text-black font-black text-sm uppercase';
                 badgeText.textContent = branchName.replace(/[^a-zA-Z0-9]/g, '').slice(0, 2).toUpperCase() || 'RM';
             }
-            // Sembunyikan File Explorer saat di cabang remote (filesystem lokal saja)
-            if (fileExplorerBtn) {
-                fileExplorerBtn.classList.add('hidden');
+            // Sembunyikan menu-menu server lokal, staf, utilitas & pengaturan di sidebar
+            remoteHiddenElements.forEach(el => el.classList.add('hidden'));
+            if (fileExplorerBtn) fileExplorerBtn.classList.add('hidden');
+            if (documentationBtn) documentationBtn.classList.add('hidden');
+
+            // Jika sedang membuka tab yang tidak diizinkan di cabang remote, otomatis alihkan ke Dashboard
+            const remoteRestricted = [
+                'branch', 'branch_inbound', 'branch_kasir', 'fileexplorer', 'tutorials',
+                'user', 'shift_history', 'user_logs',
+                'hardware_checker', 'remote_server', 'catatan', 'blackout',
+                'mikrotik', 'log', 'plugins', 'plugin-spa',
+                'settings', 'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv',
+                'whitelist_ip', 'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup',
+                'settings_db_cleanup', 'settings_scheduler', 'settings_migration'
+            ];
+            if (window.App && remoteRestricted.includes(App.currentTab)) {
+                App.switchTab('dash');
             }
-            // Sembunyikan Dokumentasi & Tutorial saat di cabang remote
-            if (documentationBtn) {
-                documentationBtn.classList.add('hidden');
-            }
-            document.title = `${branchName} - Kasir Panel`;
+
+            document.title = `${branchName} (Read-Only) - Kasir Panel`;
         }
     },
 

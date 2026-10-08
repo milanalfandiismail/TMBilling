@@ -8,28 +8,48 @@
                 </h3>
                 <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Pemeriksaan serial number komponen internal (CPU, GPU, RAM, SSD/Disk, Motherboard) dengan referensi cerdas CCTV saat PC mati.</p>
             </div>
-            <button id="hc-refresh-btn" type="button" onclick="HardwareChecker.load()"
-                class="w-full sm:w-auto px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center justify-center gap-1.5 self-start sm:self-center disabled:opacity-50 disabled:cursor-not-allowed">
-                <span id="hc-refresh-icon" class="inline-block transition-transform">↻</span> Refresh Status
-            </button>
+            <div class="flex items-center gap-2 self-start sm:self-center w-full sm:w-auto">
+                <label for="hc-group-filter" class="sr-only">Filter Grup</label>
+                <select id="hc-group-filter" onchange="HardwareChecker.onGroupFilterChange(this.value)"
+                    class="w-full sm:w-auto px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                    <option value="all">Semua Grup</option>
+                </select>
+            </div>
         </div>
 
-        <!-- Detail Grid/Tabel PC Hardware Checker -->
-        <div id="hardware-checker-container" class="space-y-4">
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-4">
-                <table class="w-full">
-                    <tbody class="divide-y divide-[#1c1c1c]">
-                        {% for _ in range(6) %}
-                        <tr class="border-b border-[#1c1c1c] animate-pulse">
-                            <td class="px-4 py-3.5 text-left"><div class="h-3 bg-[#202020] rounded w-20"></div></td>
-                            <td class="px-4 py-3.5 text-left"><div class="h-3 bg-[#202020] rounded w-28"></div></td>
-                            <td class="px-4 py-3.5 text-left"><div class="h-3 bg-[#202020] rounded w-28"></div></td>
-                            <td class="px-4 py-3.5 text-left"><div class="h-3 bg-[#202020] rounded w-28"></div></td>
-                            <td class="px-4 py-3.5 text-left"><div class="h-3 bg-[#202020] rounded w-16"></div></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <!-- Detail Grid PC Hardware Checker (2 Kolom pada lg, xl, 2xl) -->
+        <div id="hardware-checker-container" class="space-y-6 w-full">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-2 gap-3.5 sm:gap-4">
+                {% for _ in range(4) %}
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3.5 sm:p-4 space-y-3 animate-pulse">
+                    <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-[#1c1c1c]">
+                        <div class="flex items-center gap-2">
+                            <div class="h-4 w-16 bg-[#202020] rounded"></div>
+                            <div class="h-4 w-14 bg-[#1a1a1a] rounded"></div>
+                            <div class="h-4 w-20 bg-[#181818] rounded"></div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <div class="h-6 w-14 bg-[#1a1a1a] rounded"></div>
+                            <div class="h-6 w-16 bg-[#202020] rounded"></div>
+                        </div>
+                    </div>
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2.5 sm:p-3 space-y-2">
+                        <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-1.5">
+                            <div class="h-3 w-16 bg-[#202020] rounded"></div>
+                            <div class="h-3 w-28 bg-[#1a1a1a] rounded"></div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 pt-1">
+                            <div class="h-7 bg-[#141414] rounded"></div>
+                            <div class="h-7 bg-[#141414] rounded"></div>
+                            <div class="h-7 bg-[#141414] rounded"></div>
+                        </div>
+                        <div class="flex items-center justify-between pt-1 border-t border-[#1c1c1c]/60">
+                            <div class="h-2.5 w-24 bg-[#161616] rounded"></div>
+                            <div class="h-2.5 w-16 bg-[#161616] rounded"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>

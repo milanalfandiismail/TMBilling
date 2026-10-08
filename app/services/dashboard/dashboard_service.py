@@ -87,9 +87,10 @@ class DashboardService:
             # E. Grouping berdasarkan Nama Grup (VIP/Reguler/dll)
             g_nama = pc.grup.nama if pc.grup else "reguler"
             g_warna = pc.grup.warna if pc.grup else "#888888"
+            g_id = pc.grup.id if pc.grup else 0
             
             if g_nama not in grup_meta:
-                grup_meta[g_nama] = {"warna": g_warna}
+                grup_meta[g_nama] = {"warna": g_warna, "id": g_id}
                 
             by_grup.setdefault(g_nama, []).append(pc_dict)
             pc_list.append(pc_dict)

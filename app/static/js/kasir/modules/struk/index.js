@@ -15,6 +15,7 @@ const Struk = {
         this.currentDate = null;
         this.selectedId = null;
         this.searchQuery = '';
+        this._lastFingerprint = null;
         if (this.searchDebounceTimer) {
             clearTimeout(this.searchDebounceTimer);
             this.searchDebounceTimer = null;
@@ -38,6 +39,8 @@ const Struk = {
         if (searchClearBtn) searchClearBtn.classList.add('hidden');
         const historyContainer = document.getElementById('struk-history-list');
         if (historyContainer) historyContainer.innerHTML = '';
+        const pagContainer = document.getElementById('struk-pagination');
+        if (pagContainer) pagContainer.innerHTML = '';
         const dateSelect = document.getElementById('struk-date-picker');
         if (dateSelect) dateSelect.innerHTML = '<option value="">Semua Tanggal</option>';
     },
@@ -46,16 +49,34 @@ const Struk = {
         await this.loadDateOptions();
         await this.loadHistory();
 
-        const savedStruk = localStorage.getItem('lastStrukData');
-        if (savedStruk) {
-            try {
-                this.currentData = JSON.parse(savedStruk);
-                this.selectedId = this.currentData.no_nota || this.currentData.id;
-                this.renderPreview(this.currentData);
-                document.getElementById('btn-print-struk').classList.remove('hidden');
-                this.updateActiveHistoryCard(this.selectedId);
-            } catch (err) {
-                localStorage.removeItem('lastStrukData');
+        const isRemote = typeof BranchManager !== 'undefined' && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0';
+        if (isRemote) {
+            try { localStorage.removeItem('lastStrukData'); } catch (e) {}
+            this.currentData = null;
+            this.selectedId = null;
+            const printBtn = document.getElementById('btn-print-struk');
+            if (printBtn) printBtn.classList.add('hidden');
+            const previewContent = document.getElementById('struk-preview');
+            if (previewContent) {
+                previewContent.innerHTML = `
+                    <div class="text-center py-10 text-neutral-500 space-y-2">
+                        <div class="text-3xl opacity-30">🧾</div>
+                        <p class="text-xs lg:max-xl:text-xs xl:text-base font-medium">Pilih transaksi di samping untuk melihat preview struk</p>
+                    </div>`;
+            }
+        } else {
+            const savedStruk = localStorage.getItem('lastStrukData');
+            if (savedStruk) {
+                try {
+                    this.currentData = JSON.parse(savedStruk);
+                    this.selectedId = this.currentData.no_nota || this.currentData.id;
+                    this.renderPreview(this.currentData);
+                    const printBtn = document.getElementById('btn-print-struk');
+                    if (printBtn) printBtn.classList.remove('hidden');
+                    this.updateActiveHistoryCard(this.selectedId);
+                } catch (err) {
+                    localStorage.removeItem('lastStrukData');
+                }
             }
         }
     },
@@ -189,6 +210,8 @@ const Struk = {
                     <div class="py-10 px-4 text-center bg-[#050505] border border-dashed border-[#1c1c1c] rounded">
                         <p class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-500 font-medium">Tidak ada transaksi</p>
                     </div>`;
+                const pagContainer = document.getElementById('struk-pagination');
+                if (pagContainer) pagContainer.innerHTML = '';
                 return;
             }
 

@@ -37,7 +37,10 @@ const LaporanMaintenance = {
     _lastFingerprint: null,
 
     refreshLive() {
-        if (typeof App !== 'undefined' && App.currentTab !== 'maintenance') return;
+        if (typeof App !== 'undefined' && !['maintenance', 'laporan_maintenance'].includes(App.currentTab)) return;
+        if (typeof App !== 'undefined' && App.currentTab === 'laporan_maintenance') {
+            return this.loadReport(true);
+        }
         const subTab = document.getElementById('maintenance-tab-report');
         if (subTab && subTab.classList.contains('hidden')) return;
         return this.loadReport(true);

@@ -270,7 +270,7 @@ def test_branch_proxy_service_relay_headers_uses_warnet_title_not_cabang(app_and
             mock_resp.headers = {"Content-Type": "application/json"}
             mock_req.return_value = mock_resp
 
-            with app.test_request_context("/api/v1/kasir/sesi/buka-guest", method="POST"):
+            with app.test_request_context("/api/v1/kasir/dashboard/pc", method="GET"):
                 session["kasir_role"] = "admin"
                 session["kasir_username"] = "admin"
                 from flask import request
@@ -290,7 +290,7 @@ def test_branch_proxy_service_relay_headers_uses_warnet_title_not_cabang(app_and
             mock_resp.headers = {"Content-Type": "application/json"}
             mock_req.return_value = mock_resp
 
-            with app.test_request_context("/api/v1/kasir/sesi/buka-guest", method="POST"):
+            with app.test_request_context("/api/v1/kasir/dashboard/pc", method="GET"):
                 session["kasir_role"] = "admin"
                 session["kasir_username"] = "admin"
                 from flask import request

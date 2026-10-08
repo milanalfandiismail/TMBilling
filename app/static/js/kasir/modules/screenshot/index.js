@@ -223,18 +223,22 @@ const Screenshot = {
         if (!select) return;
 
         const currentValue = select.value;
-        const groups = new Set();
+        const groupMap = new Map();
         this.cachedData.forEach(pc => {
-            if (pc.pc_grup_nama) groups.add(pc.pc_grup_nama);
+            if (pc.pc_grup_nama && !groupMap.has(pc.pc_grup_nama)) {
+                groupMap.set(pc.pc_grup_nama, Number(pc.pc_grup_id || 0));
+            }
         });
 
         select.innerHTML = '<option value="all">Semua Grup / Zona</option>';
-        [...groups].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })).forEach(grup => {
-            const opt = document.createElement('option');
-            opt.value = grup;
-            opt.textContent = grup.toUpperCase();
-            select.appendChild(opt);
-        });
+        [...groupMap.entries()]
+            .sort((a, b) => a[1] !== b[1] ? a[1] - b[1] : a[0].localeCompare(b[0]))
+            .forEach(([grup]) => {
+                const opt = document.createElement('option');
+                opt.value = grup;
+                opt.textContent = grup.toUpperCase();
+                select.appendChild(opt);
+            });
 
         if ([...select.options].some(o => o.value === currentValue)) {
             select.value = currentValue;
@@ -260,7 +264,12 @@ const Screenshot = {
             data = data.filter(pc => (pc.pc_kode || '').toLowerCase().includes(this.searchQuery));
         }
 
-        data.sort((a, b) => (a.pc_kode || '').localeCompare(b.pc_kode || '', undefined, { numeric: true, sensitivity: 'base' }));
+        data.sort((a, b) => {
+            const grupA = Number(a.pc_grup_id || 0);
+            const grupB = Number(b.pc_grup_id || 0);
+            if (grupA !== grupB) return grupA - grupB;
+            return (a.pc_kode || '').localeCompare(b.pc_kode || '', undefined, { numeric: true, sensitivity: 'base' });
+        });
 
         const container = document.getElementById('screenshot-grid');
         if (!container) return;

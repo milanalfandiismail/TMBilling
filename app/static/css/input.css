@@ -250,5 +250,21 @@
     }
 }
 
+/* =========================================================================
+   Global Remote Branch Read-Only Protection Rules (Root Level - Non-Purged)
+   ========================================================================= */
+[data-branch-mode="remote"] .remote-hide-action,
+body[data-branch-mode="remote"] .remote-hide-action {
+    display: none !important;
+}
+
+[data-branch-mode="remote"] .remote-readonly-disabled,
+body[data-branch-mode="remote"] .remote-readonly-disabled {
+    pointer-events: none !important;
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+}
+
+
 
 

@@ -219,7 +219,7 @@ const Menu = {
                     ` : ''}
 
                     <!-- CRUD Quick Actions (Admin Only) -->
-                    <div class="absolute top-2.5 right-2.5 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div class="absolute top-2.5 right-2.5 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity remote-hide-action">
                         ${isKasir ? '' : `
                         ${isUnlimited ? '' : `
                         <button onclick="Menu.showRestockModal(${m.id})" class="p-1 rounded bg-black/70 hover:bg-emerald-950 text-neutral-300 hover:text-emerald-400 border border-[#2a2a2a] hover:border-emerald-800 transition-colors shadow" title="Tambah Stok">
@@ -247,7 +247,7 @@ const Menu = {
                     </div>
                     
                     <!-- Bottom Action: Add to Cart + Restock Button -->
-                    <div class="mt-2.5 flex items-center gap-1.5">
+                    <div class="mt-2.5 flex items-center gap-1.5 remote-hide-action">
                         <div class="flex-1 min-w-0">
                             ${btnHtml}
                         </div>
@@ -427,7 +427,7 @@ const Menu = {
                     </div>
                     
                     <!-- Action Buttons -->
-                    <div class="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-[#181818]">
+                    <div class="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-[#181818] remote-hide-action">
                         <button onclick="Menu.restoreItem(${m.id}, '${m.nama}')" 
                             class="flex-1 py-1.5 px-2 rounded bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-600/30 text-[10px] lg:text-xs xl:text-xs font-bold transition-colors flex items-center justify-center gap-1" title="Pulihkan ke katalog aktif">
                             <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>

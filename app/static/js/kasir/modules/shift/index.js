@@ -278,7 +278,7 @@ const Shift = {
                         </div>
                         <div>
                             <h3 class="text-sm lg:max-xl:text-base xl:text-lg font-bold text-neutral-100">Akhiri Shift Kasir</h3>
-                            <p class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500">Hitungan buta — hitung uang fisik dengan jujur</p>
+                            <p class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500">Hitungan buta: hitung uang fisik dengan jujur</p>
                         </div>
                     </div>
                 </div>
@@ -900,7 +900,13 @@ const Shift = {
     _lastUserLogsFingerprint: null,
 
     refreshHistoryLive() {
-        if (typeof App !== 'undefined' && App.currentTab !== 'shift') return;
+        if (typeof App !== 'undefined' && !['shift', 'shift_history', 'user_logs'].includes(App.currentTab)) return;
+        if (typeof App !== 'undefined' && App.currentTab === 'shift_history') {
+            return this.loadHistory({}, true);
+        }
+        if (typeof App !== 'undefined' && App.currentTab === 'user_logs') {
+            return this.loadUserLogs({}, true);
+        }
         const historyTab = document.getElementById('shift-tab-history');
         const userLogsTab = document.getElementById('shift-tab-user-logs');
         if (historyTab && !historyTab.classList.contains('hidden')) {

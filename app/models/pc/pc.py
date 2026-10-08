@@ -131,6 +131,7 @@ class PC(db.Model):
             "nama": self.nama,
             "ip_address": self.ip_address,
             "mac_address": self.mac_address,
+            "grup_id": self.grup_id or 0,
             "grup": self.grup.nama if self.grup else "reguler", 
             "grup_warna": self.grup.warna if self.grup else "#888888",
             "zona": self.zona_nama,

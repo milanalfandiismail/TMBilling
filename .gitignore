@@ -595,3 +595,7 @@ app/static/src/
 
 # Temporary tutorial images
 app/static/assets/tutorials/temp/
+
+# Playwright MCP artifacts
+.playwright-mcp/
+*.png

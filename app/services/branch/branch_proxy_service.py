@@ -63,6 +63,13 @@ class BranchProxyService:
                 "error": "Akses ditolak: Hanya Admin yang dapat mengontrol cabang lain"
             }), 403
 
+        # 100% Read-Only Protection: Server cabang remote hanya dapat diakses dalam mode pantau (Read-Only)
+        if request_obj.method.upper() in ("POST", "PUT", "DELETE", "PATCH"):
+            return jsonify({
+                "success": False,
+                "error": "Akses Ditolak: Server cabang remote hanya dapat diakses dalam mode pantau (Read-Only). Tindakan mutasi data tidak diizinkan."
+            }), 403
+
         branch = Branch.query.get(branch_id)
         if not branch or not branch.aktif:
             return jsonify({

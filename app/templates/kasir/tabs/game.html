@@ -7,7 +7,7 @@
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Kelola Aplikasi &amp; Game</h3>
                 <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Daftar software aplikasi dan game yang terpasang di client dan ditampilkan di portal publik.</p>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2 remote-hide-action">
                 <button onclick="KategoriManagement.openModal()" 
                     class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
                     Kelola Kategori
@@ -60,7 +60,7 @@
                         <th class="pb-3 text-left w-[40%]">Item &amp; Jenis</th>
                         <th class="pb-3 text-left w-[30%]">Kategori / Genre</th>
                         <th class="pb-3 text-center w-[15%]">Tampilkan</th>
-                        <th class="pb-3 text-right w-[15%]">Aksi</th>
+                        <th class="pb-3 text-right w-[15%] remote-hide-action">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="game-table-body" class="text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base block lg:table-row-group divide-y divide-[#1c1c1c]">

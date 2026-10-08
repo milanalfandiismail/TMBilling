@@ -80,9 +80,13 @@ const Maintenance = {
 
         const grouped = {};
         const groupColors = {};
+        const groupIds = {};
         this.pcs.forEach(pc => {
             const g = pc.grup || 'Reguler';
-            if (!grouped[g]) grouped[g] = [];
+            if (!grouped[g]) {
+                grouped[g] = [];
+                groupIds[g] = Number(pc.grup_id || 0);
+            }
             grouped[g].push(pc);
             if (pc.grup_warna) {
                 groupColors[g] = pc.grup_warna;
@@ -90,7 +94,7 @@ const Maintenance = {
         });
 
         let html = '';
-        Object.keys(grouped).sort().forEach(gName => {
+        Object.keys(grouped).sort((a, b) => (groupIds[a] || 0) - (groupIds[b] || 0)).forEach(gName => {
             const gColor = groupColors[gName] || '#888888';
             html += `
                 <div class="pc-group-section" data-group="${gName}">
@@ -296,18 +300,18 @@ const Maintenance = {
 
             if (t.status === 'BARU') {
                 actionButtons += `
-                    <button onclick="Maintenance.changeStatus(${t.id}, 'DIPROSES')" class="px-2.5 py-1 bg-blue-600/20 border border-blue-600/30 text-blue-400 rounded hover:bg-blue-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Proses</button>
-                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="px-2.5 py-1 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Tolak</button>
+                    <button onclick="Maintenance.changeStatus(${t.id}, 'DIPROSES')" class="remote-hide-action px-2.5 py-1 bg-blue-600/20 border border-blue-600/30 text-blue-400 rounded hover:bg-blue-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Proses</button>
+                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="remote-hide-action px-2.5 py-1 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Tolak</button>
                 `;
             } else if (t.status === 'DIPROSES') {
                 actionButtons += `
-                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="px-2.5 py-1 bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 rounded hover:bg-emerald-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Selesaikan</button>
+                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="remote-hide-action px-2.5 py-1 bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 rounded hover:bg-emerald-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Selesaikan</button>
                 `;
             }
 
             if (isAdmin) {
                 actionButtons += `
-                    <button onclick="Maintenance.deleteTicket(${t.id})" class="px-2.5 py-1 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600 hover:text-white text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors" title="Hapus">Hapus</button>
+                    <button onclick="Maintenance.deleteTicket(${t.id})" class="remote-hide-action px-2.5 py-1 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600 hover:text-white text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors" title="Hapus">Hapus</button>
                 `;
             }
 
@@ -404,6 +408,10 @@ const Maintenance = {
     },
 
     async changeStatus(ticketId, newStatus) {
+        if (window.BranchManager && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0') {
+            Toast.error('Akses Ditolak: Tiket perawatan bersifat read-only di cabang remote.');
+            return;
+        }
         try {
             const res = await API.request(`/api/v1/kasir/maintenance/${ticketId}/status`, {
                 method: 'PUT',
@@ -419,6 +427,10 @@ const Maintenance = {
     },
 
     openUpdateModal(ticketId, currentStatus) {
+        if (window.BranchManager && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0') {
+            Toast.error('Akses Ditolak: Tiket perawatan bersifat read-only di cabang remote.');
+            return;
+        }
         document.getElementById('maint-update-id').value = ticketId;
         const ticket = this.tickets.find(t => t.id === ticketId);
         if (ticket) {
@@ -557,6 +569,10 @@ const Maintenance = {
     },
 
     async deleteTicket(ticketId) {
+        if (window.BranchManager && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0') {
+            Toast.error('Akses Ditolak: Tiket perawatan bersifat read-only di cabang remote.');
+            return;
+        }
         if (!confirm('Apakah Anda yakin ingin menghapus tiket perawatan ini?')) return;
         try {
             const res = await API.request(`/api/v1/kasir/maintenance/${ticketId}`, {

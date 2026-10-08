@@ -15,14 +15,18 @@ const PaketTable = {
         }
 
         const grouped = {};
+        const groupMeta = {};
         paketList.forEach(p => {
             const g = (p.grup || 'Reguler').toUpperCase();
-            if (!grouped[g]) grouped[g] = [];
+            if (!grouped[g]) {
+                grouped[g] = [];
+                groupMeta[g] = Number(p.grup_id || 0);
+            }
             grouped[g].push(p);
         });
 
         let html = '';
-        Object.keys(grouped).sort().forEach(grupName => {
+        Object.keys(grouped).sort((a, b) => (groupMeta[a] || 0) - (groupMeta[b] || 0)).forEach(grupName => {
             const list = grouped[grupName];
             html += `
                 <div class="mb-8 last:mb-0">
@@ -38,7 +42,7 @@ const PaketTable = {
                                     <th class="px-3 lg:max-xl:px-3 xl:px-4 py-2 text-center w-[25%] md:w-[20%] font-bold">Durasi</th>
                                     <th class="px-3 lg:max-xl:px-3 xl:px-4 py-2 text-center w-[20%] md:w-[15%] font-bold">Harga</th>
                                     <th class="px-3 lg:max-xl:px-3 xl:px-4 py-2 text-center w-[15%] font-bold">Masa Aktif</th>
-                                    <th class="px-3 lg:max-xl:px-3 xl:px-4 py-2 text-right w-[10%] md:w-[15%] font-bold">Aksi</th>
+                                    <th class="px-3 lg:max-xl:px-3 xl:px-4 py-2 text-right w-[10%] md:w-[15%] font-bold remote-hide-action">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] block lg:table-row-group">
@@ -59,9 +63,9 @@ const PaketTable = {
                                             <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Masa Aktif</span>
                                             <span class="text-neutral-400 font-bold">${p.kadaluarsa_hari || 30} Hari</span>
                                         </td>
-                                        <td class="px-3 lg:max-xl:px-3 xl:px-4 py-2 text-right flex lg:table-cell justify-between items-center">
+                                        <td class="px-3 lg:max-xl:px-3 xl:px-4 py-2 text-right flex lg:table-cell justify-between items-center remote-hide-action">
                                             <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
-                                            <div class="flex justify-end gap-1.5">
+                                            <div class="flex justify-end gap-1.5 remote-hide-action">
                                                 ${(window.App && App.user && App.user.role === 'kasir') ? '' : `
                                                 <button onclick="Paket.edit(${p.id})" class="w-8 h-8 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-8 xl:h-8 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors" title="Edit">
                                                     <svg class="w-3.5 h-3.5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>

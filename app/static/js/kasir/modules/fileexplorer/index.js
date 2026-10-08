@@ -92,10 +92,8 @@ const FileExplorer = {
     _lastFingerprint: null,
 
     refreshLive() {
-        if (typeof App !== 'undefined' && App.currentTab !== 'fileexplorer') return;
-        const isAppModalOpen = document.getElementById('app-modal') && !document.getElementById('app-modal').classList.contains('hidden');
-        if (isAppModalOpen || !this.currentPath) return;
-        return this.openDirectory(this.currentPath, true);
+        // Sengaja dipertahankan manual via tombol Refresh demi efisiensi I/O disk dan beban CPU client/server
+        return;
     },
 
     async openDirectory(path, isSilent = false) {

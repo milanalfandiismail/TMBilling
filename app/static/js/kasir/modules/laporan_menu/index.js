@@ -116,7 +116,7 @@ const LaporanMenu = {
     _lastFingerprint: null,
 
     refreshLive() {
-        if (typeof App !== 'undefined' && App.currentTab !== 'laporan-menu') return;
+        if (typeof App !== 'undefined' && !['laporan_menu', 'laporan-menu'].includes(App.currentTab)) return;
         return this.fetchData(true);
     },
 

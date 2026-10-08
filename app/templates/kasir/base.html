@@ -7,6 +7,16 @@
     <title>{% block title %}{{ warnet_title }} - Kasir{% endblock %}</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="app-version" content="{{ version }}">
+    <script>
+        (function() {
+            try {
+                var bId = sessionStorage.getItem('active_branch_id');
+                if (bId && bId !== '0') {
+                    document.documentElement.setAttribute('data-branch-mode', 'remote');
+                }
+            } catch(e) {}
+        })();
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v={{ v_cache }}">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <link

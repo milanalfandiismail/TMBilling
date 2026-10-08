@@ -67,7 +67,9 @@ def tambah_paket():
         paket = PaketService.create(data, operator=kasir)
         return jsonify({
             "success": True, 
-            "message": f"Paket '{paket.nama}' berhasil dibuat"
+            "message": f"Paket '{paket.nama}' berhasil dibuat",
+            "id": paket.id,
+            "paket": paket.to_dict()
         }), 201
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
