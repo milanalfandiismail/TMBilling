@@ -1,15 +1,17 @@
-# 🧠 ANTIGRAVITY.md — Master Project Memory & Dual-Engine Playbook
+# 🧠 ANTIGRAVITY.md — Master Project Memory & Multi-Engine Playbook
 > **Single Source of Truth (SSOT) & Local Brain Memory for TMBilling**  
 > *Versi Rilis Saat Ini:* `v1.6.3` (Stabil) | *Sprint Aktif:* `v1.6.4` | *Branch:* `v1.6.4` | *Status:* **Active Sprint — Multi-Branch Hardening**  
-> *Tujuan:* Eliminasi total halusinasi kode, penghematan token, dan eksekusi secepat kilat dengan menggabungkan **Local Memory Document (`ANTIGRAVITY.md`)** + **MCP `codebase-memory`**.
+> *Tujuan:* Eliminasi total halusinasi kode, penghematan token, dan eksekusi secepat kilat dengan menggabungkan **Local Memory Document (`ANTIGRAVITY.md`)** + **MCP `codebase-memory`** + **MCP `playwright`** (Uji Frontend Real-User) + **MCP `sqlite`** (Inspeksi DB Langsung).
 
 ---
 
 ## 📑 DAFTAR ISI (TABLE OF CONTENTS)
 1. [SOP & Aturan Wajib Planning, Eksekusi & Debugging](#1-sop--aturan-wajib-planning-eksekusi--debugging)
    - 1.1 [Aturan Wajib Planning (Plugin `superpowers`)](#11-aturan-wajib-planning-plugin-superpowers)
-   - 1.2 [Aturan Wajib Eksekusi (MCP `codebase-memory`)](#12-aturan-wajib-eksekusi-mcp-codebase-memory)
-   - 1.3 [Aturan Wajib Debugging & Root Cause Analysis](#13-aturan-wajib-debugging--root-cause-analysis)
+   - 1.2 [Aturan Wajib Eksekusi Kode & Micro-Graph (MCP `codebase-memory`)](#12-aturan-wajib-eksekusi-kode--micro-graph-mcp-codebase-memory)
+   - 1.3 [Aturan Wajib Pengujian Frontend Real-User (MCP `playwright`)](#13-aturan-wajib-pengujian-frontend-real-user-mcp-playwright)
+   - 1.4 [Aturan Wajib Inspeksi Database SQLite Langsung (MCP `sqlite`)](#14-aturan-wajib-inspeksi-database-sqlite-langsung-mcp-sqlite)
+   - 1.5 [Aturan Wajib Debugging & Root Cause Analysis](#15-aturan-wajib-debugging--root-cause-analysis)
 2. [Arsitektur Sistem Terpadu (3-Layer SoC)](#2-arsitektur-sistem-terpadu-3-layer-soc)
 3. [Audit & Pemetaan Root & Infrastruktur Proyek](#3-audit--pemetaan-root--infrastruktur-proyek)
 4. [Audit & Pemetaan Lengkap Backend Flask (`app/`)](#4-audit--pemetaan-lengkap-backend-flask-app)
@@ -47,63 +49,65 @@
 
 Untuk mencegah pemborosan token, memastikan akurasi 100%, dan mengeliminasi halusinasi kode, seluruh agen AI dan developer **WAJIB** menerapkan pembagian peran yang ketat:
 * **Fase Planning**: **WAJIB MENGGUNAKAN PLUGIN `superpowers`** (`brainstorming`, `writing-plans`, `test-driven-development`).
-* **Fase Eksekusi**: **WAJIB MENGGUNAKAN MCP `codebase-memory`** (`index_status`, `search_graph`, `search_code`, `trace_path`, `get_code_snippet`, `index_repository`).
-* **Fase Debugging**: **WAJIB MENGGUNAKAN `systematic-debugging` + MCP `trace_path`** (Dilarang tebak-tebak perbaikan tanpa investigasi akar masalah).
+* **Fase Eksekusi Backend & Kode**: **WAJIB MENGGUNAKAN MCP `codebase-memory`** (`index_status`, `search_graph`, `search_code`, `trace_path`, `get_code_snippet`, `index_repository`) & **MCP `sqlite`** (`list_tables`, `describe_table`, `execute_read_query`).
+* **Fase Pengujian & Verifikasi Frontend**: **WAJIB MENGGUNAKAN MCP `playwright`** (`browser_navigate`, `browser_click`, `browser_fill_form`, `browser_select_option`, `browser_take_screenshot`, `browser_snapshot`). Uji interaksi murni sebagai **REAL USER** (menekan tombol fisik/UI, mengisi form), **DILARANG KERAS** hanya menjalankan script via console JavaScript atau terminal!
+* **Fase Debugging**: **WAJIB MENGGUNAKAN `systematic-debugging` + MCP `trace_path`** (The Iron Law: Dilarang tebak-tebak perbaikan tanpa investigasi akar masalah).
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        USER / CODING TASK                              │
-└──────────────────────────────────┬─────────────────────────────────────┘
-                                   │
-         ┌─────────────────────────┴─────────────────────────┐
-         ▼                                                   ▼
-┌─────────────────────────────────┐       ┌─────────────────────────────────┐
-│  METODE 1: ANTIGRAVITY.MD       │       │  METODE 2: MCP codebase-memory  │
-│  (Fast Macro Context)           │       │  (Live Precise Micro Symbol)    │
-│  - Arsitektur 3-Layer           │       │  - index_status & coverage      │
-│  - Katalog Model & Field DB     │  ◄──► │  - search_code & search_graph   │
-│  - Daftar Endpoint & Parameter  │       │  - trace_path (caller/callee)   │
-│  - Gotchas & Validasi Khusus    │       │  - get_code_snippet             │
-└────────────────┬────────────────┘       └────────────────┬────────────────┘
-                 │                                         │
-                 └────────────────────┬────────────────────┘
-                                      │
-                                      ▼
-             ┌─────────────────────────────────────────────────┐
-             │    📋 FASE 1: PLANNING (PLUGIN `superpowers`)   │
-             │    - brainstorming (eksplorasi intent & arsitektur)│
-             │    - writing-plans (buat rencana bertahap & spec) │
-             │    - test-driven-development (skenario tes awal)│
-             └────────────────────────┬────────────────────────┘
-                                      │
-                                      ▼
-             ┌─────────────────────────────────────────────────┐
-             │    ⚙️ FASE 2: EKSEKUSI (MCP `codebase-memory`)   │
-             │    - trace_path (cek caller & blast radius)     │
-             │    - get_code_snippet (baca symbol target)      │
-             │    - view_file HANYA baris terbatas             │
-             │    - replace_file_content (atomic minimalis)    │
-             └────────────────────────┬────────────────────────┘
-                                      │
-                                      ├────────────────────────┐
-                                      │ (Jika Ada Bug/Test Fail)│
-                                      ▼                        ▼
-             ┌─────────────────────────────────────────────────┐
-             │    🐞 FASE 3: DEBUGGING (ROOT CAUSE FIRST)      │
-             │    - systematic-debugging (No fix without root) │
-             │    - trace_path inbound (lacak asal data korup) │
-             │    - Isolasi tes: pytest tests/test_x.py -k ... │
-             │    - Perbaiki akar masalah (bukan gejala)       │
-             └────────────────────────┬────────────────────────┘
-                                      │
-                                      ▼
-             ┌─────────────────────────────────────────────────┐
-             │    ✅ FASE 4: VERIFIKASI (EVIDENCE FIRST)       │
-             │    - python -m pytest tests/ -q (264 pass)      │
-             │    - npm run build:css (jika menyentuh UI)      │
-             │    - index_repository (sinkronisasi graph MCP)  │
-             │    - Update Changelog di ANTIGRAVITY.md         │
-             └─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                               USER / CODING TASK                                │
+└────────────────────────────────────────┬────────────────────────────────────────┘
+                                         │
+       ┌─────────────────────────────────┴─────────────────────────────────┐
+       ▼                                                                   ▼
+┌─────────────────────────────────┐       ┌───────────────────────────────────────────────────────┐
+│  METODE 1: ANTIGRAVITY.MD       │       │  METODE 2: TOOLSET MULTI-MCP INTEGRASI                │
+│  (Fast Macro Context)           │       │  - MCP codebase-memory (Live Micro Symbol Graph)      │
+│  - Arsitektur 3-Layer           │       │  - MCP playwright (Real-User Interactive UI Testing)  │
+│  - Katalog Model & Field DB     │  ◄──► │  - MCP sqlite (Direct Database Inspection & State)    │
+│  - Daftar Endpoint & Parameter  │       │                                                       │
+│  - Gotchas & Validasi Khusus    │       │                                                       │
+└────────────────┬────────────────┘       └───────────────────────────┬───────────────────────────┘
+                 │                                                    │
+                 └────────────────────────┬───────────────────────────┘
+                                          │
+                                          ▼
+                 ┌─────────────────────────────────────────────────┐
+                 │    📋 FASE 1: PLANNING (PLUGIN `superpowers`)   │
+                 │    - brainstorming (eksplorasi intent & desain) │
+                 │    - writing-plans (buat rencana bertahap & spec)│
+                 │    - test-driven-development (skenario tes awal)│
+                 └────────────────────────┬────────────────────────┘
+                                          │
+                                          ▼
+                 ┌─────────────────────────────────────────────────┐
+                 │    ⚙️ FASE 2: EKSEKUSI (MCP `codebase-memory`)   │
+                 │    - trace_path (cek caller & blast radius)     │
+                 │    - get_code_snippet (baca symbol target)      │
+                 │    - MCP sqlite (cek skema/state DB langsung)   │
+                 │    - replace_file_content (atomic minimalis)    │
+                 └────────────────────────┬────────────────────────┘
+                                          │
+                                          ├────────────────────────┐
+                                          │ (Jika Ada Bug/Test Fail)│
+                                          ▼                        ▼
+                 ┌─────────────────────────────────────────────────┐
+                 │    🐞 FASE 3: DEBUGGING (ROOT CAUSE FIRST)      │
+                 │    - systematic-debugging (No fix without root) │
+                 │    - trace_path inbound (lacak asal data korup) │
+                 │    - Isolasi tes: pytest tests/test_x.py -k ... │
+                 │    - Perbaiki akar masalah (bukan gejala)       │
+                 └────────────────────────┬────────────────────────┘
+                                          │
+                                          ▼
+                 ┌─────────────────────────────────────────────────┐
+                 │    ✅ FASE 4: VERIFIKASI (EVIDENCE FIRST)       │
+                 │    - pytest tests/ -q (272+ pass)               │
+                 │    - MCP playwright (Uji Tombol/UI Real-User)   │
+                 │    - npm run build:css (jika menyentuh UI)      │
+                 │    - index_repository (sinkronisasi graph MCP)  │
+                 │    - Update Changelog di ANTIGRAVITY.md         │
+                 └─────────────────────────────────────────────────┘
 ```
 
 ---
@@ -131,7 +135,7 @@ Sebelum menulis atau mengubah baris kode apa pun, agen AI **WAJIB** menggunakan 
 
 ---
 
-### ⚙️ 1.2 ATURAN WAJIB EKSEKUSI (MCP `codebase-memory`)
+### ⚙️ 1.2 ATURAN WAJIB EKSEKUSI KODE & MICRO-GRAPH (MCP `codebase-memory`)
 
 Selama proses eksekusi kode, agen AI **WAJIB** menggunakan **MCP `codebase-memory`** untuk mencari, membaca, memahami, dan memvalidasi codebase secara langsung. Dilarang keras mengandalkan tebakan nama file atau asumsi struktur kode.
 
@@ -167,7 +171,56 @@ Nama project MCP secara default diturunkan dari root path lokal (contoh di PC in
 
 ---
 
-### 🐞 1.3 ATURAN WAJIB DEBUGGING & ROOT CAUSE ANALYSIS
+### 🎭 1.3 ATURAN WAJIB PENGUJIAN FRONTEND REAL-USER (MCP `playwright`)
+
+Pengujian antarmuka pengguna (Frontend/UI) pada TMBilling **WAJIB MENGGUNAKAN MCP `playwright`**. Pengujian ini memegang peranan krusial untuk memastikan bahwa interaksi kasir dan member berjalan sempurna tanpa bug visual atau regresi logika JavaScript.
+
+#### 🚨 The Golden Rule of Playwright UI Testing:
+> **"TEST STRICTLY AS A REAL USER BY CLICKING BUTTONS, NOT BY EXECUTING JAVASCRIPT CONSOLE OR WRITING CLI COMMANDS"**  
+> *(Uji antarmuka secara nyata layaknya pengguna asli: klik tombol fisik di layar, isi input field, pilih dropdown, dan verifikasi modal. DILARANG KERAS mem-bypass UI dengan menuliskan script lewat console browser atau terminal).*
+
+#### Toolset MCP `playwright` yang Digunakan:
+* `browser_navigate(url="...")`: Membuka halaman kasir (`http://localhost:7015/kasir`), portal member (`http://localhost:7015/`), atau layar display TV.
+* `browser_click(selector="...")`: **Menekan tombol aksi fisik**, navigasi tab, submit form, tombol filter, atau tombol tutup modal secara interaktif.
+* `browser_fill_form(selector="...", value="...")` / `browser_type(text="...")`: Mengetikkan input teks, password, harga, kuantitas FnB, nama turnamen, atau nomor meja PC.
+* `browser_select_option(selector="...", value="...")`: Memilih opsi dropdown (grup filter, metode pembayaran, kategori game).
+* `browser_wait_for(selector="...", state="visible")`: Menunggu elemen reaktif, dialog modal, atau toast notifikasi muncul dengan stabil.
+* `browser_take_screenshot(path="...")`: Menangkap bukti visual aktual dari layar untuk memastikan tidak ada glitch grafis atau teks terpotong.
+* `browser_snapshot()`: Membaca struktur accessibility tree dan status DOM elemen terkini.
+* `browser_resize(width=..., height=...)`: Menguji responsivitas tampilan (Desktop `1280x800`/`1920x1080`, Tablet `1024x768`, Mobile `375x812`).
+* `browser_console_messages()`: Memverifikasi bahwa tidak ada `Uncaught TypeError`, error 404 resource, atau warning fatal di console browser.
+* `browser_network_requests()`: Memastikan request API AJAX/Fetch mengembalikan status HTTP `200 OK` dengan payload yang sesuai.
+
+#### Disiplin Pengujian Frontend:
+1. **Real-User Flow Only**: Selalu jalankan alur pengguna yang lengkap (misal: klik tombol Buka Sesi $\rightarrow$ ketik durasi $\rightarrow$ pilih paket $\rightarrow$ klik Bayar $\rightarrow$ verifikasi kartu PC berubah warna menjadi terpakai).
+2. **Anti-Cheating Console Rule**: Dilarang menggunakan `browser_evaluate` untuk menembak fungsi JavaScript internal (seperti `App.switchTab()` atau `Modal.show()`) jika tujuannya menguji apakah tombol/navigasi di layar benar-benar bisa diklik oleh kasir. Gunakan `browser_click` pada selector tombol yang bersangkutan.
+3. **Zero Console Error**: Setiap pergantian tab atau submit form wajib menghasilkan 0 JavaScript runtime error pada `browser_console_messages`.
+4. **Layout & Antislop Verification**: Verifikasi tidak adanya overflow horizontal pada viewport mobile (`375x812`), kontras warna WCAG AA, dan tidak ada spinner putar usang.
+
+---
+
+### 🗄️ 1.4 ATURAN WAJIB INSPEKSI DATABASE SQLITE LANGSUNG (MCP `sqlite`)
+
+Untuk memastikan integritas data, validasi skema tabel, dan memeriksa rekonsiliasi transaksi secara instan, agen AI **WAJIB MENGGUNAKAN MCP `sqlite`**.
+
+#### Keunggulan & Peran MCP `sqlite`:
+* Mengeliminasi kebutuhan membuat script Python scratch sementara (`scratch/test_db.py`) yang boros token dan berisiko meninggalkan file sampah.
+* Melakukan verifikasi state tabel SQLite secara langsung, presisi, dan aman.
+
+#### Toolset MCP `sqlite` yang Digunakan:
+* `open_database(path="instance/warnet.db")`: Membuka koneksi inspeksi ke file database SQLite aplikasi.
+* `list_tables()`: Melihat seluruh daftar tabel yang terdaftar di database.
+* `describe_table(table_name="...")`: Memeriksa detail skema kolom, primary key, nullability, default values, dan foreign keys.
+* `execute_read_query(query="SELECT ...")`: Menjalankan kueri baca untuk memeriksa isi record transaksi, saldo member terkini, baseline hardware, atau log shift.
+* `database_info()`: Memeriksa ukuran file database, journal mode (`WAL`), dan status pragmas.
+
+#### Disiplin Integritas Database:
+1. **Read-Only First for Inspection**: Gunakan kueri baca (`SELECT`) untuk verifikasi hasil operasi atau investigasi anomali data.
+2. **Preserve Application Logic**: Modifikasi data produksi harus tetap dilakukan melalui API/Service aplikasi untuk memastikan trigger audit log dan event scheduler tetap terpicu. Gunakan MCP `sqlite` untuk inspeksi, cross-check, dan investigasi skema.
+
+---
+
+### 🐞 1.5 ATURAN WAJIB DEBUGGING & ROOT CAUSE ANALYSIS
 
 Ketika menghadapi bug, kegagalan unit test, anomali data, atau perilaku tak terduga, agen AI **DILARANG KERAS** langsung melakukan "quick fix" atau menebak-nebak perbaikan tanpa melalui investigasi sistematis.
 
@@ -233,7 +286,7 @@ Sistem TMBilling dirancang dengan pemisahan tanggung jawab yang ketat (Separatio
   │ HTTP REST │ WebSocket (RFB/VNC)                 │ HTTP Telemetry / Heartbeat
   ▼           ▼                                     ▼
 ┌────────────────────────────────────────────────────────┐
-│             BACKEND FLASK SERVER (PORT 5000)           │
+│             BACKEND FLASK SERVER (PORT 7015)           │
 │  - Routes (31 Blueprints)                              │
 │  - Services (41 Business Logic Engines)                │
 │  - Repositories (15 Data Access Objects)               │
@@ -268,7 +321,7 @@ Berkas-berkas di root direktori mengatur runtime server, deploy, packaging, dan 
 
 | File / Folder | Peran & Tanggung Jawab Teknis |
 |---|---|
-| [`run.py`](file:///c:/Project%20GIT/TMBilling/run.py) | Entry point utama server Flask. Menginisialisasi `create_app()`, mendaftarkan 4 background scheduler (cleanup expired sessions, dynamic auto backup, log cleanup, auto screenshot), mendeteksi mode debug/Waitress WSGI, dan membuka port 5000. |
+| [`run.py`](file:///c:/Project%20GIT/TMBilling/run.py) | Entry point utama server Flask. Menginisialisasi `create_app()`, mendaftarkan 4 background scheduler (cleanup expired sessions, dynamic auto backup, log cleanup, auto screenshot), mendeteksi mode debug/Waitress WSGI, dan membuka port 7015. |
 | [`run_branch2.py`](file:///c:/Project%20GIT/TMBilling/run_branch2.py) | Script runner khusus untuk simulasi cabang ke-2 pada port `7016` dengan database terpisah `warnet_cabang2.db`. Digunakan untuk pengetesan multi-branch lokal. |
 | [`seed.py`](file:///c:/Project%20GIT/TMBilling/seed.py) | Script database seeder komprehensif. Mengisi data awal: grup (`reguler`, `vip`), paket billing, member default, item menu kantin, akun user/admin, game, dan tutorial dasar. |
 | [`create_admin.py`](file:///c:/Project%20GIT/TMBilling/create_admin.py) | CLI utility untuk membuat akun admin emergency dengan hashing password SHA-256 / Werkzeug yang valid secara instan. |
@@ -977,6 +1030,10 @@ Direktori `docs/` menyimpan dokumentasi sistem dan riwayat blueprint implementas
 * **Dashboard Settings Modal Dynamic Rendering (`Modal.show`)**:
   - Merefaktor `Dashboard.showSettingsModal()` di [`dashboard/index.js`](file:///c:/Project%20GIT/TMBilling/app/static/js/kasir/modules/dashboard/index.js) agar menggunakan engine perenderan dinamis `Modal.show(html, null, { disableBackdropClose: false })` seperti standar modal modern lainnya di TMBilling (Buka Sesi, Tambah Paket, Member Modal, Hardware Checker).
   - Mengeliminasi modal statis usang `#modal-dashboard-settings` dari [`modals.html`](file:///c:/Project%20GIT/TMBilling/app/templates/kasir/components/modals.html) sehingga modal terinjeksi langsung ke level `document.body` tanpa terperangkap dalam batas scroll/overflow `#main-scroll`.
+* **Multi-MCP Toolset Expansion & Real-User UI Testing Commitment (Sprint v1.6.4)**:
+  - **Integrasi Penuh 3 MCP**: Menetapkan integrasi standar **MCP `codebase-memory`** (Micro Symbol Graph), **MCP `playwright`** (Uji Frontend Real-User), dan **MCP `sqlite`** (Inspeksi Database Langsung).
+  - **Aturan Baku Playwright Real-User**: Menetapkan *The Golden Rule*: pengujian antarmuka pengguna (Frontend/UI) wajib dijalankan murni sebagai real user (`browser_click`, `browser_fill_form`, `browser_select_option`, `browser_take_screenshot`). Dilarang keras mem-bypass UI atau pura-pura klik via devtools console script injection / terminal command.
+  - **Inspeksi Langsung SQLite**: Menyediakan validasi cepat skema dan state transaksi database melalui MCP `sqlite` (`list_tables`, `describe_table`, `execute_read_query`) tanpa perlu membuat scratch script python.
 * **Master Role-Based (Admin & Kasir) Multi-Tab & Multi-Entity CRUD + Styling Audit (Sprint v1.6.4)**:
   - **Objektif**: Audit holistik seluruh antarmuka Kasir untuk role **Admin** dan **Kasir** tanpa terkecuali, validasi end-to-end CRUD terhadap entitas utama (PC, Paket, Member, Grup, Menu, Catatan, Turnamen, Maintenance), audit proteksi RBAC, verifikasi styling Chamber Noir, dan antislop compliance.
   - **Fase 1: Audit Role Admin**:
