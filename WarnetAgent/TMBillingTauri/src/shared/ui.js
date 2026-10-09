@@ -25,12 +25,28 @@ export const UI = {
         const memberEl = document.getElementById('overlay-member-name');
         const groupEl = document.getElementById('overlay-group');
         const afkUserEl = document.getElementById('afk-user-name');
+        const btnMemberStatus = document.getElementById('btn-member-status');
         const name = data.member_name || '-';
         if (memberEl) memberEl.innerText = `: ${name}`;
         if (groupEl) groupEl.innerText = `: ${data.group || '-'}`;
         if (afkUserEl) afkUserEl.innerText = name;
         if (data.remaining_seconds !== undefined) {
             this.updateTime(data.remaining_seconds);
+        }
+
+        // Toggle visibilitas tombol Status Member (Hanya muncul untuk sesi Member)
+        if (btnMemberStatus) {
+            const isMemberSession = Boolean(
+                AppState.memberData || 
+                data.is_member || 
+                AppState.sessionType === 'member' ||
+                (data.member && Object.keys(data.member).length > 0)
+            );
+            if (isMemberSession && AppState.sessionType !== 'admin' && AppState.sessionType !== 'guest') {
+                btnMemberStatus.classList.remove('hidden');
+            } else {
+                btnMemberStatus.classList.add('hidden');
+            }
         }
     },
 
@@ -55,6 +71,12 @@ export const UI = {
         const menuModal = document.getElementById('modal-menu-paket');
         if (menuModal) menuModal.classList.add('hidden');
 
+        const itemDetailModal = document.getElementById('modal-item-detail');
+        if (itemDetailModal) itemDetailModal.classList.add('hidden');
+
+        const memberStatusModal = document.getElementById('modal-member-status');
+        if (memberStatusModal) memberStatusModal.classList.add('hidden');
+
         const qrisModal = document.getElementById('modal-qris-fullscreen');
         if (qrisModal) qrisModal.classList.add('hidden');
 
@@ -66,6 +88,9 @@ export const UI = {
 
         const afkPinModal = document.getElementById('modal-afk-pin');
         if (afkPinModal) afkPinModal.classList.add('hidden');
+
+        const btnMemberStatus = document.getElementById('btn-member-status');
+        if (btnMemberStatus) btnMemberStatus.classList.add('hidden');
 
         // Pastikan floating card utama overlay tidak tertinggal dalam kondisi hidden
         const mainCard = document.getElementById('overlay-main-card');
