@@ -152,7 +152,7 @@ const HardwareChecker = {
         }
     },
 
-    async registerBaseline(pcId, pcKode) {
+    async registerBaseline(pcId, pcKode, fromModal = false) {
         const targetKode = (pcKode || '').startsWith('PC') ? pcKode : `PC ${pcKode}`;
         if (!confirm(`Apakah Anda yakin ingin memperbarui baseline hardware & peripheral untuk ${targetKode}?\n\nGunakan tombol ini HANYA jika Anda (Owner/Admin) baru saja melakukan upgrade fisik atau mengganti periferal resmi pada ${targetKode}.`)) {
             return;
@@ -165,7 +165,10 @@ const HardwareChecker = {
             if (res && res.success) {
                 Toast.success(`Baseline ${targetKode} berhasil diperbarui!`);
                 this._lastFingerprint = null;
-                this.load();
+                await this.load(false, true);
+                if (fromModal) {
+                    this.showDetailModal(pcId);
+                }
             } else {
                 Toast.error(res.error || "Gagal memperbarui baseline");
             }
@@ -388,7 +391,7 @@ const HardwareChecker = {
                             class="px-4 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs font-bold rounded transition-colors">
                             Tutup
                         </button>
-                        <button type="button" onclick="Modal.closeModal(); HardwareChecker.registerBaseline(${m.pc_id}, '${this.escapeHtml(m.pc_kode)}');"
+                        <button type="button" onclick="HardwareChecker.registerBaseline(${m.pc_id}, '${this.escapeHtml(m.pc_kode)}', true);"
                             class="remote-hide-action px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded transition-colors flex items-center gap-1.5 shadow">
                             <span>🔄</span> Perbarui Baseline
                         </button>

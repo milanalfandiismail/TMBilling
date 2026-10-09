@@ -6,6 +6,24 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [1.6.4] - 2026-10-09
+
+### Ditambahkan
+- **Refactoring Desain Overlay Client (Apple Dark-Mode Aesthetic)**:
+  - Palet gelap elevasi modern (`#161618`, `#1c1c1e`, `#2c2c2e`) dengan aksen mint (`#30d158`) dan hairline borders (`border-white/10`).
+  - Segmented pill controls terstandarisasi untuk navigasi modal (Katalog Menu FnB, Daftar Paket).
+  - Eliminasi total animasi berulang/looping (pulse, spin, infinite effects) untuk menghemat alokasi CPU/GPU gaming dan kompatibilitas display refresh rate tinggi (144Hz / 240Hz).
+- **Auto-Hide Floating Overlay Card pada Modal Aktif**:
+  - Otomatis menyembunyikan floating widget `#overlay-main-card` saat modal QRIS Fullscreen HD atau Katalog Menu/Paket dibuka.
+  - Memulihkan visibilitas kartu utama secara mulus saat modal ditutup atau di-reset.
+- **Engine Validasi Waktu Unlimited Berbasis Status Murni**:
+  - Format waktu riil (`X jam Y menit` / `00:00:00`) untuk seluruh durasi kuota member tanpa batas atas buatan (termasuk kuota 1.000 s/d 1.000.000+ jam).
+  - Tampilan teks `"Unlimited"` secara eksklusif hanya diberikan pada sesi dengan status valid `admin` atau `system`.
+  - Mengeliminasi CPU thrashing render loop dan menjaga performa klien tetap konstan.
+- **Pembersihan & Keamanan Kredensial Administrator Klien**:
+  - Form input username dan password admin pada modal darurat agen dibersihkan seketika pada saat login success, login error, maupun pembatalan (cancel/close).
+  - Mencegah residu kredensial tertinggal di DOM/memori form browser klien.
+
 ## [1.6.3] - 2026-10-05
 
 ### Ditambahkan

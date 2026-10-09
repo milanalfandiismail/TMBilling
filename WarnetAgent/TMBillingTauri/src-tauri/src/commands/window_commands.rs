@@ -122,3 +122,23 @@ pub fn set_kiosk_lock(window: Window, enabled: bool) {
         }
     }
 }
+
+#[tauri::command]
+pub fn set_overlay_modal_fullscreen(window: Window, fullscreen: bool) {
+    if fullscreen {
+        let _ = window.set_fullscreen(true);
+        let _ = window.set_always_on_top(true);
+        let _ = window.set_focus();
+    } else {
+        let _ = window.set_fullscreen(false);
+        let _ = window.set_always_on_top(true);
+        if let Ok(Some(monitor)) = window.current_monitor() {
+            let (size, pos) = get_responsive_overlay_geometry(&monitor);
+            let _ = window.set_size(size);
+            let _ = window.set_position(Position::Logical(pos));
+        } else {
+            let _ = window.set_size(LogicalSize::new(680.0, 530.0));
+        }
+    }
+}
+

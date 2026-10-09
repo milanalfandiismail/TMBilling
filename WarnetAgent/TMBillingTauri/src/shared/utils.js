@@ -4,15 +4,18 @@
  */
 
 /**
- * Format detik menjadi string waktu yang readable
+ * Format detik menjadi string waktu yang readable (Jam & Menit)
  * @param {number} totalSeconds
+ * @param {string|boolean} [status=null] - Status sesi ('admin', 'system') atau boolean isStatusAdmin
  * @returns {string}
  */
-export function formatTime(totalSeconds) {
-    if (totalSeconds >= 999999) return "Unlimited";
+export function formatTime(totalSeconds, status = null) {
+    if (status === 'admin' || status === 'system' || status === true) {
+        return "Unlimited";
+    }
     if (totalSeconds <= 0) return "Sesi Berakhir";
 
-    const totalMinutes = Math.floor(totalSeconds / 60);
+    const totalMinutes = Math.floor(Number(totalSeconds) / 60) || 0;
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
 

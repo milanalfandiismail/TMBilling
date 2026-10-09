@@ -569,6 +569,7 @@ $RECYCLE.BIN/
 
 # Agent tracks & Walkthroughs
 agent.md
+agents.md
 walkthrough.md
 CODEBASE_CONTEXT.md
 
@@ -579,6 +580,9 @@ CODEBASE_CONTEXT.md
 .claude/
 claude.md
 prompts/
+.superpowers/
+superpowers/
+docs/superpowers/
 
 
 # Screenshot uploads
@@ -586,6 +590,7 @@ app/static/uploads/screenshots/
 
 # Local notes
 zip.md
+docs/references/
 
 # Tailwind source (output CSS tetap di-track)
 app/static/src/
@@ -598,4 +603,5 @@ app/static/assets/tutorials/temp/
 
 # Playwright MCP artifacts
 .playwright-mcp/
+audit-screenshots/
 *.png

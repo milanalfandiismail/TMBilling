@@ -1,155 +1,169 @@
-<!-- 2. BILLING OVERLAY (MODE MELAYANG - 1 CARD UTUH UNIFIED & RESPONSIF) -->
+<!-- BILLING OVERLAY (MODE MELAYANG - 1 CARD UTUH UNIFIED & RESPONSIF) -->
 <div id="billing-overlay" class="hidden w-full h-full p-0 flex justify-end items-start bg-transparent overflow-hidden select-none">
     
-    <!-- 1 CARD PANEL UTUH (KOLOM KIRI: PROPERTIES + QRIS HD | KOLOM KANAN: SESI WAKTU LENGKAP) -->
-    <div class="relative w-[600px] sm:w-[680px] bg-card border border-[#2a2a2a] rounded-2xl p-5 shadow-2xl flex gap-6">
+    <!-- 1 Card Panel Utuh (Kolom Kiri: Properties + QRIS | Kolom Kanan: Sesi Aktif) -->
+    <div id="overlay-main-card" class="relative w-[600px] sm:w-[680px] lg:w-[740px] xl:w-[820px] 2xl:w-[880px] apple-card p-5 sm:p-6 lg:p-7 xl:p-8 2xl:p-9 shadow-2xl flex gap-6 lg:gap-7 xl:gap-8 2xl:gap-10 select-none">
         
-        <!-- KOLOM KIRI: PROPERTIES DI ATAS, QRIS BESAR HD DI BAWAH -->
-        <div class="w-[270px] sm:w-[310px] shrink-0 flex flex-col justify-between">
+        <!-- Kolom Kiri: Properties di Atas, QRIS di Bawah -->
+        <div class="w-[270px] sm:w-[310px] lg:w-[340px] xl:w-[380px] 2xl:w-[410px] shrink-0 flex flex-col justify-between">
             
-            <!-- TITIK 1: PROPERTIES (GRID 2X2) -->
+            <!-- Panel Properties -->
             <div id="overlay-properties-bar" class="flex flex-col">
-                <div class="flex items-center gap-2 mb-3">
-                    <div class="status-dot-active"></div>
-                    <span class="text-[10px] font-bold text-accent uppercase tracking-wider">Properties</span>
+                <div class="flex items-center gap-2 mb-3 lg:mb-3.5">
+                    <div class="apple-status-dot"></div>
+                    <span class="text-[10px] lg:text-[11px] font-semibold text-[#30d158] uppercase tracking-wider">Properties</span>
                 </div>
 
                 <!-- Grid 2 Kolom untuk Tombol Control Panel (3 Baris x 2 Kolom = 6 Tombol) -->
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-2 gap-2 lg:gap-2.5 xl:gap-3">
                     <!-- Mouse Properties -->
                     <button id="btn-prop-mouse" type="button" title="Mouse Properties (DPI & Pointer)"
-                        class="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/5 hover:bg-accent/20 border border-white/5 hover:border-accent/40 text-neutral-300 hover:text-accent transition-all text-xs font-bold group">
-                        <svg class="w-3.5 h-3.5 shrink-0 text-accent group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="flex items-center gap-2 lg:gap-2.5 px-2.5 sm:px-3 lg:px-3.5 py-2 lg:py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.10] border border-white/[0.06] text-[#f5f5f7] transition-all text-xs font-semibold active:scale-[0.98] group">
+                        <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 text-[#2997ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <rect x="6" y="3" width="12" height="18" rx="6" stroke-width="2"/>
                             <line x1="12" y1="7" x2="12" y2="11" stroke-width="2" stroke-linecap="round"/>
                         </svg>
-                        <span class="text-[11px] font-semibold tracking-wide">Mouse</span>
+                        <span class="text-[11px] lg:text-xs xl:text-[13px] font-semibold tracking-wide">Mouse</span>
                     </button>
 
                     <!-- Keyboard Properties -->
                     <button id="btn-prop-keyboard" type="button" title="Keyboard Properties (Speed & Repeat Rate)"
-                        class="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/5 hover:bg-accent/20 border border-white/5 hover:border-accent/40 text-neutral-300 hover:text-accent transition-all text-xs font-bold group">
-                        <svg class="w-3.5 h-3.5 shrink-0 text-accent group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="flex items-center gap-2 lg:gap-2.5 px-2.5 sm:px-3 lg:px-3.5 py-2 lg:py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.10] border border-white/[0.06] text-[#f5f5f7] transition-all text-xs font-semibold active:scale-[0.98] group">
+                        <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 text-[#2997ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <rect x="2" y="5" width="20" height="14" rx="2" stroke-width="2"/>
                             <path stroke-linecap="round" stroke-width="2" d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M8 15h8"/>
                         </svg>
-                        <span class="text-[11px] font-semibold tracking-wide">Keyboard</span>
+                        <span class="text-[11px] lg:text-xs xl:text-[13px] font-semibold tracking-wide">Keyboard</span>
                     </button>
 
                     <!-- Sound Properties -->
                     <button id="btn-prop-sound" type="button" title="Sound / Speaker Properties (Playback & Mic)"
-                        class="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/5 hover:bg-accent/20 border border-white/5 hover:border-accent/40 text-neutral-300 hover:text-accent transition-all text-xs font-bold group">
-                        <svg class="w-3.5 h-3.5 shrink-0 text-accent group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="flex items-center gap-2 lg:gap-2.5 px-2.5 sm:px-3 lg:px-3.5 py-2 lg:py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.10] border border-white/[0.06] text-[#f5f5f7] transition-all text-xs font-semibold active:scale-[0.98] group">
+                        <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 text-[#2997ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                         </svg>
-                        <span class="text-[11px] font-semibold tracking-wide">Sound</span>
+                        <span class="text-[11px] lg:text-xs xl:text-[13px] font-semibold tracking-wide">Sound</span>
                     </button>
 
                     <!-- Volume Mixer -->
                     <button id="btn-prop-volume" type="button" title="Volume Mixer (Pengatur Suara Aplikasi)"
-                        class="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/5 hover:bg-accent/20 border border-white/5 hover:border-accent/40 text-neutral-300 hover:text-accent transition-all text-xs font-bold group">
-                        <svg class="w-3.5 h-3.5 shrink-0 text-accent group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="flex items-center gap-2 lg:gap-2.5 px-2.5 sm:px-3 lg:px-3.5 py-2 lg:py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.10] border border-white/[0.06] text-[#f5f5f7] transition-all text-xs font-semibold active:scale-[0.98] group">
+                        <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 text-[#2997ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                         </svg>
-                        <span class="text-[11px] font-semibold tracking-wide">Volume</span>
+                        <span class="text-[11px] lg:text-xs xl:text-[13px] font-semibold tracking-wide">Volume</span>
                     </button>
 
                     <!-- Display Settings -->
                     <button id="btn-prop-display" type="button" title="Display / Layar (Resolusi & Refresh Rate Hz)"
-                        class="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/5 hover:bg-accent/20 border border-white/5 hover:border-accent/40 text-neutral-300 hover:text-accent transition-all text-xs font-bold group">
-                        <svg class="w-3.5 h-3.5 shrink-0 text-accent group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="flex items-center gap-2 lg:gap-2.5 px-2.5 sm:px-3 lg:px-3.5 py-2 lg:py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.10] border border-white/[0.06] text-[#f5f5f7] transition-all text-xs font-semibold active:scale-[0.98] group">
+                        <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 text-[#2997ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <rect x="2" y="3" width="20" height="14" rx="2" stroke-width="2"/>
                             <line x1="8" y1="21" x2="16" y2="21" stroke-width="2" stroke-linecap="round"/>
                             <line x1="12" y1="17" x2="12" y2="21" stroke-width="2"/>
                         </svg>
-                        <span class="text-[11px] font-semibold tracking-wide">Display</span>
+                        <span class="text-[11px] lg:text-xs xl:text-[13px] font-semibold tracking-wide">Display</span>
                     </button>
 
                     <!-- Daftar Menu & Paket -->
                     <button id="btn-prop-menu-paket" type="button" title="Daftar Paket Billing & Menu Kantin"
-                        class="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/5 hover:bg-accent/20 border border-white/5 hover:border-accent/40 text-neutral-300 hover:text-accent transition-all text-xs font-bold group">
-                        <svg class="w-3.5 h-3.5 shrink-0 text-accent group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="flex items-center gap-2 lg:gap-2.5 px-2.5 sm:px-3 lg:px-3.5 py-2 lg:py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.10] border border-white/[0.06] text-[#f5f5f7] transition-all text-xs font-semibold active:scale-[0.98] group">
+                        <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 text-[#30d158]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                         </svg>
-                        <span class="text-[11px] font-semibold tracking-wide truncate">Menu & Paket</span>
+                        <span class="text-[11px] lg:text-xs xl:text-[13px] font-semibold tracking-wide truncate">Menu & Paket</span>
                     </button>
                 </div>
             </div>
 
-            <!-- TITIK 3: QRIS PEMBAYARAN BESAR & HD -->
-            <div id="overlay-qris-box" class="flex flex-col items-center pt-3">
-                <div class="w-full flex items-center mb-2 px-1">
+            <!-- Wadah QRIS Pembayaran -->
+            <div id="overlay-qris-box" class="flex flex-col items-center pt-2 sm:pt-2.5 lg:pt-3">
+                <div class="w-full flex items-center justify-between mb-2 px-1">
                     <div class="flex items-center gap-1.5">
-                        <div class="status-dot-active"></div>
-                        <span class="text-[10px] font-extrabold text-accent uppercase tracking-wider">QRIS Pembayaran</span>
+                        <div class="apple-status-dot"></div>
+                        <span class="text-[10px] lg:text-[11px] font-semibold text-[#30d158] uppercase tracking-wider">QRIS Pembayaran</span>
                     </div>
                 </div>
 
-                <!-- Kontainer Gambar QRIS Ekstra Besar HD -->
-                <div class="w-[230px] h-[230px] sm:w-[260px] sm:h-[260px] bg-white rounded-2xl p-2.5 flex items-center justify-center shadow-xl border border-white/20">
-                    <img id="overlay-qris-img" src="" alt="QRIS Code" class="w-full h-full object-contain [image-rendering:crisp-edges]">
+                <!-- Kontainer Gambar QRIS (Klik untuk Fullscreen) -->
+                <div id="overlay-qris-card" class="cursor-pointer group relative w-full aspect-square max-w-[240px] sm:max-w-[270px] lg:max-w-[300px] xl:max-w-[340px] 2xl:max-w-[370px] bg-white rounded-2xl p-2 sm:p-2.5 lg:p-3 flex flex-col items-center justify-center shadow-lg transition-all active:scale-[0.99]">
+                    <img id="overlay-qris-img" src="" alt="QRIS Code" class="w-full h-full object-contain">
                     <div id="overlay-qris-fallback" class="hidden text-center text-neutral-600">
-                        <div class="text-4xl font-black font-mono">?</div>
-                        <div class="text-[10px] font-bold uppercase tracking-wider mt-1">QRIS Offline</div>
+                        <div class="text-4xl font-bold font-mono">?</div>
+                        <div class="text-[10px] font-semibold uppercase tracking-wider mt-1">QRIS Offline</div>
                     </div>
+
+                    <!-- Tombol Perbesar Floating -->
+                    <button id="btn-expand-qris" type="button" title="Perbesar QRIS (HD)"
+                        class="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-lg transition-all shadow-md group-hover:scale-105 cursor-pointer">
+                        <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Petunjuk Klik Perbesar (Diperbesar & Berjarak Lega dari Border) -->
+                <div class="flex items-center justify-center gap-2 mt-3 mb-1.5 sm:mb-2 text-xs lg:text-[13px] xl:text-sm font-semibold text-[#86868b] tracking-wide">
+                    <svg class="w-4 h-4 lg:w-4.5 lg:h-4.5 text-[#30d158] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                    </svg>
+                    <span>Klik gambar untuk perbesar (HD)</span>
                 </div>
             </div>
 
         </div>
 
-        <!-- KOLOM KANAN: TITIK 2 (SESI AKTIF UTUH PERSIS SEPERTI SEBELUMNYA) -->
-        <div id="overlay-time-box" class="flex-1 flex flex-col justify-between">
+        <!-- Kolom Kanan: Sesi Aktif -->
+        <div id="overlay-time-box" class="flex-1 flex flex-col justify-start">
             
             <!-- Bagian Atas: Header & Info Sesi -->
-            <div>
-                <div class="flex justify-between items-start mb-5">
-                    <div class="flex items-center gap-2">
-                        <div class="status-dot-active"></div>
-                        <span class="text-[10px] font-bold text-accent uppercase tracking-wider">Sesi Aktif</span>
-                    </div>
-                    <button id="minimize-btn" title="Minimize ke Tray"
-                        class="p-1.5 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-                        </svg>
-                    </button>
+            <div class="flex justify-between items-start mb-3 sm:mb-4 lg:mb-5">
+                <div class="flex items-center gap-2">
+                    <div class="apple-status-dot"></div>
+                    <span class="text-[10px] lg:text-[11px] font-semibold text-[#30d158] uppercase tracking-wider">Sesi Aktif</span>
                 </div>
+                <button id="minimize-btn" title="Minimize ke Tray"
+                    class="p-1.5 hover:bg-white/10 rounded-lg text-[#86868b] hover:text-white transition-all active:scale-[0.95]">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                    </svg>
+                </button>
+            </div>
 
-                <div class="space-y-3.5 text-xs">
-                    <div class="flex items-center">
-                        <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider w-20">Nama PC</span>
-                        <span class="text-[13px] font-bold pc-name-display" id="overlay-pc-name">PC-01</span>
-                    </div>
-                    <div class="flex items-center">
-                        <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider w-20">Grup</span>
-                        <span class="text-[13px] font-bold text-accent uppercase" id="overlay-group">: TM</span>
-                    </div>
-                    <div class="flex items-center">
-                        <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider w-20">Member</span>
-                        <span class="text-[13px] font-bold truncate" id="overlay-member-name">: -</span>
-                    </div>
-                    <div class="space-y-1 pt-4">
-                        <span class="text-[9px] font-bold text-accent/70 uppercase tracking-wider">Sisa Waktu</span>
-                        <p class="text-3xl font-black tracking-tight text-white whitespace-nowrap font-mono" id="overlay-time">00:00:00</p>
-                    </div>
+            <div class="space-y-2.5 sm:space-y-3 lg:space-y-3.5 text-xs lg:text-sm">
+                <div class="flex items-center">
+                    <span class="text-[10px] lg:text-[11px] font-medium text-[#6e6e73] uppercase tracking-wider w-20 lg:w-24 xl:w-28">Nama PC</span>
+                    <span class="text-[13px] lg:text-sm xl:text-base font-bold text-[#f5f5f7] pc-name-display" id="overlay-pc-name">PC-01</span>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-[10px] lg:text-[11px] font-medium text-[#6e6e73] uppercase tracking-wider w-20 lg:w-24 xl:w-28">Grup</span>
+                    <span class="text-[13px] lg:text-sm xl:text-base font-semibold text-[#30d158] uppercase" id="overlay-group">: TM</span>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-[10px] lg:text-[11px] font-medium text-[#6e6e73] uppercase tracking-wider w-20 lg:w-24 xl:w-28">Member</span>
+                    <span class="text-[13px] lg:text-sm xl:text-base font-semibold text-[#f5f5f7] truncate" id="overlay-member-name">: -</span>
+                </div>
+                <div class="space-y-1 lg:space-y-1.5 pt-2 sm:pt-2.5 lg:pt-3">
+                    <span class="text-[9px] lg:text-[10px] font-semibold text-[#86868b] uppercase tracking-wider">Sisa Waktu</span>
+                    <p class="text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tight text-[#f5f5f7] whitespace-nowrap font-mono" id="overlay-time">00:00:00</p>
                 </div>
             </div>
 
-            <!-- Tombol Kunci Meja (AFK) & Akhiri Sesi -->
-            <div class="flex gap-2 mt-6">
+            <!-- Tombol Kunci Meja (AFK) & Akhiri Sesi (Dinaikkan ke atas, menjauh dari border bawah) -->
+            <div class="flex gap-3 sm:gap-3.5 lg:gap-4 xl:gap-4.5 2xl:gap-5 mt-4 sm:mt-5 lg:mt-6">
                 <button id="btn-lock-afk" type="button" title="Kunci Layar AFK / Istirahat"
-                    class="flex-1 bg-[#1a1a1a] hover:bg-amber-500/10 border border-[#2a2a2a] hover:border-amber-500/30 py-3 rounded-xl flex items-center justify-center gap-2 transition-all text-neutral-400 hover:text-amber-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="flex-1 bg-amber-500/10 hover:bg-amber-500/20 active:scale-[0.98] border border-amber-500/25 py-2.5 sm:py-3 lg:py-3.5 xl:py-4 px-3 sm:px-4 rounded-xl lg:rounded-2xl flex items-center justify-center gap-2 lg:gap-2.5 xl:gap-3 transition-all text-amber-400 font-semibold text-[11px] sm:text-xs lg:text-sm xl:text-sm 2xl:text-base shadow-sm cursor-pointer">
+                    <svg class="w-4 h-4 sm:w-4.5 sm:h-4.5 lg:w-5 lg:h-5 xl:w-5.5 xl:h-5.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="2"/>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="2"/>
                     </svg>
-                    <span class="text-[10px] font-bold uppercase tracking-wider">Kunci Meja</span>
+                    <span>Kunci Meja</span>
                 </button>
-                <button id="logout-btn" type="button"
-                    class="flex-1 bg-[#1a1a1a] hover:bg-red-650/10 border border-[#2a2a2a] hover:border-red-500/30 py-3 rounded-xl flex items-center justify-center gap-2 transition-all text-neutral-400 hover:text-red-400">
-                    <span class="text-[10px] font-bold uppercase tracking-wider">Akhiri Sesi</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <button id="logout-btn" type="button" title="Akhiri Sesi Billing"
+                    class="flex-1 apple-btn-danger py-2.5 sm:py-3 lg:py-3.5 xl:py-4 px-3 sm:px-4 rounded-xl lg:rounded-2xl flex items-center justify-center gap-2 lg:gap-2.5 xl:gap-3 text-[11px] sm:text-xs lg:text-sm xl:text-sm 2xl:text-base font-semibold shadow-sm cursor-pointer">
+                    <span>Akhiri Sesi</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-4.5 sm:w-4.5 lg:h-5 lg:w-5 xl:h-5.5 xl:w-5.5 text-[#ff453a] shrink-0" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd"
                             d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
                             clip-rule="evenodd" />
@@ -159,110 +173,155 @@
 
         </div>
 
-        <!-- 4. MODAL KONFIRMASI LOGOUT (ABSOLUTE PAS DI TENGAH 1 CARD UTUH) -->
+        <!-- Modal Konfirmasi Logout -->
         <div id="logout-confirm-modal"
-            class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md rounded-2xl p-6 animate-in fade-in duration-200">
-            <div class="w-[280px] bg-[#181818] border border-[#2a2a2a] rounded-2xl p-5 shadow-2xl space-y-4 text-center">
+            class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/85 rounded-2xl p-6">
+            <div class="w-[290px] lg:w-[330px] xl:w-[360px] bg-[#1c1c1e] border border-white/[0.10] rounded-2xl p-5 lg:p-6 shadow-2xl space-y-4 text-center">
                 <header class="flex flex-col items-center">
-                    <div class="w-10 h-10 bg-red-500/10 rounded-full flex items-center justify-center mb-2 text-red-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    <div class="w-10 h-10 lg:w-12 lg:h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-2 text-[#ff453a] border border-red-500/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 lg:h-6 lg:w-6" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
                     </div>
-                    <h2 class="text-base font-bold text-white">Akhiri Sesi?</h2>
-                    <p class="text-[10px] text-neutral-400 mt-0.5 uppercase tracking-wider font-bold">Yakin ingin keluar?</p>
+                    <h2 class="text-base lg:text-lg font-bold text-[#f5f5f7]">Akhiri Sesi Billing?</h2>
+                    <p class="text-xs lg:text-sm text-[#86868b] mt-1 font-normal leading-relaxed">Sesi akan dihentikan dan waktu billing yang tersisa akan selesai.</p>
                 </header>
 
-                <div class="flex gap-2 pt-1">
+                <div class="flex gap-2.5 pt-1.5">
                     <button id="logout-cancel-btn" type="button"
-                        class="flex-1 bg-[#222] border border-[#333] hover:bg-[#2a2a2a] py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider text-neutral-300 transition-all">Tidak</button>
+                        class="flex-1 apple-btn-secondary py-2.5 lg:py-3 text-xs lg:text-sm font-semibold cursor-pointer">Batal</button>
                     <button id="logout-confirm-btn" type="button"
-                        class="flex-1 bg-red-650/10 hover:bg-red-600 border border-red-500/20 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider text-red-400 hover:text-white transition-all shadow-lg shadow-red-950/50">Ya</button>
+                        class="flex-1 apple-btn-danger py-2.5 lg:py-3 text-xs lg:text-sm font-semibold cursor-pointer">Ya, Akhiri</button>
                 </div>
             </div>
         </div>
 
-        <!-- 5. MODAL DAFTAR MENU & PAKET (ABSOLUTE PAS DI DALAM 1 CARD UTUH - 0MS ZERO FLICKER) -->
-        <div id="modal-menu-paket"
-            class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md rounded-2xl p-4 sm:p-5 animate-in fade-in duration-150">
-            <div class="w-full h-full bg-[#161616] border border-[#2a2a2a] rounded-2xl p-4 sm:p-5 shadow-2xl flex flex-col">
-                <!-- Header Modal dengan Tombol X -->
-                <div class="flex items-center justify-between pb-3 border-b border-[#262626]">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-7 h-7 rounded-lg bg-accent/15 border border-accent/25 flex items-center justify-center text-accent shrink-0">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h2 class="text-sm font-bold text-white tracking-wide">Daftar Menu & Paket</h2>
-                            <p class="text-[10px] text-neutral-400 font-medium">Katalog tarif billing & menu kantin (F&B)</p>
-                        </div>
-                    </div>
-                    <button id="btn-close-menu-paket" type="button" title="Tutup"
-                        class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-neutral-400 hover:text-white flex items-center justify-center transition-all cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- Tabs: Paket Billing vs Menu Kantin -->
-                <div class="flex gap-2 pt-3 pb-2">
-                    <button id="tab-btn-paket" type="button"
-                        class="flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-accent text-white shadow-md shadow-accent/20 cursor-pointer">
-                        🏷️ Paket Billing
-                    </button>
-                    <button id="tab-btn-menu" type="button"
-                        class="flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border border-white/5 cursor-pointer">
-                        🍜 Menu Kantin (F&B)
-                    </button>
-                </div>
-
-                <!-- Content: Tab Paket Billing -->
-                <div id="tab-content-paket" class="flex-1 overflow-y-auto pr-1 space-y-2 mt-1.5 scrollbar-thin">
-                    <p class="text-xs text-neutral-500 py-6 text-center">Memuat daftar paket...</p>
-                </div>
-
-                <!-- Content: Tab Menu Kantin -->
-                <div id="tab-content-menu" class="hidden flex-1 overflow-y-auto pr-1 space-y-2 mt-1.5 scrollbar-thin">
-                    <p class="text-xs text-neutral-500 py-6 text-center">Memuat menu kantin...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- 6. MODAL SET PIN KUNCI AFK (UNTUK GUEST) -->
+        <!-- Modal PIN Kunci AFK -->
         <div id="modal-afk-pin"
-            class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md rounded-2xl p-6 animate-in fade-in duration-200">
-            <div class="w-[290px] bg-[#181818] border border-[#2a2a2a] rounded-2xl p-5 shadow-2xl space-y-4 text-center">
+            class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/85 rounded-2xl p-6">
+            <div class="w-[290px] lg:w-[330px] xl:w-[360px] bg-[#1c1c1e] border border-white/[0.10] rounded-2xl p-5 lg:p-6 shadow-2xl space-y-4 text-center">
                 <header class="flex flex-col items-center">
-                    <div class="w-10 h-10 bg-amber-500/10 rounded-full flex items-center justify-center mb-2 text-amber-400 border border-amber-500/30">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-10 h-10 lg:w-12 lg:h-12 bg-amber-500/10 rounded-full flex items-center justify-center mb-2 text-amber-400 border border-amber-500/20">
+                        <svg class="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="2"/>
                             <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="2"/>
                         </svg>
                     </div>
-                    <h2 class="text-base font-bold text-white">Kunci Meja (AFK)</h2>
-                    <p class="text-[10px] text-neutral-400 mt-0.5 font-medium">Buat PIN atau password bebas untuk membuka kunci nantinya:</p>
+                    <h2 class="text-base lg:text-lg font-bold text-[#f5f5f7]">Kunci Meja (AFK)</h2>
+                    <p class="text-xs lg:text-sm text-[#86868b] mt-0.5 font-normal">Buat PIN atau password bebas untuk membuka kunci nantinya:</p>
                 </header>
 
                 <div class="space-y-2">
                     <input type="password" id="afk-pin-input" maxlength="32" placeholder="PIN / Password Bebas"
-                        class="w-full bg-[#111] border border-[#333] rounded-xl px-3 py-2.5 text-center text-sm outline-none focus:border-amber-400 text-white font-mono tracking-widest">
-                    <div id="afk-pin-error" class="text-[10px] text-red-400 font-semibold hidden">PIN / Password tidak boleh kosong!</div>
+                        class="w-full apple-input px-3 py-2.5 text-center text-sm lg:text-base font-mono tracking-widest">
+                    <div id="afk-pin-error" class="text-[10px] lg:text-xs text-[#ff453a] font-medium hidden">PIN / Password tidak boleh kosong!</div>
                 </div>
 
-                <div class="flex gap-2 pt-1">
+                <div class="flex gap-2.5 pt-1">
                     <button id="afk-pin-cancel-btn" type="button"
-                        class="flex-1 bg-[#222] border border-[#333] hover:bg-[#2a2a2a] py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider text-neutral-300 transition-all">Batal</button>
+                        class="flex-1 apple-btn-secondary py-2.5 text-xs lg:text-sm font-semibold cursor-pointer">Batal</button>
                     <button id="afk-pin-confirm-btn" type="button"
-                        class="flex-1 bg-amber-500 hover:bg-amber-400 text-black py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all font-extrabold">Kunci</button>
+                        class="flex-1 bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-black py-2.5 rounded-xl text-xs lg:text-sm font-semibold transition-all cursor-pointer">Kunci</button>
                 </div>
             </div>
         </div>
 
     </div>
 
+    <!-- Modal Daftar Menu & Paket (Desktop Breakpoints lg, xl, 2xl) -->
+    <div id="modal-menu-paket"
+        class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 lg:p-6 xl:p-8 select-none">
+        <div class="w-[720px] lg:w-[820px] xl:w-[980px] 2xl:w-[1140px] h-[540px] lg:h-[600px] xl:h-[680px] 2xl:h-[760px] bg-[#1c1c1e] border border-white/[0.10] rounded-3xl p-5 lg:p-6 xl:p-7 shadow-2xl flex flex-col">
+            <!-- Header Modal dengan Tombol X -->
+            <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-[#30d158] shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-[#f5f5f7] tracking-tight">Daftar Menu & Paket</h2>
+                        <p class="text-xs text-[#86868b] font-normal">Katalog tarif billing & menu kantin (F&B)</p>
+                    </div>
+                </div>
+                <button id="btn-close-menu-paket" type="button" title="Tutup"
+                    class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-[#86868b] hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-[0.95]">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Segmented Tabs: Paket Billing vs Menu Kantin -->
+            <div class="flex bg-white/[0.05] p-1 rounded-xl gap-1 mt-3 mb-2">
+                <button id="tab-btn-paket" type="button"
+                    class="flex-1 py-2 px-4 rounded-lg text-xs font-semibold transition-all bg-white/10 text-white shadow-sm cursor-pointer">
+                    🏷️ Paket Billing
+                </button>
+                <button id="tab-btn-menu" type="button"
+                    class="flex-1 py-2 px-4 rounded-lg text-xs font-medium transition-all text-[#86868b] hover:text-white cursor-pointer">
+                    🍜 Menu Kantin (F&B)
+                </button>
+            </div>
+
+            <!-- Konten: Tab Paket Billing -->
+            <div id="tab-content-paket" class="flex-1 flex flex-col min-h-0 mt-1">
+                <!-- Group Filter Pills Bar -->
+                <div id="overlay-paket-group-filters" class="flex gap-1.5 overflow-x-auto pb-2 pt-0.5 scrollbar-thin shrink-0"></div>
+
+                <!-- Wadah Kartu Paket -->
+                <div id="overlay-paket-items-container" class="flex-1 overflow-y-auto pr-1 space-y-2.5 scrollbar-thin">
+                    <p class="text-xs text-[#6e6e73] py-8 text-center">Memuat daftar paket...</p>
+                </div>
+            </div>
+
+            <!-- Konten: Tab Menu Kantin -->
+            <div id="tab-content-menu" class="hidden flex-1 overflow-y-auto pr-1 space-y-2.5 mt-1.5 scrollbar-thin">
+                <p class="text-xs text-[#6e6e73] py-8 text-center">Memuat menu kantin...</p>
+            </div>
+
+            <!-- Tombol Tutup Footer -->
+            <div class="pt-3 border-t border-white/[0.08] mt-2 shrink-0">
+                <button id="btn-close-menu-esc" type="button"
+                    class="w-full apple-btn-secondary py-2.5 text-xs font-semibold cursor-pointer">
+                    Tutup (Esc)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal QRIS Fullscreen HD (Desktop Breakpoints lg, xl, 2xl) -->
+    <div id="modal-qris-fullscreen"
+        class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 lg:p-6 select-none">
+        <div class="w-[440px] lg:w-[500px] xl:w-[560px] 2xl:w-[640px] max-w-[90vw] bg-[#1c1c1e] border border-white/[0.10] rounded-3xl p-5 lg:p-6 shadow-2xl flex flex-col items-center">
+            <!-- Header Modal (Tombol Close Kanan) -->
+            <div class="w-full flex items-center justify-end pb-2">
+                <button id="btn-close-qris-fullscreen" type="button" title="Tutup"
+                    class="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-white/10 hover:bg-white/20 text-[#86868b] hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-[0.95]">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Gambar QRIS HD (Desktop Responsive lg, xl, 2xl) -->
+            <div class="w-full aspect-square max-w-[380px] lg:max-w-[440px] xl:max-w-[500px] 2xl:max-w-[580px] bg-white rounded-2xl p-2.5 sm:p-3 flex items-center justify-center shadow-lg">
+                <img id="overlay-qris-modal-img" src="" alt="QRIS Code HD" class="w-full h-full object-contain">
+            </div>
+
+            <!-- Tombol Tutup Footer -->
+            <div class="w-full pt-3 lg:pt-4 mt-2">
+                <button id="btn-close-qris-esc" type="button"
+                    class="w-full apple-btn-secondary py-2.5 text-xs 2xl:text-sm font-semibold cursor-pointer">
+                    Tutup (Esc)
+                </button>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+
