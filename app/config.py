@@ -39,12 +39,12 @@ class Config:
     SESSION_PERMANENT = True
     PERMANENT_SESSION_LIFETIME = 86400  # 24 jam
     WTF_CSRF_TIME_LIMIT = None          # CSRF mengikuti umur session agar tidak kedaluwarsa sendiri
-    VERSION = "1.6.3"
+    VERSION = "1.6.4"
     VERSION_NAME = "Multi-Branch Nexus"
 
     @classmethod
     def get_version_tag(cls) -> str:
-        """Mengembalikan format versi dengan prefix 'v' (contoh: 'v1.6.3')."""
+        """Mengembalikan format versi dengan prefix 'v' (contoh: 'v1.6.4')."""
         return f"v{cls.VERSION}" if not str(cls.VERSION).startswith("v") else str(cls.VERSION)
 
     @classmethod

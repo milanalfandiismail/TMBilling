@@ -45,6 +45,7 @@ fn main() {
             crate::commands::window_commands::switch_to_kiosk,
             crate::commands::window_commands::switch_to_afk,
             crate::commands::window_commands::minimize_window,
+            crate::commands::window_commands::set_overlay_modal_fullscreen,
             crate::commands::network_commands::get_network_info,
             crate::commands::auth_commands::login_process,
             crate::commands::auth_commands::logout_process,

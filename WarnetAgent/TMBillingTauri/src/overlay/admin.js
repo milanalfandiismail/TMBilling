@@ -36,13 +36,19 @@ export const Admin = {
      * Handle admin login
      */
     async handleLogin() {
-        const user = document.getElementById('admin-user').value.trim();
-        const pass = document.getElementById('admin-pass').value.trim();
+        const userEl = document.getElementById('admin-user');
+        const passEl = document.getElementById('admin-pass');
+        const user = userEl ? userEl.value.trim() : '';
+        const pass = passEl ? passEl.value.trim() : '';
 
         try {
             const res = await Api.login(user, pass, true);
 
             if (res.status === "success") {
+                // Bersihkan field admin segera dari memori
+                if (userEl) userEl.value = '';
+                if (passEl) passEl.value = '';
+
                 // Stop any shutdown timer
                 AppState.resetShutdownTimer();
 
@@ -56,6 +62,11 @@ export const Admin = {
                 await Api.switchToOverlay();
             }
         } catch (err) {
+            // Hapus password yang salah ketik demi keamanan kredensial
+            if (passEl) {
+                passEl.value = '';
+                passEl.focus();
+            }
             UI.showAdminError(err);
         }
     },

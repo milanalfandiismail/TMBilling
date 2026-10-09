@@ -52,8 +52,34 @@ export const Overlay = {
         // Modal Menu & Paket
         document.getElementById('btn-prop-menu-paket')?.addEventListener('click', () => this.openMenuPaketModal());
         document.getElementById('btn-close-menu-paket')?.addEventListener('click', () => this.closeMenuPaketModal());
+        document.getElementById('btn-close-menu-esc')?.addEventListener('click', () => this.closeMenuPaketModal());
         document.getElementById('tab-btn-paket')?.addEventListener('click', () => this.switchMenuPaketTab('paket'));
         document.getElementById('tab-btn-menu')?.addEventListener('click', () => this.switchMenuPaketTab('menu'));
+
+        // Modal QRIS Fullscreen HD
+        document.getElementById('overlay-qris-card')?.addEventListener('click', () => this.openQrisFullscreen());
+        document.getElementById('btn-expand-qris')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.openQrisFullscreen();
+        });
+        document.getElementById('btn-close-qris-fullscreen')?.addEventListener('click', () => this.closeQrisFullscreen());
+        document.getElementById('btn-close-qris-esc')?.addEventListener('click', () => this.closeQrisFullscreen());
+
+        // Global Escape Key Listener for Modals
+        if (!this._globalModalEventsBound) {
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const qrisModal = document.getElementById('modal-qris-fullscreen');
+                    const menuModal = document.getElementById('modal-menu-paket');
+                    if (qrisModal && !qrisModal.classList.contains('hidden')) {
+                        this.closeQrisFullscreen();
+                    } else if (menuModal && !menuModal.classList.contains('hidden')) {
+                        this.closeMenuPaketModal();
+                    }
+                }
+            });
+            this._globalModalEventsBound = true;
+        }
 
         // AFK Lock button & PIN modal
         document.getElementById('btn-lock-afk')?.addEventListener('click', () => this.handleLockAfk());
@@ -70,6 +96,7 @@ export const Overlay = {
      */
     async renderQris() {
         const qrisImg = document.getElementById('overlay-qris-img');
+        const modalQrisImg = document.getElementById('overlay-qris-modal-img');
         const fallbackEl = document.getElementById('overlay-qris-fallback');
         if (!qrisImg) return;
 
@@ -91,9 +118,11 @@ export const Overlay = {
         if (qrisUrl) {
             qrisImg.src = qrisUrl;
             qrisImg.classList.remove('hidden');
+            if (modalQrisImg) modalQrisImg.src = qrisUrl;
             if (fallbackEl) fallbackEl.classList.add('hidden');
         } else {
             qrisImg.classList.add('hidden');
+            if (modalQrisImg) modalQrisImg.src = '';
             if (fallbackEl) fallbackEl.classList.remove('hidden');
         }
     },
@@ -183,6 +212,7 @@ export const Overlay = {
         AppState.resetSession();
         AppState.resetShutdownTimer();
         UI.resetOverlayUI();
+        Api.setOverlayModalFullscreen(false);
     },
 
     /**
@@ -314,10 +344,11 @@ export const Overlay = {
     },
 
     /**
-     * Buka modal Menu & Paket (In-Card Modal Zero-Glitch)
+     * Buka modal Menu & Paket (Fullscreen Center Modal)
      */
     async openMenuPaketModal() {
         const modal = document.getElementById('modal-menu-paket');
+        const mainCard = document.getElementById('overlay-main-card');
         if (!modal) return;
 
         // 1. Pastikan data paket & menu siap dan ter-render duluan agar tidak ada delay visual
@@ -337,26 +368,46 @@ export const Overlay = {
         this.renderMenuList();
         this.switchMenuPaketTab('paket');
 
-        // 2. Tampilkan modal seketika di dalam card
+        // 2. Sembunyikan floating card overlay sementara agar modal tampil bersih di tengah layar
+        if (mainCard) mainCard.classList.add('hidden');
         modal.classList.remove('hidden');
-
-        // Bind Escape key sekali saja
-        if (!this._menuModalEventsBound) {
-            window.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-                    this.closeMenuPaketModal();
-                }
-            });
-            this._menuModalEventsBound = true;
-        }
+        await Api.setOverlayModalFullscreen(true);
     },
 
     /**
-     * Tutup modal Menu & Paket
+     * Tutup modal Menu & Paket (Kembalikan ukuran overlay ke pojok kanan atas)
      */
-    closeMenuPaketModal() {
+    async closeMenuPaketModal() {
         const modal = document.getElementById('modal-menu-paket');
+        const mainCard = document.getElementById('overlay-main-card');
         if (modal) modal.classList.add('hidden');
+        if (mainCard) mainCard.classList.remove('hidden');
+        await Api.setOverlayModalFullscreen(false);
+    },
+
+    /**
+     * Buka modal QRIS Fullscreen HD (Tengah Layar Monitor)
+     */
+    async openQrisFullscreen() {
+        const qrisModal = document.getElementById('modal-qris-fullscreen');
+        const mainCard = document.getElementById('overlay-main-card');
+        if (!qrisModal) return;
+
+        // Sembunyikan floating card overlay sementara
+        if (mainCard) mainCard.classList.add('hidden');
+        qrisModal.classList.remove('hidden');
+        await Api.setOverlayModalFullscreen(true);
+    },
+
+    /**
+     * Tutup modal QRIS Fullscreen HD (Kembalikan ukuran overlay ke pojok kanan atas)
+     */
+    async closeQrisFullscreen() {
+        const qrisModal = document.getElementById('modal-qris-fullscreen');
+        const mainCard = document.getElementById('overlay-main-card');
+        if (qrisModal) qrisModal.classList.add('hidden');
+        if (mainCard) mainCard.classList.remove('hidden');
+        await Api.setOverlayModalFullscreen(false);
     },
 
     /**
@@ -368,8 +419,8 @@ export const Overlay = {
         const contentPaket = document.getElementById('tab-content-paket');
         const contentMenu = document.getElementById('tab-content-menu');
 
-        const activeClasses = ['bg-accent', 'text-white', 'shadow-md', 'shadow-accent/20'];
-        const inactiveClasses = ['bg-white/5', 'text-neutral-400', 'hover:text-white', 'hover:bg-white/10', 'border', 'border-white/5'];
+        const activeClasses = ['bg-white/10', 'text-white', 'shadow-sm', 'font-semibold'];
+        const inactiveClasses = ['text-[#86868b]', 'font-medium'];
 
         if (tab === 'paket') {
             tabPaketBtn?.classList.remove(...inactiveClasses);
@@ -391,16 +442,18 @@ export const Overlay = {
     },
 
     /**
-     * Render daftar paket billing (Grid 3 Kolom Lapang)
+     * Render daftar paket billing (Dengan Filter Grup & Sorting grup_id Server Match)
      */
     renderPaketList() {
-        const container = document.getElementById('tab-content-paket');
-        if (!container) return;
+        const filterContainer = document.getElementById('overlay-paket-group-filters');
+        const itemsContainer = document.getElementById('overlay-paket-items-container') || document.getElementById('tab-content-paket');
+        if (!itemsContainer) return;
 
         const packages = AppState.allPackages || [];
         if (packages.length === 0) {
-            container.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-16 text-neutral-500">
+            if (filterContainer) filterContainer.innerHTML = '';
+            itemsContainer.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-16 text-[#6e6e73]">
                     <svg class="w-10 h-10 mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
@@ -409,6 +462,47 @@ export const Overlay = {
             `;
             return;
         }
+
+        // 1. Sorting berdasarkan grup_id (Ascending), lalu harga (Ascending)
+        const sortedPackages = [...packages].sort((a, b) => {
+            const gA = Number(a.grup_id ?? 999);
+            const gB = Number(b.grup_id ?? 999);
+            if (gA !== gB) return gA - gB;
+            return (Number(a.harga) || 0) - (Number(b.harga) || 0);
+        });
+
+        // 2. Ekstrak grup unik
+        const uniqueGroups = ['SEMUA', ...new Set(sortedPackages.map(p => (p.grup || 'Reguler').toUpperCase()))];
+        this._selectedOverlayGroup = this._selectedOverlayGroup || 'SEMUA';
+
+        // 3. Render Group Filter Pills
+        if (filterContainer) {
+            filterContainer.innerHTML = uniqueGroups.map(g => {
+                const isActive = (this._selectedOverlayGroup === g);
+                const activeClass = "bg-white text-black font-semibold shadow-sm";
+                const inactiveClass = "bg-white/[0.06] hover:bg-white/[0.10] text-[#86868b] hover:text-white border border-white/[0.08]";
+                return `
+                    <button type="button" data-group="${g}"
+                        class="overlay-group-pill px-3 py-1 rounded-xl text-[11px] transition-all whitespace-nowrap cursor-pointer ${isActive ? activeClass : inactiveClass}">
+                        ${g === 'SEMUA' ? 'Semua' : g}
+                    </button>
+                `;
+            }).join('');
+
+            // Bind click listeners to filter pills
+            filterContainer.querySelectorAll('.overlay-group-pill').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const group = e.currentTarget.getAttribute('data-group');
+                    this._selectedOverlayGroup = group;
+                    this.renderPaketList();
+                });
+            });
+        }
+
+        // 4. Filter daftar paket
+        const filtered = (this._selectedOverlayGroup === 'SEMUA')
+            ? sortedPackages
+            : sortedPackages.filter(p => (p.grup || 'Reguler').toUpperCase() === this._selectedOverlayGroup);
 
         const formatDuration = (menit) => {
             if (!menit) return '-';
@@ -423,17 +517,17 @@ export const Overlay = {
             return `Rp ${Number(val || 0).toLocaleString('id-ID')}`;
         };
 
-        container.innerHTML = `
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pb-2">
-                ${packages.map(p => `
-                    <div class="p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-accent/30 transition-all flex flex-col justify-between">
-                        <div class="flex items-start justify-between gap-1.5 mb-1.5">
-                            <span class="text-xs font-bold text-white leading-tight truncate" title="${p.nama || 'Paket'}">${p.nama || 'Paket'}</span>
-                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-neutral-300 shrink-0 uppercase tracking-wider">${p.grup || 'Reguler'}</span>
+        itemsContainer.innerHTML = `
+            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 lg:gap-3 xl:gap-3.5 2xl:gap-4 pb-2">
+                ${filtered.map(p => `
+                    <div class="p-3 lg:p-3.5 rounded-2xl bg-[#242426] hover:bg-[#2c2c2e] border border-white/[0.08] transition-all flex flex-col justify-between shadow-sm">
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <span class="text-xs lg:text-sm font-semibold text-[#f5f5f7] leading-tight truncate" title="${p.nama || 'Paket'}">${p.nama || 'Paket'}</span>
+                            <span class="text-[9px] font-medium px-2 py-0.5 rounded-lg bg-white/10 text-[#86868b] shrink-0 uppercase tracking-wider">${p.grup || 'Reguler'}</span>
                         </div>
-                        <div class="flex items-center justify-between mt-2 pt-1.5 border-t border-white/5">
-                            <span class="text-[10px] text-neutral-400 font-medium">⏱️ ${formatDuration(p.durasi_menit)}</span>
-                            <span class="text-xs font-black text-accent tracking-wide">${formatRupiah(p.harga)}</span>
+                        <div class="flex items-center justify-between pt-2 border-t border-white/[0.06]">
+                            <span class="text-[10px] lg:text-[11px] text-[#86868b] font-medium">${formatDuration(p.durasi_menit)}</span>
+                            <span class="text-xs lg:text-sm font-bold text-[#30d158] tracking-wide font-mono">${formatRupiah(p.harga)}</span>
                         </div>
                     </div>
                 `).join('')}
@@ -442,7 +536,7 @@ export const Overlay = {
     },
 
     /**
-     * Render daftar menu kantin (Status Ready Hardcode & Grid 3 Kolom Lapang)
+     * Render daftar menu kantin (Desktop Responsive Grid)
      */
     renderMenuList() {
         const container = document.getElementById('tab-content-menu');
@@ -451,7 +545,7 @@ export const Overlay = {
         const menus = AppState.allMenus || [];
         if (menus.length === 0) {
             container.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-16 text-neutral-500">
+                <div class="flex flex-col items-center justify-center py-16 text-[#6e6e73]">
                     <svg class="w-10 h-10 mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
                     </svg>
@@ -466,18 +560,18 @@ export const Overlay = {
         };
 
         container.innerHTML = `
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pb-2">
+            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 lg:gap-3 xl:gap-3.5 2xl:gap-4 pb-2">
                 ${menus.map(m => `
-                    <div class="p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-accent/30 transition-all flex flex-col justify-between">
-                        <div class="flex items-start justify-between gap-1.5 mb-1.5">
-                            <span class="text-xs font-bold text-white leading-tight truncate" title="${m.nama || 'Menu'}">${m.nama || 'Menu'}</span>
-                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 uppercase tracking-wider">
+                    <div class="p-3 lg:p-3.5 rounded-2xl bg-[#242426] hover:bg-[#2c2c2e] border border-white/[0.08] transition-all flex flex-col justify-between shadow-sm">
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <span class="text-xs lg:text-sm font-semibold text-[#f5f5f7] leading-tight truncate" title="${m.nama || 'Menu'}">${m.nama || 'Menu'}</span>
+                            <span class="text-[9px] font-medium px-2 py-0.5 rounded-lg bg-emerald-500/10 text-[#30d158] border border-emerald-500/20 shrink-0 uppercase tracking-wider">
                                 Ready
                             </span>
                         </div>
-                        <div class="flex items-center justify-between mt-2 pt-1.5 border-t border-white/5">
-                            <span class="text-[10px] text-neutral-400 font-medium">🍽️ Kantin</span>
-                            <span class="text-xs font-black text-accent tracking-wide">${formatRupiah(m.harga)}</span>
+                        <div class="flex items-center justify-between pt-2 border-t border-white/[0.06]">
+                            <span class="text-[10px] lg:text-[11px] text-[#86868b] font-medium">Kantin</span>
+                            <span class="text-xs lg:text-sm font-bold text-[#30d158] tracking-wide font-mono">${formatRupiah(m.harga)}</span>
                         </div>
                     </div>
                 `).join('')}
