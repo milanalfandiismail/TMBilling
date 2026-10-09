@@ -276,6 +276,9 @@ class ClientService:
                         else:
                             status_text = "aktif"
 
+                        is_member = bool(sesi and sesi.tipe == "member" and sesi.member)
+                        member_data = sesi.member.to_dict() if is_member else None
+
                         res = {
                             "status": status_text,
                             "sisa_waktu": sisa,
@@ -283,7 +286,9 @@ class ClientService:
                             "grup": pc.grup.nama if pc.grup else "reguler",
                             "pc_kode": pc.kode,
                             "is_afk": sesi.is_afk or False,
-                            "shutdown_timer": 0 
+                            "shutdown_timer": 0,
+                            "is_member": is_member,
+                            "member": member_data
                         }
 
             if res:

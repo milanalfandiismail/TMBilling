@@ -139,8 +139,15 @@ const App = {
                     status: "success",
                     member_name: status.nama || "Guest",
                     group: status.grup || "Member",
-                    remaining_seconds: status.sisa_waktu
+                    remaining_seconds: status.sisa_waktu,
+                    is_member: status.is_member,
+                    member: status.member
                 };
+
+                if (status.member) {
+                    AppState.memberData = status.member;
+                    AppState.sessionType = 'member';
+                }
 
                 AppState.setSessionData({
                     memberName: data.member_name,
@@ -157,8 +164,17 @@ const App = {
             // Session Type identification
             if (status.status === STATUS.ADMIN) {
                 AppState.sessionType = 'admin';
-            } else if (status.nama && status.nama.toLowerCase().startsWith('guest')) {
+                AppState.memberData = null;
+            } else if (status.is_member === true || status.member) {
+                AppState.sessionType = 'member';
+                AppState.memberData = status.member || AppState.memberData;
+                const btnMemberStatus = document.getElementById('btn-member-status');
+                if (btnMemberStatus) btnMemberStatus.classList.remove('hidden');
+            } else if (status.is_member === false || (status.nama && status.nama.toLowerCase().startsWith('guest'))) {
                 AppState.sessionType = 'guest';
+                AppState.memberData = null;
+                const btnMemberStatus = document.getElementById('btn-member-status');
+                if (btnMemberStatus) btnMemberStatus.classList.add('hidden');
             } else if (!AppState.sessionType && status.status === STATUS.AKTIF) {
                 AppState.sessionType = 'member';
             }

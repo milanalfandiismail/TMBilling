@@ -56,5 +56,6 @@ class Paket(db.Model):
             "kadaluarsa_hari": self.kadaluarsa_hari,
             "grup_id": self.grup_id,
             "grup": self.grup.nama if self.grup else "reguler", 
+            "grup_warna": self.grup.warna if (self.grup and hasattr(self.grup, 'warna')) else None,
             "aktif": self.aktif,
         }

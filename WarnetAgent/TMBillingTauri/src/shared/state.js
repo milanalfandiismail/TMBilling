@@ -19,6 +19,9 @@ export const AppState = {
         username: null
     },
 
+    // Member profile data (active member session)
+    memberData: null,
+
     // Network info
     networkInfo: {
         ip: null,
