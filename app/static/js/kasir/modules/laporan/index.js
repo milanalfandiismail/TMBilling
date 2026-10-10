@@ -148,6 +148,37 @@ const Laporan = {
         }
     },
 
+    _buildBreakdownHtml(items, amountKey) {
+        const breakdown = {};
+        items.forEach(t => {
+            const m = t.metode_pembayaran || 'Tunai';
+            if (!breakdown[m]) breakdown[m] = { count: 0, total: 0 };
+            breakdown[m].count++;
+            breakdown[m].total += t[amountKey] || 0;
+        });
+        const entries = Object.entries(breakdown).sort((a, b) => b[1].total - a[1].total);
+        if (entries.length === 0) return '';
+        return `
+            <div class="mb-5">
+                <h5 class="text-[10px] sm:text-xs xl:text-sm font-bold text-neutral-400 uppercase tracking-wider mb-2">
+                    Rincian per Metode Pembayaran
+                    <span class="text-neutral-600 font-normal normal-case tracking-normal text-[9px] sm:text-[10px]">(halaman ini)</span>
+                </h5>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                    ${entries.map(([method, d]) => `
+                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5">
+                            <div class="text-[9px] sm:text-[10px] xl:text-xs font-bold uppercase tracking-wider ${method === 'Tunai' ? 'text-amber-400' : 'text-cyan-400'} mb-1">
+                                ${Utils.escapeHtml(method)}
+                            </div>
+                            <div class="text-xs sm:text-sm xl:text-base font-bold font-mono text-neutral-100">${Utils.formatRupiah(d.total)}</div>
+                            <div class="text-[9px] sm:text-[10px] text-neutral-500">${d.count} transaksi</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    },
+
     render(data) {
         const area = document.getElementById('laporan-area');
         if (!area) return;
@@ -180,9 +211,15 @@ const Laporan = {
                 </div>
             </div>`;
 
+        const transaksiList = data.history_struk || [];
+
+        // Rincian per Metode Pembayaran (Client-side)
+        if (transaksiList.length > 0) {
+            html += this._buildBreakdownHtml(transaksiList, 'jumlah');
+        }
+
         // Table transaksi Billing
         html += `<h4 class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-400 uppercase tracking-wider mb-3">Detail Pendapatan Billing</h4>`;
-        const transaksiList = data.history_struk || [];
         if (transaksiList.length > 0) {
             html += `
                 <div class="overflow-x-auto w-full mb-6">
@@ -192,6 +229,7 @@ const Laporan = {
                                 <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Waktu</th>
                                 <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Nota</th>
                                 <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Pelanggan</th>
+                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Paket</th>
                                 <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-right">Jumlah</th>
                                 <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">PC</th>
                                 <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Kasir</th>
@@ -213,6 +251,10 @@ const Laporan = {
                                     <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pelanggan</span>
                                         <span>${t.nama_pelanggan || '-'}</span>
+                                    </td>
+                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Paket</span>
+                                        <span class="max-w-[120px] xl:max-w-[160px] truncate" title="${Utils.escapeHtml(t.paket_nama || '-')}">${Utils.escapeHtml(t.paket_nama || '-')}</span>
                                     </td>
                                     <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-right font-mono font-bold text-neutral-200 flex lg:table-cell justify-between items-center">
                                         <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Jumlah</span>
