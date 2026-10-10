@@ -1,26 +1,26 @@
 <!-- ===== TAB: LAPORAN KANTIN / F&B ===== -->
 <div id="tab-laporan_menu" class="tab-content hidden">
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-5 lg:max-xl:p-5 xl:p-6">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 xl:p-6">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Laporan Omzet Kantin / F&B</h3>
+            <h3 class="text-xs sm:text-base xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Laporan Omzet Kantin / F&B</h3>
             <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
                 <label for="laporan-menu-kasir-select" class="sr-only">Filter Kasir Kantin</label>
                 <select id="laporan-menu-kasir-select" onchange="LaporanMenu.filter()"
-                    class="flex-1 sm:flex-initial px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                    class="flex-1 sm:flex-initial px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm text-neutral-200 focus:outline-none focus:border-neutral-500">
                     <option value="">Semua Kasir</option>
                 </select>
                 <label for="laporan-menu-metode-pembayaran-select" class="sr-only">Filter Metode Pembayaran Kantin</label>
                 <select id="laporan-menu-metode-pembayaran-select" onchange="LaporanMenu.filter()"
-                    class="flex-1 sm:flex-initial px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                    class="flex-1 sm:flex-initial px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm text-neutral-200 focus:outline-none focus:border-neutral-500">
                     <option value="">Semua Metode</option>
                 </select>
                 <label for="laporan-menu-tanggal-select" class="sr-only">Filter Tanggal Laporan Kantin</label>
                 <select id="laporan-menu-tanggal-select" onchange="LaporanMenu.filter()"
-                    class="flex-1 sm:flex-initial px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
+                    class="flex-1 sm:flex-initial px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm text-neutral-200 focus:outline-none focus:border-neutral-500">
                     <option value="">Semua Tanggal</option>
                 </select>
                 <button onclick="LaporanMenu.exportPDF()"
-                    class="w-full sm:w-auto px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-rose-700 hover:bg-rose-600 text-white text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Export PDF</button>
+                    class="w-full sm:w-auto px-3 xl:px-4 py-2 xl:py-2.5 bg-rose-700 hover:bg-rose-600 text-white text-xs xl:text-sm font-bold rounded transition-colors">Export PDF</button>
             </div>
         </div>
         <div id="laporan-menu-area">
@@ -31,40 +31,38 @@
                 </div>
             </div>
             <div class="space-y-3">
-                <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
-                    <thead class="hidden lg:table-header-group">
-                        <tr class="border-b border-[#262626] text-neutral-400">
-                            <th class="px-4 py-3 text-left font-medium">Waktu</th>
-                            <th class="px-4 py-3 text-left font-medium">Nota</th>
-                            <th class="px-4 py-3 text-left font-medium">Item Menu</th>
-                            <th class="px-4 py-3 text-left font-medium">Qty</th>
-                            <th class="px-4 py-3 text-left font-medium">Harga</th>
-                            <th class="px-4 py-3 text-left font-medium">Total</th>
-                            <th class="px-4 py-3 text-left font-medium">Bayar</th>
-                            <th class="px-4 py-3 text-left font-medium">Pelanggan</th>
-                            <th class="px-4 py-3 text-left font-medium">Kasir</th>
-                            <th class="px-4 py-3 text-left font-medium">Metode</th>
-                            <th class="px-4 py-3 text-right font-medium">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="block lg:table-row-group divide-y divide-[#1c1c1c]">
-                        {% for _ in range(6) %}
-                        <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
-                            <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-20"></div></td>
-                            <td class="px-4 py-3 text-left"><div class="h-3.5 bg-[#262626] rounded w-24"></div></td>
-                            <td class="px-4 py-3 text-left"><div class="h-3.5 bg-[#262626] rounded w-32"></div></td>
-                            <td class="px-4 py-3 text-left"><div class="h-3 bg-[#202020] rounded w-10"></div></td>
-                            <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-16"></div></td>
-                            <td class="px-4 py-3 text-left"><div class="h-3.5 bg-[#262626] rounded w-20"></div></td>
-                            <td class="px-4 py-3 text-left"><div class="h-3 bg-[#202020] rounded w-14"></div></td>
-                            <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-16"></div></td>
-                            <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-16"></div></td>
-                            <td class="px-4 py-3 text-left"><div class="h-4 bg-[#202020] rounded w-14"></div></td>
-                            <td class="px-4 py-3 text-right"><div class="h-7 w-7 bg-[#202020] rounded ml-auto"></div></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="border border-[#1c1c1c] rounded overflow-hidden">
+                    <table class="w-full text-xs xl:text-sm">
+                        <thead class="bg-[#0c0c0c] hidden lg:table-header-group">
+                            <tr class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] xl:text-xs uppercase font-bold tracking-wider">
+                                <th class="px-4 py-3 text-left">Waktu</th>
+                                <th class="px-4 py-3 text-left">Nota</th>
+                                <th class="px-4 py-3 text-left">Item Menu</th>
+                                <th class="px-4 py-3 text-center">Qty</th>
+                                <th class="px-4 py-3 text-right">Total</th>
+                                <th class="px-4 py-3 text-left">Metode</th>
+                                <th class="px-4 py-3 text-left">Pemesanan</th>
+                                <th class="px-4 py-3 text-left">Kasir</th>
+                                <th class="px-4 py-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#1c1c1c] bg-[#050505] block lg:table-row-group">
+                            {% for _ in range(6) %}
+                            <tr class="animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
+                                <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-20"></div></td>
+                                <td class="px-4 py-3 text-left"><div class="h-3.5 bg-[#262626] rounded w-24"></div></td>
+                                <td class="px-4 py-3 text-left"><div class="h-3.5 bg-[#262626] rounded w-32"></div></td>
+                                <td class="px-4 py-3 text-center"><div class="h-3 bg-[#202020] rounded w-10 mx-auto"></div></td>
+                                <td class="px-4 py-3 text-right"><div class="h-3.5 bg-[#262626] rounded w-20 ml-auto"></div></td>
+                                <td class="px-4 py-3 text-left"><div class="h-4 bg-[#202020] rounded w-14"></div></td>
+                                <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-16"></div></td>
+                                <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-16"></div></td>
+                                <td class="px-4 py-3 text-center"><div class="h-7 w-12 bg-[#202020] rounded mx-auto"></div></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
