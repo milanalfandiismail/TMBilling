@@ -345,11 +345,18 @@ class ReportService:
 
             pc_kode = t.sesi.pc.kode if t.sesi and t.sesi.pc else "-"
 
+            paket_nama = None
+            if t.paket:
+                paket_nama = t.paket.nama
+            elif t.keterangan:
+                paket_nama = t.keterangan
+
             formatted.append({
                 "id": t.id,
                 "pc_kode": pc_kode,
                 "no_nota": t.no_nota or f"TRX-{t.id}",
                 "nama_pelanggan": nama,
+                "paket_nama": paket_nama or "-",
                 "jumlah": t.jumlah,
                 "waktu": format_display(t.dibuat_pada),
                 "keterangan": t.keterangan,
