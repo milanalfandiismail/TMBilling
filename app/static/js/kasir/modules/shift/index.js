@@ -471,144 +471,154 @@ const Shift = {
         const isForceClose = (result.catatan || '').includes('[FORCE CLOSE');
 
         const modalHtml = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-lg overflow-hidden shadow-2xl animate-in">
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-lg lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl overflow-hidden shadow-2xl animate-in flex flex-col max-h-[92vh]">
                 <!-- Header -->
-                <div class="px-6 py-5 border-b border-[#2a2a2a] flex items-center justify-between">
+                <div class="px-4 py-3 lg:px-5 lg:py-3.5 xl:px-6 xl:py-4 border-b border-[#2a2a2a] flex items-center justify-between bg-[#141414] shrink-0">
                     <div>
                         <div class="flex items-center gap-2">
-                            <h3 class="text-sm lg:max-xl:text-base xl:text-lg font-bold text-neutral-100">Rekapitulasi Shift Kasir</h3>
-                            ${isForceClose ? '<span class="px-2 py-0.5 text-[10px] lg:max-xl:text-xs xl:text-xs font-bold rounded bg-red-950/80 text-red-400 border border-red-800/60">FORCE CLOSE</span>' : '<span class="px-2 py-0.5 text-[10px] lg:max-xl:text-xs xl:text-xs font-bold rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">SELESAI</span>'}
+                            <h3 class="text-sm lg:text-base xl:text-lg font-bold text-neutral-100">Rekapitulasi Shift Kasir</h3>
+                            ${isForceClose ? '<span class="px-2 py-0.5 text-[9px] lg:text-[10px] xl:text-xs font-bold rounded bg-red-950/80 text-red-400 border border-red-800/60">FORCE CLOSE</span>' : '<span class="px-2 py-0.5 text-[9px] lg:text-[10px] xl:text-xs font-bold rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">SELESAI</span>'}
                         </div>
-                        <p class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 mt-0.5">Laporan serah terima shift dan rekonsiliasi laci fisik</p>
+                        <p class="text-[10px] lg:text-xs text-neutral-500 mt-0.5">Laporan serah terima shift dan rekonsiliasi laci fisik</p>
                     </div>
-                    <button onclick="Modal.closeModal()" class="text-neutral-500 hover:text-white transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <button onclick="Modal.closeModal()" class="w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-[#2e2e2e] text-neutral-400 hover:text-white flex items-center justify-center text-base font-bold transition-colors">
+                        &times;
                     </button>
                 </div>
 
-                <div class="px-6 py-5 space-y-4 max-h-[75vh] overflow-y-auto scrollbar-thin text-xs lg:max-xl:text-xs xl:text-sm">
-                    <!-- Info Petugas & Waktu -->
-                    <div class="p-3 rounded-lg bg-neutral-900/70 border border-[#222] space-y-1.5">
-                        <div class="flex justify-between">
-                            <span class="text-neutral-500">Kasir:</span>
-                            <span class="text-neutral-200 font-bold">${Utils.escapeHtml(result.kasir_nama || 'Kasir')}</span>
+                <!-- Body (Responsive 2-Column on lg, xl, 2xl) -->
+                <div class="p-3.5 sm:p-4 lg:p-4 xl:p-5 2xl:p-6 space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-3.5 xl:gap-4.5 overflow-y-auto scrollbar-thin text-xs lg:text-[11px] xl:text-xs 2xl:text-sm">
+                    <!-- Left Column -->
+                    <div class="space-y-2.5 lg:space-y-3 flex flex-col">
+                        <!-- Info Petugas & Waktu -->
+                        <div class="p-2.5 lg:p-2.5 xl:p-3 rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] space-y-1">
+                            <div class="flex justify-between items-center">
+                                <span class="text-neutral-500 text-[11px] lg:text-[10.5px] xl:text-xs">Petugas Kasir:</span>
+                                <span class="text-neutral-200 font-bold text-xs lg:text-[11px] xl:text-sm">${Utils.escapeHtml(result.kasir_nama || 'Kasir')}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-neutral-500 text-[11px] lg:text-[10.5px] xl:text-xs">Waktu Mulai:</span>
+                                <span class="text-neutral-300 font-mono text-[11px] lg:text-[10.5px] xl:text-xs">${result.waktu_mulai || '-'}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-neutral-500 text-[11px] lg:text-[10.5px] xl:text-xs">Waktu Selesai:</span>
+                                <span class="text-neutral-300 font-mono text-[11px] lg:text-[10.5px] xl:text-xs">${result.waktu_selesai || '-'}</span>
+                            </div>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-neutral-500">Waktu Mulai:</span>
-                            <span class="text-neutral-300 font-mono">${result.waktu_mulai || '-'}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-neutral-500">Waktu Selesai:</span>
-                            <span class="text-neutral-300 font-mono">${result.waktu_selesai || '-'}</span>
-                        </div>
-                    </div>
 
-                    <!-- 1. Rincian Penerimaan Tunai -->
-                    <div class="p-3.5 rounded-lg bg-[#0d0d0d] border border-[#202020] space-y-2">
-                        <div class="flex items-center justify-between pb-1.5 border-b border-[#1c1c1c]">
-                            <span class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                                Penerimaan Tunai (Cash)
-                            </span>
-                            <span class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-amber-400 font-mono">${Utils.formatRupiah(totalTunaiBersih)}</span>
-                        </div>
-                        <div class="space-y-1 pt-1 text-xs lg:max-xl:text-xs xl:text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-neutral-400">Billing Rental Tunai</span>
-                                <span class="text-neutral-200 font-mono">${Utils.formatRupiah(billingTunai)}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-neutral-400">Kantin / F&B Tunai</span>
-                                <span class="text-neutral-200 font-mono">${Utils.formatRupiah(kantinTunai)}</span>
-                            </div>
-                            ${refundTunai > 0 ? `
-                            <div class="flex justify-between text-red-400">
-                                <span>Refund Paket Tunai</span>
-                                <span class="font-mono">- ${Utils.formatRupiah(refundTunai)}</span>
-                            </div>` : ''}
-                        </div>
-                    </div>
-
-                    <!-- 2. Rekonsiliasi Laci (Tunai) -->
-                    <div class="p-3.5 rounded-lg bg-[#0d0d0d] border border-amber-900/30 space-y-2">
-                        <div class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-amber-400 uppercase tracking-wider pb-1.5 border-b border-amber-900/20 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                            Rekonsiliasi Laci (Tunai)
-                        </div>
-                        <div class="space-y-1.5 pt-1 text-xs lg:max-xl:text-xs xl:text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-neutral-400">Modal Awal di Laci</span>
-                                <span class="text-neutral-200 font-mono">${Utils.formatRupiah(modalAwal)}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-neutral-400">Total Tunai Masuk (Bersih)</span>
-                                <span class="text-neutral-200 font-mono">${Utils.formatRupiah(totalTunaiBersih)}</span>
-                            </div>
-                            <div class="flex justify-between pt-1 border-t border-[#1c1c1c] font-semibold items-center">
-                                <span class="text-neutral-300 flex items-center gap-1.5">
-                                    <span class="text-[9px] lg:max-xl:text-[9px] xl:text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 border border-neutral-700 font-bold tracking-wider">SISTEM</span>
-                                    Seharusnya di Laci
+                        <!-- 1. Rincian Penerimaan Tunai -->
+                        <div class="p-2.5 lg:p-2.5 xl:p-3 rounded-lg bg-[#0d0d0d] border border-[#202020] space-y-1.5">
+                            <div class="flex items-center justify-between pb-1.5 border-b border-[#1c1c1c]">
+                                <span class="text-[11px] lg:text-[10.5px] xl:text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                    Penerimaan Tunai (Cash)
                                 </span>
-                                <span class="text-neutral-100 font-mono">${Utils.formatRupiah(totalFisikSeharusnya)}</span>
+                                <span class="text-xs lg:text-[11px] xl:text-sm font-bold text-amber-400 font-mono">${Utils.formatRupiah(totalTunaiBersih)}</span>
                             </div>
-                            <div class="flex justify-between font-bold pt-1 items-center">
-                                <span class="text-neutral-300 flex items-center gap-1.5">
-                                    <span class="text-[9px] lg:max-xl:text-[9px] xl:text-[10px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/50 font-bold tracking-wider">KASIR</span>
-                                    Dihitung Fisik
-                                </span>
-                                <span class="text-white font-mono text-xs lg:max-xl:text-sm xl:text-base">
-                                    ${uangFisik !== null && uangFisik !== undefined ? Utils.formatRupiah(uangFisik) : '-'}
-                                </span>
-                            </div>
-                            <div class="flex justify-between items-center pt-1.5 border-t border-[#222]">
-                                <span class="text-neutral-400 font-semibold">Selisih Laci</span>
-                                ${selisihHtml}
+                            <div class="space-y-1 pt-0.5 text-[11px] lg:text-[10.5px] xl:text-xs">
+                                <div class="flex justify-between">
+                                    <span class="text-neutral-400">Billing Rental Tunai</span>
+                                    <span class="text-neutral-200 font-mono">${Utils.formatRupiah(billingTunai)}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-neutral-400">Kantin / F&B Tunai</span>
+                                    <span class="text-neutral-200 font-mono">${Utils.formatRupiah(kantinTunai)}</span>
+                                </div>
+                                ${refundTunai > 0 ? `
+                                <div class="flex justify-between text-red-400">
+                                    <span>Refund Paket Tunai</span>
+                                    <span class="font-mono">- ${Utils.formatRupiah(refundTunai)}</span>
+                                </div>` : ''}
                             </div>
                         </div>
+
+                        <!-- 3. Penerimaan Digital (Hanya jika ada non-tunai) -->
+                        ${nonTunaiList.length > 0 ? `
+                        <div class="p-2.5 lg:p-2.5 xl:p-3 rounded-lg bg-[#0d0d0d] border border-cyan-900/30 space-y-1.5">
+                            <div class="flex items-center justify-between pb-1.5 border-b border-cyan-900/20">
+                                <span class="text-[11px] lg:text-[10.5px] xl:text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                    Penerimaan Digital
+                                </span>
+                                <span class="text-xs lg:text-[11px] xl:text-sm font-bold text-cyan-400 font-mono">${Utils.formatRupiah(totalNonTunai)}</span>
+                            </div>
+                            <div class="space-y-1 pt-0.5">
+                                ${nonTunaiRowsHtml}
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
 
-                    <!-- 3. Penerimaan Digital (Hanya jika ada non-tunai) -->
-                    ${nonTunaiList.length > 0 ? `
-                    <div class="p-3.5 rounded-lg bg-[#0d0d0d] border border-cyan-900/30 space-y-2">
-                        <div class="flex items-center justify-between pb-1.5 border-b border-cyan-900/20">
-                            <span class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
-                                <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
-                                Penerimaan Digital
-                            </span>
-                            <span class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-cyan-400 font-mono">${Utils.formatRupiah(totalNonTunai)}</span>
+                    <!-- Right Column -->
+                    <div class="space-y-2.5 lg:space-y-3 flex flex-col">
+                        <!-- 2. Rekonsiliasi Laci (Tunai) -->
+                        <div class="p-2.5 lg:p-2.5 xl:p-3 rounded-lg bg-[#0d0d0d] border border-amber-900/30 space-y-1.5">
+                            <div class="text-[11px] lg:text-[10.5px] xl:text-xs font-bold text-amber-400 uppercase tracking-wider pb-1.5 border-b border-amber-900/20 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                Rekonsiliasi Laci (Tunai)
+                            </div>
+                            <div class="space-y-1 pt-0.5 text-[11px] lg:text-[10.5px] xl:text-xs">
+                                <div class="flex justify-between">
+                                    <span class="text-neutral-400">Modal Awal di Laci</span>
+                                    <span class="text-neutral-200 font-mono">${Utils.formatRupiah(modalAwal)}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-neutral-400">Total Tunai Masuk (Bersih)</span>
+                                    <span class="text-neutral-200 font-mono">${Utils.formatRupiah(totalTunaiBersih)}</span>
+                                </div>
+                                <div class="flex justify-between pt-1 border-t border-[#1c1c1c] font-semibold items-center">
+                                    <span class="text-neutral-300 flex items-center gap-1.5">
+                                        <span class="text-[8.5px] lg:text-[8px] xl:text-[9px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 border border-neutral-700 font-bold tracking-wider">SISTEM</span>
+                                        Seharusnya di Laci
+                                    </span>
+                                    <span class="text-neutral-100 font-mono font-bold">${Utils.formatRupiah(totalFisikSeharusnya)}</span>
+                                </div>
+                                <div class="flex justify-between font-bold pt-1 items-center">
+                                    <span class="text-neutral-300 flex items-center gap-1.5">
+                                        <span class="text-[8.5px] lg:text-[8px] xl:text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/50 font-bold tracking-wider">KASIR</span>
+                                        Dihitung Fisik
+                                    </span>
+                                    <span class="text-white font-mono text-xs lg:text-[11.5px] xl:text-sm">
+                                        ${uangFisik !== null && uangFisik !== undefined ? Utils.formatRupiah(uangFisik) : '-'}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center pt-1.5 border-t border-[#222]">
+                                    <span class="text-neutral-400 font-semibold text-[11px] lg:text-[10.5px] xl:text-xs">Selisih Laci</span>
+                                    ${selisihHtml}
+                                </div>
+                            </div>
                         </div>
-                        <div class="space-y-1 pt-1">
-                            ${nonTunaiRowsHtml}
-                        </div>
-                    </div>
-                    ` : ''}
 
-                    <!-- Catatan Serah Terima -->
-                    ${result.catatan ? `
-                    <div class="p-3 rounded-lg bg-[#0e0e0e] border border-[#222] space-y-1">
-                        <span class="text-[10px] lg:max-xl:text-xs xl:text-xs text-neutral-500 uppercase font-bold tracking-wider">Catatan Handover / Audit:</span>
-                        <p class="text-neutral-300 italic text-[11px] lg:max-xl:text-xs xl:text-sm break-words whitespace-pre-wrap">${Utils.escapeHtml(result.catatan)}</p>
-                    </div>` : ''}
+                        <!-- Catatan Serah Terima (Jika Ada) -->
+                        ${result.catatan ? `
+                        <div class="p-2.5 lg:p-2.5 xl:p-3 rounded-lg bg-[#0e0e0e] border border-[#222] space-y-1">
+                            <span class="text-[9.5px] lg:text-[9px] xl:text-[10px] text-neutral-500 uppercase font-bold tracking-wider block">Catatan Handover / Audit:</span>
+                            <p class="text-neutral-300 italic text-[11px] lg:text-[10px] xl:text-xs break-words whitespace-pre-wrap leading-relaxed">${Utils.escapeHtml(result.catatan)}</p>
+                        </div>` : `
+                        <div class="p-2.5 lg:p-2.5 xl:p-3 rounded-lg bg-[#0e0e0e]/50 border border-[#1a1a1a] flex items-center justify-center text-center">
+                            <span class="text-neutral-600 text-[10px] lg:text-[9.5px] xl:text-xs italic">Tidak ada catatan tambahan</span>
+                        </div>`}
+                    </div>
                 </div>
 
                 <!-- Footer Aksi -->
-                <div class="px-6 py-4 border-t border-[#2a2a2a] flex flex-wrap justify-between items-center gap-2 bg-[#0c0c0c]">
+                <div class="px-4 py-2.5 lg:px-5 lg:py-3 xl:px-6 xl:py-3.5 border-t border-[#2a2a2a] flex flex-wrap justify-between items-center gap-2 bg-[#0c0c0c] shrink-0">
                     <div class="flex gap-2">
                         <button onclick="Shift.printHandover(${JSON.stringify(result).replace(/"/g, "'")})" 
-                            class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors flex items-center gap-1.5">
+                            class="px-2.5 py-1.5 lg:px-3 lg:py-1.5 xl:px-3.5 xl:py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:text-[10.5px] xl:text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                             Struk Browser
                         </button>
                         ${shiftId ? `
                         <button onclick="Shift.printThermalReceipt(${shiftId})" 
-                            class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors flex items-center gap-1.5">
+                            class="px-2.5 py-1.5 lg:px-3 lg:py-1.5 xl:px-3.5 xl:py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:text-[10.5px] xl:text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                             Thermal 58mm
                         </button>
                         ` : ''}
                     </div>
                     <button onclick="Modal.closeModal()" 
-                        class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:max-xl:text-xs xl:text-sm font-bold rounded-lg transition-colors">Tutup</button>
+                        class="px-3.5 py-1.5 lg:px-4 lg:py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:text-[10.5px] xl:text-xs font-bold rounded-lg transition-colors">Tutup</button>
                 </div>
             </div>
         `;
@@ -918,6 +928,135 @@ const Shift = {
     _lastHistoryFingerprint: null,
     _lastUserLogsFingerprint: null,
 
+    historyPerPage: 5,
+    historyCurrentPage: 1,
+    historyTotalPages: 1,
+    _lastShifts: [],
+
+    userLogsPerPage: 5,
+    userLogsCurrentPage: 1,
+    userLogsTotalPages: 1,
+    _lastStaffLogs: [],
+
+    renderHistoryPagination(totalCount) {
+        const paginationContainer = document.getElementById('shift-history-pagination');
+        const pageInfo = document.getElementById('shift-history-page-info');
+        const prevBtn = document.getElementById('shift-history-prev-btn');
+        const nextBtn = document.getElementById('shift-history-next-btn');
+
+        if (!paginationContainer) return;
+
+        if (totalCount === 0) {
+            paginationContainer.classList.add('hidden');
+            return;
+        }
+
+        paginationContainer.classList.remove('hidden');
+        paginationContainer.classList.add('flex');
+
+        const startIdx = (this.historyCurrentPage - 1) * this.historyPerPage + 1;
+        const endIdx = Math.min(this.historyCurrentPage * this.historyPerPage, totalCount);
+
+        if (pageInfo) {
+            pageInfo.innerHTML = `Menampilkan <span class="font-bold text-neutral-200">${startIdx}</span> - <span class="font-bold text-neutral-200">${endIdx}</span> dari <span class="font-bold text-neutral-200">${totalCount}</span> shift`;
+        }
+
+        if (prevBtn) {
+            prevBtn.disabled = this.historyCurrentPage <= 1;
+        }
+        if (nextBtn) {
+            nextBtn.disabled = this.historyCurrentPage >= this.historyTotalPages;
+        }
+    },
+
+    prevHistoryPage() {
+        if (this.historyCurrentPage > 1) {
+            this.historyCurrentPage--;
+            this.renderHistoryTable();
+        }
+    },
+
+    nextHistoryPage() {
+        if (this.historyCurrentPage < this.historyTotalPages) {
+            this.historyCurrentPage++;
+            this.renderHistoryTable();
+        }
+    },
+
+    renderHistoryTable() {
+        const container = document.getElementById('shift-history-rows');
+        if (!container) return;
+
+        const shifts = this._lastShifts || [];
+        this.historyTotalPages = Math.ceil(shifts.length / this.historyPerPage) || 1;
+        this.historyCurrentPage = Math.max(1, Math.min(this.historyCurrentPage, this.historyTotalPages));
+
+        if (shifts.length === 0) {
+            container.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center py-6 text-neutral-500 text-xs">
+                        Tidak ada data riwayat shift ditemukan
+                    </td>
+                </tr>
+            `;
+            this.renderHistoryPagination(0);
+            return;
+        }
+
+        const startIndex = (this.historyCurrentPage - 1) * this.historyPerPage;
+        const pageShifts = shifts.slice(startIndex, startIndex + this.historyPerPage);
+
+        container.innerHTML = pageShifts.map(s => {
+            const isForceClose = (s.catatan || '').includes('[FORCE CLOSE');
+            let selisihBadge = '';
+            if (s.selisih !== null && s.selisih !== undefined) {
+                if (s.selisih > 0) {
+                    selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:text-[9px] xl:text-xs font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 font-mono whitespace-nowrap">+${Utils.formatRawRupiah(s.selisih)}</span>`;
+                } else if (s.selisih < 0) {
+                    selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:text-[9px] xl:text-xs font-bold bg-red-950/70 text-red-400 border border-red-800/40 font-mono whitespace-nowrap">-${Utils.formatRawRupiah(Math.abs(s.selisih))}</span>`;
+                } else {
+                    selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:text-[9px] xl:text-xs font-bold bg-neutral-800 text-neutral-300 font-mono whitespace-nowrap">Rp 0</span>`;
+                }
+            } else {
+                selisihBadge = '<span class="text-neutral-500 font-mono text-[10px] lg:text-[9px] xl:text-xs whitespace-nowrap">-</span>';
+            }
+
+            const statusBadge = isForceClose
+                ? '<span class="px-1.5 py-0.5 rounded text-[9px] lg:text-[9px] xl:text-xs font-bold bg-red-950/70 text-red-400 border border-red-800/40 whitespace-nowrap">FORCE CLOSE</span>'
+                : '<span class="px-1.5 py-0.5 rounded text-[9px] lg:text-[9px] xl:text-xs font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 whitespace-nowrap">SELESAI</span>';
+
+            return `
+                <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs lg:text-[10px] xl:text-xs 2xl:text-sm">
+                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-neutral-400 whitespace-nowrap">#${s.id}</td>
+                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 whitespace-nowrap">
+                        <div class="font-bold text-neutral-200 truncate max-w-[130px] lg:max-w-[100px] xl:max-w-[150px]" title="${Utils.escapeHtml(s.kasir_nama || 'Kasir')}">${Utils.escapeHtml(s.kasir_nama || 'Kasir')}</div>
+                        <div class="text-[10px] lg:text-[8.5px] xl:text-[10px] 2xl:text-xs text-neutral-500 font-mono whitespace-nowrap">${s.waktu_mulai ? s.waktu_mulai.split(' ')[0] : ''} ${s.waktu_mulai ? s.waktu_mulai.split(' ')[1] : '-'} s/d ${s.waktu_selesai ? s.waktu_selesai.split(' ')[1] : '-'}</div>
+                    </td>
+                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.modal_awal || 0)}</td>
+                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.total_billing || 0)}</td>
+                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.total_kantin || 0)}</td>
+                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono font-bold text-neutral-100 whitespace-nowrap">${s.uang_fisik !== null && s.uang_fisik !== undefined ? Utils.formatRupiah(s.uang_fisik) : '-'}</td>
+                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 whitespace-nowrap">${selisihBadge}</td>
+                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 whitespace-nowrap">${statusBadge}</td>
+                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-1">
+                            <button onclick="Shift.viewShiftDetail(${s.id})" title="Lihat Rekapitulasi"
+                                class="p-1 lg:p-0.5 xl:p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white transition-colors">
+                                <svg class="w-3.5 h-3.5 lg:w-3 lg:h-3 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </button>
+                            <button onclick="Shift.printThermalReceipt(${s.id})" title="Cetak Struk Thermal 58mm"
+                                class="p-1 lg:p-0.5 xl:p-1.5 rounded bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/40 text-amber-400 hover:text-amber-300 transition-colors">
+                                <svg class="w-3.5 h-3.5 lg:w-3 lg:h-3 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        this.renderHistoryPagination(shifts.length);
+    },
+
     refreshHistoryLive() {
         if (typeof App !== 'undefined' && !['shift', 'shift_history', 'user_logs'].includes(App.currentTab)) return;
         if (typeof App !== 'undefined' && App.currentTab === 'shift_history') {
@@ -940,8 +1079,12 @@ const Shift = {
         const container = document.getElementById('shift-history-rows');
         if (!container) return;
 
+        if (!isSilent) {
+            this.historyCurrentPage = 1;
+        }
+
         if (!isSilent && (!this._lastShifts || this._lastShifts.length === 0) && typeof Skeleton !== 'undefined') {
-            container.innerHTML = Skeleton.tableRows(6, 9);
+            container.innerHTML = Skeleton.tableRows(5, 9);
         }
 
         try {
@@ -953,7 +1096,7 @@ const Shift = {
                 tanggal_mulai: tanggalMulai,
                 tanggal_selesai: tanggalSelesai,
                 kasir_id: kasirId,
-                limit: 50
+                limit: 200
             });
 
             if (!res.success) throw new Error(res.error || 'Gagal memuat riwayat');
@@ -972,72 +1115,16 @@ const Shift = {
             this._lastHistoryFingerprint = newFingerprint;
             this._lastShifts = shifts;
 
-            if (shifts.length === 0) {
-                container.innerHTML = `
-                    <tr>
-                        <td colspan="9" class="text-center py-8 text-neutral-500 text-xs">
-                            Tidak ada data riwayat shift ditemukan
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            container.innerHTML = shifts.map(s => {
-                const isForceClose = (s.catatan || '').includes('[FORCE CLOSE');
-                let selisihBadge = '';
-                if (s.selisih !== null && s.selisih !== undefined) {
-                    if (s.selisih > 0) {
-                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:max-xl:text-[9px] xl:text-xs font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 font-mono whitespace-nowrap">+${Utils.formatRawRupiah(s.selisih)}</span>`;
-                    } else if (s.selisih < 0) {
-                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:max-xl:text-[9px] xl:text-xs font-bold bg-red-950/70 text-red-400 border border-red-800/40 font-mono whitespace-nowrap">-${Utils.formatRawRupiah(Math.abs(s.selisih))}</span>`;
-                    } else {
-                        selisihBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] lg:max-xl:text-[9px] xl:text-xs font-bold bg-neutral-800 text-neutral-300 font-mono whitespace-nowrap">Rp 0</span>`;
-                    }
-                } else {
-                    selisihBadge = '<span class="text-neutral-500 font-mono text-[10px] lg:max-xl:text-[9px] xl:text-xs whitespace-nowrap">-</span>';
-                }
-
-                const statusBadge = isForceClose
-                    ? '<span class="px-1.5 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-xs font-bold bg-red-950/70 text-red-400 border border-red-800/40 whitespace-nowrap">FORCE CLOSE</span>'
-                    : '<span class="px-1.5 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-xs font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 whitespace-nowrap">SELESAI</span>';
-
-                return `
-                    <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs lg:max-xl:text-[11px] xl:text-sm">
-                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-mono text-neutral-400 whitespace-nowrap">#${s.id}</td>
-                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">
-                            <div class="font-bold text-neutral-200 truncate max-w-[130px] lg:max-xl:max-w-[95px] xl:max-w-[160px]" title="${Utils.escapeHtml(s.kasir_nama || 'Kasir')}">${Utils.escapeHtml(s.kasir_nama || 'Kasir')}</div>
-                            <div class="text-[10px] lg:max-xl:text-[9px] xl:text-xs text-neutral-500 font-mono whitespace-nowrap">${s.waktu_mulai ? s.waktu_mulai.split(' ')[0] : ''} ${s.waktu_mulai ? s.waktu_mulai.split(' ')[1] : '-'} s/d ${s.waktu_selesai ? s.waktu_selesai.split(' ')[1] : '-'}</div>
-                        </td>
-                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.modal_awal || 0)}</td>
-                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.total_billing || 0)}</td>
-                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.total_kantin || 0)}</td>
-                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-mono font-bold text-neutral-100 whitespace-nowrap">${s.uang_fisik !== null && s.uang_fisik !== undefined ? Utils.formatRupiah(s.uang_fisik) : '-'}</td>
-                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">${selisihBadge}</td>
-                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">${statusBadge}</td>
-                        <td class="px-3 lg:max-xl:px-1.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3.5 text-right whitespace-nowrap">
-                            <div class="flex items-center justify-end gap-1">
-                                <button onclick="Shift.viewShiftDetail(${s.id})" title="Lihat Rekapitulasi"
-                                    class="p-1 lg:max-xl:p-1 xl:p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white transition-colors">
-                                    <svg class="w-3.5 h-3.5 lg:max-xl:w-3.5 lg:max-xl:h-3.5 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                </button>
-                                <button onclick="Shift.printThermalReceipt(${s.id})" title="Cetak Struk Thermal 58mm"
-                                    class="p-1 lg:max-xl:p-1 xl:p-1.5 rounded bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/40 text-amber-400 hover:text-amber-300 transition-colors">
-                                    <svg class="w-3.5 h-3.5 lg:max-xl:w-3.5 lg:max-xl:h-3.5 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            this.renderHistoryTable();
         } catch (err) {
             container.innerHTML = `
                 <tr>
-                    <td colspan="9" class="text-center py-6 text-red-400 text-xs lg:text-base">
+                    <td colspan="9" class="text-center py-6 text-red-400 text-xs">
                         Error memuat riwayat: ${Utils.escapeHtml(err.message)}
                     </td>
                 </tr>
             `;
+            this.renderHistoryPagination(0);
         }
     },
 
@@ -1053,12 +1140,157 @@ const Shift = {
         }
     },
 
+    renderUserLogsPagination(totalCount) {
+        const paginationContainer = document.getElementById('user-logs-pagination');
+        const pageInfo = document.getElementById('user-logs-page-info');
+        const prevBtn = document.getElementById('user-logs-prev-btn');
+        const nextBtn = document.getElementById('user-logs-next-btn');
+
+        if (!paginationContainer) return;
+
+        if (totalCount === 0) {
+            paginationContainer.classList.add('hidden');
+            return;
+        }
+
+        paginationContainer.classList.remove('hidden');
+        paginationContainer.classList.add('flex');
+
+        const startIdx = (this.userLogsCurrentPage - 1) * this.userLogsPerPage + 1;
+        const endIdx = Math.min(this.userLogsCurrentPage * this.userLogsPerPage, totalCount);
+
+        if (pageInfo) {
+            pageInfo.innerHTML = `Menampilkan <span class="font-bold text-neutral-200">${startIdx}</span> - <span class="font-bold text-neutral-200">${endIdx}</span> dari <span class="font-bold text-neutral-200">${totalCount}</span> log`;
+        }
+
+        if (prevBtn) {
+            prevBtn.disabled = this.userLogsCurrentPage <= 1;
+        }
+        if (nextBtn) {
+            nextBtn.disabled = this.userLogsCurrentPage >= this.userLogsTotalPages;
+        }
+    },
+
+    prevUserLogsPage() {
+        if (this.userLogsCurrentPage > 1) {
+            this.userLogsCurrentPage--;
+            this.renderUserLogsTable();
+        }
+    },
+
+    nextUserLogsPage() {
+        if (this.userLogsCurrentPage < this.userLogsTotalPages) {
+            this.userLogsCurrentPage++;
+            this.renderUserLogsTable();
+        }
+    },
+
+    openUserLogDetail(index) {
+        const log = this._lastStaffLogs ? this._lastStaffLogs[index] : null;
+        if (!log) return;
+
+        const modal = document.getElementById('modal-user-logs-detail');
+        if (!modal) return;
+
+        const elUser = document.getElementById('user-logs-detail-user');
+        const elAction = document.getElementById('user-logs-detail-action');
+        const elIp = document.getElementById('user-logs-detail-ip');
+        const elTime = document.getElementById('user-logs-detail-time');
+        const elDesc = document.getElementById('user-logs-detail-desc');
+
+        if (elUser) elUser.innerText = log.user || 'system';
+        if (elAction) {
+            elAction.innerText = log.action || '-';
+            const act = (log.action || '').toUpperCase();
+            let badgeClass = 'bg-neutral-800 text-neutral-300 border border-neutral-700';
+            if (act.includes('BUKA')) badgeClass = 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60';
+            else if (act.includes('TUTUP')) badgeClass = 'bg-blue-950/80 text-blue-400 border border-blue-800/60';
+            else if (act.includes('FORCE_CLOSE') || act.includes('GAGAL') || act.includes('HAPUS')) badgeClass = 'bg-red-950/80 text-red-400 border border-red-800/60';
+            else if (act.includes('KUOTA') || act.includes('UPDATE')) badgeClass = 'bg-purple-950/80 text-purple-400 border border-purple-800/60';
+            else if (act.includes('LOGIN')) badgeClass = 'bg-amber-950/80 text-amber-400 border border-amber-800/60';
+            elAction.className = `px-2 py-0.5 rounded text-[10px] 2xl:text-xs font-bold uppercase tracking-wider ${badgeClass}`;
+        }
+        if (elIp) elIp.innerText = log.ip_address || '-';
+        if (elTime) elTime.innerText = log.timestamp || '-';
+        if (elDesc) elDesc.innerText = log.detail || '-';
+
+        modal.classList.remove('hidden');
+    },
+
+    closeUserLogDetail() {
+        const modal = document.getElementById('modal-user-logs-detail');
+        if (modal) modal.classList.add('hidden');
+    },
+
+    renderUserLogsTable() {
+        const container = document.getElementById('user-logs-rows');
+        if (!container) return;
+
+        const staffLogs = this._lastStaffLogs || [];
+        this.userLogsTotalPages = Math.ceil(staffLogs.length / this.userLogsPerPage) || 1;
+        this.userLogsCurrentPage = Math.max(1, Math.min(this.userLogsCurrentPage, this.userLogsTotalPages));
+
+        if (staffLogs.length === 0) {
+            container.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-6 text-neutral-500 text-xs">
+                        Tidak ada log aktivitas staff yang cocok dengan filter
+                    </td>
+                </tr>
+            `;
+            this.renderUserLogsPagination(0);
+            return;
+        }
+
+        const startIndex = (this.userLogsCurrentPage - 1) * this.userLogsPerPage;
+        const pageLogs = staffLogs.slice(startIndex, startIndex + this.userLogsPerPage);
+
+        container.innerHTML = pageLogs.map((log, idx) => {
+            const globalIndex = startIndex + idx;
+            const act = (log.action || '').toUpperCase();
+            let badgeClass = 'bg-neutral-800 text-neutral-300 border-neutral-700';
+            if (act.includes('BUKA')) badgeClass = 'bg-emerald-950/70 text-emerald-400 border-emerald-800/40';
+            else if (act.includes('TUTUP')) badgeClass = 'bg-blue-950/70 text-blue-400 border-blue-800/40';
+            else if (act.includes('FORCE_CLOSE') || act.includes('GAGAL') || act.includes('HAPUS')) badgeClass = 'bg-red-950/70 text-red-400 border-red-800/40';
+            else if (act.includes('KUOTA') || act.includes('UPDATE')) badgeClass = 'bg-purple-950/70 text-purple-400 border-purple-800/40';
+            else if (act.includes('LOGIN')) badgeClass = 'bg-amber-950/70 text-amber-400 border-amber-800/40';
+
+            return `
+                <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs lg:text-[10px] xl:text-xs 2xl:text-sm">
+                    <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-neutral-400 whitespace-nowrap">${log.timestamp || '-'}</td>
+                    <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-bold text-neutral-200 whitespace-nowrap">
+                        <span class="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-700 font-mono text-[10px] lg:text-[9px] xl:text-xs">${Utils.escapeHtml(log.user || 'system')}</span>
+                    </td>
+                    <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 whitespace-nowrap">
+                        <span class="px-2 py-0.5 rounded text-[10px] lg:text-[9px] xl:text-xs font-bold border ${badgeClass}">${Utils.escapeHtml(log.action || '-')}</span>
+                    </td>
+                    <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 text-neutral-300 truncate max-w-[200px] lg:max-w-[180px] xl:max-w-[300px] 2xl:max-w-[450px]" title="${Utils.escapeHtml(log.detail || '-')}">
+                        ${Utils.escapeHtml(log.detail || '-')}
+                    </td>
+                    <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-[10px] lg:text-[9px] xl:text-xs text-neutral-500 whitespace-nowrap">${log.ip_address || '-'}</td>
+                    <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 text-center whitespace-nowrap">
+                        <button onclick="Shift.openUserLogDetail(${globalIndex})" title="Lihat Detail Log"
+                            class="px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-[10px] lg:text-[9px] xl:text-xs font-semibold transition-colors">
+                            Detail
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        this.renderUserLogsPagination(staffLogs.length);
+    },
+
     async loadUserLogs(params = {}, isSilent = false) {
         const container = document.getElementById('user-logs-rows');
         if (!container) return;
 
+        if (!isSilent) {
+            this.userLogsCurrentPage = 1;
+        }
+
         if (!isSilent && (!this._lastStaffLogs || this._lastStaffLogs.length === 0) && typeof Skeleton !== 'undefined') {
-            container.innerHTML = Skeleton.tableRows(6, 5);
+            container.innerHTML = Skeleton.tableRows(5, 6);
         }
 
         try {
@@ -1085,48 +1317,16 @@ const Shift = {
             this._lastUserLogsFingerprint = newFingerprint;
             this._lastStaffLogs = staffLogs;
 
-            if (staffLogs.length === 0) {
-                container.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="text-center py-8 text-neutral-500 text-xs lg:text-base">
-                            Tidak ada log aktivitas staff yang cocok dengan filter
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            container.innerHTML = staffLogs.map(log => {
-                const act = (log.action || '').toUpperCase();
-                let badgeClass = 'bg-neutral-800 text-neutral-300 border-neutral-700';
-                if (act.includes('BUKA')) badgeClass = 'bg-emerald-950/70 text-emerald-400 border-emerald-800/40';
-                else if (act.includes('TUTUP')) badgeClass = 'bg-blue-950/70 text-blue-400 border-blue-800/40';
-                else if (act.includes('FORCE_CLOSE') || act.includes('GAGAL') || act.includes('HAPUS')) badgeClass = 'bg-red-950/70 text-red-400 border-red-800/40';
-                else if (act.includes('KUOTA') || act.includes('UPDATE')) badgeClass = 'bg-purple-950/70 text-purple-400 border-purple-800/40';
-                else if (act.includes('LOGIN')) badgeClass = 'bg-amber-950/70 text-amber-400 border-amber-800/40';
-
-                return `
-                    <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs lg:max-xl:text-[11px] xl:text-sm">
-                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-mono text-neutral-400 whitespace-nowrap">${log.timestamp || '-'}</td>
-                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-bold text-neutral-200 whitespace-nowrap">
-                            <span class="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-700 font-mono text-[11px] lg:max-xl:text-[10px] xl:text-xs">${Utils.escapeHtml(log.user || 'system')}</span>
-                        </td>
-                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-2.5 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">
-                            <span class="px-2 py-0.5 rounded text-[10px] lg:max-xl:text-[9px] xl:text-xs font-bold border ${badgeClass}">${Utils.escapeHtml(log.action || '-')}</span>
-                        </td>
-                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-2.5 lg:max-xl:py-2 xl:py-3.5 text-neutral-300 break-words whitespace-pre-wrap">${Utils.escapeHtml(log.detail || '-')}</td>
-                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-2.5 lg:max-xl:py-2 xl:py-3.5 font-mono text-[11px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 whitespace-nowrap">${log.ip_address || '-'}</td>
-                    </tr>
-                `;
-            }).join('');
+            this.renderUserLogsTable();
         } catch (err) {
             container.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center py-6 text-red-400 text-xs lg:text-base">
+                    <td colspan="6" class="text-center py-6 text-red-400 text-xs">
                         Error memuat log: ${Utils.escapeHtml(err.message)}
                     </td>
                 </tr>
             `;
+            this.renderUserLogsPagination(0);
         }
     },
 
