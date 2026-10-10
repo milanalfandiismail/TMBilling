@@ -1,13 +1,13 @@
 <!-- ===== TAB: LOG & AUDIT STAFF ===== -->
-<div id="tab-user_logs" class="tab-content hidden space-y-6">
+<div id="tab-user_logs" class="tab-content hidden space-y-3 lg:space-y-2.5 xl:space-y-3.5 2xl:space-y-5">
     <!-- Header Card -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 lg:p-2.5 xl:p-3.5 2xl:p-5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-100 uppercase tracking-wider flex items-center gap-2">
+                <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-xl font-bold text-neutral-100 uppercase tracking-wider flex items-center gap-2">
                     <span>🛡️</span> Log & Audit Staff
                 </h3>
-                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">
+                <p class="text-[9px] lg:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5">
                     Rekam jejak aktivitas operasional kasir & admin (shift, manipulasi akun, reset benefit kuota, login/logout)
                 </p>
             </div>
@@ -15,24 +15,24 @@
     </div>
 
     <!-- Filter Card -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Filter Log & Aktivitas</h3>
-        <div class="flex flex-wrap items-end gap-3">
-            <div class="flex-1 min-w-[200px]">
-                <label for="filter-user-logs-search" class="text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider block mb-1">Cari Log</label>
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 lg:p-2.5 xl:p-3.5 2xl:p-4">
+        <h3 class="text-xs lg:text-xs xl:text-sm 2xl:text-base font-bold text-neutral-200 uppercase tracking-wider mb-2.5 lg:mb-2 xl:mb-3">Filter Log & Aktivitas</h3>
+        <div class="flex flex-wrap items-end gap-2.5">
+            <div class="flex-1 min-w-[180px]">
+                <label for="filter-user-logs-search" class="text-[10px] lg:text-[9px] xl:text-xs 2xl:text-sm font-bold text-neutral-400 uppercase tracking-wider block mb-1">Cari Log</label>
                 <div class="relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </span>
-                    <input type="text" id="filter-user-logs-search" placeholder="Cari berdasarkan kasir, detail, aksi..."
-                        class="w-full pl-9 pr-3.5 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors"
+                    <input type="text" id="filter-user-logs-search" placeholder="Cari kasir, detail, aksi..."
+                        class="w-full pl-8 pr-3 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-[10px] xl:text-xs 2xl:text-sm text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors"
                         onkeyup="if(event.key==='Enter') Shift.loadUserLogs()">
                 </div>
             </div>
-            <div class="w-auto min-w-[180px]">
-                <label for="filter-user-logs-action" class="text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider block mb-1">Kategori Aksi</label>
+            <div class="w-auto min-w-[160px]">
+                <label for="filter-user-logs-action" class="text-[10px] lg:text-[9px] xl:text-xs 2xl:text-sm font-bold text-neutral-400 uppercase tracking-wider block mb-1">Kategori Aksi</label>
                 <select id="filter-user-logs-action" onchange="Shift.loadUserLogs()"
-                    class="w-full px-3 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
+                    class="w-full px-2.5 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:text-[10px] xl:text-xs 2xl:text-sm text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
                     <option value="">Semua Aksi Staff</option>
                     <option value="SHIFT">Shift (Buka / Tutup / Force)</option>
                     <option value="USER">Akun Staff (Tambah/Edit/Hapus)</option>
@@ -40,13 +40,13 @@
                     <option value="LOGIN">Autentikasi (Login / Logout)</option>
                 </select>
             </div>
-            <div class="w-auto flex items-center gap-2">
+            <div class="w-auto flex items-center gap-1.5">
                 <button onclick="Shift.loadUserLogs()"
-                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors shadow-sm">
+                    class="px-3 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-[10px] xl:text-xs 2xl:text-sm font-bold rounded transition-colors shadow-sm">
                     Cari
                 </button>
                 <button onclick="document.getElementById('filter-user-logs-search').value=''; document.getElementById('filter-user-logs-action').value=''; Shift.loadUserLogs();"
-                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#1a1a1a] hover:bg-[#222] border border-[#262626] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">
+                    class="px-2.5 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2 bg-[#1a1a1a] hover:bg-[#222] border border-[#262626] text-neutral-400 text-xs lg:text-[10px] xl:text-xs 2xl:text-sm font-bold rounded transition-colors">
                     Reset
                 </button>
             </div>
@@ -54,31 +54,102 @@
     </div>
 
     <!-- Table Card -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:max-xl:p-3 xl:p-6 overflow-hidden">
-        <h3 class="text-xs lg:max-xl:text-base xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-3 lg:max-xl:mb-2.5 xl:mb-4">Daftar Rekam Jejak Aktivitas</h3>
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 lg:p-2.5 xl:p-3.5 2xl:p-4 overflow-hidden">
+        <h3 class="text-xs lg:text-xs xl:text-sm 2xl:text-base font-bold text-neutral-200 uppercase tracking-wider mb-2 lg:mb-1.5 xl:mb-2.5">Daftar Rekam Jejak Aktivitas</h3>
         <div class="overflow-x-auto w-full scrollbar-thin">
-            <table class="w-full text-left border-collapse text-xs lg:max-xl:text-[11px] xl:text-sm">
+            <table class="w-full text-left border-collapse text-xs lg:text-[10px] xl:text-xs 2xl:text-sm">
                 <thead>
-                    <tr class="border-b border-[#1c1c1c] text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase tracking-wider">
-                        <th class="px-3 lg:max-xl:px-2 xl:px-5 py-3 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">Waktu</th>
-                        <th class="px-3 lg:max-xl:px-2 xl:px-5 py-3 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">Operator</th>
-                        <th class="px-3 lg:max-xl:px-2 xl:px-5 py-3 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">Aksi</th>
-                        <th class="px-3 lg:max-xl:px-2 xl:px-5 py-3 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">Keterangan / Detail</th>
-                        <th class="px-3 lg:max-xl:px-2 xl:px-5 py-3 lg:max-xl:py-2 xl:py-3.5 whitespace-nowrap">IP Address</th>
+                    <tr class="border-b border-[#1c1c1c] text-[10px] lg:text-[9px] xl:text-[10px] 2xl:text-xs text-neutral-500 uppercase tracking-wider">
+                        <th class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">Waktu</th>
+                        <th class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">Operator</th>
+                        <th class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">Aksi</th>
+                        <th class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5">Keterangan / Detail</th>
+                        <th class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">IP Address</th>
+                        <th class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 text-center whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="user-logs-rows" class="divide-y divide-[#1c1c1c]">
                     {% for _ in range(5) %}
                     <tr class="border-b border-[#1c1c1c] animate-pulse">
-                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-3 lg:max-xl:py-2 xl:py-3.5"><div class="h-3 bg-[#1e1e1e] rounded w-24"></div></td>
-                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-3 lg:max-xl:py-2 xl:py-3.5"><div class="h-3.5 bg-[#262626] rounded w-24"></div></td>
-                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-3 lg:max-xl:py-2 xl:py-3.5"><div class="h-5 bg-[#202020] rounded-full w-20"></div></td>
-                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-3 lg:max-xl:py-2 xl:py-3.5"><div class="h-3 bg-[#1e1e1e] rounded w-48"></div></td>
-                        <td class="px-3 lg:max-xl:px-2 xl:px-5 py-3 lg:max-xl:py-2 xl:py-3.5"><div class="h-3 bg-[#202020] rounded w-20"></div></td>
+                        <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5"><div class="h-3 bg-[#1e1e1e] rounded w-20"></div></td>
+                        <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5"><div class="h-3.5 bg-[#262626] rounded w-16"></div></td>
+                        <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5"><div class="h-5 bg-[#202020] rounded-full w-20"></div></td>
+                        <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5"><div class="h-3 bg-[#1e1e1e] rounded w-36"></div></td>
+                        <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5"><div class="h-3 bg-[#202020] rounded w-16"></div></td>
+                        <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 text-center"><div class="h-6 w-12 bg-[#202020] rounded mx-auto"></div></td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+
+        <!-- Pagination Bar (5 items per page) -->
+        <div id="user-logs-pagination" class="hidden flex flex-col sm:flex-row items-center justify-between gap-1.5 pt-2 border-t border-[#1c1c1c] text-xs lg:text-[10px] xl:text-[11px] 2xl:text-sm text-neutral-400 mt-2">
+            <span id="user-logs-page-info">Menampilkan data...</span>
+            <div class="flex items-center gap-1.5">
+                <button id="user-logs-prev-btn" onclick="Shift.prevUserLogsPage()" disabled
+                    class="px-2 py-0.5 lg:px-2 lg:py-0.5 xl:px-2.5 xl:py-1 2xl:px-3.5 2xl:py-1.5 bg-[#121212] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#1c1c1c] border border-[#1f1f1f] text-neutral-200 text-xs lg:text-[9px] xl:text-[10px] 2xl:text-xs font-bold rounded transition-colors">
+                    &larr; Sebelumnya
+                </button>
+                <button id="user-logs-next-btn" onclick="Shift.nextUserLogsPage()" disabled
+                    class="px-2 py-0.5 lg:px-2 lg:py-0.5 xl:px-2.5 xl:py-1 2xl:px-3.5 2xl:py-1.5 bg-[#121212] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#1c1c1c] border border-[#1f1f1f] text-neutral-200 text-xs lg:text-[9px] xl:text-[10px] 2xl:text-xs font-bold rounded transition-colors">
+                    Berikutnya &rarr;
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Detail Log & Audit Staff -->
+    <div id="modal-user-logs-detail" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="if(event.target === this) Shift.closeUserLogDetail()">
+        <div class="bg-[#0e0e0e] border border-[#222222] rounded-xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-[#1c1c1c] bg-[#121212]">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xl">🛡️</span>
+                    <div>
+                        <h4 class="text-sm lg:text-base 2xl:text-lg font-bold text-neutral-100 uppercase tracking-wider">Detail Audit Staff</h4>
+                        <p class="text-[10px] lg:text-xs text-neutral-500">Informasi lengkap jejak aktivitas operasional</p>
+                    </div>
+                </div>
+                <button onclick="Shift.closeUserLogDetail()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-[#2e2e2e] text-neutral-400 hover:text-white flex items-center justify-center text-lg font-bold transition-colors">
+                    &times;
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-5 space-y-3.5 overflow-y-auto scrollbar-thin">
+                <div class="bg-[#060606] border border-[#1c1c1c] rounded-lg p-3.5 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="px-3 py-1.5 rounded-lg bg-[#141414] border border-[#262626] flex items-center justify-center text-sm lg:text-base font-bold font-mono text-neutral-100 whitespace-nowrap shadow-inner shrink-0" id="user-logs-detail-user">
+                            -
+                        </div>
+                        <div class="space-y-1">
+                            <span id="user-logs-detail-action" class="px-2 py-0.5 rounded text-[10px] 2xl:text-xs font-bold bg-neutral-800 text-neutral-200 uppercase tracking-wider">ACTION</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] text-neutral-500 block">IP Address</span>
+                        <span id="user-logs-detail-ip" class="text-xs font-mono text-neutral-300 font-bold">-</span>
+                    </div>
+                </div>
+
+                <div class="bg-[#121212] border border-[#1e1e1e] rounded-lg p-3.5 space-y-2">
+                    <span class="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block">Waktu Tercatat</span>
+                    <p id="user-logs-detail-time" class="text-xs lg:text-sm font-mono text-neutral-200">-</p>
+                </div>
+
+                <div class="bg-[#121212] border border-[#1e1e1e] rounded-lg p-3.5 space-y-2">
+                    <span class="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block">Rincian Keterangan & Catatan</span>
+                    <p id="user-logs-detail-desc" class="text-xs lg:text-sm text-neutral-200 leading-relaxed font-mono whitespace-pre-wrap break-words">-</p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-5 py-3 border-t border-[#1c1c1c] bg-[#121212] flex justify-end">
+                <button onclick="Shift.closeUserLogDetail()" class="px-4 py-2 bg-[#202020] hover:bg-[#282828] text-neutral-200 hover:text-white rounded-lg text-xs font-bold transition-colors">
+                    Tutup
+                </button>
+            </div>
         </div>
     </div>
 </div>
