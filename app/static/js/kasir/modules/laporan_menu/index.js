@@ -154,6 +154,37 @@ const LaporanMenu = {
         }
     },
 
+    _buildBreakdownHtml(items, amountKey) {
+        const breakdown = {};
+        items.forEach(t => {
+            const m = t.metode_pembayaran || 'Tunai';
+            if (!breakdown[m]) breakdown[m] = { count: 0, total: 0 };
+            breakdown[m].count++;
+            breakdown[m].total += t[amountKey] || 0;
+        });
+        const entries = Object.entries(breakdown).sort((a, b) => b[1].total - a[1].total);
+        if (entries.length === 0) return '';
+        return `
+            <div class="mb-5">
+                <h5 class="text-[10px] sm:text-xs xl:text-sm font-bold text-neutral-400 uppercase tracking-wider mb-2">
+                    Rincian per Metode Pembayaran
+                    <span class="text-neutral-600 font-normal normal-case tracking-normal text-[9px] sm:text-[10px]">(halaman ini)</span>
+                </h5>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                    ${entries.map(([method, d]) => `
+                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5">
+                            <div class="text-[9px] sm:text-[10px] xl:text-xs font-bold uppercase tracking-wider ${method === 'Tunai' ? 'text-amber-400' : 'text-cyan-400'} mb-1">
+                                ${Utils.escapeHtml(method)}
+                            </div>
+                            <div class="text-xs sm:text-sm xl:text-base font-bold font-mono text-neutral-100">${Utils.formatRupiah(d.total)}</div>
+                            <div class="text-[9px] sm:text-[10px] text-neutral-500">${d.count} transaksi</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    },
+
     render() {
         const area = document.getElementById('laporan-menu-area');
         if (!area) return;
@@ -178,6 +209,11 @@ const LaporanMenu = {
         // Table transaksi Kantin / POS F&B
         const menuList = data.history_menu || [];
         const totalPages = data.pages || 1;
+
+        // Rincian per Metode Pembayaran (Client-side)
+        if (menuList.length > 0) {
+            html += this._buildBreakdownHtml(menuList, 'total_harga');
+        }
 
         if (menuList.length > 0) {
             html += `
