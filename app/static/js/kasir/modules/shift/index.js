@@ -398,12 +398,18 @@ const Shift = {
         const refundTunai = result.total_refund ?? rincian?.tunai?.refund ?? 0;
         const totalTunaiBersih = rincian?.tunai?.total ?? ((billingTunai + kantinTunai) - refundTunai);
 
-        // Ambil rincian non-tunai dinamis
+        // Ambil rincian non-tunai dinamis (support array of objects maupun dict)
         let nonTunaiList = [];
         let totalNonTunai = 0;
         if (rincian && Array.isArray(rincian.non_tunai)) {
             nonTunaiList = rincian.non_tunai;
-            totalNonTunai = rincian.total_non_tunai || 0;
+            totalNonTunai = rincian.total_non_tunai || nonTunaiList.reduce((acc, curr) => acc + (curr.total || 0), 0);
+        } else if (rincian && rincian.non_tunai && typeof rincian.non_tunai === 'object') {
+            for (const [method, amount] of Object.entries(rincian.non_tunai)) {
+                const val = typeof amount === 'object' ? (amount.total || 0) : (amount || 0);
+                nonTunaiList.push({ method, total: val });
+                totalNonTunai += val;
+            }
         } else if (result.breakdown) {
             for (const [method, amount] of Object.entries(result.breakdown)) {
                 if (method !== 'Tunai') {

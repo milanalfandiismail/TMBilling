@@ -148,24 +148,24 @@ const Laporan = {
         }
     },
 
-    _buildBreakdownHtml(items, amountKey) {
-        const breakdown = {};
-        items.forEach(t => {
-            const m = t.metode_pembayaran || 'Tunai';
-            if (!breakdown[m]) breakdown[m] = { count: 0, total: 0 };
-            breakdown[m].count++;
-            breakdown[m].total += t[amountKey] || 0;
-        });
-        const entries = Object.entries(breakdown).sort((a, b) => b[1].total - a[1].total);
-        if (entries.length === 0) return '';
+    _buildBreakdownHtml(breakdownData) {
+        if (!breakdownData || Object.keys(breakdownData).length === 0) return '';
+        const entries = Object.entries(breakdownData);
+        const tunaiEntry = entries.find(([m]) => m === 'Tunai');
+        const nonTunaiEntries = entries.filter(([m]) => m !== 'Tunai').sort((a, b) => b[1].total - a[1].total);
+
+        const sortedEntries = [];
+        if (tunaiEntry) sortedEntries.push(tunaiEntry);
+        sortedEntries.push(...nonTunaiEntries);
+
+        if (sortedEntries.length === 0) return '';
         return `
             <div class="mb-5">
                 <h5 class="text-[10px] sm:text-xs xl:text-sm font-bold text-neutral-400 uppercase tracking-wider mb-2">
                     Rincian per Metode Pembayaran
-                    <span class="text-neutral-600 font-normal normal-case tracking-normal text-[9px] sm:text-[10px]">(halaman ini)</span>
                 </h5>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                    ${entries.map(([method, d]) => `
+                    ${sortedEntries.map(([method, d]) => `
                         <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5">
                             <div class="text-[9px] sm:text-[10px] xl:text-xs font-bold uppercase tracking-wider ${method === 'Tunai' ? 'text-amber-400' : 'text-cyan-400'} mb-1">
                                 ${Utils.escapeHtml(method)}
@@ -213,68 +213,77 @@ const Laporan = {
 
         const transaksiList = data.history_struk || [];
 
-        // Rincian per Metode Pembayaran (Client-side)
-        if (transaksiList.length > 0) {
-            html += this._buildBreakdownHtml(transaksiList, 'jumlah');
+        // Rincian per Metode Pembayaran (Semua data hari ini/filter)
+        if (data.breakdown_metode && Object.keys(data.breakdown_metode).length > 0) {
+            html += this._buildBreakdownHtml(data.breakdown_metode);
+        } else if (transaksiList.length > 0) {
+            const fallback = {};
+            transaksiList.forEach(t => {
+                const m = t.metode_pembayaran || 'Tunai';
+                if (!fallback[m]) fallback[m] = { count: 0, total: 0 };
+                fallback[m].count++;
+                fallback[m].total += t.jumlah || 0;
+            });
+            html += this._buildBreakdownHtml(fallback);
         }
 
         // Table transaksi Billing
-        html += `<h4 class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-400 uppercase tracking-wider mb-3">Detail Pendapatan Billing</h4>`;
+        html += `<h4 class="text-xs sm:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider mb-3">Detail Pendapatan Billing</h4>`;
         if (transaksiList.length > 0) {
             html += `
-                <div class="overflow-x-auto w-full mb-6">
-                    <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
-                        <thead class="hidden lg:table-header-group">
-                            <tr class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
-                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Waktu</th>
-                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Nota</th>
-                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Pelanggan</th>
-                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Paket</th>
-                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-right">Jumlah</th>
-                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">PC</th>
-                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Kasir</th>
-                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-left">Metode</th>
-                                <th class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2.5 lg:max-xl:py-2 xl:py-3 text-center">Aksi</th>
+                <div class="overflow-x-auto w-full mb-6 border border-[#1c1c1c] rounded">
+                    <table class="w-full text-xs xl:text-sm block lg:table">
+                        <thead class="hidden lg:table-header-group bg-[#0c0c0c]">
+                            <tr class="text-[10px] xl:text-xs text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
+                                <th class="px-3 xl:px-4 py-3 text-left font-bold">Waktu</th>
+                                <th class="px-3 xl:px-4 py-3 text-left font-bold">Nota</th>
+                                <th class="px-3 xl:px-4 py-3 text-left font-bold">Pelanggan</th>
+                                <th class="px-3 xl:px-4 py-3 text-left font-bold">Paket</th>
+                                <th class="px-3 xl:px-4 py-3 text-right font-bold">Jumlah</th>
+                                <th class="px-3 xl:px-4 py-3 text-left font-bold">PC</th>
+                                <th class="px-3 xl:px-4 py-3 text-left font-bold">Kasir</th>
+                                <th class="px-3 xl:px-4 py-3 text-left font-bold">Metode</th>
+                                <th class="px-3 xl:px-4 py-3 text-center font-bold">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] block lg:table-row-group">
+                        <tbody class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] bg-[#050505] block lg:table-row-group">
                             ${transaksiList.map(t => `
-                                <tr class="hover:bg-[#121212] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#2a2a2a] last:border-b-0 lg:border-b-0">
-                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-neutral-400 font-mono flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Waktu</span>
+                                <tr class="hover:bg-[#0c0c0c] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#2a2a2a] last:border-b-0 lg:border-b-0">
+                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-neutral-400 font-mono flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Waktu</span>
                                         <span>${t.waktu || '-'}</span>
                                     </td>
-                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota</span>
+                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota</span>
                                         <span class="font-mono text-neutral-300">${t.no_nota || '-'}</span>
                                     </td>
-                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pelanggan</span>
+                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pelanggan</span>
                                         <span>${t.nama_pelanggan || '-'}</span>
                                     </td>
-                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Paket</span>
+                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Paket</span>
                                         <span class="max-w-[120px] xl:max-w-[160px] truncate" title="${Utils.escapeHtml(t.paket_nama || '-')}">${Utils.escapeHtml(t.paket_nama || '-')}</span>
                                     </td>
-                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-right font-mono font-bold text-neutral-200 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Jumlah</span>
+                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-right font-mono font-bold text-neutral-200 flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Jumlah</span>
                                         <span>${Utils.formatRupiah(t.jumlah || 0)}</span>
                                     </td>
-                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-neutral-500 font-mono flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">PC</span>
+                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-neutral-500 font-mono flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">PC</span>
                                         <span>${t.pc_kode || '-'}</span>
                                     </td>
-                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir</span>
+                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir</span>
                                         <span class="text-neutral-300 font-medium">${t.kasir_nama || '-'}</span>
                                     </td>
-                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Metode</span>
-                                        <span class="px-2.5 py-1 rounded text-[10px] lg:max-xl:text-xs xl:text-base font-bold ${t.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${t.metode_pembayaran || 'Tunai'}</span>
+                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
+                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Metode</span>
+                                        <span class="px-2.5 py-1 rounded text-[10px] xl:text-xs font-bold ${t.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${t.metode_pembayaran || 'Tunai'}</span>
                                     </td>
-                                    <td class="px-3 lg:max-xl:px-2.5 xl:px-4 py-2 lg:max-xl:py-2 xl:py-3 text-center flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
-                                        <button onclick="Laporan.printStruk(${t.id})" class="px-2.5 py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Cetak</button>
+                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-center flex lg:table-cell justify-between items-center">
+                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
+                                        <button onclick="Laporan.printStruk(${t.id})" class="px-2.5 py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] xl:text-xs font-bold rounded transition-colors">Cetak</button>
                                     </td>
                                 </tr>`).join('')}
                         </tbody>
@@ -284,9 +293,9 @@ const Laporan = {
             if (data.pages && data.pages > 1) {
                 html += `
                     <div class="flex items-center justify-center gap-2 mt-2 mb-6">
-                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage - 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors ${this.currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage <= 1 ? 'disabled' : ''}>&larr;</button>
-                        <span class="px-4 py-1.5 text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 font-mono">${this.currentPage} / ${data.pages}</span>
-                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage + 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors ${this.currentPage >= data.pages ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage >= data.pages ? 'disabled' : ''}>&rarr;</button>
+                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage - 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs xl:text-sm font-bold rounded transition-colors ${this.currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage <= 1 ? 'disabled' : ''}>&larr;</button>
+                        <span class="px-4 py-1.5 text-xs xl:text-sm text-neutral-200 font-mono">${this.currentPage} / ${data.pages}</span>
+                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage + 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs xl:text-sm font-bold rounded transition-colors ${this.currentPage >= data.pages ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage >= data.pages ? 'disabled' : ''}>&rarr;</button>
                     </div>`;
             }
         } else {

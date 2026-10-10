@@ -61,3 +61,22 @@ def test_export_billing_pdf_with_paket_column():
         assert len(pdf_bytes) > 0
         assert pdf_bytes.startswith(b"%PDF")
 
+def test_laporan_billing_includes_breakdown_metode():
+    from app import create_app
+    from app.services.report.report_service import ReportService
+    app = create_app()
+    with app.app_context():
+        res = ReportService.get_laporan_by_tanggal("2026-10-10")
+        assert "breakdown_metode" in res
+        assert isinstance(res["breakdown_metode"], dict)
+
+def test_laporan_kantin_includes_breakdown_metode():
+    from app import create_app
+    from app.services.report.report_service import ReportService
+    app = create_app()
+    with app.app_context():
+        res = ReportService.get_laporan_kantin_by_tanggal("2026-10-10")
+        assert "breakdown_metode" in res
+        assert isinstance(res["breakdown_metode"], dict)
+
+

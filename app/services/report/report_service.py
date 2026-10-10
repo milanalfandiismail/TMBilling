@@ -68,6 +68,7 @@ class ReportService:
 
             pagination = TransaksiRepository.get_history_nota_paginated(tanggal, page, per_page, kasir_id, metode_pembayaran, q)
             history_struk = pagination.items
+            breakdown_metode = TransaksiRepository.get_breakdown_metode_by_tanggal(tanggal, kasir_id, metode_pembayaran, q)
 
             return {
                 "status": "success",
@@ -88,6 +89,7 @@ class ReportService:
                 "pendapatan_guest": ReportService.get_pendapatan_kategori(tanggal, 'guest', kasir_id, metode_pembayaran),
                 "pendapatan_member": ReportService.get_pendapatan_kategori(tanggal, 'member', kasir_id, metode_pembayaran),
                 "sesi_aktif": len(SesiRepository.get_all_aktif()),
+                "breakdown_metode": breakdown_metode,
                 "history_struk": ReportService._format_history_struk(history_struk)
             }
         except Exception as e:
@@ -126,6 +128,19 @@ class ReportService:
                     if q_lower in key.lower() or q_lower in menu_names or q_lower in pc_kode or q_lower in operator:
                         filtered_grouped[key] = items
                 grouped = filtered_grouped
+
+            # Hitung breakdown metode pembayaran untuk seluruh nota yang sesuai filter
+            breakdown_metode = {}
+            for key, items in grouped.items():
+                first_item = items[0]
+                m = first_item.metode_pembayaran or "Tunai"
+                if m in ["Tunai", "Cash"]:
+                    m = "Tunai"
+                if m not in breakdown_metode:
+                    breakdown_metode[m] = {"count": 0, "total": 0}
+                nota_total = sum(tm.total_harga for tm in items)
+                breakdown_metode[m]["count"] += 1
+                breakdown_metode[m]["total"] += int(nota_total or 0)
 
             total_items = len(grouped)
             pages = (total_items + per_page - 1) // per_page if per_page > 0 else 1
@@ -166,6 +181,7 @@ class ReportService:
                 "has_next": page < pages,
                 "has_prev": page > 1,
                 "total_pendapatan_menu": total_pendapatan_menu,
+                "breakdown_metode": breakdown_metode,
                 "history_menu": history_menu
             }
         except Exception as e:
