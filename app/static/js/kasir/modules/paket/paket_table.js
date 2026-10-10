@@ -16,11 +16,13 @@ const PaketTable = {
 
         const grouped = {};
         const groupMeta = {};
+        const groupColors = {};
         paketList.forEach(p => {
             const g = (p.grup || 'Reguler').toUpperCase();
             if (!grouped[g]) {
                 grouped[g] = [];
                 groupMeta[g] = Number(p.grup_id || 0);
+                groupColors[g] = p.grup_warna || '#3B82F6';
             }
             grouped[g].push(p);
         });
@@ -28,10 +30,11 @@ const PaketTable = {
         let html = '';
         Object.keys(grouped).sort((a, b) => (groupMeta[a] || 0) - (groupMeta[b] || 0)).forEach(grupName => {
             const list = grouped[grupName];
+            const gColor = groupColors[grupName] || '#3B82F6';
             html += `
                 <div class="mb-8 last:mb-0">
-                    <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[#1c1c1c]">
-                        <h4 class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-300 tracking-wider uppercase">${grupName}</h4>
+                    <div class="flex items-center gap-3 mb-4 pb-3 border-b" style="border-color: ${gColor}40;">
+                        <h4 class="text-xs lg:max-xl:text-xs xl:text-base font-bold tracking-wider uppercase" style="color: ${gColor};">${grupName}</h4>
                         <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-400 bg-[#171717] border border-[#262626] px-2.5 py-0.5 rounded font-bold">${list.length} Paket</span>
                     </div>
                     <div class="overflow-x-auto w-full">
