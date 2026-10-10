@@ -32,17 +32,21 @@ const PCGrid = {
             const pcs = (groupedData[grupKey] || []).slice();
             if (pcs.length === 0) return;
 
+            const firstPc = pcs[0] || {};
+            const gColor = firstPc.grup_warna || '#3B82F6';
+
             pcs.sort((a, b) => (a.kode || '').localeCompare(b.kode || '', undefined, { numeric: true, sensitivity: 'base' }));
 
             html += `
                 <div class="mb-8 last:mb-0">
-                    <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[#1c1c1c]">
-                        <h4 class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-500 uppercase tracking-wider">${grupKey.toUpperCase()}</h4>
+                    <div class="flex items-center gap-3 mb-4 pb-3 border-b" style="border-color: ${gColor}40;">
+                        <h4 class="text-xs lg:max-xl:text-xs xl:text-base font-bold uppercase tracking-wider" style="color: ${gColor};">${grupKey.toUpperCase()}</h4>
                         <span class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-400 bg-[#171717] border border-[#262626] px-2 py-0.5 rounded font-bold">${pcs.length} UNIT</span>
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:max-xl:grid-cols-4 xl:grid-cols-6 gap-3">
                         ${pcs.map(pc => {
                             const pcGrupNama = (pc.grup || 'reguler').toLowerCase();
+                            const pcColor = pc.grup_warna || gColor;
                             return `
                                 <div class="bg-[#0c0c0c] border ${pc.aktif ? 'border-[#262626]' : 'border-[#1c1c1c] opacity-50'} rounded p-3 transition-colors hover:bg-[#121212] relative group">
                                     <div class="flex items-center justify-between mb-1.5">
@@ -50,7 +54,7 @@ const PCGrid = {
                                         <span class="w-1.5 h-1.5 rounded-full ${pc.aktif ? 'bg-neutral-100' : 'bg-neutral-600'}"></span>
                                     </div>
                                     <div class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 font-mono mb-2">${pc.ip_address || '-'}</div>
-                                    <span class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-400 bg-[#171717] border border-[#262626] px-1.5 py-0.5 rounded font-bold">${pcGrupNama.toUpperCase()}</span>
+                                    <span class="text-[9px] lg:max-xl:text-xs xl:text-base font-bold px-1.5 py-0.5 rounded border" style="color: ${pcColor}; border-color: ${pcColor}40; background-color: ${pcColor}15;">${pcGrupNama.toUpperCase()}</span>
                                     <div class="absolute inset-0 bg-[#0c0c0c]/95 rounded flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity remote-hide-action">
                                         ${(window.App && App.user && App.user.role === 'kasir') ? '' : `
                                         <button onclick="PC.edit(${pc.id})" class="w-7 h-7 lg:max-xl:w-7 lg:max-xl:h-7 xl:w-8 xl:h-8 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center" title="Edit PC">

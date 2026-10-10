@@ -323,24 +323,24 @@ const Skeleton = {
      * Generator Skeleton Laporan Billing (Summary Cards + Tabel Transaksi 8 Kolom)
      * @param {number} rows Jumlah baris transaksi
      */
-    laporanBilling(rows = 6) {
+    laporanBilling(rows = 5) {
         let summaryCards = `
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 animate-pulse">
-                <div class="bg-[#111] border border-[#222] p-4 rounded-xl space-y-2">
-                    <div class="h-2.5 bg-[#202020] rounded w-24"></div>
-                    <div class="h-5 bg-[#262626] rounded w-32"></div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2.5 animate-pulse">
+                <div class="bg-[#111] border border-[#222] p-2.5 rounded-lg space-y-1.5">
+                    <div class="h-2 bg-[#202020] rounded w-20"></div>
+                    <div class="h-4 bg-[#262626] rounded w-24"></div>
                 </div>
-                <div class="bg-[#111] border border-[#222] p-4 rounded-xl space-y-2">
-                    <div class="h-2.5 bg-[#202020] rounded w-20"></div>
-                    <div class="h-5 bg-[#262626] rounded w-16"></div>
+                <div class="bg-[#111] border border-[#222] p-2.5 rounded-lg space-y-1.5">
+                    <div class="h-2 bg-[#202020] rounded w-16"></div>
+                    <div class="h-4 bg-[#262626] rounded w-12"></div>
                 </div>
-                <div class="bg-[#111] border border-[#222] p-4 rounded-xl space-y-2">
-                    <div class="h-2.5 bg-[#202020] rounded w-20"></div>
-                    <div class="h-5 bg-[#262626] rounded w-16"></div>
+                <div class="bg-[#111] border border-[#222] p-2.5 rounded-lg space-y-1.5">
+                    <div class="h-2 bg-[#202020] rounded w-16"></div>
+                    <div class="h-4 bg-[#262626] rounded w-12"></div>
                 </div>
-                <div class="bg-[#111] border border-[#222] p-4 rounded-xl space-y-2">
-                    <div class="h-2.5 bg-[#202020] rounded w-20"></div>
-                    <div class="h-5 bg-[#262626] rounded w-16"></div>
+                <div class="bg-[#111] border border-[#222] p-2.5 rounded-lg space-y-1.5">
+                    <div class="h-2 bg-[#202020] rounded w-16"></div>
+                    <div class="h-4 bg-[#262626] rounded w-12"></div>
                 </div>
             </div>
         `;
@@ -348,34 +348,34 @@ const Skeleton = {
         let rowsHtml = '';
         for (let i = 0; i < rows; i++) {
             rowsHtml += `
-                <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
-                    <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-24"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-3.5 bg-[#262626] rounded w-28"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-3 bg-[#202020] rounded w-20"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-3.5 bg-[#262626] rounded w-24"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-3 bg-[#202020] rounded w-12"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-16"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-4 bg-[#202020] rounded w-14"></div></td>
-                    <td class="px-4 py-3 text-right"><div class="h-7 w-7 bg-[#202020] rounded ml-auto"></div></td>
+                <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-2.5 lg:p-0">
+                    <td class="px-3 xl:px-4 py-2 text-left"><div class="h-2.5 bg-[#1e1e1e] rounded w-20"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-left"><div class="h-3 bg-[#262626] rounded w-24"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-left"><div class="h-2.5 bg-[#202020] rounded w-16"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-left"><div class="h-3 bg-[#262626] rounded w-20"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-left"><div class="h-2.5 bg-[#202020] rounded w-10"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-left"><div class="h-2.5 bg-[#1e1e1e] rounded w-14"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-left"><div class="h-3 bg-[#202020] rounded w-12"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-right"><div class="h-6 w-6 bg-[#202020] rounded ml-auto"></div></td>
                 </tr>
             `;
         }
 
         return `
             ${summaryCards}
-            <div class="space-y-3">
-                <div class="h-4 bg-[#202020] rounded w-48 mb-3 animate-pulse"></div>
-                <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
+            <div class="space-y-2">
+                <div class="h-3.5 bg-[#202020] rounded w-36 mb-2 animate-pulse"></div>
+                <table class="w-full text-xs xl:text-sm block lg:table">
                     <thead class="hidden lg:table-header-group">
-                        <tr class="border-b border-[#262626] text-neutral-400">
-                            <th class="px-4 py-3 text-left font-medium">Waktu</th>
-                            <th class="px-4 py-3 text-left font-medium">Nota</th>
-                            <th class="px-4 py-3 text-left font-medium">Pelanggan</th>
-                            <th class="px-4 py-3 text-left font-medium">Jumlah</th>
-                            <th class="px-4 py-3 text-left font-medium">PC</th>
-                            <th class="px-4 py-3 text-left font-medium">Kasir</th>
-                            <th class="px-4 py-3 text-left font-medium">Metode</th>
-                            <th class="px-4 py-3 text-right font-medium">Aksi</th>
+                        <tr class="border-b border-[#262626] text-neutral-400 text-[10px] xl:text-xs uppercase tracking-wider">
+                            <th class="px-3 xl:px-4 py-2 text-left font-medium">Waktu</th>
+                            <th class="px-3 xl:px-4 py-2 text-left font-medium">Nota</th>
+                            <th class="px-3 xl:px-4 py-2 text-left font-medium">Pelanggan</th>
+                            <th class="px-3 xl:px-4 py-2 text-left font-medium">Jumlah</th>
+                            <th class="px-3 xl:px-4 py-2 text-left font-medium">PC</th>
+                            <th class="px-3 xl:px-4 py-2 text-left font-medium">Kasir</th>
+                            <th class="px-3 xl:px-4 py-2 text-left font-medium">Metode</th>
+                            <th class="px-3 xl:px-4 py-2 text-right font-medium">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="block lg:table-row-group divide-y divide-[#1c1c1c]">
@@ -390,12 +390,12 @@ const Skeleton = {
      * Generator Skeleton Laporan Kantin / F&B (Summary Card + Tabel Responsif)
      * @param {number} rows Jumlah baris transaksi
      */
-    laporanMenu(rows = 6) {
+    laporanMenu(rows = 5) {
         let summaryCards = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6 animate-pulse">
-                <div class="bg-[#111] border border-[#222] p-4 rounded-xl space-y-2">
-                    <div class="h-2.5 bg-[#202020] rounded w-36"></div>
-                    <div class="h-5 bg-[#262626] rounded w-40"></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2.5 animate-pulse">
+                <div class="bg-[#111] border border-[#222] p-2.5 rounded-lg space-y-1.5">
+                    <div class="h-2 bg-[#202020] rounded w-32"></div>
+                    <div class="h-4 bg-[#262626] rounded w-36"></div>
                 </div>
             </div>
         `;
@@ -403,39 +403,35 @@ const Skeleton = {
         let rowsHtml = '';
         for (let i = 0; i < rows; i++) {
             rowsHtml += `
-                <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
-                    <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-20"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-3.5 bg-[#262626] rounded w-24"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-3.5 bg-[#262626] rounded w-32"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-3 bg-[#202020] rounded w-10"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-16"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-3.5 bg-[#262626] rounded w-20"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-3 bg-[#202020] rounded w-14"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-16"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-16"></div></td>
-                    <td class="px-4 py-3 text-left"><div class="h-4 bg-[#202020] rounded w-14"></div></td>
-                    <td class="px-4 py-3 text-right"><div class="h-7 w-7 bg-[#202020] rounded ml-auto"></div></td>
+                <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-2.5 lg:p-0">
+                    <td class="px-3 xl:px-4 py-2 text-left"><div class="h-2.5 bg-[#1e1e1e] rounded w-20"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-left"><div class="h-3 bg-[#262626] rounded w-24"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-left"><div class="h-3 bg-[#262626] rounded w-32"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-center"><div class="h-2.5 bg-[#202020] rounded w-8 mx-auto"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-right"><div class="h-3 bg-[#262626] rounded w-16 ml-auto"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-left"><div class="h-3 bg-[#202020] rounded w-12"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-left"><div class="h-2.5 bg-[#1e1e1e] rounded w-14"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-left"><div class="h-2.5 bg-[#1e1e1e] rounded w-14"></div></td>
+                    <td class="px-3 xl:px-4 py-2 text-center"><div class="h-6 w-10 bg-[#202020] rounded mx-auto"></div></td>
                 </tr>
             `;
         }
 
         return `
             ${summaryCards}
-            <div class="space-y-3">
-                <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
+            <div class="space-y-2">
+                <table class="w-full text-xs xl:text-sm block lg:table">
                     <thead class="hidden lg:table-header-group">
-                        <tr class="border-b border-[#262626] text-neutral-400">
-                            <th class="px-4 py-3 text-left font-medium">Waktu</th>
-                            <th class="px-4 py-3 text-left font-medium">Nota</th>
-                            <th class="px-4 py-3 text-left font-medium">Item Menu</th>
-                            <th class="px-4 py-3 text-left font-medium">Qty</th>
-                            <th class="px-4 py-3 text-left font-medium">Harga</th>
-                            <th class="px-4 py-3 text-left font-medium">Total</th>
-                            <th class="px-4 py-3 text-left font-medium">Bayar</th>
-                            <th class="px-4 py-3 text-left font-medium">Pelanggan</th>
-                            <th class="px-4 py-3 text-left font-medium">Kasir</th>
-                            <th class="px-4 py-3 text-left font-medium">Metode</th>
-                            <th class="px-4 py-3 text-right font-medium">Aksi</th>
+                        <tr class="border-b border-[#262626] text-neutral-400 text-[10px] xl:text-xs 2xl:text-sm uppercase tracking-wider">
+                            <th class="px-3 xl:px-4 2xl:px-5 py-2 2xl:py-2.5 text-left">Waktu</th>
+                            <th class="px-3 xl:px-4 2xl:px-5 py-2 2xl:py-2.5 text-left">Nota</th>
+                            <th class="px-3 xl:px-4 2xl:px-5 py-2 2xl:py-2.5 text-left">Item Menu</th>
+                            <th class="px-3 xl:px-4 2xl:px-5 py-2 2xl:py-2.5 text-center">Qty</th>
+                            <th class="px-3 xl:px-4 2xl:px-5 py-2 2xl:py-2.5 text-right">Total</th>
+                            <th class="px-3 xl:px-4 2xl:px-5 py-2 2xl:py-2.5 text-left">Metode</th>
+                            <th class="px-3 xl:px-4 2xl:px-5 py-2 2xl:py-2.5 text-left">Pemesanan</th>
+                            <th class="px-3 xl:px-4 2xl:px-5 py-2 2xl:py-2.5 text-left">Kasir</th>
+                            <th class="px-3 xl:px-4 2xl:px-5 py-2 2xl:py-2.5 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="block lg:table-row-group divide-y divide-[#1c1c1c]">

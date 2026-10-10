@@ -119,11 +119,11 @@ const Laporan = {
         if (!area) return;
 
         if (!isSilent && (!this._lastData) && typeof Skeleton !== 'undefined') {
-            area.innerHTML = Skeleton.laporanBilling(6);
+            area.innerHTML = Skeleton.laporanBilling(5);
         }
 
         try {
-            const data = await API.report.byTanggal(this.currentDate, kasirId, page, 12, metodePembayaran);
+            const data = await API.report.byTanggal(this.currentDate, kasirId, page, 5, metodePembayaran);
             
             const newFingerprint = JSON.stringify({
                 date: this.currentDate,
@@ -143,7 +143,7 @@ const Laporan = {
             this.render(data);
         } catch (err) {
             if (!isSilent) {
-                area.innerHTML = '<div class="text-center py-10 text-red-400 text-xs lg:text-base">Gagal memuat laporan</div>';
+                area.innerHTML = '<div class="text-center py-6 text-red-400 text-xs lg:text-sm">Gagal memuat laporan</div>';
             }
         }
     },
@@ -160,18 +160,18 @@ const Laporan = {
 
         if (sortedEntries.length === 0) return '';
         return `
-            <div class="mb-5">
-                <h5 class="text-[10px] sm:text-xs xl:text-sm font-bold text-neutral-400 uppercase tracking-wider mb-2">
+            <div class="mb-2 lg:mb-2 xl:mb-3">
+                <h5 class="text-[10px] xl:text-xs 2xl:text-sm font-bold text-neutral-400 uppercase tracking-wider mb-1">
                     Rincian per Metode Pembayaran
                 </h5>
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1.5">
                     ${sortedEntries.map(([method, d]) => `
-                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5">
-                            <div class="text-[9px] sm:text-[10px] xl:text-xs font-bold uppercase tracking-wider ${method === 'Tunai' ? 'text-amber-400' : 'text-cyan-400'} mb-1">
+                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 lg:p-1 xl:p-2 2xl:p-2.5">
+                            <div class="text-[9px] xl:text-[10px] 2xl:text-xs font-bold uppercase tracking-wider ${method === 'Tunai' ? 'text-amber-400' : 'text-cyan-400'} mb-0.5">
                                 ${Utils.escapeHtml(method)}
                             </div>
-                            <div class="text-xs sm:text-sm xl:text-base font-bold font-mono text-neutral-100">${Utils.formatRupiah(d.total)}</div>
-                            <div class="text-[9px] sm:text-[10px] text-neutral-500">${d.count} transaksi</div>
+                            <div class="text-xs xl:text-sm 2xl:text-base font-bold font-mono text-neutral-100">${Utils.formatRupiah(d.total)}</div>
+                            <div class="text-[9px] 2xl:text-xs text-neutral-500">${d.count} transaksi</div>
                         </div>
                     `).join('')}
                 </div>
@@ -184,7 +184,7 @@ const Laporan = {
         if (!area) return;
 
         if (!data || data.error) {
-            area.innerHTML = '<div class="text-center py-10 text-neutral-500 text-xs lg:text-base">Tidak ada data</div>';
+            area.innerHTML = '<div class="text-center py-6 text-neutral-500 text-xs lg:text-sm 2xl:text-base">Tidak ada data</div>';
             return;
         }
 
@@ -192,22 +192,22 @@ const Laporan = {
 
         // Ringkasan cards untuk Billing saja
         html += `
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-auto min-h-[5rem]">
-                    <span class="text-[10px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Total Pendapatan Billing</span>
-                    <span class="text-sm lg:text-base font-bold text-neutral-100 font-mono mt-2 truncate" title="${Utils.formatRupiah(data.total_pendapatan_billing || 0)}">${Utils.formatRupiah(data.total_pendapatan_billing || 0)}</span>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2 lg:mb-2 xl:mb-3">
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 lg:p-1.5 xl:p-2.5 2xl:p-3 flex flex-col justify-between h-auto min-h-[2.8rem] lg:min-h-[3rem] 2xl:min-h-[3.5rem]">
+                    <span class="text-[9px] xl:text-[10px] 2xl:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Total Pendapatan Billing</span>
+                    <span class="text-xs sm:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-100 font-mono mt-0.5 truncate" title="${Utils.formatRupiah(data.total_pendapatan_billing || 0)}">${Utils.formatRupiah(data.total_pendapatan_billing || 0)}</span>
                 </div>
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-auto min-h-[5rem]">
-                    <span class="text-[10px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Total Sesi</span>
-                    <span class="text-sm lg:text-base font-bold text-neutral-100 font-mono mt-2 truncate" title="${data.total_sesi || 0}">${data.total_sesi || 0}</span>
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 lg:p-1.5 xl:p-2.5 2xl:p-3 flex flex-col justify-between h-auto min-h-[2.8rem] lg:min-h-[3rem] 2xl:min-h-[3.5rem]">
+                    <span class="text-[9px] xl:text-[10px] 2xl:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Total Sesi</span>
+                    <span class="text-xs sm:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-100 font-mono mt-0.5 truncate" title="${data.total_sesi || 0}">${data.total_sesi || 0}</span>
                 </div>
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-auto min-h-[5rem]">
-                    <span class="text-[10px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Sesi Member</span>
-                    <span class="text-sm lg:text-base font-bold text-neutral-100 font-mono mt-2 truncate" title="${data.total_member || 0}">${data.total_member || 0}</span>
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 lg:p-1.5 xl:p-2.5 2xl:p-3 flex flex-col justify-between h-auto min-h-[2.8rem] lg:min-h-[3rem] 2xl:min-h-[3.5rem]">
+                    <span class="text-[9px] xl:text-[10px] 2xl:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Sesi Member</span>
+                    <span class="text-xs sm:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-100 font-mono mt-0.5 truncate" title="${data.total_member || 0}">${data.total_member || 0}</span>
                 </div>
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 flex flex-col justify-between h-auto min-h-[5rem]">
-                    <span class="text-[10px] lg:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Sesi Guest</span>
-                    <span class="text-sm lg:text-base font-bold text-neutral-100 font-mono mt-2 truncate" title="${data.total_guest || 0}">${data.total_guest || 0}</span>
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 lg:p-1.5 xl:p-2.5 2xl:p-3 flex flex-col justify-between h-auto min-h-[2.8rem] lg:min-h-[3rem] 2xl:min-h-[3.5rem]">
+                    <span class="text-[9px] xl:text-[10px] 2xl:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Sesi Guest</span>
+                    <span class="text-xs sm:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-100 font-mono mt-0.5 truncate" title="${data.total_guest || 0}">${data.total_guest || 0}</span>
                 </div>
             </div>`;
 
@@ -228,62 +228,132 @@ const Laporan = {
         }
 
         // Table transaksi Billing
-        html += `<h4 class="text-xs sm:text-sm xl:text-base font-bold text-neutral-400 uppercase tracking-wider mb-3">Detail Pendapatan Billing</h4>`;
+        html += `<h4 class="text-[11px] sm:text-xs xl:text-sm 2xl:text-base font-bold text-neutral-400 uppercase tracking-wider mb-1">Detail Pendapatan Billing</h4>`;
         if (transaksiList.length > 0) {
             html += `
-                <div class="overflow-x-auto w-full mb-6 border border-[#1c1c1c] rounded">
-                    <table class="w-full text-xs xl:text-sm block lg:table">
-                        <thead class="hidden lg:table-header-group bg-[#0c0c0c]">
-                            <tr class="text-[10px] xl:text-xs text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
-                                <th class="px-3 xl:px-4 py-3 text-left font-bold">Waktu</th>
-                                <th class="px-3 xl:px-4 py-3 text-left font-bold">Nota</th>
-                                <th class="px-3 xl:px-4 py-3 text-left font-bold">Pelanggan</th>
-                                <th class="px-3 xl:px-4 py-3 text-left font-bold">Paket</th>
-                                <th class="px-3 xl:px-4 py-3 text-right font-bold">Jumlah</th>
-                                <th class="px-3 xl:px-4 py-3 text-left font-bold">PC</th>
-                                <th class="px-3 xl:px-4 py-3 text-left font-bold">Kasir</th>
-                                <th class="px-3 xl:px-4 py-3 text-left font-bold">Metode</th>
-                                <th class="px-3 xl:px-4 py-3 text-center font-bold">Aksi</th>
+                <!-- Mobile / Tablet Card View (<1024px) -->
+                <div class="lg:hidden space-y-2 mb-2">
+                    ${transaksiList.map(t => `
+                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex flex-col">
+                                    <span class="font-mono font-bold text-neutral-200 text-xs">${t.no_nota || '-'}</span>
+                                    <span class="text-[10px] text-neutral-500 font-mono">${t.waktu || '-'}</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold ${t.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${t.metode_pembayaran || 'Tunai'}</span>
+                                    <span class="text-[9px] text-neutral-400 px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 font-mono">PC: ${t.pc_kode || '-'}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between pt-1 border-t border-[#1a1a1a]">
+                                <div class="flex flex-col">
+                                    <span class="font-semibold text-neutral-200 text-xs leading-tight break-words">${t.nama_pelanggan || '-'}</span>
+                                    <span class="text-[10px] text-neutral-400">${t.paket_nama || '-'}</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-mono font-bold text-neutral-100 text-xs">${Utils.formatRupiah(t.jumlah || 0)}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between pt-1 border-t border-[#1a1a1a]">
+                                <span class="text-[10px] text-neutral-400 font-medium">Kasir: <span class="text-neutral-300">${t.kasir_nama || '-'}</span></span>
+                                <button onclick="Laporan.printStruk(${t.id})" class="px-2 py-0.5 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] font-bold rounded transition-colors inline-flex items-center gap-1">
+                                    <span>Cetak</span>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <!-- Desktop Table View (≥1024px) -->
+                <div class="hidden lg:block overflow-x-auto w-full border border-[#1c1c1c] rounded mb-2 lg:mb-2 xl:mb-3">
+                    <table class="w-full text-xs xl:text-sm 2xl:text-base">
+                        <thead class="bg-[#0c0c0c]">
+                            <!-- Compact Laptop View Header (5 columns for lg & xl: 1024px - 1535px) -->
+                            <tr class="hidden lg:table-row 2xl:hidden text-[10px] xl:text-xs text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
+                                <th class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 text-left font-bold">Nota & Waktu</th>
+                                <th class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 text-left font-bold">Pelanggan & Paket</th>
+                                <th class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 text-right font-bold">Jumlah & Pembayaran</th>
+                                <th class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 text-left font-bold">PC & Kasir</th>
+                                <th class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 text-right font-bold">Aksi</th>
+                            </tr>
+                            <!-- Wide Desktop View Header (9 columns for 2xl: ≥1536px) -->
+                            <tr class="hidden 2xl:table-row text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-left font-bold">Waktu</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-left font-bold">Nota</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-left font-bold">Pelanggan</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-left font-bold">Paket</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-right font-bold">Jumlah</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-left font-bold">PC</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-left font-bold">Kasir</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-left font-bold">Metode</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-center font-bold">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-[#2a2a2a] lg:divide-[#1c1c1c] bg-[#050505] block lg:table-row-group">
+                        <tbody class="divide-y divide-[#1c1c1c] bg-[#050505]">
                             ${transaksiList.map(t => `
-                                <tr class="hover:bg-[#0c0c0c] transition-colors block lg:table-row py-3 lg:py-0 border-b border-[#2a2a2a] last:border-b-0 lg:border-b-0">
-                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-neutral-400 font-mono flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Waktu</span>
-                                        <span>${t.waktu || '-'}</span>
+                                <tr class="hover:bg-[#0c0c0c] transition-colors">
+                                    <!-- Compact Cells (5 items for lg & xl) -->
+                                    <td class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 hidden lg:table-cell 2xl:hidden">
+                                        <div class="flex flex-col text-left">
+                                            <span class="font-mono font-bold text-neutral-200 text-xs xl:text-sm whitespace-nowrap">${t.no_nota || '-'}</span>
+                                            <span class="text-[9px] xl:text-[10px] text-neutral-500 font-mono mt-0.5 whitespace-nowrap">${t.waktu || '-'}</span>
+                                        </div>
                                     </td>
-                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Nota</span>
-                                        <span class="font-mono text-neutral-300">${t.no_nota || '-'}</span>
+                                    <td class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 hidden lg:table-cell 2xl:hidden">
+                                        <div class="flex flex-col text-left">
+                                            <span class="font-semibold text-neutral-200 text-xs xl:text-sm leading-tight break-words">${t.nama_pelanggan || '-'}</span>
+                                            <span class="text-[9px] xl:text-[10px] text-neutral-400 mt-0.5 leading-tight break-words">${t.paket_nama || '-'}</span>
+                                        </div>
                                     </td>
-                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Pelanggan</span>
-                                        <span>${t.nama_pelanggan || '-'}</span>
+                                    <td class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 hidden lg:table-cell 2xl:hidden text-right">
+                                        <div class="flex flex-col text-right">
+                                            <span class="font-mono font-bold text-neutral-200 text-xs xl:text-sm whitespace-nowrap">${Utils.formatRupiah(t.jumlah || 0)}</span>
+                                            <div class="mt-0.5">
+                                                <span class="px-1.5 py-0.2 rounded text-[9px] xl:text-[10px] font-bold ${t.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'} whitespace-nowrap">${t.metode_pembayaran || 'Tunai'}</span>
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Paket</span>
-                                        <span class="max-w-[120px] xl:max-w-[160px] truncate" title="${Utils.escapeHtml(t.paket_nama || '-')}">${Utils.escapeHtml(t.paket_nama || '-')}</span>
+                                    <td class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 hidden lg:table-cell 2xl:hidden">
+                                        <div class="flex flex-col items-start gap-0.5">
+                                            <span class="font-mono text-neutral-300 text-xs xl:text-sm whitespace-nowrap">PC: ${t.pc_kode || '-'}</span>
+                                            <span class="text-[9px] xl:text-[10px] text-neutral-400 whitespace-nowrap">Kasir: ${t.kasir_nama || '-'}</span>
+                                        </div>
                                     </td>
-                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-right font-mono font-bold text-neutral-200 flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Jumlah</span>
-                                        <span>${Utils.formatRupiah(t.jumlah || 0)}</span>
+                                    <td class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 hidden lg:table-cell 2xl:hidden text-right">
+                                        <button onclick="Laporan.printStruk(${t.id})" class="px-2 py-0.5 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] xl:text-xs font-bold rounded transition-colors inline-flex items-center gap-1">
+                                            <span>Cetak</span>
+                                        </button>
                                     </td>
-                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-neutral-500 font-mono flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">PC</span>
-                                        <span>${t.pc_kode || '-'}</span>
+
+                                    <!-- Separated Wide Desktop Cells (9 columns for 2xl: ≥1536px) -->
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 text-neutral-400 font-mono text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
+                                        ${t.waktu || '-'}
                                     </td>
-                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Kasir</span>
-                                        <span class="text-neutral-300 font-medium">${t.kasir_nama || '-'}</span>
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 font-mono font-bold text-neutral-200 text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
+                                        ${t.no_nota || '-'}
                                     </td>
-                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-neutral-400 flex lg:table-cell justify-between items-center border-t border-[#2a2a2a]/50 lg:border-t-0">
-                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Metode</span>
-                                        <span class="px-2.5 py-1 rounded text-[10px] xl:text-xs font-bold ${t.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${t.metode_pembayaran || 'Tunai'}</span>
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 font-semibold text-neutral-200 text-xs xl:text-sm 2xl:text-base leading-tight break-words">
+                                        ${t.nama_pelanggan || '-'}
                                     </td>
-                                    <td class="px-3 xl:px-4 py-2.5 xl:py-3 text-center flex lg:table-cell justify-between items-center">
-                                        <span class="text-[10px] xl:text-xs text-neutral-500 font-bold uppercase tracking-wider lg:hidden">Aksi</span>
-                                        <button onclick="Laporan.printStruk(${t.id})" class="px-2.5 py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] xl:text-xs font-bold rounded transition-colors">Cetak</button>
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 text-neutral-400 text-xs xl:text-sm 2xl:text-base leading-tight break-words">
+                                        ${t.paket_nama || '-'}
+                                    </td>
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 text-right font-mono font-bold text-neutral-200 text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
+                                        ${Utils.formatRupiah(t.jumlah || 0)}
+                                    </td>
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 text-neutral-400 font-mono text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
+                                        ${t.pc_kode || '-'}
+                                    </td>
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 text-neutral-300 font-medium text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
+                                        ${t.kasir_nama || '-'}
+                                    </td>
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">
+                                        <span class="px-2.5 py-0.5 rounded text-[9px] xl:text-[10px] 2xl:text-xs font-bold ${t.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${t.metode_pembayaran || 'Tunai'}</span>
+                                    </td>
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 text-center whitespace-nowrap">
+                                        <button onclick="Laporan.printStruk(${t.id})" class="px-2 py-0.5 2xl:px-3 2xl:py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] xl:text-xs 2xl:text-sm font-bold rounded transition-colors inline-flex items-center gap-1">
+                                            <span>Cetak</span>
+                                        </button>
                                     </td>
                                 </tr>`).join('')}
                         </tbody>
@@ -292,14 +362,14 @@ const Laporan = {
 
             if (data.pages && data.pages > 1) {
                 html += `
-                    <div class="flex items-center justify-center gap-2 mt-2 mb-6">
-                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage - 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs xl:text-sm font-bold rounded transition-colors ${this.currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage <= 1 ? 'disabled' : ''}>&larr;</button>
-                        <span class="px-4 py-1.5 text-xs xl:text-sm text-neutral-200 font-mono">${this.currentPage} / ${data.pages}</span>
-                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage + 1})" class="px-3 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs xl:text-sm font-bold rounded transition-colors ${this.currentPage >= data.pages ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage >= data.pages ? 'disabled' : ''}>&rarr;</button>
+                    <div class="flex items-center justify-center gap-2 mt-1 mb-1">
+                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage - 1})" class="px-2.5 py-0.5 lg:py-0.5 xl:py-1 2xl:py-1.5 2xl:px-3 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors ${this.currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage <= 1 ? 'disabled' : ''}>&larr;</button>
+                        <span class="px-3 py-0.5 lg:py-0.5 xl:py-1 2xl:py-1.5 text-xs xl:text-sm 2xl:text-base text-neutral-200 font-mono">${this.currentPage} / ${data.pages}</span>
+                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage + 1})" class="px-2.5 py-0.5 lg:py-0.5 xl:py-1 2xl:py-1.5 2xl:px-3 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors ${this.currentPage >= data.pages ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage >= data.pages ? 'disabled' : ''}>&rarr;</button>
                     </div>`;
             }
         } else {
-            html += '<div class="text-center py-10 text-neutral-500 text-xs lg:max-xl:text-xs xl:text-base mb-6">Tidak ada transaksi billing di tanggal ini</div>';
+            html += '<div class="text-center py-6 text-neutral-500 text-xs lg:text-sm 2xl:text-base mb-2">Tidak ada transaksi billing di tanggal ini</div>';
         }
 
         area.innerHTML = html;

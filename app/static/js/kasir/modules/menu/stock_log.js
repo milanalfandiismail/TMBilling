@@ -10,6 +10,7 @@ const MenuStockLog = {
     totalPages: 1,
     totalRecords: 0,
     operators: [],
+    currentLogs: [],
 
     _lastFingerprint: null,
 
@@ -54,6 +55,7 @@ const MenuStockLog = {
             }
 
             const items = res.data || [];
+            this.currentLogs = items;
             const newFingerprint = JSON.stringify({ items, total: res.pagination?.total });
             if (isSilent && this._lastFingerprint === newFingerprint) {
                 return; // Data tidak berubah
@@ -119,45 +121,112 @@ const MenuStockLog = {
             return;
         }
 
-        tbody.innerHTML = items.map(log => {
+        tbody.innerHTML = items.map((log, index) => {
             const qtyPlus = Number(log.jumlah_masuk) || 0;
             const stokLama = Number(log.stok_sebelum) || 0;
             const stokBaru = Number(log.stok_sesudah) || 0;
             const timeStr = log.created_at || '-';
             const opName = log.operator || 'system';
-            const note = log.catatan && log.catatan !== '-' ? log.catatan : '<span class="text-neutral-600 italic">Tanpa catatan</span>';
 
             return `
-                <tr class="hover:bg-[#111111] transition-colors text-xs lg:max-xl:text-[11px] xl:text-sm">
-                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 px-4 lg:max-xl:px-2 xl:px-4 whitespace-nowrap text-neutral-400 font-mono text-xs lg:max-xl:text-[10px] xl:text-xs">${this.escapeHtml(timeStr)}</td>
-                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 px-4 lg:max-xl:px-2 xl:px-4 font-semibold text-neutral-100 text-xs lg:max-xl:text-[11px] xl:text-sm max-w-[130px] lg:max-xl:max-w-[100px] xl:max-w-[160px] truncate" title="${this.escapeHtml(log.menu_nama || '')}">${this.escapeHtml(log.menu_nama || '-')}</td>
-                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 px-4 lg:max-xl:px-1.5 xl:px-4 text-center whitespace-nowrap">
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-xs font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
+                <tr class="hover:bg-[#111111] transition-colors text-xs lg:max-xl:text-[11px] xl:text-sm 2xl:text-base">
+                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-2 xl:px-4 2xl:px-5 whitespace-nowrap text-neutral-400 font-mono text-xs lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm">${this.escapeHtml(timeStr)}</td>
+                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-2 xl:px-4 2xl:px-5 font-semibold text-neutral-100 text-xs lg:max-xl:text-[11px] xl:text-sm 2xl:text-base whitespace-normal break-words leading-tight" title="${this.escapeHtml(log.menu_nama || '')}">${this.escapeHtml(log.menu_nama || '-')}</td>
+                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-1.5 xl:px-4 2xl:px-5 text-center whitespace-nowrap">
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-xs 2xl:text-sm font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
                             RESTOCK
                         </span>
                     </td>
-                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 px-4 lg:max-xl:px-1.5 xl:px-4 text-center font-mono font-bold text-emerald-400 text-xs lg:max-xl:text-[11px] xl:text-sm whitespace-nowrap">
+                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-1.5 xl:px-4 2xl:px-5 text-center font-mono font-bold text-emerald-400 text-xs lg:max-xl:text-[11px] xl:text-sm 2xl:text-base whitespace-nowrap">
                         +${qtyPlus.toLocaleString('id-ID')}
                     </td>
-                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 px-4 lg:max-xl:px-1.5 xl:px-4 text-center font-mono text-xs lg:max-xl:text-[10px] xl:text-xs whitespace-nowrap">
+                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-1.5 xl:px-4 2xl:px-5 text-center font-mono text-xs lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm whitespace-nowrap">
                         <span class="text-neutral-400">${stokLama.toLocaleString('id-ID')}</span>
                         <span class="text-neutral-500 mx-1">&rarr;</span>
                         <span class="text-neutral-100 font-bold">${stokBaru.toLocaleString('id-ID')}</span>
                     </td>
-                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 px-4 lg:max-xl:px-2 xl:px-4 whitespace-nowrap">
-                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs lg:max-xl:text-[10px] xl:text-xs font-medium bg-[#171717] text-neutral-300 border border-[#262626]">
-                            <svg class="w-3 h-3 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-2 xl:px-4 2xl:px-5 whitespace-nowrap">
+                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm font-medium bg-[#171717] text-neutral-300 border border-[#262626]">
+                            <svg class="w-3 h-3 2xl:w-3.5 2xl:h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                             ${this.escapeHtml(opName)}
                         </span>
                     </td>
-                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 px-4 lg:max-xl:px-2 xl:px-4 text-neutral-300 text-xs lg:max-xl:text-[11px] xl:text-sm max-w-[180px] lg:max-xl:max-w-[130px] xl:max-w-xs truncate" title="${this.escapeHtml(log.catatan || '')}">
-                        ${note}
+                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-2 xl:px-4 2xl:px-5 text-center whitespace-nowrap">
+                        <button type="button" onclick="MenuStockLog.openDetailModal('${this.escapeHtml(log.id || '')}', ${index})"
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1 lg:max-xl:px-2 lg:max-xl:py-0.5 xl:px-3 xl:py-1 2xl:px-4 2xl:py-1.5 bg-[#171717] hover:bg-[#242424] border border-[#2a2a2a] hover:border-neutral-500 text-neutral-300 hover:text-white rounded text-xs lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm font-semibold transition-colors shadow-sm">
+                            <svg class="w-3.5 h-3.5 2xl:w-4 2xl:h-4 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>Detail</span>
+                        </button>
                     </td>
                 </tr>
             `;
         }).join('');
+    },
+
+    openDetailModal(logId, index) {
+        let log = null;
+        if (logId && this.currentLogs && this.currentLogs.length > 0) {
+            log = this.currentLogs.find(item => String(item.id) === String(logId));
+        }
+        if (!log && typeof index === 'number' && this.currentLogs && this.currentLogs[index]) {
+            log = this.currentLogs[index];
+        }
+        if (!log) {
+            if (window.Toast) Toast.error('Data mutasi tidak ditemukan');
+            return;
+        }
+
+        const elMenu = document.getElementById('stock-log-detail-menu');
+        const elJumlah = document.getElementById('stock-log-detail-jumlah');
+        const elStokSebelum = document.getElementById('stock-log-detail-stok-sebelum');
+        const elStokSesudah = document.getElementById('stock-log-detail-stok-sesudah');
+        const elOperator = document.getElementById('stock-log-detail-operator');
+        const elWaktu = document.getElementById('stock-log-detail-waktu');
+        const elCatatan = document.getElementById('stock-log-detail-catatan');
+
+        const qtyPlus = Number(log.jumlah_masuk) || 0;
+        const stokLama = Number(log.stok_sebelum) || 0;
+        const stokBaru = Number(log.stok_sesudah) || 0;
+
+        if (elMenu) elMenu.innerText = log.menu_nama || '-';
+        if (elJumlah) elJumlah.innerText = `+${qtyPlus.toLocaleString('id-ID')}`;
+        if (elStokSebelum) elStokSebelum.innerText = stokLama.toLocaleString('id-ID');
+        if (elStokSesudah) elStokSesudah.innerText = stokBaru.toLocaleString('id-ID');
+        if (elOperator) {
+            elOperator.innerHTML = `
+                <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span>${this.escapeHtml(log.operator || 'system')}</span>
+            `;
+        }
+        if (elWaktu) elWaktu.innerText = log.created_at || '-';
+        if (elCatatan) {
+            if (log.catatan && log.catatan !== '-') {
+                elCatatan.innerHTML = this.escapeHtml(log.catatan);
+                elCatatan.classList.remove('italic', 'text-neutral-500');
+                elCatatan.classList.add('text-neutral-200');
+            } else {
+                elCatatan.innerHTML = '<span class="italic text-neutral-500">Tidak ada catatan untuk mutasi ini.</span>';
+            }
+        }
+
+        const modal = document.getElementById('modal-stock-log-detail');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    },
+
+    closeDetailModal() {
+        const modal = document.getElementById('modal-stock-log-detail');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
     },
 
     renderPagination(pagination) {
