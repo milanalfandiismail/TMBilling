@@ -311,14 +311,16 @@ const Shift = {
                     </div>
 
                     <div>
-                        <label for="uang-fisik-input" class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-400 uppercase tracking-wider block mb-2">Uang Fisik di Laci (Rp)</label>
+                        <label for="uang-fisik-input" class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-400 uppercase tracking-wider block mb-2">Uang Tunai Fisik di Laci (Rp)</label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-sm lg:max-xl:text-sm xl:text-base">Rp</span>
                             <input type="text" id="uang-fisik-input" value="0" inputmode="numeric" oninput="Utils.formatInputRupiah(this)" onfocus="this.select()"
                                 class="w-full pl-10 pr-4 py-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm lg:max-xl:text-sm xl:text-base font-mono focus:border-neutral-500 transition-colors"
                                 placeholder="0" autofocus />
                         </div>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Rp 0 - Rp 100.000.000 (hitung seluruh uang tunai fisik di laci)</p>
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">
+                            Hitung <span class="text-amber-400 font-bold">uang tunai (cash) saja</span> — QRIS &amp; transfer digital tidak masuk laci.
+                        </p>
                     </div>
 
                     <div>
@@ -521,24 +523,11 @@ const Shift = {
                         </div>
                     </div>
 
-                    <!-- 2. Rincian Penerimaan Non-Tunai Dinamis -->
-                    <div class="p-3.5 rounded-lg bg-[#0d0d0d] border border-[#202020] space-y-2">
-                        <div class="flex items-center justify-between pb-1.5 border-b border-[#1c1c1c]">
-                            <span class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
-                                <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
-                                Penerimaan Non-Tunai (Digital)
-                            </span>
-                            <span class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-cyan-400 font-mono">${Utils.formatRupiah(totalNonTunai)}</span>
-                        </div>
-                        <div class="space-y-1 pt-1">
-                            ${nonTunaiRowsHtml}
-                        </div>
-                    </div>
-
-                    <!-- 3. Rekonsiliasi Laci Kasir -->
-                    <div class="p-3.5 rounded-lg bg-neutral-900/90 border border-[#262626] space-y-2">
-                        <div class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-300 uppercase tracking-wider pb-1.5 border-b border-[#222]">
-                            Rekonsiliasi Laci Kasir
+                    <!-- 2. Rekonsiliasi Laci (Tunai) -->
+                    <div class="p-3.5 rounded-lg bg-[#0d0d0d] border border-amber-900/30 space-y-2">
+                        <div class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-amber-400 uppercase tracking-wider pb-1.5 border-b border-amber-900/20 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                            Rekonsiliasi Laci (Tunai)
                         </div>
                         <div class="space-y-1.5 pt-1 text-xs lg:max-xl:text-xs xl:text-sm">
                             <div class="flex justify-between">
@@ -549,20 +538,44 @@ const Shift = {
                                 <span class="text-neutral-400">Total Tunai Masuk (Bersih)</span>
                                 <span class="text-neutral-200 font-mono">${Utils.formatRupiah(totalTunaiBersih)}</span>
                             </div>
-                            <div class="flex justify-between pt-1 border-t border-[#1c1c1c] font-semibold">
-                                <span class="text-neutral-300">Total Seharusnya di Laci</span>
+                            <div class="flex justify-between pt-1 border-t border-[#1c1c1c] font-semibold items-center">
+                                <span class="text-neutral-300 flex items-center gap-1.5">
+                                    <span class="text-[9px] lg:max-xl:text-[9px] xl:text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 border border-neutral-700 font-bold tracking-wider">SISTEM</span>
+                                    Seharusnya di Laci
+                                </span>
                                 <span class="text-neutral-100 font-mono">${Utils.formatRupiah(totalFisikSeharusnya)}</span>
                             </div>
-                            <div class="flex justify-between font-bold pt-1">
-                                <span class="text-neutral-300">Uang Fisik Aktual di Laci</span>
-                                <span class="text-white font-mono text-xs lg:max-xl:text-sm xl:text-base">${uangFisik !== null && uangFisik !== undefined ? Utils.formatRupiah(uangFisik) : '-'}</span>
+                            <div class="flex justify-between font-bold pt-1 items-center">
+                                <span class="text-neutral-300 flex items-center gap-1.5">
+                                    <span class="text-[9px] lg:max-xl:text-[9px] xl:text-[10px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/50 font-bold tracking-wider">KASIR</span>
+                                    Dihitung Fisik
+                                </span>
+                                <span class="text-white font-mono text-xs lg:max-xl:text-sm xl:text-base">
+                                    ${uangFisik !== null && uangFisik !== undefined ? Utils.formatRupiah(uangFisik) : '-'}
+                                </span>
                             </div>
                             <div class="flex justify-between items-center pt-1.5 border-t border-[#222]">
-                                <span class="text-neutral-400 font-semibold">Selisih Keuangan</span>
+                                <span class="text-neutral-400 font-semibold">Selisih Laci</span>
                                 ${selisihHtml}
                             </div>
                         </div>
                     </div>
+
+                    <!-- 3. Penerimaan Digital (Hanya jika ada non-tunai) -->
+                    ${nonTunaiList.length > 0 ? `
+                    <div class="p-3.5 rounded-lg bg-[#0d0d0d] border border-cyan-900/30 space-y-2">
+                        <div class="flex items-center justify-between pb-1.5 border-b border-cyan-900/20">
+                            <span class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                                Penerimaan Digital
+                            </span>
+                            <span class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-cyan-400 font-mono">${Utils.formatRupiah(totalNonTunai)}</span>
+                        </div>
+                        <div class="space-y-1 pt-1">
+                            ${nonTunaiRowsHtml}
+                        </div>
+                    </div>
+                    ` : ''}
 
                     <!-- Catatan Serah Terima -->
                     ${result.catatan ? `
