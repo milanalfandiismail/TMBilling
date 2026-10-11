@@ -237,6 +237,11 @@ class MenuService:
         return MenuRepository.get_distinct_stock_log_operators()
 
     @staticmethod
+    def get_stock_log_dates():
+        """Mengambil daftar tanggal unik saat terjadi mutasi stok."""
+        return MenuRepository.get_distinct_stock_log_dates()
+
+    @staticmethod
     def get_archived_menu():
         """Mengambil semua menu yang diarsipkan beserta jumlah transaksi historisnya."""
         menus = MenuRepository.get_archived()

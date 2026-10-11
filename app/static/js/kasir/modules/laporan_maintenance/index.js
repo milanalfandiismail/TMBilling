@@ -142,38 +142,43 @@ const LaporanMaintenance = {
         const startIndex = (this.currentPage - 1) * this.perPage;
         const pageTickets = listTiket.slice(startIndex, startIndex + this.perPage);
 
-        tbody.innerHTML = pageTickets.map((t, idx) => `
+        tbody.innerHTML = pageTickets.map((t, idx) => {
+            const compactResolved = (t.resolved_at || '').replace(/\s*WITA|\s*WIB|\s*WIT/gi, '').replace(/\/20\d\d/, '');
+
+            return `
             <tr class="hover:bg-[#121212] transition-colors border-b border-[#1c1c1c] last:border-b-0">
-                <td class="py-1.5 lg:py-1 xl:py-1.5 2xl:py-2 px-2.5 xl:px-3 2xl:px-4">
+                <td class="py-1.5 lg:py-1 xl:py-1.5 2xl:py-2 px-1.5 sm:px-2.5 xl:px-3 2xl:px-4">
                     <div class="flex flex-col">
-                        <span class="font-bold text-neutral-100 font-mono text-xs lg:text-[11px] xl:text-xs 2xl:text-sm">${t.pc_kode}</span>
-                        <span class="text-neutral-500 font-mono text-[10px] lg:text-[9px] xl:text-[10px] 2xl:text-xs mt-0.5">${t.resolved_at || '-'}</span>
+                        <span class="font-bold text-neutral-100 font-mono text-[11px] sm:text-xs lg:text-[11px] xl:text-xs 2xl:text-sm">${t.pc_kode}</span>
+                        <span class="sm:hidden text-neutral-500 font-mono text-[8.5px] mt-0.5">${compactResolved || '-'}</span>
+                        <span class="hidden sm:inline text-neutral-500 font-mono text-[10px] lg:text-[9px] xl:text-[10px] 2xl:text-xs mt-0.5">${t.resolved_at || '-'}</span>
                     </div>
                 </td>
-                <td class="py-1.5 lg:py-1 xl:py-1.5 2xl:py-2 px-2.5 xl:px-3 2xl:px-4 whitespace-nowrap">
+                <td class="py-1.5 lg:py-1 xl:py-1.5 2xl:py-2 px-1.5 sm:px-2.5 xl:px-3 2xl:px-4 whitespace-nowrap">
                     <div class="flex flex-col items-start gap-0.5">
-                        <span class="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 font-bold uppercase tracking-wider text-[9px] lg:text-[9px] xl:text-[10px] 2xl:text-xs">${t.kategori}</span>
-                        <span class="font-bold text-emerald-400 font-mono text-xs lg:text-[11px] xl:text-xs 2xl:text-sm">${formatRupiah(t.biaya)}</span>
+                        <span class="px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded bg-neutral-800 text-neutral-300 font-bold uppercase tracking-wider text-[8px] sm:text-[9px] lg:text-[9px] xl:text-[10px] 2xl:text-xs">${t.kategori}</span>
+                        <span class="font-bold text-emerald-400 font-mono text-[10px] sm:text-xs lg:text-[11px] xl:text-xs 2xl:text-sm">${formatRupiah(t.biaya)}</span>
                     </div>
                 </td>
-                <td class="py-1.5 lg:py-1 xl:py-1.5 2xl:py-2 px-2.5 xl:px-3 2xl:px-4">
-                    <div class="flex flex-col">
-                        <div class="font-semibold text-neutral-200 break-words leading-tight text-xs lg:text-[11px] xl:text-xs 2xl:text-sm">${t.judul}</div>
-                        <div class="text-neutral-400 text-[10px] lg:text-[9px] xl:text-[10px] 2xl:text-xs mt-0.5 break-words leading-tight line-clamp-1" title="${this.escapeHtml(t.resolusi || '')}">${t.resolusi || '-'}</div>
+                <td class="py-1.5 lg:py-1 xl:py-1.5 2xl:py-2 px-1.5 sm:px-2.5 xl:px-3 2xl:px-4">
+                    <div class="flex flex-col min-w-0 max-w-[70px] sm:max-w-[180px] md:max-w-[220px] xl:max-w-xs">
+                        <div class="font-semibold text-neutral-200 truncate leading-tight text-[11px] sm:text-xs lg:text-[11px] xl:text-xs 2xl:text-sm" title="${this.escapeHtml(t.judul || '')}">${t.judul}</div>
+                        <div class="text-neutral-400 text-[8.5px] sm:text-[10px] lg:text-[9px] xl:text-[10px] 2xl:text-xs mt-0.5 truncate leading-tight" title="${this.escapeHtml(t.resolusi || '')}">${t.resolusi || '-'}</div>
                     </div>
                 </td>
-                <td class="py-1.5 lg:py-1 xl:py-1.5 2xl:py-2 px-2.5 xl:px-3 2xl:px-4 text-center whitespace-nowrap">
+                <td class="py-1.5 lg:py-1 xl:py-1.5 2xl:py-2 px-1 sm:px-2.5 xl:px-3 2xl:px-4 text-center whitespace-nowrap">
                     <button type="button" onclick="LaporanMaintenance.openDetailModal('${this.escapeHtml(t.id || '')}', ${startIndex + idx})"
-                        class="inline-flex items-center gap-1.5 px-2 py-0.5 lg:px-2 lg:py-0.5 xl:px-2.5 xl:py-1 2xl:px-3.5 2xl:py-1.5 bg-[#171717] hover:bg-[#242424] border border-[#2a2a2a] hover:border-neutral-500 text-neutral-300 hover:text-white rounded text-xs lg:text-[9px] xl:text-xs 2xl:text-sm font-semibold transition-colors shadow-sm">
+                        class="inline-flex items-center gap-1 p-1 sm:px-2 sm:py-0.5 lg:px-2 lg:py-0.5 xl:px-2.5 xl:py-1 2xl:px-3.5 2xl:py-1.5 bg-[#171717] hover:bg-[#242424] border border-[#2a2a2a] hover:border-neutral-500 text-neutral-300 hover:text-white rounded text-xs lg:text-[9px] xl:text-xs 2xl:text-sm font-semibold transition-colors shadow-sm" title="Lihat detail laporan">
                         <svg class="w-3.5 h-3.5 2xl:w-4 2xl:h-4 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
-                        <span>Detail</span>
+                        <span class="hidden sm:inline">Detail</span>
                     </button>
                 </td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
 
         this.renderPagination(listTiket.length);
     },

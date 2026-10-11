@@ -210,11 +210,26 @@ def test_tambah_stok_menu_flow_and_audit_logging(client_kasir):
     assert first_log["operator"] == "kasir_test_rbac"
     assert first_log["catatan"] == "Beli dari Agen Sembako Makmur"
     assert "kasir_test_rbac" in res_json["operators"]
+    assert "dates" in res_json
+    assert len(res_json["dates"]) >= 1
+
+    # Test dedicated /stock-logs/dates endpoint
+    res_dates = client_kasir.get("/api/v1/kasir/menu/stock-logs/dates")
+    assert res_dates.status_code == 200
+    assert res_dates.get_json()["success"] is True
+    assert len(res_dates.get_json()["dates"]) >= 1
+    assert res_dates.get_json()["dates"] == res_json["dates"]
 
     # Filter by search
     res_search = client_kasir.get("/api/v1/kasir/menu/stock-logs?search=Sembako")
     assert res_search.status_code == 200
     assert len(res_search.get_json()["data"]) >= 1
+
+    # Filter by date
+    active_date = res_json["dates"][0]
+    res_date_filter = client_kasir.get(f"/api/v1/kasir/menu/stock-logs?tanggal={active_date}")
+    assert res_date_filter.status_code == 200
+    assert len(res_date_filter.get_json()["data"]) >= 1
 
     # Filter by non-matching search
     res_empty = client_kasir.get("/api/v1/kasir/menu/stock-logs?search=NonExistentKeywordXYZ")

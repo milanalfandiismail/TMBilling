@@ -6,9 +6,34 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
-## [1.6.4] - 2026-10-09
+## [1.6.4] - 2026-10-11
 
 ### Ditambahkan
+- **Penyempurnaan Filter Tanggal Mutasi Log Stok Menu (Hanya Tanggal yang Ada Data)**:
+  - Mengganti input tanggal kalender terbuka (`<input type="date">`) menjadi dropdown selektif dinamis (`<select id="stock-log-filter-date">`) pada tab `tab-menu_stock_log`.
+  - Dropdown hanya menyajikan tanggal-tanggal unik yang benar-benar memiliki riwayat mutasi stok (`MenuRepository.get_distinct_stock_log_dates`), mencegah kasir memilih tanggal kosong yang tidak memiliki data.
+  - Opsi dropdown berformat tanggal Indonesia `DD/MM/YYYY` dengan nilai ISO `YYYY-MM-DD`, terintegrasi otomatis dengan aksi reset filter dan live polling.
+  - Menambahkan endpoint REST API dedicated `GET /api/v1/kasir/menu/stock-logs/dates` dan properti `dates` pada payload respons `GET /api/v1/kasir/menu/stock-logs`.
+- **Optimasi Responsif "Fit-to-Table" Mobile Portrait Tanpa Prefix (`< sm`: 360px – 430px) pada 7 Tab Kasir**:
+  - **Zero Horizontal Overflow (`overflowPx === 0`) pada Layar Ponsel**: Mengeliminasi scrollbar horizontal dan memastikan seluruh konten dan tombol aksi terlihat 100% pas (*Fit-to-Table*) pada layar smartphone (iPhone 14 @ 390px, Android @ 360px) pada 7 tab kasir:
+    1. `tab-menu_stock_log`: Padding sel ringkas `px-1.5 sm:px-3`, badge mutasi kompak, tombol Detail berbasis ikon di mobile (`<span class="hidden sm:inline">Detail</span>`), format tanggal ringkas `DD/MM HH:mm`.
+    2. `tab-shift_history`: Header responsif `Petugas`, `Omset`, `Laci`, stacking tanggal dan rentang jam vertikal, status badge ringkas `SEL`, kontrol aksi ramping.
+    3. `tab-user_logs`: Header & padding responsif `p-2 sm:p-3`, penanggalan log ringkas `MM-DD HH:mm`, tombol Detail berbasis ikon pada mobile.
+    4. `tab-maintenance`: Tombol aksi icon-only pada mobile (`🔍`, `▶`, `✕`, `✓`, `🗑`), batasan lebar judul masalah dinamis `max-w-[55px] sm:max-w-[150px]`, sel padding `px-0.5 sm:px-2`.
+    5. `tab-laporan_maintenance`: Padding kontainer & tabel ramping `p-1.5 sm:p-2.5`, format tanggal ringkas, tombol Detail icon-only pada mobile.
+    6. `tab-monitor`: Badge suhu CPU & GPU ultra-kompak `min-w-[28px] sm:min-w-[54px]`, indikator kecepatan jaringan ringkas `1G`, kolom aksi hemat ruang.
+    7. `tab-hardware_checker`: Badge status hardware ringkas (`🛡️`, `🚨`, `⚙️` pada `< sm`), adapter LAN ringkas `1G`, tombol aksi Detail & Baseline berbasis ikon di layar mobile.
+  - **Preservasi 100% Fit-to-Table pada Breakpoint `sm` (640px), `md` (768px), dan `lg` (1024px)**: Teruji bebas regresi (`overflowPx === 0`) di seluruh breakpoint standar Tailwind CSS.
+- **Optimasi Responsif "Fit-to-Table" Multi-Breakpoint (`sm` 640px & `md` 768px) pada 7 Tab Kasir**:
+  - **Eliminasi Total Horizontal Overflow & Kolom Terpotong**: Mengeliminasi kolom terpotong atau tersembunyi ke sisi kanan (`overflowPx === 0`) pada 7 tab utama antarmuka kasir tanpa scrollbar horizontal:
+    1. `tab-menu_stock_log` (Logstok Menu F&B): Arsitektur adaptif 4 kolom (`Waktu & Petugas`, `Menu`, `Stok & Mutasi`, `Aksi`) dengan tombol Detail ringkas `h-7`.
+    2. `tab-shift_history` (Riwayat Serah Terima Shift): Arsitektur adaptif 5 kolom (`Petugas & Waktu`, `Penerimaan`, `Kas & Selisih`, `Status`, `Aksi`) menyatukan penerimaan & kas bertingkat.
+    3. `tab-user_logs` (Log Audit Staff): Arsitektur adaptif 4 kolom (`Waktu & Operator`, `Aksi & IP`, `Keterangan`, `Aksi`) pada layar mobile/tablet.
+    4. `tab-maintenance` (Perawatan PC): Arsitektur adaptif 4 kolom (`PC & Prioritas`, `Masalah & Detail`, `Status & Pelapor`, `Aksi`) dengan tombol aksi ringkas (`Detail`, `Proses`, `Tolak`, `Selesai`, `Hapus`).
+    5. `tab-laporan_maintenance` (Laporan Perawatan): Pembatasan lebar (`max-w-[130px] sm:max-w-[180px] md:max-w-[220px] truncate`) pada judul masalah & resolusi serta normalisasi padding sel.
+    6. `tab-monitor` (Monitor Hardware): Penataan kontainer responsif (`p-3 sm:p-4 lg:p-4 xl:p-6`), eliminasi date string overflow di kolom aksi pada breakpoint `sm`, dan perampingan sel.
+    7. `tab-hardware_checker` (Hardware Checker): Penataan kontainer responsif (`p-3 sm:p-4 lg:p-4 xl:p-6`), tombol aksi kompak (`Detail` & `Baseline`), dan format waktu sinkronisasi ringkas.
+  - **Preservasi Penuh Tampilan Desktop (`lg`, `xl`, `2xl`)**: Menjaga tabel tetap luas dengan seluruh kolom terpisah (`hidden lg:table-cell`) saat diakses pada monitor desktop standar atau lebar.
 - **Optimasi Responsif & Paginasi Tab Perawatan PC (Zero Scroll Multi-Breakpoint)**:
   - **Redesain 2-Kolom Modal Detail Tiket Perawatan PC**: Membagi struktur modal detail (`modal-detail-ticket`) menjadi 2 kolom responsif (`sm:grid sm:grid-cols-2 lg:gap-3.5 xl:gap-4.5`) serupa modal riwayat serah terima shift kasir, memisahkan kelompok identitas PC & pelapor di sisi kiri dengan rincian deskripsi masalah, status penyelesaian, serta biaya perbaikan di sisi kanan untuk mengeliminasi vertical scrollable di resolusi `sm`, `md`, `lg`, `xl`, dan `2xl`.
   - **Limit 5 Item per Halaman & Paginasi**: Membatasi tampilan tiket perawatan menjadi tepat 5 data per halaman secara dinamis di modul `Maintenance`, dilengkapi bar navigasi paginasi ringkas (`Menampilkan X - Y dari Z tiket`, tombol `← Sebelumnya`, dan tombol `Berikutnya →` dengan penanganan boundary disabled).
