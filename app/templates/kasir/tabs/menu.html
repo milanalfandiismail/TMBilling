@@ -1,18 +1,18 @@
 <!-- ===== TAB: MENU / POS F&B ===== -->
-<div id="tab-menu" class="tab-content hidden space-y-6">
+<div id="tab-menu" class="tab-content hidden space-y-4 sm:space-y-6 pb-16 lg:pb-0">
     <!-- POS Header -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-4 md:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3">
             <div>
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Kantin / POS Makanan &amp; Minuman</h3>
-                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Kelola menu makanan/minuman dan catat transaksi penjualan kantin warnet</p>
+                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-0.5 sm:mt-1">Kelola menu makanan/minuman dan catat transaksi penjualan kantin warnet</p>
             </div>
             {% if session.get('kasir_role') == 'admin' %}
             <div class="flex flex-wrap items-center gap-2 remote-hide-action">
                 <button onclick="Menu.showAddModal()"
-                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    class="px-2.5 sm:px-3 lg:max-xl:px-3.5 xl:px-4 py-1.5 sm:py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-1.5 sm:gap-2">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-                    Tambah Menu
+                    <span>Tambah Menu</span>
                 </button>
             </div>
             {% endif %}
@@ -20,33 +20,35 @@
     </div>
 
     <!-- POS Content (Grid Catalog + Cart) -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 xl:gap-6 items-start">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 xl:gap-6 items-start">
         <!-- Left Column: Catalog & Archive -->
-        <div class="lg:col-span-7 xl:col-span-8 2xl:col-span-9 space-y-4">
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-                <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-[#1c1c1c]">
-                    <!-- View Switcher Tabs (Katalog Aktif vs Arsip) -->
-                    <div class="flex items-center gap-1.5 bg-[#050505] p-1 rounded border border-[#1c1c1c]">
+        <div class="lg:col-span-7 xl:col-span-8 2xl:col-span-9 space-y-3.5 sm:space-y-4">
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-4 md:p-6">
+                <div class="flex flex-col sm:flex-row lg:flex-col xl:flex-row sm:items-center lg:items-start xl:items-center justify-between gap-2.5 sm:gap-3 mb-3.5 sm:mb-4 pb-3 border-b border-[#1c1c1c]">
+                    <!-- View Switcher Tabs (Katalog Menu vs Arsip Menu) -->
+                    <div class="grid grid-cols-2 sm:flex sm:items-center gap-1.5 bg-[#050505] p-1 rounded-lg border border-[#1c1c1c] w-full sm:w-auto">
                         <button id="menu-tab-active-btn" type="button" onclick="Menu.switchView('active')"
-                            class="px-3 py-1.5 rounded text-xs lg:max-xl:text-xs xl:text-sm font-bold bg-neutral-100 text-black shadow transition-all flex items-center gap-1.5">
-                            <span>Katalog Aktif</span>
+                            class="px-2.5 sm:px-3 py-1.5 rounded-md text-xs lg:max-xl:text-xs xl:text-sm font-bold bg-neutral-100 text-black shadow transition-all flex items-center gap-1.5 justify-center w-full sm:w-auto">
+                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                            <span>Katalog Menu</span>
                             <span id="menu-active-count-badge" class="px-1.5 py-0.5 bg-black/10 text-black rounded-full text-[10px] font-mono font-bold">0</span>
                         </button>
                         {% if session.get('kasir_role') == 'admin' %}
                         <button id="menu-tab-archived-btn" type="button" onclick="Menu.switchView('archived')"
-                            class="remote-hide-action px-3 py-1.5 rounded text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] transition-all flex items-center gap-1.5">
-                            <span>📦 Arsip Menu</span>
+                            class="remote-hide-action px-2.5 sm:px-3 py-1.5 rounded-md text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] transition-all flex items-center gap-1.5 justify-center w-full sm:w-auto">
+                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                            <span>Arsip Menu</span>
                             <span id="menu-archived-count-badge" class="px-1.5 py-0.5 bg-[#1c1c1c] text-neutral-400 rounded-full text-[10px] font-mono font-bold">0</span>
                         </button>
                         {% endif %}
                     </div>
 
                     <!-- Search Box -->
-                    <div class="flex items-center gap-2">
-                        <div class="relative">
+                    <div class="flex items-center gap-2 w-full sm:w-auto lg:w-full xl:w-auto">
+                        <div class="relative w-full sm:w-auto lg:w-full xl:w-auto">
                             <label for="menu-search-input" class="sr-only">Cari Menu</label>
                             <input type="text" id="menu-search-input" placeholder="Cari nama menu..."
-                                class="pl-8 pr-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 w-40 sm:w-48 lg:w-52 xl:w-60 transition-all"
+                                class="w-full sm:w-48 lg:w-full xl:w-60 pl-8 pr-3 py-1.5 sm:py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 transition-all font-sans"
                                 oninput="Menu.filterCatalog()">
                             <svg class="w-3.5 h-3.5 text-neutral-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -55,12 +57,12 @@
                     </div>
                 </div>
 
-                <!-- Catalog Grid (2 Columns on lg, 4 Columns on xl/2xl) -->
-                <div id="menu-catalog-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-4 gap-3 lg:gap-3.5 xl:gap-4 min-h-[320px]">
+                <!-- Catalog Grid (Mobile: 2 cols, sm: 3 cols, md: 3 cols, lg: 2 cols, xl: 3 cols, 2xl: 4 cols) -->
+                <div id="menu-catalog-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-3.5 xl:gap-4 min-h-[320px]">
                     {% for _ in range(8) %}
-                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-3 flex flex-col justify-between animate-pulse min-h-[260px]">
-                        <div class="w-full aspect-[4/3] rounded-lg border border-[#1f1f1f] bg-[#161616] mb-2.5 flex items-center justify-center">
-                            <svg class="w-8 h-8 text-[#262626]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-2.5 sm:p-3 flex flex-col justify-between animate-pulse min-h-[240px]">
+                        <div class="w-full aspect-[4/3] rounded-lg border border-[#1f1f1f] bg-[#161616] mb-2 flex items-center justify-center">
+                            <svg class="w-7 h-7 text-[#262626]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         </div>
                         <div class="space-y-1.5 flex-1">
                             <div class="h-3.5 bg-[#262626] rounded w-3/4"></div>
@@ -77,25 +79,30 @@
         </div>
 
         <!-- Right Column: Cart (Keranjang Belanja) -->
-        <div class="lg:col-span-5 xl:col-span-4 2xl:col-span-3 space-y-4">
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6 sticky top-6">
-                <div class="flex items-center justify-between gap-2 mb-4 border-b border-[#1c1c1c] pb-3">
+        <div id="menu-cart-section" class="lg:col-span-5 xl:col-span-4 2xl:col-span-3 space-y-4">
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3.5 sm:p-4 md:p-6 sticky top-6">
+                <div class="flex items-center justify-between gap-2 mb-3 sm:mb-4 border-b border-[#1c1c1c] pb-3">
                     <h3 class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5 shrink min-w-0 truncate">
                         <svg class="w-4 h-4 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                         </svg>
                         <span class="truncate">Keranjang Belanja</span>
                     </h3>
-                    <span id="menu-cart-count-badge" class="px-2 py-0.5 bg-[#171717] border border-[#262626] text-neutral-300 rounded text-[10px] xl:text-xs font-mono font-bold shrink-0 whitespace-nowrap">0 item</span>
+                    <div class="flex items-center gap-1.5">
+                        <span id="menu-cart-count-badge" class="px-2 py-0.5 bg-[#171717] border border-[#262626] text-neutral-300 rounded text-[10px] xl:text-xs font-mono font-bold shrink-0 whitespace-nowrap">0 item</span>
+                        <button id="menu-cart-clear-btn" type="button" onclick="Menu.clearCart()" class="hidden p-1 text-neutral-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors" title="Kosongkan Keranjang">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Cart Items Container -->
-                <div id="menu-cart-items" class="space-y-2.5 max-h-[340px] overflow-y-auto scrollbar-thin mb-4 pr-1">
+                <!-- Cart Items Container (Responsive Height for Desktop 2K/FHD) -->
+                <div id="menu-cart-items" class="space-y-2.5 max-h-[300px] sm:max-h-[340px] lg:max-h-[360px] xl:max-h-[500px] 2xl:max-h-[620px] overflow-y-auto scrollbar-thin mb-4 pr-1">
                     <div class="text-center py-10 text-neutral-600 text-xs lg:max-xl:text-xs xl:text-sm">Keranjang masih kosong</div>
                 </div>
 
                 <!-- Transaction Details Form -->
-                <div class="space-y-4 pt-4 border-t border-[#1c1c1c]">
+                <div class="space-y-3 sm:space-y-4 pt-3 sm:pt-4 border-t border-[#1c1c1c]">
                     <div class="space-y-1.5">
                         <label for="menu-order-pc-select" class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider block">Tipe Pemesanan</label>
                         <select id="menu-order-pc-select" class="w-full text-xs lg:max-xl:text-xs xl:text-base px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-200 focus:outline-none focus:border-neutral-500 font-medium">
@@ -116,6 +123,35 @@
                         Proses &amp; Cetak Transaksi
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Floating Cart Action Bar (< lg viewports only) -->
+    <div id="menu-mobile-cart-bar" class="fixed bottom-3 inset-x-2.5 sm:inset-x-4 z-40 lg:hidden hidden animate-modal-in">
+        <div class="bg-[#0e0e0e]/95 backdrop-blur-md border border-[#2a2a2a] shadow-2xl rounded-xl p-2.5 sm:p-3 flex items-center justify-between gap-2.5">
+            <div class="flex items-center gap-2 min-w-0 cursor-pointer" onclick="Menu.scrollToCart()" role="button" title="Lihat Keranjang">
+                <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#333] flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                        <span id="menu-mobile-bar-total" class="text-xs sm:text-sm font-bold font-mono text-emerald-400 tabular-nums">Rp0</span>
+                        <span id="menu-mobile-bar-count" class="text-[10px] font-mono text-neutral-400">(0 item)</span>
+                    </div>
+                    <span class="text-[9px] text-neutral-500 font-sans block truncate">Ketuk untuk lihat detail</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="Menu.scrollToCart()" class="px-2.5 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#2e2e2e] text-neutral-200 text-xs font-bold rounded-lg transition-colors">
+                    Keranjang
+                </button>
+                <button type="button" onclick="Menu.checkout()" class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow">
+                    <span>Bayar</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
             </div>
         </div>
     </div>

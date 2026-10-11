@@ -13,6 +13,9 @@ const BranchManager = {
     inboundSubTab: 'all',
     pendingInboundId: null,
     pendingInboundName: '',
+    _lastBranchesFingerprint: null,
+    _lastInboundFingerprint: null,
+    _lastOperatorsFingerprint: null,
 
     async init() {
         // 100% Zero UI/UX & Security: Jika user login sebagai kasir, hentikan total modul ini
@@ -48,38 +51,55 @@ const BranchManager = {
         this.initSettingsPanel();
     },
 
-    async loadBranches() {
+    async loadBranches(isSilent = false) {
         try {
             const res = await API.branch.list(false);
             if (res && res.success) {
-                this.branches = res.data || [];
+                const data = res.data || [];
+                const newFingerprint = JSON.stringify(data.map(b => ({
+                    id: b.id,
+                    nama: b.nama,
+                    url: b.url,
+                    status_online: b.status_online,
+                    latensi_ms: b.latensi_ms
+                }))) + `_active_${this.activeBranchId}`;
+
+                const changed = this._lastBranchesFingerprint !== newFingerprint;
+                this.branches = data;
+                this._lastBranchesFingerprint = newFingerprint;
+                return changed;
             }
         } catch (err) {
             console.error('[BranchManager] Gagal memuat daftar cabang:', err);
         }
+        return false;
     },
 
     async refreshLive() {
         const userRole = document.body.getAttribute('data-kasir-role');
         if (userRole !== 'admin') return;
 
-        await this.loadBranches();
-        const listContainer = document.getElementById('branch-selector-list');
-        const isDropdownOpen = listContainer && !listContainer.classList.contains('hidden');
-        if (!isDropdownOpen) {
-            this.renderNavbarDropdown();
+        const branchesChanged = await this.loadBranches(true);
+        if (branchesChanged) {
+            const listContainer = document.getElementById('branch-selector-list');
+            const isDropdownOpen = listContainer && !listContainer.classList.contains('hidden');
+            if (!isDropdownOpen) {
+                this.renderNavbarDropdown();
+            }
+
+            if (App.currentTab === 'branch') {
+                const modalBranch = document.getElementById('modal-tambah-cabang');
+                const isModalOpen = modalBranch && !modalBranch.classList.contains('hidden');
+                if (!isModalOpen) {
+                    this.renderBranchesSettingsTable();
+                }
+            }
         }
 
-        if (App.currentTab === 'branch') {
-            const modalBranch = document.getElementById('modal-tambah-cabang');
-            const isModalOpen = modalBranch && !modalBranch.classList.contains('hidden');
-            if (!isModalOpen) {
-                this.renderBranchesSettingsTable();
-            }
-        } else if (App.currentTab === 'branch_inbound') {
-            await this.loadInboundBranches();
+        if (App.currentTab === 'branch_inbound') {
+            await this.loadInboundBranches(true);
         } else if (App.currentTab === 'branch_kasir') {
-            await this.loadRemoteOperators();
+            await this.loadRemoteOperators(true);
         }
     },
 
@@ -1063,9 +1083,19 @@ const BranchManager = {
     currentOperatorSubTab: 'active',
     operatorToDelete: null,
 
-    async loadRemoteOperators() {
+    async loadRemoteOperators(isSilent = false) {
+        if (!isSilent) {
+            this._lastOperatorsFingerprint = null;
+        }
+
+        const modalDeleteOp = document.getElementById('modal-delete-remote-op');
+        const isModalOpen = modalDeleteOp && !modalDeleteOp.classList.contains('hidden');
+        if (isSilent && isModalOpen) {
+            return;
+        }
+
         const tbody = document.getElementById('branch-operators-tbody');
-        if (tbody) {
+        if (!isSilent && (!this.remoteOperators || this.remoteOperators.length === 0) && tbody) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="4" class="py-8 text-center text-xs lg:max-xl:text-xs xl:text-base text-neutral-500">Memuat data akun kasir cabang...</td>
@@ -1076,17 +1106,40 @@ const BranchManager = {
         try {
             const res = await API.branch.operators();
             if (res && res.success) {
-                this.remoteOperators = res.data || [];
-            } else {
+                const data = res.data || [];
+                const searchInput = document.getElementById('filter-remote-op-search');
+                const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
+                const newFingerprint = JSON.stringify(data.map(op => ({
+                    id: op.id,
+                    operator: op.operator,
+                    username: op.username,
+                    branch_name: op.branch_name,
+                    is_hidden: op.is_hidden,
+                    total_billing: op.total_billing,
+                    total_kantin: op.total_kantin,
+                    terakhir_aktif: op.terakhir_aktif
+                }))) + `_sub_${this.currentOperatorSubTab}_q_${searchVal}`;
+
+                if (isSilent && this._lastOperatorsFingerprint === newFingerprint) {
+                    return; // Data tidak berubah, cegah re-render DOM
+                }
+                this._lastOperatorsFingerprint = newFingerprint;
+                this.remoteOperators = data;
+                this.updateOperatorBadges();
+                this.renderOperatorsTable();
+            } else if (!isSilent) {
                 this.remoteOperators = [];
+                this.updateOperatorBadges();
+                this.renderOperatorsTable();
             }
         } catch (err) {
-            console.error('[BranchManager] Gagal memuat operator remote:', err);
-            this.remoteOperators = [];
+            if (!isSilent) {
+                console.error('[BranchManager] Gagal memuat operator remote:', err);
+                this.remoteOperators = [];
+                this.updateOperatorBadges();
+                this.renderOperatorsTable();
+            }
         }
-
-        this.updateOperatorBadges();
-        this.renderOperatorsTable();
     },
 
     updateOperatorBadges() {
@@ -1102,6 +1155,7 @@ const BranchManager = {
 
     switchOperatorSubTab(tab) {
         this.currentOperatorSubTab = tab;
+        this._lastOperatorsFingerprint = null;
         const btnActive = document.getElementById('btn-subtab-op-active');
         const btnArchived = document.getElementById('btn-subtab-op-archived');
         const badgeActive = document.getElementById('badge-count-op-active');
@@ -1145,6 +1199,7 @@ const BranchManager = {
     },
 
     filterOperatorsBySearch() {
+        this._lastOperatorsFingerprint = null;
         this.renderOperatorsTable();
     },
 
@@ -1394,6 +1449,7 @@ const BranchManager = {
     // ==========================================
     switchInboundSubTab(subTab) {
         this.inboundSubTab = subTab;
+        this._lastInboundFingerprint = null;
         const tabs = ['all', 'active', 'blocked'];
         tabs.forEach(t => {
             const btn = document.getElementById(`btn-subtab-inbound-${t}`);
@@ -1424,9 +1480,23 @@ const BranchManager = {
         if (elBlocked) elBlocked.textContent = blocked;
     },
 
-    async loadInboundBranches() {
+    async loadInboundBranches(isSilent = false) {
+        if (!isSilent) {
+            this._lastInboundFingerprint = null;
+        }
+
+        const modalBlock = document.getElementById('modal-block-inbound');
+        const modalUnblock = document.getElementById('modal-unblock-inbound');
+        const modalDelete = document.getElementById('modal-delete-inbound');
+        const isModalOpen = (modalBlock && !modalBlock.classList.contains('hidden')) ||
+                            (modalUnblock && !modalUnblock.classList.contains('hidden')) ||
+                            (modalDelete && !modalDelete.classList.contains('hidden'));
+        if (isSilent && isModalOpen) {
+            return;
+        }
+
         const tbody = document.getElementById('inbound-branch-table-body');
-        if (tbody) {
+        if (!isSilent && (!this.inboundBranches || this.inboundBranches.length === 0) && tbody) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="5" class="text-center py-8 text-neutral-500 text-xs lg:max-xl:text-xs xl:text-base font-mono">
@@ -1439,22 +1509,45 @@ const BranchManager = {
         try {
             const res = await API.branch.inboundList();
             if (res && res.success) {
-                this.inboundBranches = res.data || [];
-            } else {
+                const data = res.data || [];
+                const searchInput = document.getElementById('filter-inbound-search');
+                const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
+                const newFingerprint = JSON.stringify(data.map(b => ({
+                    id: b.id,
+                    status: b.status,
+                    nama: b.nama,
+                    ip: b.ip_address,
+                    mac: b.mac_address,
+                    terakhir_aktif: b.terakhir_aktif,
+                    total_requests: b.total_requests
+                }))) + `_sub_${this.inboundSubTab}_q_${searchVal}`;
+
+                if (isSilent && this._lastInboundFingerprint === newFingerprint) {
+                    return; // Data tidak berubah, cegah re-render DOM
+                }
+                this._lastInboundFingerprint = newFingerprint;
+                this.inboundBranches = data;
+                this.updateInboundBadgeCounts();
+                this.renderInboundTable();
+            } else if (!isSilent) {
                 this.inboundBranches = [];
+                this.updateInboundBadgeCounts();
+                this.renderInboundTable();
             }
         } catch (err) {
-            console.error('[BranchManager] Gagal memuat inbound branches:', err);
-            this.inboundBranches = [];
+            if (!isSilent) {
+                console.error('[BranchManager] Gagal memuat inbound branches:', err);
+                this.inboundBranches = [];
+                this.updateInboundBadgeCounts();
+                this.renderInboundTable();
+            }
         }
-
-        this.updateInboundBadgeCounts();
-        this.renderInboundTable();
     },
 
     filterInboundBySearch() {
         const input = document.getElementById('filter-inbound-search');
         this.filterInboundQuery = input ? input.value.trim().toLowerCase() : '';
+        this._lastInboundFingerprint = null;
         this.renderInboundTable();
     },
 
