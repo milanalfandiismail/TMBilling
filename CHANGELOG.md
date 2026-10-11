@@ -9,6 +9,43 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 ## [1.6.4] - 2026-10-11
 
 ### Ditambahkan
+- **Overhaul Responsif & Redesain UI/UX Tab Kantin / POS F&B (Mobile-First to Desktop)**:
+  - **Sistem Grid Adaptif Multi-Breakpoint**: Merestrukturisasi grid katalog produk (`#menu-catalog-grid`) di seluruh 6 tingkatan breakpoint Tailwind CSS:
+    - Default (`< 640px`: spektrum 320px–639px): Grid 2 kolom seimbang (kartu 130px–185px) dengan **`overflowPx === 0`** tanpa horizontal scrollbar.
+    - `sm:` (640px): Grid ditingkatkan menjadi 3 kolom (`sm:grid-cols-3`), mengeliminasi masalah kartu melar berlebihan (269px) menjadi ~180px proporsional.
+    - `md:` (768px): Grid 3 kolom (`md:grid-cols-3`, kartu ~212px).
+    - `lg:` (1024px): Layout split berdampingan (Katalog 7 kolom : Keranjang 5 kolom, kartu ~195px).
+    - `xl:` (1280px): Grid katalog disesuaikan menjadi 3 kolom (`xl:grid-cols-3`), mengeliminasi bug kartu terjepit (sebelumnya hanya 147px, kini menjadi ~202px yang lapang dan elegan).
+    - `2xl:` (1536px+): Grid 4 kolom (`2xl:grid-cols-4`, kartu ~217px).
+  - **Mobile Floating Bottom Action Bar (`#menu-mobile-cart-bar`)**:
+    - Mengintegrasikan bar mengambang interaktif di bagian bawah layar pada viewport `< lg` yang otomatis muncul saat keranjang terisi (`Total: RpXX.XXX • X item`).
+    - Menyediakan tombol pintas langsung *"Keranjang"* (smooth scroll) dan tombol *"Bayar"* (langsung membuka modal pembayaran POS tanpa perlu scroll melewati puluhan produk).
+    - Otomatis disembunyikan saat keranjang kosong.
+  - **Penyempurnaan Segmented Control View Switcher (Katalog Menu vs Arsip Menu)**:
+    - Memperbaiki bug kerusakan layout dan pergeseran tombol saat diklik dengan memisahkan *base layout classes* (`w-full sm:w-auto`, `justify-center`, `rounded-md`) dari *theme classes*, serta mengamankan kelas `.remote-hide-action` pada tombol arsip.
+    - Mengeliminasi emoji kardus berantakan (`📦`) dan menggantikannya dengan ikon SVG ramping yang simetris dan konsisten pada tab `Katalog Menu` dan `Arsip Menu`.
+    - Di layar mobile (`< sm`), tab switcher menggunakan `grid grid-cols-2` sehingga kedua tombol terbagi 50:50 dengan lebar identik (164px &times; 164px) tanpa pergeseran atau loncatan lebar saat berpindah tampilan.
+  - **Perbaikan Tata Letak Search Bar & Toolbar Katalog pada Breakpoint LG (1024px)**:
+    - Mengatasi masalah search bar yang terdorong keluar batas kartu (`overflowPx > 0`) pada breakpoint LG akibat pembagian 2 kolom berdampingan (Katalog 7 : Keranjang 5) yang mempersempit ruang kartu katalog menjadi ~407px (tidak muat untuk Switcher 233px + Search Box 208px jika dipaksa horizontal).
+    - Menerapkan tata letak bertingkat adaptif pada breakpoint LG (`lg:flex-col lg:items-start`), di mana View Switcher ditempatkan rapi di baris atas dan Search Bar membentang penuh 100% (`lg:w-full`) di baris bawah.
+    - Pada resolusi XL/2XL (`>= 1280px`), Search Bar dan Switcher secara otomatis kembali berdampingan (`xl:flex-row xl:w-60`) karena ruang kontainer sudah sangat lapang (> 640px).
+    - Memastikan nilai **`overflowPx === 0`** di seluruh breakpoint dengan placeholder dan teks pencarian yang terbaca sempurna tanpa terpotong.
+  - **Aksi Kelola Menu Khusus Layar Sentuh / Handphone (`< lg`)**:
+    - Memecahkan keterbatasan perangkat ponsel/tablet layar sentuh yang tidak memiliki mouse hover (`opacity-0 group-hover:opacity-100` tidak dapat dijangkau di smartphone).
+    - Menyematkan tombol aksi titik tiga (`⋮`) ramah sentuhan di pojok kanan atas kartu menu pada layar `< lg` (khusus role Admin).
+    - Mengetuk tombol titik tiga menampilkan **Action Sheet / Modal Kelola Menu Ringkas** dengan target sentuh jari yang nyaman (44px+) untuk aksi: Tambah Stok (Restock), Edit Nama, Harga & Foto, Lihat Foto Fullscreen, Arsipkan Menu, dan Hapus Permanen.
+    - Pada layar desktop monitor (`lg:` ke atas), tombol hover mouse tetap berfungsi secara native dengan tombol `⋮` otomatis disembunyikan.
+  - **Penyempurnaan Keranjang Belanja (*Cart Panel*)**:
+    - Menambahkan tombol *"Kosongkan Keranjang"* (`#menu-cart-clear-btn`) di header keranjang.
+    - Menyesuaikan batas ketinggian vertikal item keranjang secara responsif hingga `2xl:max-h-[620px]` untuk memanfaatkan ruang layar monitor desktop/2K secara maksimal.
+  - **Penataan Modal Transaksi POS & Quick Cash**:
+    - Merapikan pecahan uang cepat (`Rp1K`–`Rp100K`) beserta tombol *"Uang Pas"* ke dalam grid responsif 4 kolom &times; 2 baris (`grid grid-cols-4 gap-1.5`) yang simetris dan rapi di semua perangkat.
+    - Menyelaraskan padding dan tipografi kartu menu serta aksi hover admin.
+- **Perbaikan Bug Redundant DOM Re-render pada Tab List Koneksi Cabang & Akun Kasir Cabang**:
+  - Mengeliminasi penghapusan dan re-render DOM berulang yang terjadi pada setiap interval polling global di modul `BranchManager` (`tab-branch_inbound` dan `tab-branch_kasir`).
+  - Mengimplementasikan fingerprinting berbasis data (`_lastInboundFingerprint`, `_lastOperatorsFingerprint`, `_lastBranchesFingerprint`) dan mode *silent poll* (`isSilent = true`), sehingga tabel hanya dirender ulang saat data benar-benar berubah di backend.
+  - Menghilangkan kemunculan baris spinner / teks "Memuat..." yang sebelumnya merusak tampilan dan mereset interaksi pengguna setiap beberapa detik.
+  - Menjaga interval polling tetap konsisten mengikuti ritme global dashboard tanpa mengganggu modal dialog yang sedang terbuka atau input pencarian pengguna.
 - **Penyempurnaan Filter Tanggal Mutasi Log Stok Menu (Hanya Tanggal yang Ada Data)**:
   - Mengganti input tanggal kalender terbuka (`<input type="date">`) menjadi dropdown selektif dinamis (`<select id="stock-log-filter-date">`) pada tab `tab-menu_stock_log`.
   - Dropdown hanya menyajikan tanggal-tanggal unik yang benar-benar memiliki riwayat mutasi stok (`MenuRepository.get_distinct_stock_log_dates`), mencegah kasir memilih tanggal kosong yang tidak memiliki data.
