@@ -344,55 +344,59 @@ const Maintenance = {
             else if (t.status === 'DITOLAK') statusClass = 'bg-red-950/40 text-red-400 border border-red-900/30';
 
             let actionButtons = `
-                <button onclick="Maintenance.openDetailModal(${t.id})" class="px-2 py-0.5 bg-[#171717] border border-[#262626] text-neutral-300 rounded hover:bg-neutral-100 hover:text-black text-[9px] xl:text-[10px] font-bold transition-colors" title="Lihat Detail Lengkap">Detail</button>
+                <button onclick="Maintenance.openDetailModal(${t.id})" class="p-1 sm:px-2 sm:py-0.5 bg-[#171717] border border-[#262626] text-neutral-300 rounded hover:bg-neutral-100 hover:text-black text-[9px] xl:text-[10px] font-bold transition-colors" title="Lihat Detail Lengkap"><span class="sm:hidden">🔍</span><span class="hidden sm:inline">Detail</span></button>
             `;
             const isAdmin = !(window.App && App.user && App.user.role === 'kasir');
 
             if (t.status === 'BARU') {
                 actionButtons += `
-                    <button onclick="Maintenance.changeStatus(${t.id}, 'DIPROSES')" class="remote-hide-action px-2 py-0.5 bg-blue-600/20 border border-blue-600/30 text-blue-400 rounded hover:bg-blue-600/30 text-[9px] xl:text-[10px] font-bold transition-colors">Proses</button>
-                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="remote-hide-action px-2 py-0.5 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600/30 text-[9px] xl:text-[10px] font-bold transition-colors">Tolak</button>
+                    <button onclick="Maintenance.changeStatus(${t.id}, 'DIPROSES')" class="remote-hide-action p-1 sm:px-2 sm:py-0.5 bg-blue-600/20 border border-blue-600/30 text-blue-400 rounded hover:bg-blue-600/30 text-[9px] xl:text-[10px] font-bold transition-colors" title="Proses"><span class="sm:hidden">▶</span><span class="hidden sm:inline">Proses</span></button>
+                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="remote-hide-action p-1 sm:px-2 sm:py-0.5 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600/30 text-[9px] xl:text-[10px] font-bold transition-colors" title="Tolak"><span class="sm:hidden">✕</span><span class="hidden sm:inline">Tolak</span></button>
                 `;
             } else if (t.status === 'DIPROSES') {
                 actionButtons += `
-                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="remote-hide-action px-2 py-0.5 bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 rounded hover:bg-emerald-600/30 text-[9px] xl:text-[10px] font-bold transition-colors">Selesaikan</button>
+                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="remote-hide-action p-1 sm:px-2 sm:py-0.5 bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 rounded hover:bg-emerald-600/30 text-[9px] xl:text-[10px] font-bold transition-colors" title="Selesaikan"><span class="sm:hidden">✓</span><span class="hidden sm:inline">Selesai</span></button>
                 `;
             }
 
             if (isAdmin) {
                 actionButtons += `
-                    <button onclick="Maintenance.deleteTicket(${t.id})" class="remote-hide-action px-2 py-0.5 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600 hover:text-white text-[9px] xl:text-[10px] font-bold transition-colors" title="Hapus">Hapus</button>
+                    <button onclick="Maintenance.deleteTicket(${t.id})" class="remote-hide-action p-1 sm:px-2 sm:py-0.5 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600 hover:text-white text-[9px] xl:text-[10px] font-bold transition-colors" title="Hapus"><span class="sm:hidden">🗑</span><span class="hidden sm:inline">Hapus</span></button>
                 `;
             }
 
             return `
                 <tr class="hover:bg-[#121212] transition-colors border-b border-[#1c1c1c] last:border-b-0">
-                    <td class="py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-2 xl:px-2.5 2xl:px-3 align-middle">
+                    <td class="py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-1 sm:px-2 xl:px-2.5 2xl:px-3 align-middle whitespace-nowrap">
                         <div class="flex flex-col">
-                            <span class="font-mono font-bold text-neutral-100 text-xs lg:text-[11px] xl:text-xs 2xl:text-sm">${t.pc_kode}</span>
-                            <div class="flex items-center gap-1 mt-0.5 whitespace-nowrap">
-                                <span class="px-1.5 py-0.2 rounded text-[8px] xl:text-[9px] font-bold ${prioritasClass}">${t.prioritas}</span>
-                                <span class="px-1.5 py-0.2 rounded bg-neutral-800 text-neutral-400 font-bold uppercase text-[8px] xl:text-[9px]">${t.kategori}</span>
+                            <span class="font-mono font-bold text-neutral-100 text-[11px] sm:text-xs lg:text-[11px] xl:text-xs 2xl:text-sm">${t.pc_kode}</span>
+                            <div class="flex items-center gap-0.5 sm:gap-1 mt-0.5 whitespace-nowrap">
+                                <span class="px-1 py-0.2 rounded text-[7.5px] sm:text-[8px] xl:text-[9px] font-bold ${prioritasClass}">${t.prioritas}</span>
+                                <span class="px-1 py-0.2 rounded bg-neutral-800 text-neutral-400 font-bold uppercase text-[7.5px] sm:text-[8px] xl:text-[9px]">${t.kategori}</span>
                             </div>
                         </div>
                     </td>
-                    <td class="py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-2 xl:px-2.5 2xl:px-3 align-middle text-neutral-200 cursor-pointer group" onclick="Maintenance.openDetailModal(${t.id})" title="Klik untuk melihat detail masalah">
-                        <div class="flex flex-col min-w-0 max-w-[200px] xl:max-w-xs">
-                            <div class="font-bold text-neutral-100 group-hover:text-white group-hover:underline transition-colors truncate text-xs lg:text-[11px] xl:text-xs 2xl:text-sm">${t.judul}</div>
-                            ${t.deskripsi ? `<div class="text-[9px] xl:text-[10px] text-neutral-500 truncate mt-0.5">${t.deskripsi}</div>` : ''}
+                    <td class="py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-1 sm:px-2 xl:px-2.5 2xl:px-3 align-middle text-neutral-200 cursor-pointer group" onclick="Maintenance.openDetailModal(${t.id})" title="Klik untuk melihat detail masalah">
+                        <div class="flex flex-col min-w-0 max-w-[55px] sm:max-w-[150px] md:max-w-[200px] xl:max-w-xs">
+                            <div class="font-bold text-neutral-100 group-hover:text-white group-hover:underline transition-colors truncate text-[11px] sm:text-xs lg:text-[11px] xl:text-xs 2xl:text-sm">${t.judul}</div>
+                            ${t.deskripsi ? `<div class="text-[8.5px] sm:text-[9px] xl:text-[10px] text-neutral-500 truncate mt-0.5">${t.deskripsi}</div>` : ''}
                         </div>
                     </td>
-                    <td class="py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-2 xl:px-2.5 2xl:px-3 align-middle">
-                        <div class="flex flex-col min-w-0">
+                    <td class="py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-1 sm:px-2 xl:px-2.5 2xl:px-3 align-middle">
+                        <div class="lg:hidden flex flex-col min-w-0">
+                            <span class="px-1.5 py-0.5 rounded text-[8px] font-bold self-start ${statusClass}">${t.status}</span>
+                            <span class="text-[9px] text-neutral-300 font-medium truncate mt-0.5">${t.reporter}</span>
+                        </div>
+                        <div class="hidden lg:flex flex-col min-w-0">
                             <span class="font-bold text-neutral-200 text-xs lg:text-[11px] xl:text-xs 2xl:text-sm truncate">${t.reporter}</span>
                             <span class="text-[9px] xl:text-[10px] text-neutral-500 font-mono mt-0.5 truncate">${t.created_at}</span>
                         </div>
                     </td>
-                    <td class="py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-2 xl:px-2.5 2xl:px-3 align-middle whitespace-nowrap">
+                    <td class="hidden lg:table-cell py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-1.5 sm:px-2 xl:px-2.5 2xl:px-3 align-middle whitespace-nowrap">
                         <span class="px-1.5 py-0.5 rounded text-[8px] xl:text-[9px] font-bold ${statusClass}">${t.status}</span>
                     </td>
-                    <td class="py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-2 xl:px-2.5 2xl:px-3 align-middle text-right whitespace-nowrap">
-                        <div class="flex items-center justify-end gap-1 whitespace-nowrap">${actionButtons}</div>
+                    <td class="py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-0.5 sm:px-2 xl:px-2.5 2xl:px-3 align-middle text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-0.5 sm:gap-1 whitespace-nowrap">${actionButtons}</div>
                     </td>
                 </tr>
             `;

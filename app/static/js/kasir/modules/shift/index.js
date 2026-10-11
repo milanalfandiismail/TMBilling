@@ -1021,25 +1021,57 @@ const Shift = {
                 selisihBadge = '<span class="text-neutral-500 font-mono text-[10px] lg:text-[9px] xl:text-xs whitespace-nowrap">-</span>';
             }
 
+            const tMulai = s.waktu_mulai ? s.waktu_mulai.split(' ')[1] : '-';
+            const tSelesai = s.waktu_selesai ? s.waktu_selesai.split(' ')[1] : '-';
+            const dMulai = s.waktu_mulai ? s.waktu_mulai.split(' ')[0].replace(/\/20\d\d/, '') : '';
+
             const statusBadge = isForceClose
-                ? '<span class="px-1.5 py-0.5 rounded text-[9px] lg:text-[9px] xl:text-xs font-bold bg-red-950/70 text-red-400 border border-red-800/40 whitespace-nowrap">FORCE CLOSE</span>'
-                : '<span class="px-1.5 py-0.5 rounded text-[9px] lg:text-[9px] xl:text-xs font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 whitespace-nowrap">SELESAI</span>';
+                ? '<span class="px-1 sm:px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] xl:text-xs font-bold bg-red-950/70 text-red-400 border border-red-800/40 whitespace-nowrap"><span class="sm:hidden">FC</span><span class="hidden sm:inline">FORCE CLOSE</span></span>'
+                : '<span class="px-1 sm:px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] xl:text-xs font-bold bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 whitespace-nowrap"><span class="sm:hidden">SEL</span><span class="hidden sm:inline">SELESAI</span></span>';
 
             return `
                 <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs lg:text-[10px] xl:text-xs 2xl:text-sm">
-                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-neutral-400 whitespace-nowrap">#${s.id}</td>
-                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 whitespace-nowrap">
-                        <div class="font-bold text-neutral-200 truncate max-w-[130px] lg:max-w-[100px] xl:max-w-[150px]" title="${Utils.escapeHtml(s.kasir_nama || 'Kasir')}">${Utils.escapeHtml(s.kasir_nama || 'Kasir')}</div>
-                        <div class="text-[10px] lg:text-[8.5px] xl:text-[10px] 2xl:text-xs text-neutral-500 font-mono whitespace-nowrap">${s.waktu_mulai ? s.waktu_mulai.split(' ')[0] : ''} ${s.waktu_mulai ? s.waktu_mulai.split(' ')[1] : '-'} s/d ${s.waktu_selesai ? s.waktu_selesai.split(' ')[1] : '-'}</div>
+                    <!-- ID on >= lg -->
+                    <td class="hidden lg:table-cell px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-neutral-400 whitespace-nowrap">#${s.id}</td>
+                    
+                    <!-- Petugas & Waktu -->
+                    <td class="px-1 sm:px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 whitespace-nowrap">
+                        <div class="font-bold text-neutral-200 truncate max-w-[55px] sm:max-w-[130px] lg:max-w-[100px] xl:max-w-[150px]" title="${Utils.escapeHtml(s.kasir_nama || 'Kasir')}">
+                            <span class="lg:hidden text-neutral-500 font-mono font-normal">#${s.id} </span>${Utils.escapeHtml(s.kasir_nama || 'Kasir')}
+                        </div>
+                        <div class="sm:hidden text-[9px] text-neutral-500 font-mono leading-tight">${dMulai ? `<div>${dMulai}</div>` : ''}<div>${tMulai}-${tSelesai}</div></div>
+                        <div class="hidden sm:block text-[10px] lg:text-[8.5px] xl:text-[10px] 2xl:text-xs text-neutral-500 font-mono whitespace-nowrap">${s.waktu_mulai ? s.waktu_mulai.split(' ')[0] : ''} ${tMulai} s/d ${tSelesai}</div>
                     </td>
-                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.modal_awal || 0)}</td>
-                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.total_billing || 0)}</td>
-                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.total_kantin || 0)}</td>
-                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono font-bold text-neutral-100 whitespace-nowrap">${s.uang_fisik !== null && s.uang_fisik !== undefined ? Utils.formatRupiah(s.uang_fisik) : '-'}</td>
-                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 whitespace-nowrap">${selisihBadge}</td>
-                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 whitespace-nowrap">${statusBadge}</td>
-                    <td class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 text-right whitespace-nowrap">
-                        <div class="flex items-center justify-end gap-1">
+
+                    <!-- Modal Awal on >= lg -->
+                    <td class="hidden lg:table-cell px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.modal_awal || 0)}</td>
+                    
+                    <!-- Penerimaan on < lg (Billing & Kantin combined) -->
+                    <td class="lg:hidden px-1 sm:px-2 py-1.5 font-mono whitespace-nowrap">
+                        <div class="text-neutral-200 text-[10px] sm:text-[11px] font-semibold">${Utils.formatRupiah(s.total_billing || 0)}</div>
+                        <div class="text-neutral-400 text-[9px] sm:text-[10px]">${Utils.formatRupiah(s.total_kantin || 0)}</div>
+                    </td>
+
+                    <!-- Billing & Kantin separate on >= lg -->
+                    <td class="hidden lg:table-cell px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.total_billing || 0)}</td>
+                    <td class="hidden lg:table-cell px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-neutral-300 whitespace-nowrap">${Utils.formatRupiah(s.total_kantin || 0)}</td>
+
+                    <!-- Kas & Selisih on < lg (Uang Fisik & Selisih combined) -->
+                    <td class="lg:hidden px-1 sm:px-2 py-1.5 font-mono whitespace-nowrap">
+                        <div class="font-bold text-neutral-100 text-[10px] sm:text-[11px]">${s.uang_fisik !== null && s.uang_fisik !== undefined ? Utils.formatRupiah(s.uang_fisik) : '-'}</div>
+                        <div class="mt-0.5">${selisihBadge}</div>
+                    </td>
+
+                    <!-- Uang Fisik & Selisih separate on >= lg -->
+                    <td class="hidden lg:table-cell px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono font-bold text-neutral-100 whitespace-nowrap">${s.uang_fisik !== null && s.uang_fisik !== undefined ? Utils.formatRupiah(s.uang_fisik) : '-'}</td>
+                    <td class="hidden lg:table-cell px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 whitespace-nowrap">${selisihBadge}</td>
+
+                    <!-- Status (both) -->
+                    <td class="px-1 sm:px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 whitespace-nowrap">${statusBadge}</td>
+
+                    <!-- Aksi (both) -->
+                    <td class="px-0.5 sm:px-2 lg:px-2.5 xl:px-3 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-0.5 sm:gap-1">
                             <button onclick="Shift.viewShiftDetail(${s.id})" title="Lihat Rekapitulasi"
                                 class="p-1 lg:p-0.5 xl:p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white transition-colors">
                                 <svg class="w-3.5 h-3.5 lg:w-3 lg:h-3 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
@@ -1255,22 +1287,31 @@ const Shift = {
             else if (act.includes('KUOTA') || act.includes('UPDATE')) badgeClass = 'bg-purple-950/70 text-purple-400 border-purple-800/40';
             else if (act.includes('LOGIN')) badgeClass = 'bg-amber-950/70 text-amber-400 border-amber-800/40';
 
+            const compactLogTime = (log.timestamp || '').replace(/^20\d\d-/, '');
+
             return `
                 <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs lg:text-[10px] xl:text-xs 2xl:text-sm">
-                    <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-neutral-400 whitespace-nowrap">${log.timestamp || '-'}</td>
-                    <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-bold text-neutral-200 whitespace-nowrap">
+                    <td class="px-1.5 sm:px-2 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 whitespace-nowrap">
+                        <div class="sm:hidden font-mono text-neutral-300 text-[9px]">${compactLogTime}</div>
+                        <div class="hidden sm:block font-mono text-neutral-300 text-[11px] lg:text-[10px] xl:text-xs">${log.timestamp || '-'}</div>
+                        <div class="mt-0.5 lg:hidden">
+                            <span class="px-1.5 py-0.2 rounded bg-neutral-900 border border-neutral-700 font-mono text-[8.5px] sm:text-[9px] text-neutral-300 font-semibold">${Utils.escapeHtml(log.user || 'system')}</span>
+                        </div>
+                    </td>
+                    <td class="hidden lg:table-cell px-2 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-bold text-neutral-200 whitespace-nowrap">
                         <span class="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-700 font-mono text-[10px] lg:text-[9px] xl:text-xs">${Utils.escapeHtml(log.user || 'system')}</span>
                     </td>
-                    <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 whitespace-nowrap">
-                        <span class="px-2 py-0.5 rounded text-[10px] lg:text-[9px] xl:text-xs font-bold border ${badgeClass}">${Utils.escapeHtml(log.action || '-')}</span>
+                    <td class="px-1.5 sm:px-2 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 whitespace-nowrap">
+                        <span class="px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] lg:text-[9px] xl:text-xs font-bold border ${badgeClass}">${Utils.escapeHtml(log.action || '-')}</span>
+                        <div class="mt-0.5 lg:hidden font-mono text-[8.5px] sm:text-[9px] text-neutral-500">${Utils.escapeHtml(log.ip_address || '-')}</div>
                     </td>
-                    <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 text-neutral-300 truncate max-w-[200px] lg:max-w-[180px] xl:max-w-[300px] 2xl:max-w-[450px]" title="${Utils.escapeHtml(log.detail || '-')}">
+                    <td class="px-1.5 sm:px-2 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 text-neutral-300 truncate max-w-[75px] sm:max-w-[170px] md:max-w-[220px] lg:max-w-[180px] xl:max-w-[300px] 2xl:max-w-[450px]" title="${Utils.escapeHtml(log.detail || '-')}">
                         ${Utils.escapeHtml(log.detail || '-')}
                     </td>
-                    <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-[10px] lg:text-[9px] xl:text-xs text-neutral-500 whitespace-nowrap">${log.ip_address || '-'}</td>
-                    <td class="px-2.5 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 text-center whitespace-nowrap">
+                    <td class="hidden lg:table-cell px-2 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 font-mono text-[10px] lg:text-[9px] xl:text-xs text-neutral-500 whitespace-nowrap">${log.ip_address || '-'}</td>
+                    <td class="px-1 sm:px-2 lg:px-2 xl:px-3.5 2xl:px-4 py-1.5 lg:py-1 xl:py-1.5 2xl:py-2.5 text-center whitespace-nowrap">
                         <button onclick="Shift.openUserLogDetail(${globalIndex})" title="Lihat Detail Log"
-                            class="px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-[10px] lg:text-[9px] xl:text-xs font-semibold transition-colors">
+                            class="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-[9px] sm:text-[10px] lg:text-[9px] xl:text-xs font-semibold transition-colors">
                             Detail
                         </button>
                     </td>

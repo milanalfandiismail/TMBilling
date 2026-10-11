@@ -1,7 +1,7 @@
 <!-- ===== TAB: RIWAYAT SERAH TERIMA SHIFT ===== -->
 <div id="tab-shift_history" class="tab-content hidden space-y-3 lg:space-y-2.5 xl:space-y-3.5 2xl:space-y-5">
     <!-- Header Card -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 lg:p-2.5 xl:p-3.5 2xl:p-5">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 sm:p-3 lg:p-2.5 xl:p-3.5 2xl:p-5">
         <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
                 <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-xl font-bold text-neutral-100 uppercase tracking-wider flex items-center gap-2">
@@ -15,7 +15,7 @@
     </div>
 
     <!-- Filter Card -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 lg:p-2.5 xl:p-3.5 2xl:p-4">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 sm:p-3 lg:p-2.5 xl:p-3.5 2xl:p-4">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5 lg:mb-2 xl:mb-3">
             <h3 class="text-xs lg:text-xs xl:text-sm 2xl:text-base font-bold text-neutral-200 uppercase tracking-wider">Filter Periode Shift</h3>
             
@@ -96,25 +96,27 @@
     </div>
 
     <!-- Table Card -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 lg:p-2.5 xl:p-3.5 2xl:p-4 overflow-hidden">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 sm:p-3 lg:p-2.5 xl:p-3.5 2xl:p-4 overflow-hidden">
         <h3 class="text-xs lg:text-xs xl:text-sm 2xl:text-base font-bold text-neutral-200 uppercase tracking-wider mb-2 lg:mb-1.5 xl:mb-2.5">Daftar Rekap Shift</h3>
         <div class="overflow-x-auto w-full scrollbar-thin">
             <table class="w-full text-left border-collapse text-xs lg:text-[10px] xl:text-xs 2xl:text-sm">
                 <thead>
                     <tr class="border-b border-[#1c1c1c] text-[10px] lg:text-[9px] xl:text-[10px] 2xl:text-xs text-neutral-500 uppercase tracking-wider">
-                        <th class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">ID</th>
-                        <th class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">Petugas & Waktu</th>
-                        <th class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">Modal Awal</th>
-                        <th class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">Billing</th>
-                        <th class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">Kantin</th>
-                        <th class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap"
+                        <th class="hidden lg:table-cell px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">ID</th>
+                        <th class="px-1 sm:px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 sm:py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap"><span class="sm:hidden">Petugas</span><span class="hidden sm:inline">Petugas &amp; Waktu</span></th>
+                        <th class="hidden lg:table-cell px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">Modal Awal</th>
+                        <th class="lg:hidden px-1 sm:px-2 py-1.5 sm:py-2 whitespace-nowrap"><span class="sm:hidden">Omset</span><span class="hidden sm:inline">Penerimaan</span></th>
+                        <th class="hidden lg:table-cell px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">Billing</th>
+                        <th class="hidden lg:table-cell px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">Kantin</th>
+                        <th class="lg:hidden px-1 sm:px-2 py-1.5 sm:py-2 whitespace-nowrap"><span class="sm:hidden">Laci</span><span class="hidden sm:inline">Kas &amp; Selisih</span></th>
+                        <th class="hidden lg:table-cell px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap"
                             title="Uang tunai fisik yang dihitung kasir saat tutup shift (QRIS &amp; digital tidak termasuk)">
                             Uang Fisik
                             <span class="block text-[8px] text-neutral-600 font-normal normal-case tracking-normal">(Tunai)</span>
                         </th>
-                        <th class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">Selisih</th>
-                        <th class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">Status</th>
-                        <th class="px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 text-right whitespace-nowrap">Aksi</th>
+                        <th class="hidden lg:table-cell px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">Selisih</th>
+                        <th class="px-1.5 sm:px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 sm:py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">Status</th>
+                        <th class="px-1.5 sm:px-2.5 lg:px-2 xl:px-3 2xl:px-4 py-1.5 sm:py-2 lg:py-1.5 xl:py-2 2xl:py-2.5 text-right whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="shift-history-rows" class="divide-y divide-[#1c1c1c]">

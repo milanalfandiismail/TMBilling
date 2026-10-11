@@ -338,6 +338,7 @@ const API = {
             const url = '/api/v1/kasir/menu/stock-logs' + (q.toString() ? `?${q}` : '');
             return API.request(url);
         },
+        stockLogDates: () => API.request('/api/v1/kasir/menu/stock-logs/dates'),
         checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0, metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/menu/checkout', {
             method: 'POST',
             body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode, tunai, kembalian, metode_pembayaran: metodePembayaran })

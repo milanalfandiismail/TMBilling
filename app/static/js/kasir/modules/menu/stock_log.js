@@ -69,6 +69,9 @@ const MenuStockLog = {
             if (res.operators && Array.isArray(res.operators)) {
                 this.updateOperatorDropdown(res.operators, params.operator);
             }
+            if (res.dates && Array.isArray(res.dates)) {
+                this.updateDateDropdown(res.dates, params.tanggal);
+            }
 
             this.renderTable(items);
             this.renderPagination(res.pagination);
@@ -86,6 +89,25 @@ const MenuStockLog = {
                     Toast.error(err.message || 'Gagal mengambil data log stok');
                 }
             }
+        }
+    },
+
+    updateDateDropdown(dates, selectedDate) {
+        const select = document.getElementById('stock-log-filter-date');
+        if (!select) return;
+
+        const currentVal = selectedDate !== undefined ? selectedDate : select.value;
+        let html = '<option value="">Semua Tanggal</option>';
+        (dates || []).forEach(d => {
+            if (!d) return;
+            const isSel = d === currentVal ? 'selected' : '';
+            const parts = d.split('-');
+            const displayLabel = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : d;
+            html += `<option value="${this.escapeHtml(d)}" ${isSel}>${this.escapeHtml(displayLabel)}</option>`;
+        });
+        select.innerHTML = html;
+        if (currentVal && dates.includes(currentVal)) {
+            select.value = currentVal;
         }
     },
 
@@ -128,24 +150,61 @@ const MenuStockLog = {
             const timeStr = log.created_at || '-';
             const opName = log.operator || 'system';
 
+            const compactTimeStr = timeStr.replace(/\s*WITA|\s*WIB|\s*WIT/gi, '').replace(/\/20\d\d/, '');
+
             return `
-                <tr class="hover:bg-[#111111] transition-colors text-xs lg:max-xl:text-[11px] xl:text-sm 2xl:text-base">
-                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-2 xl:px-4 2xl:px-5 whitespace-nowrap text-neutral-400 font-mono text-xs lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm">${this.escapeHtml(timeStr)}</td>
-                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-2 xl:px-4 2xl:px-5 font-semibold text-neutral-100 text-xs lg:max-xl:text-[11px] xl:text-sm 2xl:text-base whitespace-normal break-words leading-tight" title="${this.escapeHtml(log.menu_nama || '')}">${this.escapeHtml(log.menu_nama || '-')}</td>
-                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-1.5 xl:px-4 2xl:px-5 text-center whitespace-nowrap">
+                <tr class="hover:bg-[#111111] transition-colors text-xs lg:max-xl:text-[11px] xl:text-sm 2xl:text-base border-b border-[#171717] last:border-b-0">
+                    <!-- Col 1 on < lg: Waktu & Operator Combined -->
+                    <td class="lg:hidden py-1.5 sm:py-2 px-1.5 sm:px-2.5 whitespace-nowrap">
+                        <div class="flex flex-col">
+                            <span class="sm:hidden text-neutral-300 font-mono text-[9px] font-bold">${this.escapeHtml(compactTimeStr)}</span>
+                            <span class="hidden sm:inline text-neutral-300 font-mono text-[11px] font-bold">${this.escapeHtml(timeStr)}</span>
+                            <span class="text-neutral-500 text-[8.5px] sm:text-[10px] flex items-center gap-0.5 sm:gap-1 mt-0.5">
+                                <svg class="w-2.5 h-2.5 sm:w-3 sm:h-3 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                <span class="truncate max-w-[60px] sm:max-w-none">${this.escapeHtml(opName)}</span>
+                            </span>
+                        </div>
+                    </td>
+                    <!-- Col 1 on >= lg: Waktu separate -->
+                    <td class="hidden lg:table-cell py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-2 xl:px-4 2xl:px-5 whitespace-nowrap text-neutral-400 font-mono text-xs lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm">${this.escapeHtml(timeStr)}</td>
+
+                    <!-- Menu (both) -->
+                    <td class="py-1.5 sm:py-2 lg:py-2.5 px-1.5 sm:px-2.5 lg:px-3 xl:px-4 2xl:px-5 font-semibold text-neutral-100 text-[11px] sm:text-xs xl:text-sm 2xl:text-base max-w-[75px] sm:max-w-[170px] lg:max-w-[200px] truncate" title="${this.escapeHtml(log.menu_nama || '')}">
+                        ${this.escapeHtml(log.menu_nama || '-')}
+                    </td>
+
+                    <!-- Col 3 on < lg: Stok & Mutasi Combined -->
+                    <td class="lg:hidden py-1.5 sm:py-2 px-1.5 sm:px-2.5 text-center whitespace-nowrap">
+                        <div class="flex flex-col items-center gap-0.5">
+                            <div class="flex items-center gap-0.5 sm:gap-1">
+                                <span class="font-mono font-bold text-emerald-400 text-[10px] sm:text-xs">+${qtyPlus.toLocaleString('id-ID')}</span>
+                                <span class="hidden sm:inline px-1 py-0.2 rounded text-[8.5px] font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">RESTOCK</span>
+                            </div>
+                            <div class="text-[8.5px] sm:text-[10px] font-mono text-neutral-400">
+                                <span>${stokLama.toLocaleString('id-ID')}</span>
+                                <span class="text-neutral-600 mx-0.5">&rarr;</span>
+                                <span class="text-neutral-200 font-bold">${stokBaru.toLocaleString('id-ID')}</span>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- Cols on >= lg: Mutasi, Jumlah, Perubahan separate -->
+                    <td class="hidden lg:table-cell py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-1.5 xl:px-4 2xl:px-5 text-center whitespace-nowrap">
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-xs 2xl:text-sm font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
                             RESTOCK
                         </span>
                     </td>
-                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-1.5 xl:px-4 2xl:px-5 text-center font-mono font-bold text-emerald-400 text-xs lg:max-xl:text-[11px] xl:text-sm 2xl:text-base whitespace-nowrap">
+                    <td class="hidden lg:table-cell py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-1.5 xl:px-4 2xl:px-5 text-center font-mono font-bold text-emerald-400 text-xs lg:max-xl:text-[11px] xl:text-sm 2xl:text-base whitespace-nowrap">
                         +${qtyPlus.toLocaleString('id-ID')}
                     </td>
-                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-1.5 xl:px-4 2xl:px-5 text-center font-mono text-xs lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm whitespace-nowrap">
+                    <td class="hidden lg:table-cell py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-1.5 xl:px-4 2xl:px-5 text-center font-mono text-xs lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm whitespace-nowrap">
                         <span class="text-neutral-400">${stokLama.toLocaleString('id-ID')}</span>
                         <span class="text-neutral-500 mx-1">&rarr;</span>
                         <span class="text-neutral-100 font-bold">${stokBaru.toLocaleString('id-ID')}</span>
                     </td>
-                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-2 xl:px-4 2xl:px-5 whitespace-nowrap">
+                    <td class="hidden lg:table-cell py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-2 xl:px-4 2xl:px-5 whitespace-nowrap">
                         <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm font-medium bg-[#171717] text-neutral-300 border border-[#262626]">
                             <svg class="w-3 h-3 2xl:w-3.5 2xl:h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
@@ -153,14 +212,16 @@ const MenuStockLog = {
                             ${this.escapeHtml(opName)}
                         </span>
                     </td>
-                    <td class="py-2.5 lg:max-xl:py-2 xl:py-3.5 2xl:py-4 px-4 lg:max-xl:px-2 xl:px-4 2xl:px-5 text-center whitespace-nowrap">
+
+                    <!-- Aksi (both) -->
+                    <td class="py-1.5 sm:py-2 lg:py-2.5 px-1 sm:px-2 lg:px-4 text-center whitespace-nowrap">
                         <button type="button" onclick="MenuStockLog.openDetailModal('${this.escapeHtml(log.id || '')}', ${index})"
-                            class="inline-flex items-center gap-1.5 px-2.5 py-1 lg:max-xl:px-2 lg:max-xl:py-0.5 xl:px-3 xl:py-1 2xl:px-4 2xl:py-1.5 bg-[#171717] hover:bg-[#242424] border border-[#2a2a2a] hover:border-neutral-500 text-neutral-300 hover:text-white rounded text-xs lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm font-semibold transition-colors shadow-sm">
-                            <svg class="w-3.5 h-3.5 2xl:w-4 2xl:h-4 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="inline-flex items-center gap-1 p-1 sm:px-2.5 sm:py-1 bg-[#171717] hover:bg-[#242424] border border-[#2a2a2a] hover:border-neutral-500 text-neutral-300 hover:text-white rounded text-xs font-semibold transition-colors shadow-sm" title="Lihat detail mutasi">
+                            <svg class="w-3.5 h-3.5 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            <span>Detail</span>
+                            <span class="hidden sm:inline">Detail</span>
                         </button>
                     </td>
                 </tr>
