@@ -586,21 +586,27 @@ const Maintenance = {
             if (elDeskripsi) elDeskripsi.innerText = ticket.deskripsi || '-';
             
             const statusEl = document.getElementById('maint-detail-status');
-            statusEl.innerText = ticket.status;
-            statusEl.className = 'font-bold';
-            if (ticket.status === 'SELESAI') statusEl.classList.add('text-emerald-400');
-            else if (ticket.status === 'DITOLAK') statusEl.classList.add('text-rose-400');
-            else statusEl.classList.add('text-amber-400');
+            if (statusEl) {
+                statusEl.innerText = ticket.status;
+                statusEl.className = 'font-bold px-2 py-0.5 rounded text-[10px] xl:text-xs inline-block';
+                if (ticket.status === 'SELESAI') statusEl.className += ' bg-emerald-950/80 text-emerald-400 border border-emerald-800/60';
+                else if (ticket.status === 'DITOLAK') statusEl.className += ' bg-rose-950/80 text-rose-400 border border-rose-800/60';
+                else if (ticket.status === 'DIPROSES') statusEl.className += ' bg-amber-950/80 text-amber-400 border border-amber-800/60';
+                else statusEl.className += ' bg-cyan-950/80 text-cyan-400 border border-cyan-800/60';
+            }
 
             const resolutionSection = document.getElementById('maint-detail-resolution-section');
+            const pendingSection = document.getElementById('maint-detail-pending-section');
             if (ticket.status === 'SELESAI' || ticket.status === 'DITOLAK') {
-                resolutionSection.classList.remove('hidden');
+                resolutionSection?.classList.remove('hidden');
+                pendingSection?.classList.add('hidden');
                 document.getElementById('maint-detail-resolved-by').innerText = ticket.resolved_by || 'Staff';
                 document.getElementById('maint-detail-resolved-at').innerText = ticket.resolved_at || '-';
                 document.getElementById('maint-detail-biaya').innerText = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(ticket.biaya || 0);
                 document.getElementById('maint-detail-resolusi').innerText = ticket.resolusi || '-';
             } else {
-                resolutionSection.classList.add('hidden');
+                resolutionSection?.classList.add('hidden');
+                pendingSection?.classList.remove('hidden');
             }
 
             document.getElementById('modal-detail-ticket')?.classList.remove('hidden');

@@ -10,6 +10,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ### Ditambahkan
 - **Optimasi Responsif & Paginasi Tab Perawatan PC (Zero Scroll Multi-Breakpoint)**:
+  - **Redesain 2-Kolom Modal Detail Tiket Perawatan PC**: Membagi struktur modal detail (`modal-detail-ticket`) menjadi 2 kolom responsif (`sm:grid sm:grid-cols-2 lg:gap-3.5 xl:gap-4.5`) serupa modal riwayat serah terima shift kasir, memisahkan kelompok identitas PC & pelapor di sisi kiri dengan rincian deskripsi masalah, status penyelesaian, serta biaya perbaikan di sisi kanan untuk mengeliminasi vertical scrollable di resolusi `sm`, `md`, `lg`, `xl`, dan `2xl`.
   - **Limit 5 Item per Halaman & Paginasi**: Membatasi tampilan tiket perawatan menjadi tepat 5 data per halaman secara dinamis di modul `Maintenance`, dilengkapi bar navigasi paginasi ringkas (`Menampilkan X - Y dari Z tiket`, tombol `← Sebelumnya`, dan tombol `Berikutnya →` dengan penanganan boundary disabled).
   - **Single Unified Card Layout**: Menyatukan 3 kartu terpisah (Action Header, 4 Mini Status Cards, dan Tabel Data) pada `maintenance.html` menjadi 1 card wrapper terpadu, memangkas jarak vertikal berlebih (`space-y-6` menjadi `space-y-2 lg:space-y-1.5 xl:space-y-2`) dan padding kartu.
   - **Zero Scroll di Seluruh Breakpoint Desktop**: Mengeliminasi scrollbar vertikal pada `#main-scroll` di resolusi desktop (`lg` 1024x768, `xl` 1280x800, dan `2xl` 1536x960), dengan tinggi tab hanya 397–571 px (jauh di bawah batas viewport).
