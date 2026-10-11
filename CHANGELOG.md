@@ -9,6 +9,26 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 ## [1.6.4] - 2026-10-09
 
 ### Ditambahkan
+- **Optimasi Responsif & Paginasi Tab Perawatan PC (Zero Scroll Multi-Breakpoint)**:
+  - **Limit 5 Item per Halaman & Paginasi**: Membatasi tampilan tiket perawatan menjadi tepat 5 data per halaman secara dinamis di modul `Maintenance`, dilengkapi bar navigasi paginasi ringkas (`Menampilkan X - Y dari Z tiket`, tombol `← Sebelumnya`, dan tombol `Berikutnya →` dengan penanganan boundary disabled).
+  - **Single Unified Card Layout**: Menyatukan 3 kartu terpisah (Action Header, 4 Mini Status Cards, dan Tabel Data) pada `maintenance.html` menjadi 1 card wrapper terpadu, memangkas jarak vertikal berlebih (`space-y-6` menjadi `space-y-2 lg:space-y-1.5 xl:space-y-2`) dan padding kartu.
+  - **Zero Scroll di Seluruh Breakpoint Desktop**: Mengeliminasi scrollbar vertikal pada `#main-scroll` di resolusi desktop (`lg` 1024x768, `xl` 1280x800, dan `2xl` 1536x960), dengan tinggi tab hanya 397–571 px (jauh di bawah batas viewport).
+  - **Tabel Responsif Ramping Tanpa Card Mode Berlebih**: Menjaga tabel tetap dalam satu baris terpadu (`overflow-x-auto scrollbar-thin`) di seluruh resolusi termasuk mobile/tablet (`sm`, `md`), dilengkapi teks terpotong rapi (`truncate min-w-0 max-w-[200px] xl:max-w-xs`) serta tombol aksi dan badge status yang kompak (`whitespace-nowrap`).
+- **Penyempurnaan Tampilan Monitor Hardware & Hardware Checker**:
+  - **Fitur Filter / Sorting Grup di Monitor Hardware**: Menambahkan kontrol dropdown `<select id="monitor-group-filter">` pada header Monitor Hardware untuk memudahkan kasir memfilter dan mengurutkan unit PC per grup atau menampilkan seluruh grup sekaligus.
+  - **Highlighted Group Header & Pembersihan Color Bar Samping**: Menghapus strip warna vertikal di samping teks grup dan mengubah header grup menjadi badge pill berlatar kontras tinggi (`REGULER • 20 UNIT`) dengan unit count badge terpadu sehingga langsung mudah dikenali oleh end-user.
+  - **Penggantian Kolom Grup Menjadi Kolom Status di Hardware Checker**: Mengeliminasi kolom Grup pada Hardware Checker dan menggantikannya dengan kolom berdedikasi `Status` (`🛡️ AMAN`, `🚨 DITUKAR`, `⚙️ PENDING`), serta merapikan tampilan kode PC pada breakpoint kecil (`sm`, `md`, `lg`, `xl`).
+  - **Grouping per Grup PC & Spacing Antargrup**: Membagi baris tabel Monitor Hardware per grup PC dengan menambahkan jarak/gap vertikal antargrup yang lebih tinggi (`pt-8 sm:pt-9 pb-2.5`) pada Monitor Hardware dan Hardware Checker.
+  - **Skema Warna Komponen CPU & GPU**: Menerapkan diferensiasi warna yang konsisten pada nama CPU (`text-cyan-400`) serta badge suhunya (`text-cyan-300 border-cyan-800/60 bg-cyan-950/60`), dan nama GPU (`text-amber-400`) serta badge suhunya (`text-amber-300 border-amber-800/60 bg-amber-950/60`).
+  - **Pembersihan Alert Suhu & Bullet Point**: Menghapus indikator alert peringatan suhu berlebih ("Perhatian" / red ping animation) dan bullet point pada nama PC di Monitor Hardware, dengan mempertahankan indikator status kecepatan LAN adapter.
+  - **Pembaruan Header Sinkronisasi**: Mengganti label kolom `"SYNC"` menjadi `"Terakhir disinkronkan"` pada tabel dan modal detail Hardware Checker agar lebih informatif dan rapi.
+  - **Informasi Nama/Model SSD & RAM pada Modal Detail**: Menampilkan model atau nama RAM dan SSD/Disk pada Modal Detail Hardware Checker jika data tersedia pada spesifikasi (baseline/telemetri), serta mengabaikannya secara bersih jika tidak tersedia.
+- **Unifikasi Responsif Monitor Hardware & Hardware Checker (1 Baris per PC)**:
+  - Unifikasi tampilan daftar PC pada tab Monitor Hardware (`tab-monitor`) dan Hardware Checker (`tab-hardware_checker`) menjadi tabel 1 baris per PC yang seragam di seluruh breakpoint responsive (`sm`, `md`, `lg`, `xl`, `2xl`).
+  - **Optimasi Fit-to-Table Lintas-Breakpoint (`sm`, `md`, `lg`, `xl`, `2xl`)**: Mengeliminasi lebar minimum artifisial (`min-w-[960px]`) dan menerapkan arsitektur kolom adaptif multi-line (Spesifikasi CPU/GPU/Mobo, RAM & LAN, Suhu terpadu, tombol aksi fleksibel) sehingga tabel 100% pas (*fit to table width*) tanpa ada kolom yang terpotong atau hilang di semua resolusi.
+  - Pencegahan pemotongan baris (*line-wrapping*) pada indikator kecepatan adapter jaringan (`1000 Mbps`, `1 Gbps`) menggunakan normalisasi unit dan utilitas `whitespace-nowrap shrink-0 inline-flex`.
+  - Integrasi kapasitas **Total RAM** (`m.total_ram`) dan Network Adapter pada Modal Detail Hardware Checker, baik di kolom Baseline Resmi maupun Live Telemetry.
+  - Penggantian konfirmasi browser native `window.confirm()` dengan Custom Modal Dialog terstandarisasi (`Modal.confirm`) bernuansa amber warning, keyboard shortcut `E`, serta ukuran modal responsive.
 - **Refactoring Desain Overlay Client (Apple Dark-Mode Aesthetic)**:
   - Palet gelap elevasi modern (`#161618`, `#1c1c1e`, `#2c2c2e`) dengan aksen mint (`#30d158`) dan hairline borders (`border-white/10`).
   - Segmented pill controls terstandarisasi untuk navigasi modal (Katalog Menu FnB, Daftar Paket).
