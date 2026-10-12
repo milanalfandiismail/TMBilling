@@ -9,6 +9,19 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 ## [1.6.4] - 2026-10-11
 
 ### Ditambahkan
+- **Fit-to-Screen, Single Container & Responsive POS F&B Tab Kantin (`#tab-menu`)**:
+  - Menyatukan POS Header dan Content ke dalam **1 Container Terpadu Ramping** (`bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 xl:p-3.5 space-y-2.5`), selaras dengan standar Tab Member, Paket, dan Unit PC.
+  - Menghadirkan **Header Toolbar Terpadu**: Judul & deskripsi di sisi kiri, search box cepat dengan tombol reset `✕` dan tombol `Tambah Menu` di sisi kanan.
+  - Menambahkan **Horizontal Tab & Filter Pills**: Tab switcher `Katalog Menu` & `Arsip Menu` disertai badge counter dinamis serta pills filter stok cepat (`Semua`, `Tersedia`, `Stok Habis`).
+  - Menerapkan **Grid 2-Kolom Terpadu dengan Internal Scroll (Fit-to-Screen)**:
+    - Kolom Kiri: Grid Katalog Produk mandiri (`max-h-[calc(100vh-215px)] overflow-y-auto scrollbar-thin`) dengan grid responsif (2 col di mobile & lg, 3 col di sm/md/xl, 4 col di 2xl).
+    - Kolom Kanan: Panel Keranjang Belanja Cart terintegrasi pas di layar (`flex flex-col max-h-[calc(100vh-215px)]`) dengan daftar item scrollable mandiri dan ringkasan checkout selalu terkunci di bawah tanpa terdorong keluar layar.
+  - **Rombakan UI/UX Operasional Kasir Harian (Long-Shift Ergonomics)**:
+    - **Kartu Interaktif Penuh (Tap-to-Add)**: Klik/tap di mana saja pada kartu produk menambah +1 item ke keranjang secara instan (`active:scale-[0.98]`).
+    - **In-Cart Badging & Border Glow**: Menampilkan badge kuantitas di pojok atas (`xN di Keranjang`) dan highlight border emerald (`border-emerald-500/60 bg-[#08130d]`) yang tersinkronisasi realtime dengan isi keranjang.
+    - **Proteksi Aksi Admin & Preview**: Aksi edit, restock, arsip, hapus, dan preview dilindungi dengan `stopPropagation` agar tidak memicu add-to-cart.
+    - **Modal Pembayaran Kompak & Ergonomis (`max-w-2xl`)**: Menggantikan modal lama (`max-w-6xl`) dengan ukuran proporsional 2 kolom seimbang, grid pecahan nominal cepat simetris, dan nominal kembalian besar beraksen emerald.
+  - Menyinkronkan dimensi kartu skeleton `Skeleton.menuCards()` dan placeholder SSR ke ukuran compact `min-h-[220px]` dan padding `p-2 sm:p-2.5`.
 - **Fit-to-Screen, Adaptive Pagination & Navigasi Grup Tab Member (`#tab-member`)**:
   - Menyatukan 2 card terpisah menjadi 1 boks container ramping terpadu (`bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 xl:p-3.5`) dengan Toolbar Terpadu di bagian atas.
   - Menghadirkan navigasi **Horizontal Tab Pills Per Grup** (`#member-group-tabs`) dengan pill "Semua" dan tab tiap grup beraksen warna grup (`grup.warna`) menggantikan dropdown filter statis.
@@ -137,6 +150,16 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Pembersihan & Keamanan Kredensial Administrator Klien**:
   - Form input username dan password admin pada modal darurat agen dibersihkan seketika pada saat login success, login error, maupun pembatalan (cancel/close).
   - Mencegah residu kredensial tertinggal di DOM/memori form browser klien.
+
+### Diperbaiki
+- **Isolasi Scrollbar & Interaksi Roda Mouse Katalog POS (`#menu-catalog-scroll-container`)**:
+  - Mencegah *scroll chaining* ke seluruh halaman saat mouse hover di atas kartu menu dengan menambahkan `overscroll-behavior: contain` (`.pos-catalog-scroll-container` & `.pos-cart-box`) dan event listener non-passive `wheel` yang mengunci perputaran scroll di dalam kontainer internal katalog.
+  - Memberikan batas tinggi adaptif (`max-height`) dan *bottom breathing room* (`padding-bottom: 2.75rem` / `pb-10` di mobile, `pb-8` di sm/md, `pb-6` di lg/xl/2xl) agar item terbawah tidak menabrak batas bawah kontainer atau terpotong.
+  - Menambah jarak bawah pada `#tab-menu` mobile (`pb-28 sm:pb-24 lg:pb-0`) untuk memastikan floating action bar keranjang tidak menutupi produk terakhir.
+  - **Dukungan Klik Kiri (Tambah) & Klik Kanan (Kurangi) pada Kartu**: Klik kiri kartu menambah kuantitas, klik kanan (`contextmenu`) memanggil `decrementCart()` untuk mengurangi kuantitas atau menghapus item tanpa memicu menu konteks browser.
+  - **Kontrol Stepper Responsif Mobile**: Pada item yang sudah ada di keranjang (`inCartQty > 0`), tombol aksi bawah kartu otomatis berubah menjadi stepper interaktif `[-]` `N` `[+]` dan mendukung *long-press* (tekan tahan) di layar sentuh.
+  - **Pencegahan Teks Judul Menimpa Tombol Kebab Mobile**: Memindahkan tombol aksi mobile (`adminMobileActions`) ke dalam flex container judul (`flex items-start justify-between gap-1.5 min-w-0`) dengan `line-clamp-2` sehingga nama menu yang panjang tidak pernah bertabrakan dengan ikon titik tiga.
+  - Mempertahankan posisi scroll katalog (`prevScroll`) saat re-render kartu untuk kenyamanan interaksi kasir tanpa lonjakan scrollbar.
 
 ## [1.6.3] - 2026-10-05
 
