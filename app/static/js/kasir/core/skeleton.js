@@ -47,18 +47,18 @@ const Skeleton = {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-3 flex flex-col justify-between animate-pulse min-h-[260px]">
-                    <div class="w-full aspect-[4/3] rounded-lg border border-[#1f1f1f] bg-[#161616] mb-2.5 flex items-center justify-center">
-                        <svg class="w-8 h-8 text-[#262626]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between animate-pulse min-h-[220px]">
+                    <div class="w-full aspect-[4/3] rounded-lg border border-[#1f1f1f] bg-[#161616] mb-2 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-[#262626]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
-                    <div class="space-y-1.5 flex-1">
-                        <div class="h-3.5 bg-[#262626] rounded w-3/4"></div>
+                    <div class="space-y-1 flex-1">
+                        <div class="h-3 bg-[#262626] rounded w-3/4"></div>
                         <div class="h-2.5 bg-[#1e1e1e] rounded w-1/2"></div>
                     </div>
-                    <div class="pt-2 mt-2 border-t border-[#181818] flex items-center justify-between">
-                        <div class="h-3.5 bg-[#262626] rounded w-16"></div>
+                    <div class="pt-1.5 mt-1.5 border-t border-[#181818] flex items-center justify-between">
+                        <div class="h-3 bg-[#262626] rounded w-14"></div>
                     </div>
-                    <div class="mt-2 h-7 bg-[#202020] rounded w-full"></div>
+                    <div class="mt-2 h-6 bg-[#202020] rounded w-full"></div>
                 </div>
             `;
         }
