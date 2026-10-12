@@ -3,23 +3,49 @@
 const Member = {
     allMembers: [],
     currentPage: 1,
+    perPage: 5,
     searchQuery: '',
     currentGrupId: '',
     totalPages: 1,
     totalRecords: 0,
     _currentPaketList: [],
 
+    _lastFingerprint: null,
+    _hasResizeListener: false,
+    _allGroups: [],
+
+    getAdaptivePerPage() {
+        const width = window.innerWidth;
+        if (width >= 1536) return 10; // 2xl (10 baris, fit to screen)
+        if (width >= 1280) return 8;  // xl (8 baris)
+        if (width >= 768)  return 7;  // md, lg
+        return 5;                     // < md
+    },
+
+    _initResizeListener() {
+        if (this._hasResizeListener) return;
+        this._hasResizeListener = true;
+        window.addEventListener('resize', Utils.debounce(() => {
+            if (typeof App !== 'undefined' && App.currentTab !== 'member') return;
+            const newPerPage = this.getAdaptivePerPage();
+            if (newPerPage !== this.perPage) {
+                this.perPage = newPerPage;
+                this.currentPage = 1;
+                this.load();
+            }
+        }, 200));
+    },
+
     resetFilters() {
         this.currentPage = 1;
+        this.perPage = this.getAdaptivePerPage();
         this.searchQuery = '';
         this.currentGrupId = '';
         const searchInput = document.getElementById('member-search-input');
         if (searchInput) searchInput.value = '';
-        const filterSelect = document.getElementById('member-grup-filter-select');
-        if (filterSelect) filterSelect.innerHTML = '<option value="">Semua Grup</option>';
+        const clearBtn = document.getElementById('member-search-clear');
+        if (clearBtn) clearBtn.classList.add('hidden');
     },
-
-    _lastFingerprint: null,
 
     refreshLive() {
         if (typeof App !== 'undefined' && App.currentTab !== 'member') return;
@@ -35,9 +61,12 @@ const Member = {
     },
 
     async load(isSilent = false) {
+        this.perPage = this.getAdaptivePerPage();
+        this._initResizeListener();
+
         const area = document.getElementById('member-table');
         if (area && !isSilent && (!this.allMembers || this.allMembers.length === 0) && typeof Skeleton !== 'undefined') {
-            area.innerHTML = Skeleton.memberTable(6);
+            area.innerHTML = Skeleton.memberTable(this.getAdaptivePerPage());
         }
 
         try {
@@ -45,6 +74,7 @@ const Member = {
                 API.member.list({
                     q: this.searchQuery,
                     page: this.currentPage,
+                    per_page: this.perPage,
                     grup_id: this.currentGrupId
                 }),
                 API.grup.list()
@@ -54,6 +84,7 @@ const Member = {
             const newFingerprint = JSON.stringify({
                 q: this.searchQuery,
                 page: this.currentPage,
+                per_page: this.perPage,
                 grup: this.currentGrupId,
                 members: fetchedMembers.map(m => ({ id: m.id, saldo: m.saldo, sisa_waktu: m.sisa_waktu, status: m.status }))
             });
@@ -68,13 +99,9 @@ const Member = {
             this.totalRecords = memberData.total || 0;
             this.currentPage = memberData.current_page || 1;
 
-            const groups = grupData.grup || grupData || [];
-
-            const filterSelect = document.getElementById('member-grup-filter-select');
-            if (filterSelect && !isSilent) {
-                filterSelect.innerHTML = '<option value="">Semua Grup</option>' +
-                    groups.map(g => `<option value="${g.id}" ${String(this.currentGrupId) === String(g.id) ? 'selected' : ''}>${g.nama.toUpperCase()}</option>`).join('');
-            }
+            const groups = grupData.grup || grupData.grup_list || grupData || [];
+            this._allGroups = groups;
+            this.renderGroupTabs(groups);
 
             const addGrupSelect = document.getElementById('inp-mem-grup');
             if (addGrupSelect && !isSilent) {
@@ -89,26 +116,83 @@ const Member = {
         }
     },
 
+    renderGroupTabs(groups) {
+        const tabsContainer = document.getElementById('member-group-tabs');
+        if (!tabsContainer) return;
+
+        if (!groups || groups.length === 0) {
+            tabsContainer.innerHTML = '<span class="text-[11px] text-neutral-500 py-1">Belum ada grup member</span>';
+            return;
+        }
+
+        const isAllActive = !this.currentGrupId;
+        let tabsHtml = `
+            <button type="button" onclick="Member.selectGroup('')"
+                class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${isAllActive ? 'bg-[#161616] text-white border border-neutral-400 shadow-sm' : 'bg-[#0a0a0a] text-neutral-400 border border-[#1f1f1f] hover:border-[#333] hover:text-neutral-200'}">
+                <span class="w-1.5 h-1.5 rounded-full ${isAllActive ? 'bg-neutral-200' : 'bg-neutral-600'}"></span>
+                <span class="tracking-wide">SEMUA</span>
+            </button>
+        `;
+
+        tabsHtml += groups.map(g => {
+            const isActive = String(this.currentGrupId) === String(g.id);
+            const gColor = g.warna || '#3B82F6';
+
+            if (isActive) {
+                return `
+                    <button type="button" onclick="Member.selectGroup(${g.id})"
+                        class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 bg-[#161616] text-white border shadow-sm"
+                        style="border-color: ${gColor};">
+                        <span class="w-2 h-2 rounded-full" style="background-color: ${gColor};"></span>
+                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
+                    </button>
+                `;
+            } else {
+                return `
+                    <button type="button" onclick="Member.selectGroup(${g.id})"
+                        class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 bg-[#0a0a0a] text-neutral-400 border border-[#1f1f1f] hover:border-[#333] hover:text-neutral-200">
+                        <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${gColor};"></span>
+                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
+                    </button>
+                `;
+            }
+        }).join('');
+
+        tabsContainer.innerHTML = tabsHtml;
+    },
+
+    selectGroup(grupId) {
+        this.currentGrupId = (grupId !== undefined && grupId !== null && grupId !== '') ? String(grupId) : '';
+        this.currentPage = 1;
+        this.renderGroupTabs(this._allGroups || []);
+        this.load();
+    },
+
     doSearch() {
         const searchInput = document.getElementById('member-search-input');
-        const filterSelect = document.getElementById('member-grup-filter-select');
         this.searchQuery = searchInput ? searchInput.value.trim() : '';
-        this.currentGrupId = filterSelect ? filterSelect.value : '';
+        const clearBtn = document.getElementById('member-search-clear');
+        if (clearBtn) clearBtn.classList.toggle('hidden', !this.searchQuery);
         this.currentPage = 1;
         this.load();
     },
 
     debouncedSearch: Utils.debounce(function() {
         Member.doSearch();
-    }, 500),
+    }, 400),
 
     clearSearch() {
         const searchInput = document.getElementById('member-search-input');
-        const filterSelect = document.getElementById('member-grup-filter-select');
         if (searchInput) searchInput.value = '';
-        if (filterSelect) filterSelect.value = '';
+        const clearBtn = document.getElementById('member-search-clear');
+        if (clearBtn) clearBtn.classList.add('hidden');
         this.searchQuery = '';
-        this.currentGrupId = '';
+        this.currentPage = 1;
+        this.load();
+    },
+
+    changePerPage(n) {
+        this.perPage = parseInt(n) || this.getAdaptivePerPage();
         this.currentPage = 1;
         this.load();
     },
@@ -117,6 +201,83 @@ const Member = {
         if (p < 1 || p > this.totalPages) return;
         this.currentPage = p;
         this.load();
+    },
+
+    showMobileActions(id) {
+        const m = (this.allMembers || []).find(x => x.id === id);
+        if (!m) return;
+        const username = m.username || '-';
+        const grupNama = (typeof m.grup === 'object' ? m.grup.nama : m.grup) || 'reguler';
+        const modalHtml = `
+            <div class="text-left space-y-3 p-1">
+                <div class="flex items-center justify-between border-b border-[#262626] pb-2.5">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-200 font-bold text-xs">
+                            ${username.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <div class="font-bold text-neutral-200 text-sm">${username}</div>
+                            <div class="text-[11px] text-neutral-500">${m.nama_lengkap || '-'}</div>
+                        </div>
+                    </div>
+                    <span class="text-[10px] px-2 py-0.5 rounded font-bold uppercase" style="background-color: ${m.grup_warna}20; color: ${m.grup_warna}; border: 1px solid ${m.grup_warna}40;">
+                        ${grupNama}
+                    </span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs font-mono py-1">
+                    <div class="bg-[#0a0a0a] border border-[#1f1f1f] p-2 rounded">
+                        <span class="text-neutral-500 block text-[10px]">SISA WAKTU</span>
+                        <span class="text-neutral-200 font-bold">${Utils.formatMenit(m.waktu_tersimpan)}</span>
+                    </div>
+                    <div class="bg-[#0a0a0a] border border-[#1f1f1f] p-2 rounded">
+                        <span class="text-neutral-500 block text-[10px]">STATUS</span>
+                        <span class="${m.aktif ? 'text-emerald-400' : 'text-neutral-500'} font-bold">${m.aktif ? 'Aktif' : 'Terkunci'}</span>
+                    </div>
+                </div>
+                <div class="space-y-1.5 pt-1">
+                    <button onclick="Modal.closeModal(); Member.tambahWaktu(${m.id})" class="w-full flex items-center justify-between px-3 py-2.5 bg-neutral-100 hover:bg-white text-black font-bold text-xs rounded-lg transition-colors">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                            Isi Saldo / Tambah Waktu
+                        </span>
+                        <span class="text-[10px] opacity-75">Beli Paket</span>
+                    </button>
+                    <button onclick="Modal.closeModal(); Member.showDetail(${m.id})" class="w-full flex items-center justify-between px-3 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs rounded-lg transition-colors font-semibold">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            Lihat Detail & Riwayat
+                        </span>
+                        <span class="text-neutral-500 text-[10px]">&rarr;</span>
+                    </button>
+                    <button onclick="Modal.closeModal(); Member.edit(${m.id})" class="w-full flex items-center justify-between px-3 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs rounded-lg transition-colors font-semibold">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            Edit Profil
+                        </span>
+                        <span class="text-neutral-500 text-[10px]">&rarr;</span>
+                    </button>
+                    ${(window.App && App.user && App.user.role === 'kasir') ? '' : `
+                    <button onclick="Modal.closeModal(); Member.delete(${m.id})" class="w-full flex items-center justify-between px-3 py-2 bg-red-950/20 hover:bg-red-900/30 border border-red-900/40 text-red-400 text-xs rounded-lg transition-colors font-semibold">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            Hapus Akun
+                        </span>
+                        <span class="text-red-500 text-[10px]">Permanen</span>
+                    </button>`}
+                </div>
+            </div>
+        `;
+        const modalContainerHtml = `
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-4 sm:p-5 max-w-sm w-full mx-auto shadow-2xl">
+                ${modalHtml}
+                <div class="mt-3 pt-2 border-t border-[#1c1c1c]">
+                    <button onclick="Modal.closeModal()" class="w-full py-2 bg-[#1a1a1a] hover:bg-[#222] border border-[#2a2a2a] text-neutral-300 text-xs font-bold rounded-lg transition-colors">Tutup</button>
+                </div>
+            </div>
+        `;
+        if (typeof Modal !== 'undefined' && typeof Modal.show === 'function') {
+            Modal.show(modalContainerHtml, null, { disableBackdropClose: false });
+        }
     },
 
     async add() {

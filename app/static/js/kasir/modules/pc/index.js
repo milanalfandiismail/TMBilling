@@ -2,20 +2,43 @@
 
 const PC = {
     currentPage: 1,
+    perPage: 6,
     searchQuery: '',
-    currentGrupId: '',
+    currentGrupId: null,
+    groups: [],
+    _allPcs: [],
+    _lastFingerprint: null,
+    _hasResizeListener: false,
+
+    getAdaptivePerPage() {
+        const width = window.innerWidth;
+        if (width >= 1536) return 24; // 2xl (6 x 4)
+        if (width >= 1280) return 18; // xl (6 x 3)
+        if (width >= 768)  return 12; // md, lg (4 x 3)
+        return 8;                     // < md (2 x 4)
+    },
+
+    _initResizeListener() {
+        if (this._hasResizeListener) return;
+        this._hasResizeListener = true;
+        window.addEventListener('resize', Utils.debounce(() => {
+            if (typeof App !== 'undefined' && App.currentTab !== 'pc') return;
+            const newPerPage = this.getAdaptivePerPage();
+            if (newPerPage !== this.perPage) {
+                this.perPage = newPerPage;
+                this.renderActiveGroup();
+            }
+        }, 200));
+    },
 
     resetFilters() {
         this.currentPage = 1;
         this.searchQuery = '';
-        this.currentGrupId = '';
         const searchInput = document.getElementById('pc-search-input');
         if (searchInput) searchInput.value = '';
-        const filterSelect = document.getElementById('pc-grup-filter-select');
-        if (filterSelect) filterSelect.innerHTML = '<option value="">Semua Grup</option>';
+        const clearBtn = document.getElementById('pc-search-clear');
+        if (clearBtn) clearBtn.classList.add('hidden');
     },
-
-    _lastFingerprint: null,
 
     refreshLive() {
         if (typeof App !== 'undefined' && App.currentTab !== 'pc') return;
@@ -31,50 +54,64 @@ const PC = {
     },
 
     async load(isSilent = false) {
+        this.perPage = this.getAdaptivePerPage();
+        this._initResizeListener();
+
         const area = document.getElementById('pc-table');
         if (!area) return;
-        if (!isSilent && (!this._lastPcData || !this._lastPcData.pc_list || this._lastPcData.pc_list.length === 0) && typeof Skeleton !== 'undefined') {
-            area.innerHTML = Skeleton.pcManagementGrid(2, 6);
+        if (!isSilent && (!this._allPcs || this._allPcs.length === 0) && typeof Skeleton !== 'undefined') {
+            area.innerHTML = Skeleton.pcManagementGrid(this.getAdaptivePerPage());
         }
 
         try {
             const [grupResponse, data] = await Promise.all([
                 API.grup.list(),
                 API.pc.list({
-                    q: this.searchQuery || '',
-                    grup_id: this.currentGrupId || ''
+                    q: this.searchQuery || ''
                 })
             ]);
 
             const pcs = data.pc_list || [];
+            const rawGroups = grupResponse.grup || grupResponse.grup_list || [];
+            const groups = [...rawGroups].sort((a, b) => Number(a.id) - Number(b.id));
+            this.groups = groups;
+
+            if (!this.currentGrupId || !groups.some(g => Number(g.id) === Number(this.currentGrupId))) {
+                this.currentGrupId = groups.length > 0 ? Number(groups[0].id) : null;
+            }
+
             const newFingerprint = JSON.stringify({
                 q: this.searchQuery,
                 grup: this.currentGrupId,
-                pcs: pcs.map(p => ({ id: p.id, status: p.status, koneksi: p.status_koneksi, ip: p.ip_address, mode: p.is_admin_mode }))
+                groups: groups.map(g => ({ id: g.id, nama: g.nama })),
+                pcs: pcs.map(p => ({ id: p.id, status: p.status, koneksi: p.status_koneksi, ip: p.ip_address, mode: p.is_admin_mode, grup_id: p.grup_id, aktif: p.aktif }))
             });
 
             if (isSilent && this._lastFingerprint === newFingerprint) {
                 return; // Data tidak berubah
             }
             this._lastFingerprint = newFingerprint;
-            this._lastPcData = data;
-
-            const groups = grupResponse.grup || grupResponse.grup_list || [];
-            const filterSelect = document.getElementById('pc-grup-filter-select');
-            if (filterSelect && !isSilent) {
-                filterSelect.innerHTML = '<option value="">Semua Grup</option>' + groups.map(g => `<option value="${g.id}" ${String(this.currentGrupId) === String(g.id) ? 'selected' : ''}>${g.nama.toUpperCase()}</option>`).join('');
-            }
+            this._allPcs = pcs;
 
             const addSelect = document.getElementById('inp-pc-grup');
             if (addSelect && !isSilent) {
                 addSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
             }
+            const modalAddSelect = document.getElementById('modal-pc-grup');
+            if (modalAddSelect && !isSilent) {
+                modalAddSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+            }
             const batchSelect = document.getElementById('inp-batch-grup');
             if (batchSelect && !isSilent) {
                 batchSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
             }
+            const modalBatchSelect = document.getElementById('modal-batch-grup');
+            if (modalBatchSelect && !isSilent) {
+                modalBatchSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+            }
 
-            this.render(data.grouped || {}, data);
+            this.renderTabs();
+            this.renderActiveGroup();
         } catch (err) {
             if (!isSilent) {
                 Toast.error('Gagal memuat daftar PC');
@@ -82,22 +119,87 @@ const PC = {
         }
     },
 
+    renderTabs() {
+        const tabsContainer = document.getElementById('pc-group-tabs');
+        if (!tabsContainer) return;
+
+        if (!this.groups || this.groups.length === 0) {
+            tabsContainer.innerHTML = '<span class="text-[11px] 2xl:text-xs text-neutral-500 py-1">Belum ada grup PC</span>';
+            return;
+        }
+
+        const tabsHtml = this.groups.map(g => {
+            const count = (this._allPcs || []).filter(p => Number(p.grup_id) === Number(g.id)).length;
+            const isActive = Number(this.currentGrupId) === Number(g.id);
+            const gColor = g.warna || '#3B82F6';
+
+            if (isActive) {
+                return `
+                    <button type="button" onclick="PC.selectGroup(${g.id})"
+                        class="px-2.5 sm:px-3 2xl:px-3.5 py-1 sm:py-1.5 2xl:py-2 rounded text-xs 2xl:text-sm font-bold transition-all flex items-center gap-1.5 2xl:gap-2 shrink-0 bg-[#161616] text-white border shadow-sm"
+                        style="border-color: ${gColor};">
+                        <span class="w-2 h-2 2xl:w-2.5 2xl:h-2.5 rounded-full" style="background-color: ${gColor};"></span>
+                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
+                        <span class="text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0.2 2xl:py-0.5 rounded font-mono bg-[#242424] text-neutral-200 font-bold">${count} UNIT</span>
+                    </button>
+                `;
+            } else {
+                return `
+                    <button type="button" onclick="PC.selectGroup(${g.id})"
+                        class="px-2.5 sm:px-3 2xl:px-3.5 py-1 sm:py-1.5 2xl:py-2 rounded text-xs 2xl:text-sm font-bold transition-all flex items-center gap-1.5 2xl:gap-2 shrink-0 bg-[#0c0c0c] hover:bg-[#141414] text-neutral-400 hover:text-neutral-200 border border-[#1c1c1c]">
+                        <span class="w-1.5 h-1.5 2xl:w-2 2xl:h-2 rounded-full opacity-60" style="background-color: ${gColor};"></span>
+                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
+                        <span class="text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0.2 2xl:py-0.5 rounded font-mono bg-[#141414] text-neutral-500 font-semibold">${count} UNIT</span>
+                    </button>
+                `;
+            }
+        }).join('');
+
+        tabsContainer.innerHTML = tabsHtml;
+    },
+
+    selectGroup(grupId) {
+        this.currentGrupId = Number(grupId);
+        this.currentPage = 1;
+        this.renderTabs();
+        this.renderActiveGroup();
+    },
+
+    renderActiveGroup() {
+        if (!this.currentGrupId && this.groups.length > 0) {
+            this.currentGrupId = Number(this.groups[0].id);
+        }
+        const activeGroup = (this.groups || []).find(g => Number(g.id) === Number(this.currentGrupId));
+        const filteredPcs = (this._allPcs || []).filter(p => Number(p.grup_id) === Number(this.currentGrupId));
+
+        PCGrid.render(filteredPcs, {
+            activeGroup: activeGroup,
+            currentPage: this.currentPage,
+            perPage: this.perPage
+        });
+    },
+
     doSearch() {
-        this.searchQuery = document.getElementById('pc-search-input').value.trim();
-        this.currentGrupId = document.getElementById('pc-grup-filter-select').value;
+        const input = document.getElementById('pc-search-input');
+        this.searchQuery = input ? input.value.trim() : '';
+        const clearBtn = document.getElementById('pc-search-clear');
+        if (clearBtn) {
+            clearBtn.classList.toggle('hidden', !this.searchQuery);
+        }
         this.currentPage = 1;
         this.load();
     },
 
     debouncedSearch: Utils.debounce(function() {
         PC.doSearch();
-    }, 500),
+    }, 400),
 
     clearSearch() {
-        document.getElementById('pc-search-input').value = '';
-        document.getElementById('pc-grup-filter-select').value = '';
+        const input = document.getElementById('pc-search-input');
+        if (input) input.value = '';
+        const clearBtn = document.getElementById('pc-search-clear');
+        if (clearBtn) clearBtn.classList.add('hidden');
         this.searchQuery = '';
-        this.currentGrupId = '';
         this.currentPage = 1;
         this.load();
     },
@@ -105,7 +207,7 @@ const PC = {
     changePage(page) {
         if (page < 1) return;
         this.currentPage = page;
-        this.load();
+        this.renderActiveGroup();
     },
 
     updateAddPreview() {

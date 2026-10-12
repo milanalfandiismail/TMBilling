@@ -84,8 +84,8 @@ class MemberService:
         return MemberRepository.get_all()
 
     @staticmethod
-    def get_paginated_members(search_query=None, page=1, per_page=10, grup_id=None):
-        """Mengambil member dengan pagination dan search filter."""
+    def get_paginated_members(search_query=None, page=1, per_page=5, grup_id=None, sort_by="grup_id", order="asc"):
+        """Mengambil member dengan pagination, search filter, dan pengurutan."""
         grup_id_parsed = None
         if grup_id:
             if isinstance(grup_id, int):
@@ -97,7 +97,14 @@ class MemberService:
                 grup_obj = GrupRepository.find_by_nama(grup_id)
                 if grup_obj:
                     grup_id_parsed = grup_obj.id
-        pagination = MemberRepository.get_paginated(search_query, page, per_page, grup_id=grup_id_parsed)
+        pagination = MemberRepository.get_paginated(
+            search_query,
+            page,
+            per_page,
+            grup_id=grup_id_parsed,
+            sort_by=sort_by,
+            order=order
+        )
         return {
             "members": [m.to_dict() for m in pagination.items],
             "total": pagination.total,

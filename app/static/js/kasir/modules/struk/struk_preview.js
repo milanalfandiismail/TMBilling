@@ -1,8 +1,9 @@
 // app/static/js/kasir/modules/struk/struk_preview.js
 
 const StrukPreview = {
-    renderPreview(data) {
-        const container = document.getElementById('struk-preview');
+    renderPreview(data, targetContainerId = null) {
+        const primaryContainer = document.getElementById(targetContainerId || 'struk-preview');
+        const mobileContainer = document.getElementById('struk-preview-mobile');
         const inputStruk = document.getElementById('struk-no');
         if (inputStruk) inputStruk.value = data.no_nota || data.no_struk || '';
 
@@ -19,15 +20,15 @@ const StrukPreview = {
         const tglDate = tglParts[0] || '';
         const tglTime = tglParts.slice(1).join(' ') || '';
 
-        container.innerHTML = `
-            <div class="thermal-paper w-full max-w-[320px] lg:max-xl:max-w-[340px] xl:max-w-[380px] mx-auto p-5 sm:p-6 font-mono bg-[#111] border border-[#222] text-neutral-200 rounded-xl shadow-2xl select-none">
-                <div class="text-center mb-4 pb-3 border-b border-dashed border-[#262626]">
-                    <h2 class="text-sm lg:max-xl:text-base xl:text-lg font-black tracking-tight">${escape(warnetTitle)}</h2>
-                    <p class="text-[10px] lg:max-xl:text-[11px] xl:text-xs text-neutral-400 font-medium mt-0.5">${escape(warnetAddress)}</p>
-                    ${warnetPhone ? `<p class="text-[10px] lg:max-xl:text-[11px] xl:text-xs text-neutral-400 font-medium">${escape(warnetPhone)}</p>` : ''}
+        const htmlContent = `
+            <div class="thermal-paper w-full max-w-[310px] sm:max-w-[330px] xl:max-w-[360px] mx-auto p-3.5 sm:p-4 font-mono bg-[#111] border border-[#222] text-neutral-200 rounded-lg shadow-xl select-none">
+                <div class="text-center mb-2.5 pb-2 border-b border-dashed border-[#262626]">
+                    <h2 class="text-sm sm:text-base font-black tracking-tight">${escape(warnetTitle)}</h2>
+                    <p class="text-[10px] sm:text-[11px] text-neutral-400 font-medium mt-0.5">${escape(warnetAddress)}</p>
+                    ${warnetPhone ? `<p class="text-[10px] sm:text-[11px] text-neutral-400 font-medium">${escape(warnetPhone)}</p>` : ''}
                 </div>
 
-                <div class="space-y-2 text-xs lg:max-xl:text-xs xl:text-sm">
+                <div class="space-y-1.5 text-xs">
                     <div class="flex justify-between">
                         <span class="text-neutral-400">No. Nota</span>
                         <span class="font-bold">${escape(data.no_nota)}</span>
@@ -49,65 +50,68 @@ const StrukPreview = {
                         <span class="font-bold text-neutral-100">${escape(data.nama_pelanggan)}</span>
                     </div>
 
-                    <div class="border-t border-dashed border-[#262626] my-3"></div>
+                    <div class="border-t border-dashed border-[#262626] my-2"></div>
 
-                    <div class="text-[10px] lg:max-xl:text-[11px] xl:text-xs uppercase text-neutral-400 font-bold mb-1">Rincian:</div>
-                    <div class="space-y-2">
+                    <div class="text-[10px] sm:text-[11px] uppercase text-neutral-400 font-bold mb-1">Rincian:</div>
+                    <div class="space-y-1.5">
                         ${(data.rincian || []).map(r => `
-                            <div class="border-b border-dashed border-[#262626]/60 pb-1.5 last:border-0 last:pb-0">
+                            <div class="border-b border-dashed border-[#262626]/60 pb-1 last:border-0 last:pb-0">
                                 <div class="font-bold text-neutral-100">${escape(r.keterangan)}</div>
-                                <div class="text-[10px] lg:max-xl:text-[11px] xl:text-xs text-neutral-400 font-medium">${data.tipe === 'kantin' ? 'Jumlah: ' + r.durasi : r.durasi + ' menit'}</div>
-                                <div class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-right mt-0.5 text-neutral-200">${Utils.formatRupiah(r.harga)}</div>
+                                <div class="text-[10px] sm:text-[11px] text-neutral-400 font-medium">${data.tipe === 'kantin' ? 'Jumlah: ' + r.durasi : r.durasi + ' menit'}</div>
+                                <div class="text-xs font-bold text-right mt-0.5 text-neutral-200">${Utils.formatRupiah(r.harga)}</div>
                             </div>
                         `).join('')}
                     </div>
 
-                    <div class="border-t border-dashed border-[#262626] my-3"></div>
+                    <div class="border-t border-dashed border-[#262626] my-2"></div>
 
                     <div class="flex justify-between items-end">
                         <div>
-                            <span class="text-[10px] lg:max-xl:text-[11px] xl:text-xs text-neutral-400 uppercase font-bold">${data.tipe === 'kantin' ? 'Total Item' : 'Total Durasi'}</span>
+                            <span class="text-[10px] sm:text-[11px] text-neutral-400 uppercase font-bold">${data.tipe === 'kantin' ? 'Total Item' : 'Total Durasi'}</span>
                             <div class="font-bold text-neutral-200">${data.total_durasi} ${data.tipe === 'kantin' ? 'pcs' : 'menit'}</div>
                         </div>
                         <div class="text-right">
-                            <span class="text-[10px] lg:max-xl:text-[11px] xl:text-xs text-neutral-400 uppercase font-bold">TOTAL BAYAR</span>
-                            <div class="text-sm lg:max-xl:text-base xl:text-lg font-black text-emerald-400">${Utils.formatRupiah(data.total_harga)}</div>
+                            <span class="text-[10px] sm:text-[11px] text-neutral-400 uppercase font-bold">TOTAL BAYAR</span>
+                            <div class="text-sm sm:text-base font-black text-emerald-400">${Utils.formatRupiah(data.total_harga)}</div>
                         </div>
                     </div>
 
                     ${(data.payment_method || 'Tunai').toLowerCase() === 'tunai' && data.tipe === 'kantin' ? `
-                    <div class="border-t border-dashed border-[#262626] my-3"></div>
-                    <div class="flex justify-between text-[10px] lg:max-xl:text-[11px] xl:text-xs">
+                    <div class="border-t border-dashed border-[#262626] my-2"></div>
+                    <div class="flex justify-between text-[10px] sm:text-[11px]">
                         <span class="text-neutral-400">Metode Bayar</span>
                         <span class="text-neutral-200 font-bold uppercase">TUNAI</span>
                     </div>
-                    <div class="flex justify-between text-[10px] lg:max-xl:text-[11px] xl:text-xs">
+                    <div class="flex justify-between text-[10px] sm:text-[11px]">
                         <span class="text-neutral-400">Uang Tunai</span>
                         <span class="text-neutral-200 font-bold">${Utils.formatRupiah(data.tunai || 0)}</span>
                     </div>
-                    <div class="flex justify-between text-[10px] lg:max-xl:text-[11px] xl:text-xs">
+                    <div class="flex justify-between text-[10px] sm:text-[11px]">
                         <span class="text-neutral-400">Kembalian</span>
                         <span class="text-emerald-400 font-bold">${Utils.formatRupiah(data.kembalian || 0)}</span>
                     </div>
                     ` : `
-                    <div class="border-t border-dashed border-[#262626] my-3"></div>
-                    <div class="flex justify-between text-[10px] lg:max-xl:text-[11px] xl:text-xs">
+                    <div class="border-t border-dashed border-[#262626] my-2"></div>
+                    <div class="flex justify-between text-[10px] sm:text-[11px]">
                         <span class="text-neutral-400">Metode Bayar</span>
                         <span class="text-neutral-200 font-bold uppercase">${escape(data.payment_method || 'Tunai')}</span>
                     </div>
                     `}
 
-                    <div class="border-t border-dashed border-[#262626] my-3"></div>
+                    <div class="border-t border-dashed border-[#262626] my-2"></div>
 
-                    <div class="flex justify-between text-[10px] lg:max-xl:text-[11px] xl:text-xs">
+                    <div class="flex justify-between text-[10px] sm:text-[11px]">
                         <span class="text-neutral-400">Kasir</span>
                         <span class="text-neutral-200 font-bold">${escape(data.kasir)}</span>
                     </div>
-                    <div class="text-center text-[10px] lg:max-xl:text-[11px] xl:text-xs text-neutral-500 font-medium pt-3 border-t border-dashed border-[#262626] mt-2">
+                    <div class="text-center text-[10px] sm:text-[11px] text-neutral-500 font-medium pt-2 border-t border-dashed border-[#262626] mt-1.5">
                         ${escape(warnetFooter)}
                     </div>
                 </div>
             </div>`;
+
+        if (primaryContainer) primaryContainer.innerHTML = htmlContent;
+        if (mobileContainer && targetContainerId === 'struk-preview-mobile') mobileContainer.innerHTML = htmlContent;
     },
 
     printPreview() {

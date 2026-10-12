@@ -1,5 +1,5 @@
 <!-- ===== TAB: STRUK ===== -->
-<div id="tab-struk" class="tab-content hidden space-y-6">
+<div id="tab-struk" class="tab-content hidden space-y-2.5 sm:space-y-3">
     <!-- Sub-tab navigation -->
     <div class="flex gap-1 bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-1 w-fit">
         <button id="struk-sub-billing" onclick="Struk.switchSubTab('billing')"
@@ -9,77 +9,103 @@
     </div>
 
     <!-- Grid Container with equal height columns matching receipt preview -->
-    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-12 gap-4 lg:max-xl:gap-3 xl:gap-6 items-stretch">
-        <!-- Left Column: Riwayat Transaksi & Filter Pencarian (8 Items per Page) -->
-        <div class="md:col-span-1 lg:col-span-5 xl:col-span-4 bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:max-xl:p-3.5 xl:p-6 flex flex-col justify-between h-full">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 lg:gap-4 items-stretch">
+        <!-- Left Column: Riwayat Transaksi & Filter Pencarian (5 Items per Page) -->
+        <div class="col-span-1 md:col-span-5 lg:col-span-5 xl:col-span-4 bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 xl:p-3.5 flex flex-col justify-between">
             <div class="flex-1 flex flex-col min-h-0">
                 <!-- Header -->
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-xs lg:max-xl:text-base xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Riwayat Transaksi</h3>
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider">Riwayat Transaksi</h3>
                     <button onclick="Struk.loadHistory()"
-                        class="px-2.5 py-1 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs lg:max-xl:text-xs xl:text-sm text-neutral-300 font-bold transition-colors" title="Segarkan Riwayat">↻</button>
+                        class="px-2 py-0.5 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs text-neutral-300 font-bold transition-colors" title="Segarkan Riwayat">↻</button>
                 </div>
                 
-                <!-- Filters Section: Date Picker & Search Query -->
-                <div class="space-y-2 mb-3">
-                    <label for="struk-date-picker" class="sr-only">Filter Tanggal Struk</label>
-                    <select id="struk-date-picker" onchange="Struk.handleDateChange(this.value)"
-                        class="w-full px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-medium">
-                        <option value="">Semua Tanggal</option>
-                    </select>
+                <!-- Filters Section: Date Picker & Search Query in 2 Columns -->
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div>
+                        <label for="struk-date-picker" class="sr-only">Filter Tanggal Struk</label>
+                        <select id="struk-date-picker" onchange="Struk.handleDateChange(this.value)"
+                            class="w-full px-2 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-[11px] sm:text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 font-medium truncate">
+                            <option value="">Semua Tanggal</option>
+                        </select>
+                    </div>
                     <div class="relative">
                         <label for="struk-search" class="sr-only">Cari Nota, Pelanggan, atau PC</label>
-                        <input type="text" id="struk-search" placeholder="Cari nota, pelanggan, PC..."
-                            class="w-full pl-8 pr-8 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 font-mono"
+                        <input type="text" id="struk-search" placeholder="Cari..."
+                            class="w-full pl-6 pr-5 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-[11px] sm:text-xs text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 font-mono"
                             oninput="Struk.handleSearch(this.value)"
                             onkeypress="if(event.key === 'Enter') Struk.loadHistory()">
-                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-neutral-500">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </span>
-                        <button id="struk-search-clear" onclick="Struk.clearSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 text-xs font-bold">✕</button>
+                        <button id="struk-search-clear" onclick="Struk.clearSearch()" class="hidden absolute right-1.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 text-[10px] font-bold">✕</button>
                     </div>
                 </div>
 
                 <!-- Transaction List Container -->
-                <div id="struk-history-list" class="space-y-2 flex-1 overflow-y-auto scrollbar-thin pr-0.5 min-h-[300px]">
-                    {% for _ in range(6) %}
-                    <div class="p-3 bg-[#111] border border-[#1c1c1c] rounded-lg animate-pulse space-y-2">
+                <div id="struk-history-list" class="space-y-1.5 flex-1 pr-0.5">
+                    {% for _ in range(5) %}
+                    <div class="p-2 sm:p-2.5 bg-[#111] border border-[#1c1c1c] rounded animate-pulse space-y-1.5">
                         <div class="flex justify-between items-center">
-                            <div class="h-3.5 bg-[#262626] rounded w-24"></div>
-                            <div class="h-3 bg-[#202020] rounded w-16"></div>
+                            <div class="h-3 bg-[#262626] rounded w-20"></div>
+                            <div class="h-3 bg-[#202020] rounded w-14"></div>
                         </div>
                         <div class="flex justify-between items-center pt-1 border-t border-[#1a1a1a]">
-                            <div class="h-2.5 bg-[#1e1e1e] rounded w-20"></div>
-                            <div class="h-2.5 bg-[#1e1e1e] rounded w-14"></div>
+                            <div class="h-2.5 bg-[#1e1e1e] rounded w-16"></div>
+                            <div class="h-2.5 bg-[#1e1e1e] rounded w-12"></div>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
-            <div id="struk-pagination" class="mt-4 pt-3 border-t border-[#1c1c1c]"></div>
+            <div id="struk-pagination" class="mt-2 pt-2 border-t border-[#1c1c1c]"></div>
         </div>
 
-        <!-- Right Column: Detail Struk Preview -->
-        <div class="md:col-span-2 lg:col-span-7 xl:col-span-8 bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:max-xl:p-3.5 xl:p-6 flex flex-col justify-between h-full">
+        <!-- Right Column: Detail Struk Preview (Hidden on mobile < md, visible md+) -->
+        <div class="hidden md:flex md:col-span-7 lg:col-span-7 xl:col-span-8 bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 xl:p-3.5 flex-col justify-between">
             <div class="flex-1 flex flex-col min-h-0">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xs lg:max-xl:text-base xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Detail Struk</h3>
+                <div class="flex items-center justify-between mb-2 pb-2 border-b border-[#1c1c1c]">
+                    <h3 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider">Detail Struk</h3>
                 </div>
                 <div id="struk-preview"
-                    class="flex-1 bg-[#050505] border border-[#1c1c1c] rounded p-4 sm:p-5 lg:max-xl:p-3 xl:p-6 text-xs lg:max-xl:text-xs xl:text-base min-h-[480px] flex items-center justify-center text-neutral-500 overflow-x-auto">
-                    <div class="text-center py-10 text-neutral-500 space-y-2">
-                        <div class="text-3xl opacity-30">🧾</div>
-                        <p class="text-xs lg:max-xl:text-xs xl:text-base font-medium">Pilih transaksi di samping untuk melihat preview struk</p>
+                    class="flex-1 bg-[#050505] border border-[#1c1c1c] rounded p-3 text-xs max-h-[calc(100vh-210px)] flex items-center justify-center text-neutral-500 overflow-y-auto scrollbar-thin">
+                    <div class="text-center py-6 text-neutral-500 space-y-1.5">
+                        <div class="text-2xl opacity-30">🧾</div>
+                        <p class="text-xs font-medium">Pilih transaksi di samping untuk melihat preview struk</p>
                     </div>
                 </div>
             </div>
-            <div class="flex justify-end mt-4 pt-3 border-t border-[#1c1c1c]">
+            <div class="flex justify-end mt-2 pt-2 border-t border-[#1c1c1c]">
                 <button onclick="Struk.printPreview()" id="btn-print-struk"
-                    class="px-4 lg:max-xl:px-5 xl:px-6 py-2.5 lg:max-xl:py-2.5 xl:py-3 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors hidden flex items-center gap-2 shadow-lg shadow-white/5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="px-3.5 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors hidden flex items-center gap-1.5 shadow-md shadow-white/5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                     </svg>
                     <span>Cetak Struk</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Mobile Struk Preview (< md) -->
+    <div id="modal-struk-mobile" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-3">
+        <div class="bg-[#0c0c0c] border border-[#222] rounded-xl w-full max-w-sm max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between p-3 border-b border-[#1c1c1c]">
+                <h3 class="text-xs font-bold text-neutral-200 uppercase tracking-wider">Detail Struk Transaksi</h3>
+                <button onclick="Struk.closeMobileModal()" class="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors" title="Tutup">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="struk-preview-mobile" class="p-3 overflow-y-auto scrollbar-thin flex-1 flex justify-center bg-[#050505]">
+                <!-- Thermal Receipt Content dimuat di sini -->
+            </div>
+            <div class="p-3 border-t border-[#1c1c1c] flex gap-2">
+                <button onclick="Struk.printPreview()" id="btn-print-struk-mobile" class="flex-1 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors flex items-center justify-center gap-1.5 shadow-md">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    <span>Cetak Struk</span>
+                </button>
+                <button onclick="Struk.closeMobileModal()" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold rounded transition-colors">
+                    Tutup
                 </button>
             </div>
         </div>

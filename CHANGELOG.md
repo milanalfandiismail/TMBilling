@@ -9,6 +9,35 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 ## [1.6.4] - 2026-10-11
 
 ### Ditambahkan
+- **Fit-to-Screen, Adaptive Pagination & Navigasi Grup Tab Member (`#tab-member`)**:
+  - Menyatukan 2 card terpisah menjadi 1 boks container ramping terpadu (`bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 xl:p-3.5`) dengan Toolbar Terpadu di bagian atas.
+  - Menghadirkan navigasi **Horizontal Tab Pills Per Grup** (`#member-group-tabs`) dengan pill "Semua" dan tab tiap grup beraksen warna grup (`grup.warna`) menggantikan dropdown filter statis.
+  - Menerapkan **Adaptive Pagination dinamis** berbasis breakpoint: Mobile (`< md`) = 5 baris, Tablet & Laptop Sedang (`md`/`lg`) = 7 baris, XL = 8 baris, dan Layar Lebar 2XL = 10 baris (dengan debounced window resize auto-listener).
+  - Menyelaraskan proporsi dan padding 2XL dengan XL (`xl:p-3.5`, `py-2`, avatar & tombol `w-8 h-8`) serta menghilangkan sorting berdasarkan kolom agar tampilan stabil, bersih, dan **`overflowPx === 0`** (bebas scrollbar vertikal).
+  - Streamline footer pagination dengan status 'Menampilkan X - Y dari Total Z Member' dan tombol Prev/Next, mengeliminasi dropdown manual yang membebani UI.
+  - Menyesuaikan SSR fallback di `member.html` agar selaras dengan 8 baris dan layout terpadu.
+  - Mengeliminasi duplikasi scrollbar pada modal detail riwayat member, membuang ruang hitam kosong (space void), menambahkan ringkasan total pembelian & kartu kebijakan refund, serta melebarkan jarak (gap) scrollbar dari tombol refund.
+- **Fit-to-Screen, Adaptive Grid & Optimasi Ruang Unit PC (`#tab-pc`)**:
+  - Mengeliminasi layout multi-grup bertumpuk yang menyebabkan scrolling vertikal, digantikan dengan **Horizontal Tab Pills Per Grup** (`#pc-group-tabs`) dengan aksen warna dan badge jumlah unit PC (`${count} UNIT`).
+  - Menerapkan **Adaptive Target Pagination** optimal untuk mengisi ruang vertikal secara seimbang tanpa scrollbar (`overflowPx === 0`): Mobile (`< md`) = 8 PC (2x4), Tablet & Laptop Sedang (`md`/`lg`) = 12 PC (4x3), Desktop Standar (`xl`) = 18 PC (6x3), dan Layar Lebar 2XL = 24 PC (6x4) dengan resize listener otomatis.
+  - **Hardening Tata Letak Kartu untuk Nama PC Panjang (hingga 11–15 karakter)**:
+    - Memisahkan kode PC dari status badge tekstual: Header kini mendedikasikan ruang penuh untuk Kode PC (`truncate min-w-0 flex-1`) didampingi ikon monitor SVG dan Status Dot bercahaya (emerald/sky/purple/neutral glowing dot dengan tooltip).
+    - Menghilangkan badge grup di dalam kartu untuk mengeliminasi redundansi visual dan menghemat ruang vertikal.
+    - Menempatkan Status Badge teks penuh di baris footer sebelah kiri (`TERSEDIA`, `TERPAKAI`, `ADMIN`, `MAINTENANCE`) dengan aksen border kontras.
+    - Memproteksi baris IP address (`truncate min-w-0 flex-1 font-mono`) dan tombol aksi sentuh (`shrink-0`) agar tidak saling mendesak atau meluap dari batas kartu.
+  - Menyesuaikan proporsi tinggi kartu (`min-h-[82px] sm:min-h-[88px] 2xl:min-h-[98px]`) dan padding (`p-2.5 sm:p-3 2xl:p-3.5`) untuk mengeliminasi ruang kosong di bagian bawah container.
+  - Menyatukan 2 card terpisah menjadi 1 boks container ramping terpadu (`bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 xl:p-3.5 2xl:p-5`).
+  - Interaksi kartu touch-friendly: Tombol aksi permanen di mobile/tablet/lg (`< xl`) dan hover overlay di desktop (`xl+`).
+  - Menyesuaikan `Skeleton.pcManagementGrid(cards = 8)` dan SSR fallback di `pc.html` agar selaras dengan dimensi dan elemen kartu baru.
+- **Fit-to-Screen, 2XL Adaptive Pagination & Navigasi Grup Tab Paket Billing (`#tab-paket`)**:
+  - Mengeliminasi layout multi-grup bertumpuk yang menyebabkan scrolling vertikal tinggi, digantikan dengan navigasi **Horizontal Tab Pills Per Grup** (`#paket-group-tabs`) dengan aksen warna dan badge jumlah paket.
+  - Menerapkan **Adaptive Pagination dinamis** berbasis breakpoint: Mobile (`< md`) = 5 baris, Tablet/Laptop (`md`/`lg`) = 7 baris, XL = 8 baris, dan Layar Lebar 2XL = 11 baris (dengan debounced window resize auto-listener).
+  - Skala proporsional di layar 2XL: Container card `2xl:p-5`, toolbar search `2xl:w-64 2xl:py-2 2xl:text-sm`, tombol tambah `2xl:px-4 2xl:py-2 2xl:text-sm`, dan tab pills `2xl:px-3.5 2xl:py-2 2xl:text-sm`.
+  - Padding baris tabel membesar proporsional di 2XL (`2xl:py-3`, `2xl:text-sm`) sehingga ruang vertikal terisi padat tanpa spasi kosong menganga dan tetap **`overflowPx === 0`** (zero vertical scrollbar).
+  - Menyesuaikan `Skeleton.paketTable(rows)` agar mendukung jumlah baris dinamis dan kelas 2XL.
+- **Fit-to-Screen & Optimasi Responsif Tab Riwayat Struk (`#tab-struk`)**:
+  - Mengubah pagination default riwayat struk menjadi 5 item per halaman untuk menjaga tinggi halaman tetap fit-to-screen di seluruh breakpoint.
+  - Merampingkan preview struk dan card container untuk mengeliminasi vertical scrollbar pada viewport kasir.
 - **Overhaul Responsif & Redesain UI/UX Tab Kantin / POS F&B (Mobile-First to Desktop)**:
   - **Sistem Grid Adaptif Multi-Breakpoint**: Merestrukturisasi grid katalog produk (`#menu-catalog-grid`) di seluruh 6 tingkatan breakpoint Tailwind CSS:
     - Default (`< 640px`: spektrum 320px–639px): Grid 2 kolom seimbang (kartu 130px–185px) dengan **`overflowPx === 0`** tanpa horizontal scrollbar.
@@ -51,15 +80,17 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
   - Dropdown hanya menyajikan tanggal-tanggal unik yang benar-benar memiliki riwayat mutasi stok (`MenuRepository.get_distinct_stock_log_dates`), mencegah kasir memilih tanggal kosong yang tidak memiliki data.
   - Opsi dropdown berformat tanggal Indonesia `DD/MM/YYYY` dengan nilai ISO `YYYY-MM-DD`, terintegrasi otomatis dengan aksi reset filter dan live polling.
   - Menambahkan endpoint REST API dedicated `GET /api/v1/kasir/menu/stock-logs/dates` dan properti `dates` pada payload respons `GET /api/v1/kasir/menu/stock-logs`.
-- **Optimasi Responsif "Fit-to-Table" Mobile Portrait Tanpa Prefix (`< sm`: 360px – 430px) pada 7 Tab Kasir**:
-  - **Zero Horizontal Overflow (`overflowPx === 0`) pada Layar Ponsel**: Mengeliminasi scrollbar horizontal dan memastikan seluruh konten dan tombol aksi terlihat 100% pas (*Fit-to-Table*) pada layar smartphone (iPhone 14 @ 390px, Android @ 360px) pada 7 tab kasir:
-    1. `tab-menu_stock_log`: Padding sel ringkas `px-1.5 sm:px-3`, badge mutasi kompak, tombol Detail berbasis ikon di mobile (`<span class="hidden sm:inline">Detail</span>`), format tanggal ringkas `DD/MM HH:mm`.
-    2. `tab-shift_history`: Header responsif `Petugas`, `Omset`, `Laci`, stacking tanggal dan rentang jam vertikal, status badge ringkas `SEL`, kontrol aksi ramping.
-    3. `tab-user_logs`: Header & padding responsif `p-2 sm:p-3`, penanggalan log ringkas `MM-DD HH:mm`, tombol Detail berbasis ikon pada mobile.
-    4. `tab-maintenance`: Tombol aksi icon-only pada mobile (`🔍`, `▶`, `✕`, `✓`, `🗑`), batasan lebar judul masalah dinamis `max-w-[55px] sm:max-w-[150px]`, sel padding `px-0.5 sm:px-2`.
-    5. `tab-laporan_maintenance`: Padding kontainer & tabel ramping `p-1.5 sm:p-2.5`, format tanggal ringkas, tombol Detail icon-only pada mobile.
-    6. `tab-monitor`: Badge suhu CPU & GPU ultra-kompak `min-w-[28px] sm:min-w-[54px]`, indikator kecepatan jaringan ringkas `1G`, kolom aksi hemat ruang.
-    7. `tab-hardware_checker`: Badge status hardware ringkas (`🛡️`, `🚨`, `⚙️` pada `< sm`), adapter LAN ringkas `1G`, tombol aksi Detail & Baseline berbasis ikon di layar mobile.
+- **Optimasi Responsif "Fit-to-Table" Mobile Portrait Tanpa Prefix (`< sm`: 360px – 430px) pada 8 Tab Kasir Termasuk Tab Member**:
+  - **Zero Horizontal Overflow (`overflowPx === 0`) pada Layar Ponsel**: Mengeliminasi scrollbar horizontal dan memastikan seluruh konten dan tombol aksi terlihat 100% pas (*Fit-to-Table*) pada layar smartphone (iPhone 14 @ 390px, Android @ 360px) di 8 tab kasir:
+    1. `tab-member`: Arsitektur tabel horizontal ramping (`px-2 sm:px-3 py-2`), kolom esensial `Member`, `Waktu`, dan `Aksi` di `< sm`, tombol cepat `+` (Isi Saldo) & menu aksi `⋮` (Action Sheet modal terpadu: Isi Saldo, Detail/Riwayat, Edit, Hapus), server-side pagination & sorting responsif dengan selector baris (5, 10, 25) mengeliminasi card mode vertikal bertumpuk.
+    2. `tab-menu_stock_log`: Padding sel ringkas `px-1.5 sm:px-3`, badge mutasi kompak, tombol Detail berbasis ikon di mobile (`<span class="hidden sm:inline">Detail</span>`), format tanggal ringkas `DD/MM HH:mm`.
+    3. `tab-shift_history`: Header responsif `Petugas`, `Omset`, `Laci`, stacking tanggal dan rentang jam vertikal, status badge ringkas `SEL`, kontrol aksi ramping.
+    4. `tab-user_logs`: Header & padding responsif `p-2 sm:p-3`, penanggalan log ringkas `MM-DD HH:mm`, tombol Detail berbasis ikon pada mobile.
+    5. `tab-maintenance`: Tombol aksi icon-only pada mobile (`🔍`, `▶`, `✕`, `✓`, `🗑`), batasan lebar judul masalah dinamis `max-w-[55px] sm:max-w-[150px]`, sel padding `px-0.5 sm:px-2`.
+    6. `tab-laporan_maintenance`: Padding kontainer & tabel ramping `p-1.5 sm:p-2.5`, format tanggal ringkas, tombol Detail icon-only pada mobile.
+    7. `tab-monitor`: Badge suhu CPU & GPU ultra-kompak `min-w-[28px] sm:min-w-[54px]`, indikator kecepatan jaringan ringkas `1G`, kolom aksi hemat ruang.
+    8. `tab-hardware_checker`: Badge status hardware ringkas (`🛡️`, `🚨`, `⚙️` pada `< sm`), adapter LAN ringkas `1G`, tombol aksi Detail & Baseline berbasis ikon di layar mobile.
+  - **Paginasi & Sorting Server-Side Tab Member**: Menambahkan parameter `page`, `per_page`, `sort_by`, dan `sort_order` pada REST API `GET /api/v1/member/` (`MemberRepository.get_members_paginated`), menyajikan respon terpaginasi lengkap dengan metadata total records dan total halaman, mengurangi beban rendering DOM ribuan baris menjadi instant.
   - **Preservasi 100% Fit-to-Table pada Breakpoint `sm` (640px), `md` (768px), dan `lg` (1024px)**: Teruji bebas regresi (`overflowPx === 0`) di seluruh breakpoint standar Tailwind CSS.
 - **Optimasi Responsif "Fit-to-Table" Multi-Breakpoint (`sm` 640px & `md` 768px) pada 7 Tab Kasir**:
   - **Eliminasi Total Horizontal Overflow & Kolom Terpotong**: Mengeliminasi kolom terpotong atau tersembunyi ke sisi kanan (`overflowPx === 0`) pada 7 tab utama antarmuka kasir tanpa scrollbar horizontal:
