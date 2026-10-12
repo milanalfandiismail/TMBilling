@@ -28,11 +28,15 @@ const Struk = {
         const previewContent = document.getElementById('struk-preview');
         if (previewContent) {
             previewContent.innerHTML = `
-                <div class="text-center py-10 text-neutral-500 space-y-2">
-                    <div class="text-3xl opacity-30">🧾</div>
-                    <p class="text-xs lg:max-xl:text-xs xl:text-base font-medium">Pilih transaksi di samping untuk melihat preview struk</p>
+                <div class="text-center py-6 text-neutral-500 space-y-1.5">
+                    <div class="text-2xl opacity-30">🧾</div>
+                    <p class="text-xs font-medium">Pilih transaksi di samping untuk melihat preview struk</p>
                 </div>`;
         }
+        const mobileModal = document.getElementById('modal-struk-mobile');
+        if (mobileModal) mobileModal.classList.add('hidden');
+        const mobilePreview = document.getElementById('struk-preview-mobile');
+        if (mobilePreview) mobilePreview.innerHTML = '';
         const searchInput = document.getElementById('struk-search');
         if (searchInput) searchInput.value = '';
         const searchClearBtn = document.getElementById('struk-search-clear');
@@ -59,9 +63,9 @@ const Struk = {
             const previewContent = document.getElementById('struk-preview');
             if (previewContent) {
                 previewContent.innerHTML = `
-                    <div class="text-center py-10 text-neutral-500 space-y-2">
-                        <div class="text-3xl opacity-30">🧾</div>
-                        <p class="text-xs lg:max-xl:text-xs xl:text-base font-medium">Pilih transaksi di samping untuk melihat preview struk</p>
+                    <div class="text-center py-6 text-neutral-500 space-y-1.5">
+                        <div class="text-2xl opacity-30">🧾</div>
+                        <p class="text-xs font-medium">Pilih transaksi di samping untuk melihat preview struk</p>
                     </div>`;
             }
         } else {
@@ -187,11 +191,11 @@ const Struk = {
             this.currentPage = page;
 
             if (!isSilent && (!this.currentData && !document.querySelector('.struk-history-card')) && typeof Skeleton !== 'undefined') {
-                container.innerHTML = Skeleton.strukList(6);
+                container.innerHTML = Skeleton.strukList(5);
             }
 
             const apiFn = this.currentSubTab === 'kantin' ? window.API.report.kantinByTanggal : window.API.report.byTanggal;
-            const res = await apiFn(this.currentDate, '', page, 8, '', this.searchQuery || '');
+            const res = await apiFn(this.currentDate, '', page, 5, '', this.searchQuery || '');
             let listData = [];
             if (this.currentSubTab === 'billing') {
                 listData = res.history_struk || [];
@@ -207,8 +211,8 @@ const Struk = {
 
             if (!listData || listData.length === 0) {
                 container.innerHTML = `
-                    <div class="py-10 px-4 text-center bg-[#050505] border border-dashed border-[#1c1c1c] rounded">
-                        <p class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-500 font-medium">Tidak ada transaksi</p>
+                    <div class="py-8 px-4 text-center bg-[#050505] border border-dashed border-[#1c1c1c] rounded">
+                        <p class="text-xs text-neutral-500 font-medium">Tidak ada transaksi</p>
                     </div>`;
                 const pagContainer = document.getElementById('struk-pagination');
                 if (pagContainer) pagContainer.innerHTML = '';
@@ -227,15 +231,15 @@ const Struk = {
                     : 'bg-[#050505] border-[#1c1c1c] hover:border-neutral-500 hover:bg-[#0f0f0f]';
 
                 return `
-                    <div onclick="Struk.cetak('${clickId}')" data-history-id="${clickId}" class="struk-history-card border rounded p-2.5 sm:p-3 lg:max-xl:p-3 xl:p-3.5 cursor-pointer transition-all mb-2 ${activeBorder}">
+                    <div onclick="Struk.cetak('${clickId}')" data-history-id="${clickId}" class="struk-history-card border rounded p-2 sm:p-2.5 cursor-pointer transition-all mb-1.5 ${activeBorder}">
                         <div class="flex items-center justify-between gap-2">
                             <div class="min-w-0 flex-1">
-                                <div class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 truncate">${nama}</div>
-                                <div class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 font-mono mt-0.5">${waktu}</div>
+                                <div class="text-xs font-bold text-neutral-200 truncate">${nama}</div>
+                                <div class="text-[9px] sm:text-[10px] text-neutral-500 font-mono mt-0.5">${waktu}</div>
                             </div>
                             <div class="text-right shrink-0 font-mono">
-                                <div class="text-xs lg:max-xl:text-xs xl:text-sm font-black text-neutral-100">${window.Utils ? window.Utils.formatRupiah(totalBayar) : totalBayar}</div>
-                                <div class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 mt-0.5">${noNota}</div>
+                                <div class="text-xs font-bold text-neutral-100">${window.Utils ? window.Utils.formatRupiah(totalBayar) : totalBayar}</div>
+                                <div class="text-[9px] sm:text-[10px] text-neutral-500 mt-0.5">${noNota}</div>
                             </div>
                         </div>
                     </div>`;
@@ -247,10 +251,10 @@ const Struk = {
             if (pagContainer) {
                 if (res.pages > 1) {
                     pagContainer.innerHTML = `
-                        <div class="flex items-center justify-between py-2 px-3 bg-[#050505] border border-[#1c1c1c] rounded">
-                            <button onclick="Struk.changePage(${res.page - 1})" class="px-2.5 lg:max-xl:px-3 xl:px-3.5 py-1 lg:max-xl:py-1 xl:py-1.5 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors ${!res.has_prev ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_prev ? 'disabled' : ''}>&larr;</button>
-                            <span class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-400 font-mono">${res.page} / ${res.pages}</span>
-                            <button onclick="Struk.changePage(${res.page + 1})" class="px-2.5 lg:max-xl:px-3 xl:px-3.5 py-1 lg:max-xl:py-1 xl:py-1.5 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors ${!res.has_next ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_next ? 'disabled' : ''}>&rarr;</button>
+                        <div class="flex items-center justify-between py-1.5 px-2.5 bg-[#050505] border border-[#1c1c1c] rounded">
+                            <button onclick="Struk.changePage(${res.page - 1})" class="px-2.5 py-1 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs font-bold rounded transition-colors ${!res.has_prev ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_prev ? 'disabled' : ''}>&larr;</button>
+                            <span class="text-xs font-bold text-neutral-400 font-mono">${res.page} / ${res.pages}</span>
+                            <button onclick="Struk.changePage(${res.page + 1})" class="px-2.5 py-1 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs font-bold rounded transition-colors ${!res.has_next ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_next ? 'disabled' : ''}>&rarr;</button>
                         </div>`;
                 } else {
                     pagContainer.innerHTML = '';
@@ -265,19 +269,24 @@ const Struk = {
         }
     },
 
-    refreshLive() {
-        if (App.currentTab !== 'struk') return;
-        return this.loadHistory(this.currentDate, this.currentPage, true);
-    },
-
     async cetak(sesiId) {
         if (!sesiId) { Toast.error("ID sesi tidak valid"); return; }
         this.selectedId = sesiId;
         this.updateActiveHistoryCard(sesiId);
 
-        try {
-            document.getElementById('struk-preview').innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
+        const isMobile = window.innerWidth < 768;
+        const spinner = '<div class="flex justify-center py-6"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
+        const previewEl = document.getElementById('struk-preview');
+        const mobilePreviewEl = document.getElementById('struk-preview-mobile');
+        if (previewEl) previewEl.innerHTML = spinner;
+        if (mobilePreviewEl) mobilePreviewEl.innerHTML = spinner;
+
+        if (isMobile) {
+            this.openMobileModal();
+        }
+
+        try {
             let data;
             if (this.currentSubTab === 'kantin') {
                 data = await API.report.strukMenu(sesiId);
@@ -287,12 +296,30 @@ const Struk = {
 
             this.currentData = data;
             localStorage.setItem('lastStrukData', JSON.stringify(data));
-            this.renderPreview(data);
-            document.getElementById('btn-print-struk').classList.remove('hidden');
+
+            this.renderPreview(data, 'struk-preview');
+            const printBtn = document.getElementById('btn-print-struk');
+            if (printBtn) printBtn.classList.remove('hidden');
+
+            if (isMobile) {
+                this.renderPreview(data, 'struk-preview-mobile');
+            }
         } catch (err) {
             Toast.error("Gagal mengambil data struk");
-            document.getElementById('struk-preview').innerHTML = '<p class="text-xs text-red-400 text-center py-10">Gagal memuat data</p>';
+            const errHtml = '<p class="text-xs text-red-400 text-center py-6">Gagal memuat data</p>';
+            if (previewEl) previewEl.innerHTML = errHtml;
+            if (mobilePreviewEl) mobilePreviewEl.innerHTML = errHtml;
         }
+    },
+
+    openMobileModal() {
+        const modal = document.getElementById('modal-struk-mobile');
+        if (modal) modal.classList.remove('hidden');
+    },
+
+    closeMobileModal() {
+        const modal = document.getElementById('modal-struk-mobile');
+        if (modal) modal.classList.add('hidden');
     },
 
     async deleteReceipt(id, nota) {

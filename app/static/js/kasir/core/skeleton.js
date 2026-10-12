@@ -70,37 +70,37 @@ const Skeleton = {
      * Membangun tag <table> dan <thead> 6 kolom lengkap yang selaras dengan tampilan data Member.
      * @param {number} rows Jumlah baris
      */
-    memberTable(rows = 6) {
+    memberTable(rows = 5) {
+        const count = typeof rows === 'number' && rows > 0 ? rows : 5;
         let rowsHtml = '';
-        for (let i = 0; i < rows; i++) {
+        for (let i = 0; i < count; i++) {
             rowsHtml += `
-                <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
-                    <td class="px-4 py-3 text-left">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded bg-[#1c1c1c] flex-shrink-0"></div>
-                            <div class="space-y-1 flex-1">
-                                <div class="h-3.5 bg-[#262626] rounded w-24"></div>
-                                <div class="h-2.5 bg-[#1a1a1a] rounded w-32"></div>
+                <tr class="animate-pulse">
+                    <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 sm:w-8 sm:h-8 2xl:w-9 2xl:h-9 rounded bg-[#1c1c1c] shrink-0"></div>
+                            <div class="space-y-1">
+                                <div class="h-3 2xl:h-4 bg-[#262626] rounded w-20 2xl:w-28"></div>
+                                <div class="h-2 2xl:h-2.5 bg-[#1a1a1a] rounded w-14 2xl:w-20"></div>
                             </div>
                         </div>
                     </td>
-                    <td class="px-4 py-3 text-left">
-                        <div class="h-5 bg-[#202020] rounded w-16"></div>
+                    <td class="hidden sm:table-cell px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center">
+                        <div class="h-4 2xl:h-5 bg-[#202020] rounded w-14 2xl:w-16 mx-auto"></div>
                     </td>
-                    <td class="px-4 py-3 text-left">
-                        <div class="h-3.5 bg-[#262626] rounded w-20"></div>
+                    <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center">
+                        <div class="h-3 2xl:h-4 bg-[#262626] rounded w-14 2xl:w-18 mx-auto"></div>
                     </td>
-                    <td class="px-4 py-3 text-left">
-                        <div class="h-3 bg-[#1e1e1e] rounded w-28"></div>
+                    <td class="hidden md:table-cell px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center">
+                        <div class="h-3 2xl:h-4 bg-[#1e1e1e] rounded w-20 2xl:w-24 mx-auto"></div>
                     </td>
-                    <td class="px-4 py-3 text-left">
-                        <div class="h-5 bg-[#202020] rounded-full w-14"></div>
+                    <td class="hidden sm:table-cell px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center">
+                        <div class="h-4 2xl:h-5 bg-[#202020] rounded-full w-12 2xl:w-14 mx-auto"></div>
                     </td>
-                    <td class="px-4 py-3 text-right">
-                        <div class="flex items-center justify-end gap-1.5">
-                            <div class="h-7 w-7 bg-[#202020] rounded"></div>
-                            <div class="h-7 w-7 bg-[#202020] rounded"></div>
-                            <div class="h-7 w-7 bg-[#202020] rounded"></div>
+                    <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-right">
+                        <div class="flex items-center justify-end gap-1">
+                            <div class="h-6 2xl:h-7 w-6 2xl:w-7 bg-[#202020] rounded"></div>
+                            <div class="h-6 2xl:h-7 w-6 2xl:w-7 bg-[#202020] rounded"></div>
                         </div>
                     </td>
                 </tr>
@@ -108,21 +108,23 @@ const Skeleton = {
         }
 
         return `
-            <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
-                <thead class="hidden lg:table-header-group">
-                    <tr class="border-b border-[#262626] text-neutral-400">
-                        <th class="px-4 py-3 text-left font-medium w-1/4">Member</th>
-                        <th class="px-4 py-3 text-left font-medium">Grup</th>
-                        <th class="px-4 py-3 text-left font-medium">Sisa Waktu</th>
-                        <th class="px-4 py-3 text-left font-medium">Berlaku Sampai</th>
-                        <th class="px-4 py-3 text-left font-medium">Status</th>
-                        <th class="px-4 py-3 text-right font-medium w-36">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="block lg:table-row-group divide-y divide-[#1c1c1c]">
-                    ${rowsHtml}
-                </tbody>
-            </table>
+            <div class="overflow-x-auto w-full border border-[#1c1c1c] rounded">
+                <table class="w-full text-xs 2xl:text-sm">
+                    <thead>
+                        <tr class="border-b border-[#1c1c1c] bg-[#0c0c0c] text-neutral-400 text-[10px] sm:text-xs 2xl:text-sm uppercase tracking-wider">
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left font-medium">Member</th>
+                            <th class="hidden sm:table-cell px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center font-medium">Grup</th>
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center font-medium">Waktu</th>
+                            <th class="hidden md:table-cell px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center font-medium">Berlaku Sampai</th>
+                            <th class="hidden sm:table-cell px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center font-medium">Status</th>
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-right font-medium">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#1c1c1c]">
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
         `;
     },
 
@@ -163,101 +165,89 @@ const Skeleton = {
     /**
      * Generator Skeleton Paket & Tarif (Grouped Table Layout)
      * @param {number} groups Jumlah grup paket (default 2: misal REGULER, VIP)
-     * @param {number} rowsPerGroup Jumlah baris paket per grup
+    /**
+     * Generator Skeleton Tabel Paket Billing (Single Group, Adaptive Rows)
+     * @param {number} rows Jumlah baris skeleton (default: 5)
      */
-    paketTable(groups = 2, rowsPerGroup = 3) {
-        let html = '';
-        for (let g = 0; g < groups; g++) {
-            let rowsHtml = '';
-            for (let r = 0; r < rowsPerGroup; r++) {
-                rowsHtml += `
-                    <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
-                        <td class="px-4 py-3 text-left">
-                            <div class="h-3.5 bg-[#262626] rounded w-36"></div>
-                        </td>
-                        <td class="px-4 py-3 text-left">
-                            <div class="h-3 bg-[#202020] rounded w-20"></div>
-                        </td>
-                        <td class="px-4 py-3 text-left">
-                            <div class="h-3.5 bg-[#262626] rounded w-24"></div>
-                        </td>
-                        <td class="px-4 py-3 text-left">
-                            <div class="h-3 bg-[#1e1e1e] rounded w-16"></div>
-                        </td>
-                        <td class="px-4 py-3 text-right">
-                            <div class="flex items-center justify-end gap-2">
-                                <div class="h-7 w-7 bg-[#202020] rounded"></div>
-                                <div class="h-7 w-7 bg-[#202020] rounded"></div>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }
-
-            html += `
-                <div class="space-y-3 ${g > 0 ? 'mt-8' : ''}">
-                    <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[#1c1c1c] animate-pulse">
-                        <div class="h-4 bg-[#262626] rounded w-32"></div>
-                        <div class="h-4 bg-[#1e1e1e] rounded w-16"></div>
-                    </div>
-                    <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
-                        <thead class="hidden lg:table-header-group">
-                            <tr class="border-b border-[#262626] text-neutral-400">
-                                <th class="px-4 py-3 text-left font-medium w-2/5">Nama</th>
-                                <th class="px-4 py-3 text-left font-medium w-1/5">Durasi</th>
-                                <th class="px-4 py-3 text-left font-medium w-1/5">Harga</th>
-                                <th class="px-4 py-3 text-left font-medium w-1/6">Masa Aktif</th>
-                                <th class="px-4 py-3 text-right font-medium w-24">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="block lg:table-row-group divide-y divide-[#1c1c1c]">
-                            ${rowsHtml}
-                        </tbody>
-                    </table>
-                </div>
+    paketTable(rows = 5) {
+        const count = typeof rows === 'number' && rows > 0 ? rows : 5;
+        let rowsHtml = '';
+        for (let r = 0; r < count; r++) {
+            rowsHtml += `
+                <tr class="animate-pulse">
+                    <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left">
+                        <div class="h-3 2xl:h-4 bg-[#1e1e1e] rounded w-28 sm:w-36 2xl:w-48"></div>
+                    </td>
+                    <td class="px-2 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center">
+                        <div class="h-3 2xl:h-4 bg-[#181818] rounded w-14 2xl:w-16 mx-auto"></div>
+                    </td>
+                    <td class="px-2 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center">
+                        <div class="h-3 2xl:h-4 bg-[#1e1e1e] rounded w-16 2xl:w-20 mx-auto"></div>
+                    </td>
+                    <td class="hidden sm:table-cell px-2 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center">
+                        <div class="h-3 2xl:h-4 bg-[#181818] rounded w-12 2xl:w-16 mx-auto"></div>
+                    </td>
+                    <td class="px-2 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-right remote-hide-action">
+                        <div class="h-5 2xl:h-6 w-12 2xl:w-14 bg-[#181818] rounded ml-auto"></div>
+                    </td>
+                </tr>
             `;
         }
-        return html;
+        return `
+            <div class="overflow-x-auto w-full border border-[#1c1c1c] rounded">
+                <table class="w-full text-xs 2xl:text-sm">
+                    <thead>
+                        <tr class="text-[10px] sm:text-xs 2xl:text-sm text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c] bg-[#0c0c0c]">
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left font-bold w-2/5 sm:w-1/3">Paket</th>
+                            <th class="px-2 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center font-bold w-1/4 sm:w-1/5">Durasi</th>
+                            <th class="px-2 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center font-bold w-1/4 sm:w-1/5">Harga</th>
+                            <th class="hidden sm:table-cell px-2 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center font-bold w-1/6">Masa Aktif</th>
+                            <th class="px-2 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-right font-bold w-16 sm:w-20 2xl:w-24 remote-hide-action">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#1a1a1a]">
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
     },
 
     /**
-     * Generator Skeleton Grid Manajemen Unit PC (Grouped PC Cards)
-     * @param {number} groups Jumlah grup PC
-     * @param {number} cardsPerGroup Jumlah kartu PC per grup
+     * Generator Skeleton Grid Manajemen Unit PC (Single Group, Adaptive Cards)
+     * @param {number} cards Jumlah kartu PC (default: 8)
      */
-    pcManagementGrid(groups = 2, cardsPerGroup = 6) {
-        let html = '';
-        for (let g = 0; g < groups; g++) {
-            let cardsHtml = '';
-            for (let c = 0; c < cardsPerGroup; c++) {
-                cardsHtml += `
-                    <div class="bg-[#0c0c0c] border border-[#262626] rounded p-3 relative flex flex-col justify-between min-h-[92px] animate-pulse">
-                        <div class="flex items-center justify-between gap-2">
-                            <div class="h-4 bg-[#262626] rounded w-16"></div>
-                            <div class="w-2.5 h-2.5 rounded-full bg-[#262626]"></div>
+    pcManagementGrid(cards = 8) {
+        const count = typeof cards === 'number' && cards > 0 ? cards : 8;
+        let cardsHtml = '';
+        for (let c = 0; c < count; c++) {
+            cardsHtml += `
+                <div class="bg-[#0c0c0c] border border-[#262626] rounded p-2.5 sm:p-3 2xl:p-3.5 relative flex flex-col justify-between min-h-[82px] sm:min-h-[88px] 2xl:min-h-[98px] animate-pulse">
+                    <div class="flex items-center justify-between gap-1.5">
+                        <div class="flex items-center gap-1.5 flex-1">
+                            <div class="w-3.5 h-3.5 bg-[#262626] rounded shrink-0"></div>
+                            <div class="h-3.5 2xl:h-4 bg-[#262626] rounded w-16 sm:w-20"></div>
                         </div>
-                        <div class="h-3 bg-[#1e1e1e] rounded w-24 my-1"></div>
-                        <div class="flex items-center justify-between pt-1 border-t border-[#181818]">
-                            <div class="h-4 bg-[#202020] rounded w-16"></div>
-                            <div class="h-4 w-4 bg-[#202020] rounded"></div>
+                        <div class="w-2 h-2 2xl:w-2.5 2xl:h-2.5 rounded-full bg-[#262626] shrink-0"></div>
+                    </div>
+                    <div class="flex items-center justify-between gap-1.5 my-1">
+                        <div class="h-2.5 2xl:h-3 bg-[#1e1e1e] rounded w-20"></div>
+                        <div class="flex xl:hidden items-center gap-1">
+                            <div class="w-4 h-4 rounded bg-[#1a1a1a]"></div>
+                            <div class="w-4 h-4 rounded bg-[#1a1a1a]"></div>
                         </div>
                     </div>
-                `;
-            }
-
-            html += `
-                <div class="space-y-3 ${g > 0 ? 'mt-6' : ''}">
-                    <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[#1c1c1c] animate-pulse">
-                        <div class="h-4 bg-[#262626] rounded w-28"></div>
-                        <div class="h-4 bg-[#1e1e1e] rounded w-14"></div>
-                    </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:max-xl:grid-cols-4 xl:grid-cols-6 gap-3">
-                        ${cardsHtml}
+                    <div class="flex items-center justify-start mt-auto">
+                        <div class="h-3.5 2xl:h-4 bg-[#202020] rounded w-16"></div>
                     </div>
                 </div>
             `;
         }
-        return html;
+        return `
+            <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-2.5 2xl:gap-3">
+                ${cardsHtml}
+            </div>
+        `;
     },
 
     /**
@@ -557,23 +547,23 @@ const Skeleton = {
      * Generator Skeleton Riwayat Struk
      * @param {number} count Jumlah item struk
      */
-    strukList(count = 6) {
+    strukList(count = 5) {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="p-3 bg-[#111] border border-[#1c1c1c] rounded-lg animate-pulse space-y-2">
+                <div class="p-2 sm:p-2.5 bg-[#111] border border-[#1c1c1c] rounded animate-pulse space-y-1.5">
                     <div class="flex justify-between items-center">
-                        <div class="h-3.5 bg-[#262626] rounded w-24"></div>
-                        <div class="h-3 bg-[#202020] rounded w-16"></div>
+                        <div class="h-3 bg-[#262626] rounded w-20"></div>
+                        <div class="h-3 bg-[#202020] rounded w-14"></div>
                     </div>
                     <div class="flex justify-between items-center pt-1 border-t border-[#1a1a1a]">
-                        <div class="h-2.5 bg-[#1e1e1e] rounded w-20"></div>
-                        <div class="h-2.5 bg-[#1e1e1e] rounded w-14"></div>
+                        <div class="h-2.5 bg-[#1e1e1e] rounded w-16"></div>
+                        <div class="h-2.5 bg-[#1e1e1e] rounded w-12"></div>
                     </div>
                 </div>
             `;
         }
-        return `<div class="space-y-2">${html}</div>`;
+        return `<div class="space-y-1.5">${html}</div>`;
     },
 
     /**
