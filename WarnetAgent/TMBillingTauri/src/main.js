@@ -135,18 +135,22 @@ const App = {
                 console.log("Auto-switching to overlay because status is:", status.status);
                 AppState.isOverlayActive = true;
 
+                const isGuestSession = status.is_member === false || (status.nama && status.nama.toLowerCase().startsWith('guest'));
                 const data = {
                     status: "success",
-                    member_name: status.nama || "Guest",
-                    group: status.grup || "Member",
+                    member_name: status.nama || (isGuestSession ? "Guest" : "Member"),
+                    group: isGuestSession ? (status.grup || "GUEST") : (status.grup || "REGULAR"),
                     remaining_seconds: status.sisa_waktu,
-                    is_member: status.is_member,
+                    is_member: status.is_member !== false && !isGuestSession,
                     member: status.member
                 };
 
                 if (status.member) {
                     AppState.memberData = status.member;
                     AppState.sessionType = 'member';
+                } else if (isGuestSession) {
+                    AppState.sessionType = 'guest';
+                    AppState.memberData = null;
                 }
 
                 AppState.setSessionData({
@@ -161,22 +165,35 @@ const App = {
                 await Api.switchToOverlay();
             }
 
-            // Session Type identification
+            // Session Type identification & Overlay Header/Billing Sync
+            const billingTypeEl = document.getElementById('overlay-billing-type');
+            const memberNameEl = document.getElementById('overlay-member-name');
+            const groupEl = document.getElementById('overlay-group');
+            const btnMemberStatus = document.getElementById('btn-member-status');
+
+            const isMember = status.is_member === true || Boolean(status.member && Object.keys(status.member).length > 0);
+
             if (status.status === STATUS.ADMIN) {
                 AppState.sessionType = 'admin';
                 AppState.memberData = null;
-            } else if (status.is_member === true || status.member) {
+                if (billingTypeEl) billingTypeEl.innerText = 'Admin';
+                if (memberNameEl) memberNameEl.innerText = 'Admin';
+                if (groupEl) groupEl.innerText = 'ADMIN';
+                if (btnMemberStatus) btnMemberStatus.classList.add('hidden');
+            } else if (isMember) {
                 AppState.sessionType = 'member';
                 AppState.memberData = status.member || AppState.memberData;
-                const btnMemberStatus = document.getElementById('btn-member-status');
                 if (btnMemberStatus) btnMemberStatus.classList.remove('hidden');
-            } else if (status.is_member === false || (status.nama && status.nama.toLowerCase().startsWith('guest'))) {
+                if (billingTypeEl) billingTypeEl.innerText = 'Member';
+                if (memberNameEl) memberNameEl.innerText = status.nama || 'Member';
+                if (groupEl) groupEl.innerText = (status.grup || 'REGULAR').toUpperCase();
+            } else {
                 AppState.sessionType = 'guest';
                 AppState.memberData = null;
-                const btnMemberStatus = document.getElementById('btn-member-status');
                 if (btnMemberStatus) btnMemberStatus.classList.add('hidden');
-            } else if (!AppState.sessionType && status.status === STATUS.AKTIF) {
-                AppState.sessionType = 'member';
+                if (billingTypeEl) billingTypeEl.innerText = 'Guest';
+                if (memberNameEl) memberNameEl.innerText = status.nama || 'Guest';
+                if (groupEl) groupEl.innerText = (status.grup && status.grup.toLowerCase() !== 'member' ? status.grup : 'GUEST').toUpperCase();
             }
 
             // Sync AFK state from server polling
