@@ -660,7 +660,6 @@ const Menu = {
             this.cart.push({ menu, jumlah: 1 });
         }
 
-        Toast.success(`'${menu.nama}' dimasukkan ke keranjang`);
         this.renderCart();
     },
 
@@ -671,15 +670,9 @@ const Menu = {
 
         if (cartItem.jumlah > 1) {
             cartItem.jumlah--;
-            if (typeof Toast !== 'undefined') {
-                Toast.info(`'${cartItem.menu.nama}' dikurangi (x${cartItem.jumlah})`);
-            }
             this.renderCart();
         } else {
             this.removeFromCart(menuId);
-            if (typeof Toast !== 'undefined') {
-                Toast.info(`'${cartItem.menu.nama}' dihapus dari keranjang`);
-            }
         }
     },
 
