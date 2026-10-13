@@ -3,15 +3,42 @@
 const Struk = {
     currentData: null,
     currentPage: 1,
+    perPage: 5,
+    _hasResizeListener: false,
     currentDate: null,
     currentSubTab: 'billing',
     selectedId: null,
     searchQuery: '',
     searchDebounceTimer: null,
 
+    getAdaptivePerPage() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        if (height >= 1200) return 12;
+        if (width >= 1536 || height >= 950) return 10; // 2xl / 1080p
+        if (width >= 1280 || height >= 850) return 8;  // xl / 900p
+        if (width >= 768)  return 6;                   // md, lg / 720p - 768p
+        return 5;                                      // < md / mobile
+    },
+
+    _initResizeListener() {
+        if (this._hasResizeListener) return;
+        this._hasResizeListener = true;
+        window.addEventListener('resize', Utils.debounce(() => {
+            if (typeof App !== 'undefined' && App.currentTab !== 'struk') return;
+            const newPerPage = this.getAdaptivePerPage();
+            if (newPerPage !== this.perPage) {
+                this.perPage = newPerPage;
+                this.currentPage = 1;
+                this.loadHistory(this.currentDate, 1);
+            }
+        }, 200));
+    },
+
     resetState() {
         this.currentData = null;
         this.currentPage = 1;
+        this.perPage = this.getAdaptivePerPage();
         this.currentDate = null;
         this.selectedId = null;
         this.searchQuery = '';
@@ -50,6 +77,8 @@ const Struk = {
     },
 
     async init() {
+        this.perPage = this.getAdaptivePerPage();
+        this._initResizeListener();
         await this.loadDateOptions();
         await this.loadHistory();
 
@@ -88,6 +117,7 @@ const Struk = {
     switchSubTab(type) {
         this.currentSubTab = type;
         this.selectedId = null;
+        this.perPage = this.getAdaptivePerPage();
         // Update active state
         ['billing', 'kantin'].forEach(t => {
             const el = document.getElementById(`struk-sub-${t}`);
@@ -189,13 +219,14 @@ const Struk = {
 
             this.currentDate = targetDate || '';
             this.currentPage = page;
+            this.perPage = this.perPage || this.getAdaptivePerPage();
 
             if (!isSilent && (!this.currentData && !document.querySelector('.struk-history-card')) && typeof Skeleton !== 'undefined') {
-                container.innerHTML = Skeleton.strukList(5);
+                container.innerHTML = Skeleton.strukList(this.perPage);
             }
 
             const apiFn = this.currentSubTab === 'kantin' ? window.API.report.kantinByTanggal : window.API.report.byTanggal;
-            const res = await apiFn(this.currentDate, '', page, 5, '', this.searchQuery || '');
+            const res = await apiFn(this.currentDate, '', page, this.perPage, '', this.searchQuery || '');
             let listData = [];
             if (this.currentSubTab === 'billing') {
                 listData = res.history_struk || [];
@@ -203,7 +234,7 @@ const Struk = {
                 listData = res.history_menu || [];
             }
 
-            const newFingerprint = JSON.stringify({ tab: this.currentSubTab, date: this.currentDate, page: this.currentPage, items: listData.map(x => x.no_nota || x.id) });
+            const newFingerprint = JSON.stringify({ tab: this.currentSubTab, date: this.currentDate, page: this.currentPage, perPage: this.perPage, items: listData.map(x => x.no_nota || x.id) });
             if (isSilent && this._lastFingerprint === newFingerprint) {
                 return; // Data tidak berubah
             }
