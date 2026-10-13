@@ -38,6 +38,12 @@ export const Overlay = {
         // Minimize button
         document.getElementById('minimize-btn')?.addEventListener('click', () => Api.minimize());
 
+        // Overlay Card Internal Tab Switcher
+        document.getElementById('btn-overlay-tab-session')?.addEventListener('click', () => this.switchOverlayCardTab('session'));
+        document.getElementById('btn-overlay-tab-tools')?.addEventListener('click', () => this.switchOverlayCardTab('tools'));
+        document.getElementById('btn-overlay-tab-qris')?.addEventListener('click', () => this.switchOverlayCardTab('qris'));
+        document.getElementById('btn-quick-open-menu')?.addEventListener('click', () => this.openMenuPaketModal());
+
         // Logout confirmation modal
         document.getElementById('logout-cancel-btn')?.addEventListener('click', () => UI.toggleLogoutModal(false));
         document.getElementById('logout-confirm-btn')?.addEventListener('click', () => this.confirmLogout());
@@ -59,19 +65,11 @@ export const Overlay = {
         // Modal Detail Item (Paket & Menu F&B)
         document.getElementById('btn-close-item-detail')?.addEventListener('click', () => this.closeItemDetailModal());
         document.getElementById('btn-close-item-detail-footer')?.addEventListener('click', () => this.closeItemDetailModal());
-        const itemDetailModal = document.getElementById('modal-item-detail');
-        itemDetailModal?.addEventListener('click', (e) => {
-            if (e.target === itemDetailModal) this.closeItemDetailModal();
-        });
 
         // Modal Status Member
         document.getElementById('btn-member-status')?.addEventListener('click', () => this.openMemberStatusModal());
         document.getElementById('btn-close-member-status')?.addEventListener('click', () => this.closeMemberStatusModal());
         document.getElementById('btn-done-member-status')?.addEventListener('click', () => this.closeMemberStatusModal());
-        const memberStatusModal = document.getElementById('modal-member-status');
-        memberStatusModal?.addEventListener('click', (e) => {
-            if (e.target === memberStatusModal) this.closeMemberStatusModal();
-        });
 
         // Modal QRIS Fullscreen HD
         document.getElementById('overlay-qris-card')?.addEventListener('click', () => this.openQrisFullscreen());
@@ -82,7 +80,7 @@ export const Overlay = {
         document.getElementById('btn-close-qris-fullscreen')?.addEventListener('click', () => this.closeQrisFullscreen());
         document.getElementById('btn-close-qris-esc')?.addEventListener('click', () => this.closeQrisFullscreen());
 
-        // Global Escape Key Listener for Modals
+        // Global Escape Key Listener for Modals (Modal hanya ditutup via tombol X atau Esc)
         if (!this._globalModalEventsBound) {
             window.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
@@ -90,6 +88,9 @@ export const Overlay = {
                     const memberModal = document.getElementById('modal-member-status');
                     const qrisModal = document.getElementById('modal-qris-fullscreen');
                     const menuModal = document.getElementById('modal-menu-paket');
+                    const logoutModal = document.getElementById('logout-confirm-modal');
+                    const afkPinModal = document.getElementById('modal-afk-pin');
+
                     if (detailModal && !detailModal.classList.contains('hidden')) {
                         this.closeItemDetailModal();
                     } else if (memberModal && !memberModal.classList.contains('hidden')) {
@@ -98,6 +99,10 @@ export const Overlay = {
                         this.closeQrisFullscreen();
                     } else if (menuModal && !menuModal.classList.contains('hidden')) {
                         this.closeMenuPaketModal();
+                    } else if (logoutModal && !logoutModal.classList.contains('hidden')) {
+                        UI.toggleLogoutModal(false);
+                    } else if (afkPinModal && !afkPinModal.classList.contains('hidden')) {
+                        UI.toggleAfkPinModal(false);
                     }
                 }
             });
@@ -111,6 +116,48 @@ export const Overlay = {
         document.getElementById('afk-pin-input')?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') this.confirmAfkPinLock();
             if (e.key === 'Escape') UI.toggleAfkPinModal(false);
+        });
+    },
+
+    /**
+     * Switch internal tab on slim overlay card (session, tools, qris)
+     */
+    switchOverlayCardTab(tab) {
+        const sessionPanel = document.getElementById('overlay-panel-session');
+        const toolsPanel = document.getElementById('overlay-panel-tools');
+        const qrisPanel = document.getElementById('overlay-panel-qris');
+
+        const sessionBtn = document.getElementById('btn-overlay-tab-session');
+        const toolsBtn = document.getElementById('btn-overlay-tab-tools');
+        const qrisBtn = document.getElementById('btn-overlay-tab-qris');
+
+        if (!sessionPanel || !toolsPanel || !qrisPanel) return;
+
+        sessionPanel.classList.add('hidden');
+        toolsPanel.classList.add('hidden');
+        qrisPanel.classList.add('hidden');
+
+        if (tab === 'session') {
+            sessionPanel.classList.remove('hidden');
+        } else if (tab === 'tools') {
+            toolsPanel.classList.remove('hidden');
+        } else if (tab === 'qris') {
+            qrisPanel.classList.remove('hidden');
+        }
+
+        const tabs = [
+            { btn: sessionBtn, name: 'session' },
+            { btn: toolsBtn, name: 'tools' },
+            { btn: qrisBtn, name: 'qris' }
+        ];
+
+        tabs.forEach(({ btn, name }) => {
+            if (!btn) return;
+            if (name === tab) {
+                btn.className = 'flex-1 py-1 text-xs font-semibold rounded-lg bg-white/10 text-white shadow-sm transition-all';
+            } else {
+                btn.className = 'flex-1 py-1 text-xs font-medium rounded-lg text-[#86868b] hover:text-white transition-all';
+            }
         });
     },
 
@@ -374,27 +421,31 @@ export const Overlay = {
         const mainCard = document.getElementById('overlay-main-card');
         if (!modal) return;
 
-        // 1. Pastikan data paket & menu siap dan ter-render duluan agar tidak ada delay visual
-        if (!AppState.allPackages?.length || !AppState.allMenus?.length) {
+        // 1. Instan tampilkan modal & sembunyikan card utama (0ms respon)
+        if (mainCard) mainCard.classList.add('hidden');
+        modal.classList.remove('hidden');
+        const fullscreenPromise = Api.setOverlayModalFullscreen(true);
+
+        // 2. Render list instan dari cache memori jika sudah siap
+        if (AppState.allPackages?.length || AppState.allMenus?.length) {
+            this.renderPaketList();
+            this.renderMenuList();
+        } else {
             try {
                 const config = await Api.getWarnetConfig();
                 if (config) {
                     AppState.allPackages = config.paket || [];
                     AppState.allMenus = config.menu || [];
+                    this.renderPaketList();
+                    this.renderMenuList();
                 }
             } catch (err) {
                 console.warn("Gagal memuat paket/menu warnet:", err);
             }
         }
 
-        this.renderPaketList();
-        this.renderMenuList();
         this.switchMenuPaketTab('paket');
-
-        // 2. Sembunyikan floating card overlay sementara agar modal tampil bersih di tengah layar
-        if (mainCard) mainCard.classList.add('hidden');
-        modal.classList.remove('hidden');
-        await Api.setOverlayModalFullscreen(true);
+        await fullscreenPromise;
     },
 
     /**
@@ -485,7 +536,7 @@ export const Overlay = {
         if (name.includes('REGULER') || name.includes('REGULAR') || name.includes('STANDARD')) {
             return 'bg-blue-500/15 text-blue-400 border border-blue-500/25';
         }
-        
+
         // Fallback: Deterministic dynamic color from group name hash
         const palette = [
             'bg-blue-500/15 text-blue-400 border border-blue-500/25',
@@ -622,7 +673,7 @@ export const Overlay = {
 
         if (nameEl) nameEl.innerText = member.nama_lengkap || member.username || 'Member';
         if (usernameEl) usernameEl.innerText = `@${member.username || '-'}`;
-        
+
         const groupName = member.grup || 'Reguler';
         if (groupBadge) {
             groupBadge.innerText = groupName;
@@ -766,8 +817,8 @@ export const Overlay = {
         itemsContainer.innerHTML = `
             <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 lg:gap-3 xl:gap-3.5 2xl:gap-4 pb-2">
                 ${filtered.map(p => {
-                    const groupBadgeClass = this.getGroupBadgeClass(p.grup);
-                    return `
+            const groupBadgeClass = this.getGroupBadgeClass(p.grup);
+            return `
                     <div data-paket-id="${p.id}"
                         class="overlay-paket-card p-3 lg:p-3.5 rounded-2xl bg-[#242426] hover:bg-[#2c2c2e] border border-white/[0.08] hover:border-[#30d158]/40 transition-all flex flex-col justify-between shadow-sm cursor-pointer group active:scale-[0.98] select-none"
                         title="Klik untuk melihat detail lengkap ${escapeHtml(p.nama || 'Paket')}">

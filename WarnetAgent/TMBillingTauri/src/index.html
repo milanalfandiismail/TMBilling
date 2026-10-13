@@ -12,185 +12,217 @@
 
 <body class="bg-transparent" oncontextmenu="return false">
 
-    <!-- 1. LAYAR LOGIN (MODE KIOSK) -->
+    <!-- 1. LAYAR LOGIN (MODE KIOSK - 2 KOLOM TERPADU & STATUS BAR FOOTER) -->
     <div id="login-screen"
-        class="w-full h-screen p-4 lg:p-5 xl:p-6 2xl:p-7 flex flex-col gap-4 lg:grid lg:grid-cols-3 lg:grid-rows-3 lg:gap-5 xl:gap-6 2xl:gap-7 overflow-hidden bg-black select-none text-[#f5f5f7]">
+        class="w-full h-screen p-3 sm:p-4 lg:p-5 xl:p-6 2xl:p-7 flex flex-col justify-between overflow-hidden bg-black select-none text-[#f5f5f7]">
 
-        <!-- Panel Aturan & Daftar Paket (Kiri) -->
-        <div
-            class="kiosk-info order-2 lg:order-none lg:col-start-1 lg:row-start-1 lg:row-span-3 flex flex-col gap-3 lg:gap-4 z-10 h-full">
-            <!-- Header Brand -->
-            <div class="flex flex-col gap-1 shrink-0">
-                <h1 id="kiosk-title"
-                    class="text-xl lg:text-2xl xl:text-2xl 2xl:text-3xl font-bold tracking-tight text-[#f5f5f7]">
-                    TMBilling</h1>
-                <div class="w-8 lg:w-10 xl:w-12 h-0.5 bg-[#30d158] rounded-full"></div>
+        <!-- HEADER TOP BAR: BRANDING & PC BADGE -->
+        <header class="flex items-center justify-between shrink-0 mb-3 sm:mb-4 lg:mb-5">
+            <div class="flex items-center gap-2.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-[#30d158]"></div>
+                <h1 id="kiosk-title" class="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-[#f5f5f7]">TMBilling</h1>
+            </div>
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.05] border border-white/[0.08]">
+                <span class="text-xs text-[#86868b] font-medium">Unit:</span>
+                <span class="text-xs sm:text-sm font-bold text-[#30d158] pc-name-display">PC-01</span>
+                <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#30d158]"></span>
+            </div>
+        </header>
+
+        <!-- MAIN 2-COLUMN GRID (KIRI: INFO & PAKET | KANAN: HERO LOGIN & QRIS) -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 flex-1 min-h-0 items-stretch">
+            
+            <!-- PANEL KIRI (lg:col-span-7): ATURAN WARNET & DAFTAR PAKET -->
+            <section class="lg:col-span-7 flex flex-col h-full min-h-0">
+                <div class="apple-card p-4 sm:p-5 lg:p-6 flex flex-col justify-between flex-1 min-h-0">
+                    <!-- Segmented Control Tab Header -->
+                    <div class="flex bg-white/[0.05] p-1 rounded-xl gap-1 mb-3 shrink-0">
+                        <button id="tab-rules-btn"
+                            class="flex-1 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg bg-white/10 text-white shadow-sm transition-all">Aturan Warnet</button>
+                        <button id="tab-packages-btn"
+                            class="flex-1 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-[#86868b] hover:text-white transition-all">Daftar Paket</button>
+                    </div>
+
+                    <!-- Konten Tab: Aturan -->
+                    <div id="panel-rules" class="flex-1 flex flex-col min-h-0">
+                        <div id="rules-container"
+                            class="flex-1 overflow-y-auto text-xs sm:text-[13px] 2xl:text-sm text-[#86868b] space-y-2 pr-2 scrollbar-thin leading-relaxed overscroll-contain">
+                            <p class="text-[#6e6e73] text-xs sm:text-[13px]">Memuat aturan...</p>
+                        </div>
+
+                        <div id="rules-pagination"
+                            class="mt-2.5 pt-2.5 border-t border-white/[0.08] flex items-center justify-between font-mono text-xs sm:text-sm shrink-0">
+                            <button id="rules-prev-btn"
+                                class="px-3 py-1.5 apple-btn-secondary font-medium disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1.5 shadow-sm"
+                                disabled>&larr; Prev</button>
+                            <span id="rules-page-indicator"
+                                class="px-3 py-1 bg-white/[0.05] border border-white/[0.08] rounded-lg text-[#30d158] font-bold text-xs">1 / 1</span>
+                            <button id="rules-next-btn"
+                                class="px-3 py-1.5 apple-btn-secondary font-medium disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1.5 shadow-sm"
+                                disabled>Next &rarr;</button>
+                        </div>
+                    </div>
+
+                    <!-- Konten Tab: Paket -->
+                    <div id="panel-packages" class="flex-1 flex flex-col min-h-0 hidden">
+                        <!-- Grup Tabs -->
+                        <div id="paket-tabs"
+                            class="flex gap-1.5 overflow-x-auto pb-2 mb-2 border-b border-white/[0.06] scrollbar-thin shrink-0">
+                            <!-- Tab dinamis diisi oleh JS -->
+                        </div>
+
+                        <!-- Daftar Paket -->
+                        <div id="paket-list-container"
+                            class="flex-1 overflow-y-auto space-y-2.5 pr-2 scrollbar-thin overscroll-contain">
+                            <!-- Kartu paket dinamis diisi oleh JS -->
+                        </div>
+
+                        <!-- Kontrol Paginasi -->
+                        <div id="paket-pagination"
+                            class="mt-2.5 pt-2.5 border-t border-white/[0.08] flex items-center justify-between font-mono text-xs sm:text-sm shrink-0">
+                            <button id="paket-prev-btn"
+                                class="px-3 py-1.5 apple-btn-secondary font-medium disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1.5 shadow-sm"
+                                disabled>&larr; Prev</button>
+                            <span id="paket-page-indicator"
+                                class="px-3 py-1 bg-white/[0.05] border border-white/[0.08] rounded-lg text-[#30d158] font-bold text-xs">1</span>
+                            <button id="paket-next-btn"
+                                class="px-3 py-1.5 apple-btn-secondary font-medium disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1.5 shadow-sm"
+                                disabled>Next &rarr;</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PANEL KANAN (lg:col-span-5): HERO LOGIN & QRIS MANDIRI -->
+            <section class="lg:col-span-5 flex flex-col h-full min-h-0">
+                <div class="apple-card p-4 sm:p-5 lg:p-6 xl:p-7 flex flex-col justify-between h-full min-h-0">
+                    <!-- Top Section: Header & Segmented Switcher -->
+                    <div class="shrink-0">
+                        <div class="flex items-center justify-between mb-3 lg:mb-4">
+                            <div>
+                                <h2 class="text-base sm:text-lg lg:text-xl font-bold tracking-tight text-[#f5f5f7]">
+                                    Sesi Billing
+                                </h2>
+                                <p class="text-xs text-[#86868b] mt-0.5">Silakan login member atau scan QRIS kasir</p>
+                            </div>
+                            <div class="px-2.5 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-[11px] text-[#30d158] font-medium flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#30d158]"></span>
+                                Siap Digunakan
+                            </div>
+                        </div>
+
+                        <!-- Segmented Switcher: Login Member vs Scan QRIS Kasir -->
+                        <div class="flex bg-white/[0.05] p-1 rounded-xl gap-1 mb-2 lg:mb-3">
+                            <button id="tab-login-mode-btn"
+                                class="flex-1 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg bg-white/10 text-white shadow-sm transition-all">Login Member</button>
+                            <button id="tab-qris-mode-btn"
+                                class="flex-1 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-[#86868b] hover:text-white transition-all">Scan QRIS Kasir</button>
+                        </div>
+                    </div>
+
+                    <!-- KONTEN: FORM LOGIN (Distribusi Vertikal Seimbang) -->
+                    <div id="kiosk-login-panel" class="flex-1 min-h-0 flex flex-col justify-between py-2 sm:py-3 lg:py-4">
+                        <div class="my-auto flex flex-col items-center w-full">
+                            <!-- Hero Header: Avatar & Hint Member Bersih -->
+                            <div class="flex flex-col items-center text-center mb-3 sm:mb-3.5 lg:mb-4 xl:mb-5">
+                                <div class="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 lg:w-14 lg:h-14 xl:w-16 xl:h-16 rounded-2xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-[#30d158] shadow-inner mb-2 sm:mb-2.5">
+                                    <svg class="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                    </svg>
+                                </div>
+                                <h3 class="text-sm sm:text-base lg:text-lg xl:text-xl font-bold text-[#f5f5f7] tracking-tight">Login Akun Member</h3>
+                                <p class="text-[11px] sm:text-xs xl:text-sm text-[#86868b] mt-0.5 max-w-[280px] sm:max-w-[320px]">Untuk member, silakan masukkan username & password akun Anda.</p>
+                            </div>
+
+                            <!-- Form Input & Tombol Masuk -->
+                            <div class="w-full space-y-3 sm:space-y-3.5 lg:space-y-4">
+                                <div class="space-y-1 sm:space-y-1.5">
+                                    <label for="username" class="text-xs font-medium text-[#86868b]">Username / ID Member</label>
+                                    <input type="text" id="username" placeholder="Masukkan username member"
+                                        class="w-full apple-input px-3.5 py-2.5 sm:py-3 lg:py-3.5 xl:py-4 text-xs sm:text-sm xl:text-base font-medium"
+                                        autocomplete="off" autofocus>
+                                </div>
+
+                                <div class="space-y-1 sm:space-y-1.5">
+                                    <label for="password" class="text-xs font-medium text-[#86868b]">Password Akun</label>
+                                    <input type="password" id="password" placeholder="Masukkan password"
+                                        class="w-full apple-input px-3.5 py-2.5 sm:py-3 lg:py-3.5 xl:py-4 text-xs sm:text-sm xl:text-base font-medium">
+                                </div>
+
+                                <button id="login-btn"
+                                    class="w-full apple-btn-primary py-2.5 sm:py-3 lg:py-3.5 xl:py-4 text-xs sm:text-sm xl:text-base font-bold shadow-lg transition-all mt-1 flex items-center justify-center gap-2">
+                                    <span>Masuk ke Billing</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Sub-Footer Kartu Login: Tips Pintasan Enter -->
+                        <div class="pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] sm:text-xs text-[#6e6e73]">
+                            <span>Pintasan Keyboard</span>
+                            <span class="text-[#86868b] font-mono">Tekan [Enter] untuk masuk</span>
+                        </div>
+                    </div>
+
+                    <!-- KONTEN: QRIS KASIR MANDIRI (Jumbo HD Mengisi Kartu) -->
+                    <div id="kiosk-qris-panel" class="hidden flex-1 min-h-0 flex flex-col items-center justify-center space-y-3 sm:space-y-4 py-2">
+                        <div class="w-56 sm:w-64 md:w-72 lg:w-[340px] xl:w-[400px] 2xl:w-[460px] aspect-square max-h-[46vh] sm:max-h-[50vh] lg:max-h-[58vh] xl:max-h-[62vh] rounded-2xl bg-white p-3 sm:p-4 lg:p-5 shadow-2xl flex items-center justify-center border border-white/20">
+                            <img id="kiosk-qris-img" src="" alt="QRIS Code" class="w-full h-full object-contain filter contrast-125" style="image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;">
+                        </div>
+                        <div class="text-center px-2">
+                            <p class="text-xs sm:text-sm font-semibold text-[#f5f5f7]">Scan QRIS untuk Bayar / Top-up</p>
+                            <p class="text-[11px] sm:text-xs text-[#86868b] mt-0.5 leading-normal">Setelah scan, segera tunjukkan bukti bayar & konfirmasi ke kasir.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- FOOTER STATUS BAR: INFO TEKNIS & KONTROL DAYA PC -->
+        <footer class="mt-3 sm:mt-4 pt-2.5 border-t border-white/[0.08] flex items-center justify-between text-xs text-[#86868b] shrink-0">
+            <div class="flex items-center gap-3 sm:gap-4 font-mono text-[11px] sm:text-xs">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#30d158]"></span>
+                    IP: <span id="ip-display" class="text-white font-semibold">-</span>
+                </span>
+                <span class="hidden sm:inline text-white/[0.2]">•</span>
+                <span class="hidden sm:inline">
+                    MAC: <span id="mac-display" class="text-white font-semibold">-</span>
+                </span>
+                <span class="hidden md:inline text-white/[0.2]">•</span>
+                <span id="client-version-display" class="hidden md:inline text-[#6e6e73]">Client v1.6.4</span>
             </div>
 
-            <!-- Kartu Aturan & Paket -->
-            <div
-                class="apple-card p-4 lg:p-5 xl:p-6 2xl:p-7 flex flex-col justify-between flex-1 min-h-0">
-                <!-- Segmented Control Tab Header -->
-                <div class="flex bg-white/[0.05] p-1 rounded-xl gap-1 mb-2.5 lg:mb-3">
-                    <button id="tab-rules-btn"
-                        class="flex-1 px-3 py-1.5 text-xs xl:text-xs 2xl:text-sm font-semibold rounded-lg bg-white/10 text-white shadow-sm transition-all">Aturan Warnet</button>
-                    <button id="tab-packages-btn"
-                        class="flex-1 px-3 py-1.5 text-xs xl:text-xs 2xl:text-sm font-medium rounded-lg text-[#86868b] hover:text-white transition-all">Daftar Paket</button>
+            <div class="flex items-center gap-2 sm:gap-2.5">
+                <!-- Shutdown Timer Badge yang Selalu Terlihat -->
+                <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] font-mono text-xs">
+                    <span class="text-[10px] text-[#6e6e73] uppercase tracking-wider font-sans hidden sm:inline">Auto Shutdown:</span>
+                    <span id="shutdown-status" class="uppercase text-[10px] sm:text-[11px] font-semibold text-[#30d158]">Off</span>
+                    <span class="text-white/[0.2]">:</span>
+                    <span id="shutdown-countdown" class="font-bold text-[#f5f5f7]">--:--</span>
                 </div>
 
-                <!-- Konten Tab: Aturan -->
-                <div id="panel-rules" class="flex-1 flex flex-col min-h-0">
-                    <div id="rules-container"
-                        class="flex-1 overflow-y-auto text-xs lg:text-[13px] xl:text-[13px] 2xl:text-sm text-[#86868b] space-y-2 pr-2 scrollbar-thin leading-relaxed">
-                        <p class="text-[#6e6e73] text-xs lg:text-[13px] xl:text-[13px] 2xl:text-sm">Memuat aturan...
-                        </p>
-                    </div>
-
-                    <div id="rules-pagination"
-                        class="mt-2.5 pt-2.5 border-t border-white/[0.08] flex items-center justify-between font-mono text-xs xl:text-xs 2xl:text-sm">
-                        <button id="rules-prev-btn"
-                            class="px-3 py-1.5 apple-btn-secondary font-medium disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1.5 shadow-sm"
-                            disabled>&larr; Prev</button>
-                        <span id="rules-page-indicator"
-                            class="px-3 py-1 bg-white/[0.05] border border-white/[0.08] rounded-lg text-[#30d158] font-bold text-xs xl:text-xs 2xl:text-sm">1
-                            / 1</span>
-                        <button id="rules-next-btn"
-                            class="px-3 py-1.5 apple-btn-secondary font-medium disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1.5 shadow-sm"
-                            disabled>Next &rarr;</button>
-                    </div>
-                </div>
-
-                <!-- Konten Tab: Paket -->
-                <div id="panel-packages" class="flex-1 flex flex-col min-h-0 hidden">
-                    <!-- Grup Tabs -->
-                    <div id="paket-tabs" class="flex gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin mb-2.5">
-                        <!-- Tab dinamis -->
-                    </div>
-
-                    <!-- Daftar Paket -->
-                    <div id="paket-list-container"
-                        class="flex-1 flex flex-col gap-1.5 justify-start overflow-y-auto pr-2 scrollbar-thin">
-                        <p class="text-xs lg:text-[13px] xl:text-[13px] 2xl:text-sm text-[#6e6e73]">Memuat paket...
-                        </p>
-                    </div>
-
-                    <!-- Kontrol Paginasi -->
-                    <div id="paket-pagination"
-                        class="mt-2.5 pt-2.5 border-t border-white/[0.08] flex items-center justify-between font-mono text-xs xl:text-xs 2xl:text-sm">
-                        <button id="paket-prev-btn"
-                            class="px-3 py-1.5 apple-btn-secondary font-medium disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1.5 shadow-sm"
-                            disabled>&larr; Prev</button>
-                        <span id="paket-page-indicator"
-                            class="px-3 py-1 bg-white/[0.05] border border-white/[0.08] rounded-lg text-[#30d158] font-bold text-xs xl:text-xs 2xl:text-sm">1
-                            / 1</span>
-                        <button id="paket-next-btn"
-                            class="px-3 py-1.5 apple-btn-secondary font-medium disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1.5 shadow-sm"
-                            disabled>Next &rarr;</button>
-                    </div>
-                </div>
+                <button id="kiosk-restart-btn" type="button" title="Restart PC"
+                    class="px-2.5 py-1.5 apple-btn-secondary text-xs font-medium rounded-lg flex items-center gap-1.5 hover:text-white">
+                    <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
+                    </svg>
+                    <span>Restart</span>
+                </button>
+                <button id="kiosk-shutdown-btn" type="button" title="Matikan PC"
+                    class="px-2.5 py-1.5 apple-btn-danger text-xs font-medium rounded-lg flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    <span>Matikan</span>
+                </button>
             </div>
-        </div>
-
-        <!-- Form Login (Tengah) -->
-        <div
-            class="kiosk-login order-1 lg:order-none lg:col-start-2 lg:row-start-2 flex items-center justify-center z-10 w-full">
-            <div
-                class="apple-card kiosk-login-card p-5 lg:p-6 xl:p-7 2xl:p-8 flex flex-col w-full max-w-[360px] lg:max-w-[390px] xl:max-w-[420px] 2xl:max-w-[450px]">
-                <header class="space-y-1 mb-3 lg:mb-4">
-                    <div class="flex items-center gap-2 mb-1.5">
-                        <div class="apple-status-dot"></div>
-                        <span
-                            class="text-[10px] lg:text-xs xl:text-xs 2xl:text-sm font-semibold tracking-wider text-[#30d158] uppercase">Sistem
-                            Terkunci</span>
-                    </div>
-                    <h2 class="text-xl lg:text-2xl xl:text-2xl 2xl:text-3xl font-bold tracking-tight text-[#f5f5f7]">
-                        Nama PC:
-                        <span class="text-[#30d158] pc-name-display">PC-01</span>
-                    </h2>
-                </header>
-
-                <div class="space-y-2.5 lg:space-y-3 xl:space-y-3.5 flex flex-col justify-center">
-                    <input type="text" id="username" placeholder="Username" autocomplete="off"
-                        class="w-full apple-input px-3.5 py-2.5 lg:px-4 lg:py-2.5 xl:py-3 2xl:px-4.5 2xl:py-3.5 text-xs lg:text-sm xl:text-sm 2xl:text-base">
-                    <input type="password" id="password" placeholder="Password"
-                        class="w-full apple-input px-3.5 py-2.5 lg:px-4 lg:py-2.5 xl:py-3 2xl:px-4.5 2xl:py-3.5 text-xs lg:text-sm xl:text-sm 2xl:text-base">
-                    <button id="login-btn"
-                        class="w-full apple-btn-primary py-2.5 lg:py-3 xl:py-3 2xl:py-3.5 mt-1.5 text-xs lg:text-sm xl:text-sm 2xl:text-base tracking-wide">Mulai
-                        Sesi</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Wadah QRIS (Kanan Atas) -->
-        <div
-            class="kiosk-qris order-3 lg:order-none lg:col-start-3 lg:row-start-1 lg:row-span-2 flex flex-col z-10 h-full">
-            <div
-                class="apple-card p-4 lg:p-5 xl:p-6 2xl:p-7 flex-1 flex flex-col items-center justify-between min-h-0">
-                <header class="flex items-center gap-2 mb-2 self-start shrink-0">
-                    <div class="apple-status-dot"></div>
-                    <span
-                        class="text-[10px] lg:text-xs xl:text-xs 2xl:text-sm font-semibold tracking-wider text-[#30d158] uppercase">Pembayaran</span>
-                </header>
-                <div class="flex-1 flex items-center justify-center w-full min-h-0 p-1">
-                    <div class="w-full h-full aspect-square max-h-[280px] lg:max-h-[340px] xl:max-h-[400px] 2xl:max-h-[480px] p-2 sm:p-2.5 bg-white rounded-2xl shadow-md flex items-center justify-center">
-                        <img id="kiosk-qris-img" src="" alt="QRIS Code"
-                            class="w-full h-full object-contain">
-                    </div>
-                </div>
-                <p class="text-center text-xs xl:text-xs 2xl:text-sm text-[#86868b] mt-2 font-medium shrink-0">Scan QRIS untuk pembayaran</p>
-            </div>
-        </div>
-
-        <!-- Info Footer & Kontrol Daya (Kanan Bawah) -->
-        <div
-            class="kiosk-footer order-4 lg:order-none lg:col-start-3 lg:row-start-3 flex flex-col z-10 justify-end h-full">
-            <div
-                class="apple-card p-4 lg:p-5 xl:p-6 2xl:p-7 flex flex-col justify-between h-full">
-                <div class="flex justify-between items-start text-[#86868b] font-mono text-xs xl:text-xs 2xl:text-sm">
-                    <div class="space-y-0.5">
-                        <p>IP Address: <span id="ip-display" class="text-[#f5f5f7] font-semibold">Memuat...</span></p>
-                        <p>Mac Address: <span id="mac-display" class="text-[#f5f5f7] font-semibold">Memuat...</span>
-                        </p>
-                    </div>
-                    <div class="text-right text-[#30d158] font-bold">
-                        <p id="shutdown-status"
-                            class="tracking-wider text-[10px] lg:text-xs xl:text-xs 2xl:text-sm uppercase font-semibold text-[#30d158]">
-                            Off</p>
-                        <p id="shutdown-countdown"
-                            class="text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl text-[#f5f5f7] font-mono font-bold">--:--
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Tombol Aksi Daya: Restart & Shutdown -->
-                <div class="flex items-center gap-2 my-auto pt-2">
-                    <button id="kiosk-restart-btn" type="button" title="Restart PC"
-                        class="flex-1 flex items-center justify-center gap-1.5 py-2 xl:py-2.5 2xl:py-3 px-2.5 apple-btn-secondary text-xs 2xl:text-sm font-semibold group">
-                        <svg class="w-3.5 h-3.5 xl:w-4 xl:h-4 text-[#2997ff] group-hover:rotate-180 transition-transform duration-500 shrink-0"
-                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        <span>Restart</span>
-                    </button>
-                    <button id="kiosk-shutdown-btn" type="button" title="Matikan PC"
-                        class="flex-1 flex items-center justify-center gap-1.5 py-2 xl:py-2.5 2xl:py-3 px-2.5 apple-btn-danger text-xs 2xl:text-sm font-semibold group">
-                        <svg class="w-3.5 h-3.5 xl:w-4 xl:h-4 text-[#ff453a] shrink-0"
-                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        <span>Shutdown</span>
-                    </button>
-                </div>
-
-                <div
-                    class="mt-3 pt-3 border-t border-white/[0.08] flex justify-between items-center text-xs xl:text-xs 2xl:text-sm text-[#86868b] font-medium">
-                    <span class="tracking-wider uppercase text-[#6e6e73]">Client Version</span>
-                    <span id="client-version-display" class="font-semibold text-[#f5f5f7]">TMBilling v...</span>
-                </div>
-            </div>
-        </div>
+        </footer>
     </div>
 
     <!-- OVERLAY DYNAMICALLY INJECTED HERE -->
@@ -198,116 +230,121 @@
 
     <!-- Layar Kunci AFK / Istirahat -->
     <div id="afk-screen"
-        class="hidden fixed inset-0 z-[500] w-full h-screen bg-black flex flex-col items-center justify-center p-4 lg:p-6 xl:p-8 select-none overflow-hidden text-[#f5f5f7] font-sans">
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/95 select-none text-[#f5f5f7]">
         <div
-            class="w-full max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl apple-card p-6 lg:p-8 xl:p-10 flex flex-col items-center text-center space-y-5 lg:space-y-6 xl:space-y-7">
+            class="w-[360px] lg:w-[420px] xl:w-[460px] 2xl:w-[500px] bg-[#161618] border border-white/[0.10] rounded-3xl p-6 lg:p-8 xl:p-9 shadow-2xl flex flex-col items-center text-center space-y-6">
+
             <!-- Header -->
-            <div class="flex flex-col items-center space-y-2">
+            <div class="flex flex-col items-center gap-2">
                 <div
                     class="w-14 h-14 lg:w-16 lg:h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
                     <svg class="w-7 h-7 lg:w-8 lg:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-width="2" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                 </div>
-                <h1 class="text-xl lg:text-2xl xl:text-3xl font-bold tracking-tight text-[#f5f5f7]">PC Sedang Dikunci / Istirahat</h1>
-                <p class="text-xs lg:text-sm text-[#86868b] font-normal">Layar PC ini diamankan sementara oleh pengguna.</p>
+                <h2 class="text-xl lg:text-2xl font-bold tracking-tight text-[#f5f5f7]">Layar Terkunci</h2>
+                <p class="text-xs text-[#86868b] font-medium">Sesi billing Anda sedang diistirahatkan</p>
             </div>
 
             <!-- Info PC & Pengguna -->
-            <div class="w-full grid grid-cols-2 gap-3 bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 lg:p-5 text-xs lg:text-sm">
-                <div class="text-left">
-                    <span class="text-[10px] lg:text-[11px] text-[#6e6e73] font-medium uppercase tracking-wider">Unit Meja</span>
+            <div
+                class="w-full grid grid-cols-2 gap-3 bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 lg:p-5 text-xs lg:text-sm">
+                <div>
+                    <span class="text-[#86868b] block text-[10px] uppercase font-semibold">Unit</span>
                     <p id="afk-pc-name" class="font-semibold text-[#f5f5f7] text-sm lg:text-base pc-name-display">PC-01</p>
                 </div>
-                <div class="text-right">
-                    <span class="text-[10px] lg:text-[11px] text-[#6e6e73] font-medium uppercase tracking-wider">Pengguna</span>
+                <div>
+                    <span class="text-[#86868b] block text-[10px] uppercase font-semibold">User</span>
                     <p id="afk-user-name" class="font-semibold text-[#30d158] text-sm lg:text-base">Member</p>
                 </div>
             </div>
 
             <!-- Countdown Sisa Waktu -->
             <div class="space-y-1">
-                <span class="text-[10px] lg:text-[11px] font-semibold text-[#86868b] uppercase tracking-wider">Sisa Waktu Billing</span>
+                <span class="text-[10px] lg:text-xs text-[#86868b] uppercase tracking-wider font-semibold">Sisa Waktu
+                    Aktif</span>
                 <p id="afk-time-display" class="text-4xl lg:text-5xl xl:text-6xl font-mono font-bold text-amber-400">00:00:00</p>
             </div>
 
             <!-- Form Unlock -->
-            <div class="w-full space-y-3 pt-2">
+            <div class="w-full space-y-3">
                 <input type="password" id="afk-unlock-input" placeholder="Masukkan Password Akun / PIN Kunci"
-                    class="w-full apple-input px-4 py-3 lg:py-3.5 text-center text-sm lg:text-base tracking-wider">
+                    class="w-full apple-input px-4 py-3 text-center text-sm lg:text-base tracking-widest font-mono">
                 <div id="afk-error-msg" class="text-xs text-[#ff453a] font-medium hidden">Password akun atau PIN salah!
                 </div>
                 <button id="afk-unlock-btn" type="button"
-                    class="w-full py-3 lg:py-3.5 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-xl text-xs lg:text-sm tracking-wider transition-all active:scale-[0.98] cursor-pointer">Buka
-                    Kunci (Unlock)</button>
+                    class="w-full apple-btn-primary py-3 text-sm lg:text-base font-bold shadow-lg">
+                    Buka Kunci Layar
+                </button>
             </div>
 
             <!-- Pesan Bantuan Kasir -->
             <p class="text-[11px] lg:text-xs text-[#6e6e73] font-normal leading-relaxed border-t border-white/[0.06] pt-4">
-                Lupa PIN / Password? Silakan hubungi kasir atau operator warnet untuk membuka kunci meja ini.
+                Lupa password akun atau PIN kunci Anda? Silakan hubungi kasir atau operator untuk membuka kunci meja
+                ini.
             </p>
         </div>
     </div>
 
     <!-- Modal Login Admin -->
     <div id="admin-modal"
-        class="hidden fixed inset-0 z-[999] flex items-center justify-center bg-black/85 p-4 select-none">
-        <div class="w-[360px] lg:w-[400px] xl:w-[440px] 2xl:w-[480px] bg-[#1c1c1e] border border-white/[0.10] rounded-2xl p-6 lg:p-8 xl:p-9 shadow-2xl space-y-5 lg:space-y-6">
-            <header>
-                <div class="flex items-center gap-2 mb-1">
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
+        <div
+            class="w-[360px] lg:w-[400px] xl:w-[440px] 2xl:w-[480px] bg-[#1c1c1e] border border-white/[0.10] rounded-2xl p-6 lg:p-8 xl:p-9 shadow-2xl space-y-5 lg:space-y-6">
+            <header class="flex items-center justify-between border-b border-white/[0.08] pb-3.5">
+                <div class="flex items-center gap-2">
                     <div class="apple-status-dot"></div>
-                    <span class="text-[9px] lg:text-[10px] font-semibold tracking-wider text-[#30d158] uppercase">Admin Access</span>
+                    <h3 class="text-sm lg:text-base xl:text-lg font-bold text-[#f5f5f7]">Admin Emergency Login</h3>
                 </div>
-                <h2 class="text-xl lg:text-2xl font-bold text-[#f5f5f7]">Log-in Sistem</h2>
+                <span class="text-[10px] lg:text-xs text-[#86868b] font-mono">F11</span>
             </header>
-
-            <div class="space-y-3">
+            <div class="space-y-3 lg:space-y-4">
                 <input type="text" id="admin-user" placeholder="Admin Username" autocomplete="off"
-                    class="w-full apple-input px-4 py-3 text-sm lg:text-base">
+                    class="w-full apple-input px-3.5 py-2.5 lg:py-3 xl:py-3.5 text-xs lg:text-sm font-medium">
                 <input type="password" id="admin-pass" placeholder="Admin Password"
-                    class="w-full apple-input px-4 py-3 text-sm lg:text-base">
+                    class="w-full apple-input px-3.5 py-2.5 lg:py-3 xl:py-3.5 text-xs lg:text-sm font-medium">
                 <div id="admin-error" class="text-[10px] lg:text-xs text-[#ff453a] font-medium hidden">Username atau Password salah!</div>
             </div>
-
-            <div class="flex gap-3 pt-2">
+            <div class="flex justify-end gap-2.5 pt-2">
                 <button id="admin-close-btn"
-                    class="flex-1 apple-btn-secondary py-2.5 lg:py-3 text-xs lg:text-sm font-semibold cursor-pointer">Batal</button>
+                    class="px-4 py-2 lg:py-2.5 xl:py-3 apple-btn-secondary text-xs lg:text-sm font-semibold">Batal</button>
                 <button id="admin-login-confirm-btn"
-                    class="flex-1 apple-btn-primary py-2.5 lg:py-3 text-xs lg:text-sm font-semibold cursor-pointer">Masuk</button>
+                    class="px-5 py-2 lg:py-2.5 xl:py-3 apple-btn-primary text-xs lg:text-sm font-bold shadow-lg">Login</button>
             </div>
         </div>
     </div>
 
     <!-- Modal Konfirmasi Daya (Shutdown / Restart) -->
     <div id="power-confirm-modal"
-        class="hidden fixed inset-0 z-[1000] flex items-center justify-center bg-black/85 p-4 select-none">
-        <div class="w-[340px] lg:w-[380px] xl:w-[420px] 2xl:w-[460px] bg-[#1c1c1e] border border-white/[0.10] rounded-2xl p-6 lg:p-7 shadow-2xl space-y-5 text-center">
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md select-none">
+        <div
+            class="w-[340px] lg:w-[380px] xl:w-[420px] 2xl:w-[460px] bg-[#1c1c1e] border border-white/[0.10] rounded-2xl p-6 lg:p-7 shadow-2xl space-y-5 text-center">
             <header class="flex flex-col items-center">
+                <!-- Dynamic Icon -->
                 <div id="power-modal-icon-container"
-                    class="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center mb-3">
-                    <svg id="power-modal-icon" class="w-6 h-6 lg:w-7 lg:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <!-- Dynamic Icon -->
-                    </svg>
+                    class="w-12 h-12 lg:w-14 lg:h-14 rounded-full flex items-center justify-center mb-3">
+                    <svg id="power-modal-icon" class="w-6 h-6 lg:w-7 lg:h-7" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24"></svg>
                 </div>
-                <h2 id="power-modal-title" class="text-lg lg:text-xl font-bold text-[#f5f5f7]">Konfirmasi Daya</h2>
-                <p id="power-modal-desc" class="text-xs lg:text-sm text-[#86868b] mt-1 font-normal leading-relaxed">Apakah Anda
-                    yakin ingin melanjutkan tindakan ini?</p>
+                <h3 id="power-modal-title" class="text-base lg:text-lg font-bold text-[#f5f5f7]">Konfirmasi Daya</h3>
+                <p id="power-modal-desc" class="text-xs lg:text-sm text-[#86868b] mt-1 font-normal leading-relaxed">
+                    Apakah Anda yakin ingin mematikan komputer ini?
+                </p>
             </header>
-
-            <div class="flex gap-2.5 pt-2">
+            <div class="flex gap-3 pt-2">
                 <button id="power-modal-cancel-btn" type="button"
-                    class="flex-1 apple-btn-secondary py-2.5 lg:py-3 text-xs lg:text-sm font-semibold cursor-pointer">Batal</button>
+                    class="flex-1 py-2.5 apple-btn-secondary text-xs lg:text-sm font-semibold">Batal</button>
                 <button id="power-modal-confirm-btn" type="button"
-                    class="flex-1 apple-btn-danger py-2.5 lg:py-3 text-xs lg:text-sm font-semibold cursor-pointer">Lanjutkan</button>
+                    class="flex-1 py-2.5 text-xs lg:text-sm font-bold shadow-lg transition-all rounded-xl">Konfirmasi</button>
             </div>
         </div>
     </div>
 
     <!-- Toast Notification Container -->
-    <div id="toast-container" class="fixed bottom-10 right-10 z-[9999] space-y-3 pointer-events-none"></div>
+    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 pointer-events-none"></div>
 
-    <script type="module" src="/main.js"></script>
+    <script type="module" src="main.js"></script>
 </body>
 
 </html>

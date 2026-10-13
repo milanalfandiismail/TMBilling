@@ -26,23 +26,37 @@ export const UI = {
         const groupEl = document.getElementById('overlay-group');
         const afkUserEl = document.getElementById('afk-user-name');
         const btnMemberStatus = document.getElementById('btn-member-status');
-        const name = data.member_name || '-';
-        if (memberEl) memberEl.innerText = `: ${name}`;
-        if (groupEl) groupEl.innerText = `: ${data.group || '-'}`;
+        const billingTypeEl = document.getElementById('overlay-billing-type');
+
+        // Tipe billing & visibilitas tombol Status Member (Member vs Guest)
+        const isMemberSession = Boolean(
+            data.is_member === true || 
+            (data.member && Object.keys(data.member).length > 0) ||
+            AppState.memberData || 
+            AppState.sessionType === 'member'
+        );
+        const isGuest = AppState.sessionType === 'guest' || !isMemberSession || (data.member_name && data.member_name.toLowerCase().startsWith('guest'));
+
+        const name = isGuest ? (data.member_name || 'Guest') : (data.member_name || 'Member');
+        if (memberEl) memberEl.innerText = name;
+        if (groupEl) groupEl.innerText = isGuest ? (data.group && data.group.toLowerCase() !== 'member' ? data.group.toUpperCase() : 'GUEST') : (data.group ? data.group.toUpperCase() : 'REGULAR');
         if (afkUserEl) afkUserEl.innerText = name;
         if (data.remaining_seconds !== undefined) {
             this.updateTime(data.remaining_seconds);
         }
 
-        // Toggle visibilitas tombol Status Member (Hanya muncul untuk sesi Member)
+        if (billingTypeEl) {
+            if (AppState.sessionType === 'admin') {
+                billingTypeEl.innerText = "Admin";
+            } else if (isGuest) {
+                billingTypeEl.innerText = "Guest";
+            } else {
+                billingTypeEl.innerText = "Member";
+            }
+        }
+
         if (btnMemberStatus) {
-            const isMemberSession = Boolean(
-                AppState.memberData || 
-                data.is_member || 
-                AppState.sessionType === 'member' ||
-                (data.member && Object.keys(data.member).length > 0)
-            );
-            if (isMemberSession && AppState.sessionType !== 'admin' && AppState.sessionType !== 'guest') {
+            if (isMemberSession && AppState.sessionType !== 'admin' && !isGuest) {
                 btnMemberStatus.classList.remove('hidden');
             } else {
                 btnMemberStatus.classList.add('hidden');
@@ -264,13 +278,17 @@ export const UI = {
 
         if (seconds > 0) {
             statusEl.innerText = "Shutdown";
+            statusEl.className = "uppercase text-[10px] sm:text-[11px] font-semibold text-amber-400";
 
             const mins = Math.floor(seconds / 60);
             const secs = seconds % 60;
             countEl.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            countEl.className = "font-bold text-amber-400";
         } else {
             statusEl.innerText = "Off";
+            statusEl.className = "uppercase text-[10px] sm:text-[11px] font-semibold text-[#30d158]";
             countEl.innerText = "--:--";
+            countEl.className = "font-bold text-[#f5f5f7]";
         }
     },
 
@@ -279,6 +297,15 @@ export const UI = {
         if (!modal) return;
 
         if (show) {
+            const descEl = document.getElementById('logout-modal-desc');
+            if (descEl) {
+                const isGuest = AppState.sessionType === 'guest' || (!AppState.memberData && AppState.sessionType !== 'member');
+                if (isGuest) {
+                    descEl.innerText = "Sisa waktu bermain Anda akan hangus dan tidak dapat dikembalikan. Yakin ingin keluar?";
+                } else {
+                    descEl.innerText = "Sisa waktu yang ada akan disimpan ke akun member Anda. Yakin ingin keluar?";
+                }
+            }
             modal.classList.remove('hidden');
         } else {
             modal.classList.add('hidden');

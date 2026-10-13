@@ -30,6 +30,14 @@ export const Admin = {
         document.getElementById('admin-pass').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.handleLogin();
         });
+
+        // Shortcut keyboard F11 untuk membuka modal Admin Emergency Login
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'F11') {
+                e.preventDefault();
+                UI.toggleAdminModal(true);
+            }
+        });
     },
 
     /**

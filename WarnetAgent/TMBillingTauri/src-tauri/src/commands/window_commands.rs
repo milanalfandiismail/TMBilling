@@ -43,7 +43,7 @@ pub fn switch_to_overlay(window: Window, app_handle: AppHandle) {
         let _ = window.set_size(size);
         let _ = window.set_position(Position::Logical(pos));
     } else {
-        let _ = window.set_size(LogicalSize::new(680.0, 530.0));
+        let _ = window.set_size(LogicalSize::new(360.0, 400.0));
     }
 }
 
@@ -118,7 +118,7 @@ pub fn set_kiosk_lock(window: Window, enabled: bool) {
             let _ = window.set_size(size);
             let _ = window.set_position(Position::Logical(pos));
         } else {
-            let _ = window.set_size(LogicalSize::new(680.0, 530.0));
+            let _ = window.set_size(LogicalSize::new(360.0, 400.0));
         }
     }
 }
@@ -137,7 +137,7 @@ pub fn set_overlay_modal_fullscreen(window: Window, fullscreen: bool) {
             let _ = window.set_size(size);
             let _ = window.set_position(Position::Logical(pos));
         } else {
-            let _ = window.set_size(LogicalSize::new(680.0, 530.0));
+            let _ = window.set_size(LogicalSize::new(360.0, 400.0));
         }
     }
 }
