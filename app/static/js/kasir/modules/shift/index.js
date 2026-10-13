@@ -1237,7 +1237,7 @@ const Shift = {
             let badgeClass = 'bg-neutral-800 text-neutral-300 border border-neutral-700';
             if (act.includes('BUKA')) badgeClass = 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60';
             else if (act.includes('TUTUP')) badgeClass = 'bg-blue-950/80 text-blue-400 border border-blue-800/60';
-            else if (act.includes('FORCE_CLOSE') || act.includes('GAGAL') || act.includes('HAPUS')) badgeClass = 'bg-red-950/80 text-red-400 border border-red-800/60';
+            else if (act.includes('FORCE_CLOSE') || act.includes('GAGAL') || act.includes('HAPUS') || act.includes('DELETE') || act.includes('CLEAR')) badgeClass = 'bg-red-950/80 text-red-400 border border-red-800/60';
             else if (act.includes('KUOTA') || act.includes('UPDATE')) badgeClass = 'bg-purple-950/80 text-purple-400 border border-purple-800/60';
             else if (act.includes('LOGIN')) badgeClass = 'bg-amber-950/80 text-amber-400 border border-amber-800/60';
             elAction.className = `px-2 py-0.5 rounded text-[10px] 2xl:text-xs font-bold uppercase tracking-wider ${badgeClass}`;
@@ -1283,7 +1283,7 @@ const Shift = {
             let badgeClass = 'bg-neutral-800 text-neutral-300 border-neutral-700';
             if (act.includes('BUKA')) badgeClass = 'bg-emerald-950/70 text-emerald-400 border-emerald-800/40';
             else if (act.includes('TUTUP')) badgeClass = 'bg-blue-950/70 text-blue-400 border-blue-800/40';
-            else if (act.includes('FORCE_CLOSE') || act.includes('GAGAL') || act.includes('HAPUS')) badgeClass = 'bg-red-950/70 text-red-400 border-red-800/40';
+            else if (act.includes('FORCE_CLOSE') || act.includes('GAGAL') || act.includes('HAPUS') || act.includes('DELETE') || act.includes('CLEAR')) badgeClass = 'bg-red-950/70 text-red-400 border-red-800/40';
             else if (act.includes('KUOTA') || act.includes('UPDATE')) badgeClass = 'bg-purple-950/70 text-purple-400 border-purple-800/40';
             else if (act.includes('LOGIN')) badgeClass = 'bg-amber-950/70 text-amber-400 border-amber-800/40';
 
@@ -1341,13 +1341,38 @@ const Shift = {
             const res = await API.report.logs(search, 200, '');
             const rawLogs = res.logs || [];
 
-            // Filter log yang relevan dengan aktivitas staf
-            const staffActionKeywords = ['SHIFT', 'USER', 'RESET_KUOTA', 'LOGIN', 'LOGOUT'];
+            // Filter log khusus aktivitas operasional staf (eksklusi ketat seluruh aktivitas member)
             const staffLogs = rawLogs.filter(log => {
                 const act = (log.action || '').toUpperCase();
-                const matchesKeyword = staffActionKeywords.some(kw => act.includes(kw));
-                if (!matchesKeyword) return false;
-                if (actionType && !act.includes(actionType.toUpperCase())) return false;
+
+                // 1. Tolak segala log yang berelasi dengan member (member bukan staf)
+                if (act.includes('MEMBER')) return false;
+
+                // 2. Whitelist aksi operasional dan administratif staf
+                const isStaffAction =
+                    act.startsWith('SHIFT_') ||
+                    act.endsWith('_USER') ||
+                    act.includes('KUOTA') ||
+                    ['LOGIN', 'LOGOUT', 'LOGIN_GAGAL', 'LOGIN_KASIR_BENEFIT', 'CLIENT_ADMIN_LOGIN', 'EMERGENCY_LOGIN', 'DELETE_STRUK', 'CLEAR_LOG', 'CLEAR_ALL_HISTORY', 'RESET_ADMIN'].includes(act) ||
+                    act.startsWith('IP_WHITELIST');
+
+                if (!isStaffAction) return false;
+
+                // 3. Filter berdasarkan dropdown kategori aksi jika dipilih
+                if (actionType === 'SHIFT') {
+                    if (!act.startsWith('SHIFT_')) return false;
+                } else if (actionType === 'USER') {
+                    if (!act.endsWith('_USER')) return false;
+                } else if (actionType === 'KUOTA') {
+                    if (!act.includes('KUOTA')) return false;
+                } else if (actionType === 'LOGIN') {
+                    if (!['LOGIN', 'LOGOUT', 'LOGIN_GAGAL', 'LOGIN_KASIR_BENEFIT', 'CLIENT_ADMIN_LOGIN', 'EMERGENCY_LOGIN'].includes(act)) return false;
+                } else if (actionType === 'AUDIT') {
+                    if (!['DELETE_STRUK', 'CLEAR_LOG', 'CLEAR_ALL_HISTORY', 'RESET_ADMIN'].includes(act) && !act.startsWith('IP_WHITELIST')) return false;
+                } else if (actionType) {
+                    if (!act.includes(actionType.toUpperCase())) return false;
+                }
+
                 return true;
             });
 

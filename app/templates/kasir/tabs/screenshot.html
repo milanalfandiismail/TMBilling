@@ -1,62 +1,65 @@
 <!-- ===== TAB: SCREENSHOT MONITOR ===== -->
-<div id="tab-screenshot" class="tab-content hidden space-y-6">
-    <!-- Header Action -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
+<div id="tab-screenshot" class="tab-content hidden space-y-1.5 sm:space-y-2">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 sm:p-2.5 xl:p-3 2xl:p-3.5 space-y-2 sm:space-y-2.5">
+        <!-- 1. Header Toolbar Terpadu -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 2xl:pb-3 border-b border-[#1c1c1c]">
             <div>
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Screenshot Monitor</h3>
-                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Pantauan visual real-time seluruh PC yang sedang aktif.</p>
+                <h3 class="text-xs sm:text-sm 2xl:text-base font-bold text-neutral-100 uppercase tracking-wider">Screenshot Monitor</h3>
+                <p class="text-[10px] sm:text-xs 2xl:text-sm text-neutral-500">Pantauan visual real-time layar PC per grup/zona</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <button onclick="Screenshot.triggerAll()"
-                    class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    Ambil Semua
+                <!-- Search Input PC -->
+                <div class="relative flex-1 sm:w-44 2xl:w-56">
+                    <label for="screenshot-search" class="sr-only">Cari PC</label>
+                    <input type="text" id="screenshot-search" placeholder="Cari PC..."
+                        class="w-full pl-7 pr-6 py-1.5 2xl:py-2 bg-[#050505] border border-[#1c1c1c] rounded text-[11px] sm:text-xs 2xl:text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 font-medium">
+                    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none">
+                        <svg class="w-3 h-3 2xl:w-3.5 2xl:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </span>
+                    <button id="screenshot-search-clear" onclick="Screenshot.clearSearch()" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 text-[10px] 2xl:text-xs font-bold">✕</button>
+                </div>
+                
+                <!-- Filter Status Screenshot -->
+                <label for="screenshot-filter" class="sr-only">Filter Status Screenshot</label>
+                <select id="screenshot-filter"
+                    class="px-2.5 py-1.5 2xl:py-2 bg-[#050505] border border-[#1c1c1c] rounded text-[11px] sm:text-xs 2xl:text-sm text-neutral-200 focus:outline-none focus:border-neutral-500 font-medium">
+                    <option value="all">Semua Status</option>
+                    <option value="has_screenshot">Ada Screenshot</option>
+                    <option value="no_screenshot">Belum Ada</option>
+                </select>
+
+                <!-- Tombol Ambil Screenshot Grup -->
+                <button onclick="Screenshot.triggerActiveGroup()" id="btn-trigger-group-screenshot"
+                    class="px-2.5 sm:px-3 2xl:px-4 py-1.5 2xl:py-2 bg-neutral-100 hover:bg-white text-black text-xs 2xl:text-sm font-bold rounded transition-colors flex items-center gap-1.5 shadow-sm shrink-0">
+                    <svg class="w-3.5 h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span class="hidden sm:inline">Ambil Screenshot Grup</span>
+                    <span class="sm:hidden">Ambil Grup</span>
                 </button>
             </div>
         </div>
-    </div>
-    
-    <!-- Filter & Grid -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <h3 class="text-xs lg:max-xl:text-base xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Pantauan PC</h3>
-            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                <label for="screenshot-search" class="sr-only">Cari PC</label>
-                <input type="text" id="screenshot-search" placeholder="Cari PC..."
-                    class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-neutral-500 w-full sm:w-48 lg:max-xl:w-40 xl:w-48">
-                
-                <label for="screenshot-group-filter" class="sr-only">Filter Grup PC</label>
-                <select id="screenshot-group-filter"
-                    class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-full sm:w-48 lg:max-xl:w-40 xl:w-48">
-                    <option value="all">Semua Grup / Zona</option>
-                </select>
-                
-                <label for="screenshot-filter" class="sr-only">Filter Status Screenshot</label>
-                <select id="screenshot-filter"
-                    class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 w-full sm:w-48 lg:max-xl:w-40 xl:w-48">
-                    <option value="all">Semua Status</option>
-                    <option value="has_screenshot">Ada Screenshot</option>
-                    <option value="no_screenshot">Belum Ada Screenshot</option>
-                </select>
-            </div>
+
+        <!-- 2. Baris Tab Pills Grup Horizontal (Identik Tab Unit PC) -->
+        <div id="screenshot-group-tabs" class="flex items-center gap-1.5 2xl:gap-2.5 overflow-x-auto scrollbar-none py-0.5 2xl:py-1">
+            <div class="h-7 2xl:h-9 w-20 2xl:w-24 bg-[#161616] rounded animate-pulse"></div>
+            <div class="h-7 2xl:h-9 w-16 2xl:w-20 bg-[#161616] rounded animate-pulse"></div>
         </div>
-        
-        <div id="screenshot-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:max-xl:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
-            {% for _ in range(8) %}
-            <div class="screenshot-card w-full h-full flex flex-col bg-[#121212] border border-[#1c1c1c] rounded overflow-hidden animate-pulse">
-                <div class="p-3 border-b border-[#1c1c1c] flex justify-between items-center bg-[#171717]">
-                    <div class="h-4 bg-[#262626] rounded w-16"></div>
-                    <div class="h-6 w-6 bg-[#202020] rounded"></div>
+
+        <!-- 3. Grid Kartu Screenshot Responsif (8 Kolom di 2xl) -->
+        <div id="screenshot-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-1.5 sm:gap-2 xl:gap-2 2xl:gap-2.5 w-full overflow-y-auto scrollbar-thin max-h-[calc(100vh-190px)] md:max-h-[calc(100vh-210px)] pr-0.5">
+            {% for _ in range(16) %}
+            <div class="screenshot-card w-full h-full flex flex-col bg-[#121212] border border-[#1c1c1c] rounded-lg overflow-hidden animate-pulse">
+                <div class="p-1.5 px-2 border-b border-[#1c1c1c] flex justify-between items-center bg-[#171717]">
+                    <div class="h-3 bg-[#262626] rounded w-12"></div>
+                    <div class="h-4 w-4 bg-[#202020] rounded"></div>
                 </div>
-                <div class="relative w-full aspect-video bg-black flex flex-col items-center justify-center p-4">
-                    <div class="w-10 h-10 rounded-full bg-[#1c1c1c] flex items-center justify-center">
-                        <svg class="w-5 h-5 text-[#2a2a2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <div class="relative w-full aspect-video bg-black flex flex-col items-center justify-center p-2">
+                    <div class="w-6 h-6 rounded-full bg-[#1c1c1c] flex items-center justify-center">
+                        <svg class="w-3.5 h-3.5 text-[#2a2a2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
                 </div>
-                <div class="p-3 text-sm flex justify-between items-center bg-[#0c0c0c] border-t border-[#1c1c1c] mt-auto">
-                    <div class="h-3 bg-[#202020] rounded w-14"></div>
-                    <div class="h-3 bg-[#262626] rounded w-24"></div>
+                <div class="px-2 py-1 text-[10px] flex justify-between items-center bg-[#0c0c0c] border-t border-[#1c1c1c] mt-auto">
+                    <div class="h-2 bg-[#202020] rounded w-8"></div>
+                    <div class="h-2 bg-[#262626] rounded w-14"></div>
                 </div>
             </div>
             {% endfor %}
