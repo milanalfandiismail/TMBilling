@@ -83,7 +83,7 @@ class AuthService:
             db.session.add(sesi)
             db.session.commit()
 
-            write_log("LOGIN_KASIR_BENEFIT", f"Kasir {username} login di PC {pc.kode} | Sisa: {user_kasir.sisa_kuota_menit}m")
+            write_log("LOGIN_KASIR_BENEFIT", f"Kasir {username} login di PC {pc.kode} | Sisa: {user_kasir.sisa_kuota_menit}m", user=username, category="AUTHENTICATION")
 
             return {
                 "success": True,
@@ -129,7 +129,7 @@ class AuthService:
         db.session.add(sesi)
         db.session.commit()
 
-        write_log("LOGIN_MEMBER", f"{username} login di PC {pc.kode} | Sisa: {member.waktu_tersimpan}m")
+        write_log("LOGIN_MEMBER", f"{username} login di PC {pc.kode} | Sisa: {member.waktu_tersimpan}m", user=username, category="AUTHENTICATION")
         
         return {
             "success": True,

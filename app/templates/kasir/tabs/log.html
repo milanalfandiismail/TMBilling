@@ -1,83 +1,197 @@
-<!-- ===== TAB: LOG ===== -->
-<div id="tab-log" class="tab-content hidden">
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-        <div class="flex flex-wrap gap-3 mb-4">
-            <!-- Kategori tab bar -->
-            <div class="flex gap-1 bg-[#050505] border border-[#1c1c1c] rounded-lg p-1 w-full overflow-x-auto scrollbar-thin">
-                <button id="log-cat-Semua" onclick="Log.switchCategory('Semua', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-neutral-100 text-black border border-transparent">Semua</button>
-                <button id="log-cat-sistem" onclick="Log.switchCategory('sistem', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">Sistem (Legacy)</button>
-                <button id="log-cat-transaksi" onclick="Log.switchCategory('transaksi', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">Transaksi (Legacy)</button>
-                <button id="log-cat-sesi" onclick="Log.switchCategory('sesi', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">Sesi (Legacy)</button>
-                <button id="log-cat-blackout" onclick="Log.switchCategory('blackout', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">Blackout (Legacy)</button>
-                
-                <!-- New Canonical Category Filters -->
-                <button id="log-cat-AUTHENTICATION" onclick="Log.switchCategory('AUTHENTICATION', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">🔐 Autentikasi</button>
-                <button id="log-cat-USER_ACCOUNT" onclick="Log.switchCategory('USER_ACCOUNT', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">👥 Akun &amp; User</button>
-                <button id="log-cat-AUTHORIZATION_SECURITY" onclick="Log.switchCategory('AUTHORIZATION_SECURITY', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">🛡️ Keamanan</button>
-                <button id="log-cat-PAYMENT_BILLING" onclick="Log.switchCategory('PAYMENT_BILLING', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">💳 Pembayaran</button>
-                <button id="log-cat-TRANSACTION" onclick="Log.switchCategory('TRANSACTION', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">📊 Transaksi</button>
-                <button id="log-cat-SESI_BILLING" onclick="Log.switchCategory('SESI_BILLING', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">⏱️ Sesi Rental</button>
-                <button id="log-cat-DATA_CATALOG" onclick="Log.switchCategory('DATA_CATALOG', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">📂 Katalog &amp; PC</button>
-                <button id="log-cat-MONITOR_REMOTE" onclick="Log.switchCategory('MONITOR_REMOTE', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">🖥️ Remote</button>
-                <button id="log-cat-TOURNAMENT_GAME" onclick="Log.switchCategory('TOURNAMENT_GAME', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">🏆 Turnamen &amp; Game</button>
-                <button id="log-cat-CONFIGURATION" onclick="Log.switchCategory('CONFIGURATION', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">⚙️ Konfigurasi</button>
-                <button id="log-cat-API_INTEGRATION" onclick="Log.switchCategory('API_INTEGRATION', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">🌐 Router Sync</button>
-                <button id="log-cat-BACKGROUND_JOB" onclick="Log.switchCategory('BACKGROUND_JOB', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">🕒 Scheduler</button>
-                <button id="log-cat-MAINTENANCE" onclick="Log.switchCategory('MAINTENANCE', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">🔧 Maintenance</button>
-                <button id="log-cat-SYSTEM" onclick="Log.switchCategory('SYSTEM', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">⚡ Sistem</button>
-                <button id="log-cat-ERROR_FAILURE" onclick="Log.switchCategory('ERROR_FAILURE', this)"
-                    class="px-3 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap bg-transparent text-neutral-400 hover:text-neutral-200 border border-neutral-800/40">❌ Error</button>
+<!-- ===== TAB: LOG SISTEM & AUDIT TRAIL ===== -->
+<div id="tab-log" class="tab-content hidden space-y-1.5 sm:space-y-2">
+    <!-- 1. Card Toolbar Terpadu (Judul, Aksi, Search, & Pills Kategori) -->
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 sm:p-2.5 xl:p-3 space-y-2 sm:space-y-2.5 w-full max-w-full overflow-hidden">
+        <!-- Baris Atas: Judul & Action Buttons -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#1c1c1c]">
+            <div>
+                <h3 class="text-xs sm:text-sm 2xl:text-base font-bold text-neutral-100 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>🛡️</span> Log Sistem &amp; Audit Trail
+                </h3>
+                <p class="text-[10px] sm:text-xs text-neutral-500">Rekam jejak aktivitas server, autentikasi, transaksi, dan integrasi</p>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="Log.exportLogs()" title="Ekspor Log Format TXT"
+                    class="px-2 sm:px-2.5 py-1 2xl:py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-[10px] sm:text-xs font-semibold rounded transition-colors flex items-center gap-1 shadow-sm">
+                    <svg class="w-3 h-3 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    <span>TXT</span>
+                </button>
+                <button onclick="Log.exportPDF()" title="Ekspor Laporan Audit Format PDF"
+                    class="px-2 sm:px-2.5 py-1 2xl:py-1.5 bg-[#2d1215] hover:bg-[#ef4444] hover:text-white border border-[#ef4444]/30 text-red-400 text-[10px] sm:text-xs font-semibold rounded transition-colors flex items-center gap-1 shadow-sm">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    <span>PDF</span>
+                </button>
+                <button onclick="Log.clear()" title="Bersihkan Seluruh Riwayat Log"
+                    class="px-2 sm:px-2.5 py-1 2xl:py-1.5 bg-[#1a0a0c] hover:bg-red-600 hover:text-white border border-[#ef4444]/30 text-red-400 text-[10px] sm:text-xs font-bold rounded transition-colors flex items-center gap-1 shadow-sm">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <span>Bersihkan</span>
+                </button>
             </div>
         </div>
-        <div class="flex flex-wrap gap-3 mb-4">
-            <label for="filter-log" class="sr-only">Cari Riwayat Log</label>
-            <input type="text" id="filter-log" placeholder="Cari log..."
-                class="flex-1 min-w-[150px] px-3 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500">
-            <button onclick="Log.filter()"
-                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Cari</button>
-            <button onclick="Log.clear()"
-                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#1a0a0c] border border-[#ef4444]/30 hover:bg-red-600 hover:text-white text-red-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Bersihkan</button>
-            <button onclick="Log.exportLogs()"
-                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Export (.txt)</button>
-            <button onclick="Log.exportPDF()"
-                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#2d1215] border border-[#ef4444]/30 hover:bg-[#ef4444] hover:text-white text-red-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Export (.pdf)</button>
-        </div>
-        <div id="log-content"
-            class="bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base max-h-[600px] overflow-auto scrollbar-mono p-4">
-            <div class="divide-y divide-[#1c1c1c]">
-                {% for i in range(8) %}
-                <div class="border-b border-[#1c1c1c] py-3.5 px-4 animate-pulse space-y-2 {% if i % 2 == 0 %}bg-[#0a0a0a]{% endif %}">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <div class="h-3 bg-[#262626] rounded w-8"></div>
-                            <div class="h-3 bg-[#202020] rounded w-24"></div>
-                            <div class="h-3 bg-[#1e1e1e] rounded w-16"></div>
-                        </div>
-                        <div class="h-3 bg-[#202020] rounded w-20"></div>
-                    </div>
-                    <div class="h-3.5 bg-[#262626] rounded w-1/2"></div>
+
+        <!-- Baris Bawah: Search Input & 5 Pills Kategori Fleksibel -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
+            <!-- Search & Filter Actions -->
+            <div class="flex items-center gap-1.5 flex-1 max-w-md w-full">
+                <div class="relative flex-1">
+                    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </span>
+                    <input type="text" id="filter-log" placeholder="Cari aksi, user, IP, atau keterangan..."
+                        class="w-full pl-7 pr-6 py-1 sm:py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-[11px] sm:text-xs text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors"
+                        onkeyup="if(event.key==='Enter') Log.filter()">
+                    <button id="btn-clear-log-search" onclick="document.getElementById('filter-log').value=''; Log.filter();"
+                        class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 text-[10px] font-bold">✕</button>
                 </div>
-                {% endfor %}
+                <button onclick="Log.filter()"
+                    class="px-2.5 py-1 sm:py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-[11px] sm:text-xs font-bold rounded transition-colors shadow-sm shrink-0">
+                    Cari
+                </button>
+                <button onclick="document.getElementById('filter-log').value=''; Log.switchCategory('Semua');"
+                    class="px-2 py-1 sm:py-1.5 bg-[#1a1a1a] hover:bg-[#222] border border-[#262626] text-neutral-400 text-[11px] sm:text-xs font-semibold rounded transition-colors shrink-0">
+                    Reset
+                </button>
             </div>
+
+            <!-- 5 Essential Category Pills -->
+            <div class="flex items-center gap-1 sm:gap-1.5 overflow-x-auto scrollbar-none py-0.5 shrink-0 max-w-full">
+                <button id="log-cat-Semua" onclick="Log.switchCategory('Semua')"
+                    class="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap bg-neutral-100 text-black shadow-sm shrink-0">
+                    🌐 Semua
+                </button>
+                <button id="log-cat-auth" onclick="Log.switchCategory('auth')"
+                    class="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap bg-[#0c0c0c] hover:bg-[#141414] text-neutral-400 hover:text-neutral-200 border border-[#1c1c1c] shrink-0">
+                    🔐 Autentikasi
+                </button>
+                <button id="log-cat-billing" onclick="Log.switchCategory('billing')"
+                    class="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap bg-[#0c0c0c] hover:bg-[#141414] text-neutral-400 hover:text-neutral-200 border border-[#1c1c1c] shrink-0">
+                    💳 Billing &amp; F&amp;B
+                </button>
+                <button id="log-cat-system" onclick="Log.switchCategory('system')"
+                    class="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap bg-[#0c0c0c] hover:bg-[#141414] text-neutral-400 hover:text-neutral-200 border border-[#1c1c1c] shrink-0">
+                    ⚙️ Sistem
+                </button>
+                <button id="log-cat-error" onclick="Log.switchCategory('error')"
+                    class="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap bg-[#0c0c0c] hover:bg-[#141414] text-neutral-400 hover:text-neutral-200 border border-[#1c1c1c] shrink-0">
+                    ❌ Error
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Card Tabel Log Kompak & Paginasi (Scroll Containment Terisolasi) -->
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 sm:p-2.5 xl:p-3 overflow-hidden space-y-2 w-full max-w-full">
+        <div class="w-full overflow-hidden">
+            <table class="w-full text-left border-collapse table-fixed text-xs lg:text-[10px] xl:text-xs 2xl:text-sm">
+                <thead>
+                    <!-- Header Mobile (< 768px) - 3 Kolom Fluid 100% -->
+                    <tr class="md:hidden border-b border-[#1c1c1c] text-[9px] text-neutral-500 uppercase tracking-wider sticky top-0 bg-[#0c0c0c] z-10">
+                        <th class="px-2 py-1.5 w-[33%] whitespace-nowrap">Waktu &amp; User</th>
+                        <th class="px-2 py-1.5 w-[52%]">Aksi &amp; Keterangan</th>
+                        <th class="px-1.5 py-1.5 w-[15%] text-center whitespace-nowrap">Aksi</th>
+                    </tr>
+
+                    <!-- Header Desktop (>= 768px) - 8 Kolom Proporsional Anti-Bleed -->
+                    <tr class="hidden md:table-row border-b border-[#1c1c1c] text-[9px] lg:text-[10px] xl:text-[10px] 2xl:text-xs text-neutral-500 uppercase tracking-wider sticky top-0 bg-[#0c0c0c] z-10">
+                        <th class="px-2 py-1.5 w-10 text-center font-mono text-neutral-600">No</th>
+                        <th class="px-2 py-1.5 w-20 lg:w-24 xl:w-28 whitespace-nowrap">Waktu</th>
+                        <th class="px-2 py-1.5 w-20 lg:w-24 whitespace-nowrap text-center">Operator</th>
+                        <th class="px-2 py-1.5 w-24 lg:w-28 whitespace-nowrap text-center">Kategori</th>
+                        <th class="px-2 py-1.5 w-28 lg:w-36 xl:w-44 whitespace-nowrap">Aksi</th>
+                        <th class="px-2.5 py-1.5">Keterangan / Detail</th>
+                        <th class="px-2 py-1.5 w-24 lg:w-28 font-mono whitespace-nowrap">IP Address</th>
+                        <th class="px-1.5 py-1.5 text-center w-14 lg:w-16 whitespace-nowrap">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="log-rows" class="divide-y divide-[#171717]">
+                    <!-- Rows populated dynamically by Log.render() -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Controls Ramping -->
+        <div id="log-pagination" class="flex flex-col sm:flex-row items-center justify-between gap-1.5 pt-1.5 border-t border-[#1c1c1c] text-[10px] sm:text-xs text-neutral-400">
+            <div id="log-page-info" class="font-mono text-neutral-400 text-[10px] sm:text-xs">Menampilkan 0 log</div>
+            <div class="flex items-center gap-1.5">
+                <button id="btn-log-prev" onclick="Log.prevPage()"
+                    class="px-2 py-0.5 sm:py-1 rounded bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-[10px] sm:text-xs transition-colors">
+                    Sebelumnya
+                </button>
+                <span id="log-page-current" class="px-2 py-0.5 font-mono font-bold text-neutral-200 text-[10px] sm:text-xs">1 / 1</span>
+                <button id="btn-log-next" onclick="Log.nextPage()"
+                    class="px-2 py-0.5 sm:py-1 rounded bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-[10px] sm:text-xs transition-colors">
+                    Selanjutnya
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Detail Log Sistem Terpadu -->
+<div id="modal-log-detail" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-[#0c0c0c] border border-[#262626] rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+        <div class="flex justify-between items-center px-4 py-3 border-b border-[#1c1c1c] bg-[#121212]">
+            <h4 class="text-xs sm:text-sm font-bold text-neutral-100 uppercase tracking-wider flex items-center gap-2">
+                <span>📋</span> Detail Log Sistem
+            </h4>
+            <button onclick="Log.closeDetail()" class="text-neutral-500 hover:text-neutral-300 p-1 rounded transition-colors text-xs font-bold">✕</button>
+        </div>
+        <div class="p-4 overflow-y-auto space-y-3.5 scrollbar-thin text-xs sm:text-sm">
+            <!-- Meta Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 bg-[#050505] border border-[#1c1c1c] rounded-lg">
+                <div>
+                    <span class="text-[10px] text-neutral-500 font-bold uppercase block">Waktu</span>
+                    <span id="log-detail-time" class="font-mono text-neutral-200 text-xs">-</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-neutral-500 font-bold uppercase block">Operator</span>
+                    <span id="log-detail-user" class="font-mono font-bold text-neutral-100 text-xs">-</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-neutral-500 font-bold uppercase block">Kategori</span>
+                    <span id="log-detail-category" class="font-medium text-xs">-</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-neutral-500 font-bold uppercase block">IP Address</span>
+                    <span id="log-detail-ip" class="font-mono text-sky-400 text-xs">-</span>
+                </div>
+            </div>
+
+            <!-- Action & Description -->
+            <div class="p-3 bg-[#050505] border border-[#1c1c1c] rounded-lg space-y-1.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] text-neutral-500 font-bold uppercase">Aksi</span>
+                    <span id="log-detail-action" class="font-bold text-neutral-100 text-xs uppercase px-2 py-0.5 rounded bg-neutral-900 border border-neutral-700">-</span>
+                </div>
+                <div class="pt-1 border-t border-[#1c1c1c]/50">
+                    <span class="text-[10px] text-neutral-500 font-bold uppercase block mb-0.5">Keterangan</span>
+                    <p id="log-detail-desc" class="text-neutral-200 font-mono text-xs break-words leading-relaxed">-</p>
+                </div>
+            </div>
+
+            <!-- Browser Agent -->
+            <div id="log-detail-agent-box" class="p-2.5 bg-[#050505] border border-[#1c1c1c] rounded-lg space-y-0.5">
+                <span class="text-[10px] text-neutral-500 font-bold uppercase block">User Agent Browser</span>
+                <p id="log-detail-agent" class="text-neutral-400 text-[11px] font-mono break-all">-</p>
+            </div>
+
+            <!-- JSON Payload Formatted -->
+            <div id="log-detail-json-box" class="space-y-1.5 hidden">
+                <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">Struktur Data / Payload</span>
+                <div id="log-detail-json-content"></div>
+            </div>
+
+            <!-- Raw Data Collapsible -->
+            <div id="log-detail-raw-box" class="pt-1">
+                <button type="button" onclick="document.getElementById('log-detail-raw-content').classList.toggle('hidden')"
+                    class="text-[11px] text-neutral-500 hover:text-neutral-300 font-semibold flex items-center gap-1 transition-colors">
+                    <span>⚙️</span> Tampilkan String Log Mentah (Raw)
+                </button>
+                <pre id="log-detail-raw-content" class="hidden mt-2 p-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-[11px] text-neutral-400 font-mono overflow-x-auto whitespace-pre-wrap break-all"></pre>
+            </div>
+        </div>
+        <div class="px-4 py-2.5 border-t border-[#1c1c1c] bg-[#121212] flex justify-end">
+            <button onclick="Log.closeDetail()" class="px-4 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded text-xs font-semibold transition-colors">Tutup</button>
         </div>
     </div>
 </div>

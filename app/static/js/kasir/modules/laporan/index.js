@@ -1,8 +1,34 @@
 const Laporan = {
     currentDate: null,
     currentPage: 1,
+    perPage: 10,
     currentKasirId: '',
     currentMetodePembayaran: '',
+    _hasResizeListener: false,
+
+    getAdaptivePerPage() {
+        const width = window.innerWidth;
+        if (width >= 1536) return 8;
+        if (width >= 1280) return 7;
+        if (width >= 1024) return 6;
+        if (width >= 768) return 5;
+        return 4;
+    },
+
+    _initResizeListener() {
+        if (this._hasResizeListener) return;
+        this._hasResizeListener = true;
+        const handleResize = () => {
+            if (typeof App !== 'undefined' && App.currentTab !== 'laporan') return;
+            const newPerPage = this.getAdaptivePerPage();
+            if (newPerPage !== this.perPage) {
+                this.perPage = newPerPage;
+                this.currentPage = 1;
+                this.loadByDate(this.currentDate, this.currentKasirId, 1, this.currentMetodePembayaran);
+            }
+        };
+        window.addEventListener('resize', (typeof Utils !== 'undefined' && Utils.debounce) ? Utils.debounce(handleResize, 200) : handleResize);
+    },
 
     resetFilters() {
         this.currentDate = '';
@@ -110,6 +136,8 @@ const Laporan = {
     },
 
     async loadByDate(tanggal = '', kasirId = '', page = 1, metodePembayaran = '', isSilent = false) {
+        this._initResizeListener();
+        this.perPage = this.getAdaptivePerPage();
         this.currentDate = tanggal || '';
         this.currentKasirId = kasirId;
         this.currentMetodePembayaran = metodePembayaran;
@@ -119,11 +147,11 @@ const Laporan = {
         if (!area) return;
 
         if (!isSilent && (!this._lastData) && typeof Skeleton !== 'undefined') {
-            area.innerHTML = Skeleton.laporanBilling(5);
+            area.innerHTML = Skeleton.laporanBilling(this.perPage);
         }
 
         try {
-            const data = await API.report.byTanggal(this.currentDate, kasirId, page, 5, metodePembayaran);
+            const data = await API.report.byTanggal(this.currentDate, kasirId, page, this.perPage, metodePembayaran);
             
             const newFingerprint = JSON.stringify({
                 date: this.currentDate,
@@ -160,21 +188,15 @@ const Laporan = {
 
         if (sortedEntries.length === 0) return '';
         return `
-            <div class="mb-2 lg:mb-2 xl:mb-3">
-                <h5 class="text-[10px] xl:text-xs 2xl:text-sm font-bold text-neutral-400 uppercase tracking-wider mb-1">
-                    Rincian per Metode Pembayaran
-                </h5>
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1.5">
-                    ${sortedEntries.map(([method, d]) => `
-                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 lg:p-1 xl:p-2 2xl:p-2.5">
-                            <div class="text-[9px] xl:text-[10px] 2xl:text-xs font-bold uppercase tracking-wider ${method === 'Tunai' ? 'text-amber-400' : 'text-cyan-400'} mb-0.5">
-                                ${Utils.escapeHtml(method)}
-                            </div>
-                            <div class="text-xs xl:text-sm 2xl:text-base font-bold font-mono text-neutral-100">${Utils.formatRupiah(d.total)}</div>
-                            <div class="text-[9px] 2xl:text-xs text-neutral-500">${d.count} transaksi</div>
-                        </div>
-                    `).join('')}
-                </div>
+            <div class="flex flex-wrap items-center gap-1.5 mb-1.5 py-1 px-2 bg-[#080808] border border-[#1a1a1a] rounded">
+                <span class="text-[9px] xl:text-[10px] text-neutral-500 font-bold uppercase tracking-wider mr-0.5">Metode:</span>
+                ${sortedEntries.map(([method, d]) => `
+                    <div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#111] border border-[#222] text-[10px] font-mono">
+                        <span class="${method === 'Tunai' ? 'text-amber-400' : 'text-cyan-400'} font-sans font-bold">${Utils.escapeHtml(method)}</span>
+                        <span class="text-neutral-200 font-bold">${Utils.formatRupiah(d.total || 0)}</span>
+                        <span class="text-neutral-500 text-[9px]">(${d.count})</span>
+                    </div>
+                `).join('')}
             </div>
         `;
     },
@@ -234,7 +256,7 @@ const Laporan = {
                 <!-- Mobile / Tablet Card View (<1024px) -->
                 <div class="lg:hidden space-y-2 mb-2">
                     ${transaksiList.map(t => `
-                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 space-y-2">
+                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 space-y-1.5">
                             <div class="flex items-center justify-between">
                                 <div class="flex flex-col">
                                     <span class="font-mono font-bold text-neutral-200 text-xs">${t.no_nota || '-'}</span>
@@ -278,34 +300,34 @@ const Laporan = {
                             </tr>
                             <!-- Wide Desktop View Header (9 columns for 2xl: ≥1536px) -->
                             <tr class="hidden 2xl:table-row text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c]">
-                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-left font-bold">Waktu</th>
-                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-left font-bold">Nota</th>
-                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-left font-bold">Pelanggan</th>
-                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-left font-bold">Paket</th>
-                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-right font-bold">Jumlah</th>
-                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-left font-bold">PC</th>
-                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-left font-bold">Kasir</th>
-                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-left font-bold">Metode</th>
-                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1.5 xl:py-2 2xl:py-2.5 text-center font-bold">Aksi</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1 xl:py-1.5 text-left font-bold">Waktu</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1 xl:py-1.5 text-left font-bold">Nota</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1 xl:py-1.5 text-left font-bold">Pelanggan</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1 xl:py-1.5 text-left font-bold">Paket</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1 xl:py-1.5 text-right font-bold">Jumlah</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1 xl:py-1.5 text-left font-bold">PC</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1 xl:py-1.5 text-left font-bold">Kasir</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1 xl:py-1.5 text-left font-bold">Metode</th>
+                                <th class="px-3 xl:px-4 2xl:px-5 py-1 lg:py-1 xl:py-1.5 text-center font-bold">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-[#1c1c1c] bg-[#050505]">
                             ${transaksiList.map(t => `
                                 <tr class="hover:bg-[#0c0c0c] transition-colors">
                                     <!-- Compact Cells (5 items for lg & xl) -->
-                                    <td class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 hidden lg:table-cell 2xl:hidden">
+                                    <td class="px-2.5 xl:px-3 py-1 hidden lg:table-cell 2xl:hidden">
                                         <div class="flex flex-col text-left">
                                             <span class="font-mono font-bold text-neutral-200 text-xs xl:text-sm whitespace-nowrap">${t.no_nota || '-'}</span>
                                             <span class="text-[9px] xl:text-[10px] text-neutral-500 font-mono mt-0.5 whitespace-nowrap">${t.waktu || '-'}</span>
                                         </div>
                                     </td>
-                                    <td class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 hidden lg:table-cell 2xl:hidden">
+                                    <td class="px-2.5 xl:px-3 py-1 hidden lg:table-cell 2xl:hidden">
                                         <div class="flex flex-col text-left">
                                             <span class="font-semibold text-neutral-200 text-xs xl:text-sm leading-tight break-words">${t.nama_pelanggan || '-'}</span>
                                             <span class="text-[9px] xl:text-[10px] text-neutral-400 mt-0.5 leading-tight break-words">${t.paket_nama || '-'}</span>
                                         </div>
                                     </td>
-                                    <td class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 hidden lg:table-cell 2xl:hidden text-right">
+                                    <td class="px-2.5 xl:px-3 py-1 hidden lg:table-cell 2xl:hidden text-right">
                                         <div class="flex flex-col text-right">
                                             <span class="font-mono font-bold text-neutral-200 text-xs xl:text-sm whitespace-nowrap">${Utils.formatRupiah(t.jumlah || 0)}</span>
                                             <div class="mt-0.5">
@@ -313,44 +335,44 @@ const Laporan = {
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 hidden lg:table-cell 2xl:hidden">
+                                    <td class="px-2.5 xl:px-3 py-1 hidden lg:table-cell 2xl:hidden">
                                         <div class="flex flex-col items-start gap-0.5">
                                             <span class="font-mono text-neutral-300 text-xs xl:text-sm whitespace-nowrap">PC: ${t.pc_kode || '-'}</span>
                                             <span class="text-[9px] xl:text-[10px] text-neutral-400 whitespace-nowrap">Kasir: ${t.kasir_nama || '-'}</span>
                                         </div>
                                     </td>
-                                    <td class="px-2.5 xl:px-3 py-1 lg:py-1 xl:py-2 hidden lg:table-cell 2xl:hidden text-right">
+                                    <td class="px-2.5 xl:px-3 py-1 hidden lg:table-cell 2xl:hidden text-right">
                                         <button onclick="Laporan.printStruk(${t.id})" class="px-2 py-0.5 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] xl:text-xs font-bold rounded transition-colors inline-flex items-center gap-1">
                                             <span>Cetak</span>
                                         </button>
                                     </td>
 
                                     <!-- Separated Wide Desktop Cells (9 columns for 2xl: ≥1536px) -->
-                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 text-neutral-400 font-mono text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1 xl:py-1.5 text-neutral-400 font-mono text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
                                         ${t.waktu || '-'}
                                     </td>
-                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 font-mono font-bold text-neutral-200 text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1 xl:py-1.5 font-mono font-bold text-neutral-200 text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
                                         ${t.no_nota || '-'}
                                     </td>
-                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 font-semibold text-neutral-200 text-xs xl:text-sm 2xl:text-base leading-tight break-words">
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1 xl:py-1.5 font-semibold text-neutral-200 text-xs xl:text-sm 2xl:text-base leading-tight break-words">
                                         ${t.nama_pelanggan || '-'}
                                     </td>
-                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 text-neutral-400 text-xs xl:text-sm 2xl:text-base leading-tight break-words">
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1 xl:py-1.5 text-neutral-400 text-xs xl:text-sm 2xl:text-base leading-tight break-words">
                                         ${t.paket_nama || '-'}
                                     </td>
-                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 text-right font-mono font-bold text-neutral-200 text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1 xl:py-1.5 text-right font-mono font-bold text-neutral-200 text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
                                         ${Utils.formatRupiah(t.jumlah || 0)}
                                     </td>
-                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 text-neutral-400 font-mono text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1 xl:py-1.5 text-neutral-400 font-mono text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
                                         ${t.pc_kode || '-'}
                                     </td>
-                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 text-neutral-300 font-medium text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1 xl:py-1.5 text-neutral-300 font-medium text-xs xl:text-sm 2xl:text-base whitespace-nowrap">
                                         ${t.kasir_nama || '-'}
                                     </td>
-                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 whitespace-nowrap">
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1 xl:py-1.5 whitespace-nowrap">
                                         <span class="px-2.5 py-0.5 rounded text-[9px] xl:text-[10px] 2xl:text-xs font-bold ${t.metode_pembayaran === 'Tunai' ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${t.metode_pembayaran || 'Tunai'}</span>
                                     </td>
-                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1.5 xl:py-2 2xl:py-2.5 text-center whitespace-nowrap">
+                                    <td class="hidden 2xl:table-cell px-3 xl:px-4 2xl:px-5 py-1 xl:py-1.5 text-center whitespace-nowrap">
                                         <button onclick="Laporan.printStruk(${t.id})" class="px-2 py-0.5 2xl:px-3 2xl:py-1 bg-neutral-900 border border-[#2a2a2a] hover:bg-neutral-800 text-neutral-300 text-[10px] xl:text-xs 2xl:text-sm font-bold rounded transition-colors inline-flex items-center gap-1">
                                             <span>Cetak</span>
                                         </button>
@@ -360,14 +382,28 @@ const Laporan = {
                     </table>
                 </div>`;
 
-            if (data.pages && data.pages > 1) {
-                html += `
-                    <div class="flex items-center justify-center gap-2 mt-1 mb-1">
-                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage - 1})" class="px-2.5 py-0.5 lg:py-0.5 xl:py-1 2xl:py-1.5 2xl:px-3 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors ${this.currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage <= 1 ? 'disabled' : ''}>&larr;</button>
-                        <span class="px-3 py-0.5 lg:py-0.5 xl:py-1 2xl:py-1.5 text-xs xl:text-sm 2xl:text-base text-neutral-200 font-mono">${this.currentPage} / ${data.pages}</span>
-                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage + 1})" class="px-2.5 py-0.5 lg:py-0.5 xl:py-1 2xl:py-1.5 2xl:px-3 bg-[#0c0c0c] border border-[#1c1c1c] hover:bg-[#121212] text-neutral-400 text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors ${this.currentPage >= data.pages ? 'opacity-30 cursor-not-allowed' : ''}" ${this.currentPage >= data.pages ? 'disabled' : ''}>&rarr;</button>
-                    </div>`;
-            }
+            const totalItems = data.total || (data.history_struk ? data.history_struk.length : 0);
+            const totalPages = data.pages || 1;
+            const startIdx = totalItems > 0 ? (this.currentPage - 1) * this.perPage + 1 : 0;
+            const endIdx = Math.min(this.currentPage * this.perPage, totalItems);
+
+            html += `
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-2 mt-2 pt-2 border-t border-[#1c1c1c] text-xs">
+                    <div class="text-[11px] sm:text-xs text-neutral-400 font-mono">
+                        ${totalItems > 0 ? `Menampilkan <span class="text-neutral-200 font-bold">${startIdx}</span> - <span class="text-neutral-200 font-bold">${endIdx}</span> dari <span class="text-neutral-200 font-bold">${totalItems}</span> transaksi` : 'Menampilkan 0 transaksi'}
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage - 1}, '${this.currentMetodePembayaran || ""}')" 
+                            class="px-2.5 py-1 bg-[#121212] hover:bg-[#1a1a1a] border border-[#222] text-neutral-300 text-xs font-bold rounded transition-colors ${this.currentPage <= 1 ? 'opacity-30 cursor-not-allowed' : ''}" 
+                            ${this.currentPage <= 1 ? 'disabled' : ''}>&larr; Prev</button>
+                        <span class="px-2.5 py-1 text-xs text-neutral-300 font-mono bg-[#080808] border border-[#1c1c1c] rounded">
+                            Hal. <strong class="text-neutral-100">${this.currentPage}</strong> / ${totalPages}
+                        </span>
+                        <button onclick="Laporan.loadByDate('${this.currentDate}', '${this.currentKasirId}', ${this.currentPage + 1}, '${this.currentMetodePembayaran || ""}')" 
+                            class="px-2.5 py-1 bg-[#121212] hover:bg-[#1a1a1a] border border-[#222] text-neutral-300 text-xs font-bold rounded transition-colors ${this.currentPage >= totalPages ? 'opacity-30 cursor-not-allowed' : ''}" 
+                            ${this.currentPage >= totalPages ? 'disabled' : ''}>Next &rarr;</button>
+                    </div>
+                </div>`;
         } else {
             html += '<div class="text-center py-6 text-neutral-500 text-xs lg:text-sm 2xl:text-base mb-2">Tidak ada transaksi billing di tanggal ini</div>';
         }

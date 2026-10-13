@@ -129,6 +129,124 @@ const Skeleton = {
     },
 
     /**
+     * Generator Skeleton Baris Log Sistem & Audit Trail
+     * Menghasilkan baris <tr> yang selaras dengan 3-kolom mobile / 8-kolom desktop.
+     * @param {number} count Jumlah baris skeleton (default: 8)
+     */
+    logRows(count = 8) {
+        const rows = typeof count === 'number' && count > 0 ? count : 8;
+        let mobileHtml = '';
+        let desktopHtml = '';
+        for (let i = 0; i < rows; i++) {
+            mobileHtml += `
+                <tr class="md:hidden animate-pulse border-b border-[#1c1c1c]">
+                    <!-- Mobile: 3 Kolom Fluid -->
+                    <td class="px-2 py-2">
+                        <div class="h-2.5 bg-[#262626] rounded w-16 mb-1"></div>
+                        <div class="h-3 bg-[#1e1e1e] rounded w-12"></div>
+                    </td>
+                    <td class="px-2 py-2">
+                        <div class="h-3 bg-[#262626] rounded w-20 mb-1"></div>
+                        <div class="h-2.5 bg-[#1c1c1c] rounded w-28"></div>
+                    </td>
+                    <td class="px-1.5 py-2 text-center">
+                        <div class="h-5 bg-[#202020] rounded w-10 mx-auto"></div>
+                    </td>
+                </tr>
+            `;
+            desktopHtml += `
+                <tr class="hidden md:table-row animate-pulse border-b border-[#1c1c1c]">
+                    <!-- Desktop: 8 Kolom Lengkap -->
+                    <td class="px-2 py-2 font-mono text-center">
+                        <div class="h-3 bg-[#1e1e1e] rounded w-6 mx-auto"></div>
+                    </td>
+                    <td class="px-2 py-2">
+                        <div class="h-2.5 bg-[#262626] rounded w-16 mb-1"></div>
+                        <div class="h-2 bg-[#1c1c1c] rounded w-14"></div>
+                    </td>
+                    <td class="px-2 py-2 text-center">
+                        <div class="h-4 bg-[#202020] rounded w-16 mx-auto"></div>
+                    </td>
+                    <td class="px-2 py-2 text-center">
+                        <div class="h-4 bg-[#202020] rounded w-20 mx-auto"></div>
+                    </td>
+                    <td class="px-2 py-2">
+                        <div class="h-3.5 bg-[#262626] rounded w-24"></div>
+                    </td>
+                    <td class="px-2.5 py-2">
+                        <div class="h-3 bg-[#1e1e1e] rounded w-48"></div>
+                    </td>
+                    <td class="px-2 py-2 font-mono">
+                        <div class="h-3 bg-[#1c1c1c] rounded w-20"></div>
+                    </td>
+                    <td class="px-1.5 py-2 text-center">
+                        <div class="h-5 bg-[#202020] rounded w-12 mx-auto"></div>
+                    </td>
+                </tr>
+            `;
+        }
+        return mobileHtml + desktopHtml;
+    },
+
+    /**
+     * Generator Skeleton Baris Katalog Game & Aplikasi
+     * @param {number} count Jumlah baris skeleton (default: 6)
+     */
+    gameRows(count = 6) {
+        const rows = typeof count === 'number' && count > 0 ? count : 6;
+        let mobileHtml = '';
+        let desktopHtml = '';
+        for (let i = 0; i < rows; i++) {
+            mobileHtml += `
+                <tr class="md:hidden animate-pulse border-b border-[#1c1c1c]">
+                    <td class="px-2 py-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-11 bg-[#1e1e1e] rounded flex-shrink-0"></div>
+                            <div class="space-y-1.5 flex-1">
+                                <div class="h-3 bg-[#262626] rounded w-24"></div>
+                                <div class="h-2.5 bg-[#1c1c1c] rounded w-14"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-2 py-2">
+                        <div class="h-2.5 bg-[#202020] rounded w-16 mb-1"></div>
+                        <div class="h-2.5 bg-[#1c1c1c] rounded w-12"></div>
+                    </td>
+                    <td class="px-1.5 py-2 text-center">
+                        <div class="h-5 bg-[#202020] rounded w-12 mx-auto"></div>
+                    </td>
+                </tr>
+            `;
+            desktopHtml += `
+                <tr class="hidden md:table-row animate-pulse border-b border-[#1c1c1c]">
+                    <td class="px-2.5 py-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-11 bg-[#1e1e1e] rounded flex-shrink-0"></div>
+                            <div class="space-y-1.5 flex-1">
+                                <div class="h-3 bg-[#262626] rounded w-32"></div>
+                                <div class="h-2.5 bg-[#1c1c1c] rounded w-48"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-2 py-2 text-center">
+                        <div class="h-4 bg-[#202020] rounded w-14 mx-auto"></div>
+                    </td>
+                    <td class="px-2.5 py-2">
+                        <div class="h-4 bg-[#202020] rounded w-28"></div>
+                    </td>
+                    <td class="px-2 py-2 text-center">
+                        <div class="h-4 bg-[#202020] rounded w-10 mx-auto"></div>
+                    </td>
+                    <td class="px-2 py-2 text-center">
+                        <div class="h-5 bg-[#202020] rounded w-16 mx-auto"></div>
+                    </td>
+                </tr>
+            `;
+        }
+        return mobileHtml + desktopHtml;
+    },
+
+    /**
      * Generator Skeleton Kartu Pemulihan Mati Lampu (Blackout)
      * @param {number} count Jumlah kartu blackout (default 4)
      */
@@ -387,6 +505,10 @@ const Skeleton = {
                     <div class="h-2 bg-[#202020] rounded w-32"></div>
                     <div class="h-4 bg-[#262626] rounded w-36"></div>
                 </div>
+                <div class="bg-[#111] border border-[#222] p-2.5 rounded-lg space-y-1.5">
+                    <div class="h-2 bg-[#202020] rounded w-28"></div>
+                    <div class="h-4 bg-[#262626] rounded w-16"></div>
+                </div>
             </div>
         `;
 
@@ -499,23 +621,23 @@ const Skeleton = {
      * sehingga langsung mewarisi layout grid responsif #screenshot-grid (3 col di lg, 4 col di xl/2xl).
      * @param {number} count Jumlah kartu screenshot
      */
-    screenshotCards(count = 8) {
+    screenshotCards(count = 16) {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="screenshot-card w-full h-full flex flex-col bg-[#121212] border border-[#1c1c1c] rounded overflow-hidden animate-pulse">
-                    <div class="p-3 border-b border-[#1c1c1c] flex justify-between items-center bg-[#171717]">
-                        <div class="h-4 bg-[#262626] rounded w-16"></div>
-                        <div class="h-6 w-6 bg-[#202020] rounded"></div>
+                <div class="screenshot-card w-full h-full flex flex-col bg-[#121212] border border-[#1c1c1c] rounded-lg overflow-hidden animate-pulse">
+                    <div class="p-1.5 px-2 border-b border-[#1c1c1c] flex justify-between items-center bg-[#171717]">
+                        <div class="h-3 bg-[#262626] rounded w-12"></div>
+                        <div class="h-4 w-4 bg-[#202020] rounded"></div>
                     </div>
-                    <div class="relative w-full aspect-video bg-black flex flex-col items-center justify-center p-4">
-                        <div class="w-10 h-10 rounded-full bg-[#1c1c1c] flex items-center justify-center">
-                            <svg class="w-5 h-5 text-[#2a2a2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <div class="relative w-full aspect-video bg-black flex flex-col items-center justify-center p-2">
+                        <div class="w-6 h-6 rounded-full bg-[#1c1c1c] flex items-center justify-center">
+                            <svg class="w-3.5 h-3.5 text-[#2a2a2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         </div>
                     </div>
-                    <div class="p-3 text-sm flex justify-between items-center bg-[#0c0c0c] border-t border-[#1c1c1c] mt-auto">
-                        <div class="h-3 bg-[#202020] rounded w-14"></div>
-                        <div class="h-3 bg-[#262626] rounded w-24"></div>
+                    <div class="px-2 py-1 text-[10px] flex justify-between items-center bg-[#0c0c0c] border-t border-[#1c1c1c] mt-auto">
+                        <div class="h-2 bg-[#202020] rounded w-8"></div>
+                        <div class="h-2 bg-[#262626] rounded w-14"></div>
                     </div>
                 </div>
             `;
@@ -612,27 +734,42 @@ const Skeleton = {
     },
 
     /**
-     * Generator Skeleton Log Audit Aktivitas
-     * @param {number} count Jumlah baris log
+     * Generator Skeleton Log Audit Sistem (Table Rows)
+     * @param {number} count Jumlah baris log (default: 8)
      */
     logRows(count = 8) {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="border-b border-[#1c1c1c] py-3.5 px-4 animate-pulse space-y-2 ${i % 2 === 0 ? 'bg-[#0a0a0a]' : ''}">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <div class="h-3 bg-[#262626] rounded w-8"></div>
-                            <div class="h-3 bg-[#202020] rounded w-24"></div>
-                            <div class="h-3 bg-[#1e1e1e] rounded w-16"></div>
-                        </div>
-                        <div class="h-3 bg-[#202020] rounded w-20"></div>
-                    </div>
-                    <div class="h-3.5 bg-[#262626] rounded w-1/2"></div>
-                </div>
+                <tr class="border-b border-[#1c1c1c] animate-pulse">
+                    <td class="px-2 sm:px-2.5 py-1 sm:py-1 2xl:py-1.5 text-left">
+                        <div class="h-2.5 bg-[#202020] rounded w-6"></div>
+                    </td>
+                    <td class="px-1.5 sm:px-2 lg:px-2 xl:px-2.5 2xl:px-3 py-1 sm:py-1 2xl:py-1.5 text-left">
+                        <div class="h-3 bg-[#262626] rounded w-20 sm:w-24"></div>
+                    </td>
+                    <td class="hidden lg:table-cell px-2 lg:px-2 xl:px-2.5 2xl:px-3 py-1 sm:py-1 2xl:py-1.5 text-left">
+                        <div class="h-3 bg-[#202020] rounded w-16"></div>
+                    </td>
+                    <td class="hidden lg:table-cell px-2 lg:px-2 xl:px-2.5 2xl:px-3 py-1 sm:py-1 2xl:py-1.5 text-left">
+                        <div class="h-3.5 bg-[#1e1e1e] rounded w-16"></div>
+                    </td>
+                    <td class="px-1.5 sm:px-2 lg:px-2 xl:px-2.5 2xl:px-3 py-1 sm:py-1 2xl:py-1.5 text-left">
+                        <div class="h-3 bg-[#262626] rounded w-16 sm:w-20"></div>
+                    </td>
+                    <td class="px-1.5 sm:px-2 lg:px-2 xl:px-2.5 2xl:px-3 py-1 sm:py-1 2xl:py-1.5 text-left">
+                        <div class="h-3 bg-[#1e1e1e] rounded w-28 sm:w-40"></div>
+                    </td>
+                    <td class="hidden lg:table-cell px-2 lg:px-2 xl:px-2.5 2xl:px-3 py-1 sm:py-1 2xl:py-1.5 text-left">
+                        <div class="h-2.5 bg-[#202020] rounded w-16"></div>
+                    </td>
+                    <td class="px-1 sm:px-2 py-1 sm:py-1 2xl:py-1.5 text-center">
+                        <div class="h-4 bg-[#202020] rounded w-10 mx-auto"></div>
+                    </td>
+                </tr>
             `;
         }
-        return `<div class="divide-y divide-[#1c1c1c]">${html}</div>`;
+        return html;
     },
 
     /**
@@ -749,6 +886,34 @@ const Skeleton = {
                 </div>
             </div>
         `;
+    },
+
+    /**
+     * Generator Skeleton Kartu Screenshot Monitor (Grid Kompak 8 Kolom)
+     * @param {number} count Jumlah kartu skeleton (default: 16)
+     */
+    screenshotCards(count = 16) {
+        let html = '';
+        for (let i = 0; i < count; i++) {
+            html += `
+                <div class="screenshot-card w-full h-full flex flex-col bg-[#121212] border border-[#1c1c1c] rounded-lg overflow-hidden animate-pulse">
+                    <div class="p-1.5 px-2 border-b border-[#1c1c1c] flex justify-between items-center bg-[#171717]">
+                        <div class="h-3 bg-[#262626] rounded w-12"></div>
+                        <div class="h-3.5 w-3.5 bg-[#202020] rounded"></div>
+                    </div>
+                    <div class="relative w-full aspect-video bg-black flex flex-col items-center justify-center p-2">
+                        <div class="w-6 h-6 rounded-full bg-[#1c1c1c] flex items-center justify-center">
+                            <svg class="w-3.5 h-3.5 text-[#2a2a2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                    </div>
+                    <div class="px-2 py-1 text-[10px] flex justify-between items-center bg-[#0c0c0c] border-t border-[#1c1c1c] mt-auto">
+                        <div class="h-2 bg-[#202020] rounded w-8"></div>
+                        <div class="h-2 bg-[#262626] rounded w-14"></div>
+                    </div>
+                </div>
+            `;
+        }
+        return html;
     }
 };
 
