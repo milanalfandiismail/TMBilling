@@ -605,3 +605,4 @@ app/static/assets/tutorials/temp/
 .playwright-mcp/
 audit-screenshots/
 *.png
+!app/static/img/*.png

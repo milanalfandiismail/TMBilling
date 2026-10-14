@@ -6,9 +6,20 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
-## [1.6.4] - 2026-10-11
+## [1.6.4] - 2026-10-14
 
 ### Ditambahkan
+- **Integrasi Logo Resmi TM Server & Standarisasi Visual**:
+  - Mengintegrasikan icon multi-resolusi resmi TM (`icon.ico`, `logo.png`, `logo-32.png`) dari klien Tauri ke server Flask.
+  - Menambahkan dukungan favicon browser dan apple-touch-icon di seluruh template panel kasir (`kasir/base.html`, `kasir/login.html`) dan portal publik (`_head.html`).
+  - Mengganti brand badge teks pada header sidebar kasir, halaman login kasir, portal member, dan navbar publik dengan wadah borderless & transparan berlogo TM resmi yang responsif di seluruh breakpoint tanpa garis border putih mencolok.
+  - Menautkan icon resmi TM ke berkas shortcut desktop Windows kasir (`TMBilling - Kasir.url`).
+- **Navigasi Kolom Denah Manual Discrete Chunks (Zero Overlap)**:
+  - Merombak navigasi geser denah manual di Dashboard menjadi model discrete page chunks tanpa pengulangan kolom antar halaman (misal: Hal 1 Kolom 1-8, Hal 2 Kolom 9-12).
+  - Menggantikan kontrol panah header dan banner kuning dengan Footer Bar Navigasi Kolom Noir terpadu di bawah denah, lengkap dengan dot indicator interaktif yang dapat diklik langsung.
+- **Penyelarasan Responsif & Skala Tipografi Laporan Kasir**:
+  - Menyelaraskan layout, padding, dan arsitektur tabel pada tab Grup PC dan Akun Kasir/Admin agar konsisten dengan tab Paket Billing di seluruh breakpoint.
+  - Memperbesar ukuran teks dan padding bar rincian metode pembayaran di Laporan Billing & Kantin (dari font mikro 9px/10px ke 12px dan 14px di 2XL) dengan diferensiasi warna kontras tinggi (Tunai amber, QRIS emerald, Transfer sky).
 - **Fit-to-Screen, Single Container & Responsive POS F&B Tab Kantin (`#tab-menu`)**:
   - Menyatukan POS Header dan Content ke dalam **1 Container Terpadu Ramping** (`bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 xl:p-3.5 space-y-2.5`), selaras dengan standar Tab Member, Paket, dan Unit PC.
   - Menghadirkan **Header Toolbar Terpadu**: Judul & deskripsi di sisi kiri, search box cepat dengan tombol reset `✕` dan tombol `Tambah Menu` di sisi kanan.
