@@ -8,8 +8,8 @@
     <!-- Brand / Logo -->
     <div class="flex items-center gap-3">
         <a href="/" class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded bg-neutral-100 flex items-center justify-center">
-                <span class="text-[#050505] font-black text-sm">TM</span>
+            <div class="w-7 h-7 lg:w-8 lg:h-8 flex items-center justify-center shrink-0 select-none">
+                <img src="{{ url_for('static', filename='img/logo.png') }}?v={{ v_cache }}" alt="TM Logo" class="w-full h-full object-contain">
             </div>
             <div>
                 <h1 class="text-sm lg:text-base font-extrabold text-neutral-100 leading-none">{{ warnet_title }}</h1>

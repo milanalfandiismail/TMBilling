@@ -260,6 +260,7 @@ const BranchManager = {
         const subTitleEl = document.getElementById('sidebar-brand-subtitle');
         const badgeContainer = document.getElementById('sidebar-brand-badge-container');
         const badgeText = document.getElementById('sidebar-brand-badge-text');
+        const logoImg = document.getElementById('sidebar-brand-logo-img');
         const fileExplorerBtn = document.getElementById('sidebar-fileexplorer-btn');
         const documentationBtn = document.getElementById('sidebar-documentation-btn');
         const remoteHiddenElements = document.querySelectorAll('.sidebar-remote-hidden, .sidebar-branch-group, #sidebar-branch-wrapper, #sidebar-branch-section, #sidebar-staff-group, #sidebar-settings-group');
@@ -279,11 +280,14 @@ const BranchManager = {
                 subTitleEl.className = 'text-[10px] text-neutral-500 leading-tight mt-0.5';
             }
             if (badgeContainer) {
-                badgeContainer.className = 'w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 transition-all';
+                badgeContainer.className = 'w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center shrink-0 transition-all overflow-hidden select-none';
+            }
+            if (logoImg) {
+                logoImg.classList.remove('hidden');
             }
             if (badgeText) {
-                badgeText.className = 'text-[#050505] font-black text-sm';
-                badgeText.textContent = defaultTitle.slice(0, 2).toUpperCase() || 'TM';
+                badgeText.classList.add('hidden');
+                badgeText.textContent = '';
             }
             // Tampilkan kembali seluruh elemen lokal di sidebar
             remoteHiddenElements.forEach(el => el.classList.remove('hidden'));
@@ -307,10 +311,14 @@ const BranchManager = {
                 subTitleEl.className = 'text-[10px] leading-tight mt-0.5';
             }
             if (badgeContainer) {
-                badgeContainer.className = 'w-8 h-8 rounded-lg bg-emerald-500 text-black flex items-center justify-center shrink-0 shadow-lg shadow-emerald-950/40 transition-all';
+                badgeContainer.className = 'w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-500 text-black flex items-center justify-center shrink-0 shadow-lg shadow-emerald-950/40 transition-all select-none';
+            }
+            if (logoImg) {
+                logoImg.classList.add('hidden');
             }
             if (badgeText) {
-                badgeText.className = 'text-black font-black text-sm uppercase';
+                badgeText.classList.remove('hidden');
+                badgeText.className = 'text-black font-black text-xs uppercase';
                 badgeText.textContent = branchName.replace(/[^a-zA-Z0-9]/g, '').slice(0, 2).toUpperCase() || 'RM';
             }
             // Sembunyikan menu-menu server lokal, staf, utilitas & pengaturan di sidebar
