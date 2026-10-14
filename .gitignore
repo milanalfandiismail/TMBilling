@@ -606,3 +606,4 @@ app/static/assets/tutorials/temp/
 audit-screenshots/
 *.png
 !app/static/img/*.png
+!tm.png

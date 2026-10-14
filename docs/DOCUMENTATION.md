@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="../tm.png" alt="TMBilling" width="360" />
+</p>
+
 # Master Dokumentasi Teknis & Operasional TMBilling (Single Source of Truth)
 
 > **Versi Rilis:** v1.6.4  
