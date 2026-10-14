@@ -188,15 +188,22 @@ const Laporan = {
 
         if (sortedEntries.length === 0) return '';
         return `
-            <div class="flex flex-wrap items-center gap-1.5 mb-1.5 py-1 px-2 bg-[#080808] border border-[#1a1a1a] rounded">
-                <span class="text-[9px] xl:text-[10px] text-neutral-500 font-bold uppercase tracking-wider mr-0.5">Metode:</span>
-                ${sortedEntries.map(([method, d]) => `
-                    <div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#111] border border-[#222] text-[10px] font-mono">
-                        <span class="${method === 'Tunai' ? 'text-amber-400' : 'text-cyan-400'} font-sans font-bold">${Utils.escapeHtml(method)}</span>
-                        <span class="text-neutral-200 font-bold">${Utils.formatRupiah(d.total || 0)}</span>
-                        <span class="text-neutral-500 text-[9px]">(${d.count})</span>
-                    </div>
-                `).join('')}
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2 py-1.5 px-2.5 sm:px-3 bg-[#080808] border border-[#1a1a1a] rounded-lg">
+                <span class="text-[11px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 font-bold uppercase tracking-wider mr-1">Metode:</span>
+                ${sortedEntries.map(([method, d]) => {
+                    const mLower = (method || '').toLowerCase();
+                    let colorClass = 'text-sky-400';
+                    if (mLower === 'tunai') colorClass = 'text-amber-400';
+                    else if (mLower === 'qris') colorClass = 'text-emerald-400';
+
+                    return `
+                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#111] border border-[#262626] text-xs xl:text-xs 2xl:text-sm font-mono">
+                            <span class="${colorClass} font-sans font-bold">${Utils.escapeHtml(method)}</span>
+                            <span class="text-neutral-100 font-bold">${Utils.formatRupiah(d.total || 0)}</span>
+                            <span class="text-neutral-500 text-[10px] sm:text-[11px] xl:text-xs">(${d.count})</span>
+                        </div>
+                    `;
+                }).join('')}
             </div>
         `;
     },
