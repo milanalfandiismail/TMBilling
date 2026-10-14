@@ -558,60 +558,69 @@ const Skeleton = {
      * Generator Skeleton Tabel Akun Kasir & Admin Lengkap
      * @param {number} rows Jumlah baris operator
      */
-    userTable(rows = 5) {
+    grupTable(rows = 5) {
         let rowsHtml = '';
         for (let i = 0; i < rows; i++) {
             rowsHtml += `
-                <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
-                    <td class="px-4 py-3 text-left">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-[#1c1c1c] flex-shrink-0"></div>
-                            <div class="space-y-1 flex-1">
-                                <div class="h-3.5 bg-[#262626] rounded w-24"></div>
-                                <div class="h-2.5 bg-[#1a1a1a] rounded w-32"></div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-4 py-3 text-left">
-                        <div class="h-5 bg-[#202020] rounded w-16"></div>
-                    </td>
-                    <td class="px-4 py-3 text-left">
-                        <div class="space-y-1">
-                            <div class="h-3 bg-[#262626] rounded w-24"></div>
-                            <div class="h-2 bg-[#1a1a1a] rounded w-16"></div>
-                        </div>
-                    </td>
-                    <td class="px-4 py-3 text-left">
-                        <div class="flex items-center gap-2">
-                            <div class="w-2 h-2 rounded-full bg-[#262626]"></div>
-                            <div class="h-3 bg-[#202020] rounded w-12"></div>
-                        </div>
-                    </td>
-                    <td class="px-4 py-3 text-right">
-                        <div class="flex items-center justify-end gap-2">
-                            <div class="h-7 w-7 bg-[#202020] rounded"></div>
-                            <div class="h-7 w-7 bg-[#202020] rounded"></div>
-                        </div>
-                    </td>
+                <tr class="animate-pulse">
+                    <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center"><div class="h-3 bg-[#1e1e1e] rounded w-6 mx-auto"></div></td>
+                    <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left"><div class="h-3.5 bg-[#262626] rounded w-28 sm:w-36"></div></td>
+                    <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-36 sm:w-48"></div></td>
+                    <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-right remote-hide-action"><div class="h-5 2xl:h-6 w-14 bg-[#181818] rounded ml-auto"></div></td>
                 </tr>
             `;
         }
 
         return `
-            <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
-                <thead class="hidden lg:table-header-group">
-                    <tr class="border-b border-[#262626] text-neutral-400">
-                        <th class="px-4 py-3 text-left font-medium w-1/4">Operator</th>
-                        <th class="px-4 py-3 text-left font-medium">Role</th>
-                        <th class="px-4 py-3 text-left font-medium">Benefit Bermain</th>
-                        <th class="px-4 py-3 text-left font-medium">Status</th>
-                        <th class="px-4 py-3 text-right font-medium w-28">Kelola</th>
-                    </tr>
-                </thead>
-                <tbody class="block lg:table-row-group divide-y divide-[#1c1c1c]">
-                    ${rowsHtml}
-                </tbody>
-            </table>
+            <div class="overflow-x-auto w-full border border-[#1c1c1c] rounded">
+                <table class="w-full text-xs 2xl:text-sm">
+                    <thead>
+                        <tr class="text-[10px] sm:text-xs 2xl:text-sm text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c] bg-[#0c0c0c]">
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center w-12 font-bold">ID</th>
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left font-bold">Nama Grup / Zona</th>
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left font-bold">Keterangan & PC</th>
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-right font-bold w-24 sm:w-28 remote-hide-action">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#1a1a1a]">
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    },
+
+    userTable(rows = 5) {
+        let rowsHtml = '';
+        for (let i = 0; i < rows; i++) {
+            rowsHtml += `
+                <tr class="animate-pulse">
+                    <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left"><div class="h-3.5 bg-[#262626] rounded w-28 sm:w-36"></div></td>
+                    <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center"><div class="h-3 bg-[#1e1e1e] rounded w-16 mx-auto"></div></td>
+                    <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-24"></div></td>
+                    <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center"><div class="h-4 bg-[#202020] rounded w-12 mx-auto"></div></td>
+                    <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-right"><div class="h-5 2xl:h-6 w-16 bg-[#181818] rounded ml-auto"></div></td>
+                </tr>
+            `;
+        }
+
+        return `
+            <div class="overflow-x-auto w-full border border-[#1c1c1c] rounded">
+                <table class="w-full text-xs 2xl:text-sm">
+                    <thead>
+                        <tr class="text-[10px] sm:text-xs 2xl:text-sm text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c] bg-[#0c0c0c]">
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left font-bold">Operator</th>
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center font-bold">Role</th>
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left font-bold">Benefit Bermain</th>
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center font-bold">Status</th>
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-right font-bold w-24 sm:w-28">Kelola</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#1a1a1a]">
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
         `;
     },
 
