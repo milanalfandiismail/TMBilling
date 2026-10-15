@@ -37,9 +37,18 @@ def list_member():
                 grup_id = grup_id_raw
                 
         page = request.args.get("page", 1, type=int)
-        per_page = request.args.get("per_page", 10, type=int)
+        per_page = request.args.get("per_page", 5, type=int)
+        sort_by = request.args.get("sort_by", "grup_id")
+        order = request.args.get("order", "asc")
         
-        result = MemberService.get_paginated_members(q, page, per_page, grup_id=grup_id)
+        result = MemberService.get_paginated_members(
+            q,
+            page,
+            per_page,
+            grup_id=grup_id,
+            sort_by=sort_by,
+            order=order
+        )
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -305,6 +305,7 @@ def get_stock_logs():
             per_page=per_page
         )
         operators = MenuService.get_stock_log_operators()
+        dates = MenuService.get_stock_log_dates()
         return jsonify({
             "success": True,
             "data": data["items"],
@@ -315,10 +316,22 @@ def get_stock_logs():
                 "has_prev": data["has_prev"],
                 "has_next": data["has_next"]
             },
-            "operators": operators
+            "operators": operators,
+            "dates": dates
         }), 200
     except ValueError as val_e:
         return jsonify({"success": False, "error": str(val_e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@menu_api_bp.route("/stock-logs/dates", methods=["GET"])
+@login_required
+def get_stock_log_dates():
+    """Mendapatkan daftar tanggal unik saat terjadi mutasi stok."""
+    try:
+        dates = MenuService.get_stock_log_dates()
+        return jsonify({"success": True, "dates": dates}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

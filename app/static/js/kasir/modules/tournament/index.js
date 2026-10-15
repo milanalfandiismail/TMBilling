@@ -26,6 +26,10 @@ const Tournament = {
         return window.App && App.user && App.user.role === 'kasir';
     },
 
+    isReadOnly() {
+        return this.isKasir() || (window.BranchManager && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0');
+    },
+
     async load() {
         this.showListView();
         await this.renderList();
@@ -122,7 +126,7 @@ const Tournament = {
                             <span class="text-[10px] lg:text-xs text-neutral-500 font-mono">${t.teams_count} Tim Terdaftar</span>
                             <div class="flex gap-2">
                                 ${this.isKasir() ? '' : `
-                                <button onclick="Tournament.deleteTournament(${t.id})" class="p-2 text-neutral-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Hapus Turnamen">
+                                <button onclick="Tournament.deleteTournament(${t.id})" class="p-2 text-neutral-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors remote-hide-action" title="Hapus Turnamen">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
@@ -308,8 +312,8 @@ const Tournament = {
                 }
 
                 html += `
-                    <div ${this.isKasir() ? '' : `onclick="Tournament.openSkorModal(${m.id}, '${t1}', '${t2}', ${m.tim1_id || 0}, ${m.tim2_id || 0}, ${m.skor1}, ${m.skor2})"`}
-                        class="bg-[#0a0a0a] border ${cardBorder} rounded-xl p-4 ${this.isKasir() ? '' : 'cursor-pointer hover:bg-[#0c0c0c]'} transition-all space-y-2.5">
+                    <div ${this.isReadOnly() ? '' : `onclick="Tournament.openSkorModal(${m.id}, '${t1}', '${t2}', ${m.tim1_id || 0}, ${m.tim2_id || 0}, ${m.skor1}, ${m.skor2})"`}
+                        class="bg-[#0a0a0a] border ${cardBorder} rounded-xl p-4 ${this.isReadOnly() ? '' : 'cursor-pointer hover:bg-[#0c0c0c]'} transition-all space-y-2.5">
                         <div class="flex items-center justify-between text-[10px] lg:text-xs text-neutral-600 font-mono">
                             <span>Match #${m.match_number}</span>
                             ${boIndicators}
@@ -383,12 +387,12 @@ const Tournament = {
                 }
             }
 
-            const cardClickAction = (m.tim2_id && !this.isKasir())
+            const cardClickAction = (m.tim2_id && !this.isReadOnly())
                 ? `onclick="Tournament.openSkorModal(${m.id}, '${t1}', '${t2}', ${m.tim1_id || 0}, ${m.tim2_id || 0}, ${m.skor1}, ${m.skor2})"`
                 : '';
 
             return `
-                <div ${cardClickAction} class="bg-[#0a0a0a] border border-[#2a2a2a] ${m.tim2_id ? 'hover:border-neutral-500 cursor-pointer' : ''} rounded-xl p-4 flex items-center justify-between gap-4 transition-all">
+                <div ${cardClickAction} class="bg-[#0a0a0a] border border-[#2a2a2a] ${m.tim2_id && !this.isReadOnly() ? 'hover:border-neutral-500 cursor-pointer' : ''} rounded-xl p-4 flex items-center justify-between gap-4 transition-all">
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 text-[10px] lg:text-xs text-neutral-600 font-mono mb-2">
                             <span>Match #${m.match_number}</span>
@@ -418,13 +422,13 @@ const Tournament = {
         if (allCompleted) {
             if (isLastStage) {
                 actionButtons = isKasir ? '' : `
-                    <button onclick="Tournament.finishStage(${stage.id})" class="w-full py-2.5 px-4 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">
+                    <button onclick="Tournament.finishStage(${stage.id})" class="remote-hide-action w-full py-2.5 px-4 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base font-bold rounded-lg transition-colors">
                         Selesaikan Turnamen & Simpan Hasil
                     </button>
                 `;
             } else {
                 actionButtons = isKasir ? '' : `
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-2 gap-3 remote-hide-action">
                         <button onclick="Tournament.triggerNextSwiss(${t_id=stage.turnamen_id})" class="py-2.5 px-4 bg-[#0f0f0f] border border-[#2a2a2a] hover:bg-[#151515] text-neutral-200 text-xs lg:text-base font-bold rounded-lg transition-colors">
                             Buat Ronde Swiss #${maxRound + 1}
                         </button>
@@ -483,6 +487,10 @@ const Tournament = {
 
     // ===== MODAL ACTIONS: CREATE TOURNAMENT =====
     openCreateModal() {
+        if (this.isReadOnly()) {
+            Toast.error('Akses Ditolak: Turnamen bersifat read-only di cabang remote.');
+            return;
+        }
         document.getElementById('form-buat-turnamen').reset();
         document.getElementById('tim-count').innerText = '0 Tim terdeteksi';
         document.getElementById('modal-buat-turnamen').classList.remove('hidden');
@@ -531,8 +539,8 @@ const Tournament = {
 
     // ===== MODAL ACTIONS: SCORE INPUT =====
     openSkorModal(matchId, t1Name, t2Name, t1Id, t2Id, s1, s2) {
-        if (this.isKasir()) {
-            Toast.error('Akses Ditolak: Hanya Admin yang dapat mengubah skor turnamen.');
+        if (this.isReadOnly()) {
+            Toast.error('Akses Ditolak: Turnamen bersifat read-only di cabang remote.');
             return;
         }
         if (!t1Id || !t2Id) {
@@ -587,6 +595,10 @@ const Tournament = {
 
     // ===== SWISS NEXT ROUND MATCHMAKING =====
     async triggerNextSwiss(tId) {
+        if (this.isReadOnly()) {
+            Toast.error('Akses Ditolak: Turnamen bersifat read-only di cabang remote.');
+            return;
+        }
         try {
             const res = await API.tournament.nextSwiss(tId);
             Toast.success(res.message);
@@ -598,6 +610,10 @@ const Tournament = {
 
     // ===== SWISS QUALIFICATION TO PLAYOFFS =====
     openQualifyModal(stageId) {
+        if (this.isReadOnly()) {
+            Toast.error('Akses Ditolak: Turnamen bersifat read-only di cabang remote.');
+            return;
+        }
         const listContainer = document.getElementById('qualify-teams-list');
         listContainer.innerHTML = '';
 
@@ -632,6 +648,10 @@ const Tournament = {
     },
 
     async submitQualifiers() {
+        if (this.isReadOnly()) {
+            Toast.error('Akses Ditolak: Turnamen bersifat read-only di cabang remote.');
+            return;
+        }
         const stageId = document.getElementById('modal-loloskan-playoff').dataset.stageId;
         const checkedBoxes = document.querySelectorAll('input[name="qualifier-team"]:checked');
         const qualified_team_ids = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
@@ -666,6 +686,10 @@ const Tournament = {
     },
 
     async finishStage(stageId) {
+        if (this.isReadOnly()) {
+            Toast.error('Akses Ditolak: Turnamen bersifat read-only di cabang remote.');
+            return;
+        }
         Modal.confirm('Selesaikan turnamen ini secara permanen?', async () => {
             try {
                 // Untuk tahap akhir turnamen, kirim list kosong
@@ -680,6 +704,10 @@ const Tournament = {
 
     // ===== DELETE TOURNAMENT =====
     deleteTournament(tId) {
+        if (this.isReadOnly()) {
+            Toast.error('Akses Ditolak: Turnamen bersifat read-only di cabang remote.');
+            return;
+        }
         Modal.confirm('Apakah Anda yakin ingin menghapus turnamen ini secara permanen? Semua data pertandingan, tim, dan skor akan hilang.', async () => {
             try {
                 const res = await API.tournament.delete(tId);

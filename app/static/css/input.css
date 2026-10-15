@@ -25,6 +25,67 @@
         display: none;  /* Chrome, Safari and Opera */
     }
 
+    /* POS Fit-to-Screen Containers with Scroll Containment */
+    .pos-catalog-scroll-container {
+        max-height: calc(100vh - 230px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 2.75rem;
+    }
+    @media (min-width: 640px) {
+        .pos-catalog-scroll-container {
+            max-height: calc(100vh - 225px);
+            padding-bottom: 2rem;
+        }
+    }
+    @media (min-width: 768px) {
+        .pos-catalog-scroll-container {
+            max-height: calc(100vh - 220px);
+            padding-bottom: 2rem;
+        }
+    }
+    @media (min-width: 1024px) {
+        .pos-catalog-scroll-container {
+            max-height: calc(100vh - 215px);
+            padding-bottom: 1.5rem;
+        }
+    }
+    @media (min-width: 1280px) {
+        .pos-catalog-scroll-container {
+            max-height: calc(100vh - 210px);
+            padding-bottom: 1.5rem;
+        }
+    }
+    @media (min-width: 1536px) {
+        .pos-catalog-scroll-container {
+            max-height: calc(100vh - 205px);
+            padding-bottom: 1.5rem;
+        }
+    }
+
+    .pos-cart-box {
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 230px);
+        overscroll-behavior: contain;
+    }
+    @media (min-width: 1024px) {
+        .pos-cart-box {
+            max-height: calc(100vh - 215px);
+        }
+    }
+    @media (min-width: 1280px) {
+        .pos-cart-box {
+            max-height: calc(100vh - 210px);
+        }
+    }
+    @media (min-width: 1536px) {
+        .pos-cart-box {
+            max-height: calc(100vh - 205px);
+        }
+    }
+
     /* Hide number input spinners on all browsers */
     .no-spinners::-webkit-inner-spin-button,
     .no-spinners::-webkit-outer-spin-button {
@@ -249,6 +310,22 @@
         text-decoration: underline !important;
     }
 }
+
+/* =========================================================================
+   Global Remote Branch Read-Only Protection Rules (Root Level - Non-Purged)
+   ========================================================================= */
+[data-branch-mode="remote"] .remote-hide-action,
+body[data-branch-mode="remote"] .remote-hide-action {
+    display: none !important;
+}
+
+[data-branch-mode="remote"] .remote-readonly-disabled,
+body[data-branch-mode="remote"] .remote-readonly-disabled {
+    pointer-events: none !important;
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+}
+
 
 
 

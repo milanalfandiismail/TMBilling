@@ -508,6 +508,7 @@ def get_all_screenshot_status():
                 result.append({
                     "pc_id": pc.id,
                     "pc_kode": pc.kode,
+                    "pc_grup_id": pc.grup_id or 0,
                     "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",
                     "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
                     "screenshot_time": screenshot_time,
@@ -517,6 +518,7 @@ def get_all_screenshot_status():
                 result.append({
                     "pc_id": pc.id,
                     "pc_kode": pc.kode,
+                    "pc_grup_id": pc.grup_id or 0,
                     "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",
                     "screenshot_url": None,
                     "screenshot_time": None,

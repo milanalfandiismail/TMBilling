@@ -3,10 +3,15 @@
 const Maintenance = {
     tickets: [],
     pcs: [],
+    currentPage: 1,
+    perPage: 5,
+    totalPages: 1,
 
     resetState() {
         this.tickets = [];
         this.pcs = [];
+        this.currentPage = 1;
+        this.totalPages = 1;
         this.pcSelectContext = '';
     },
 
@@ -80,9 +85,13 @@ const Maintenance = {
 
         const grouped = {};
         const groupColors = {};
+        const groupIds = {};
         this.pcs.forEach(pc => {
             const g = pc.grup || 'Reguler';
-            if (!grouped[g]) grouped[g] = [];
+            if (!grouped[g]) {
+                grouped[g] = [];
+                groupIds[g] = Number(pc.grup_id || 0);
+            }
             grouped[g].push(pc);
             if (pc.grup_warna) {
                 groupColors[g] = pc.grup_warna;
@@ -90,7 +99,7 @@ const Maintenance = {
         });
 
         let html = '';
-        Object.keys(grouped).sort().forEach(gName => {
+        Object.keys(grouped).sort((a, b) => (groupIds[a] || 0) - (groupIds[b] || 0)).forEach(gName => {
             const gColor = groupColors[gName] || '#888888';
             html += `
                 <div class="pc-group-section" data-group="${gName}">
@@ -203,7 +212,7 @@ const Maintenance = {
     async load(isSilent = false) {
         const tbody = document.getElementById('maintenance-tickets-tbody');
         if (tbody && !isSilent && (!this.tickets || this.tickets.length === 0) && typeof Skeleton !== 'undefined') {
-            tbody.innerHTML = Skeleton.tableRows(6, 5);
+            tbody.innerHTML = Skeleton.tableRows(5, 5);
         }
 
         try {
@@ -229,6 +238,12 @@ const Maintenance = {
                 this._lastFingerprint = newFingerprint;
 
                 this.tickets = tickets;
+                this.totalPages = Math.ceil(this.tickets.length / this.perPage) || 1;
+                if (!isSilent) {
+                    this.currentPage = Math.max(1, Math.min(this.currentPage, this.totalPages));
+                } else if (this.currentPage > this.totalPages) {
+                    this.currentPage = this.totalPages;
+                }
                 this.renderTickets();
                 this.updateStats();
             }
@@ -237,6 +252,42 @@ const Maintenance = {
                 Toast.error('Gagal mengambil data tiket perawatan.');
             }
         }
+    },
+
+    prevPage() {
+        if (this.currentPage > 1) {
+            this.currentPage--;
+            this.renderTickets();
+        }
+    },
+
+    nextPage() {
+        if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+            this.renderTickets();
+        }
+    },
+
+    renderPagination() {
+        const container = document.getElementById('maint-pagination');
+        const pageInfo = document.getElementById('maint-page-info');
+        const prevBtn = document.getElementById('maint-prev-btn');
+        const nextBtn = document.getElementById('maint-next-btn');
+        if (!container || !pageInfo) return;
+
+        const total = this.tickets ? this.tickets.length : 0;
+        if (total === 0) {
+            container.classList.add('hidden');
+            return;
+        }
+        container.classList.remove('hidden');
+
+        const start = (this.currentPage - 1) * this.perPage + 1;
+        const end = Math.min(this.currentPage * this.perPage, total);
+        pageInfo.innerText = `Menampilkan ${start} - ${end} dari ${total} tiket (Hal. ${this.currentPage} / ${this.totalPages})`;
+
+        if (prevBtn) prevBtn.disabled = this.currentPage <= 1;
+        if (nextBtn) nextBtn.disabled = this.currentPage >= this.totalPages;
     },
 
     updateStats() {
@@ -269,15 +320,18 @@ const Maintenance = {
         const tbody = document.getElementById('maintenance-tickets-tbody');
         if (!this.tickets || this.tickets.length === 0) {
             tbody.innerHTML = `
-                <tr class="block lg:table-row">
-                    <td colspan="5" class="py-10 text-center text-neutral-500 block lg:table-cell">Tidak ada tiket perbaikan yang aktif.</td>
+                <tr>
+                    <td colspan="5" class="py-6 text-center text-neutral-500 text-xs lg:text-[10px] xl:text-[11px] 2xl:text-sm">Tidak ada tiket perbaikan yang aktif.</td>
                 </tr>
             `;
+            this.renderPagination();
             return;
         }
 
-        tbody.innerHTML = '';
-        this.tickets.forEach(t => {
+        const startIndex = (this.currentPage - 1) * this.perPage;
+        const pageTickets = this.tickets.slice(startIndex, startIndex + this.perPage);
+
+        tbody.innerHTML = pageTickets.map(t => {
             let prioritasClass = 'bg-neutral-800 text-neutral-400';
             if (t.prioritas === 'KRITIS') prioritasClass = 'bg-red-950/40 text-red-400 border border-red-900/30';
             else if (t.prioritas === 'TINGGI') prioritasClass = 'bg-amber-950/40 text-amber-400 border border-amber-900/30';
@@ -290,66 +344,65 @@ const Maintenance = {
             else if (t.status === 'DITOLAK') statusClass = 'bg-red-950/40 text-red-400 border border-red-900/30';
 
             let actionButtons = `
-                <button onclick="Maintenance.openDetailModal(${t.id})" class="px-2.5 py-1 bg-[#171717] border border-[#262626] text-neutral-300 rounded hover:bg-neutral-100 hover:text-black text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors" title="Lihat Detail Lengkap">Detail</button>
+                <button onclick="Maintenance.openDetailModal(${t.id})" class="p-1 sm:px-2 sm:py-0.5 bg-[#171717] border border-[#262626] text-neutral-300 rounded hover:bg-neutral-100 hover:text-black text-[9px] xl:text-[10px] font-bold transition-colors" title="Lihat Detail Lengkap"><span class="sm:hidden">🔍</span><span class="hidden sm:inline">Detail</span></button>
             `;
             const isAdmin = !(window.App && App.user && App.user.role === 'kasir');
 
             if (t.status === 'BARU') {
                 actionButtons += `
-                    <button onclick="Maintenance.changeStatus(${t.id}, 'DIPROSES')" class="px-2.5 py-1 bg-blue-600/20 border border-blue-600/30 text-blue-400 rounded hover:bg-blue-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Proses</button>
-                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="px-2.5 py-1 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Tolak</button>
+                    <button onclick="Maintenance.changeStatus(${t.id}, 'DIPROSES')" class="remote-hide-action p-1 sm:px-2 sm:py-0.5 bg-blue-600/20 border border-blue-600/30 text-blue-400 rounded hover:bg-blue-600/30 text-[9px] xl:text-[10px] font-bold transition-colors" title="Proses"><span class="sm:hidden">▶</span><span class="hidden sm:inline">Proses</span></button>
+                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="remote-hide-action p-1 sm:px-2 sm:py-0.5 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600/30 text-[9px] xl:text-[10px] font-bold transition-colors" title="Tolak"><span class="sm:hidden">✕</span><span class="hidden sm:inline">Tolak</span></button>
                 `;
             } else if (t.status === 'DIPROSES') {
                 actionButtons += `
-                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="px-2.5 py-1 bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 rounded hover:bg-emerald-600/30 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors">Selesaikan</button>
+                    <button onclick="Maintenance.openUpdateModal(${t.id}, '${t.status}')" class="remote-hide-action p-1 sm:px-2 sm:py-0.5 bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 rounded hover:bg-emerald-600/30 text-[9px] xl:text-[10px] font-bold transition-colors" title="Selesaikan"><span class="sm:hidden">✓</span><span class="hidden sm:inline">Selesai</span></button>
                 `;
             }
 
             if (isAdmin) {
                 actionButtons += `
-                    <button onclick="Maintenance.deleteTicket(${t.id})" class="px-2.5 py-1 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600 hover:text-white text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold transition-colors" title="Hapus">Hapus</button>
+                    <button onclick="Maintenance.deleteTicket(${t.id})" class="remote-hide-action p-1 sm:px-2 sm:py-0.5 bg-red-600/20 border border-red-600/30 text-red-400 rounded hover:bg-red-600 hover:text-white text-[9px] xl:text-[10px] font-bold transition-colors" title="Hapus"><span class="sm:hidden">🗑</span><span class="hidden sm:inline">Hapus</span></button>
                 `;
             }
 
-            tbody.innerHTML += `
-                <tr class="hover:bg-[#121212] transition-colors border-b border-[#2a2a2a] lg:border-[#1c1c1c] last:border-b-0 block lg:table-row py-3 lg:py-0">
-                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-start sm:items-center">
-                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">PC & Prioritas</span>
-                        <div class="flex flex-col text-right lg:text-left">
-                            <span class="font-mono font-bold text-neutral-100 text-xs lg:max-xl:text-xs xl:text-base">${t.pc_kode}</span>
-                            <div class="flex items-center justify-end lg:justify-start gap-1 mt-1 flex-wrap">
-                                <span class="px-1.5 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-xs font-bold ${prioritasClass}">${t.prioritas}</span>
-                                <span class="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 font-bold uppercase text-[9px] lg:max-xl:text-[9px] xl:text-xs">${t.kategori}</span>
+            return `
+                <tr class="hover:bg-[#121212] transition-colors border-b border-[#1c1c1c] last:border-b-0">
+                    <td class="py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-1 sm:px-2 xl:px-2.5 2xl:px-3 align-middle whitespace-nowrap">
+                        <div class="flex flex-col">
+                            <span class="font-mono font-bold text-neutral-100 text-[11px] sm:text-xs lg:text-[11px] xl:text-xs 2xl:text-sm">${t.pc_kode}</span>
+                            <div class="flex items-center gap-0.5 sm:gap-1 mt-0.5 whitespace-nowrap">
+                                <span class="px-1 py-0.2 rounded text-[7.5px] sm:text-[8px] xl:text-[9px] font-bold ${prioritasClass}">${t.prioritas}</span>
+                                <span class="px-1 py-0.2 rounded bg-neutral-800 text-neutral-400 font-bold uppercase text-[7.5px] sm:text-[8px] xl:text-[9px]">${t.kategori}</span>
                             </div>
                         </div>
                     </td>
-                    <td class="py-2 lg:py-2.5 px-3 text-neutral-200 cursor-pointer group flex lg:table-cell justify-between items-start sm:items-center border-t border-[#1c1c1c]/40 lg:border-t-0" onclick="Maintenance.openDetailModal(${t.id})" title="Klik untuk melihat detail masalah">
-                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">Masalah</span>
-                        <div class="flex flex-col text-right lg:text-left max-w-[65%] sm:max-w-none">
-                            <div class="font-bold text-neutral-100 group-hover:text-white group-hover:underline transition-colors break-words leading-snug text-xs lg:max-xl:text-xs xl:text-base">${t.judul}</div>
-                            ${t.deskripsi ? `<div class="text-[10px] lg:max-xl:text-[10px] xl:text-sm text-neutral-400 break-words mt-0.5 leading-relaxed line-clamp-1">${t.deskripsi}</div>` : ''}
+                    <td class="py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-1 sm:px-2 xl:px-2.5 2xl:px-3 align-middle text-neutral-200 cursor-pointer group" onclick="Maintenance.openDetailModal(${t.id})" title="Klik untuk melihat detail masalah">
+                        <div class="flex flex-col min-w-0 max-w-[55px] sm:max-w-[150px] md:max-w-[200px] xl:max-w-xs">
+                            <div class="font-bold text-neutral-100 group-hover:text-white group-hover:underline transition-colors truncate text-[11px] sm:text-xs lg:text-[11px] xl:text-xs 2xl:text-sm">${t.judul}</div>
+                            ${t.deskripsi ? `<div class="text-[8.5px] sm:text-[9px] xl:text-[10px] text-neutral-500 truncate mt-0.5">${t.deskripsi}</div>` : ''}
                         </div>
                     </td>
-                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-start sm:items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
-                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">Pelapor</span>
-                        <div class="flex flex-col text-right lg:text-left">
-                            <span class="font-bold text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base">${t.reporter}</span>
-                            <span class="text-[10px] lg:max-xl:text-[10px] xl:text-sm text-neutral-500 font-mono mt-0.5">${t.created_at}</span>
+                    <td class="py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-1 sm:px-2 xl:px-2.5 2xl:px-3 align-middle">
+                        <div class="lg:hidden flex flex-col min-w-0">
+                            <span class="px-1.5 py-0.5 rounded text-[8px] font-bold self-start ${statusClass}">${t.status}</span>
+                            <span class="text-[9px] text-neutral-300 font-medium truncate mt-0.5">${t.reporter}</span>
+                        </div>
+                        <div class="hidden lg:flex flex-col min-w-0">
+                            <span class="font-bold text-neutral-200 text-xs lg:text-[11px] xl:text-xs 2xl:text-sm truncate">${t.reporter}</span>
+                            <span class="text-[9px] xl:text-[10px] text-neutral-500 font-mono mt-0.5 truncate">${t.created_at}</span>
                         </div>
                     </td>
-                    <td class="py-2 lg:py-2.5 px-3 flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
-                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">Status</span>
-                        <div class="flex items-center justify-end lg:justify-start">
-                            <span class="px-2 py-0.5 rounded text-[9px] lg:max-xl:text-[9px] xl:text-xs font-bold ${statusClass}">${t.status}</span>
-                        </div>
+                    <td class="hidden lg:table-cell py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-1.5 sm:px-2 xl:px-2.5 2xl:px-3 align-middle whitespace-nowrap">
+                        <span class="px-1.5 py-0.5 rounded text-[8px] xl:text-[9px] font-bold ${statusClass}">${t.status}</span>
                     </td>
-                    <td class="py-2 lg:py-2.5 px-3 text-right flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
-                        <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500">Aksi</span>
-                        <div class="flex items-center justify-end gap-1.5 flex-wrap">${actionButtons}</div>
+                    <td class="py-1 lg:py-0.5 xl:py-0.5 2xl:py-1.5 px-0.5 sm:px-2 xl:px-2.5 2xl:px-3 align-middle text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-0.5 sm:gap-1 whitespace-nowrap">${actionButtons}</div>
                     </td>
                 </tr>
             `;
-        });
+        }).join('');
+
+        this.renderPagination();
     },
 
     openCreateModal() {
@@ -404,6 +457,10 @@ const Maintenance = {
     },
 
     async changeStatus(ticketId, newStatus) {
+        if (window.BranchManager && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0') {
+            Toast.error('Akses Ditolak: Tiket perawatan bersifat read-only di cabang remote.');
+            return;
+        }
         try {
             const res = await API.request(`/api/v1/kasir/maintenance/${ticketId}/status`, {
                 method: 'PUT',
@@ -419,6 +476,10 @@ const Maintenance = {
     },
 
     openUpdateModal(ticketId, currentStatus) {
+        if (window.BranchManager && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0') {
+            Toast.error('Akses Ditolak: Tiket perawatan bersifat read-only di cabang remote.');
+            return;
+        }
         document.getElementById('maint-update-id').value = ticketId;
         const ticket = this.tickets.find(t => t.id === ticketId);
         if (ticket) {
@@ -529,21 +590,27 @@ const Maintenance = {
             if (elDeskripsi) elDeskripsi.innerText = ticket.deskripsi || '-';
             
             const statusEl = document.getElementById('maint-detail-status');
-            statusEl.innerText = ticket.status;
-            statusEl.className = 'font-bold';
-            if (ticket.status === 'SELESAI') statusEl.classList.add('text-emerald-400');
-            else if (ticket.status === 'DITOLAK') statusEl.classList.add('text-rose-400');
-            else statusEl.classList.add('text-amber-400');
+            if (statusEl) {
+                statusEl.innerText = ticket.status;
+                statusEl.className = 'font-bold px-2 py-0.5 rounded text-[10px] xl:text-xs inline-block';
+                if (ticket.status === 'SELESAI') statusEl.className += ' bg-emerald-950/80 text-emerald-400 border border-emerald-800/60';
+                else if (ticket.status === 'DITOLAK') statusEl.className += ' bg-rose-950/80 text-rose-400 border border-rose-800/60';
+                else if (ticket.status === 'DIPROSES') statusEl.className += ' bg-amber-950/80 text-amber-400 border border-amber-800/60';
+                else statusEl.className += ' bg-cyan-950/80 text-cyan-400 border border-cyan-800/60';
+            }
 
             const resolutionSection = document.getElementById('maint-detail-resolution-section');
+            const pendingSection = document.getElementById('maint-detail-pending-section');
             if (ticket.status === 'SELESAI' || ticket.status === 'DITOLAK') {
-                resolutionSection.classList.remove('hidden');
+                resolutionSection?.classList.remove('hidden');
+                pendingSection?.classList.add('hidden');
                 document.getElementById('maint-detail-resolved-by').innerText = ticket.resolved_by || 'Staff';
                 document.getElementById('maint-detail-resolved-at').innerText = ticket.resolved_at || '-';
                 document.getElementById('maint-detail-biaya').innerText = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(ticket.biaya || 0);
                 document.getElementById('maint-detail-resolusi').innerText = ticket.resolusi || '-';
             } else {
-                resolutionSection.classList.add('hidden');
+                resolutionSection?.classList.add('hidden');
+                pendingSection?.classList.remove('hidden');
             }
 
             document.getElementById('modal-detail-ticket')?.classList.remove('hidden');
@@ -557,6 +624,10 @@ const Maintenance = {
     },
 
     async deleteTicket(ticketId) {
+        if (window.BranchManager && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0') {
+            Toast.error('Akses Ditolak: Tiket perawatan bersifat read-only di cabang remote.');
+            return;
+        }
         if (!confirm('Apakah Anda yakin ingin menghapus tiket perawatan ini?')) return;
         try {
             const res = await API.request(`/api/v1/kasir/maintenance/${ticketId}`, {

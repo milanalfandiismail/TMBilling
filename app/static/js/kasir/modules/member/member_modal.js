@@ -14,34 +14,47 @@ const MemberModal = {
             const riwayatPaket = paketResponse.paket || [];
             const grupNama = (typeof member.grup === 'object' ? member.grup.nama : member.grup) || 'reguler';
 
+            const totalBelanja = riwayatPaket.reduce((sum, p) => sum + (Number(p.harga) || 0), 0);
+            const totalDurasi = riwayatPaket.reduce((sum, p) => sum + (Number(p.durasi_menit) || 0), 0);
+
             let riwayatHtml = '';
             if (riwayatPaket.length === 0) {
-                riwayatHtml = `<div class="text-center py-10 text-neutral-500 text-xs lg:text-base font-bold uppercase tracking-wider">Tidak ada riwayat paket</div>`;
+                riwayatHtml = `<div class="text-center py-6 text-neutral-500 text-xs font-bold uppercase tracking-wider">Tidak ada riwayat paket</div>`;
             } else {
                 riwayatHtml = `
-                    <div class="divide-y divide-[#1c1c1c]/60 max-h-[220px] md:max-h-[350px] overflow-y-auto pr-1 scrollbar-mono">
+                    <div class="divide-y divide-[#1c1c1c]/60 max-h-[280px] overflow-y-auto pr-4 scrollbar-mono">
                         ${riwayatPaket.map(t => `
-                            <div class="py-3 flex items-center justify-between gap-3">
+                            <div class="py-2.5 flex items-center justify-between gap-3">
                                 <div class="min-w-0 flex-1">
-                                    <div class="font-bold text-neutral-200 text-xs lg:text-base lg:truncate break-words whitespace-normal">${t.nama}</div>
-                                    <div class="text-[9px] lg:text-base text-neutral-400 mt-0.5 font-semibold">
-                                        QTY : <span class="text-neutral-200">${t.qty || 1}x</span> (${Utils.formatDurasiFriendly(t.durasi_menit)})
+                                    <div class="font-bold text-neutral-200 text-xs lg:text-sm lg:truncate break-words whitespace-normal font-mono">${t.nama}</div>
+                                    <div class="text-[9px] lg:text-xs text-neutral-400 mt-0.5 font-semibold">
+                                        QTY: <span class="text-neutral-200">${t.qty || 1}x</span> (${Utils.formatDurasiFriendly(t.durasi_menit)})
                                     </div>
-                                    <div class="text-[9px] lg:text-base text-neutral-500 font-mono mt-0.5">
+                                    <div class="text-[9px] lg:text-xs text-neutral-500 font-mono mt-0.5">
                                         ${t.dibuat_pada}
                                     </div>
                                 </div>
-                                <div class="text-right flex items-center gap-3">
-                                    <span class="text-xs lg:text-base font-mono font-bold text-neutral-300">${Utils.formatRupiah(t.harga)}</span>
+                                <div class="text-right flex items-center gap-2.5 shrink-0">
+                                    <span class="text-xs lg:text-sm font-mono font-bold text-neutral-300">${Utils.formatRupiah(t.harga)}</span>
                                     ${(t.jenis === 'beli_paket_member' || t.jenis === 'tambah_waktu_sesi') ? `
                                         <button onclick="Member.refund(${member.id}, ${t.id}, '${t.nama.replace(/'/g, "\\'")}', ${t.durasi_menit}, '${t.dibuat_pada}', ${member.waktu_saved || member.waktu_tersimpan || 0})" 
-                                            class="px-2 py-1 text-[9px] lg:text-xs font-bold bg-[#3b1216] border border-[#ef4444]/30 text-red-200 hover:bg-red-600 hover:text-white rounded transition-colors uppercase shrink-0">
+                                            class="remote-hide-action px-2.5 py-1 text-[9px] lg:text-xs font-bold bg-[#3b1216] border border-[#ef4444]/30 text-red-200 hover:bg-red-600 hover:text-white rounded transition-colors uppercase shrink-0 font-mono">
                                             REFUND
                                         </button>
                                     ` : ''}
                                 </div>
                             </div>
                         `).join('')}
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-[#1c1c1c]">
+                        <div>
+                            <div class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold">Total Pembelian</div>
+                            <div class="font-mono font-bold text-neutral-200 text-xs lg:text-sm mt-0.5">${Utils.formatRupiah(totalBelanja)}</div>
+                        </div>
+                        <div>
+                            <div class="text-[9px] lg:text-xs text-neutral-500 uppercase font-bold">Total Durasi</div>
+                            <div class="font-mono font-bold text-neutral-200 text-xs lg:text-sm mt-0.5">${Utils.formatDurasiFriendly(totalDurasi)}</div>
+                        </div>
                     </div>
                 `;
             }
@@ -124,10 +137,22 @@ const MemberModal = {
                         </div>
 
                         <!-- Right Column: Riwayat Paket / Refund -->
-                        <div class="flex flex-col h-full border-t md:border-t-0 md:border-l border-[#1c1c1c] pt-4 md:pt-0 md:pl-6">
-                            <h4 class="text-[10px] lg:text-base font-bold text-neutral-500 uppercase tracking-wider mb-3 font-mono">Riwayat Paket Aktif</h4>
-                            <div class="flex-1 bg-[#050505] border border-[#1c1c1c] rounded p-4 overflow-y-auto max-h-[220px] md:max-h-[350px] scrollbar-thin">
-                                ${riwayatHtml}
+                        <div class="flex flex-col border-t md:border-t-0 md:border-l border-[#1c1c1c] pt-4 md:pt-0 md:pl-6 space-y-4">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="text-[10px] lg:text-base font-bold text-neutral-500 uppercase tracking-wider font-mono">Riwayat Paket Aktif</h4>
+                                    <span class="text-[10px] lg:text-xs font-mono font-bold px-2 py-0.5 bg-[#171717] border border-[#262626] rounded text-neutral-400">${riwayatPaket.length} Paket</span>
+                                </div>
+                                <div class="bg-[#050505] border border-[#1c1c1c] rounded p-4">
+                                    ${riwayatHtml}
+                                </div>
+                            </div>
+                            <div class="bg-[#050505] border border-[#1c1c1c] rounded p-3 text-[10px] lg:text-xs text-neutral-500 font-mono space-y-1">
+                                <div class="text-neutral-400 font-bold uppercase flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Kebijakan Refund Paket
+                                </div>
+                                <p class="text-neutral-500 font-sans">Refund memotong sisa waktu bermain member sesuai paket yang dibeli dan mengembalikan kas transaksi ke kasir.</p>
                             </div>
                         </div>
                     </div>

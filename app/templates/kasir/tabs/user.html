@@ -1,75 +1,62 @@
 <!-- ===== TAB: USER ===== -->
-<div id="tab-user" class="tab-content hidden space-y-6">
-    <!-- User Action Header -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
+<div id="tab-user" class="tab-content hidden space-y-2 sm:space-y-2.5">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 xl:p-3.5 2xl:p-5 space-y-2.5 2xl:space-y-4">
+        <!-- 1. Header Toolbar Terpadu -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 2xl:pb-3 border-b border-[#1c1c1c]">
             <div>
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-100 uppercase tracking-wider flex items-center gap-2">
-                    <span>🔑</span> Manajemen Staff
+                <h3 class="text-xs sm:text-sm 2xl:text-base font-bold text-neutral-100 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>🔑</span>
+                    <span>Manajemen Staff</span>
                 </h3>
-                <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">
-                    Kelola akun kasir dan administrator — tambah kasir baru, ganti password, atur role dan benefit
-                </p>
+                <p class="text-[10px] sm:text-xs 2xl:text-sm text-neutral-500">Kelola akun kasir & administrator, hak akses, dan benefit bermain</p>
             </div>
-            <button onclick="User.openAddModal()"
-                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Tambah User
-            </button>
+            <div class="flex items-center gap-2">
+                <div class="relative flex-1 sm:w-48 2xl:w-64">
+                    <label for="user-search-input" class="sr-only">Cari Staff</label>
+                    <input type="text" id="user-search-input" placeholder="Cari user / staff..."
+                        class="w-full pl-7 2xl:pl-8 pr-6 2xl:pr-7 py-1.5 2xl:py-2 bg-[#050505] border border-[#1c1c1c] rounded text-[11px] sm:text-xs 2xl:text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 font-medium"
+                        oninput="User.debouncedSearch()"
+                        onkeypress="if(event.key === 'Enter') User.doSearch()">
+                    <span class="absolute left-2 2xl:left-2.5 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none">
+                        <svg class="w-3 h-3 2xl:w-3.5 2xl:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </span>
+                    <button id="user-search-clear" onclick="User.clearSearch()" class="hidden absolute right-2 2xl:right-2.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 text-[10px] 2xl:text-xs font-bold">✕</button>
+                </div>
+                <button onclick="User.openAddModal()"
+                    class="px-2.5 sm:px-3 2xl:px-4 py-1.5 2xl:py-2 bg-neutral-100 hover:bg-white text-black text-xs 2xl:text-sm font-bold rounded transition-colors flex items-center gap-1.5 2xl:gap-2 shrink-0 shadow-sm">
+                    <svg class="w-3.5 h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span class="hidden sm:inline">Tambah User</span>
+                    <span class="sm:hidden">Tambah</span>
+                </button>
+            </div>
         </div>
-    </div>
 
-    <!-- User List -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Daftar Akun</h3>
-        <div id="user-table" class="overflow-x-auto w-full">
-            <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
-                <thead class="hidden lg:table-header-group">
-                    <tr class="border-b border-[#262626] text-neutral-400">
-                        <th class="px-4 py-3 text-left font-medium w-1/4">Operator</th>
-                        <th class="px-4 py-3 text-left font-medium">Role</th>
-                        <th class="px-4 py-3 text-left font-medium">Benefit Bermain</th>
-                        <th class="px-4 py-3 text-left font-medium">Status</th>
-                        <th class="px-4 py-3 text-right font-medium w-28">Kelola</th>
-                    </tr>
-                </thead>
-                <tbody class="block lg:table-row-group divide-y divide-[#1c1c1c]">
-                    {% for _ in range(5) %}
-                    <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
-                        <td class="px-4 py-3 text-left">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-[#1c1c1c] flex-shrink-0"></div>
-                                <div class="space-y-1 flex-1">
-                                    <div class="h-3.5 bg-[#262626] rounded w-24"></div>
-                                    <div class="h-2.5 bg-[#1a1a1a] rounded w-32"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-4 py-3 text-left">
-                            <div class="h-5 bg-[#202020] rounded w-16"></div>
-                        </td>
-                        <td class="px-4 py-3 text-left">
-                            <div class="space-y-1">
-                                <div class="h-3 bg-[#262626] rounded w-24"></div>
-                                <div class="h-2 bg-[#1a1a1a] rounded w-16"></div>
-                            </div>
-                        </td>
-                        <td class="px-4 py-3 text-left">
-                            <div class="flex items-center gap-2">
-                                <div class="w-2 h-2 rounded-full bg-[#262626]"></div>
-                                <div class="h-3 bg-[#202020] rounded w-12"></div>
-                            </div>
-                        </td>
-                        <td class="px-4 py-3 text-right">
-                            <div class="flex items-center justify-end gap-2">
-                                <div class="h-7 w-7 bg-[#202020] rounded"></div>
-                                <div class="h-7 w-7 bg-[#202020] rounded"></div>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <!-- 2. Kontainer Tabel User & Pagination -->
+        <div id="user-table" class="w-full">
+            <div class="overflow-x-auto w-full border border-[#1c1c1c] rounded">
+                <table class="w-full text-xs 2xl:text-sm">
+                    <thead>
+                        <tr class="text-[10px] sm:text-xs 2xl:text-sm text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c] bg-[#0c0c0c]">
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left font-bold">Operator</th>
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center font-bold">Role</th>
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left font-bold">Benefit Bermain</th>
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center font-bold">Status</th>
+                            <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-right font-bold w-28 sm:w-32">Kelola</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#1a1a1a]">
+                        {% for _ in range(5) %}
+                        <tr class="animate-pulse">
+                            <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left"><div class="h-3.5 bg-[#262626] rounded w-28 sm:w-36"></div></td>
+                            <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center"><div class="h-3 bg-[#1e1e1e] rounded w-16 mx-auto"></div></td>
+                            <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-24"></div></td>
+                            <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center"><div class="h-4 bg-[#202020] rounded w-12 mx-auto"></div></td>
+                            <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-right"><div class="h-5 2xl:h-6 w-16 bg-[#181818] rounded ml-auto"></div></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

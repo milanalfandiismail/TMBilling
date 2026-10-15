@@ -533,9 +533,9 @@ const Dashboard = {
                     <span>Detail PC</span>
                 </button>
 
-                <div class="border-t border-[#222] my-1"></div>
+                <div class="border-t border-[#222] my-1 remote-hide-action"></div>
 
-                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-indigo-400 hover:bg-indigo-950/40 hover:text-indigo-300 transition-colors text-left font-mono"
+                <button class="ctx-item remote-hide-action w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-indigo-400 hover:bg-indigo-950/40 hover:text-indigo-300 transition-colors text-left font-mono"
                         onclick="Dashboard.closeContextMenu(); Dashboard.clearSesiSystem(${pcId}, ${pc.sesi_detail ? pc.sesi_detail.id : 'null'})">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -559,7 +559,7 @@ const Dashboard = {
                 </button>
 
                 ${!pc.sesi_detail && !isAdminMode ? `
-                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
+                <button class="ctx-item remote-hide-action w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
                         onclick="Dashboard.closeContextMenu(); BukaModal.open('${pc.kode}', '${pc.grup}')">
                     <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -568,7 +568,7 @@ const Dashboard = {
                 </button>` : ''}
 
                 ${isAdminMode ? `
-                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-amber-400 hover:bg-amber-950/40 hover:text-amber-300 transition-colors text-left font-mono"
+                <button class="ctx-item remote-hide-action w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-amber-400 hover:bg-amber-950/40 hover:text-amber-300 transition-colors text-left font-mono"
                         onclick="Dashboard.closeContextMenu(); Dashboard.logoutAdmin(${pcId}, ${pc.sesi_detail ? pc.sesi_detail.id : 'null'})">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -577,7 +577,7 @@ const Dashboard = {
                 </button>` : ''}
 
                 ${hasSesi ? `
-                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
+                <button class="ctx-item remote-hide-action w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
                         onclick="Dashboard.closeContextMenu(); TambahModal.open(${pc.sesi_detail.id}, '${pc.grup}')">
                     <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -586,7 +586,7 @@ const Dashboard = {
                 </button>` : ''}
 
                 ${hasSesi ? `
-                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left font-mono"
+                <button class="ctx-item remote-hide-action w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left font-mono"
                         onclick="Dashboard.closeContextMenu(); ${pc.sesi_detail.tipe === 'guest' ? `Dashboard.showGuestRefundModal(${pc.sesi_detail.id})` : `Dashboard.showMemberRefundModal(${pc.sesi_detail.member_id})`}">
                     <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"/>
@@ -595,7 +595,7 @@ const Dashboard = {
                 </button>` : ''}
 
                 ${hasSesi ? `
-                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left"
+                <button class="ctx-item remote-hide-action w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left"
                         onclick="Dashboard.closeContextMenu(); Dashboard.tutupSesi(${pc.sesi_detail.id})">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -604,7 +604,7 @@ const Dashboard = {
                 </button>` : ''}
 
                 ${hasSesi ? `
-                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
+                <button class="ctx-item remote-hide-action w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left"
                         onclick="Dashboard.closeContextMenu(); Dashboard.pindahSesi(${pc.sesi_detail.id}, '${pc.sesi_detail.tipe}', '${pc.grup}')">
                     <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
@@ -612,10 +612,10 @@ const Dashboard = {
                     <span>Pindah PC</span>
                 </button>` : ''}
 
-                <div class="border-t border-[#222] my-1"></div>
+                <div class="border-t border-[#222] my-1 remote-hide-action"></div>
 
                 ${hasMac ? `
-                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-green-400 hover:bg-green-950/40 hover:text-green-300 transition-colors text-left"
+                <button class="ctx-item remote-hide-action w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-green-400 hover:bg-green-950/40 hover:text-green-300 transition-colors text-left"
                         onclick="Dashboard.closeContextMenu(); Dashboard.wolSingle(${pcId})">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/>
@@ -623,7 +623,7 @@ const Dashboard = {
                     <span>Wake-on-LAN</span>
                     <span class="ml-auto text-[9px] lg:text-base text-green-700 font-mono">${pc.mac_address}</span>
                 </button>` : `
-                <div class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-600 cursor-not-allowed text-left" title="Tambahkan MAC Address di tab PC terlebih dahulu">
+                <div class="ctx-item remote-hide-action w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-neutral-600 cursor-not-allowed text-left" title="Tambahkan MAC Address di tab PC terlebih dahulu">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/>
                     </svg>
@@ -632,15 +632,15 @@ const Dashboard = {
                 </div>`}
 
                 ${pc.status !== 'offline' ? `
-                <div class="border-t border-[#222] my-1"></div>
-                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left"
+                <div class="border-t border-[#222] my-1 remote-hide-action"></div>
+                <button class="ctx-item remote-hide-action w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left"
                         onclick="Dashboard.closeContextMenu(); Dashboard.remoteAction(${pcId}, 'restart')">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5" />
                     </svg>
                     <span>Restart PC</span>
                 </button>
-                <button class="ctx-item w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-500 hover:bg-red-950/50 hover:text-red-400 transition-colors text-left"
+                <button class="ctx-item remote-hide-action w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-500 hover:bg-red-950/50 hover:text-red-400 transition-colors text-left"
                         onclick="Dashboard.closeContextMenu(); Dashboard.remoteAction(${pcId}, 'shutdown')">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L12 12m0-6v6" />
@@ -1021,24 +1021,103 @@ const Dashboard = {
     },
 
     showSettingsModal() {
-        const modal = document.getElementById('modal-dashboard-settings');
-        if (!modal) return;
+        const nicDropEnabled = localStorage.getItem('dashboard_nic_drop_detection') !== 'false';
+        const currentInterval = this.getRefreshInterval();
 
-        // 1. Sync Toggle NIC Drop
-        const nicToggle = document.getElementById('setting-nic-drop-toggle');
-        if (nicToggle) {
-            nicToggle.checked = localStorage.getItem('dashboard_nic_drop_detection') !== 'false';
+        const pollButtons = [
+            { ms: 1000, label: '⚡ 1 Detik', sub: '(Realtime)', subClass: 'text-emerald-400' },
+            { ms: 2000, label: '🚀 2 Detik', sub: 'Cepat', subClass: 'text-neutral-500' },
+            { ms: 3000, label: '⏱️ 3 Detik', sub: 'Sedang', subClass: 'text-neutral-500' },
+            { ms: 5000, label: '🐢 5 Detik', sub: 'Santai', subClass: 'text-neutral-500' }
+        ].map(item => {
+            const isActive = item.ms === currentInterval;
+            const activeClasses = isActive
+                ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-300 shadow-md shadow-emerald-950/20"
+                : "border-[#1c1c1c] bg-[#141414] text-neutral-400 hover:border-neutral-500";
+            return `
+                <button type="button" onclick="Dashboard.setPollingInterval(${item.ms})" id="btn-poll-${item.ms}"
+                    class="px-3 sm:px-3.5 py-2.5 sm:py-3 rounded border text-xs sm:text-sm lg:max-xl:text-xs xl:text-base font-semibold transition-all text-center flex flex-col items-center justify-center gap-0.5 ${activeClasses}">
+                    <span class="font-bold">${item.label}</span>
+                    <span class="text-[9px] sm:text-[11px] ${item.subClass} font-mono font-normal">${item.sub}</span>
+                </button>
+            `;
+        }).join('');
+
+        const html = `
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-5 sm:p-6 md:p-7 max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl w-[95vw] sm:w-[calc(100%-2rem)] md:w-full shadow-2xl relative flex flex-col my-auto space-y-4 sm:space-y-5 lg:space-y-6 animate-in">
+                <!-- Header (Fixed) -->
+                <div class="flex items-center justify-between pb-3.5 sm:pb-4 lg:pb-5 border-b border-[#1c1c1c] shrink-0">
+                    <div class="flex items-center gap-3 sm:gap-3.5">
+                        <div class="w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-neutral-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Pengaturan Dashboard</h3>
+                            <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-0.5">Konfigurasi visual, alert hardware, dan interval update</p>
+                        </div>
+                    </div>
+                    <button onclick="Modal.closeModal()"
+                        class="text-neutral-500 hover:text-neutral-300 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Body Options -->
+                <div class="space-y-3.5 sm:space-y-4 lg:space-y-5">
+                    <!-- Opsi 1: Deteksi LAN Drop -->
+                    <div class="p-3.5 sm:p-4 lg:p-5 bg-[#050505] border border-[#1c1c1c] rounded space-y-2 sm:space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <label for="setting-nic-drop-toggle" class="font-bold text-neutral-200 cursor-pointer flex items-center gap-2 select-none text-xs sm:text-sm lg:max-xl:text-xs xl:text-base uppercase tracking-wider">
+                                <span>🌐</span> Deteksi LAN Drop (&lt; 1 Gbps)
+                            </label>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-nic-drop-toggle" class="sr-only peer" ${nicDropEnabled ? 'checked' : ''} onchange="Dashboard.toggleNicDropDetection(this.checked)">
+                                <div class="w-10 h-5 sm:w-11 sm:h-6 bg-[#171717] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-neutral-100 after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-neutral-100 peer-checked:after:bg-black"></div>
+                            </label>
+                        </div>
+                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 leading-relaxed">
+                            Menampilkan badge peringatan kuning/merah jika kecepatan LAN turun ke 100 Mbps / 10 Mbps. Matikan opsi ini jika warnet Anda menggunakan kabel Cat 5 atau switch 100 Mbps.
+                        </p>
+                    </div>
+
+                    <!-- Opsi 2: Interval Polling -->
+                    <div class="p-3.5 sm:p-4 lg:p-5 bg-[#050505] border border-[#1c1c1c] rounded space-y-2 sm:space-y-2.5">
+                        <label class="block font-bold text-neutral-200 select-none flex items-center gap-2 text-xs sm:text-sm lg:max-xl:text-xs xl:text-base uppercase tracking-wider">
+                            <span>⏱️</span> Interval Refresh Real-time
+                        </label>
+                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 leading-relaxed mb-2">
+                            Frekuensi update serentak data PC, status shift kasir, dan omzet di layar kasir.
+                        </p>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+                            ${pollButtons}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="flex justify-end pt-3 sm:pt-4 border-t border-[#1c1c1c]">
+                    <button onclick="Modal.closeModal()"
+                        class="px-4 lg:max-xl:px-5 xl:px-6 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors uppercase tracking-wider">
+                        Selesai
+                    </button>
+                </div>
+            </div>
+        `;
+
+        if (typeof Modal !== 'undefined' && Modal.show) {
+            Modal.show(html, null, { disableBackdropClose: false });
         }
-
-        // 2. Sync Polling Interval
-        this._updatePollingButtonUI(this.getRefreshInterval());
-
-        modal.classList.remove('hidden');
     },
 
     closeSettingsModal() {
-        const modal = document.getElementById('modal-dashboard-settings');
-        if (modal) modal.classList.add('hidden');
+        if (typeof Modal !== 'undefined' && Modal.closeModal) {
+            Modal.closeModal();
+        }
     },
 
     toggleNicDropDetection(enabled) {
@@ -1052,12 +1131,20 @@ const Dashboard = {
     },
 
     getRefreshInterval() {
-        const val = parseInt(localStorage.getItem('dashboard_refresh_interval'), 10);
-        return (!isNaN(val) && val >= 1000) ? val : 1000;
+        try {
+            const val = parseInt(localStorage.getItem('dashboard_refresh_interval'), 10);
+            return (!isNaN(val) && val >= 1000) ? val : 1000;
+        } catch (e) {
+            return 1000;
+        }
     },
 
     setPollingInterval(intervalMs) {
-        localStorage.setItem('dashboard_refresh_interval', String(intervalMs));
+        try {
+            localStorage.setItem('dashboard_refresh_interval', String(intervalMs));
+        } catch (e) {
+            console.error('[Dashboard] Error saving interval:', e);
+        }
         this._updatePollingButtonUI(intervalMs);
         if (typeof App !== 'undefined' && App.restartDashboardPolling) {
             App.restartDashboardPolling();
@@ -1072,9 +1159,9 @@ const Dashboard = {
             const btn = document.getElementById(`btn-poll-${ms}`);
             if (btn) {
                 if (ms === activeMs) {
-                    btn.className = "px-3 sm:px-3.5 py-2.5 sm:py-3 rounded-xl border text-xs sm:text-sm lg:text-base font-semibold transition-all text-center flex flex-col items-center justify-center gap-0.5 border-emerald-500/60 bg-emerald-500/10 text-emerald-300 shadow-md shadow-emerald-950/20";
+                    btn.className = "px-3 sm:px-3.5 py-2.5 sm:py-3 rounded border text-xs sm:text-sm lg:max-xl:text-xs xl:text-base font-semibold transition-all text-center flex flex-col items-center justify-center gap-0.5 border-emerald-500/60 bg-emerald-500/10 text-emerald-300 shadow-md shadow-emerald-950/20";
                 } else {
-                    btn.className = "px-3 sm:px-3.5 py-2.5 sm:py-3 rounded-xl border text-xs sm:text-sm lg:text-base font-semibold transition-all text-center flex flex-col items-center justify-center gap-0.5 border-[#2a2a2a] bg-[#141414] text-neutral-400 hover:border-neutral-500";
+                    btn.className = "px-3 sm:px-3.5 py-2.5 sm:py-3 rounded border text-xs sm:text-sm lg:max-xl:text-xs xl:text-base font-semibold transition-all text-center flex flex-col items-center justify-center gap-0.5 border-[#1c1c1c] bg-[#141414] text-neutral-400 hover:border-neutral-500";
                 }
             }
         });

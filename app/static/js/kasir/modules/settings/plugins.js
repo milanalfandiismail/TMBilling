@@ -10,7 +10,10 @@ const PluginsModule = {
     },
 
     refreshLive: function() {
-        if (typeof App !== 'undefined' && App.currentTab !== 'settings') return;
+        if (typeof App !== 'undefined' && !['settings', 'plugins'].includes(App.currentTab)) return;
+        if (typeof App !== 'undefined' && App.currentTab === 'plugins') {
+            return this.fetchPlugins(true);
+        }
         const subTab = document.getElementById('settings-subtab-plugins');
         if (subTab && subTab.classList.contains('hidden')) return;
         return this.fetchPlugins(true);

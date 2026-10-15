@@ -6,7 +6,7 @@
 import { AppState } from '../shared/state.js';
 import { Api } from '../shared/api.js';
 import { UI } from '../shared/ui.js';
-import { formatTime } from '../shared/utils.js';
+import { formatTime, escapeHtml, formatRupiah, formatDuration } from '../shared/utils.js';
 import {
     AUDIO_WARNING_15MIN_PATH,
     AUDIO_WARNING_5MIN_PATH,
@@ -38,6 +38,12 @@ export const Overlay = {
         // Minimize button
         document.getElementById('minimize-btn')?.addEventListener('click', () => Api.minimize());
 
+        // Overlay Card Internal Tab Switcher
+        document.getElementById('btn-overlay-tab-session')?.addEventListener('click', () => this.switchOverlayCardTab('session'));
+        document.getElementById('btn-overlay-tab-tools')?.addEventListener('click', () => this.switchOverlayCardTab('tools'));
+        document.getElementById('btn-overlay-tab-qris')?.addEventListener('click', () => this.switchOverlayCardTab('qris'));
+        document.getElementById('btn-quick-open-menu')?.addEventListener('click', () => this.openMenuPaketModal());
+
         // Logout confirmation modal
         document.getElementById('logout-cancel-btn')?.addEventListener('click', () => UI.toggleLogoutModal(false));
         document.getElementById('logout-confirm-btn')?.addEventListener('click', () => this.confirmLogout());
@@ -52,8 +58,56 @@ export const Overlay = {
         // Modal Menu & Paket
         document.getElementById('btn-prop-menu-paket')?.addEventListener('click', () => this.openMenuPaketModal());
         document.getElementById('btn-close-menu-paket')?.addEventListener('click', () => this.closeMenuPaketModal());
+        document.getElementById('btn-close-menu-esc')?.addEventListener('click', () => this.closeMenuPaketModal());
         document.getElementById('tab-btn-paket')?.addEventListener('click', () => this.switchMenuPaketTab('paket'));
         document.getElementById('tab-btn-menu')?.addEventListener('click', () => this.switchMenuPaketTab('menu'));
+
+        // Modal Detail Item (Paket & Menu F&B)
+        document.getElementById('btn-close-item-detail')?.addEventListener('click', () => this.closeItemDetailModal());
+        document.getElementById('btn-close-item-detail-footer')?.addEventListener('click', () => this.closeItemDetailModal());
+
+        // Modal Status Member
+        document.getElementById('btn-member-status')?.addEventListener('click', () => this.openMemberStatusModal());
+        document.getElementById('btn-close-member-status')?.addEventListener('click', () => this.closeMemberStatusModal());
+        document.getElementById('btn-done-member-status')?.addEventListener('click', () => this.closeMemberStatusModal());
+
+        // Modal QRIS Fullscreen HD
+        document.getElementById('overlay-qris-card')?.addEventListener('click', () => this.openQrisFullscreen());
+        document.getElementById('btn-expand-qris')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.openQrisFullscreen();
+        });
+        document.getElementById('btn-close-qris-fullscreen')?.addEventListener('click', () => this.closeQrisFullscreen());
+        document.getElementById('btn-close-qris-esc')?.addEventListener('click', () => this.closeQrisFullscreen());
+
+        // Global Escape Key Listener for Modals (Modal hanya ditutup via tombol X atau Esc)
+        if (!this._globalModalEventsBound) {
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const detailModal = document.getElementById('modal-item-detail');
+                    const memberModal = document.getElementById('modal-member-status');
+                    const qrisModal = document.getElementById('modal-qris-fullscreen');
+                    const menuModal = document.getElementById('modal-menu-paket');
+                    const logoutModal = document.getElementById('logout-confirm-modal');
+                    const afkPinModal = document.getElementById('modal-afk-pin');
+
+                    if (detailModal && !detailModal.classList.contains('hidden')) {
+                        this.closeItemDetailModal();
+                    } else if (memberModal && !memberModal.classList.contains('hidden')) {
+                        this.closeMemberStatusModal();
+                    } else if (qrisModal && !qrisModal.classList.contains('hidden')) {
+                        this.closeQrisFullscreen();
+                    } else if (menuModal && !menuModal.classList.contains('hidden')) {
+                        this.closeMenuPaketModal();
+                    } else if (logoutModal && !logoutModal.classList.contains('hidden')) {
+                        UI.toggleLogoutModal(false);
+                    } else if (afkPinModal && !afkPinModal.classList.contains('hidden')) {
+                        UI.toggleAfkPinModal(false);
+                    }
+                }
+            });
+            this._globalModalEventsBound = true;
+        }
 
         // AFK Lock button & PIN modal
         document.getElementById('btn-lock-afk')?.addEventListener('click', () => this.handleLockAfk());
@@ -66,10 +120,53 @@ export const Overlay = {
     },
 
     /**
+     * Switch internal tab on slim overlay card (session, tools, qris)
+     */
+    switchOverlayCardTab(tab) {
+        const sessionPanel = document.getElementById('overlay-panel-session');
+        const toolsPanel = document.getElementById('overlay-panel-tools');
+        const qrisPanel = document.getElementById('overlay-panel-qris');
+
+        const sessionBtn = document.getElementById('btn-overlay-tab-session');
+        const toolsBtn = document.getElementById('btn-overlay-tab-tools');
+        const qrisBtn = document.getElementById('btn-overlay-tab-qris');
+
+        if (!sessionPanel || !toolsPanel || !qrisPanel) return;
+
+        sessionPanel.classList.add('hidden');
+        toolsPanel.classList.add('hidden');
+        qrisPanel.classList.add('hidden');
+
+        if (tab === 'session') {
+            sessionPanel.classList.remove('hidden');
+        } else if (tab === 'tools') {
+            toolsPanel.classList.remove('hidden');
+        } else if (tab === 'qris') {
+            qrisPanel.classList.remove('hidden');
+        }
+
+        const tabs = [
+            { btn: sessionBtn, name: 'session' },
+            { btn: toolsBtn, name: 'tools' },
+            { btn: qrisBtn, name: 'qris' }
+        ];
+
+        tabs.forEach(({ btn, name }) => {
+            if (!btn) return;
+            if (name === tab) {
+                btn.className = 'flex-1 py-1 text-xs font-semibold rounded-lg bg-white/10 text-white shadow-sm transition-all';
+            } else {
+                btn.className = 'flex-1 py-1 text-xs font-medium rounded-lg text-[#86868b] hover:text-white transition-all';
+            }
+        });
+    },
+
+    /**
      * Render QRIS image from configuration
      */
     async renderQris() {
         const qrisImg = document.getElementById('overlay-qris-img');
+        const modalQrisImg = document.getElementById('overlay-qris-modal-img');
         const fallbackEl = document.getElementById('overlay-qris-fallback');
         if (!qrisImg) return;
 
@@ -91,9 +188,11 @@ export const Overlay = {
         if (qrisUrl) {
             qrisImg.src = qrisUrl;
             qrisImg.classList.remove('hidden');
+            if (modalQrisImg) modalQrisImg.src = qrisUrl;
             if (fallbackEl) fallbackEl.classList.add('hidden');
         } else {
             qrisImg.classList.add('hidden');
+            if (modalQrisImg) modalQrisImg.src = '';
             if (fallbackEl) fallbackEl.classList.remove('hidden');
         }
     },
@@ -183,6 +282,7 @@ export const Overlay = {
         AppState.resetSession();
         AppState.resetShutdownTimer();
         UI.resetOverlayUI();
+        Api.setOverlayModalFullscreen(false);
     },
 
     /**
@@ -314,49 +414,75 @@ export const Overlay = {
     },
 
     /**
-     * Buka modal Menu & Paket (In-Card Modal Zero-Glitch)
+     * Buka modal Menu & Paket (Fullscreen Center Modal)
      */
     async openMenuPaketModal() {
         const modal = document.getElementById('modal-menu-paket');
+        const mainCard = document.getElementById('overlay-main-card');
         if (!modal) return;
 
-        // 1. Pastikan data paket & menu siap dan ter-render duluan agar tidak ada delay visual
-        if (!AppState.allPackages?.length || !AppState.allMenus?.length) {
+        // 1. Instan tampilkan modal & sembunyikan card utama (0ms respon)
+        if (mainCard) mainCard.classList.add('hidden');
+        modal.classList.remove('hidden');
+        const fullscreenPromise = Api.setOverlayModalFullscreen(true);
+
+        // 2. Render list instan dari cache memori jika sudah siap
+        if (AppState.allPackages?.length || AppState.allMenus?.length) {
+            this.renderPaketList();
+            this.renderMenuList();
+        } else {
             try {
                 const config = await Api.getWarnetConfig();
                 if (config) {
                     AppState.allPackages = config.paket || [];
                     AppState.allMenus = config.menu || [];
+                    this.renderPaketList();
+                    this.renderMenuList();
                 }
             } catch (err) {
                 console.warn("Gagal memuat paket/menu warnet:", err);
             }
         }
 
-        this.renderPaketList();
-        this.renderMenuList();
         this.switchMenuPaketTab('paket');
-
-        // 2. Tampilkan modal seketika di dalam card
-        modal.classList.remove('hidden');
-
-        // Bind Escape key sekali saja
-        if (!this._menuModalEventsBound) {
-            window.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-                    this.closeMenuPaketModal();
-                }
-            });
-            this._menuModalEventsBound = true;
-        }
+        await fullscreenPromise;
     },
 
     /**
-     * Tutup modal Menu & Paket
+     * Tutup modal Menu & Paket (Kembalikan ukuran overlay ke pojok kanan atas)
      */
-    closeMenuPaketModal() {
+    async closeMenuPaketModal() {
+        this.closeItemDetailModal();
         const modal = document.getElementById('modal-menu-paket');
+        const mainCard = document.getElementById('overlay-main-card');
         if (modal) modal.classList.add('hidden');
+        if (mainCard) mainCard.classList.remove('hidden');
+        await Api.setOverlayModalFullscreen(false);
+    },
+
+    /**
+     * Buka modal QRIS Fullscreen HD (Tengah Layar Monitor)
+     */
+    async openQrisFullscreen() {
+        const qrisModal = document.getElementById('modal-qris-fullscreen');
+        const mainCard = document.getElementById('overlay-main-card');
+        if (!qrisModal) return;
+
+        // Sembunyikan floating card overlay sementara
+        if (mainCard) mainCard.classList.add('hidden');
+        qrisModal.classList.remove('hidden');
+        await Api.setOverlayModalFullscreen(true);
+    },
+
+    /**
+     * Tutup modal QRIS Fullscreen HD (Kembalikan ukuran overlay ke pojok kanan atas)
+     */
+    async closeQrisFullscreen() {
+        const qrisModal = document.getElementById('modal-qris-fullscreen');
+        const mainCard = document.getElementById('overlay-main-card');
+        if (qrisModal) qrisModal.classList.add('hidden');
+        if (mainCard) mainCard.classList.remove('hidden');
+        await Api.setOverlayModalFullscreen(false);
     },
 
     /**
@@ -368,8 +494,8 @@ export const Overlay = {
         const contentPaket = document.getElementById('tab-content-paket');
         const contentMenu = document.getElementById('tab-content-menu');
 
-        const activeClasses = ['bg-accent', 'text-white', 'shadow-md', 'shadow-accent/20'];
-        const inactiveClasses = ['bg-white/5', 'text-neutral-400', 'hover:text-white', 'hover:bg-white/10', 'border', 'border-white/5'];
+        const activeClasses = ['bg-white/10', 'text-white', 'shadow-sm', 'font-semibold'];
+        const inactiveClasses = ['text-[#86868b]', 'font-medium'];
 
         if (tab === 'paket') {
             tabPaketBtn?.classList.remove(...inactiveClasses);
@@ -391,16 +517,244 @@ export const Overlay = {
     },
 
     /**
-     * Render daftar paket billing (Grid 3 Kolom Lapang)
+     * Dapatkan styling badge dinamis untuk grup paket (Apple Dark Mode aesthetic)
+     */
+    getGroupBadgeClass(groupName) {
+        const name = String(groupName || 'REGULER').toUpperCase().trim();
+        if (name.includes('SULTAN') || name.includes('VVIP') || name.includes('GOLD') || name.includes('ROYAL')) {
+            return 'bg-amber-500/15 text-amber-400 border border-amber-500/25';
+        }
+        if (name.includes('VIP')) {
+            return 'bg-purple-500/15 text-purple-400 border border-purple-500/25';
+        }
+        if (name.includes('ESPORT') || name.includes('GAMING') || name.includes('PRO') || name.includes('TOURNAMENT')) {
+            return 'bg-emerald-500/15 text-[#30d158] border border-emerald-500/25';
+        }
+        if (name.includes('STREAM') || name.includes('STUDIO') || name.includes('PODCAST')) {
+            return 'bg-rose-500/15 text-rose-400 border border-rose-500/25';
+        }
+        if (name.includes('REGULER') || name.includes('REGULAR') || name.includes('STANDARD')) {
+            return 'bg-blue-500/15 text-blue-400 border border-blue-500/25';
+        }
+
+        // Fallback: Deterministic dynamic color from group name hash
+        const palette = [
+            'bg-blue-500/15 text-blue-400 border border-blue-500/25',
+            'bg-purple-500/15 text-purple-400 border border-purple-500/25',
+            'bg-amber-500/15 text-amber-400 border border-amber-500/25',
+            'bg-emerald-500/15 text-[#30d158] border border-emerald-500/25',
+            'bg-rose-500/15 text-rose-400 border border-rose-500/25',
+            'bg-cyan-500/15 text-cyan-400 border border-cyan-500/25'
+        ];
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash) % palette.length;
+        return palette[index];
+    },
+
+    /**
+     * Tampilkan popup detail lengkap untuk Paket Billing atau Menu Kantin
+     */
+    showItemDetailModal(type, item) {
+        const modal = document.getElementById('modal-item-detail');
+        if (!modal || !item) return;
+
+        const iconBox = document.getElementById('item-detail-icon-box');
+        const typeBadge = document.getElementById('item-detail-type-badge');
+        const titleEl = document.getElementById('item-detail-title');
+        const priceEl = document.getElementById('item-detail-price');
+        const fieldsEl = document.getElementById('item-detail-fields');
+
+        if (type === 'paket') {
+            if (iconBox) iconBox.innerText = '🏷️';
+            if (typeBadge) {
+                typeBadge.innerText = 'Detail Paket Billing';
+                typeBadge.className = 'text-[10px] lg:text-[11px] font-semibold text-[#30d158] uppercase tracking-wider';
+            }
+            if (titleEl) titleEl.innerText = item.nama || 'Paket Billing';
+            if (priceEl) priceEl.innerText = formatRupiah(item.harga);
+
+            const menit = Number(item.durasi_menit) || 0;
+            let durasiText = `${menit} Menit`;
+            if (menit >= 60) {
+                const jam = menit / 60;
+                durasiText = jam % 1 === 0 ? `${jam} Jam (${menit} Menit)` : `${jam.toFixed(1)} Jam (${menit} Menit)`;
+            }
+
+            const kadaluarsa = Number(item.kadaluarsa_hari);
+            let masaBerlakuText = '30 Hari';
+            if (kadaluarsa && kadaluarsa > 0) {
+                masaBerlakuText = `${kadaluarsa} Hari`;
+            } else if (item.kadaluarsa_hari === 0 || item.kadaluarsa_hari === '0') {
+                masaBerlakuText = 'Aktif Saat Sesi';
+            }
+
+            const groupBadgeClass = this.getGroupBadgeClass(item.grup);
+
+            if (fieldsEl) {
+                fieldsEl.innerHTML = `
+                    <div class="flex items-center justify-between py-1.5 lg:py-2 xl:py-2.5 2xl:py-3 border-b border-white/[0.06]">
+                        <span class="text-[#86868b] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base">Grup Ruangan</span>
+                        <span class="px-2 lg:px-2.5 xl:px-3 py-0.5 lg:py-1 rounded-lg font-semibold text-xs lg:text-xs xl:text-sm 2xl:text-base uppercase tracking-wider ${groupBadgeClass}">${escapeHtml(item.grup || 'Reguler')}</span>
+                    </div>
+                    <div class="flex items-center justify-between py-1.5 lg:py-2 xl:py-2.5 2xl:py-3 border-b border-white/[0.06]">
+                        <span class="text-[#86868b] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base">Total Durasi</span>
+                        <span class="text-[#f5f5f7] font-bold text-xs lg:text-xs xl:text-sm 2xl:text-base font-mono">${durasiText}</span>
+                    </div>
+                    <div class="flex items-center justify-between py-1.5 lg:py-2 xl:py-2.5 2xl:py-3 border-b border-white/[0.06]">
+                        <span class="text-[#86868b] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base">Masa Aktif: Berlaku s/d</span>
+                        <span class="text-[#f5f5f7] font-bold text-xs lg:text-xs xl:text-sm 2xl:text-base font-mono">${masaBerlakuText}</span>
+                    </div>
+                    <div class="mt-2.5 lg:mt-3 xl:mt-3.5 p-2 lg:p-2.5 xl:p-3 rounded-xl lg:rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2 text-left">
+                        <span class="text-xs lg:text-sm xl:text-base shrink-0">💡</span>
+                        <span class="text-[10px] lg:text-[11px] xl:text-xs 2xl:text-sm text-amber-400 font-medium">Masa aktif hanya berlaku untuk member</span>
+                    </div>
+                `;
+            }
+        } else {
+            // Menu Kantin F&B
+            if (iconBox) iconBox.innerText = '🍜';
+            if (typeBadge) {
+                typeBadge.innerText = 'Detail Menu Kantin (F&B)';
+                typeBadge.className = 'text-[10px] lg:text-[11px] xl:text-xs 2xl:text-sm font-semibold text-[#ff9f0a] uppercase tracking-wider';
+            }
+            if (titleEl) titleEl.innerText = item.nama || 'Menu Kantin';
+            if (priceEl) priceEl.innerText = formatRupiah(item.harga);
+
+            if (fieldsEl) {
+                fieldsEl.innerHTML = `
+                    <div class="flex items-center justify-between py-1.5 lg:py-2 xl:py-2.5 2xl:py-3 border-b border-white/[0.06]">
+                        <span class="text-[#86868b] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base">Kategori</span>
+                        <span class="px-2 lg:px-2.5 xl:px-3 py-0.5 lg:py-1 rounded-lg bg-white/10 text-[#f5f5f7] font-semibold text-xs lg:text-xs xl:text-sm 2xl:text-base uppercase tracking-wider">Kantin (F&B)</span>
+                    </div>
+                    <div class="flex items-center justify-between py-1.5 lg:py-2 xl:py-2.5 2xl:py-3 border-b border-white/[0.06]">
+                        <span class="text-[#86868b] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base">Status Ketersediaan</span>
+                        <span class="px-2 lg:px-2.5 xl:px-3 py-0.5 lg:py-1 rounded-lg bg-emerald-500/10 text-[#30d158] border border-emerald-500/20 font-semibold text-xs lg:text-xs xl:text-sm 2xl:text-base uppercase tracking-wider">Ready / Tersedia</span>
+                    </div>
+                    <div class="pt-1.5 lg:pt-2 text-[11px] lg:text-xs xl:text-sm 2xl:text-base text-[#86868b] leading-relaxed">
+                        🍜 <em>Untuk memesan makanan minuman, silahkan ke meja operator/kasir.</em>
+                    </div>
+                `;
+            }
+        }
+
+        modal.classList.remove('hidden');
+    },
+
+    /**
+     * Tutup popup detail item
+     */
+    closeItemDetailModal() {
+        const modal = document.getElementById('modal-item-detail');
+        if (modal) modal.classList.add('hidden');
+    },
+
+    /**
+     * Buka modal Status & Profil Member (Fullscreen Center Modal)
+     */
+    async openMemberStatusModal() {
+        const modal = document.getElementById('modal-member-status');
+        const mainCard = document.getElementById('overlay-main-card');
+        if (!modal) return;
+
+        const member = AppState.memberData || {
+            username: AppState.sessionData?.memberName || 'Member',
+            nama_lengkap: AppState.sessionData?.memberName || 'Member',
+            grup: AppState.sessionData?.group || 'Reguler',
+            waktu_tersimpan: Math.floor((AppState.sessionData?.remainingSeconds || 0) / 60)
+        };
+
+        const nameEl = document.getElementById('member-modal-name');
+        const usernameEl = document.getElementById('member-modal-username');
+        const groupBadge = document.getElementById('member-modal-group-badge');
+        const fieldsEl = document.getElementById('member-modal-fields');
+
+        if (nameEl) nameEl.innerText = member.nama_lengkap || member.username || 'Member';
+        if (usernameEl) usernameEl.innerText = `@${member.username || '-'}`;
+
+        const groupName = member.grup || 'Reguler';
+        if (groupBadge) {
+            groupBadge.innerText = groupName;
+            groupBadge.className = `px-2.5 lg:px-3 py-0.5 lg:py-1 rounded-lg text-[10px] lg:text-[11px] xl:text-xs 2xl:text-sm font-semibold uppercase tracking-wider ${this.getGroupBadgeClass(groupName)}`;
+        }
+
+        const menitTersimpan = Number(member.waktu_tersimpan) || 0;
+        let saldoText = `${menitTersimpan} Menit`;
+        if (menitTersimpan >= 60) {
+            const jam = Math.floor(menitTersimpan / 60);
+            const sisaM = menitTersimpan % 60;
+            saldoText = sisaM > 0 ? `${jam} Jam ${sisaM} Menit (${menitTersimpan} Menit)` : `${jam} Jam (${menitTersimpan} Menit)`;
+        }
+
+        const masaAktifText = member.kadaluarsa_pada_display || member.kadaluarsa_pada || 'Tidak Terbatas';
+        const dibuatText = member.dibuat_pada_display || member.dibuat_pada || '-';
+        const noHpText = member.no_hp || '-';
+        const emailText = member.email || '-';
+
+        if (fieldsEl) {
+            fieldsEl.innerHTML = `
+                <div class="flex items-center justify-between py-1.5 lg:py-2 xl:py-2.5 2xl:py-3 border-b border-white/[0.06]">
+                    <span class="text-[#86868b] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base">Grup Ruangan</span>
+                    <span class="px-2 lg:px-2.5 xl:px-3 py-0.5 lg:py-1 rounded-lg font-semibold text-xs lg:text-xs xl:text-sm 2xl:text-base uppercase tracking-wider ${this.getGroupBadgeClass(groupName)}">${escapeHtml(groupName)}</span>
+                </div>
+                <div class="flex items-center justify-between py-1.5 lg:py-2 xl:py-2.5 2xl:py-3 border-b border-white/[0.06]">
+                    <span class="text-[#86868b] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base">Total Sisa Waktu</span>
+                    <span class="text-[#30d158] font-bold text-xs lg:text-xs xl:text-sm 2xl:text-base font-mono">${saldoText}</span>
+                </div>
+                <div class="flex items-center justify-between py-1.5 lg:py-2 xl:py-2.5 2xl:py-3 border-b border-white/[0.06]">
+                    <span class="text-[#86868b] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base">Masa Aktif: Berlaku s/d</span>
+                    <span class="text-[#f5f5f7] font-semibold text-xs lg:text-xs xl:text-sm 2xl:text-base font-mono">${escapeHtml(masaAktifText)}</span>
+                </div>
+                <div class="flex items-center justify-between py-1.5 lg:py-2 xl:py-2.5 2xl:py-3 border-b border-white/[0.06]">
+                    <span class="text-[#86868b] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base">No. WhatsApp / HP</span>
+                    <span class="text-[#f5f5f7] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base">${escapeHtml(noHpText)}</span>
+                </div>
+                <div class="flex items-center justify-between py-1.5 lg:py-2 xl:py-2.5 2xl:py-3 border-b border-white/[0.06]">
+                    <span class="text-[#86868b] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base">Email</span>
+                    <span class="text-[#f5f5f7] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base truncate max-w-[180px] lg:max-w-[220px] xl:max-w-[280px] 2xl:max-w-[340px]">${escapeHtml(emailText)}</span>
+                </div>
+                <div class="flex items-center justify-between py-1.5 lg:py-2 xl:py-2.5 2xl:py-3 border-b border-white/[0.06]">
+                    <span class="text-[#86868b] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base">Terdaftar Sejak</span>
+                    <span class="text-[#86868b] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base">${escapeHtml(dibuatText)}</span>
+                </div>
+                <div class="flex items-center justify-between py-1.5 lg:py-2 xl:py-2.5 2xl:py-3">
+                    <span class="text-[#86868b] font-medium text-xs lg:text-xs xl:text-sm 2xl:text-base">Status Keanggotaan</span>
+                    <span class="px-2 lg:px-2.5 xl:px-3 py-0.5 lg:py-1 rounded-lg bg-emerald-500/10 text-[#30d158] border border-emerald-500/20 font-semibold text-xs lg:text-xs xl:text-sm 2xl:text-base uppercase tracking-wider">Aktif / Verified</span>
+                </div>
+            `;
+        }
+
+        if (mainCard) mainCard.classList.add('hidden');
+        modal.classList.remove('hidden');
+        await Api.setOverlayModalFullscreen(true);
+    },
+
+    /**
+     * Tutup modal Status Member
+     */
+    async closeMemberStatusModal() {
+        const modal = document.getElementById('modal-member-status');
+        const mainCard = document.getElementById('overlay-main-card');
+        if (modal) modal.classList.add('hidden');
+        if (mainCard) mainCard.classList.remove('hidden');
+        await Api.setOverlayModalFullscreen(false);
+    },
+
+    /**
+     * Render daftar paket billing (Dengan Filter Grup, 2-Line Natural Wrapping & Interactive Detail Click)
      */
     renderPaketList() {
-        const container = document.getElementById('tab-content-paket');
-        if (!container) return;
+        const filterContainer = document.getElementById('overlay-paket-group-filters');
+        const itemsContainer = document.getElementById('overlay-paket-items-container') || document.getElementById('tab-content-paket');
+        if (!itemsContainer) return;
 
         const packages = AppState.allPackages || [];
         if (packages.length === 0) {
-            container.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-16 text-neutral-500">
+            if (filterContainer) filterContainer.innerHTML = '';
+            itemsContainer.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-16 text-[#6e6e73]">
                     <svg class="w-10 h-10 mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
@@ -410,7 +764,48 @@ export const Overlay = {
             return;
         }
 
-        const formatDuration = (menit) => {
+        // 1. Sorting berdasarkan grup_id (Ascending), lalu harga (Ascending)
+        const sortedPackages = [...packages].sort((a, b) => {
+            const gA = Number(a.grup_id ?? 999);
+            const gB = Number(b.grup_id ?? 999);
+            if (gA !== gB) return gA - gB;
+            return (Number(a.harga) || 0) - (Number(b.harga) || 0);
+        });
+
+        // 2. Ekstrak grup unik
+        const uniqueGroups = ['SEMUA', ...new Set(sortedPackages.map(p => (p.grup || 'Reguler').toUpperCase()))];
+        this._selectedOverlayGroup = this._selectedOverlayGroup || 'SEMUA';
+
+        // 3. Render Group Filter Pills
+        if (filterContainer) {
+            filterContainer.innerHTML = uniqueGroups.map(g => {
+                const isActive = (this._selectedOverlayGroup === g);
+                const activeClass = "bg-white text-black font-semibold shadow-sm";
+                const inactiveClass = "bg-white/[0.06] hover:bg-white/[0.10] text-[#86868b] hover:text-white border border-white/[0.08]";
+                return `
+                    <button type="button" data-group="${g}"
+                        class="overlay-group-pill px-3 py-1 rounded-xl text-[11px] transition-all whitespace-nowrap cursor-pointer ${isActive ? activeClass : inactiveClass}">
+                        ${g === 'SEMUA' ? 'Semua' : g}
+                    </button>
+                `;
+            }).join('');
+
+            // Bind click listeners to filter pills
+            filterContainer.querySelectorAll('.overlay-group-pill').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const group = e.currentTarget.getAttribute('data-group');
+                    this._selectedOverlayGroup = group;
+                    this.renderPaketList();
+                });
+            });
+        }
+
+        // 4. Filter daftar paket
+        const filtered = (this._selectedOverlayGroup === 'SEMUA')
+            ? sortedPackages
+            : sortedPackages.filter(p => (p.grup || 'Reguler').toUpperCase() === this._selectedOverlayGroup);
+
+        const formatDurationLocal = (menit) => {
             if (!menit) return '-';
             if (menit >= 60) {
                 const jam = menit / 60;
@@ -419,30 +814,48 @@ export const Overlay = {
             return `${menit} Menit`;
         };
 
-        const formatRupiah = (val) => {
-            return `Rp ${Number(val || 0).toLocaleString('id-ID')}`;
-        };
-
-        container.innerHTML = `
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pb-2">
-                ${packages.map(p => `
-                    <div class="p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-accent/30 transition-all flex flex-col justify-between">
-                        <div class="flex items-start justify-between gap-1.5 mb-1.5">
-                            <span class="text-xs font-bold text-white leading-tight truncate" title="${p.nama || 'Paket'}">${p.nama || 'Paket'}</span>
-                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-neutral-300 shrink-0 uppercase tracking-wider">${p.grup || 'Reguler'}</span>
+        itemsContainer.innerHTML = `
+            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 lg:gap-3 xl:gap-3.5 2xl:gap-4 pb-2">
+                ${filtered.map(p => {
+            const groupBadgeClass = this.getGroupBadgeClass(p.grup);
+            return `
+                    <div data-paket-id="${p.id}"
+                        class="overlay-paket-card p-3 lg:p-3.5 rounded-2xl bg-[#242426] hover:bg-[#2c2c2e] border border-white/[0.08] hover:border-[#30d158]/40 transition-all flex flex-col justify-between shadow-sm cursor-pointer group active:scale-[0.98] select-none"
+                        title="Klik untuk melihat detail lengkap ${escapeHtml(p.nama || 'Paket')}">
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <span class="text-xs lg:text-sm font-semibold text-[#f5f5f7] group-hover:text-white leading-snug line-clamp-2 break-words min-h-[2.25rem] flex items-center">
+                                ${escapeHtml(p.nama || 'Paket')}
+                            </span>
+                            <span class="text-[9px] font-medium px-2 py-0.5 rounded-lg shrink-0 uppercase tracking-wider ${groupBadgeClass}">
+                                ${escapeHtml(p.grup || 'Reguler')}
+                            </span>
                         </div>
-                        <div class="flex items-center justify-between mt-2 pt-1.5 border-t border-white/5">
-                            <span class="text-[10px] text-neutral-400 font-medium">⏱️ ${formatDuration(p.durasi_menit)}</span>
-                            <span class="text-xs font-black text-accent tracking-wide">${formatRupiah(p.harga)}</span>
+                        <div class="flex items-center justify-between pt-2 border-t border-white/[0.06]">
+                            <span class="text-[10px] lg:text-[11px] text-[#86868b] font-medium">${formatDurationLocal(p.durasi_menit)}</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs lg:text-sm font-bold text-[#30d158] tracking-wide font-mono">${formatRupiah(p.harga)}</span>
+                                <svg class="w-3.5 h-3.5 text-[#86868b] group-hover:text-[#30d158] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </div>
                         </div>
                     </div>
-                `).join('')}
+                `}).join('')}
             </div>
         `;
+
+        // 5. Bind click listeners to cards for opening detail modal
+        itemsContainer.querySelectorAll('.overlay-paket-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const pId = card.getAttribute('data-paket-id');
+                const paketObj = filtered.find(item => String(item.id) === String(pId));
+                if (paketObj) this.showItemDetailModal('paket', paketObj);
+            });
+        });
     },
 
     /**
-     * Render daftar menu kantin (Status Ready Hardcode & Grid 3 Kolom Lapang)
+     * Render daftar menu kantin (Dengan 2-Line Natural Wrapping & Interactive Detail Click)
      */
     renderMenuList() {
         const container = document.getElementById('tab-content-menu');
@@ -451,7 +864,7 @@ export const Overlay = {
         const menus = AppState.allMenus || [];
         if (menus.length === 0) {
             container.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-16 text-neutral-500">
+                <div class="flex flex-col items-center justify-center py-16 text-[#6e6e73]">
                     <svg class="w-10 h-10 mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
                     </svg>
@@ -461,27 +874,41 @@ export const Overlay = {
             return;
         }
 
-        const formatRupiah = (val) => {
-            return `Rp ${Number(val || 0).toLocaleString('id-ID')}`;
-        };
-
         container.innerHTML = `
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pb-2">
+            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 lg:gap-3 xl:gap-3.5 2xl:gap-4 pb-2">
                 ${menus.map(m => `
-                    <div class="p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-accent/30 transition-all flex flex-col justify-between">
-                        <div class="flex items-start justify-between gap-1.5 mb-1.5">
-                            <span class="text-xs font-bold text-white leading-tight truncate" title="${m.nama || 'Menu'}">${m.nama || 'Menu'}</span>
-                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 uppercase tracking-wider">
+                    <div data-menu-id="${m.id}"
+                        class="overlay-menu-card p-3 lg:p-3.5 rounded-2xl bg-[#242426] hover:bg-[#2c2c2e] border border-white/[0.08] hover:border-[#30d158]/40 transition-all flex flex-col justify-between shadow-sm cursor-pointer group active:scale-[0.98] select-none"
+                        title="Klik untuk melihat detail lengkap ${escapeHtml(m.nama || 'Menu')}">
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <span class="text-xs lg:text-sm font-semibold text-[#f5f5f7] group-hover:text-white leading-snug line-clamp-2 break-words min-h-[2.25rem] flex items-center">
+                                ${escapeHtml(m.nama || 'Menu')}
+                            </span>
+                            <span class="text-[9px] font-medium px-2 py-0.5 rounded-lg bg-emerald-500/10 text-[#30d158] border border-emerald-500/20 shrink-0 uppercase tracking-wider">
                                 Ready
                             </span>
                         </div>
-                        <div class="flex items-center justify-between mt-2 pt-1.5 border-t border-white/5">
-                            <span class="text-[10px] text-neutral-400 font-medium">🍽️ Kantin</span>
-                            <span class="text-xs font-black text-accent tracking-wide">${formatRupiah(m.harga)}</span>
+                        <div class="flex items-center justify-between pt-2 border-t border-white/[0.06]">
+                            <span class="text-[10px] lg:text-[11px] text-[#86868b] font-medium">Kantin</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs lg:text-sm font-bold text-[#30d158] tracking-wide font-mono">${formatRupiah(m.harga)}</span>
+                                <svg class="w-3.5 h-3.5 text-[#86868b] group-hover:text-[#30d158] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </div>
                         </div>
                     </div>
                 `).join('')}
             </div>
         `;
+
+        // Bind click listeners to menu cards
+        container.querySelectorAll('.overlay-menu-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const mId = card.getAttribute('data-menu-id');
+                const menuObj = menus.find(item => String(item.id) === String(mId));
+                if (menuObj) this.showItemDetailModal('menu', menuObj);
+            });
+        });
     }
 };

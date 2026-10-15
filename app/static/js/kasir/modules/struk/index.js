@@ -3,18 +3,46 @@
 const Struk = {
     currentData: null,
     currentPage: 1,
+    perPage: 5,
+    _hasResizeListener: false,
     currentDate: null,
     currentSubTab: 'billing',
     selectedId: null,
     searchQuery: '',
     searchDebounceTimer: null,
 
+    getAdaptivePerPage() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        if (height >= 1200) return 12;
+        if (width >= 1536 || height >= 950) return 10; // 2xl / 1080p
+        if (width >= 1280 || height >= 850) return 8;  // xl / 900p
+        if (width >= 768)  return 6;                   // md, lg / 720p - 768p
+        return 5;                                      // < md / mobile
+    },
+
+    _initResizeListener() {
+        if (this._hasResizeListener) return;
+        this._hasResizeListener = true;
+        window.addEventListener('resize', Utils.debounce(() => {
+            if (typeof App !== 'undefined' && App.currentTab !== 'struk') return;
+            const newPerPage = this.getAdaptivePerPage();
+            if (newPerPage !== this.perPage) {
+                this.perPage = newPerPage;
+                this.currentPage = 1;
+                this.loadHistory(this.currentDate, 1);
+            }
+        }, 200));
+    },
+
     resetState() {
         this.currentData = null;
         this.currentPage = 1;
+        this.perPage = this.getAdaptivePerPage();
         this.currentDate = null;
         this.selectedId = null;
         this.searchQuery = '';
+        this._lastFingerprint = null;
         if (this.searchDebounceTimer) {
             clearTimeout(this.searchDebounceTimer);
             this.searchDebounceTimer = null;
@@ -27,35 +55,61 @@ const Struk = {
         const previewContent = document.getElementById('struk-preview');
         if (previewContent) {
             previewContent.innerHTML = `
-                <div class="text-center py-10 text-neutral-500 space-y-2">
-                    <div class="text-3xl opacity-30">🧾</div>
-                    <p class="text-xs lg:max-xl:text-xs xl:text-base font-medium">Pilih transaksi di samping untuk melihat preview struk</p>
+                <div class="text-center py-6 text-neutral-500 space-y-1.5">
+                    <div class="text-2xl opacity-30">🧾</div>
+                    <p class="text-xs font-medium">Pilih transaksi di samping untuk melihat preview struk</p>
                 </div>`;
         }
+        const mobileModal = document.getElementById('modal-struk-mobile');
+        if (mobileModal) mobileModal.classList.add('hidden');
+        const mobilePreview = document.getElementById('struk-preview-mobile');
+        if (mobilePreview) mobilePreview.innerHTML = '';
         const searchInput = document.getElementById('struk-search');
         if (searchInput) searchInput.value = '';
         const searchClearBtn = document.getElementById('struk-search-clear');
         if (searchClearBtn) searchClearBtn.classList.add('hidden');
         const historyContainer = document.getElementById('struk-history-list');
         if (historyContainer) historyContainer.innerHTML = '';
+        const pagContainer = document.getElementById('struk-pagination');
+        if (pagContainer) pagContainer.innerHTML = '';
         const dateSelect = document.getElementById('struk-date-picker');
         if (dateSelect) dateSelect.innerHTML = '<option value="">Semua Tanggal</option>';
     },
 
     async init() {
+        this.perPage = this.getAdaptivePerPage();
+        this._initResizeListener();
         await this.loadDateOptions();
         await this.loadHistory();
 
-        const savedStruk = localStorage.getItem('lastStrukData');
-        if (savedStruk) {
-            try {
-                this.currentData = JSON.parse(savedStruk);
-                this.selectedId = this.currentData.no_nota || this.currentData.id;
-                this.renderPreview(this.currentData);
-                document.getElementById('btn-print-struk').classList.remove('hidden');
-                this.updateActiveHistoryCard(this.selectedId);
-            } catch (err) {
-                localStorage.removeItem('lastStrukData');
+        const isRemote = typeof BranchManager !== 'undefined' && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0';
+        if (isRemote) {
+            try { localStorage.removeItem('lastStrukData'); } catch (e) {}
+            this.currentData = null;
+            this.selectedId = null;
+            const printBtn = document.getElementById('btn-print-struk');
+            if (printBtn) printBtn.classList.add('hidden');
+            const previewContent = document.getElementById('struk-preview');
+            if (previewContent) {
+                previewContent.innerHTML = `
+                    <div class="text-center py-6 text-neutral-500 space-y-1.5">
+                        <div class="text-2xl opacity-30">🧾</div>
+                        <p class="text-xs font-medium">Pilih transaksi di samping untuk melihat preview struk</p>
+                    </div>`;
+            }
+        } else {
+            const savedStruk = localStorage.getItem('lastStrukData');
+            if (savedStruk) {
+                try {
+                    this.currentData = JSON.parse(savedStruk);
+                    this.selectedId = this.currentData.no_nota || this.currentData.id;
+                    this.renderPreview(this.currentData);
+                    const printBtn = document.getElementById('btn-print-struk');
+                    if (printBtn) printBtn.classList.remove('hidden');
+                    this.updateActiveHistoryCard(this.selectedId);
+                } catch (err) {
+                    localStorage.removeItem('lastStrukData');
+                }
             }
         }
     },
@@ -63,6 +117,7 @@ const Struk = {
     switchSubTab(type) {
         this.currentSubTab = type;
         this.selectedId = null;
+        this.perPage = this.getAdaptivePerPage();
         // Update active state
         ['billing', 'kantin'].forEach(t => {
             const el = document.getElementById(`struk-sub-${t}`);
@@ -164,13 +219,14 @@ const Struk = {
 
             this.currentDate = targetDate || '';
             this.currentPage = page;
+            this.perPage = this.perPage || this.getAdaptivePerPage();
 
             if (!isSilent && (!this.currentData && !document.querySelector('.struk-history-card')) && typeof Skeleton !== 'undefined') {
-                container.innerHTML = Skeleton.strukList(6);
+                container.innerHTML = Skeleton.strukList(this.perPage);
             }
 
             const apiFn = this.currentSubTab === 'kantin' ? window.API.report.kantinByTanggal : window.API.report.byTanggal;
-            const res = await apiFn(this.currentDate, '', page, 8, '', this.searchQuery || '');
+            const res = await apiFn(this.currentDate, '', page, this.perPage, '', this.searchQuery || '');
             let listData = [];
             if (this.currentSubTab === 'billing') {
                 listData = res.history_struk || [];
@@ -178,7 +234,7 @@ const Struk = {
                 listData = res.history_menu || [];
             }
 
-            const newFingerprint = JSON.stringify({ tab: this.currentSubTab, date: this.currentDate, page: this.currentPage, items: listData.map(x => x.no_nota || x.id) });
+            const newFingerprint = JSON.stringify({ tab: this.currentSubTab, date: this.currentDate, page: this.currentPage, perPage: this.perPage, items: listData.map(x => x.no_nota || x.id) });
             if (isSilent && this._lastFingerprint === newFingerprint) {
                 return; // Data tidak berubah
             }
@@ -186,9 +242,11 @@ const Struk = {
 
             if (!listData || listData.length === 0) {
                 container.innerHTML = `
-                    <div class="py-10 px-4 text-center bg-[#050505] border border-dashed border-[#1c1c1c] rounded">
-                        <p class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-500 font-medium">Tidak ada transaksi</p>
+                    <div class="py-8 px-4 text-center bg-[#050505] border border-dashed border-[#1c1c1c] rounded">
+                        <p class="text-xs text-neutral-500 font-medium">Tidak ada transaksi</p>
                     </div>`;
+                const pagContainer = document.getElementById('struk-pagination');
+                if (pagContainer) pagContainer.innerHTML = '';
                 return;
             }
 
@@ -204,15 +262,15 @@ const Struk = {
                     : 'bg-[#050505] border-[#1c1c1c] hover:border-neutral-500 hover:bg-[#0f0f0f]';
 
                 return `
-                    <div onclick="Struk.cetak('${clickId}')" data-history-id="${clickId}" class="struk-history-card border rounded p-2.5 sm:p-3 lg:max-xl:p-3 xl:p-3.5 cursor-pointer transition-all mb-2 ${activeBorder}">
+                    <div onclick="Struk.cetak('${clickId}')" data-history-id="${clickId}" class="struk-history-card border rounded p-2 sm:p-2.5 cursor-pointer transition-all mb-1.5 ${activeBorder}">
                         <div class="flex items-center justify-between gap-2">
                             <div class="min-w-0 flex-1">
-                                <div class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 truncate">${nama}</div>
-                                <div class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 font-mono mt-0.5">${waktu}</div>
+                                <div class="text-xs font-bold text-neutral-200 truncate">${nama}</div>
+                                <div class="text-[9px] sm:text-[10px] text-neutral-500 font-mono mt-0.5">${waktu}</div>
                             </div>
                             <div class="text-right shrink-0 font-mono">
-                                <div class="text-xs lg:max-xl:text-xs xl:text-sm font-black text-neutral-100">${window.Utils ? window.Utils.formatRupiah(totalBayar) : totalBayar}</div>
-                                <div class="text-[9px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 mt-0.5">${noNota}</div>
+                                <div class="text-xs font-bold text-neutral-100">${window.Utils ? window.Utils.formatRupiah(totalBayar) : totalBayar}</div>
+                                <div class="text-[9px] sm:text-[10px] text-neutral-500 mt-0.5">${noNota}</div>
                             </div>
                         </div>
                     </div>`;
@@ -224,10 +282,10 @@ const Struk = {
             if (pagContainer) {
                 if (res.pages > 1) {
                     pagContainer.innerHTML = `
-                        <div class="flex items-center justify-between py-2 px-3 bg-[#050505] border border-[#1c1c1c] rounded">
-                            <button onclick="Struk.changePage(${res.page - 1})" class="px-2.5 lg:max-xl:px-3 xl:px-3.5 py-1 lg:max-xl:py-1 xl:py-1.5 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors ${!res.has_prev ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_prev ? 'disabled' : ''}>&larr;</button>
-                            <span class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-400 font-mono">${res.page} / ${res.pages}</span>
-                            <button onclick="Struk.changePage(${res.page + 1})" class="px-2.5 lg:max-xl:px-3 xl:px-3.5 py-1 lg:max-xl:py-1 xl:py-1.5 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors ${!res.has_next ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_next ? 'disabled' : ''}>&rarr;</button>
+                        <div class="flex items-center justify-between py-1.5 px-2.5 bg-[#050505] border border-[#1c1c1c] rounded">
+                            <button onclick="Struk.changePage(${res.page - 1})" class="px-2.5 py-1 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs font-bold rounded transition-colors ${!res.has_prev ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_prev ? 'disabled' : ''}>&larr;</button>
+                            <span class="text-xs font-bold text-neutral-400 font-mono">${res.page} / ${res.pages}</span>
+                            <button onclick="Struk.changePage(${res.page + 1})" class="px-2.5 py-1 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs font-bold rounded transition-colors ${!res.has_next ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_next ? 'disabled' : ''}>&rarr;</button>
                         </div>`;
                 } else {
                     pagContainer.innerHTML = '';
@@ -242,19 +300,24 @@ const Struk = {
         }
     },
 
-    refreshLive() {
-        if (App.currentTab !== 'struk') return;
-        return this.loadHistory(this.currentDate, this.currentPage, true);
-    },
-
     async cetak(sesiId) {
         if (!sesiId) { Toast.error("ID sesi tidak valid"); return; }
         this.selectedId = sesiId;
         this.updateActiveHistoryCard(sesiId);
 
-        try {
-            document.getElementById('struk-preview').innerHTML = '<div class="flex justify-center py-10"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
+        const isMobile = window.innerWidth < 768;
+        const spinner = '<div class="flex justify-center py-6"><div class="w-6 h-6 border-2 border-[#1c1c1c] border-t-neutral-100 rounded-full animate-spin"></div></div>';
 
+        const previewEl = document.getElementById('struk-preview');
+        const mobilePreviewEl = document.getElementById('struk-preview-mobile');
+        if (previewEl) previewEl.innerHTML = spinner;
+        if (mobilePreviewEl) mobilePreviewEl.innerHTML = spinner;
+
+        if (isMobile) {
+            this.openMobileModal();
+        }
+
+        try {
             let data;
             if (this.currentSubTab === 'kantin') {
                 data = await API.report.strukMenu(sesiId);
@@ -264,12 +327,30 @@ const Struk = {
 
             this.currentData = data;
             localStorage.setItem('lastStrukData', JSON.stringify(data));
-            this.renderPreview(data);
-            document.getElementById('btn-print-struk').classList.remove('hidden');
+
+            this.renderPreview(data, 'struk-preview');
+            const printBtn = document.getElementById('btn-print-struk');
+            if (printBtn) printBtn.classList.remove('hidden');
+
+            if (isMobile) {
+                this.renderPreview(data, 'struk-preview-mobile');
+            }
         } catch (err) {
             Toast.error("Gagal mengambil data struk");
-            document.getElementById('struk-preview').innerHTML = '<p class="text-xs text-red-400 text-center py-10">Gagal memuat data</p>';
+            const errHtml = '<p class="text-xs text-red-400 text-center py-6">Gagal memuat data</p>';
+            if (previewEl) previewEl.innerHTML = errHtml;
+            if (mobilePreviewEl) mobilePreviewEl.innerHTML = errHtml;
         }
+    },
+
+    openMobileModal() {
+        const modal = document.getElementById('modal-struk-mobile');
+        if (modal) modal.classList.remove('hidden');
+    },
+
+    closeMobileModal() {
+        const modal = document.getElementById('modal-struk-mobile');
+        if (modal) modal.classList.add('hidden');
     },
 
     async deleteReceipt(id, nota) {

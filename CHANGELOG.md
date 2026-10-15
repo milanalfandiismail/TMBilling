@@ -6,6 +6,172 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [1.6.4] - 2026-10-14
+
+### Ditambahkan
+- **Integrasi Logo Resmi TM Server & Standarisasi Visual**:
+  - Mengintegrasikan icon multi-resolusi resmi TM (`icon.ico`, `logo.png`, `logo-32.png`) dari klien Tauri ke server Flask.
+  - Menambahkan dukungan favicon browser dan apple-touch-icon di seluruh template panel kasir (`kasir/base.html`, `kasir/login.html`) dan portal publik (`_head.html`).
+  - Mengganti brand badge teks pada header sidebar kasir, halaman login kasir, portal member, dan navbar publik dengan wadah borderless & transparan berlogo TM resmi yang responsif di seluruh breakpoint tanpa garis border putih mencolok.
+  - Menautkan icon resmi TM ke berkas shortcut desktop Windows kasir (`TMBilling - Kasir.url`).
+- **Navigasi Kolom Denah Manual Discrete Chunks (Zero Overlap)**:
+  - Merombak navigasi geser denah manual di Dashboard menjadi model discrete page chunks tanpa pengulangan kolom antar halaman (misal: Hal 1 Kolom 1-8, Hal 2 Kolom 9-12).
+  - Menggantikan kontrol panah header dan banner kuning dengan Footer Bar Navigasi Kolom Noir terpadu di bawah denah, lengkap dengan dot indicator interaktif yang dapat diklik langsung.
+- **Penyelarasan Responsif & Skala Tipografi Laporan Kasir**:
+  - Menyelaraskan layout, padding, dan arsitektur tabel pada tab Grup PC dan Akun Kasir/Admin agar konsisten dengan tab Paket Billing di seluruh breakpoint.
+  - Memperbesar ukuran teks dan padding bar rincian metode pembayaran di Laporan Billing & Kantin (dari font mikro 9px/10px ke 12px dan 14px di 2XL) dengan diferensiasi warna kontras tinggi (Tunai amber, QRIS emerald, Transfer sky).
+- **Fit-to-Screen, Single Container & Responsive POS F&B Tab Kantin (`#tab-menu`)**:
+  - Menyatukan POS Header dan Content ke dalam **1 Container Terpadu Ramping** (`bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 xl:p-3.5 space-y-2.5`), selaras dengan standar Tab Member, Paket, dan Unit PC.
+  - Menghadirkan **Header Toolbar Terpadu**: Judul & deskripsi di sisi kiri, search box cepat dengan tombol reset `✕` dan tombol `Tambah Menu` di sisi kanan.
+  - Menambahkan **Horizontal Tab & Filter Pills**: Tab switcher `Katalog Menu` & `Arsip Menu` disertai badge counter dinamis serta pills filter stok cepat (`Semua`, `Tersedia`, `Stok Habis`).
+  - Menerapkan **Grid 2-Kolom Terpadu dengan Internal Scroll (Fit-to-Screen)**:
+    - Kolom Kiri: Grid Katalog Produk mandiri (`max-h-[calc(100vh-215px)] overflow-y-auto scrollbar-thin`) dengan grid responsif (2 col di mobile & lg, 3 col di sm/md/xl, 4 col di 2xl).
+    - Kolom Kanan: Panel Keranjang Belanja Cart terintegrasi pas di layar (`flex flex-col max-h-[calc(100vh-215px)]`) dengan daftar item scrollable mandiri dan ringkasan checkout selalu terkunci di bawah tanpa terdorong keluar layar.
+  - **Rombakan UI/UX Operasional Kasir Harian (Long-Shift Ergonomics)**:
+    - **Kartu Interaktif Penuh (Tap-to-Add)**: Klik/tap di mana saja pada kartu produk menambah +1 item ke keranjang secara instan (`active:scale-[0.98]`).
+    - **In-Cart Badging & Border Glow**: Menampilkan badge kuantitas di pojok atas (`xN di Keranjang`) dan highlight border emerald (`border-emerald-500/60 bg-[#08130d]`) yang tersinkronisasi realtime dengan isi keranjang.
+    - **Proteksi Aksi Admin & Preview**: Aksi edit, restock, arsip, hapus, dan preview dilindungi dengan `stopPropagation` agar tidak memicu add-to-cart.
+    - **Modal Pembayaran Kompak & Ergonomis (`max-w-2xl`)**: Menggantikan modal lama (`max-w-6xl`) dengan ukuran proporsional 2 kolom seimbang, grid pecahan nominal cepat simetris, dan nominal kembalian besar beraksen emerald.
+  - Menyinkronkan dimensi kartu skeleton `Skeleton.menuCards()` dan placeholder SSR ke ukuran compact `min-h-[220px]` dan padding `p-2 sm:p-2.5`.
+- **Fit-to-Screen, Adaptive Pagination & Navigasi Grup Tab Member (`#tab-member`)**:
+  - Menyatukan 2 card terpisah menjadi 1 boks container ramping terpadu (`bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 xl:p-3.5`) dengan Toolbar Terpadu di bagian atas.
+  - Menghadirkan navigasi **Horizontal Tab Pills Per Grup** (`#member-group-tabs`) dengan pill "Semua" dan tab tiap grup beraksen warna grup (`grup.warna`) menggantikan dropdown filter statis.
+  - Menerapkan **Adaptive Pagination dinamis** berbasis breakpoint: Mobile (`< md`) = 5 baris, Tablet & Laptop Sedang (`md`/`lg`) = 7 baris, XL = 8 baris, dan Layar Lebar 2XL = 10 baris (dengan debounced window resize auto-listener).
+  - Menyelaraskan proporsi dan padding 2XL dengan XL (`xl:p-3.5`, `py-2`, avatar & tombol `w-8 h-8`) serta menghilangkan sorting berdasarkan kolom agar tampilan stabil, bersih, dan **`overflowPx === 0`** (bebas scrollbar vertikal).
+  - Streamline footer pagination dengan status 'Menampilkan X - Y dari Total Z Member' dan tombol Prev/Next, mengeliminasi dropdown manual yang membebani UI.
+  - Menyesuaikan SSR fallback di `member.html` agar selaras dengan 8 baris dan layout terpadu.
+  - Mengeliminasi duplikasi scrollbar pada modal detail riwayat member, membuang ruang hitam kosong (space void), menambahkan ringkasan total pembelian & kartu kebijakan refund, serta melebarkan jarak (gap) scrollbar dari tombol refund.
+- **Fit-to-Screen, Adaptive Grid & Optimasi Ruang Unit PC (`#tab-pc`)**:
+  - Mengeliminasi layout multi-grup bertumpuk yang menyebabkan scrolling vertikal, digantikan dengan **Horizontal Tab Pills Per Grup** (`#pc-group-tabs`) dengan aksen warna dan badge jumlah unit PC (`${count} UNIT`).
+  - Menerapkan **Adaptive Target Pagination** optimal untuk mengisi ruang vertikal secara seimbang tanpa scrollbar (`overflowPx === 0`): Mobile (`< md`) = 8 PC (2x4), Tablet & Laptop Sedang (`md`/`lg`) = 12 PC (4x3), Desktop Standar (`xl`) = 18 PC (6x3), dan Layar Lebar 2XL = 24 PC (6x4) dengan resize listener otomatis.
+  - **Hardening Tata Letak Kartu untuk Nama PC Panjang (hingga 11–15 karakter)**:
+    - Memisahkan kode PC dari status badge tekstual: Header kini mendedikasikan ruang penuh untuk Kode PC (`truncate min-w-0 flex-1`) didampingi ikon monitor SVG dan Status Dot bercahaya (emerald/sky/purple/neutral glowing dot dengan tooltip).
+    - Menghilangkan badge grup di dalam kartu untuk mengeliminasi redundansi visual dan menghemat ruang vertikal.
+    - Menempatkan Status Badge teks penuh di baris footer sebelah kiri (`TERSEDIA`, `TERPAKAI`, `ADMIN`, `MAINTENANCE`) dengan aksen border kontras.
+    - Memproteksi baris IP address (`truncate min-w-0 flex-1 font-mono`) dan tombol aksi sentuh (`shrink-0`) agar tidak saling mendesak atau meluap dari batas kartu.
+  - Menyesuaikan proporsi tinggi kartu (`min-h-[82px] sm:min-h-[88px] 2xl:min-h-[98px]`) dan padding (`p-2.5 sm:p-3 2xl:p-3.5`) untuk mengeliminasi ruang kosong di bagian bawah container.
+  - Menyatukan 2 card terpisah menjadi 1 boks container ramping terpadu (`bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 xl:p-3.5 2xl:p-5`).
+  - Interaksi kartu touch-friendly: Tombol aksi permanen di mobile/tablet/lg (`< xl`) dan hover overlay di desktop (`xl+`).
+  - Menyesuaikan `Skeleton.pcManagementGrid(cards = 8)` dan SSR fallback di `pc.html` agar selaras dengan dimensi dan elemen kartu baru.
+- **Fit-to-Screen, 2XL Adaptive Pagination & Navigasi Grup Tab Paket Billing (`#tab-paket`)**:
+  - Mengeliminasi layout multi-grup bertumpuk yang menyebabkan scrolling vertikal tinggi, digantikan dengan navigasi **Horizontal Tab Pills Per Grup** (`#paket-group-tabs`) dengan aksen warna dan badge jumlah paket.
+  - Menerapkan **Adaptive Pagination dinamis** berbasis breakpoint: Mobile (`< md`) = 5 baris, Tablet/Laptop (`md`/`lg`) = 7 baris, XL = 8 baris, dan Layar Lebar 2XL = 11 baris (dengan debounced window resize auto-listener).
+  - Skala proporsional di layar 2XL: Container card `2xl:p-5`, toolbar search `2xl:w-64 2xl:py-2 2xl:text-sm`, tombol tambah `2xl:px-4 2xl:py-2 2xl:text-sm`, dan tab pills `2xl:px-3.5 2xl:py-2 2xl:text-sm`.
+  - Padding baris tabel membesar proporsional di 2XL (`2xl:py-3`, `2xl:text-sm`) sehingga ruang vertikal terisi padat tanpa spasi kosong menganga dan tetap **`overflowPx === 0`** (zero vertical scrollbar).
+  - Menyesuaikan `Skeleton.paketTable(rows)` agar mendukung jumlah baris dinamis dan kelas 2XL.
+- **Fit-to-Screen & Optimasi Responsif Tab Riwayat Struk (`#tab-struk`)**:
+  - Mengubah pagination default riwayat struk menjadi 5 item per halaman untuk menjaga tinggi halaman tetap fit-to-screen di seluruh breakpoint.
+  - Merampingkan preview struk dan card container untuk mengeliminasi vertical scrollbar pada viewport kasir.
+- **Overhaul Responsif & Redesain UI/UX Tab Kantin / POS F&B (Mobile-First to Desktop)**:
+  - **Sistem Grid Adaptif Multi-Breakpoint**: Merestrukturisasi grid katalog produk (`#menu-catalog-grid`) di seluruh 6 tingkatan breakpoint Tailwind CSS:
+    - Default (`< 640px`: spektrum 320px–639px): Grid 2 kolom seimbang (kartu 130px–185px) dengan **`overflowPx === 0`** tanpa horizontal scrollbar.
+    - `sm:` (640px): Grid ditingkatkan menjadi 3 kolom (`sm:grid-cols-3`), mengeliminasi masalah kartu melar berlebihan (269px) menjadi ~180px proporsional.
+    - `md:` (768px): Grid 3 kolom (`md:grid-cols-3`, kartu ~212px).
+    - `lg:` (1024px): Layout split berdampingan (Katalog 7 kolom : Keranjang 5 kolom, kartu ~195px).
+    - `xl:` (1280px): Grid katalog disesuaikan menjadi 3 kolom (`xl:grid-cols-3`), mengeliminasi bug kartu terjepit (sebelumnya hanya 147px, kini menjadi ~202px yang lapang dan elegan).
+    - `2xl:` (1536px+): Grid 4 kolom (`2xl:grid-cols-4`, kartu ~217px).
+  - **Mobile Floating Bottom Action Bar (`#menu-mobile-cart-bar`)**:
+    - Mengintegrasikan bar mengambang interaktif di bagian bawah layar pada viewport `< lg` yang otomatis muncul saat keranjang terisi (`Total: RpXX.XXX • X item`).
+    - Menyediakan tombol pintas langsung *"Keranjang"* (smooth scroll) dan tombol *"Bayar"* (langsung membuka modal pembayaran POS tanpa perlu scroll melewati puluhan produk).
+    - Otomatis disembunyikan saat keranjang kosong.
+  - **Penyempurnaan Segmented Control View Switcher (Katalog Menu vs Arsip Menu)**:
+    - Memperbaiki bug kerusakan layout dan pergeseran tombol saat diklik dengan memisahkan *base layout classes* (`w-full sm:w-auto`, `justify-center`, `rounded-md`) dari *theme classes*, serta mengamankan kelas `.remote-hide-action` pada tombol arsip.
+    - Mengeliminasi emoji kardus berantakan (`📦`) dan menggantikannya dengan ikon SVG ramping yang simetris dan konsisten pada tab `Katalog Menu` dan `Arsip Menu`.
+    - Di layar mobile (`< sm`), tab switcher menggunakan `grid grid-cols-2` sehingga kedua tombol terbagi 50:50 dengan lebar identik (164px &times; 164px) tanpa pergeseran atau loncatan lebar saat berpindah tampilan.
+  - **Perbaikan Tata Letak Search Bar & Toolbar Katalog pada Breakpoint LG (1024px)**:
+    - Mengatasi masalah search bar yang terdorong keluar batas kartu (`overflowPx > 0`) pada breakpoint LG akibat pembagian 2 kolom berdampingan (Katalog 7 : Keranjang 5) yang mempersempit ruang kartu katalog menjadi ~407px (tidak muat untuk Switcher 233px + Search Box 208px jika dipaksa horizontal).
+    - Menerapkan tata letak bertingkat adaptif pada breakpoint LG (`lg:flex-col lg:items-start`), di mana View Switcher ditempatkan rapi di baris atas dan Search Bar membentang penuh 100% (`lg:w-full`) di baris bawah.
+    - Pada resolusi XL/2XL (`>= 1280px`), Search Bar dan Switcher secara otomatis kembali berdampingan (`xl:flex-row xl:w-60`) karena ruang kontainer sudah sangat lapang (> 640px).
+    - Memastikan nilai **`overflowPx === 0`** di seluruh breakpoint dengan placeholder dan teks pencarian yang terbaca sempurna tanpa terpotong.
+  - **Aksi Kelola Menu Khusus Layar Sentuh / Handphone (`< lg`)**:
+    - Memecahkan keterbatasan perangkat ponsel/tablet layar sentuh yang tidak memiliki mouse hover (`opacity-0 group-hover:opacity-100` tidak dapat dijangkau di smartphone).
+    - Menyematkan tombol aksi titik tiga (`⋮`) ramah sentuhan di pojok kanan atas kartu menu pada layar `< lg` (khusus role Admin).
+    - Mengetuk tombol titik tiga menampilkan **Action Sheet / Modal Kelola Menu Ringkas** dengan target sentuh jari yang nyaman (44px+) untuk aksi: Tambah Stok (Restock), Edit Nama, Harga & Foto, Lihat Foto Fullscreen, Arsipkan Menu, dan Hapus Permanen.
+    - Pada layar desktop monitor (`lg:` ke atas), tombol hover mouse tetap berfungsi secara native dengan tombol `⋮` otomatis disembunyikan.
+  - **Penyempurnaan Keranjang Belanja (*Cart Panel*)**:
+    - Menambahkan tombol *"Kosongkan Keranjang"* (`#menu-cart-clear-btn`) di header keranjang.
+    - Menyesuaikan batas ketinggian vertikal item keranjang secara responsif hingga `2xl:max-h-[620px]` untuk memanfaatkan ruang layar monitor desktop/2K secara maksimal.
+  - **Penataan Modal Transaksi POS & Quick Cash**:
+    - Merapikan pecahan uang cepat (`Rp1K`–`Rp100K`) beserta tombol *"Uang Pas"* ke dalam grid responsif 4 kolom &times; 2 baris (`grid grid-cols-4 gap-1.5`) yang simetris dan rapi di semua perangkat.
+    - Menyelaraskan padding dan tipografi kartu menu serta aksi hover admin.
+- **Perbaikan Bug Redundant DOM Re-render pada Tab List Koneksi Cabang & Akun Kasir Cabang**:
+  - Mengeliminasi penghapusan dan re-render DOM berulang yang terjadi pada setiap interval polling global di modul `BranchManager` (`tab-branch_inbound` dan `tab-branch_kasir`).
+  - Mengimplementasikan fingerprinting berbasis data (`_lastInboundFingerprint`, `_lastOperatorsFingerprint`, `_lastBranchesFingerprint`) dan mode *silent poll* (`isSilent = true`), sehingga tabel hanya dirender ulang saat data benar-benar berubah di backend.
+  - Menghilangkan kemunculan baris spinner / teks "Memuat..." yang sebelumnya merusak tampilan dan mereset interaksi pengguna setiap beberapa detik.
+  - Menjaga interval polling tetap konsisten mengikuti ritme global dashboard tanpa mengganggu modal dialog yang sedang terbuka atau input pencarian pengguna.
+- **Penyempurnaan Filter Tanggal Mutasi Log Stok Menu (Hanya Tanggal yang Ada Data)**:
+  - Mengganti input tanggal kalender terbuka (`<input type="date">`) menjadi dropdown selektif dinamis (`<select id="stock-log-filter-date">`) pada tab `tab-menu_stock_log`.
+  - Dropdown hanya menyajikan tanggal-tanggal unik yang benar-benar memiliki riwayat mutasi stok (`MenuRepository.get_distinct_stock_log_dates`), mencegah kasir memilih tanggal kosong yang tidak memiliki data.
+  - Opsi dropdown berformat tanggal Indonesia `DD/MM/YYYY` dengan nilai ISO `YYYY-MM-DD`, terintegrasi otomatis dengan aksi reset filter dan live polling.
+  - Menambahkan endpoint REST API dedicated `GET /api/v1/kasir/menu/stock-logs/dates` dan properti `dates` pada payload respons `GET /api/v1/kasir/menu/stock-logs`.
+- **Optimasi Responsif "Fit-to-Table" Mobile Portrait Tanpa Prefix (`< sm`: 360px – 430px) pada 8 Tab Kasir Termasuk Tab Member**:
+  - **Zero Horizontal Overflow (`overflowPx === 0`) pada Layar Ponsel**: Mengeliminasi scrollbar horizontal dan memastikan seluruh konten dan tombol aksi terlihat 100% pas (*Fit-to-Table*) pada layar smartphone (iPhone 14 @ 390px, Android @ 360px) di 8 tab kasir:
+    1. `tab-member`: Arsitektur tabel horizontal ramping (`px-2 sm:px-3 py-2`), kolom esensial `Member`, `Waktu`, dan `Aksi` di `< sm`, tombol cepat `+` (Isi Saldo) & menu aksi `⋮` (Action Sheet modal terpadu: Isi Saldo, Detail/Riwayat, Edit, Hapus), server-side pagination & sorting responsif dengan selector baris (5, 10, 25) mengeliminasi card mode vertikal bertumpuk.
+    2. `tab-menu_stock_log`: Padding sel ringkas `px-1.5 sm:px-3`, badge mutasi kompak, tombol Detail berbasis ikon di mobile (`<span class="hidden sm:inline">Detail</span>`), format tanggal ringkas `DD/MM HH:mm`.
+    3. `tab-shift_history`: Header responsif `Petugas`, `Omset`, `Laci`, stacking tanggal dan rentang jam vertikal, status badge ringkas `SEL`, kontrol aksi ramping.
+    4. `tab-user_logs`: Header & padding responsif `p-2 sm:p-3`, penanggalan log ringkas `MM-DD HH:mm`, tombol Detail berbasis ikon pada mobile.
+    5. `tab-maintenance`: Tombol aksi icon-only pada mobile (`🔍`, `▶`, `✕`, `✓`, `🗑`), batasan lebar judul masalah dinamis `max-w-[55px] sm:max-w-[150px]`, sel padding `px-0.5 sm:px-2`.
+    6. `tab-laporan_maintenance`: Padding kontainer & tabel ramping `p-1.5 sm:p-2.5`, format tanggal ringkas, tombol Detail icon-only pada mobile.
+    7. `tab-monitor`: Badge suhu CPU & GPU ultra-kompak `min-w-[28px] sm:min-w-[54px]`, indikator kecepatan jaringan ringkas `1G`, kolom aksi hemat ruang.
+    8. `tab-hardware_checker`: Badge status hardware ringkas (`🛡️`, `🚨`, `⚙️` pada `< sm`), adapter LAN ringkas `1G`, tombol aksi Detail & Baseline berbasis ikon di layar mobile.
+  - **Paginasi & Sorting Server-Side Tab Member**: Menambahkan parameter `page`, `per_page`, `sort_by`, dan `sort_order` pada REST API `GET /api/v1/member/` (`MemberRepository.get_members_paginated`), menyajikan respon terpaginasi lengkap dengan metadata total records dan total halaman, mengurangi beban rendering DOM ribuan baris menjadi instant.
+  - **Preservasi 100% Fit-to-Table pada Breakpoint `sm` (640px), `md` (768px), dan `lg` (1024px)**: Teruji bebas regresi (`overflowPx === 0`) di seluruh breakpoint standar Tailwind CSS.
+- **Optimasi Responsif "Fit-to-Table" Multi-Breakpoint (`sm` 640px & `md` 768px) pada 7 Tab Kasir**:
+  - **Eliminasi Total Horizontal Overflow & Kolom Terpotong**: Mengeliminasi kolom terpotong atau tersembunyi ke sisi kanan (`overflowPx === 0`) pada 7 tab utama antarmuka kasir tanpa scrollbar horizontal:
+    1. `tab-menu_stock_log` (Logstok Menu F&B): Arsitektur adaptif 4 kolom (`Waktu & Petugas`, `Menu`, `Stok & Mutasi`, `Aksi`) dengan tombol Detail ringkas `h-7`.
+    2. `tab-shift_history` (Riwayat Serah Terima Shift): Arsitektur adaptif 5 kolom (`Petugas & Waktu`, `Penerimaan`, `Kas & Selisih`, `Status`, `Aksi`) menyatukan penerimaan & kas bertingkat.
+    3. `tab-user_logs` (Log Audit Staff): Arsitektur adaptif 4 kolom (`Waktu & Operator`, `Aksi & IP`, `Keterangan`, `Aksi`) pada layar mobile/tablet.
+    4. `tab-maintenance` (Perawatan PC): Arsitektur adaptif 4 kolom (`PC & Prioritas`, `Masalah & Detail`, `Status & Pelapor`, `Aksi`) dengan tombol aksi ringkas (`Detail`, `Proses`, `Tolak`, `Selesai`, `Hapus`).
+    5. `tab-laporan_maintenance` (Laporan Perawatan): Pembatasan lebar (`max-w-[130px] sm:max-w-[180px] md:max-w-[220px] truncate`) pada judul masalah & resolusi serta normalisasi padding sel.
+    6. `tab-monitor` (Monitor Hardware): Penataan kontainer responsif (`p-3 sm:p-4 lg:p-4 xl:p-6`), eliminasi date string overflow di kolom aksi pada breakpoint `sm`, dan perampingan sel.
+    7. `tab-hardware_checker` (Hardware Checker): Penataan kontainer responsif (`p-3 sm:p-4 lg:p-4 xl:p-6`), tombol aksi kompak (`Detail` & `Baseline`), dan format waktu sinkronisasi ringkas.
+  - **Preservasi Penuh Tampilan Desktop (`lg`, `xl`, `2xl`)**: Menjaga tabel tetap luas dengan seluruh kolom terpisah (`hidden lg:table-cell`) saat diakses pada monitor desktop standar atau lebar.
+- **Optimasi Responsif & Paginasi Tab Perawatan PC (Zero Scroll Multi-Breakpoint)**:
+  - **Redesain 2-Kolom Modal Detail Tiket Perawatan PC**: Membagi struktur modal detail (`modal-detail-ticket`) menjadi 2 kolom responsif (`sm:grid sm:grid-cols-2 lg:gap-3.5 xl:gap-4.5`) serupa modal riwayat serah terima shift kasir, memisahkan kelompok identitas PC & pelapor di sisi kiri dengan rincian deskripsi masalah, status penyelesaian, serta biaya perbaikan di sisi kanan untuk mengeliminasi vertical scrollable di resolusi `sm`, `md`, `lg`, `xl`, dan `2xl`.
+  - **Limit 5 Item per Halaman & Paginasi**: Membatasi tampilan tiket perawatan menjadi tepat 5 data per halaman secara dinamis di modul `Maintenance`, dilengkapi bar navigasi paginasi ringkas (`Menampilkan X - Y dari Z tiket`, tombol `← Sebelumnya`, dan tombol `Berikutnya →` dengan penanganan boundary disabled).
+  - **Single Unified Card Layout**: Menyatukan 3 kartu terpisah (Action Header, 4 Mini Status Cards, dan Tabel Data) pada `maintenance.html` menjadi 1 card wrapper terpadu, memangkas jarak vertikal berlebih (`space-y-6` menjadi `space-y-2 lg:space-y-1.5 xl:space-y-2`) dan padding kartu.
+  - **Zero Scroll di Seluruh Breakpoint Desktop**: Mengeliminasi scrollbar vertikal pada `#main-scroll` di resolusi desktop (`lg` 1024x768, `xl` 1280x800, dan `2xl` 1536x960), dengan tinggi tab hanya 397–571 px (jauh di bawah batas viewport).
+  - **Tabel Responsif Ramping Tanpa Card Mode Berlebih**: Menjaga tabel tetap dalam satu baris terpadu (`overflow-x-auto scrollbar-thin`) di seluruh resolusi termasuk mobile/tablet (`sm`, `md`), dilengkapi teks terpotong rapi (`truncate min-w-0 max-w-[200px] xl:max-w-xs`) serta tombol aksi dan badge status yang kompak (`whitespace-nowrap`).
+- **Penyempurnaan Tampilan Monitor Hardware & Hardware Checker**:
+  - **Fitur Filter / Sorting Grup di Monitor Hardware**: Menambahkan kontrol dropdown `<select id="monitor-group-filter">` pada header Monitor Hardware untuk memudahkan kasir memfilter dan mengurutkan unit PC per grup atau menampilkan seluruh grup sekaligus.
+  - **Highlighted Group Header & Pembersihan Color Bar Samping**: Menghapus strip warna vertikal di samping teks grup dan mengubah header grup menjadi badge pill berlatar kontras tinggi (`REGULER • 20 UNIT`) dengan unit count badge terpadu sehingga langsung mudah dikenali oleh end-user.
+  - **Penggantian Kolom Grup Menjadi Kolom Status di Hardware Checker**: Mengeliminasi kolom Grup pada Hardware Checker dan menggantikannya dengan kolom berdedikasi `Status` (`🛡️ AMAN`, `🚨 DITUKAR`, `⚙️ PENDING`), serta merapikan tampilan kode PC pada breakpoint kecil (`sm`, `md`, `lg`, `xl`).
+  - **Grouping per Grup PC & Spacing Antargrup**: Membagi baris tabel Monitor Hardware per grup PC dengan menambahkan jarak/gap vertikal antargrup yang lebih tinggi (`pt-8 sm:pt-9 pb-2.5`) pada Monitor Hardware dan Hardware Checker.
+  - **Skema Warna Komponen CPU & GPU**: Menerapkan diferensiasi warna yang konsisten pada nama CPU (`text-cyan-400`) serta badge suhunya (`text-cyan-300 border-cyan-800/60 bg-cyan-950/60`), dan nama GPU (`text-amber-400`) serta badge suhunya (`text-amber-300 border-amber-800/60 bg-amber-950/60`).
+  - **Pembersihan Alert Suhu & Bullet Point**: Menghapus indikator alert peringatan suhu berlebih ("Perhatian" / red ping animation) dan bullet point pada nama PC di Monitor Hardware, dengan mempertahankan indikator status kecepatan LAN adapter.
+  - **Pembaruan Header Sinkronisasi**: Mengganti label kolom `"SYNC"` menjadi `"Terakhir disinkronkan"` pada tabel dan modal detail Hardware Checker agar lebih informatif dan rapi.
+  - **Informasi Nama/Model SSD & RAM pada Modal Detail**: Menampilkan model atau nama RAM dan SSD/Disk pada Modal Detail Hardware Checker jika data tersedia pada spesifikasi (baseline/telemetri), serta mengabaikannya secara bersih jika tidak tersedia.
+- **Unifikasi Responsif Monitor Hardware & Hardware Checker (1 Baris per PC)**:
+  - Unifikasi tampilan daftar PC pada tab Monitor Hardware (`tab-monitor`) dan Hardware Checker (`tab-hardware_checker`) menjadi tabel 1 baris per PC yang seragam di seluruh breakpoint responsive (`sm`, `md`, `lg`, `xl`, `2xl`).
+  - **Optimasi Fit-to-Table Lintas-Breakpoint (`sm`, `md`, `lg`, `xl`, `2xl`)**: Mengeliminasi lebar minimum artifisial (`min-w-[960px]`) dan menerapkan arsitektur kolom adaptif multi-line (Spesifikasi CPU/GPU/Mobo, RAM & LAN, Suhu terpadu, tombol aksi fleksibel) sehingga tabel 100% pas (*fit to table width*) tanpa ada kolom yang terpotong atau hilang di semua resolusi.
+  - Pencegahan pemotongan baris (*line-wrapping*) pada indikator kecepatan adapter jaringan (`1000 Mbps`, `1 Gbps`) menggunakan normalisasi unit dan utilitas `whitespace-nowrap shrink-0 inline-flex`.
+  - Integrasi kapasitas **Total RAM** (`m.total_ram`) dan Network Adapter pada Modal Detail Hardware Checker, baik di kolom Baseline Resmi maupun Live Telemetry.
+  - Penggantian konfirmasi browser native `window.confirm()` dengan Custom Modal Dialog terstandarisasi (`Modal.confirm`) bernuansa amber warning, keyboard shortcut `E`, serta ukuran modal responsive.
+- **Refactoring Desain Overlay Client (Apple Dark-Mode Aesthetic)**:
+  - Palet gelap elevasi modern (`#161618`, `#1c1c1e`, `#2c2c2e`) dengan aksen mint (`#30d158`) dan hairline borders (`border-white/10`).
+  - Segmented pill controls terstandarisasi untuk navigasi modal (Katalog Menu FnB, Daftar Paket).
+  - Eliminasi total animasi berulang/looping (pulse, spin, infinite effects) untuk menghemat alokasi CPU/GPU gaming dan kompatibilitas display refresh rate tinggi (144Hz / 240Hz).
+- **Auto-Hide Floating Overlay Card pada Modal Aktif**:
+  - Otomatis menyembunyikan floating widget `#overlay-main-card` saat modal QRIS Fullscreen HD atau Katalog Menu/Paket dibuka.
+  - Memulihkan visibilitas kartu utama secara mulus saat modal ditutup atau di-reset.
+- **Engine Validasi Waktu Unlimited Berbasis Status Murni**:
+  - Format waktu riil (`X jam Y menit` / `00:00:00`) untuk seluruh durasi kuota member tanpa batas atas buatan (termasuk kuota 1.000 s/d 1.000.000+ jam).
+  - Tampilan teks `"Unlimited"` secara eksklusif hanya diberikan pada sesi dengan status valid `admin` atau `system`.
+  - Mengeliminasi CPU thrashing render loop dan menjaga performa klien tetap konstan.
+- **Pembersihan & Keamanan Kredensial Administrator Klien**:
+  - Form input username dan password admin pada modal darurat agen dibersihkan seketika pada saat login success, login error, maupun pembatalan (cancel/close).
+  - Mencegah residu kredensial tertinggal di DOM/memori form browser klien.
+
+### Diperbaiki
+- **Isolasi Scrollbar & Interaksi Roda Mouse Katalog POS (`#menu-catalog-scroll-container`)**:
+  - Mencegah *scroll chaining* ke seluruh halaman saat mouse hover di atas kartu menu dengan menambahkan `overscroll-behavior: contain` (`.pos-catalog-scroll-container` & `.pos-cart-box`) dan event listener non-passive `wheel` yang mengunci perputaran scroll di dalam kontainer internal katalog.
+  - Memberikan batas tinggi adaptif (`max-height`) dan *bottom breathing room* (`padding-bottom: 2.75rem` / `pb-10` di mobile, `pb-8` di sm/md, `pb-6` di lg/xl/2xl) agar item terbawah tidak menabrak batas bawah kontainer atau terpotong.
+  - Menambah jarak bawah pada `#tab-menu` mobile (`pb-28 sm:pb-24 lg:pb-0`) untuk memastikan floating action bar keranjang tidak menutupi produk terakhir.
+  - **Dukungan Klik Kiri (Tambah) & Klik Kanan (Kurangi) pada Kartu**: Klik kiri kartu menambah kuantitas, klik kanan (`contextmenu`) memanggil `decrementCart()` untuk mengurangi kuantitas atau menghapus item tanpa memicu menu konteks browser.
+  - **Kontrol Stepper Responsif Mobile**: Pada item yang sudah ada di keranjang (`inCartQty > 0`), tombol aksi bawah kartu otomatis berubah menjadi stepper interaktif `[-]` `N` `[+]` dan mendukung *long-press* (tekan tahan) di layar sentuh.
+  - **Pencegahan Teks Judul Menimpa Tombol Kebab Mobile**: Memindahkan tombol aksi mobile (`adminMobileActions`) ke dalam flex container judul (`flex items-start justify-between gap-1.5 min-w-0`) dengan `line-clamp-2` sehingga nama menu yang panjang tidak pernah bertabrakan dengan ikon titik tiga.
+  - Mempertahankan posisi scroll katalog (`prevScroll`) saat re-render kartu untuk kenyamanan interaksi kasir tanpa lonjakan scrollbar.
+
 ## [1.6.3] - 2026-10-05
 
 ### Ditambahkan

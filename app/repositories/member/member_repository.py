@@ -24,8 +24,8 @@ class MemberRepository:
         return Member.query.order_by(Member.username).all()
 
     @staticmethod
-    def get_paginated(search_query=None, page=1, per_page=10, grup_id=None):
-        """Mengambil member dengan filter pencarian dan pagination."""
+    def get_paginated(search_query=None, page=1, per_page=5, grup_id=None, sort_by="grup_id", order="asc"):
+        """Mengambil member dengan filter pencarian, pengurutan, dan pagination."""
         query = Member.query
         if search_query:
             query = query.filter(
@@ -36,21 +36,49 @@ class MemberRepository:
         if grup_id:
             query = query.filter(Member.grup_id == grup_id)
         
-        # Natural Sorting Logic (Numerics first, then Alphabetical)
+        order_dir = db.asc if (order or "asc").lower() == "asc" else db.desc
+        
         try:
-            # We try SQLite-specific natural sorting first
-            return query.order_by(
-                db.case(
-                    (Member.username.op('GLOB')('[0-9]*'), 0),
-                    else_=1
-                ),
-                db.func.cast(Member.username, db.Integer),
-                Member.username
-            ).paginate(page=page, per_page=per_page, error_out=False)
+            if sort_by == "username":
+                if (order or "asc").lower() == "asc":
+                    query = query.order_by(
+                        db.case((Member.username.op('GLOB')('[0-9]*'), 0), else_=1),
+                        db.func.cast(Member.username, db.Integer),
+                        Member.username.asc()
+                    )
+                else:
+                    query = query.order_by(
+                        db.case((Member.username.op('GLOB')('[0-9]*'), 1), else_=0),
+                        db.func.cast(Member.username, db.Integer).desc(),
+                        Member.username.desc()
+                    )
+            elif sort_by in ("sisa_waktu", "waktu_tersimpan"):
+                query = query.order_by(order_dir(Member.waktu_tersimpan), Member.username.asc())
+            elif sort_by in ("status", "aktif"):
+                query = query.order_by(order_dir(Member.aktif), Member.username.asc())
+            elif sort_by in ("id", "id_member"):
+                query = query.order_by(order_dir(Member.id))
+            else:
+                # Default: sort by grup_id ASC, then username natural sort
+                query = query.order_by(
+                    order_dir(Member.grup_id),
+                    db.case((Member.username.op('GLOB')('[0-9]*'), 0), else_=1),
+                    db.func.cast(Member.username, db.Integer),
+                    Member.username.asc()
+                )
+            return query.paginate(page=page, per_page=per_page, error_out=False)
         except Exception:
             db.session.rollback()
-            # Standard alphabetical sorting fallback for strict database engines (PostgreSQL, MySQL, etc.)
-            return query.order_by(Member.username.asc()).paginate(page=page, per_page=per_page, error_out=False)
+            # Standard sorting fallback
+            if sort_by == "username":
+                fallback_order = order_dir(Member.username)
+            elif sort_by in ("sisa_waktu", "waktu_tersimpan"):
+                fallback_order = order_dir(Member.waktu_tersimpan)
+            elif sort_by in ("status", "aktif"):
+                fallback_order = order_dir(Member.aktif)
+            else:
+                fallback_order = order_dir(Member.grup_id)
+            return query.order_by(fallback_order, Member.username.asc()).paginate(page=page, per_page=per_page, error_out=False)
 
     @staticmethod
     def get_all_aktif():

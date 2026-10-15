@@ -32,8 +32,12 @@ export const Kiosk = {
         });
 
         // Info tabs
-        document.getElementById('tab-rules-btn').addEventListener('click', () => this.switchInfoTab('rules'));
-        document.getElementById('tab-packages-btn').addEventListener('click', () => this.switchInfoTab('packages'));
+        document.getElementById('tab-rules-btn')?.addEventListener('click', () => this.switchInfoTab('rules'));
+        document.getElementById('tab-packages-btn')?.addEventListener('click', () => this.switchInfoTab('packages'));
+
+        // Mode tabs: Login Member vs Scan QRIS Kasir
+        document.getElementById('tab-login-mode-btn')?.addEventListener('click', () => this.switchLoginMode('login'));
+        document.getElementById('tab-qris-mode-btn')?.addEventListener('click', () => this.switchLoginMode('qris'));
 
         // Power actions (Restart & Shutdown)
         const restartBtn = document.getElementById('kiosk-restart-btn');
@@ -63,13 +67,6 @@ export const Kiosk = {
                     UI.showToast('Me-restart PC...', 'error');
                     await Api.forceRestart();
                 }
-            });
-        }
-
-        const powerModal = document.getElementById('power-confirm-modal');
-        if (powerModal) {
-            powerModal.addEventListener('click', (e) => {
-                if (e.target === powerModal) UI.togglePowerModal(false);
             });
         }
 
@@ -129,13 +126,42 @@ export const Kiosk = {
         if (tab === 'rules') {
             rulesPanel.classList.remove('hidden');
             packagesPanel.classList.add('hidden');
-            rulesBtn.className = 'flex-1 px-4 py-2 bg-white/10 border border-white/10 text-xs lg:text-sm font-bold rounded-xl text-white transition-all shadow-sm';
-            packagesBtn.className = 'flex-1 px-4 py-2 bg-white/5 border border-white/5 text-xs lg:text-sm font-bold rounded-xl text-neutral-400 hover:text-white hover:bg-white/10 transition-all';
+            rulesBtn.className = 'flex-1 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg bg-white/10 text-white shadow-sm transition-all';
+            packagesBtn.className = 'flex-1 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-[#86868b] hover:text-white transition-all';
         } else {
             rulesPanel.classList.add('hidden');
             packagesPanel.classList.remove('hidden');
-            rulesBtn.className = 'flex-1 px-4 py-2 bg-white/5 border border-white/5 text-xs lg:text-sm font-bold rounded-xl text-neutral-400 hover:text-white hover:bg-white/10 transition-all';
-            packagesBtn.className = 'flex-1 px-4 py-2 bg-white/10 border border-white/10 text-xs lg:text-sm font-bold rounded-xl text-white transition-all shadow-sm';
+            rulesBtn.className = 'flex-1 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-[#86868b] hover:text-white transition-all';
+            packagesBtn.className = 'flex-1 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg bg-white/10 text-white shadow-sm transition-all';
+        }
+    },
+
+    /**
+     * Switch between Login form and QRIS scanner on Kiosk
+     */
+    switchLoginMode(mode) {
+        const loginPanel = document.getElementById('kiosk-login-panel');
+        const qrisPanel = document.getElementById('kiosk-qris-panel');
+        const loginBtn = document.getElementById('tab-login-mode-btn');
+        const qrisBtn = document.getElementById('tab-qris-mode-btn');
+
+        if (!loginPanel || !qrisPanel) return;
+
+        if (mode === 'login') {
+            loginPanel.classList.remove('hidden');
+            qrisPanel.classList.add('hidden');
+            loginBtn?.classList.add('bg-white/10', 'text-white', 'font-semibold');
+            loginBtn?.classList.remove('text-[#86868b]', 'font-medium');
+            qrisBtn?.classList.remove('bg-white/10', 'text-white', 'font-semibold');
+            qrisBtn?.classList.add('text-[#86868b]', 'font-medium');
+            document.getElementById('username')?.focus();
+        } else {
+            loginPanel.classList.add('hidden');
+            qrisPanel.classList.remove('hidden');
+            qrisBtn?.classList.add('bg-white/10', 'text-white', 'font-semibold');
+            qrisBtn?.classList.remove('text-[#86868b]', 'font-medium');
+            loginBtn?.classList.remove('bg-white/10', 'text-white', 'font-semibold');
+            loginBtn?.classList.add('text-[#86868b]', 'font-medium');
         }
     },
 

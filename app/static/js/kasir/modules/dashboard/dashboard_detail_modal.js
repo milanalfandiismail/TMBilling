@@ -13,7 +13,7 @@ const DashboardDetailModal = {
     renderActionButtonsHtml(pc, isOnline, sesi, isAfk, isSystemMode, isAdminMode) {
         return `
             <button onclick="DashboardProcessMonitor.showProcesses(${pc.id})"
-                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 rounded-lg transition-colors ${!isOnline ? 'opacity-40 cursor-not-allowed' : ''}"
+                class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 rounded-lg transition-colors ${!isOnline ? 'opacity-40 cursor-not-allowed' : ''}"
                 ${!isOnline ? 'disabled' : ''}>
                 <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
@@ -23,7 +23,7 @@ const DashboardDetailModal = {
 
             ${isOnline ? `
             <button onclick="DashboardDetailModal.openRemoteView(${pc.id}, '${pc.kode}')"
-                class="flex flex-col items-center gap-2 p-4 bg-[#0a1520] border border-blue-900/40 hover:border-blue-500/60 hover:bg-[#0d1d2c] rounded-lg transition-colors">
+                class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#0a1520] border border-blue-900/40 hover:border-blue-500/60 hover:bg-[#0d1d2c] rounded-lg transition-colors">
                 <div class="w-9 h-9 rounded-lg bg-blue-950/50 border border-blue-900/50 flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -32,7 +32,7 @@ const DashboardDetailModal = {
                 </div>
                 <span class="text-[10px] lg:text-base font-bold text-blue-400 uppercase tracking-wider text-center leading-tight">Remote Layar</span>
             </button>` : `
-            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] rounded-lg opacity-25 cursor-not-allowed">
+            <div class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] rounded-lg opacity-25 cursor-not-allowed">
                 <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 </div>
@@ -41,13 +41,13 @@ const DashboardDetailModal = {
 
             ${pc.mac_address ? `
             <button onclick="Modal.closeModal(); Dashboard.wolSingle(${pc.id})"
-                class="flex flex-col items-center gap-2 p-4 bg-[#0a1a0f] border border-green-900/40 hover:border-green-600/60 hover:bg-[#0d2014] rounded-lg transition-colors">
+                class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#0a1a0f] border border-green-900/40 hover:border-green-600/60 hover:bg-[#0d2014] rounded-lg transition-colors">
                 <div class="w-9 h-9 rounded-lg bg-green-950/50 border border-green-900/50 flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>
                 </div>
                 <span class="text-[10px] lg:text-base font-bold text-green-500 uppercase tracking-wider text-center leading-tight">Wake-on-LAN</span>
             </button>` : `
-            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-30 cursor-not-allowed" title="Tidak ada MAC Address">
+            <div class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-30 cursor-not-allowed" title="Tidak ada MAC Address">
                 <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>
                 </div>
@@ -56,13 +56,13 @@ const DashboardDetailModal = {
 
             ${sesi && sesi.tipe !== 'admin' && !isSystemMode ? `
             <button onclick="Dashboard.pindahSesi(${sesi.id}, '${sesi.tipe}', '${pc.grup}')"
-                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-400 hover:bg-[#141414] rounded-lg transition-colors">
+                class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-400 hover:bg-[#141414] rounded-lg transition-colors">
                 <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
                 </div>
                 <span class="text-[10px] lg:text-base font-bold text-neutral-400 uppercase tracking-wider text-center leading-tight">Pindah PC</span>
             </button>` : `
-            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed">
+            <div class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed">
                 <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
                 </div>
@@ -78,7 +78,7 @@ const DashboardDetailModal = {
             </button>
 
             <button id="btn-screenshot-${pc.id}" onclick="DashboardDetailModal.takeScreenshot(${pc.id})"
-                class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 rounded-lg transition-colors ${!isOnline ? 'opacity-40 cursor-not-allowed' : ''}"
+                class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#232323] hover:border-neutral-500 rounded-lg transition-colors ${!isOnline ? 'opacity-40 cursor-not-allowed' : ''}"
                 ${!isOnline ? 'disabled' : ''}>
                 <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,7 +91,7 @@ const DashboardDetailModal = {
 
             ${isOnline && !isSystemMode ? `
             <button onclick="Modal.closeModal(); DashboardDetailModal.remoteAction(${pc.id}, 'restart', '${pc.kode}')"
-                class="flex flex-col items-center gap-2 p-4 bg-[#1a0a0f] border border-red-900/40 hover:border-red-600/60 hover:bg-[#200d14] rounded-lg transition-colors">
+                class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#1a0a0f] border border-red-900/40 hover:border-red-600/60 hover:bg-[#200d14] rounded-lg transition-colors">
                 <div class="w-9 h-9 rounded-lg bg-red-950/50 border border-red-900/50 flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5" />
@@ -99,7 +99,7 @@ const DashboardDetailModal = {
                 </div>
                 <span class="text-[10px] lg:text-base font-bold text-red-400 uppercase tracking-wider text-center leading-tight">Restart PC</span>
             </button>` : `
-            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed" title="${isSystemMode ? 'Operasional dinonaktifkan untuk mode SYSTEM' : 'PC Offline'}">
+            <div class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed" title="${isSystemMode ? 'Operasional dinonaktifkan untuk mode SYSTEM' : 'PC Offline'}">
                 <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5" />
@@ -110,7 +110,7 @@ const DashboardDetailModal = {
 
             ${isOnline && !isSystemMode ? `
             <button onclick="Modal.closeModal(); DashboardDetailModal.remoteAction(${pc.id}, 'shutdown', '${pc.kode}')"
-                class="flex flex-col items-center gap-2 p-4 bg-[#1f0a0f] border border-red-900/50 hover:border-red-600/70 hover:bg-[#280d14] rounded-lg transition-colors">
+                class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#1f0a0f] border border-red-900/50 hover:border-red-600/70 hover:bg-[#280d14] rounded-lg transition-colors">
                 <div class="w-9 h-9 rounded-lg bg-red-950/60 border border-red-900/60 flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L12 12m0-6v6" />
@@ -118,7 +118,7 @@ const DashboardDetailModal = {
                 </div>
                 <span class="text-[10px] lg:text-base font-bold text-red-500 uppercase tracking-wider text-center leading-tight">Shutdown PC</span>
             </button>` : `
-            <div class="flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed" title="${isSystemMode ? 'Operasional dinonaktifkan untuk mode SYSTEM' : 'PC Offline'}">
+            <div class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#0f0f0f] border border-[#1c1c1c] border-dashed rounded-lg opacity-25 cursor-not-allowed" title="${isSystemMode ? 'Operasional dinonaktifkan untuk mode SYSTEM' : 'PC Offline'}">
                 <div class="w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[#232323] flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L12 12m0-6v6" />
@@ -129,7 +129,7 @@ const DashboardDetailModal = {
 
             ${isSystemMode ? `
             <button onclick="Modal.closeModal(); Dashboard.clearSesiSystem(${pc.id}, ${sesi ? sesi.id : 'null'})"
-                class="flex flex-col items-center gap-2 p-4 bg-[#0f121d] border border-indigo-900/50 hover:border-indigo-500/70 hover:bg-[#151928] rounded-lg transition-colors">
+                class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#0f121d] border border-indigo-900/50 hover:border-indigo-500/70 hover:bg-[#151928] rounded-lg transition-colors">
                 <div class="w-9 h-9 rounded-lg bg-indigo-950/60 border border-indigo-900/60 flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -138,7 +138,7 @@ const DashboardDetailModal = {
                 <span class="text-[10px] lg:text-base font-bold text-indigo-400 uppercase tracking-wider text-center leading-tight">Clear Sesi System</span>
             </button>` : (isAdminMode ? `
             <button onclick="Modal.closeModal(); Dashboard.logoutAdmin(${pc.id}, ${sesi ? sesi.id : 'null'})"
-                class="flex flex-col items-center gap-2 p-4 bg-[#1f150a] border border-amber-900/50 hover:border-amber-500/70 hover:bg-[#2a1d0e] rounded-lg transition-colors">
+                class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#1f150a] border border-amber-900/50 hover:border-amber-500/70 hover:bg-[#2a1d0e] rounded-lg transition-colors">
                 <div class="w-9 h-9 rounded-lg bg-amber-950/60 border border-amber-900/60 flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -147,7 +147,7 @@ const DashboardDetailModal = {
                 <span class="text-[10px] lg:text-base font-bold text-amber-400 uppercase tracking-wider text-center leading-tight">Logout Admin</span>
             </button>` : (isAfk ? `
             <button onclick="Modal.closeModal(); DashboardDetailModal.remoteAfkUnlock(${pc.id}, '${pc.kode}')"
-                class="flex flex-col items-center gap-2 p-4 bg-[#1f1608] border border-amber-500/60 hover:border-amber-400 hover:bg-[#2e210c] rounded-lg transition-colors group">
+                class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#1f1608] border border-amber-500/60 hover:border-amber-400 hover:bg-[#2e210c] rounded-lg transition-colors group">
                 <div class="w-9 h-9 rounded-lg bg-amber-950/70 border border-amber-500/60 flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
@@ -156,7 +156,7 @@ const DashboardDetailModal = {
                 <span class="text-[10px] lg:text-base font-bold text-amber-400 group-hover:text-amber-300 uppercase tracking-wider text-center leading-tight">Buka Kunci AFK</span>
             </button>` : (sesi && isOnline ? `
             <button onclick="Modal.closeModal(); DashboardDetailModal.remoteAfkLock(${pc.id}, '${pc.kode}')"
-                class="flex flex-col items-center gap-2 p-4 bg-[#14120c] border border-amber-900/40 hover:border-amber-600/60 hover:bg-[#1e1a10] rounded-lg transition-colors group">
+                class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#14120c] border border-amber-900/40 hover:border-amber-600/60 hover:bg-[#1e1a10] rounded-lg transition-colors group">
                 <div class="w-9 h-9 rounded-lg bg-amber-950/50 border border-amber-900/50 flex items-center justify-center">
                     <svg class="w-[18px] h-[18px] text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="2"/>
@@ -165,7 +165,7 @@ const DashboardDetailModal = {
                 </div>
                 <span class="text-[10px] lg:text-base font-bold text-amber-500 group-hover:text-amber-400 uppercase tracking-wider text-center leading-tight">Kunci Meja AFK</span>
             </button>` : `
-            <div class="flex flex-col items-center gap-2 p-4 bg-[#0a0a0a] border border-dashed border-[#1a1a1a] rounded-lg opacity-20"><span class="text-[9px] lg:text-base text-neutral-700 uppercase tracking-widest mt-4">—</span></div>`)))}
+            <div class="remote-hide-action flex flex-col items-center gap-2 p-4 bg-[#0a0a0a] border border-dashed border-[#1a1a1a] rounded-lg opacity-20"><span class="text-[9px] lg:text-base text-neutral-700 uppercase tracking-widest mt-4">—</span></div>`)))}
         `;
     },
 
@@ -206,7 +206,7 @@ const DashboardDetailModal = {
                 <div id="modal-view-container" class="flex-1 min-h-0 overflow-y-auto flex flex-col scrollbar-thin">
                     <div id="view-action-menu" class="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 overflow-y-auto scrollbar-thin">
                         <!-- Left Column: Action Buttons -->
-                        <div class="lg:col-span-7 xl:col-span-5 2xl:col-span-5 space-y-2.5 flex flex-col justify-start">
+                        <div class="col-span-full lg:col-span-7 xl:col-span-5 2xl:col-span-5 space-y-2.5 flex flex-col justify-start">
                             <div class="text-[10px] lg:text-xs text-neutral-400 uppercase font-bold tracking-wider font-mono">Aksi & Kontrol PC</div>
                             <div id="modal-action-buttons-grid" class="grid grid-cols-3 gap-2.5 md:gap-3">
                                 ${this.renderActionButtonsHtml(pc, isOnline, sesi, isAfk, isSystemMode, isAdminMode)}
@@ -214,7 +214,7 @@ const DashboardDetailModal = {
                         </div>
 
                         <!-- Right Column: Screenshot Preview -->
-                        <div class="lg:col-span-5 xl:col-span-7 2xl:col-span-7 flex flex-col space-y-2.5">
+                        <div class="remote-hide-action lg:col-span-5 xl:col-span-7 2xl:col-span-7 flex flex-col space-y-2.5">
                             <div class="text-[10px] lg:text-xs text-neutral-400 uppercase font-bold tracking-wider font-mono">Tangkapan Layar Client</div>
                             <div id="screenshot-preview-container" class="p-3.5 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg flex-1 flex flex-col justify-between">
                                 <div class="flex items-center justify-between mb-2 shrink-0">

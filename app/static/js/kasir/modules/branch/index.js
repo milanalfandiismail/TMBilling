@@ -13,6 +13,9 @@ const BranchManager = {
     inboundSubTab: 'all',
     pendingInboundId: null,
     pendingInboundName: '',
+    _lastBranchesFingerprint: null,
+    _lastInboundFingerprint: null,
+    _lastOperatorsFingerprint: null,
 
     async init() {
         // 100% Zero UI/UX & Security: Jika user login sebagai kasir, hentikan total modul ini
@@ -48,34 +51,55 @@ const BranchManager = {
         this.initSettingsPanel();
     },
 
-    async loadBranches() {
+    async loadBranches(isSilent = false) {
         try {
             const res = await API.branch.list(false);
             if (res && res.success) {
-                this.branches = res.data || [];
+                const data = res.data || [];
+                const newFingerprint = JSON.stringify(data.map(b => ({
+                    id: b.id,
+                    nama: b.nama,
+                    url: b.url,
+                    status_online: b.status_online,
+                    latensi_ms: b.latensi_ms
+                }))) + `_active_${this.activeBranchId}`;
+
+                const changed = this._lastBranchesFingerprint !== newFingerprint;
+                this.branches = data;
+                this._lastBranchesFingerprint = newFingerprint;
+                return changed;
             }
         } catch (err) {
             console.error('[BranchManager] Gagal memuat daftar cabang:', err);
         }
+        return false;
     },
 
     async refreshLive() {
         const userRole = document.body.getAttribute('data-kasir-role');
         if (userRole !== 'admin') return;
 
-        await this.loadBranches();
-        const listContainer = document.getElementById('branch-selector-list');
-        const isDropdownOpen = listContainer && !listContainer.classList.contains('hidden');
-        if (!isDropdownOpen) {
-            this.renderNavbarDropdown();
+        const branchesChanged = await this.loadBranches(true);
+        if (branchesChanged) {
+            const listContainer = document.getElementById('branch-selector-list');
+            const isDropdownOpen = listContainer && !listContainer.classList.contains('hidden');
+            if (!isDropdownOpen) {
+                this.renderNavbarDropdown();
+            }
+
+            if (App.currentTab === 'branch') {
+                const modalBranch = document.getElementById('modal-tambah-cabang');
+                const isModalOpen = modalBranch && !modalBranch.classList.contains('hidden');
+                if (!isModalOpen) {
+                    this.renderBranchesSettingsTable();
+                }
+            }
         }
 
-        if (App.currentTab === 'branch') {
-            const modalBranch = document.getElementById('modal-tambah-cabang');
-            const isModalOpen = modalBranch && !modalBranch.classList.contains('hidden');
-            if (!isModalOpen) {
-                this.renderBranchList();
-            }
+        if (App.currentTab === 'branch_inbound') {
+            await this.loadInboundBranches(true);
+        } else if (App.currentTab === 'branch_kasir') {
+            await this.loadRemoteOperators(true);
         }
     },
 
@@ -122,7 +146,7 @@ const BranchManager = {
         }
 
         // Render daftar item dropdown
-        const displayVersion = window.APP_VERSION || document.querySelector('meta[name="app-version"]')?.content || 'v1.6.3';
+        const displayVersion = window.APP_VERSION || document.querySelector('meta[name="app-version"]')?.content || 'v1.6.4';
         let html = `
             <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-neutral-400 border-b border-white/5 flex items-center justify-between">
                 <span>Pilih Cabang</span>
@@ -200,20 +224,53 @@ const BranchManager = {
         }
     },
 
+    showSwitchLoading(targetName, statusText = 'Menghubungkan ke server cabang...') {
+        const overlay = document.getElementById('branch-switch-overlay');
+        const titleEl = document.getElementById('branch-switch-title');
+        const statusEl = document.getElementById('branch-switch-status');
+        if (titleEl) {
+            titleEl.textContent = targetName ? `Menghubungkan: ${targetName}` : 'Menghubungkan Cabang...';
+        }
+        if (statusEl) {
+            statusEl.textContent = statusText;
+        }
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+        }
+    },
+
+    updateSwitchStatus(statusText) {
+        const statusEl = document.getElementById('branch-switch-status');
+        if (statusEl) {
+            statusEl.textContent = statusText;
+        }
+    },
+
+    hideSwitchLoading() {
+        const overlay = document.getElementById('branch-switch-overlay');
+        if (overlay) {
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+        }
+    },
+
     updateBrandAndSidebarVisibility() {
         const titleEl = document.getElementById('sidebar-brand-title');
         const subTitleEl = document.getElementById('sidebar-brand-subtitle');
         const badgeContainer = document.getElementById('sidebar-brand-badge-container');
         const badgeText = document.getElementById('sidebar-brand-badge-text');
-        const branchSection = document.getElementById('sidebar-branch-section');
+        const logoImg = document.getElementById('sidebar-brand-logo-img');
         const fileExplorerBtn = document.getElementById('sidebar-fileexplorer-btn');
         const documentationBtn = document.getElementById('sidebar-documentation-btn');
+        const remoteHiddenElements = document.querySelectorAll('.sidebar-remote-hidden, .sidebar-branch-group, #sidebar-branch-wrapper, #sidebar-branch-section, #sidebar-staff-group, #sidebar-settings-group');
 
         const defaultTitle = (titleEl && titleEl.getAttribute('data-default-title')) || this.localWarnetTitle || 'TMBilling';
         const defaultSubtitle = (subTitleEl && subTitleEl.getAttribute('data-default-subtitle')) || 'Kasir Panel';
 
         if (this.activeBranchId === '0') {
             // MODE CABANG LOKAL
+            document.body.setAttribute('data-branch-mode', 'local');
             if (titleEl) {
                 titleEl.textContent = defaultTitle;
                 titleEl.title = defaultTitle;
@@ -223,58 +280,67 @@ const BranchManager = {
                 subTitleEl.className = 'text-[10px] text-neutral-500 leading-tight mt-0.5';
             }
             if (badgeContainer) {
-                badgeContainer.className = 'w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 transition-all';
+                badgeContainer.className = 'w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center shrink-0 transition-all overflow-hidden select-none';
+            }
+            if (logoImg) {
+                logoImg.classList.remove('hidden');
             }
             if (badgeText) {
-                badgeText.className = 'text-[#050505] font-black text-sm';
-                badgeText.textContent = defaultTitle.slice(0, 2).toUpperCase() || 'TM';
+                badgeText.classList.add('hidden');
+                badgeText.textContent = '';
             }
-            if (branchSection) {
-                branchSection.classList.remove('hidden');
-            }
-            // Tampilkan kembali File Explorer saat di cabang lokal
-            if (fileExplorerBtn) {
-                fileExplorerBtn.classList.remove('hidden');
-            }
-            // Tampilkan kembali Dokumentasi & Tutorial saat di cabang lokal
-            if (documentationBtn) {
-                documentationBtn.classList.remove('hidden');
-            }
+            // Tampilkan kembali seluruh elemen lokal di sidebar
+            remoteHiddenElements.forEach(el => el.classList.remove('hidden'));
+            if (fileExplorerBtn) fileExplorerBtn.classList.remove('hidden');
+            if (documentationBtn) documentationBtn.classList.remove('hidden');
+
             document.title = `${defaultTitle} - Kasir`;
         } else {
-            // MODE CABANG REMOTE
+            // MODE CABANG REMOTE (READ-ONLY)
+            document.body.setAttribute('data-branch-mode', 'remote');
             let branchName = this.activeBranchName || 'Cabang Remote';
             const b = this.branches.find(x => String(x.id) === String(this.activeBranchId));
             if (b && b.nama) branchName = b.nama;
 
             if (titleEl) {
                 titleEl.textContent = branchName;
-                titleEl.title = `${branchName} (Remote)`;
+                titleEl.title = `${branchName} (Remote - Read Only)`;
             }
             if (subTitleEl) {
-                subTitleEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-emerald-400 font-bold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Cabang Remote</span>`;
+                subTitleEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-emerald-400 font-bold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Cabang Remote (Read-Only)</span>`;
                 subTitleEl.className = 'text-[10px] leading-tight mt-0.5';
             }
             if (badgeContainer) {
-                badgeContainer.className = 'w-8 h-8 rounded-lg bg-emerald-500 text-black flex items-center justify-center shrink-0 shadow-lg shadow-emerald-950/40 transition-all';
+                badgeContainer.className = 'w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-500 text-black flex items-center justify-center shrink-0 shadow-lg shadow-emerald-950/40 transition-all select-none';
+            }
+            if (logoImg) {
+                logoImg.classList.add('hidden');
             }
             if (badgeText) {
-                badgeText.className = 'text-black font-black text-sm uppercase';
+                badgeText.classList.remove('hidden');
+                badgeText.className = 'text-black font-black text-xs uppercase';
                 badgeText.textContent = branchName.replace(/[^a-zA-Z0-9]/g, '').slice(0, 2).toUpperCase() || 'RM';
             }
-            // Sembunyikan menu sidebar Multi Cabang saat sedang di cabang remote!
-            if (branchSection) {
-                branchSection.classList.add('hidden');
+            // Sembunyikan menu-menu server lokal, staf, utilitas & pengaturan di sidebar
+            remoteHiddenElements.forEach(el => el.classList.add('hidden'));
+            if (fileExplorerBtn) fileExplorerBtn.classList.add('hidden');
+            if (documentationBtn) documentationBtn.classList.add('hidden');
+
+            // Jika sedang membuka tab yang tidak diizinkan di cabang remote, otomatis alihkan ke Dashboard
+            const remoteRestricted = [
+                'branch', 'branch_inbound', 'branch_kasir', 'fileexplorer', 'tutorials',
+                'user', 'shift_history', 'user_logs',
+                'hardware_checker', 'remote_server', 'catatan', 'blackout',
+                'mikrotik', 'log', 'plugins', 'plugin-spa',
+                'settings', 'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv',
+                'whitelist_ip', 'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup',
+                'settings_db_cleanup', 'settings_scheduler', 'settings_migration'
+            ];
+            if (window.App && remoteRestricted.includes(App.currentTab)) {
+                App.switchTab('dash');
             }
-            // Sembunyikan File Explorer saat di cabang remote (filesystem lokal saja)
-            if (fileExplorerBtn) {
-                fileExplorerBtn.classList.add('hidden');
-            }
-            // Sembunyikan Dokumentasi & Tutorial saat di cabang remote
-            if (documentationBtn) {
-                documentationBtn.classList.add('hidden');
-            }
-            document.title = `${branchName} - Kasir Panel`;
+
+            document.title = `${branchName} (Read-Only) - Kasir Panel`;
         }
     },
 
@@ -335,30 +401,39 @@ const BranchManager = {
         // KASUS 1: Beralih kembali ke Cabang Lokal (ID = '0')
         if (targetIdStr === '0') {
             if (btn) btn.disabled = true;
+            this.showSwitchLoading(this.localWarnetTitle + ' (Lokal)', 'Mengembalikan koneksi ke server database lokal...');
+
             try {
                 if (API.branch && API.branch.switchContext) {
                     await API.branch.switchContext(0);
                 }
+
+                this.activeBranchId = '0';
+                this.activeBranchName = this.localWarnetTitle;
+                sessionStorage.setItem('active_branch_id', '0');
+                sessionStorage.setItem('active_branch_name', this.localWarnetTitle);
+
+                this.renderNavbarDropdown();
+                this.updateBrandAndSidebarVisibility();
+                this.removeActiveBranchBanner();
+
+                this.updateSwitchStatus('Memuat ulang seluruh data PC, grup & transaksi lokal...');
+                await this.refreshAllModulesAfterBranchSwitch();
+
+                this.hideSwitchLoading();
+                if (window.Toast) {
+                    window.Toast.show(`Kembali ke ${this.localWarnetTitle} (Lokal)`, "info");
+                }
             } catch (e) {
                 console.warn('[BranchManager] Sync server context lokal warn:', e);
+                this.hideSwitchLoading();
+                if (window.Toast) {
+                    window.Toast.show('Terjadi kendala saat memuat data lokal: ' + (e.message || e), 'warning');
+                }
             } finally {
                 if (btn) btn.disabled = false;
+                this.renderNavbarDropdown();
             }
-
-            this.activeBranchId = '0';
-            this.activeBranchName = this.localWarnetTitle;
-            sessionStorage.setItem('active_branch_id', '0');
-            sessionStorage.setItem('active_branch_name', this.localWarnetTitle);
-
-            this.renderNavbarDropdown();
-            this.updateBrandAndSidebarVisibility();
-            this.removeActiveBranchBanner();
-
-            if (window.Toast) {
-                window.Toast.show(`Beralih ke ${this.localWarnetTitle} (Lokal)`, "info");
-            }
-
-            await this.refreshAllModulesAfterBranchSwitch();
             return;
         }
 
@@ -369,20 +444,20 @@ const BranchManager = {
             return;
         }
 
-        // Tampilkan feedback visual & loading handshake saat menguji koneksi
+        // Tampilkan feedback visual & loading overlay saat menguji koneksi
         if (btn) btn.disabled = true;
         if (iconElem) {
             iconElem.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
         }
-        if (window.Toast) {
-            window.Toast.show(`Menguji koneksi ke ${targetBranch.nama}...`, "info");
-        }
+
+        this.showSwitchLoading(targetBranch.nama, 'Menguji koneksi & verifikasi kunci API cabang...');
 
         try {
             const res = await API.branch.switchContext(targetBranch.id);
             if (!res || !res.success) {
                 // KONEKSI GAGAL: BATALKAN PERPINDAHAN CABANG!
                 targetBranch.status_online = false;
+                this.hideSwitchLoading();
                 this.renderNavbarDropdown();
                 if (window.Toast) {
                     window.Toast.show(res?.error || `Cabang '${targetBranch.nama}' tidak dapat terhubung. Pergantian cabang dibatalkan.`, "error");
@@ -390,7 +465,7 @@ const BranchManager = {
                 return;
             }
 
-            // KONEKSI BERHASIL: Beralih ke cabang remote
+            // KONEKSI BERHASIL: Siapkan data cabang remote
             targetBranch.status_online = true;
             this.activeBranchId = targetIdStr;
             this.activeBranchName = res.data?.branch_name || targetBranch.nama;
@@ -401,19 +476,24 @@ const BranchManager = {
             this.updateBrandAndSidebarVisibility();
             this.removeActiveBranchBanner();
 
-            if (window.Toast) {
-                window.Toast.show(`Berhasil beralih ke ${this.activeBranchName}`, "success");
-            }
-
-            // Jika beralih ke cabang remote dan sedang membuka tab manajemen cabang, otomatis alihkan ke Dashboard
+            // Jika beralih ke cabang remote dan sedang membuka tab manajemen cabang/lokal, otomatis alihkan ke Dashboard
             if (window.App && ['branch', 'branch_inbound', 'branch_kasir', 'fileexplorer', 'tutorials'].includes(App.currentTab)) {
                 App.switchTab('dash');
             }
 
+            this.updateSwitchStatus('Menyinkronkan data PC, grup & transaksi cabang...');
             await this.refreshAllModulesAfterBranchSwitch();
+
+            this.hideSwitchLoading();
+
+            // Toast sukses HANYA dimunculkan setelah data 100% selesai di-fetch dan ter-render
+            if (window.Toast) {
+                window.Toast.show(`Berhasil beralih ke ${this.activeBranchName}`, "success");
+            }
 
         } catch (err) {
             targetBranch.status_online = false;
+            this.hideSwitchLoading();
             this.renderNavbarDropdown();
             if (window.Toast) {
                 window.Toast.show(`Gagal terhubung ke ${targetBranch.nama}: ${err.message || 'Server offline'}`, "error");
@@ -437,7 +517,7 @@ const BranchManager = {
             window.Toast.show(`Koneksi ke cabang '${disconnectedName}' terputus. Mengembalikan kontrol panel ke Cabang Lokal...`, "warning");
         }
 
-        // Failover aman kembali ke Cabang Lokal
+        // Failover aman kembali ke Cabang Lokal dengan perlindungan loading overlay
         this.switchBranch('0');
     },
 
@@ -1011,9 +1091,19 @@ const BranchManager = {
     currentOperatorSubTab: 'active',
     operatorToDelete: null,
 
-    async loadRemoteOperators() {
+    async loadRemoteOperators(isSilent = false) {
+        if (!isSilent) {
+            this._lastOperatorsFingerprint = null;
+        }
+
+        const modalDeleteOp = document.getElementById('modal-delete-remote-op');
+        const isModalOpen = modalDeleteOp && !modalDeleteOp.classList.contains('hidden');
+        if (isSilent && isModalOpen) {
+            return;
+        }
+
         const tbody = document.getElementById('branch-operators-tbody');
-        if (tbody) {
+        if (!isSilent && (!this.remoteOperators || this.remoteOperators.length === 0) && tbody) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="4" class="py-8 text-center text-xs lg:max-xl:text-xs xl:text-base text-neutral-500">Memuat data akun kasir cabang...</td>
@@ -1024,17 +1114,40 @@ const BranchManager = {
         try {
             const res = await API.branch.operators();
             if (res && res.success) {
-                this.remoteOperators = res.data || [];
-            } else {
+                const data = res.data || [];
+                const searchInput = document.getElementById('filter-remote-op-search');
+                const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
+                const newFingerprint = JSON.stringify(data.map(op => ({
+                    id: op.id,
+                    operator: op.operator,
+                    username: op.username,
+                    branch_name: op.branch_name,
+                    is_hidden: op.is_hidden,
+                    total_billing: op.total_billing,
+                    total_kantin: op.total_kantin,
+                    terakhir_aktif: op.terakhir_aktif
+                }))) + `_sub_${this.currentOperatorSubTab}_q_${searchVal}`;
+
+                if (isSilent && this._lastOperatorsFingerprint === newFingerprint) {
+                    return; // Data tidak berubah, cegah re-render DOM
+                }
+                this._lastOperatorsFingerprint = newFingerprint;
+                this.remoteOperators = data;
+                this.updateOperatorBadges();
+                this.renderOperatorsTable();
+            } else if (!isSilent) {
                 this.remoteOperators = [];
+                this.updateOperatorBadges();
+                this.renderOperatorsTable();
             }
         } catch (err) {
-            console.error('[BranchManager] Gagal memuat operator remote:', err);
-            this.remoteOperators = [];
+            if (!isSilent) {
+                console.error('[BranchManager] Gagal memuat operator remote:', err);
+                this.remoteOperators = [];
+                this.updateOperatorBadges();
+                this.renderOperatorsTable();
+            }
         }
-
-        this.updateOperatorBadges();
-        this.renderOperatorsTable();
     },
 
     updateOperatorBadges() {
@@ -1050,6 +1163,7 @@ const BranchManager = {
 
     switchOperatorSubTab(tab) {
         this.currentOperatorSubTab = tab;
+        this._lastOperatorsFingerprint = null;
         const btnActive = document.getElementById('btn-subtab-op-active');
         const btnArchived = document.getElementById('btn-subtab-op-archived');
         const badgeActive = document.getElementById('badge-count-op-active');
@@ -1093,6 +1207,7 @@ const BranchManager = {
     },
 
     filterOperatorsBySearch() {
+        this._lastOperatorsFingerprint = null;
         this.renderOperatorsTable();
     },
 
@@ -1342,6 +1457,7 @@ const BranchManager = {
     // ==========================================
     switchInboundSubTab(subTab) {
         this.inboundSubTab = subTab;
+        this._lastInboundFingerprint = null;
         const tabs = ['all', 'active', 'blocked'];
         tabs.forEach(t => {
             const btn = document.getElementById(`btn-subtab-inbound-${t}`);
@@ -1372,9 +1488,23 @@ const BranchManager = {
         if (elBlocked) elBlocked.textContent = blocked;
     },
 
-    async loadInboundBranches() {
+    async loadInboundBranches(isSilent = false) {
+        if (!isSilent) {
+            this._lastInboundFingerprint = null;
+        }
+
+        const modalBlock = document.getElementById('modal-block-inbound');
+        const modalUnblock = document.getElementById('modal-unblock-inbound');
+        const modalDelete = document.getElementById('modal-delete-inbound');
+        const isModalOpen = (modalBlock && !modalBlock.classList.contains('hidden')) ||
+                            (modalUnblock && !modalUnblock.classList.contains('hidden')) ||
+                            (modalDelete && !modalDelete.classList.contains('hidden'));
+        if (isSilent && isModalOpen) {
+            return;
+        }
+
         const tbody = document.getElementById('inbound-branch-table-body');
-        if (tbody) {
+        if (!isSilent && (!this.inboundBranches || this.inboundBranches.length === 0) && tbody) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="5" class="text-center py-8 text-neutral-500 text-xs lg:max-xl:text-xs xl:text-base font-mono">
@@ -1387,22 +1517,45 @@ const BranchManager = {
         try {
             const res = await API.branch.inboundList();
             if (res && res.success) {
-                this.inboundBranches = res.data || [];
-            } else {
+                const data = res.data || [];
+                const searchInput = document.getElementById('filter-inbound-search');
+                const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
+                const newFingerprint = JSON.stringify(data.map(b => ({
+                    id: b.id,
+                    status: b.status,
+                    nama: b.nama,
+                    ip: b.ip_address,
+                    mac: b.mac_address,
+                    terakhir_aktif: b.terakhir_aktif,
+                    total_requests: b.total_requests
+                }))) + `_sub_${this.inboundSubTab}_q_${searchVal}`;
+
+                if (isSilent && this._lastInboundFingerprint === newFingerprint) {
+                    return; // Data tidak berubah, cegah re-render DOM
+                }
+                this._lastInboundFingerprint = newFingerprint;
+                this.inboundBranches = data;
+                this.updateInboundBadgeCounts();
+                this.renderInboundTable();
+            } else if (!isSilent) {
                 this.inboundBranches = [];
+                this.updateInboundBadgeCounts();
+                this.renderInboundTable();
             }
         } catch (err) {
-            console.error('[BranchManager] Gagal memuat inbound branches:', err);
-            this.inboundBranches = [];
+            if (!isSilent) {
+                console.error('[BranchManager] Gagal memuat inbound branches:', err);
+                this.inboundBranches = [];
+                this.updateInboundBadgeCounts();
+                this.renderInboundTable();
+            }
         }
-
-        this.updateInboundBadgeCounts();
-        this.renderInboundTable();
     },
 
     filterInboundBySearch() {
         const input = document.getElementById('filter-inbound-search');
         this.filterInboundQuery = input ? input.value.trim().toLowerCase() : '';
+        this._lastInboundFingerprint = null;
         this.renderInboundTable();
     },
 

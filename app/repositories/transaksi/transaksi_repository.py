@@ -309,6 +309,58 @@ class TransaksiRepository:
         """Alias untuk get_total_refund_hari_ini"""
         return TransaksiRepository.get_total_refund_hari_ini(tanggal, kasir_id, metode_pembayaran)
 
+    @staticmethod
+    def get_breakdown_metode_by_tanggal(tanggal=None, kasir_id=None, metode_pembayaran=None, q=None):
+        """Mengambil ringkasan jumlah transaksi dan total per metode pembayaran berdasarkan filter."""
+        query = db.session.query(
+            Transaksi.metode_pembayaran,
+            func.count(Transaksi.id),
+            func.sum(Transaksi.jumlah)
+        ).filter(Transaksi.no_nota != None)
+
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            from app.utils.timezone_utils import get_local_date_range_utc
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            query = query.filter(
+                Transaksi.dibuat_pada >= start_utc,
+                Transaksi.dibuat_pada < end_utc
+            )
+        query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
+        if metode_pembayaran:
+            if metode_pembayaran == "Tunai":
+                query = query.filter(
+                    (Transaksi.metode_pembayaran.in_(["Tunai", "Cash"])) | 
+                    (Transaksi.metode_pembayaran == None)
+                )
+            else:
+                query = query.filter(Transaksi.metode_pembayaran == metode_pembayaran)
+
+        if q:
+            search = f"%{q}%"
+            query = query.outerjoin(Transaksi.member).outerjoin(Transaksi.sesi).outerjoin(Sesi.pc).filter(
+                or_(
+                    Transaksi.no_nota.ilike(search),
+                    Transaksi.keterangan.ilike(search),
+                    Member.username.ilike(search),
+                    Member.nama_lengkap.ilike(search),
+                    Sesi.nama_guest.ilike(search),
+                    PC.kode.ilike(search),
+                    PC.nama.ilike(search)
+                )
+            )
+
+        query = query.group_by(Transaksi.metode_pembayaran)
+        results = query.all()
+
+        breakdown = {}
+        for method, count, total in results:
+            norm_method = "Tunai" if not method or method in ["Tunai", "Cash"] else method
+            if norm_method not in breakdown:
+                breakdown[norm_method] = {"count": 0, "total": 0}
+            breakdown[norm_method]["count"] += count or 0
+            breakdown[norm_method]["total"] += int(total or 0)
+        return breakdown
+
 
     # =========================================================================
     # 4. UTILITAS (UTILITY)

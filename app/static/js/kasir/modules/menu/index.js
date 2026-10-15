@@ -5,6 +5,7 @@ const Menu = {
     archivedItems: [],
     cart: [], // Array of { menu: MenuItem, jumlah: number }
     currentView: 'active', // 'active' | 'archived'
+    stockFilter: 'all', // 'all' | 'available' | 'out_of_stock'
     
     // Canvas Image Cropper & Zoom State (4:3 ratio)
     cropperState: {
@@ -19,17 +20,49 @@ const Menu = {
         existingImageUrl: null
     },
     _cropperEventsBound: false,
+    _scrollBound: false,
+    _cartScrollBound: false,
+
+    setupCatalogScroll() {
+        const container = document.getElementById("menu-catalog-scroll-container");
+        if (!container || this._scrollBound) return;
+        this._scrollBound = true;
+
+        // Contain mouse wheel scrolling strictly within catalog container when hovering cards
+        container.addEventListener('wheel', (e) => {
+            if (e.deltaY === 0) return;
+            container.scrollBy({ top: e.deltaY, behavior: 'auto' });
+            e.preventDefault();
+        }, { passive: false });
+    },
+
+    setupCartScroll() {
+        const cart = document.getElementById("menu-cart-items");
+        if (!cart || this._cartScrollBound) return;
+        this._cartScrollBound = true;
+
+        cart.addEventListener('wheel', (e) => {
+            if (e.deltaY === 0) return;
+            cart.scrollBy({ top: e.deltaY, behavior: 'auto' });
+            e.preventDefault();
+        }, { passive: false });
+    },
 
     resetState() {
         this.cart = [];
+        this.stockFilter = 'all';
         this.renderCart();
         const searchInput = document.getElementById("menu-search-input");
         if (searchInput) searchInput.value = "";
+        const clearBtn = document.getElementById("menu-search-clear");
+        if (clearBtn) clearBtn.classList.add("hidden");
     },
 
     async load() {
         try {
             this.setupCropperEvents();
+            this.setupCatalogScroll();
+            this.setupCartScroll();
             await this.loadCatalog();
         } catch (error) {
             console.error("Gagal inisialisasi modul menu:", error);
@@ -46,30 +79,59 @@ const Menu = {
         const activeBtn = document.getElementById("menu-tab-active-btn");
         const archivedBtn = document.getElementById("menu-tab-archived-btn");
 
+        const baseBtnClasses = "px-2.5 sm:px-3 py-1 rounded text-xs font-bold transition-all flex items-center gap-1.5 justify-center w-auto";
+
         if (view === 'active') {
             if (activeBtn) {
-                activeBtn.className = "px-3 py-1.5 rounded-md text-xs lg:text-xs xl:text-sm font-bold bg-neutral-100 text-black shadow transition-all flex items-center gap-1.5";
+                activeBtn.className = `${baseBtnClasses} bg-neutral-100 text-black shadow-sm`;
                 const badge = activeBtn.querySelector('#menu-active-count-badge');
                 if (badge) badge.className = "px-1.5 py-0.5 bg-black/10 text-black rounded-full text-[10px] font-mono font-bold";
             }
             if (archivedBtn) {
-                archivedBtn.className = "px-3 py-1.5 rounded-md text-xs lg:text-xs xl:text-sm font-bold text-neutral-400 hover:text-neutral-200 hover:bg-[#161616] transition-all flex items-center gap-1.5";
+                archivedBtn.className = `${baseBtnClasses} remote-hide-action text-neutral-400 hover:text-neutral-200 hover:bg-[#171717]`;
                 const badge = archivedBtn.querySelector('#menu-archived-count-badge');
                 if (badge) badge.className = "px-1.5 py-0.5 bg-[#1c1c1c] text-neutral-400 rounded-full text-[10px] font-mono font-bold";
             }
         } else {
             if (activeBtn) {
-                activeBtn.className = "px-3 py-1.5 rounded-md text-xs lg:text-xs xl:text-sm font-bold text-neutral-400 hover:text-neutral-200 hover:bg-[#161616] transition-all flex items-center gap-1.5";
+                activeBtn.className = `${baseBtnClasses} text-neutral-400 hover:text-neutral-200 hover:bg-[#171717]`;
                 const badge = activeBtn.querySelector('#menu-active-count-badge');
                 if (badge) badge.className = "px-1.5 py-0.5 bg-[#1c1c1c] text-neutral-400 rounded-full text-[10px] font-mono font-bold";
             }
             if (archivedBtn) {
-                archivedBtn.className = "px-3 py-1.5 rounded-md text-xs lg:text-xs xl:text-sm font-bold bg-amber-400 text-black shadow transition-all flex items-center gap-1.5";
+                archivedBtn.className = `${baseBtnClasses} remote-hide-action bg-amber-400 text-black shadow-sm`;
                 const badge = archivedBtn.querySelector('#menu-archived-count-badge');
                 if (badge) badge.className = "px-1.5 py-0.5 bg-black/15 text-black rounded-full text-[10px] font-mono font-bold";
             }
         }
 
+        this.filterCatalog();
+    },
+
+    setStockFilter(filter) {
+        this.stockFilter = filter;
+        const btnAll = document.getElementById("menu-filter-stock-all");
+        const btnAvail = document.getElementById("menu-filter-stock-available");
+        const btnOut = document.getElementById("menu-filter-stock-out");
+
+        const activeClasses = "px-2.5 py-1 rounded text-neutral-100 bg-[#1f1f1f] border border-[#2a2a2a] font-medium transition-colors";
+        const inactiveClasses = "px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium transition-colors";
+
+        if (btnAll) btnAll.className = filter === 'all' ? activeClasses : inactiveClasses;
+        if (btnAvail) btnAvail.className = filter === 'available' ? activeClasses : inactiveClasses;
+        if (btnOut) btnOut.className = filter === 'out_of_stock' ? activeClasses : inactiveClasses;
+
+        this.filterCatalog();
+    },
+
+    clearSearch() {
+        const input = document.getElementById("menu-search-input");
+        if (input) {
+            input.value = "";
+            input.focus();
+        }
+        const clearBtn = document.getElementById("menu-search-clear");
+        if (clearBtn) clearBtn.classList.add("hidden");
         this.filterCatalog();
     },
 
@@ -153,17 +215,40 @@ const Menu = {
     },
 
     filterCatalog() {
-        const query = document.getElementById("menu-search-input")?.value?.toLowerCase() || "";
+        const searchInput = document.getElementById("menu-search-input");
+        const query = searchInput?.value?.toLowerCase() || "";
+        const clearBtn = document.getElementById("menu-search-clear");
+        if (clearBtn) {
+            if (query) clearBtn.classList.remove("hidden");
+            else clearBtn.classList.add("hidden");
+        }
+
+        const itemsToFilter = this.currentView === 'active' ? this.items : this.archivedItems;
+        const filtered = itemsToFilter.filter(m => {
+            const matchesQuery = !query || m.nama.toLowerCase().includes(query);
+            if (!matchesQuery) return false;
+
+            if (this.currentView === 'active') {
+                if (this.stockFilter === 'available') {
+                    return m.stok < 0 || m.stok > 0;
+                } else if (this.stockFilter === 'out_of_stock') {
+                    return m.stok >= 0 && m.stok === 0;
+                }
+            }
+            return true;
+        });
+
         if (this.currentView === 'active') {
-            const filtered = this.items.filter(m => m.nama.toLowerCase().includes(query));
             this.renderCatalog(filtered);
         } else {
-            const filtered = this.archivedItems.filter(m => m.nama.toLowerCase().includes(query));
             this.renderArchivedCatalog(filtered);
         }
     },
 
     renderCatalog(data) {
+        this.setupCatalogScroll();
+        const container = document.getElementById("menu-catalog-scroll-container");
+        const prevScroll = container ? container.scrollTop : 0;
         const grid = document.getElementById("menu-catalog-grid");
         if (!grid) return;
 
@@ -179,86 +264,181 @@ const Menu = {
             return;
         }
 
+        const isKasir = window.App && App.user && App.user.role === 'kasir';
+
         grid.innerHTML = data.map(m => {
             const isUnlimited = m.stok < 0;
             const isOutOfStock = !isUnlimited && m.stok <= 0;
             const stokText = isUnlimited ? 'Unlimited' : `Stok: ${m.stok}`;
-            const stokColor = isUnlimited ? 'text-green-500 font-bold' : (m.stok < 5 ? 'text-amber-500 font-bold' : 'text-neutral-400 font-semibold');
+            const stokColor = isUnlimited ? 'text-emerald-400 font-bold' : (m.stok < 5 ? 'text-amber-400 font-bold' : 'text-neutral-400 font-semibold');
+
+            const cartItem = this.cart.find(c => c.menu.id === m.id);
+            const inCartQty = cartItem ? cartItem.jumlah : 0;
 
             const resolvedImg = m.gambar_path && window.API ? API.resolveMediaUrl(m.gambar_path) : (m.gambar_path || '');
             const imgHtml = resolvedImg 
                 ? `<div class="w-full aspect-[4/3] rounded-lg overflow-hidden border border-[#1f1f1f] bg-[#0c0c0c] relative">
                      <img src="${resolvedImg}" alt="${m.nama}" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" loading="lazy">
-                     <span class="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/85 backdrop-blur-sm border border-[#2a2a2a] ${stokColor} rounded text-[9px] lg:text-[10px] xl:text-xs font-mono shadow">${stokText}</span>
+                     <span class="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/85 backdrop-blur-sm border border-[#2a2a2a] ${stokColor} rounded text-[9px] font-mono shadow">${stokText}</span>
                    </div>`
                 : `<div class="w-full aspect-[4/3] rounded-lg border border-[#1f1f1f] bg-[#090909] flex flex-col items-center justify-center text-neutral-600 relative">
-                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"></path>
                      </svg>
-                     <span class="text-[9px] xl:text-[10px] text-neutral-600 mt-1 font-medium">No Image</span>
-                     <span class="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/85 backdrop-blur-sm border border-[#2a2a2a] ${stokColor} rounded text-[9px] lg:text-[10px] xl:text-xs font-mono shadow">${stokText}</span>
+                     <span class="text-[9px] text-neutral-600 mt-1 font-medium">No Image</span>
+                     <span class="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/85 backdrop-blur-sm border border-[#2a2a2a] ${stokColor} rounded text-[9px] font-mono shadow">${stokText}</span>
                    </div>`;
 
-            const isKasir = window.App && App.user && App.user.role === 'kasir';
             const escapedName = (m.nama || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
-            const btnHtml = isOutOfStock
-                ? `<button disabled class="w-full py-1.5 rounded bg-neutral-900 border border-[#1c1c1c] text-[10px] lg:text-xs xl:text-sm text-neutral-600 font-bold uppercase cursor-not-allowed">Stok Habis</button>`
-                : `<button onclick="Menu.addToCart(${m.id})" class="w-full py-1.5 rounded bg-neutral-100 hover:bg-white text-[#050505] text-[10px] lg:text-xs xl:text-sm font-bold uppercase transition-colors shadow">Tambah</button>`;
+            const cardBorderClass = (isOutOfStock && inCartQty === 0)
+                ? 'bg-[#0a0a0a] border-[#181818] opacity-50 cursor-not-allowed select-none'
+                : inCartQty > 0
+                    ? 'bg-[#08130d] border-emerald-500/60 shadow-[0_0_12px_rgba(16,185,129,0.12)] cursor-pointer active:scale-[0.98]'
+                    : 'bg-[#0c0c0c] border-[#1c1c1c] hover:border-[#2a2a2a] hover:bg-[#0f0f0f] cursor-pointer active:scale-[0.98]';
+
+            const cardClickAction = isOutOfStock ? '' : `onclick="Menu.addToCart(${m.id})"`;
+            const cardContextMenuAction = (isOutOfStock && inCartQty === 0) ? '' : `oncontextmenu="event.preventDefault(); Menu.decrementCart(${m.id})"`;
+
+            const inCartBadge = inCartQty > 0 ? `
+                <div class="absolute top-2 left-2 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500 text-black text-[9px] sm:text-[10px] font-mono font-bold shadow-md select-none" title="Klik kiri tambah, klik kanan kurangi">
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                    <span>x${inCartQty} di Keranjang</span>
+                </div>
+            ` : '';
+
+            const previewBtn = resolvedImg ? `
+                <div class="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                    <button type="button" onclick="event.stopPropagation(); Menu.openLightbox('${resolvedImg}', '${escapedName}', '${Utils.formatRupiah(m.harga)}')" class="p-1 rounded bg-black/80 hover:bg-neutral-800 text-neutral-200 hover:text-white border border-[#2a2a2a] transition-all shadow flex items-center gap-1 text-[10px]" title="Lihat Fullscreen">
+                        <svg class="w-3 h-3 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    </button>
+                </div>
+            ` : '';
+
+            const adminDesktopActions = (isKasir || isOutOfStock) ? '' : `
+                <div class="hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity remote-hide-action">
+                    ${isUnlimited ? '' : `
+                    <button type="button" onclick="event.stopPropagation(); Menu.showRestockModal(${m.id})" class="p-1 rounded bg-black/85 hover:bg-emerald-950 text-neutral-300 hover:text-emerald-400 border border-[#2a2a2a] hover:border-emerald-800 transition-colors shadow" title="Tambah Stok">
+                        <svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                    </button>`}
+                    <button type="button" onclick="event.stopPropagation(); Menu.showEditModal(${m.id})" class="p-1 rounded bg-black/85 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-[#2a2a2a] transition-colors shadow" title="Edit Menu">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    </button>
+                    <button type="button" onclick="event.stopPropagation(); Menu.deleteItem(${m.id}, '${escapedName}')" class="p-1 rounded bg-black/85 hover:bg-amber-950 text-neutral-300 hover:text-amber-400 border border-[#2a2a2a] hover:border-amber-800 transition-colors shadow" title="Arsipkan Menu">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                    </button>
+                </div>
+            `;
+
+            const adminMobileActions = isKasir ? '' : `
+                <button type="button" onclick="event.stopPropagation(); Menu.showMobileActions(${m.id})" 
+                    class="w-6 h-6 rounded-md bg-[#161616] hover:bg-[#222] border border-[#2c2c2c] text-neutral-400 hover:text-neutral-200 flex items-center justify-center shadow shrink-0 lg:hidden remote-hide-action active:scale-90 transition-transform mt-0.5" 
+                    title="Kelola Menu">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                    </svg>
+                </button>
+            `;
 
             return `
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] hover:border-[#2a2a2a] transition-all rounded-xl p-3 flex flex-col justify-between group relative">
-                    <!-- Preview Button (Top Left - Hover Only: Icon on LG, Icon + Text on XL/2XL) -->
-                    ${resolvedImg ? `
-                    <div class="absolute top-2.5 left-2.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button type="button" onclick="Menu.openLightbox('${resolvedImg}', '${escapedName}', '${Utils.formatRupiah(m.harga)}')" class="p-1 xl:px-2 xl:py-1 rounded bg-black/75 hover:bg-neutral-800 text-neutral-200 hover:text-white border border-[#2a2a2a] transition-all shadow flex items-center gap-1 text-[10px] xl:text-xs font-bold" title="Lihat Fullscreen">
-                            <svg class="w-3.5 h-3.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                            <span class="hidden xl:inline">Preview</span>
-                        </button>
-                    </div>
-                    ` : ''}
-
-                    <!-- CRUD Quick Actions (Admin Only) -->
-                    <div class="absolute top-2.5 right-2.5 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        ${isKasir ? '' : `
-                        ${isUnlimited ? '' : `
-                        <button onclick="Menu.showRestockModal(${m.id})" class="p-1 rounded bg-black/70 hover:bg-emerald-950 text-neutral-300 hover:text-emerald-400 border border-[#2a2a2a] hover:border-emerald-800 transition-colors shadow" title="Tambah Stok">
-                            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-                        </button>`}
-                        <button onclick="Menu.showEditModal(${m.id})" class="p-1 rounded bg-black/70 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-[#2a2a2a] transition-colors shadow" title="Edit Menu">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                        </button>
-                        <button onclick="Menu.deleteItem(${m.id}, '${escapedName}')" class="p-1 rounded bg-black/70 hover:bg-amber-950 text-neutral-300 hover:text-amber-400 border border-[#2a2a2a] hover:border-amber-800 transition-colors shadow" title="Arsipkan Menu">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-                        </button>
-                        <button onclick="Menu.hardDeleteItem(${m.id}, '${escapedName}')" class="p-1 rounded bg-black/70 hover:bg-red-700 text-neutral-300 hover:text-white border border-[#2a2a2a] hover:border-red-600 transition-colors shadow" title="Hapus Permanen">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>`}
+                <div ${cardClickAction} ${cardContextMenuAction} class="${cardBorderClass} border transition-all rounded-xl p-2 sm:p-2.5 flex flex-col justify-between group relative select-none" title="${escapedName} (Klik Kiri: Tambah | Klik Kanan: Kurangi)">
+                    ${inCartBadge}
+                    <div class="absolute top-2 right-2 z-10 flex items-center gap-1">
+                        ${previewBtn}
+                        ${adminDesktopActions}
                     </div>
 
-                    <div class="space-y-2">
+                    <div class="space-y-1.5 sm:space-y-2">
                         ${imgHtml}
-                        <div>
-                            <h4 class="text-xs lg:text-xs xl:text-sm font-bold text-neutral-100 line-clamp-2 leading-snug" title="${escapedName}">${m.nama}</h4>
-                            <div class="mt-1.5 pt-1.5 border-t border-[#181818]">
-                                <span class="text-xs lg:text-xs xl:text-sm text-neutral-200 font-bold font-mono tabular-nums">${Utils.formatRupiah(m.harga)}</span>
-                            </div>
+                        <div class="flex items-start justify-between gap-1.5 min-w-0">
+                            <h4 class="text-xs font-bold text-neutral-100 line-clamp-2 leading-snug flex-1 min-w-0" title="${escapedName}">${m.nama}</h4>
+                            ${adminMobileActions}
                         </div>
                     </div>
                     
-                    <!-- Bottom Action: Add to Cart + Restock Button -->
-                    <div class="mt-2.5 flex items-center gap-1.5">
-                        <div class="flex-1 min-w-0">
-                            ${btnHtml}
-                        </div>
-                        ${isUnlimited ? '' : `
-                        <button type="button" onclick="Menu.showRestockModal(${m.id})" class="px-2 py-1.5 rounded bg-[#171717] hover:bg-[#222] border border-[#262626] hover:border-emerald-500/50 text-neutral-300 hover:text-emerald-400 text-[10px] lg:text-xs xl:text-sm font-bold flex items-center justify-center gap-1 transition-all shrink-0 shadow" title="Tambah Stok (+)">
-                            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-                            <span class="hidden sm:inline font-mono">Stok</span>
-                        </button>`}
+                    <!-- Bottom Row: Price & Action Stepper -->
+                    <div class="mt-2 pt-1.5 border-t border-[#181818] flex items-center justify-between gap-1">
+                        <span class="text-xs font-bold font-mono text-neutral-200 tabular-nums">${Utils.formatRupiah(m.harga)}</span>
+                        ${inCartQty > 0 ? `
+                            <!-- Mobile & Desktop Stepper: Direct +/- touch targets -->
+                            <div class="flex items-center gap-1 bg-[#141414] border border-emerald-500/50 rounded p-0.5 shadow-sm shrink-0" onclick="event.stopPropagation()">
+                                <button type="button" onclick="event.stopPropagation(); Menu.decrementCart(${m.id})" class="w-5 h-5 rounded bg-[#1e1e1e] hover:bg-red-500/20 text-neutral-300 hover:text-red-400 flex items-center justify-center font-bold text-xs transition-colors active:scale-95" title="Kurangi (Klik Kanan di card)">-</button>
+                                <span class="px-1 text-[10px] font-mono font-bold text-emerald-400 tabular-nums">${inCartQty}</span>
+                                <button type="button" ${isOutOfStock ? 'disabled' : `onclick="event.stopPropagation(); Menu.addToCart(${m.id})"`} class="w-5 h-5 rounded ${isOutOfStock ? 'bg-neutral-800 text-neutral-600 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-400 text-black active:scale-95'} flex items-center justify-center font-bold text-xs transition-colors" title="${isOutOfStock ? 'Stok habis' : 'Tambah (Klik Kiri di card)'}">+</button>
+                            </div>
+                        ` : isOutOfStock ? `
+                            <span class="px-1.5 py-0.5 rounded bg-neutral-900 border border-[#1c1c1c] text-[9px] text-neutral-600 font-bold uppercase">Habis</span>
+                        ` : `
+                            <button type="button" class="px-2 py-0.5 rounded bg-neutral-100 hover:bg-white text-black font-bold text-[10px] transition-colors shadow flex items-center gap-1 shrink-0">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                <span>Tambah</span>
+                            </button>
+                        `}
                     </div>
                 </div>`;
         }).join('');
+
+        if (container && prevScroll > 0) {
+            container.scrollTop = prevScroll;
+        }
+    },
+
+    showMobileActions(menuId) {
+        if (window.event) window.event.stopPropagation();
+        const menu = this.items.find(m => m.id === menuId);
+        if (!menu) return;
+
+        const isUnlimited = menu.stok < 0;
+        const escapedName = (menu.nama || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const resolvedImg = menu.gambar_path && window.API ? API.resolveMediaUrl(menu.gambar_path) : (menu.gambar_path || '');
+
+        const modalHtml = `
+            <div id="menu-mobile-actions-modal" class="bg-[#111] border border-[#262626] rounded-2xl p-4 max-w-sm w-[calc(100%-2rem)] mx-auto my-auto shadow-2xl space-y-4">
+                <div class="flex items-center justify-between border-b border-[#222] pb-3">
+                    <div class="min-w-0 flex-1 pr-2">
+                        <span class="text-[10px] font-mono uppercase text-emerald-400 font-bold tracking-wider">Kelola Menu</span>
+                        <h3 class="text-sm font-bold text-neutral-100 truncate">${escapedName}</h3>
+                        <span class="text-xs text-neutral-400 font-mono">${Utils.formatRupiah(menu.harga)} • ${isUnlimited ? 'Unlimited' : `Stok: ${menu.stok}`}</span>
+                    </div>
+                    <button onclick="Modal.closeModal()" class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-white flex items-center justify-center text-lg">&times;</button>
+                </div>
+
+                <div class="space-y-2">
+                    ${!isUnlimited ? `
+                    <button type="button" onclick="Modal.closeModal(); Menu.showRestockModal(${menu.id})" 
+                        class="w-full py-2.5 px-3 bg-[#181818] hover:bg-[#222] border border-[#2e2e2e] text-emerald-400 font-bold rounded-xl flex items-center gap-2.5 text-xs transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                        <span>Tambah Stok (Restock)</span>
+                    </button>` : ''}
+
+                    <button type="button" onclick="Modal.closeModal(); Menu.showEditModal(${menu.id})" 
+                        class="w-full py-2.5 px-3 bg-[#181818] hover:bg-[#222] border border-[#2e2e2e] text-neutral-200 font-bold rounded-xl flex items-center gap-2.5 text-xs transition-colors">
+                        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        <span>Edit Nama, Harga & Foto</span>
+                    </button>
+
+                    ${resolvedImg ? `
+                    <button type="button" onclick="Modal.closeModal(); Menu.openLightbox('${resolvedImg}', '${escapedName}', '${Utils.formatRupiah(menu.harga)}')" 
+                        class="w-full py-2.5 px-3 bg-[#181818] hover:bg-[#222] border border-[#2e2e2e] text-neutral-200 font-bold rounded-xl flex items-center gap-2.5 text-xs transition-colors">
+                        <svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        <span>Lihat Foto Fullscreen</span>
+                    </button>` : ''}
+
+                    <button type="button" onclick="Modal.closeModal(); Menu.deleteItem(${menu.id}, '${escapedName}')" 
+                        class="w-full py-2.5 px-3 bg-[#181818] hover:bg-amber-950/40 border border-[#2e2e2e] hover:border-amber-800 text-amber-400 font-bold rounded-xl flex items-center gap-2.5 text-xs transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                        <span>Arsipkan Menu</span>
+                    </button>
+
+                    <button type="button" onclick="Modal.closeModal(); Menu.hardDeleteItem(${menu.id}, '${escapedName}')" 
+                        class="w-full py-2.5 px-3 bg-[#181818] hover:bg-red-950/40 border border-[#2e2e2e] hover:border-red-800 text-red-400 font-bold rounded-xl flex items-center gap-2.5 text-xs transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <span>Hapus Permanen</span>
+                    </button>
+                </div>
+            </div>
+        `;
+        Modal.show(modalHtml);
     },
 
     showRestockModal(menuId) {
@@ -371,6 +551,7 @@ const Menu = {
     },
 
     renderArchivedCatalog(data) {
+        this.setupCatalogScroll();
         const grid = document.getElementById("menu-catalog-grid");
         if (!grid) return;
 
@@ -404,10 +585,10 @@ const Menu = {
             const trxInfo = trxCount > 0 ? `${trxCount} transaksi historis` : 'Belum pernah terjual';
 
             return `
-                <div class="bg-[#0a0a0a] border border-[#222] rounded-xl p-3 flex flex-col justify-between relative group">
-                    <!-- Preview Button (Top Left - Hover Only: Icon on LG, Icon + Text on XL/2XL) -->
+                <div class="bg-[#0a0a0a] border border-[#222] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between relative group">
+                    <!-- Preview Button (Top Left: Always clickable via tapping or preview button) -->
                     ${resolvedImg ? `
-                    <div class="absolute top-2.5 left-2.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div class="absolute top-2 left-2 z-10 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                         <button type="button" onclick="Menu.openLightbox('${resolvedImg}', '${m.nama.replace(/'/g, "\\'")}', '${Utils.formatRupiah(m.harga)}')" class="p-1 xl:px-2 xl:py-1 rounded bg-black/75 hover:bg-neutral-800 text-neutral-200 hover:text-white border border-[#2a2a2a] transition-all shadow flex items-center gap-1 text-[10px] xl:text-xs font-bold" title="Lihat Fullscreen">
                             <svg class="w-3.5 h-3.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                             <span class="hidden xl:inline">Preview</span>
@@ -427,7 +608,7 @@ const Menu = {
                     </div>
                     
                     <!-- Action Buttons -->
-                    <div class="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-[#181818]">
+                    <div class="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-[#181818] remote-hide-action">
                         <button onclick="Menu.restoreItem(${m.id}, '${m.nama}')" 
                             class="flex-1 py-1.5 px-2 rounded bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-600/30 text-[10px] lg:text-xs xl:text-xs font-bold transition-colors flex items-center justify-center gap-1" title="Pulihkan ke katalog aktif">
                             <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
@@ -479,8 +660,20 @@ const Menu = {
             this.cart.push({ menu, jumlah: 1 });
         }
 
-        Toast.success(`'${menu.nama}' dimasukkan ke keranjang`);
         this.renderCart();
+    },
+
+    decrementCart(menuId) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
+        const cartItem = this.cart.find(c => c.menu.id === menuId);
+        if (!cartItem) return;
+
+        if (cartItem.jumlah > 1) {
+            cartItem.jumlah--;
+            this.renderCart();
+        } else {
+            this.removeFromCart(menuId);
+        }
     },
 
     removeFromCart(menuId) {
@@ -513,14 +706,26 @@ const Menu = {
         const container = document.getElementById("menu-cart-items");
         const totalEl = document.getElementById("menu-cart-total");
         const countBadge = document.getElementById("menu-cart-count-badge");
+        const clearBtn = document.getElementById("menu-cart-clear-btn");
+        const mobileBar = document.getElementById("menu-mobile-cart-bar");
+        const mobileTotal = document.getElementById("menu-mobile-bar-total");
+        const mobileCount = document.getElementById("menu-mobile-bar-count");
+
         if (!container || !totalEl) return;
 
         const totalItemsCount = this.cart.reduce((sum, c) => sum + c.jumlah, 0);
         if (countBadge) countBadge.textContent = `${totalItemsCount} item`;
 
+        if (clearBtn) {
+            if (this.cart.length > 0) clearBtn.classList.remove("hidden");
+            else clearBtn.classList.add("hidden");
+        }
+
         if (this.cart.length === 0) {
             container.innerHTML = `<div class="text-center py-10 text-neutral-600 text-xs lg:text-xs xl:text-sm">Keranjang masih kosong</div>`;
             totalEl.textContent = "Rp0";
+            if (mobileBar) mobileBar.classList.add("hidden");
+            this.updateCardBadges();
             return;
         }
 
@@ -564,7 +769,36 @@ const Menu = {
                 </div>`;
         }).join('');
 
-        totalEl.textContent = Utils.formatRupiah(total);
+        const formattedTotal = Utils.formatRupiah(total);
+        totalEl.textContent = formattedTotal;
+
+        if (mobileBar) {
+            mobileBar.classList.remove("hidden");
+            if (mobileTotal) mobileTotal.textContent = formattedTotal;
+            if (mobileCount) mobileCount.textContent = `(${totalItemsCount} item)`;
+        }
+
+        this.updateCardBadges();
+    },
+
+    updateCardBadges() {
+        if (this.currentView === 'active' && this.items && this.items.length > 0) {
+            this.filterCatalog();
+        }
+    },
+
+    scrollToCart() {
+        const cartSec = document.getElementById('menu-cart-section');
+        if (cartSec) {
+            cartSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    },
+
+    clearCart() {
+        if (!this.cart || this.cart.length === 0) return;
+        this.cart = [];
+        this.renderCart();
+        if (window.Toast) Toast.info("Keranjang belanja dikosongkan");
     },
 
     async checkout() {
@@ -595,92 +829,95 @@ const Menu = {
         this._checkoutTotal = total;
         this._checkoutPcKode = pcKode;
         const pecahanHtml = [1000, 2000, 5000, 10000, 20000, 50000, 100000].map(n =>
-            `<button onclick="Menu.setTunai(${n})" class="px-2 py-1.5 lg:px-3 lg:py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-[10px] xl:text-sm text-neutral-300 font-bold rounded transition-colors">Rp${(n/1000).toFixed(0)}K</button>`
+            `<button type="button" onclick="Menu.setTunai(${n})" class="px-1.5 py-1.5 bg-[#141414] hover:bg-[#202020] border border-[#222] text-[10px] text-neutral-300 font-bold rounded transition-colors text-center font-mono">Rp${(n/1000).toFixed(0)}k</button>`
         ).join('');
 
         const modalHtml = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-3 md:p-4 lg:p-6 max-w-6xl w-[calc(100%-2rem)] mx-auto md:w-full max-h-[95vh] xl:max-h-[90vh] overflow-y-auto scrollbar-thin my-auto shadow-2xl">
-                <div class="flex items-center justify-between mb-3 pb-2 lg:mb-4 lg:pb-3 border-b border-[#2a2a2a]">
-                    <div class="flex items-center gap-2 lg:gap-3">
-                        <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-                            <svg class="w-4 h-4 lg:w-5 lg:h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-3 sm:p-4 max-w-2xl w-[calc(100%-1.5rem)] mx-auto max-h-[92vh] overflow-y-auto scrollbar-thin my-auto shadow-2xl">
+                <!-- Header -->
+                <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-[#222]">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
+                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         </div>
                         <div>
-                            <h3 class="text-xs lg:text-sm xl:text-lg font-bold text-neutral-100 uppercase tracking-wider">Pembayaran POS</h3>
-                            <p class="text-[9px] xl:text-sm text-neutral-500 mt-0.5">${targetDest}</p>
+                            <h3 class="text-xs sm:text-sm font-bold text-neutral-100 uppercase tracking-wider">Pembayaran POS</h3>
+                            <p class="text-[10px] text-neutral-400 font-medium">${targetDest}</p>
                         </div>
                     </div>
-                    <button onclick="Modal.closeModal()" class="w-8 h-8 lg:w-10 lg:h-10 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-neutral-400 hover:text-neutral-100 hover:bg-[#222] transition-colors flex items-center justify-center text-lg lg:text-xl leading-none">&times;</button>
+                    <button type="button" onclick="Modal.closeModal()" class="w-7 h-7 rounded-lg bg-[#1a1a1a] hover:bg-[#252525] border border-[#2a2a2a] text-neutral-400 hover:text-white flex items-center justify-center text-base leading-none transition-colors">&times;</button>
                 </div>
-                
-                <div class="grid grid-cols-1 lg:grid-cols-5 gap-3 lg:gap-5 mt-2 lg:mt-4">
-                    <!-- Left Column: Ringkasan Pesanan -->
-                    <div class="lg:col-span-2 space-y-3 lg:space-y-4">
-                        <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-3 lg:p-5">
-                            <div class="text-[9px] xl:text-base text-neutral-500 uppercase font-bold">Total Belanja</div>
-                            <div class="font-bold text-xl lg:text-2xl xl:text-4xl text-neutral-100 font-mono mt-1">${formattedTotal}</div>
-                            
-                            <div class="border-t border-[#2a2a2a] my-2 lg:my-4"></div>
-                            
-                            <div class="text-[9px] xl:text-base text-neutral-500 uppercase font-bold mb-2 lg:mb-3">Daftar Pesanan</div>
-                            <div class="space-y-2 max-h-[120px] md:max-h-[160px] xl:max-h-[350px] overflow-y-auto scrollbar-thin pr-1 xl:pr-2">
+
+                <!-- 2 Column Layout -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Kolom Kiri: Total & Ringkasan -->
+                    <div class="space-y-2.5">
+                        <!-- Total Tagihan Box -->
+                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-lg p-3">
+                            <span class="text-[9px] uppercase font-bold text-neutral-500 tracking-wider block">Total Tagihan</span>
+                            <div class="text-xl sm:text-2xl font-black text-emerald-400 font-mono tabular-nums mt-0.5">${formattedTotal}</div>
+                        </div>
+
+                        <!-- Ringkasan Items -->
+                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-lg p-2.5 space-y-1.5">
+                            <div class="flex items-center justify-between text-[10px] uppercase font-bold text-neutral-500 border-b border-[#181818] pb-1">
+                                <span>Menu (${this.cart.length})</span>
+                                <span>Subtotal</span>
+                            </div>
+                            <div class="space-y-1.5 max-h-[130px] overflow-y-auto scrollbar-thin pr-1 text-xs">
                                 ${this.cart.map(c => `
-                                    <div class="bg-[#111] border border-[#2a2a2a] p-2 xl:p-4 rounded-lg">
-                                        <div class="flex justify-between items-start gap-2 lg:gap-3">
-                                            <div class="flex-1">
-                                                <div class="font-bold text-xs lg:text-sm xl:text-lg text-neutral-200 break-words whitespace-normal">${c.menu.nama}</div>
-                                                <div class="text-[9px] xl:text-sm text-neutral-500 mt-0.5 lg:mt-1">Kuantitas: <span class="text-neutral-300 font-bold">${c.jumlah}</span></div>
-                                            </div>
-                                            <div class="text-right shrink-0">
-                                                <div class="font-bold text-xs lg:text-sm xl:text-lg text-emerald-400 font-mono">Rp${Utils.formatRupiah(c.menu.harga * c.jumlah).replace('Rp', '')}</div>
-                                            </div>
-                                        </div>
+                                    <div class="flex items-center justify-between text-[11px] gap-2">
+                                        <span class="text-neutral-300 truncate"><strong class="font-mono text-neutral-400">${c.jumlah}x</strong> ${c.menu.nama}</span>
+                                        <span class="text-neutral-200 font-mono font-medium shrink-0 tabular-nums">${Utils.formatRupiah(c.menu.harga * c.jumlah)}</span>
                                     </div>
                                 `).join('')}
                             </div>
                         </div>
 
-                        <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-3 lg:p-5">
-                            <label class="text-[9px] xl:text-base text-neutral-500 uppercase font-bold block mb-1">Metode Bayar</label>
+                        <!-- Metode Bayar -->
+                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-lg p-2.5">
+                            <label for="payment-method-select" class="text-[10px] uppercase font-bold text-neutral-400 tracking-wider block mb-1">Metode Bayar</label>
                             <select id="payment-method-select" onchange="Menu.onPaymentMethodChange()" 
-                                class="w-full px-2 py-1 xl:py-2.5 bg-[#050505] border border-[#2a2a2a] rounded-lg text-[10px] xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 font-bold transition-all">
+                                class="w-full px-2.5 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 font-bold focus:outline-none focus:border-neutral-500">
                                 ${paymentMethods.map(m => `<option value="${m}">${m}</option>`).join('')}
                             </select>
                         </div>
                     </div>
-                    
-                    <!-- Right Column: Pembayaran Tunai -->
-                    <div class="lg:col-span-3 space-y-3 lg:space-y-4">
-                        <div class="bg-[#161616] border border-[#2a2a2a] rounded-lg p-3 lg:p-5">
-                            <label class="text-[9px] xl:text-base text-neutral-400 uppercase font-bold tracking-wider font-mono block mb-1 lg:mb-2">Input Uang Tunai</label>
-                            <div class="relative mb-3 lg:mb-5">
-                                <span class="absolute left-3 xl:left-4 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-xs lg:text-sm xl:text-lg">Rp</span>
+
+                    <!-- Kolom Kanan: Input Tunai, Pecahan Cepat, Kembalian -->
+                    <div class="space-y-2.5">
+                        <!-- Input Tunai -->
+                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-lg p-3 space-y-2">
+                            <label for="payment-tunai-input" class="text-[10px] uppercase font-bold text-neutral-400 tracking-wider block">Uang Diterima (Tunai)</label>
+                            <div class="relative">
+                                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500 font-bold text-xs">Rp</span>
                                 <input type="text" inputmode="numeric" id="payment-tunai-input" 
-                                    class="w-full pl-9 pr-3 py-2 xl:pl-12 xl:pr-4 xl:py-4 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-neutral-200 text-sm lg:text-base xl:text-2xl font-mono text-right focus:outline-none focus:border-neutral-500 transition-colors"
+                                    class="w-full pl-8 pr-3 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-neutral-100 text-base font-mono font-bold text-right focus:outline-none focus:border-neutral-400"
                                     placeholder="0" oninput="Utils.formatInputRupiah(this); Menu.hitungKembalian()" autofocus />
                             </div>
 
-                            <label class="text-[9px] xl:text-base text-neutral-400 uppercase font-bold tracking-wider font-mono block mb-1 lg:mb-2">Pecahan Cepat</label>
-                            <div id="payment-shortcut-container" class="flex flex-wrap gap-1.5 lg:gap-2 mb-3 lg:mb-5 transition-opacity">
+                            <!-- Pecahan Cepat -->
+                            <div id="payment-shortcut-container" class="grid grid-cols-4 gap-1 pt-1 transition-opacity">
                                 ${pecahanHtml}
-                                <button onclick="Menu.setTunaiPas()" class="px-2 py-1.5 lg:px-3 lg:py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-[10px] xl:text-sm text-neutral-300 font-bold rounded flex-1 transition-colors">Uang Pas</button>
+                                <button type="button" onclick="Menu.setTunaiPas()" class="px-1.5 py-1.5 bg-[#161616] hover:bg-[#222] border border-[#262626] text-[10px] text-emerald-400 font-bold rounded transition-colors text-center font-mono">Uang Pas</button>
                             </div>
+                        </div>
 
-                            <div class="border-t border-[#2a2a2a] my-3 lg:my-5"></div>
-
-                            <div class="flex justify-between items-center bg-[#0a0a0a] border border-[#1c1c1c] rounded-lg p-3 lg:p-4">
-                                <span class="text-[10px] lg:text-sm text-neutral-400 uppercase font-bold tracking-wider">Kembalian</span>
-                                <span id="payment-kembalian-text" class="text-sm lg:text-2xl font-black text-neutral-100 font-mono">Rp0</span>
-                            </div>
+                        <!-- Kembalian Display -->
+                        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-lg p-3 flex items-center justify-between">
+                            <span class="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">Kembalian</span>
+                            <span id="payment-kembalian-text" class="text-base sm:text-lg font-black text-neutral-100 font-mono tabular-nums">Rp0</span>
                         </div>
                     </div>
                 </div>
-                <div class="flex gap-2 lg:gap-3 justify-end mt-3 lg:mt-5 pt-3 lg:pt-4 border-t border-[#2a2a2a]">
-                    <button onclick="Modal.closeModal()" class="px-3 py-2 lg:px-4 lg:py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-400 text-xs lg:text-base xl:text-lg font-bold rounded-lg transition-colors">Batal</button>
-                    <button onclick="Menu.submitPembayaran()" id="btn-submit-payment" disabled 
-                        class="px-4 py-2 lg:px-5 lg:py-2.5 bg-neutral-100 hover:bg-[#e5e5e5] disabled:bg-[#1a1a1a] disabled:text-neutral-500 disabled:cursor-not-allowed text-black text-xs lg:text-base xl:text-lg font-bold rounded-lg transition-colors flex items-center gap-1.5 lg:gap-2">
-                        <svg class="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                        Proses & Cetak
+
+                <!-- Footer Action Buttons -->
+                <div class="flex items-center justify-end gap-2 pt-3 mt-3 border-t border-[#1c1c1c]">
+                    <button type="button" onclick="Modal.closeModal()" class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs font-bold rounded transition-colors">Batal</button>
+                    <button type="button" onclick="Menu.submitPembayaran()" id="btn-submit-payment" disabled 
+                        class="px-4 py-1.5 bg-neutral-100 hover:bg-white disabled:bg-[#1a1a1a] disabled:text-neutral-500 disabled:cursor-not-allowed text-black text-xs font-bold rounded transition-colors flex items-center gap-1.5 shadow">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        <span>Proses &amp; Cetak</span>
                     </button>
                 </div>
             </div>`;
@@ -707,12 +944,12 @@ const Menu = {
             tunaiInput.readOnly = false;
             tunaiInput.value = '0';
             tunaiInput.classList.remove('bg-[#1a1a1a]', 'text-neutral-500');
-            tunaiInput.classList.add('bg-[#0a0a0a]', 'text-neutral-200');
+            tunaiInput.classList.add('bg-[#050505]', 'text-neutral-100');
             if (shortcutContainer) shortcutContainer.classList.remove('opacity-40', 'pointer-events-none');
         } else {
             tunaiInput.readOnly = true;
             tunaiInput.value = Utils.formatRupiah(this._checkoutTotal).replace('Rp', '');
-            tunaiInput.classList.remove('bg-[#0a0a0a]', 'text-neutral-200');
+            tunaiInput.classList.remove('bg-[#050505]', 'text-neutral-100');
             tunaiInput.classList.add('bg-[#1a1a1a]', 'text-neutral-500');
             if (shortcutContainer) shortcutContainer.classList.add('opacity-40', 'pointer-events-none');
         }
@@ -732,14 +969,14 @@ const Menu = {
 
         if (tunai >= total && total > 0) {
             kembalianDisplay.textContent = Utils.formatRupiah(kembalian);
-            kembalianDisplay.className = 'text-sm lg:text-2xl font-black text-emerald-400 font-mono';
+            kembalianDisplay.className = 'text-base sm:text-lg font-black text-emerald-400 font-mono tabular-nums';
             submitBtn.disabled = false;
-            submitBtn.className = 'px-4 py-2 lg:px-5 lg:py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-base xl:text-lg font-bold rounded-lg transition-colors flex items-center gap-1.5 lg:gap-2';
+            submitBtn.className = 'px-4 py-1.5 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded transition-colors flex items-center gap-1.5 shadow';
         } else {
             kembalianDisplay.textContent = 'Rp0';
-            kembalianDisplay.className = 'text-sm lg:text-2xl font-black text-neutral-100 font-mono';
+            kembalianDisplay.className = 'text-base sm:text-lg font-black text-neutral-100 font-mono tabular-nums';
             submitBtn.disabled = true;
-            submitBtn.className = 'px-4 py-2 lg:px-5 lg:py-2.5 bg-neutral-100 hover:bg-white disabled:bg-[#1a1a1a] disabled:text-neutral-500 disabled:cursor-not-allowed text-black text-xs lg:text-base xl:text-lg font-bold rounded-lg transition-colors flex items-center gap-1.5 lg:gap-2';
+            submitBtn.className = 'px-4 py-1.5 bg-neutral-100 hover:bg-white disabled:bg-[#1a1a1a] disabled:text-neutral-500 disabled:cursor-not-allowed text-black text-xs font-bold rounded transition-colors flex items-center gap-1.5 shadow';
         }
     },
 
