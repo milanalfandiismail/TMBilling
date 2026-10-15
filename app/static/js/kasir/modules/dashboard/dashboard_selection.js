@@ -406,7 +406,7 @@ const DashboardSelection = {
 
             <!-- Buka Sesi (Guest Batch) - Only if ALL PCs are empty -->
             ${isAllKosong ? `
-            <button class="ctx-item w-full flex items-center gap-2.5 px-3.5 py-2 text-xs lg:text-sm text-emerald-300 hover:bg-[#1f1f1f] hover:text-emerald-200 transition-colors text-left min-w-0"
+            <button class="ctx-item remote-hide-action w-full flex items-center gap-2.5 px-3.5 py-2 text-xs lg:text-sm text-emerald-300 hover:bg-[#1f1f1f] hover:text-emerald-200 transition-colors text-left min-w-0"
                     onclick="Dashboard.closeContextMenu(); DashboardSelection.openBatchBukaModal()">
                 <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 <span class="truncate">Buka Sesi (${count} PC)</span>
@@ -414,7 +414,7 @@ const DashboardSelection = {
 
             <!-- Tambah Sesi - Only if ALL PCs have active sessions -->
             ${isAllAktif ? `
-            <button class="ctx-item w-full flex items-center gap-2.5 px-3.5 py-2 text-xs lg:text-sm text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left min-w-0"
+            <button class="ctx-item remote-hide-action w-full flex items-center gap-2.5 px-3.5 py-2 text-xs lg:text-sm text-neutral-300 hover:bg-[#1f1f1f] hover:text-white transition-colors text-left min-w-0"
                     onclick="Dashboard.closeContextMenu(); DashboardSelection.openBatchTambahModal()">
                 <svg class="w-3.5 h-3.5 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 <span class="truncate">Tambah Waktu (${count} Sesi)</span>
@@ -422,7 +422,7 @@ const DashboardSelection = {
 
             <!-- Tutup Sesi - If any active sessions exist -->
             ${aktifPcs.length > 0 ? `
-            <button class="ctx-item w-full flex items-center gap-2.5 px-3.5 py-2 text-xs lg:text-sm text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left min-w-0"
+            <button class="ctx-item remote-hide-action w-full flex items-center gap-2.5 px-3.5 py-2 text-xs lg:text-sm text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left min-w-0"
                     onclick="Dashboard.closeContextMenu(); DashboardSelection.tutupSesiBatchConfirm()">
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 <span class="truncate">Tutup Sesi (${aktifPcs.length} Sesi)</span>
@@ -430,8 +430,8 @@ const DashboardSelection = {
 
             <!-- Wake-on-LAN -->
             ${macPcs.length > 0 ? `
-            <div class="border-t border-[#222] my-1"></div>
-            <button class="ctx-item w-full flex items-center gap-2.5 px-3.5 py-2 text-xs lg:text-sm text-green-400 hover:bg-green-950/40 hover:text-green-300 transition-colors text-left font-mono min-w-0"
+            <div class="border-t border-[#222] my-1 remote-hide-action"></div>
+            <button class="ctx-item remote-hide-action w-full flex items-center gap-2.5 px-3.5 py-2 text-xs lg:text-sm text-green-400 hover:bg-green-950/40 hover:text-green-300 transition-colors text-left font-mono min-w-0"
                     onclick="Dashboard.closeContextMenu(); DashboardSelection.wolBatchAction()">
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>
                 <span class="truncate">Wake-on-LAN (${macPcs.length} PC)</span>
@@ -439,13 +439,13 @@ const DashboardSelection = {
 
             <!-- Restart & Shutdown -->
             ${onlinePcs.length > 0 ? `
-            <div class="border-t border-[#222] my-1"></div>
-            <button class="ctx-item w-full flex items-center gap-2.5 px-3.5 py-2 text-xs lg:text-sm text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left min-w-0"
+            <div class="border-t border-[#222] my-1 remote-hide-action"></div>
+            <button class="ctx-item remote-hide-action w-full flex items-center gap-2.5 px-3.5 py-2 text-xs lg:text-sm text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left min-w-0"
                     onclick="Dashboard.closeContextMenu(); DashboardSelection.remoteBatchConfirm('restart')">
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5"/></svg>
                 <span class="truncate">Restart (${onlinePcs.length} PC)</span>
             </button>
-            <button class="ctx-item w-full flex items-center gap-2.5 px-3.5 py-2 text-xs lg:text-sm text-red-500 hover:bg-red-950/50 hover:text-red-400 transition-colors text-left min-w-0"
+            <button class="ctx-item remote-hide-action w-full flex items-center gap-2.5 px-3.5 py-2 text-xs lg:text-sm text-red-500 hover:bg-red-950/50 hover:text-red-400 transition-colors text-left min-w-0"
                     onclick="Dashboard.closeContextMenu(); DashboardSelection.remoteBatchConfirm('shutdown')">
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L12 12m0-6v6"/></svg>
                 <span class="truncate">Shutdown (${onlinePcs.length} PC)</span>

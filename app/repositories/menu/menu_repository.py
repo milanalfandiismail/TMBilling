@@ -226,3 +226,10 @@ class MenuRepository:
         results = db.session.query(MenuStockLog.operator).distinct().all()
         return [r[0] for r in results if r[0]]
 
+    @staticmethod
+    def get_distinct_stock_log_dates():
+        """Mengambil daftar tanggal unik (YYYY-MM-DD) saat terjadi mutasi stok."""
+        from app.utils.timezone_utils import convert_utc_datetimes_to_distinct_dates
+        results = db.session.query(MenuStockLog.created_at).filter(MenuStockLog.created_at != None).all()
+        return convert_utc_datetimes_to_distinct_dates([r[0] for r in results if r[0]])
+

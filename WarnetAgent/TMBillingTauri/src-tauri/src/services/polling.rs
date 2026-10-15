@@ -67,6 +67,8 @@ pub fn start_polling_service(app: tauri::AppHandle) {
                                 message: None,
                                 is_afk: Some(false),
                                 polling_interval: Some(current_interval_secs),
+                                is_member: Some(false),
+                                member: None,
                             };
                             let _ = app.emit_all("time-update", 999999);
                             let _ = app.emit_all("status-update", sys_status);

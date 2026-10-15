@@ -1,6 +1,6 @@
 [package]
 name = "mgctm"
-version = "1.6.3"
+version = "1.6.4"
 authors = ["Milan Alfandi Ismail"]
 edition = "2021"
 

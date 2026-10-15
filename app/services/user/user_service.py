@@ -43,12 +43,26 @@ class UserService:
         if UserRepository.find_by_username(username):
             raise ValueError("Username sudah terdaftar")
 
+        kuota_main_bulanan = 0
+        sisa_kuota_menit = 0
+        terakhir_reset_kuota = None
+        if role == "kasir":
+            from app.models import now_local
+            from app.utils.validators import validate_integer_range
+            kuota_raw = data.get("kuota_main_bulanan", 0)
+            kuota_main_bulanan = validate_integer_range(kuota_raw, 0, 720 * 60, "Kuota main bulanan (menit)")
+            sisa_kuota_menit = kuota_main_bulanan
+            terakhir_reset_kuota = now_local().strftime("%Y-%m")
+
         from app.models import User
         new_user = User(
             username=username,
             nama_lengkap=nama_lengkap,
             role=role,
-            aktif=aktif
+            aktif=aktif,
+            kuota_main_bulanan=kuota_main_bulanan,
+            sisa_kuota_menit=sisa_kuota_menit,
+            terakhir_reset_kuota=terakhir_reset_kuota
         )
         new_user.set_password(password)
         db.session.add(new_user)
@@ -58,7 +72,9 @@ class UserService:
             "username": username,
             "nama_lengkap": nama_lengkap,
             "role": role,
-            "aktif": aktif
+            "aktif": aktif,
+            "kuota_main_bulanan": kuota_main_bulanan,
+            "sisa_kuota_menit": sisa_kuota_menit
         }
         write_log("TAMBAH_USER", f"Role:{role} | User:{username}", user=operator, detail_json=detail_user)
         return new_user.to_dict()
@@ -85,6 +101,22 @@ class UserService:
             if role not in ["admin", "kasir"]:
                 raise ValueError("Role harus 'admin' atau 'kasir'")
             user.role = role
+            if user.role == "admin":
+                user.kuota_main_bulanan = 0
+                user.sisa_kuota_menit = 0
+
+        if user.role == "kasir" and "kuota_main_bulanan" in data:
+            from app.models import now_local
+            from app.utils.validators import validate_integer_range
+            kuota_baru = validate_integer_range(data["kuota_main_bulanan"], 0, 720 * 60, "Kuota main bulanan (menit)")
+            selisih = kuota_baru - (user.kuota_main_bulanan or 0)
+            user.kuota_main_bulanan = kuota_baru
+            if not user.sisa_kuota_menit or user.sisa_kuota_menit == 0:
+                user.sisa_kuota_menit = kuota_baru
+            else:
+                user.sisa_kuota_menit = max(0, min(user.sisa_kuota_menit + selisih, kuota_baru))
+            if not user.terakhir_reset_kuota:
+                user.terakhir_reset_kuota = now_local().strftime("%Y-%m")
             
         if "aktif" in data and data["aktif"] is not None:
             user.aktif = str(data["aktif"]).lower() == "true"
@@ -99,7 +131,9 @@ class UserService:
             "username": user.username,
             "nama_lengkap": user.nama_lengkap,
             "role": user.role,
-            "aktif": user.aktif
+            "aktif": user.aktif,
+            "kuota_main_bulanan": user.kuota_main_bulanan,
+            "sisa_kuota_menit": user.sisa_kuota_menit
         }
         write_log("UPDATE_USER", f"ID:{user_id} | User:{user.username}", user=operator, detail_json=detail_user)
         return user.to_dict()

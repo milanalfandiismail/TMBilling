@@ -379,13 +379,14 @@ def create_app():
     CORS(app, resources={r"/*": {"origins": allowed_origins}}, supports_credentials=True)
 
     db.init_app(app)
+
+    # IP Whitelist & Branch Proxy Relay middleware
+    from app.middleware import check_ip_whitelist, handle_branch_proxy_relay
+    app.before_request(handle_branch_proxy_relay)
+    app.before_request(check_ip_whitelist)
+
     csrf.init_app(app)
     migrate.init_app(app, db, render_as_batch=True)
-
-    # IP Whitelist middleware — proteksi dashboard /kasir dan /api/v1/kasir/*
-    from app.middleware import check_ip_whitelist, handle_branch_proxy_relay
-    app.before_request(check_ip_whitelist)
-    app.before_request(handle_branch_proxy_relay)
 
     @app.after_request
     def _isolate_stateless_bearer_sessions(response):

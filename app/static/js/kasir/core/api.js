@@ -134,6 +134,8 @@ const API = {
             if (params.grup_id) q.append('grup_id', params.grup_id);
             if (params.page) q.append('page', params.page);
             if (params.per_page) q.append('per_page', params.per_page);
+            if (params.sort_by) q.append('sort_by', params.sort_by);
+            if (params.order) q.append('order', params.order);
             const url = '/api/v1/kasir/member/' + (q.toString() ? `?${q}` : '');
             return API.request(url);
         },
@@ -338,6 +340,7 @@ const API = {
             const url = '/api/v1/kasir/menu/stock-logs' + (q.toString() ? `?${q}` : '');
             return API.request(url);
         },
+        stockLogDates: () => API.request('/api/v1/kasir/menu/stock-logs/dates'),
         checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0, metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/menu/checkout', {
             method: 'POST',
             body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode, tunai, kembalian, metode_pembayaran: metodePembayaran })

@@ -7,6 +7,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ page_title }}</title>
+<link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}?v={{ v_cache }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='img/logo.png') }}?v={{ v_cache }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v={{ v_cache }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/member.css') }}?v={{ v_cache }}">

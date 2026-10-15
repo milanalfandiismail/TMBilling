@@ -50,6 +50,10 @@ export const Api = {
         return await invoke('set_window_fullscreen', { fullscreen });
     },
 
+    async setOverlayModalFullscreen(fullscreen) {
+        return await invoke('set_overlay_modal_fullscreen', { fullscreen });
+    },
+
     async forceShutdown() {
         return await invoke('force_shutdown');
     },

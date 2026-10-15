@@ -88,7 +88,7 @@ const App = {
                     if (typeof Monitor !== 'undefined' && typeof Monitor.refreshLive === 'function') Monitor.refreshLive();
                     break;
                 case 'hardware_checker':
-                    if (typeof HardwareChecker !== 'undefined') HardwareChecker.load(false, true);
+                    if (typeof HardwareChecker !== 'undefined' && typeof HardwareChecker.refreshLive === 'function') HardwareChecker.refreshLive();
                     break;
                 case 'maintenance':
                     if (typeof Maintenance !== 'undefined' && typeof Maintenance.refreshLive === 'function') Maintenance.refreshLive();
@@ -127,8 +127,8 @@ const App = {
                 case 'tutorials':
                     if (typeof Tutorials !== 'undefined' && typeof Tutorials.refreshLive === 'function') Tutorials.refreshLive();
                     break;
-                case 'fileexplorer':
-                    if (typeof FileExplorer !== 'undefined' && typeof FileExplorer.refreshLive === 'function') FileExplorer.refreshLive();
+                case 'server_statistic':
+                    if (typeof ServerMonitor !== 'undefined' && typeof ServerMonitor.refreshLive === 'function') ServerMonitor.refreshLive();
                     break;
                 case 'branch':
                 case 'branch_inbound':
@@ -200,6 +200,7 @@ const App = {
  
     switchTab(tab) {
         if (tab === 'dashboard') tab = 'dash';
+        if (tab === 'game') tab = 'game_management';
         let mainTab = tab;
         let subTab = null;
 
@@ -230,17 +231,20 @@ const App = {
             subTab = null;
         }
 
-        // Jika sedang mengontrol cabang remote, proteksi tab konfigurasi multi-cabang, file explorer & tutorial
+        // Jika sedang mengontrol cabang remote, proteksi seluruh tab server lokal, staff, utilitas & pengaturan
         if (typeof BranchManager !== 'undefined' && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0') {
-            if (['branch', 'branch_inbound', 'branch_kasir', 'fileexplorer', 'tutorials'].includes(tab)) {
+            const remoteRestrictedTabs = [
+                'branch', 'branch_inbound', 'branch_kasir', 'fileexplorer', 'tutorials',
+                'user', 'shift_history', 'user_logs',
+                'hardware_checker', 'remote_server', 'catatan', 'blackout',
+                'mikrotik', 'log', 'plugins', 'plugin-spa',
+                'settings', 'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv',
+                'whitelist_ip', 'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup',
+                'settings_db_cleanup', 'settings_scheduler', 'settings_migration'
+            ];
+            if (remoteRestrictedTabs.includes(tab) || mainTab === 'settings') {
                 if (window.Toast) {
-                    let msg = 'Pengaturan Multi Cabang hanya dapat diakses pada Cabang Lokal';
-                    if (tab === 'fileexplorer') {
-                        msg = 'File Explorer hanya dapat diakses pada Cabang Lokal';
-                    } else if (tab === 'tutorials') {
-                        msg = 'Dokumentasi & Tutorial hanya dapat diakses pada Cabang Lokal';
-                    }
-                    window.Toast.show(msg, 'info');
+                    window.Toast.show('Menu ini hanya dapat dikonfigurasi pada Cabang Lokal', 'info');
                 }
                 tab = 'dash';
                 mainTab = 'dash';
@@ -307,7 +311,7 @@ const App = {
     updatePageTitle(tab) {
         const titles = {
             dash: 'Dashboard', pc: 'Unit PC', paket: 'Paket', member: 'Member',
-            grup: 'Grup', game_management: 'Kelola Game & Aplikasi', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Aktivitas Sistem',
+            grup: 'Grup', game: 'Kelola Game & Aplikasi', game_management: 'Kelola Game & Aplikasi', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Aktivitas Sistem',
             monitor: 'Hardware Monitor', hardware_checker: 'Hardware Checker', maintenance: 'Perawatan PC', laporan_maintenance: 'Laporan Perawatan', blackout: 'Pemulihan Mati Lampu', screenshot: 'Screenshot Monitor',
             uptime: 'Uptime Tracker',
             user: 'Kelola User', shift_history: 'Riwayat Serah Terima Shift', user_logs: 'Log & Audit Staff', settings: 'Pengaturan', struk: 'Riwayat',
@@ -323,7 +327,8 @@ const App = {
             settings_scheduler: 'Auto Scheduler',
             settings_migration: 'Migrasi & Update',
             tutorials: 'Dokumentasi & Tutorial',
-            analytics: 'Analytics Owner',            plugins: 'Plugins & Ekstensi',
+            analytics: 'Analytics Owner',
+            plugins: 'Plugins & Ekstensi',
             mikrotik: 'MikroTik Hotspot',
             fileexplorer: 'File Explorer',
             branch: 'Multi Cabang: Koneksi Cabang',
@@ -359,6 +364,7 @@ const App = {
             case 'laporan_menu': if (typeof LaporanMenu !== 'undefined') await LaporanMenu.load(); break;
             case 'log': await Log.load(); break;
             case 'grup': await Grup.load(); break;
+            case 'game':
             case 'game_management': if (typeof GameManagement !== 'undefined') await GameManagement.init(); break;
             case 'monitor': if (typeof Monitor !== 'undefined') await Monitor.load(); break;
             case 'server_statistic':
@@ -389,7 +395,7 @@ const App = {
             case 'catatan': if (typeof Catatan !== 'undefined') await Catatan.loadNotes(); break;
             case 'analytics': if (typeof OwnerAnalytics !== 'undefined') await OwnerAnalytics.load(); break;
             case 'plugins': if (typeof PluginsModule !== 'undefined') PluginsModule.init(); break;
-            case 'mikrotik': if (typeof SettingsMikrotik !== 'undefined') SettingsMikrotik.init(); break;
+            case 'mikrotik': if (typeof MikrotikModule !== 'undefined') MikrotikModule.init(); break;
             case 'tutorials': if (typeof Tutorials !== 'undefined') await Tutorials.load(); break;
             case 'fileexplorer': if (typeof FileExplorer !== 'undefined') await FileExplorer.load(); break;
             case 'remote_server': if (typeof VNCClient !== 'undefined') await VNCClient.load(); break;
@@ -457,16 +463,35 @@ window.PC = PC;
 window.Paket = Paket;
 window.Member = Member;
 window.Laporan = Laporan;
-window.LaporanMenu = LaporanMenu;
+window.LaporanMenu = typeof LaporanMenu !== 'undefined' ? LaporanMenu : undefined;
 window.Log = Log;
-window.BukaModal = BukaModal;
-window.Blackout = Blackout;
-window.Monitor = Monitor;
-window.TambahModal = TambahModal;
+window.BukaModal = typeof BukaModal !== 'undefined' ? BukaModal : undefined;
+window.Blackout = typeof Blackout !== 'undefined' ? Blackout : undefined;
+window.Monitor = typeof Monitor !== 'undefined' ? Monitor : undefined;
+window.TambahModal = typeof TambahModal !== 'undefined' ? TambahModal : undefined;
 window.Modal = Modal;
 window.Toast = Toast;
-window.User = User;
-window.Menu = Menu;
+window.User = typeof User !== 'undefined' ? User : undefined;
+window.Menu = typeof Menu !== 'undefined' ? Menu : undefined;
 window.MenuStockLog = typeof MenuStockLog !== 'undefined' ? MenuStockLog : undefined;
-window.Tournament = Tournament;
-window.OwnerAnalytics = OwnerAnalytics;
+window.Tournament = typeof Tournament !== 'undefined' ? Tournament : undefined;
+window.OwnerAnalytics = typeof OwnerAnalytics !== 'undefined' ? OwnerAnalytics : undefined;
+window.Grup = typeof Grup !== 'undefined' ? Grup : undefined;
+window.GameManagement = typeof GameManagement !== 'undefined' ? GameManagement : undefined;
+window.ServerMonitor = typeof ServerMonitor !== 'undefined' ? ServerMonitor : undefined;
+window.HardwareChecker = typeof HardwareChecker !== 'undefined' ? HardwareChecker : undefined;
+window.Maintenance = typeof Maintenance !== 'undefined' ? Maintenance : undefined;
+window.LaporanMaintenance = typeof LaporanMaintenance !== 'undefined' ? LaporanMaintenance : undefined;
+window.Screenshot = typeof Screenshot !== 'undefined' ? Screenshot : undefined;
+window.UptimeTracker = typeof UptimeTracker !== 'undefined' ? UptimeTracker : undefined;
+window.Shift = typeof Shift !== 'undefined' ? Shift : undefined;
+window.Struk = typeof Struk !== 'undefined' ? Struk : undefined;
+window.Settings = typeof Settings !== 'undefined' ? Settings : undefined;
+window.PluginsModule = typeof PluginsModule !== 'undefined' ? PluginsModule : undefined;
+window.MikrotikModule = typeof MikrotikModule !== 'undefined' ? MikrotikModule : undefined;
+window.Tutorials = typeof Tutorials !== 'undefined' ? Tutorials : undefined;
+window.FileExplorer = typeof FileExplorer !== 'undefined' ? FileExplorer : undefined;
+window.VNCClient = typeof VNCClient !== 'undefined' ? VNCClient : undefined;
+window.VNCSession = typeof VNCSession !== 'undefined' ? VNCSession : undefined;
+window.BranchManager = typeof BranchManager !== 'undefined' ? BranchManager : undefined;
+window.Catatan = typeof Catatan !== 'undefined' ? Catatan : undefined;

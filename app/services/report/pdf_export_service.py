@@ -45,6 +45,7 @@ class PdfExportService:
             Paragraph("Waktu", styles["table_header"]),
             Paragraph("No. Nota", styles["table_header"]),
             Paragraph("Pelanggan", styles["table_header"]),
+            Paragraph("Paket", styles["table_header"]),
             Paragraph("PC", styles["table_header"]),
             Paragraph("Kasir", styles["table_header"]),
             Paragraph("Keterangan", styles["table_header"]),
@@ -58,6 +59,7 @@ class PdfExportService:
             waktu = t.get("waktu") or "-"
             no_nota = t.get("no_nota") or "-"
             nama_p = t.get("nama_pelanggan") or "-"
+            paket = t.get("paket_nama") or "-"
             pc = t.get("pc_kode") or "-"
             kasir_nama = t.get("kasir_nama") or "-"
             ket = t.get("keterangan") or "-"
@@ -70,6 +72,7 @@ class PdfExportService:
                 Paragraph(waktu, styles["table_cell_center"]),
                 Paragraph(no_nota, styles["table_cell_center"]),
                 Paragraph(nama_p, styles["table_cell"]),
+                Paragraph(paket, styles["table_cell"]),
                 Paragraph(pc, styles["table_cell_center"]),
                 Paragraph(kasir_nama, styles["table_cell_center"]),
                 Paragraph(ket, styles["table_cell"]),
@@ -78,7 +81,7 @@ class PdfExportService:
             ]
             table_data.append(row)
 
-        col_widths = [0.8 * cm, 2.0 * cm, 2.2 * cm, 2.7 * cm, 1.0 * cm, 2.5 * cm, 3.5 * cm, 1.8 * cm, 2.5 * cm]
+        col_widths = [0.7 * cm, 1.8 * cm, 2.0 * cm, 2.2 * cm, 2.5 * cm, 0.9 * cm, 2.0 * cm, 2.8 * cm, 1.6 * cm, 2.5 * cm]
         data_table = Table(table_data, colWidths=col_widths, repeatRows=1)
         PdfHelper.apply_standard_table_style(data_table, table_data)
         story.append(data_table)

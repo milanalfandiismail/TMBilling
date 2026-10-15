@@ -1,14 +1,19 @@
 // app/static/js/kasir/modules/dashboard/dashboard_compact.js
 
 const CompactGrid = {
+    _groupPages: {},
     _groupOffsets: {},
 
     renderTabs(data) {
         const container = document.getElementById('dashboard-tabs');
         if (!container) return;
 
-        const groups = Object.keys(data.by_grup || {}).sort();
         const meta = data.grup_meta || {};
+        const groups = Object.keys(data.by_grup || {}).sort((a, b) => {
+            const idA = Number(meta[a]?.id || 0);
+            const idB = Number(meta[b]?.id || 0);
+            return idA !== idB ? idA - idB : a.localeCompare(b);
+        });
 
         let html = `
             <button onclick="Dashboard.setGrup('semua')" 
@@ -68,9 +73,13 @@ const CompactGrid = {
         const capacity = this._getScreenCapacity();
         const gs = this._getGridSize(grupKey);
         const cols = gs.cols || 12;
-        const maxOffset = Math.max(0, cols - capacity);
-        const offset = Math.min(maxOffset, Math.max(0, this._groupOffsets[grupKey] || 0));
-        this._groupOffsets[grupKey] = offset;
+        const totalPages = Math.max(1, Math.ceil(cols / capacity));
+        const currentPage = Math.min(totalPages, Math.max(1, this._groupPages[grupKey] || 1));
+        this._groupPages[grupKey] = currentPage;
+
+        const offset = (currentPage - 1) * capacity;
+        const startCol = offset + 1;
+        const endCol = Math.min(cols, currentPage * capacity);
 
         const viewport = document.querySelector(`.manual-grid-viewport[data-grup="${grupKey}"]`);
         if (!viewport) return;
@@ -83,7 +92,7 @@ const CompactGrid = {
         const innerWidth = viewport.clientWidth - padLeft - padRight;
         if (innerWidth <= 0) return;
 
-        if (cols > capacity) {
+        if (totalPages > 1) {
             const gap = 8;
             const colWidth = (innerWidth - ((capacity - 1) * gap)) / capacity;
             const totalGridWidth = (cols * colWidth) + ((cols - 1) * gap);
@@ -100,42 +109,82 @@ const CompactGrid = {
             grid.style.transform = 'none';
         }
 
+        const colNav = document.getElementById(`group-col-nav-${grupKey}`);
+        if (colNav) {
+            colNav.style.display = (totalPages > 1) ? 'flex' : 'none';
+        }
+
         const prevBtn = document.getElementById(`group-prev-btn-${grupKey}`);
         const nextBtn = document.getElementById(`group-next-btn-${grupKey}`);
         const navLabel = document.getElementById(`group-nav-label-${grupKey}`);
-        const captionBadge = document.getElementById(`group-caption-badge-${grupKey}`);
+        const navDots = document.getElementById(`group-nav-dots-${grupKey}`);
 
-        if (prevBtn) prevBtn.disabled = (offset === 0);
-        if (nextBtn) nextBtn.disabled = (offset >= maxOffset);
-        if (navLabel) navLabel.innerText = `Kolom ${1 + offset}–${capacity + offset}`;
-        if (captionBadge) captionBadge.innerText = `Kolom ${1 + offset}–${capacity + offset} dari ${cols}`;
+        if (prevBtn) {
+            prevBtn.disabled = (currentPage <= 1);
+            if (currentPage <= 1) {
+                prevBtn.className = 'px-2.5 py-1 rounded text-xs font-mono transition-all flex items-center gap-1 text-neutral-600 cursor-not-allowed bg-transparent';
+            } else {
+                prevBtn.className = 'px-2.5 py-1 rounded text-xs font-mono transition-all flex items-center gap-1 text-neutral-300 hover:text-white hover:bg-[#161616] cursor-pointer';
+            }
+        }
+        if (nextBtn) {
+            nextBtn.disabled = (currentPage >= totalPages);
+            if (currentPage >= totalPages) {
+                nextBtn.className = 'px-2.5 py-1 rounded text-xs font-mono transition-all flex items-center gap-1 text-neutral-600 cursor-not-allowed bg-transparent';
+            } else {
+                nextBtn.className = 'px-2.5 py-1 rounded text-xs font-mono transition-all flex items-center gap-1 text-neutral-300 hover:text-white hover:bg-[#161616] cursor-pointer';
+            }
+        }
+        if (navLabel) {
+            navLabel.innerHTML = `Bagian Denah: Kolom <strong class="text-neutral-100">${startCol}–${endCol}</strong> dari <strong class="text-neutral-100">${cols}</strong> <span class="text-neutral-500 font-normal hidden sm:inline">(Hal ${currentPage}/${totalPages})</span>`;
+        }
+        if (navDots) {
+            let dotsHtml = '';
+            for (let p = 1; p <= totalPages; p++) {
+                const isActive = (p === currentPage);
+                dotsHtml += `
+                    <button onclick="CompactGrid.goToColPage('${grupKey}', ${p})" 
+                            title="Lompat ke Halaman ${p}"
+                            class="inline-block h-1.5 rounded-full transition-all ${isActive ? 'w-3 bg-indigo-500' : 'w-1.5 bg-neutral-600 hover:bg-neutral-400 cursor-pointer'}">
+                    </button>
+                `;
+            }
+            navDots.innerHTML = dotsHtml;
+        }
     },
 
     nextColPage(grupKey) {
         const capacity = this._getScreenCapacity();
         const gs = this._getGridSize(grupKey);
         const cols = gs.cols || 12;
-        const maxOffset = Math.max(0, cols - capacity);
-        const currentOffset = this._groupOffsets[grupKey] || 0;
+        const totalPages = Math.max(1, Math.ceil(cols / capacity));
+        const currentPage = Math.min(totalPages, Math.max(1, this._groupPages[grupKey] || 1));
         
-        const jump = cols - capacity;
-        const newOffset = Math.min(maxOffset, currentOffset + jump);
-        this._groupOffsets[grupKey] = newOffset;
-
-        this.updateGroupSlideUI(grupKey, true);
+        if (currentPage < totalPages) {
+            this._groupPages[grupKey] = currentPage + 1;
+            this.updateGroupSlideUI(grupKey, true);
+        }
     },
 
     prevColPage(grupKey) {
+        const currentPage = Math.max(1, this._groupPages[grupKey] || 1);
+        if (currentPage > 1) {
+            this._groupPages[grupKey] = currentPage - 1;
+            this.updateGroupSlideUI(grupKey, true);
+        }
+    },
+
+    goToColPage(grupKey, pageNum) {
         const capacity = this._getScreenCapacity();
         const gs = this._getGridSize(grupKey);
         const cols = gs.cols || 12;
-        const currentOffset = this._groupOffsets[grupKey] || 0;
-        
-        const jump = cols - capacity;
-        const newOffset = Math.max(0, currentOffset - jump);
-        this._groupOffsets[grupKey] = newOffset;
+        const totalPages = Math.max(1, Math.ceil(cols / capacity));
+        const targetPage = Math.min(totalPages, Math.max(1, pageNum));
 
-        this.updateGroupSlideUI(grupKey, true);
+        if (this._groupPages[grupKey] !== targetPage) {
+            this._groupPages[grupKey] = targetPage;
+            this.updateGroupSlideUI(grupKey, true);
+        }
     },
 
     toggleAutoSort(grupKey) {
@@ -506,9 +555,14 @@ const CompactGrid = {
         }
 
         let html = '';
+        const meta = data.grup_meta || {};
         const allGroups = Object.keys(data.by_grup || {});
         const groupsToRender = Dashboard.activeGrup === 'semua'
-            ? allGroups.sort()
+            ? allGroups.sort((a, b) => {
+                const idA = Number(meta[a]?.id || 0);
+                const idB = Number(meta[b]?.id || 0);
+                return idA !== idB ? idA - idB : a.localeCompare(b);
+            })
             : [Dashboard.activeGrup];
 
         const isAdmin = (document.body.dataset.kasirRole || '') === 'admin';
@@ -536,47 +590,23 @@ const CompactGrid = {
             const mapped = pcs.filter(p => p.pos_x >= 0 && p.pos_y >= 0);
             const unmapped = pcs.filter(p => p.pos_x < 0 || p.pos_y < 0);
 
-            const isCrossScreen = !isMobile && !isAutoSort && cols > capacity;
-            const maxOffset = Math.max(0, cols - capacity);
-            const offset = Math.min(maxOffset, this._groupOffsets[grupKey] || 0);
+            const totalPages = Math.max(1, Math.ceil(cols / capacity));
+            const currentPage = Math.min(totalPages, Math.max(1, this._groupPages[grupKey] || 1));
+            const offset = (currentPage - 1) * capacity;
+            const startCol = offset + 1;
+            const endCol = Math.min(cols, currentPage * capacity);
+            const isCrossScreen = !isMobile && !isAutoSort && totalPages > 1;
 
-            // Kontrol Paging Slide Arrow di Header
-            const pageNavHtml = isCrossScreen ? `
-                <div class="flex items-center gap-1 bg-[#141414] border border-[#2a2a2a] rounded px-2 py-1 text-xs">
-                    <button onclick="CompactGrid.prevColPage('${grupKey}')" 
-                        id="group-prev-btn-${grupKey}"
-                        ${offset === 0 ? 'disabled' : ''} 
-                        title="Lihat kolom sebelumnya"
-                        class="px-1.5 py-0.5 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded disabled:opacity-25 disabled:cursor-not-allowed transition-all">
-                        ◀
+            let initialDotsHtml = '';
+            for (let p = 1; p <= totalPages; p++) {
+                const isActive = (p === currentPage);
+                initialDotsHtml += `
+                    <button onclick="CompactGrid.goToColPage('${grupKey}', ${p})" 
+                            title="Lompat ke Halaman ${p}"
+                            class="inline-block h-1.5 rounded-full transition-all ${isActive ? 'w-3 bg-indigo-500' : 'w-1.5 bg-neutral-600 hover:bg-neutral-400 cursor-pointer'}">
                     </button>
-                    <span id="group-nav-label-${grupKey}" class="font-mono text-[11px] text-neutral-300 font-bold px-1.5">
-                        Kolom ${1 + offset}–${capacity + offset}
-                    </span>
-                    <button onclick="CompactGrid.nextColPage('${grupKey}')" 
-                        id="group-next-btn-${grupKey}"
-                        ${offset >= maxOffset ? 'disabled' : ''} 
-                        title="Lihat kolom berikutnya"
-                        class="px-1.5 py-0.5 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded disabled:opacity-25 disabled:cursor-not-allowed transition-all">
-                        ▶
-                    </button>
-                </div>
-            ` : '';
-
-            // Helper Caption Banner untuk End-User Kasir/Operator
-            const helperCaptionHtml = isCrossScreen ? `
-                <div class="mb-3 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center justify-between gap-3 text-xs text-amber-300">
-                    <div class="flex items-center gap-2">
-                        <span class="text-base shrink-0">💡</span>
-                        <span class="leading-relaxed">
-                            Denah grup ini memiliki <strong>${cols} kolom</strong> (layar saat ini menampilkan <strong>${capacity} kolom</strong>). Gunakan tombol panah <strong>[ ◀ ] [ ▶ ]</strong> di kanan atas untuk menggeser dan melihat kolom lainnya.
-                        </span>
-                    </div>
-                    <div id="group-caption-badge-${grupKey}" class="font-mono text-[11px] bg-amber-500/20 border border-amber-500/30 px-2 py-1 rounded text-amber-200 shrink-0 font-bold hidden sm:inline-block">
-                        Kolom ${1 + offset}–${capacity + offset} dari ${cols}
-                    </div>
-                </div>
-            ` : '';
+                `;
+            }
 
             // Group Header with Auto-Sort button
             html += `
@@ -589,7 +619,6 @@ const CompactGrid = {
                         </div>
                         
                         <div class="flex items-center gap-2">
-                            ${pageNavHtml}
 
                             <!-- Auto-Sort Toggle Button (hidden on mobile) -->
                             <button onclick="CompactGrid.toggleAutoSort('${grupKey}')" 
@@ -634,7 +663,6 @@ const CompactGrid = {
                             </div>
                         </div>
                     `) : `
-                        ${helperCaptionHtml}
                         <!-- Manual Layout Grid: uses absolute pos_x / pos_y with paged sliding if cols > capacity -->
                         <div class="manual-grid-viewport overflow-hidden w-full p-1 relative" data-grup="${grupKey}">
                             <div class="manual-grid-container grid gap-2 auto-rows-fr" 
@@ -654,6 +682,34 @@ const CompactGrid = {
                                     `;
                     }).join('')}
                             </div>
+                        </div>
+
+                        <!-- Footer Bar Navigasi Kolom Noir di Bawah Denah -->
+                        <div id="group-col-nav-${grupKey}" 
+                             style="display: ${isCrossScreen ? 'flex' : 'none'};"
+                             class="items-center justify-between py-1.5 2xl:py-2 px-3 mt-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs font-mono select-none">
+                            <button onclick="CompactGrid.prevColPage('${grupKey}')" 
+                                id="group-prev-btn-${grupKey}"
+                                ${currentPage <= 1 ? 'disabled' : ''} 
+                                title="Lihat kolom sebelumnya"
+                                class="px-2.5 py-1 rounded text-xs font-mono transition-all flex items-center gap-1 ${currentPage <= 1 ? 'text-neutral-600 cursor-not-allowed bg-transparent' : 'text-neutral-300 hover:text-white hover:bg-[#161616] cursor-pointer'}">
+                                &larr; Prev
+                            </button>
+                            <div class="flex items-center gap-2">
+                                <span id="group-nav-label-${grupKey}" class="text-neutral-400 text-[11px] sm:text-xs">
+                                    Bagian Denah: Kolom <strong class="text-neutral-100">${startCol}–${endCol}</strong> dari <strong class="text-neutral-100">${cols}</strong> <span class="text-neutral-500 font-normal hidden sm:inline">(Hal ${currentPage}/${totalPages})</span>
+                                </span>
+                                <div id="group-nav-dots-${grupKey}" class="flex items-center gap-1.5 ml-1">
+                                    ${initialDotsHtml}
+                                </div>
+                            </div>
+                            <button onclick="CompactGrid.nextColPage('${grupKey}')" 
+                                id="group-next-btn-${grupKey}"
+                                ${currentPage >= totalPages ? 'disabled' : ''} 
+                                title="Lihat kolom berikutnya"
+                                class="px-2.5 py-1 rounded text-xs font-mono transition-all flex items-center gap-1 ${currentPage >= totalPages ? 'text-neutral-600 cursor-not-allowed bg-transparent' : 'text-neutral-300 hover:text-white hover:bg-[#161616] cursor-pointer'}">
+                                Next &rarr;
+                            </button>
                         </div>
                         
                         <!-- Unmapped Section -->

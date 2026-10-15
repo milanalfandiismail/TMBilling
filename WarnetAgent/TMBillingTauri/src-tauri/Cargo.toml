@@ -1,6 +1,6 @@
 [package]
 name = "tmbilling"
-version = "1.6.3"
+version = "1.6.4"
 description = "TMBilling Client"
 authors = ["Milan Alfandi Ismail"]
 edition = "2021"

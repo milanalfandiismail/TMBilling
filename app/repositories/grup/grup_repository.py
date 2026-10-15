@@ -21,7 +21,7 @@ class GrupRepository:
     @staticmethod
     def get_all():
         """Mengambil semua grup yang tersedia."""
-        return Grup.query.all()
+        return Grup.query.order_by(Grup.id.asc()).all()
 
     @staticmethod
     def get_by_id(id):

@@ -42,9 +42,9 @@ const PaketModal = {
                             <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">Maksimal Rp 1.000.000.000</p>
                         </div>
                         <div>
-                            <label for="modal-paket-kadaluarsa" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Masa Aktif (Hari)</label>
+                            <label for="modal-paket-kadaluarsa" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Masa Aktif Waktu (Hari)</label>
                             <input type="number" id="modal-paket-kadaluarsa" min="1" max="3650" value="30" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
-                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">1 - 3.650 hari (default: 30 hari)</p>
+                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">1 - 3.650 hari (default: 30 hari). <span class="text-amber-400/90 font-medium">Masa aktif hanya berlaku untuk member</span></p>
                         </div>
                     </div>
                 </div>
@@ -105,9 +105,9 @@ const PaketModal = {
                         </div>
                     </div>
                     <div>
-                        <label for="edit-paket-kadaluarsa" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Masa Aktif (Hari)</label>
+                        <label for="edit-paket-kadaluarsa" class="block text-[10px] lg:max-xl:text-xs xl:text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Masa Aktif Waktu (Hari)</label>
                         <input type="number" id="edit-paket-kadaluarsa" min="1" max="3650" value="${paket.kadaluarsa_hari || 30}" class="w-full px-3 py-2.5 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 transition-colors">
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">1 - 3.650 hari (default: 30 hari)</p>
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans">1 - 3.650 hari (default: 30 hari). <span class="text-amber-400/90 font-medium">Masa aktif hanya berlaku untuk member</span></p>
                     </div>
                 </div>
                 <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-[#2a2a2a]">

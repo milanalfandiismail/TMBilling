@@ -1,86 +1,88 @@
 <!-- ===== TAB: MEMBER ===== -->
-<div id="tab-member" class="tab-content hidden space-y-6">
-    <!-- Member Action Header -->
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
+<div id="tab-member" class="tab-content hidden space-y-2 sm:space-y-2.5">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 xl:p-3.5 space-y-2.5">
+        <!-- 1. Header Toolbar Terpadu -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#1c1c1c]">
             <div>
-                <h3 class="text-sm lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-100 tracking-wide">Member</h3>
-                <p class="text-[10px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-0.5">Kelola akun member — daftarkan, isi saldo, lihat riwayat transaksi</p>
+                <h3 class="text-xs sm:text-sm font-bold text-neutral-100 uppercase tracking-wider">Member</h3>
+                <p class="text-[10px] sm:text-xs text-neutral-500">Kelola akun member: daftarkan, isi saldo, dan pantau status waktu</p>
             </div>
-            <button onclick="Member.showAddModal()"
-                class="px-4 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded-lg transition-colors flex items-center gap-2">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Tambah Member
-            </button>
+            <div class="flex items-center gap-2">
+                <div class="relative flex-1 sm:w-48 xl:w-56">
+                    <label for="member-search-input" class="sr-only">Cari Member</label>
+                    <input type="text" id="member-search-input" placeholder="Cari username..."
+                        class="w-full pl-7 pr-6 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-[11px] sm:text-xs text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 font-medium"
+                        oninput="Member.debouncedSearch()"
+                        onkeypress="if(event.key === 'Enter') Member.doSearch()">
+                    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </span>
+                    <button id="member-search-clear" onclick="Member.clearSearch()" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 text-[10px] font-bold">✕</button>
+                </div>
+                <button onclick="Member.showAddModal()"
+                    class="remote-hide-action px-2.5 sm:px-3 py-1.5 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded transition-colors flex items-center gap-1.5 shadow-sm shrink-0">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span class="hidden sm:inline">Tambah Member</span>
+                    <span class="sm:hidden">Tambah</span>
+                </button>
+            </div>
         </div>
-    </div>
 
-    <div class="bg-[#111] border border-[#1f1f1f] rounded-xl p-5">
-        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-400 uppercase tracking-wider">Daftar Member</h3>
-            <div class="flex flex-wrap items-center gap-2">
-                <input type="text" id="member-search-input" placeholder="Cari username..."
-                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-500 w-40"
-                    oninput="Member.debouncedSearch()"
-                    onkeypress="if(event.key === 'Enter') Member.doSearch()">
-                <select id="member-grup-filter-select"
-                    class="px-3 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
-                    onchange="Member.doSearch()">
-                    <option value="">Semua Grup</option>
-                </select>
-                <button onclick="Member.doSearch()"
-                    class="px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded-lg transition-colors">Cari</button>
-                <button onclick="Member.clearSearch()"
-                    class="px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#222] text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded-lg transition-colors">Reset</button>
-            </div>
+        <!-- 2. Baris Tab Pills Grup Horizontal -->
+        <div id="member-group-tabs" class="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5">
+            <div class="h-7 w-20 bg-[#161616] rounded animate-pulse"></div>
+            <div class="h-7 w-16 bg-[#161616] rounded animate-pulse"></div>
         </div>
-        <div id="member-table" class="overflow-x-auto w-full">
-            <table class="w-full text-xs lg:max-xl:text-xs xl:text-base block lg:table">
-                <thead class="hidden lg:table-header-group">
-                    <tr class="border-b border-[#262626] text-neutral-400">
-                        <th class="px-4 py-3 text-left font-medium w-1/4">Member</th>
-                        <th class="px-4 py-3 text-left font-medium">Grup</th>
-                        <th class="px-4 py-3 text-left font-medium">Sisa Waktu</th>
-                        <th class="px-4 py-3 text-left font-medium">Berlaku Sampai</th>
-                        <th class="px-4 py-3 text-left font-medium">Status</th>
-                        <th class="px-4 py-3 text-right font-medium w-36">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="block lg:table-row-group divide-y divide-[#1c1c1c]">
-                    {% for _ in range(6) %}
-                    <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
-                        <td class="px-4 py-3 text-left">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded bg-[#1c1c1c] flex-shrink-0"></div>
-                                <div class="space-y-1 flex-1">
-                                    <div class="h-3.5 bg-[#262626] rounded w-24"></div>
-                                    <div class="h-2.5 bg-[#1a1a1a] rounded w-32"></div>
+
+        <!-- 3. Kontainer Tabel Member & Pagination -->
+        <div id="member-table" class="w-full">
+            <div class="overflow-x-auto w-full border border-[#1c1c1c] rounded">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="text-[10px] sm:text-xs text-neutral-400 uppercase border-b border-[#1c1c1c] bg-[#0c0c0c] tracking-wider select-none">
+                            <th class="px-2.5 sm:px-3 py-2 text-left font-medium">Member</th>
+                            <th class="hidden sm:table-cell px-2.5 sm:px-3 py-2 text-center font-medium">Grup</th>
+                            <th class="px-2.5 sm:px-3 py-2 text-center font-medium">Waktu</th>
+                            <th class="hidden md:table-cell px-2.5 sm:px-3 py-2 text-center font-medium">Berlaku Sampai</th>
+                            <th class="hidden sm:table-cell px-2.5 sm:px-3 py-2 text-center font-medium">Status</th>
+                            <th class="px-2.5 sm:px-3 py-2 text-right font-medium">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#1c1c1c]">
+                        {% for _ in range(8) %}
+                        <tr class="animate-pulse">
+                            <td class="px-2.5 sm:px-3 py-2 text-left">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded bg-[#1c1c1c] shrink-0"></div>
+                                    <div class="space-y-1">
+                                        <div class="h-3 bg-[#262626] rounded w-20"></div>
+                                        <div class="h-2 bg-[#1a1a1a] rounded w-14"></div>
+                                    </div>
                                 </div>
-                            </div>
-                        </td>
-                        <td class="px-4 py-3 text-left">
-                            <div class="h-5 bg-[#202020] rounded w-16"></div>
-                        </td>
-                        <td class="px-4 py-3 text-left">
-                            <div class="h-3.5 bg-[#262626] rounded w-20"></div>
-                        </td>
-                        <td class="px-4 py-3 text-left">
-                            <div class="h-3 bg-[#1e1e1e] rounded w-28"></div>
-                        </td>
-                        <td class="px-4 py-3 text-left">
-                            <div class="h-5 bg-[#202020] rounded-full w-14"></div>
-                        </td>
-                        <td class="px-4 py-3 text-right">
-                            <div class="flex items-center justify-end gap-1.5">
-                                <div class="h-7 w-7 bg-[#202020] rounded"></div>
-                                <div class="h-7 w-7 bg-[#202020] rounded"></div>
-                                <div class="h-7 w-7 bg-[#202020] rounded"></div>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                            <td class="hidden sm:table-cell px-2.5 sm:px-3 py-2 text-center">
+                                <div class="h-4 bg-[#202020] rounded w-14 mx-auto"></div>
+                            </td>
+                            <td class="px-2.5 sm:px-3 py-2 text-center">
+                                <div class="h-3 bg-[#262626] rounded w-14 mx-auto"></div>
+                            </td>
+                            <td class="hidden md:table-cell px-2.5 sm:px-3 py-2 text-center">
+                                <div class="h-3 bg-[#1e1e1e] rounded w-20 mx-auto"></div>
+                            </td>
+                            <td class="hidden sm:table-cell px-2.5 sm:px-3 py-2 text-center">
+                                <div class="h-4 bg-[#202020] rounded-full w-12 mx-auto"></div>
+                            </td>
+                            <td class="px-2.5 sm:px-3 py-2 text-right">
+                                <div class="flex items-center justify-end gap-1">
+                                    <div class="h-6 w-6 bg-[#202020] rounded"></div>
+                                    <div class="h-6 w-6 bg-[#202020] rounded"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

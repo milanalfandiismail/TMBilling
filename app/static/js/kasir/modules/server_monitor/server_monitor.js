@@ -20,6 +20,11 @@ const ServerMonitor = {
         this.isPolling = false;
         if (this.interval) clearInterval(this.interval);
     },
+
+    refreshLive() {
+        if (typeof App !== 'undefined' && App.currentTab !== 'server_statistic') return;
+        return this.fetchMetrics();
+    },
     
     async checkLHMStatus() {
         try {

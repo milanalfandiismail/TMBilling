@@ -21,6 +21,10 @@ pub struct StatusResponse {
     pub is_afk: Option<bool>,
     #[serde(default)]
     pub polling_interval: Option<u64>,
+    #[serde(default)]
+    pub is_member: Option<bool>,
+    #[serde(default)]
+    pub member: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -41,6 +45,12 @@ pub struct MemberLoginResponse {
     pub grup: Option<String>,
     pub pc_kode: Option<String>,
     pub error: Option<String>,
+    #[serde(default)]
+    pub is_member: Option<bool>,
+    #[serde(default)]
+    pub tipe: Option<String>,
+    #[serde(default)]
+    pub member: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -351,6 +361,10 @@ impl ApiService {
         let raw: MemberLoginResponse = serde_json::from_str(&body_text)
             .map_err(|_e| format!("Gagal urai data member."))?;
 
+        let is_member = raw.is_member.or_else(|| {
+            raw.tipe.as_deref().map(|t| t == "member")
+        }).unwrap_or(true);
+
         Ok(StatusResponse {
             status: "aktif".to_string(),
             sisa_waktu: raw.waktu_tersimpan.map(|m| m * 60),
@@ -362,6 +376,8 @@ impl ApiService {
             message: None,
             is_afk: Some(false),
             polling_interval: None,
+            is_member: Some(is_member),
+            member: raw.member,
         })
     }
 
@@ -381,6 +397,8 @@ impl ApiService {
                 message: None,
                 is_afk: Some(false),
                 polling_interval: None,
+                is_member: Some(false),
+                member: None,
             });
         }
 
@@ -436,6 +454,8 @@ impl ApiService {
             message: None,
             is_afk: Some(false),
             polling_interval: None,
+            is_member: Some(false),
+            member: None,
         })
     }
 
@@ -466,6 +486,8 @@ impl ApiService {
             message: None,
             is_afk: Some(false),
             polling_interval: None,
+            is_member: Some(false),
+            member: None,
         })
     }
 
