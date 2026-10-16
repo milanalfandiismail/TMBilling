@@ -1,6 +1,9 @@
 """Routes untuk manajemen pengaturan umum dan parameter operasional sistem.
 Termasuk auto-shutdown, client polling, apikey, timezone, dan scheduler.
 """
+import os
+import sys
+import subprocess
 from flask import request, jsonify, session, current_app
 from app.services import SettingsService
 from app.routes.auth.auth_kasir_routes import login_required, admin_required

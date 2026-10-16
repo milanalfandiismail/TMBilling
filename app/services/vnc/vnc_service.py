@@ -113,10 +113,24 @@ class VNCService:
                 f"--token-source={cls.TOKEN_FILE_PATH}",
                 f"0.0.0.0:{cls.LISTEN_PORT}"
             ]
+            # Pastikan folder logs ada & rotasi log jika ukuran > 5MB
+            log_dir = os.path.join(os.path.dirname(cls.TOKEN_FILE_PATH), "logs")
+            os.makedirs(log_dir, exist_ok=True)
+            log_file_path = os.path.join(log_dir, "websockify.log")
+            if os.path.exists(log_file_path) and os.path.getsize(log_file_path) > 5 * 1024 * 1024:
+                try:
+                    old_log = log_file_path + ".old"
+                    if os.path.exists(old_log):
+                        os.remove(old_log)
+                    os.rename(log_file_path, old_log)
+                except Exception as rot_e:
+                    logger.warning(f"Gagal rotasi websockify.log: {rot_e}")
+
+            log_file = open(log_file_path, "a", encoding="utf-8")
             cls._process = subprocess.Popen(
                 cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=log_file,
+                stderr=log_file,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             )
             import time
@@ -124,11 +138,16 @@ class VNCService:
 
             # Cek jika proses langsung mati
             if cls._process.poll() is not None:
-                _, err = cls._process.communicate()
-                err_msg = err.decode('utf-8', errors='ignore').strip()
+                err_msg = ""
+                try:
+                    with open(log_file_path, "r", encoding="utf-8", errors="ignore") as f:
+                        lines = f.readlines()
+                        err_msg = "".join(lines[-10:]).strip()
+                except Exception:
+                    pass
                 return False, f"Proses websockify gagal berjalan: {err_msg or 'Unknown error'}"
 
-            logger.info(f"Proses Websockify dengan TokenFile berhasil dijalankan pada port {cls.LISTEN_PORT}")
+            logger.info(f"Proses Websockify dengan TokenFile berhasil dijalankan pada port {cls.LISTEN_PORT} (log: {log_file_path})")
             return True, "Websockify berhasil dinyalakan"
         except Exception as e:
             logger.error(f"Gagal menjalankan Websockify: {e}")

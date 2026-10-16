@@ -79,9 +79,15 @@ class PC(db.Model):
         """
         return self.sesi_list.filter_by(status="aktif").order_by(db.text('id DESC')).first()
     
-    def to_dict(self):
+    def to_dict(self, sesi=False, screenshot_info=False):
         """Mengkonversi data PC ke format dictionary untuk API response.
         
+        Args:
+            sesi: Objek Sesi aktif jika sudah di-prefetch (atau None). 
+                  Jika False (default), query self.sesi_aktif dipanggil.
+            screenshot_info: Dict {'has_screenshot': bool, 'screenshot_time': str/None}.
+                             Jika False (default), disk dicek secara sinkron.
+
         Returns:
             dict: Dictionary berisi detail PC, status penggunaan, dan info sesi aktif.
         """
@@ -89,20 +95,27 @@ class PC(db.Model):
         from flask import current_app
         from datetime import datetime
 
-        s = self.sesi_aktif
+        if sesi is not False:
+            s = sesi
+        else:
+            s = self.sesi_aktif
 
-        screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{self.kode}.png")
-        has_screenshot = os.path.exists(screenshot_path)
-        screenshot_time = None
-        if has_screenshot:
-            try:
-                from app.utils.timezone_utils import format_display
-                from datetime import timezone
-                mtime = os.path.getmtime(screenshot_path)
-                dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
-                screenshot_time = format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
-            except Exception:
-                pass
+        if screenshot_info is not False:
+            has_screenshot = bool(screenshot_info and screenshot_info.get('has_screenshot'))
+            screenshot_time = screenshot_info.get('screenshot_time') if screenshot_info else None
+        else:
+            screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{self.kode}.png")
+            has_screenshot = os.path.exists(screenshot_path)
+            screenshot_time = None
+            if has_screenshot:
+                try:
+                    from app.utils.timezone_utils import format_display
+                    from datetime import timezone
+                    mtime = os.path.getmtime(screenshot_path)
+                    dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
+                    screenshot_time = format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
+                except Exception:
+                    pass
 
         is_system = False
         is_admin = False
