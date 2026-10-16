@@ -583,36 +583,49 @@ const SettingsGeneral = {
             const res = await API.request('/api/v1/kasir/backup/list');
             if (res.success) {
                 if (res.backups.length === 0) {
-                    tbody.innerHTML = `<tr class="block lg:table-row"><td colspan="4" class="py-4 text-center text-neutral-500 block lg:table-cell">Tidak ada berkas backup di server.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-neutral-400 text-xs xl:text-sm 2xl:text-base font-sans">Tidak ada berkas backup di server.</td></tr>`;
                     return;
                 }
 
                 tbody.innerHTML = res.backups.map(b => `
-                    <tr class="border-b border-[#2a2a2a] lg:border-[#1c1c1c] hover:bg-[#070707] transition-colors block lg:table-row py-3 lg:py-0 last:border-b-0">
-                        <td class="py-2 lg:py-3 pr-2 text-neutral-200 text-xs lg:text-base font-bold flex lg:table-cell justify-between items-start sm:items-center">
-                            <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Nama Berkas</span>
-                            <span class="break-all font-mono text-right lg:text-left">${b.filename}</span>
-                        </td>
-                        <td class="py-2 lg:py-3 pr-2 text-neutral-400 text-[10px] lg:text-sm flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
-                            <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Tanggal Dibuat</span>
-                            <span class="font-mono text-right lg:text-left">${b.created_at}</span>
-                        </td>
-                        <td class="py-2 lg:py-3 pr-2 text-neutral-400 text-xs lg:text-base flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
-                            <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Ukuran</span>
-                            <span class="font-mono text-right lg:text-left">${b.size_mb} MB</span>
-                        </td>
-                        <td class="py-2 lg:py-3 text-right flex lg:table-cell justify-between items-center border-t border-[#1c1c1c]/40 lg:border-t-0">
-                            <span class="lg:hidden text-[10px] font-bold uppercase text-neutral-500 font-sans">Aksi</span>
-                            <div class="flex items-center justify-end gap-2">
-                                <button onclick="Settings.downloadBackup('${b.filename}')" class="px-2.5 py-1 bg-neutral-200 hover:bg-neutral-300 text-black text-[10px] lg:text-xs font-bold rounded transition-colors">Unduh</button>
-                                <button onclick="Settings.deleteBackup('${b.filename}')" class="px-2.5 py-1 bg-red-950/40 hover:bg-red-900/40 border border-red-900/50 text-red-400 text-[10px] lg:text-xs font-bold rounded transition-colors">Hapus</button>
+                    <tr class="border-b border-[#1c1c1c] hover:bg-[#070707] transition-colors">
+                        <td class="py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4 text-neutral-200">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <i class="fa-solid fa-file-zipper text-emerald-400 text-xs xl:text-sm shrink-0"></i>
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-bold font-mono text-xs xl:text-sm 2xl:text-base truncate max-w-[calc(100vw-165px)] md:max-w-none md:whitespace-nowrap" title="${b.filename}">
+                                        ${b.filename}
+                                    </div>
+                                    <div class="md:hidden flex items-center gap-1.5 mt-0.5 text-[10px] text-neutral-400 font-mono">
+                                        <span>${b.created_at}</span>
+                                        <span class="text-neutral-600">&bull;</span>
+                                        <span class="text-neutral-300 font-semibold">${b.size_mb} MB</span>
+                                    </div>
+                                </div>
                             </div>
                         </td>
-                    </tr>
-                `).join('');
+                        <td class="hidden md:table-cell py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4 text-neutral-400 text-[10px] sm:text-xs xl:text-xs 2xl:text-sm font-mono whitespace-nowrap">
+                            ${b.created_at}
+                        </td>
+                        <td class="hidden md:table-cell py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4 text-neutral-300 text-[10px] sm:text-xs xl:text-sm 2xl:text-base font-mono whitespace-nowrap">
+                            ${b.size_mb} MB
+                        </td>
+                        <td class="py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4 text-right whitespace-nowrap shrink-0">
+                            <div class="flex items-center justify-end gap-1 sm:gap-1.5 xl:gap-2">
+                                <button onclick="Settings.downloadBackup('${b.filename}')" class="p-1.5 md:px-2.5 md:py-1 xl:px-3 xl:py-1.5 bg-neutral-200 hover:bg-neutral-300 text-black text-xs xl:text-xs 2xl:text-sm font-bold rounded transition-colors active:scale-95 shadow-sm inline-flex items-center gap-1.5" title="Unduh Berkas Backup">
+                                    <i class="fa-solid fa-download text-[11px] xl:text-xs"></i>
+                                    <span class="hidden md:inline">Unduh</span>
+                                </button>
+                                <button onclick="Settings.deleteBackup('${b.filename}')" class="p-1.5 md:px-2.5 md:py-1 xl:px-3 xl:py-1.5 bg-red-950/40 hover:bg-red-900/40 border border-red-900/50 text-red-400 text-xs xl:text-xs 2xl:text-sm font-bold rounded transition-colors active:scale-95 inline-flex items-center gap-1.5" title="Hapus Berkas Backup">
+                                    <i class="fa-solid fa-trash-can text-[11px] xl:text-xs"></i>
+                                    <span class="hidden md:inline">Hapus</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`).join('');
             }
         } catch (err) {
-            tbody.innerHTML = `<tr class="block lg:table-row"><td colspan="4" class="py-4 text-center text-red-500 block lg:table-cell">Gagal memuat berkas: ${err.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-red-500 font-sans">Gagal memuat berkas: ${err.message}</td></tr>`;
         }
     },
 

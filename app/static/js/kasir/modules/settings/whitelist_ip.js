@@ -59,14 +59,16 @@ const WhitelistIP = {
         tbody.innerHTML = entries.map(e => {
             const date = e.added_at ? e.added_at.substring(0, 10) : '-';
             return `
-                <tr class="border-b border-[#1c1c1c]/40">
-                    <td class="py-2.5 font-mono text-neutral-200 text-xs lg:text-sm">${this._esc(e.ip)}</td>
-                    <td class="py-2.5 text-neutral-400 text-xs lg:text-sm hidden sm:table-cell">${this._esc(e.label || '-')}</td>
-                    <td class="py-2.5 text-neutral-500 text-xs hidden md:table-cell">${date}</td>
-                    <td class="py-2.5 text-right">
+                <tr class="border-b border-[#1c1c1c]/40 hover:bg-[#121212] transition-colors">
+                    <td class="py-2.5 px-2.5 sm:px-3 font-mono text-neutral-200 text-xs xl:text-sm 2xl:text-base font-bold whitespace-nowrap">${this._esc(e.ip)}</td>
+                    <td class="py-2.5 px-2 sm:px-3 text-neutral-400 text-xs xl:text-sm 2xl:text-base truncate max-w-[85px] sm:max-w-[120px] xl:max-w-[160px]">${this._esc(e.label || '-')}</td>
+                    <td class="py-2.5 px-2 sm:px-3 text-neutral-400 text-[10px] sm:text-xs xl:text-xs 2xl:text-sm font-mono whitespace-nowrap">${date}</td>
+                    <td class="py-2.5 px-2 sm:px-3 text-right whitespace-nowrap">
                         <button onclick="WhitelistIP.remove('${this._esc(e.ip)}')"
-                            class="text-red-400 hover:text-red-300 text-xs px-2 py-1 hover:bg-red-500/10 rounded transition-colors"
-                            title="Hapus">🗑</button>
+                            class="p-1 sm:px-2 sm:py-1 xl:px-2.5 xl:py-1.5 text-neutral-400 hover:text-red-400 hover:bg-red-950/30 rounded text-xs xl:text-sm 2xl:text-base font-medium transition-colors inline-flex items-center justify-center active:scale-95"
+                            title="Hapus IP">
+                            <i class="fa-solid fa-trash-can text-[11px] xl:text-xs 2xl:text-sm"></i>
+                        </button>
                     </td>
                 </tr>`;
         }).join('');
