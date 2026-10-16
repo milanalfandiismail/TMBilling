@@ -24,33 +24,33 @@
                 <!-- Kolom Kiri: Operasional Sistem -->
                 <div id="general-col-operasional" class="space-y-2.5 md:block">
                     <!-- Card 1: Auto Shutdown -->
-                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5">
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
                         <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
-                                <i class="fa-solid fa-clock text-neutral-400 text-xs"></i>
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-clock text-neutral-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
                                 <span>Auto Shutdown</span>
                             </h3>
-                            <span class="text-[9px] text-neutral-500 font-mono">Min 30s • Max 600s</span>
+                            <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Min 30s • Max 600s</span>
                         </div>
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                             <div class="min-w-0 flex-1">
-                                <label for="shutdown-timer" class="text-[11px] lg:max-xl:text-xs xl:text-xs text-neutral-300 font-medium block">
+                                <label for="shutdown-timer" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
                                     Waktu Tunggu PC Idle (Detik)
                                 </label>
-                                <p class="text-[9px] lg:max-xl:text-[10px] xl:text-[11px] text-neutral-500 mt-0.5 truncate">
+                                <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5 truncate">
                                     Shutdown otomatis saat PC client tidak aktif / login
                                 </p>
                             </div>
                             <div class="flex items-center gap-1.5 shrink-0">
                                 <div class="flex items-center gap-1 bg-[#050505] border border-[#1c1c1c] rounded px-2 py-1.5">
                                     <input type="number" id="shutdown-timer"
-                                        class="w-16 bg-transparent text-xs text-neutral-200 text-center focus:outline-none font-mono"
+                                        class="w-16 2xl:w-20 bg-transparent text-xs xl:text-sm 2xl:text-base text-neutral-200 text-center focus:outline-none font-mono py-1 2xl:py-1.5"
                                         value="180" step="10" min="30" max="600">
-                                    <span class="text-[10px] text-neutral-500 font-mono">dtk</span>
+                                    <span class="text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">dtk</span>
                                 </div>
                                 <button type="button" onclick="Settings.saveAutoShutdown()"
-                                    class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
-                                    <i class="fa-solid fa-floppy-disk text-[11px]"></i>
+                                    class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
                                     <span>Simpan</span>
                                 </button>
                             </div>
@@ -58,59 +58,59 @@
                     </div>
 
                     <!-- Card 2: Interval Polling & Telemetry PC Client -->
-                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5">
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
                         <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
-                                <i class="fa-solid fa-bolt text-emerald-400 text-xs"></i>
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-bolt text-emerald-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
                                 <span>Interval Polling &amp; Telemetry</span>
                             </h3>
-                            <span class="px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <span class="px-1.5 sm:px-2 xl:px-2.5 2xl:px-3 py-0.5 xl:py-1 2xl:py-1.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                                 Auto-Save
                             </span>
                         </div>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-[11px] text-neutral-400">
+                        <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400">
                             Frekuensi detak sinkronisasi billing, remote lock &amp; telemetry client:
                         </p>
                         <!-- 3 Preset Pill Selector Buttons -->
-                        <div class="grid grid-cols-3 gap-1.5 sm:gap-2 mt-2">
+                        <div class="grid grid-cols-3 gap-1.5 sm:gap-2 xl:gap-2.5 2xl:gap-3 mt-2 xl:mt-2.5 2xl:mt-3">
                             <!-- Option 1s -->
                             <button type="button" onclick="Settings.selectPollingInterval(1, true)" id="polling-interval-btn-1"
-                                class="polling-interval-btn relative flex flex-col items-start p-2 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
+                                class="polling-interval-btn relative flex flex-col items-start p-2 sm:p-2.5 xl:p-3 2xl:p-3.5 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
                                 <div class="flex items-center justify-between w-full">
-                                    <span class="text-[11px] sm:text-xs font-bold text-neutral-200 flex items-center gap-1 tracking-wider uppercase">
+                                    <span class="text-xs sm:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 flex items-center gap-1 tracking-wider uppercase">
                                         ⚡ 1s
                                     </span>
-                                    <span class="w-1.5 h-1.5 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
+                                    <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 xl:w-2.5 xl:h-2.5 2xl:w-3 2xl:h-3 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
                                 </div>
-                                <span class="text-[8px] sm:text-[9px] text-neutral-500 mt-0.5 group-hover:text-neutral-400 truncate w-full">
+                                <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5 xl:mt-1 group-hover:text-neutral-200 truncate w-full font-sans">
                                     Realtime
                                 </span>
                             </button>
 
                             <!-- Option 5s (Default / Recommended) -->
                             <button type="button" onclick="Settings.selectPollingInterval(5, true)" id="polling-interval-btn-5"
-                                class="polling-interval-btn relative flex flex-col items-start p-2 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
+                                class="polling-interval-btn relative flex flex-col items-start p-2 sm:p-2.5 xl:p-3 2xl:p-3.5 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
                                 <div class="flex items-center justify-between w-full">
-                                    <span class="text-[11px] sm:text-xs font-bold text-neutral-200 flex items-center gap-1 tracking-wider uppercase">
+                                    <span class="text-xs sm:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 flex items-center gap-1 tracking-wider uppercase">
                                         🛡️ 5s
                                     </span>
-                                    <span class="w-1.5 h-1.5 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
+                                    <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 xl:w-2.5 xl:h-2.5 2xl:w-3 2xl:h-3 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
                                 </div>
-                                <span class="text-[8px] sm:text-[9px] text-neutral-500 mt-0.5 group-hover:text-neutral-400 truncate w-full">
+                                <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5 xl:mt-1 group-hover:text-neutral-200 truncate w-full font-sans">
                                     Standar
                                 </span>
                             </button>
 
                             <!-- Option 10s -->
                             <button type="button" onclick="Settings.selectPollingInterval(10, true)" id="polling-interval-btn-10"
-                                class="polling-interval-btn relative flex flex-col items-start p-2 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
+                                class="polling-interval-btn relative flex flex-col items-start p-2 sm:p-2.5 xl:p-3 2xl:p-3.5 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
                                 <div class="flex items-center justify-between w-full">
-                                    <span class="text-[11px] sm:text-xs font-bold text-neutral-200 flex items-center gap-1 tracking-wider uppercase">
+                                    <span class="text-xs sm:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 flex items-center gap-1 tracking-wider uppercase">
                                         🍃 10s
                                     </span>
-                                    <span class="w-1.5 h-1.5 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
+                                    <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 xl:w-2.5 xl:h-2.5 2xl:w-3 2xl:h-3 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
                                 </div>
-                                <span class="text-[8px] sm:text-[9px] text-neutral-500 mt-0.5 group-hover:text-neutral-400 truncate w-full">
+                                <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5 xl:mt-1 group-hover:text-neutral-200 truncate w-full font-sans">
                                     Hemat
                                 </span>
                             </button>
@@ -118,19 +118,19 @@
                     </div>
 
                     <!-- Card 3: Timezone -->
-                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5">
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
                         <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
                                 <span>🌐 Zona Waktu (Timezone)</span>
                             </h3>
-                            <span class="text-[9px] text-neutral-500 font-mono">WIB / WITA / WIT / UTC</span>
+                            <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">WIB / WITA / WIT / UTC</span>
                         </div>
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                             <div class="min-w-0 flex-1">
-                                <label for="timezone-select" class="text-[11px] lg:max-xl:text-xs xl:text-xs text-neutral-300 font-medium block">
+                                <label for="timezone-select" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
                                     Format Waktu Laporan &amp; Billing
                                 </label>
-                                <p class="text-[9px] lg:max-xl:text-[10px] xl:text-[11px] text-neutral-500 mt-0.5 truncate">
+                                <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5 truncate">
                                     Zona display pada log sesi dan struk pembayaran
                                 </p>
                             </div>
@@ -139,8 +139,8 @@
                                     class="w-36 sm:w-44 px-2 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500">
                                 </select>
                                 <button type="button" onclick="Settings.saveTimezone()"
-                                    class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
-                                    <i class="fa-solid fa-floppy-disk text-[11px]"></i>
+                                    class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
                                     <span>Simpan</span>
                                 </button>
                             </div>
@@ -151,30 +151,30 @@
                 <!-- Kolom Kanan: Kredensial & Keamanan -->
                 <div id="general-col-keamanan" class="space-y-2.5 md:block hidden">
                     <!-- Card 4: Uninstall Token Client -->
-                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5">
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
                         <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
-                                <i class="fa-solid fa-shield-halved text-neutral-400 text-xs"></i>
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-shield-halved text-neutral-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
                                 <span>Uninstall Token Client</span>
                             </h3>
-                            <span class="text-[9px] text-neutral-500 font-mono">Max 64 char</span>
+                            <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Max 64 char</span>
                         </div>
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                             <div class="min-w-0 flex-1">
-                                <label for="uninstall-token-input" class="text-[11px] lg:max-xl:text-xs xl:text-xs text-neutral-300 font-medium block">
+                                <label for="uninstall-token-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
                                     Token Keamanan Uninstall Client
                                 </label>
-                                <p class="text-[9px] lg:max-xl:text-[10px] xl:text-[11px] text-neutral-500 mt-0.5 truncate">
+                                <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5 truncate">
                                     Matikan proteksi client saat maintenance tanpa BSOD
                                 </p>
                             </div>
                             <div class="flex items-center gap-1.5 shrink-0">
                                 <input type="text" id="uninstall-token-input"
-                                    class="w-40 sm:w-48 px-2.5 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
+                                    class="w-40 sm:w-48 2xl:w-60 px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
                                     placeholder="TM_UNINSTALL_SAFE">
                                 <button type="button" onclick="Settings.saveUninstallToken()"
-                                    class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
-                                    <i class="fa-solid fa-floppy-disk text-[11px]"></i>
+                                    class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
                                     <span>Simpan</span>
                                 </button>
                             </div>
@@ -182,52 +182,52 @@
                     </div>
 
                     <!-- Card 5: API Key System -->
-                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5">
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
                         <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
-                                <i class="fa-solid fa-key text-amber-400 text-xs"></i>
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-key text-amber-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
                                 <span>Client API Key System</span>
                             </h3>
-                            <span class="px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                            <span class="px-1.5 sm:px-2 xl:px-2.5 2xl:px-3 py-0.5 xl:py-1 2xl:py-1.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20">
                                 Kunci Global
                             </span>
                         </div>
                         <div class="space-y-2">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                                <label for="client-apikey-input" class="text-[11px] lg:max-xl:text-xs xl:text-xs text-neutral-300 font-medium block">
+                                <label for="client-apikey-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
                                     Otentikasi Klien ke Server (4 - 128 Karakter)
                                 </label>
-                                <span class="text-[9px] text-neutral-500 font-sans">Tersimpan di .env</span>
+                                <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-sans">Tersimpan di .env</span>
                             </div>
                             <!-- Input with Eye Toggle, Copy, and Save -->
                             <div class="flex items-center gap-1.5">
                                 <div class="relative flex-1">
                                     <input type="password" id="client-apikey-input"
-                                        class="w-full pl-2.5 pr-8 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono tracking-wider"
+                                        class="w-full pl-2.5 pr-8 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono tracking-wider"
                                         placeholder="TM2026QWERTY-api-key">
                                     <button type="button" id="btn-toggle-apikey-eye" onclick="Settings.toggleApiKeyVisibility()"
                                         title="Tampilkan / Sembunyikan API Key"
                                         class="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 p-0.5 transition-colors">
-                                        <i class="fa-solid fa-eye text-xs"></i>
+                                        <i class="fa-solid fa-eye text-xs xl:text-sm 2xl:text-base"></i>
                                     </button>
                                 </div>
                                 <button type="button" id="btn-copy-apikey" onclick="Settings.copyClientApiKey()"
                                     title="Salin API Key ke Clipboard"
-                                    class="p-2 sm:px-2.5 sm:py-1.5 bg-[#141414] hover:bg-[#202020] border border-[#252525] hover:border-neutral-500 text-neutral-300 text-xs font-medium rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95">
-                                    <i class="fa-solid fa-copy text-xs"></i>
+                                    class="p-2 sm:px-2.5 sm:py-1.5 xl:py-2 xl:px-3 2xl:py-2.5 2xl:px-4 bg-[#141414] hover:bg-[#202020] border border-[#252525] hover:border-neutral-500 text-neutral-300 text-xs xl:text-sm 2xl:text-base font-medium rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95">
+                                    <i class="fa-solid fa-copy text-xs xl:text-sm 2xl:text-base"></i>
                                     <span class="hidden sm:inline">Salin</span>
                                 </button>
                                 <button type="button" onclick="Settings.saveClientApiKey()"
-                                    class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
-                                    <i class="fa-solid fa-floppy-disk text-[11px]"></i>
+                                    class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
                                     <span>Simpan</span>
                                 </button>
                             </div>
                         </div>
                         <!-- Micro-Notice 1-baris -->
-                        <div class="mt-2.5 px-2.5 py-1.5 bg-amber-500/10 border border-amber-500/25 rounded flex items-center gap-2">
-                            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-xs shrink-0"></i>
-                            <p class="text-[10px] lg:max-xl:text-[11px] xl:text-xs text-amber-200/90 leading-tight truncate">
+                        <div class="mt-2.5 xl:mt-3 2xl:mt-3.5 px-2.5 py-1.5 xl:px-3.5 xl:py-2 2xl:px-4 2xl:py-2.5 bg-amber-500/10 border border-amber-500/25 rounded flex items-center gap-2 xl:gap-2.5 2xl:gap-3">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-xs lg:text-sm xl:text-base 2xl:text-lg shrink-0"></i>
+                            <p class="text-[10px] sm:text-xs xl:text-sm 2xl:text-base text-amber-200/90 leading-tight">
                                 <strong class="text-amber-300 font-semibold">Rahasia:</strong> Jangan berikan kunci ini kepada pihak yang tidak dikenal atau tidak dipercaya.
                             </p>
                         </div>
@@ -236,231 +236,398 @@
             </div>
         </div>
 
-        <!-- ==================== SUB-TAB: METODE PEMBAYARAN ==================== -->
-        <div id="subtab-payment" class="subtab-content hidden space-y-6">
-            <!-- Card: Payment Methods -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">💳 Metode
-                    Pembayaran</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label for="new-payment-method-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Kelola Metode Pembayaran</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Daftar metode pembayaran yang tersedia saat transaksi.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Maksimal 50 karakter</p>
-                    </div>
-                    
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="new-payment-method-input"
-                            class="flex-1 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
-                            placeholder="Contoh: ShopeePay">
-                        <button onclick="Settings.addPaymentMethod()"
-                            class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">+ Tambah</button>
-                    </div>
+        <!-- ==================== SUB-TAB: METODE PEMBAYARAN & QRIS ==================== -->
+        <div id="subtab-payment" class="subtab-content hidden">
+            <!-- Mobile Segmented Tab Switcher (< 768px) -->
+            <div class="flex md:hidden p-1 bg-[#080808] border border-[#1f1f1f] rounded-lg mb-2.5">
+                <button type="button" id="payment-mobile-pill-methods" onclick="Settings.switchPaymentMobileView('methods')"
+                    class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm">
+                    <i class="fa-solid fa-credit-card text-[11px]"></i>
+                    <span>Metode Pembayaran</span>
+                </button>
+                <button type="button" id="payment-mobile-pill-qris" onclick="Settings.switchPaymentMobileView('qris')"
+                    class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200">
+                    <i class="fa-solid fa-qrcode text-[11px]"></i>
+                    <span>Gambar QRIS</span>
+                </button>
+            </div>
 
-                    <div class="bg-[#050505] border border-[#1c1c1c] rounded overflow-hidden">
-                        <ul id="payment-methods-list" class="divide-y divide-[#1c1c1c]">
-                            <!-- List item diisi via JS -->
-                        </ul>
+            <!-- Responsive 2-Column Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 xl:gap-3.5">
+                <!-- Kolom Kiri: Kelola Metode Pembayaran -->
+                <div id="payment-col-methods" class="space-y-2.5 md:block">
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-credit-card text-emerald-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                                <span>Metode Pembayaran</span>
+                            </h3>
+                            <span id="payment-methods-count" class="px-1.5 sm:px-2 xl:px-2.5 2xl:px-3 py-0.5 xl:py-1 2xl:py-1.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                3 Aktif
+                            </span>
+                        </div>
+
+                        <!-- Baris Tambah Cepat (Quick Preset Chips) -->
+                        <div class="mb-2.5 space-y-1">
+                            <span class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 uppercase font-bold tracking-wider block">
+                                Tambah Cepat Preset:
+                            </span>
+                            <div id="payment-quick-presets" class="flex flex-wrap gap-1.5">
+                                <!-- Diisi via JS: [+ DANA] [+ GoPay] [+ OVO] dll -->
+                            </div>
+                        </div>
+
+                        <!-- Input Custom Method dengan Tombol Inline + Tambah -->
+                        <div class="flex items-center gap-1.5 mb-2.5">
+                            <input type="text" id="new-payment-method-input"
+                                class="flex-1 px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-sans"
+                                placeholder="Ketik nama metode lain (misal: BCA, Mandiri)..."
+                                onkeydown="if(event.key==='Enter'){event.preventDefault(); Settings.addPaymentMethod();}">
+                            <button type="button" onclick="Settings.addPaymentMethod()"
+                                class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                <i class="fa-solid fa-plus text-[11px]"></i>
+                                <span>Tambah</span>
+                            </button>
+                        </div>
+
+                        <!-- Daftar Metode Pembayaran Aktif (Grid Chips) -->
+                        <div class="space-y-1">
+                            <span class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 uppercase font-bold tracking-wider block">
+                                Metode Pembayaran Aktif:
+                            </span>
+                            <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2 xl:p-2.5 2xl:p-3 overflow-y-auto max-h-[160px] xl:max-h-[200px] 2xl:max-h-[240px] scrollbar-thin">
+                                <div id="payment-methods-list" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                    <!-- Diisi via JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 font-sans mt-2 xl:mt-2.5 2xl:mt-3">
+                            Metode aktif otomatis tersimpan dan tersedia pada modul Transaksi Kasir, POS, Refill Member, dan Kiosk.
+                        </p>
                     </div>
                 </div>
-                <div class="flex justify-end mt-4 pt-4 border-t border-[#1c1c1c]">
-                    <button onclick="Settings.savePaymentMethods()"
-                        class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Simpan Perubahan</button>
+
+                <!-- Kolom Kanan: Pengaturan & Upload Gambar QRIS -->
+                <div id="payment-col-qris" class="space-y-2.5 md:block hidden">
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-qrcode text-amber-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                                <span>Gambar QRIS Pembayaran</span>
+                            </h3>
+                            <span class="px-1.5 sm:px-2 xl:px-2.5 2xl:px-3 py-0.5 xl:py-1 2xl:py-1.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                Auto-Upload
+                            </span>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-center gap-3 xl:gap-4">
+                            <!-- Preview Box -->
+                            <div id="qris-preview-container"
+                                class="w-24 h-24 xl:w-28 xl:h-28 2xl:w-32 2xl:h-32 bg-[#050505] border border-[#1c1c1c] hover:border-neutral-500 rounded flex items-center justify-center overflow-hidden cursor-pointer shrink-0 transition-colors group relative"
+                                onclick="Settings.viewQRIS()" title="Klik untuk memperbesar QRIS">
+                                <img id="settings-qris-preview" src="/static/uploads/qris/default_qris.png"
+                                    class="max-w-full max-h-full object-contain" alt="QRIS Preview">
+                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs xl:text-sm 2xl:text-base font-bold gap-1">
+                                    <i class="fa-solid fa-magnifying-glass-plus text-xs xl:text-sm 2xl:text-base"></i>
+                                    <span>Zoom</span>
+                                </div>
+                            </div>
+
+                            <!-- Controls & Tips -->
+                            <div class="flex-1 space-y-2 text-left w-full sm:w-auto">
+                                <div class="space-y-0.5">
+                                    <p class="text-xs xl:text-sm 2xl:text-base text-neutral-300 font-medium">Format: JPG, PNG, WEBP (Max 5MB)</p>
+                                    <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400">Gunakan foto vertikal/portrait agar proporsional dan jelas.</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label for="qris-file-input"
+                                        class="cursor-pointer px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs xl:text-sm 2xl:text-base font-bold text-neutral-200 transition-colors inline-flex items-center gap-1.5 shadow-sm active:scale-95">
+                                        <i class="fa-solid fa-cloud-arrow-up text-xs xl:text-sm 2xl:text-base"></i>
+                                        <span>Pilih File QRIS</span>
+                                        <input type="file" id="qris-file-input" accept="image/*" class="hidden"
+                                            onchange="Settings.previewQRIS(this)">
+                                    </label>
+                                    <button type="button" onclick="Settings.viewQRIS()"
+                                        class="px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#121212] hover:bg-[#1c1c1c] border border-[#222] rounded text-xs xl:text-sm 2xl:text-base text-neutral-300 font-medium transition-colors flex items-center gap-1 active:scale-95 shadow-sm">
+                                        <i class="fa-solid fa-eye text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                        <span>Lihat</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Micro-Notice Kiosk Hint -->
+                        <div class="mt-3 xl:mt-3.5 2xl:mt-4 px-2.5 py-1.5 xl:px-3.5 xl:py-2 2xl:px-4 2xl:py-2.5 bg-blue-500/10 border border-blue-500/25 rounded flex items-center gap-2 xl:gap-2.5 2xl:gap-3">
+                            <i class="fa-solid fa-circle-info text-blue-400 text-xs lg:text-sm xl:text-base 2xl:text-lg shrink-0"></i>
+                            <p class="text-[10px] sm:text-xs xl:text-sm 2xl:text-base text-blue-200/90 leading-tight">
+                                Gambar QRIS ini otomatis ditampilkan di layar Kiosk.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- ==================== SUB-TAB: INFO WARNET & KIOSK ==================== -->
-        <div id="subtab-kiosk" class="subtab-content hidden space-y-6">
-            <!-- Card: Konfigurasi Kiosk Screen -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Konfigurasi Info
-                    Warnet</h3>
+                        <!-- ==================== SUB-TAB: INFO WARNET & KIOSK ==================== -->
+        <div id="subtab-kiosk" class="subtab-content hidden">
+            <!-- 4 Horizontal Pills Navigation -->
+            <div class="flex items-center gap-1.5 p-1 bg-[#080808] border border-[#1f1f1f] rounded-lg mb-2.5 overflow-x-auto scrollbar-none">
+                <button type="button" id="kiosk-pill-profile" onclick="Settings.switchKioskPill('profile')"
+                    class="flex-1 min-w-[120px] py-1.5 xl:py-2 2xl:py-2.5 px-3 2xl:px-4 text-xs xl:text-sm 2xl:text-base font-bold rounded-md transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm">
+                    <i class="fa-solid fa-store text-[11px] xl:text-xs 2xl:text-sm"></i>
+                    <span>Profil &amp; Struk</span>
+                </button>
+                <button type="button" id="kiosk-pill-maps" onclick="Settings.switchKioskPill('maps')"
+                    class="flex-1 min-w-[120px] py-1.5 xl:py-2 2xl:py-2.5 px-3 2xl:px-4 text-xs xl:text-sm 2xl:text-base font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200">
+                    <i class="fa-solid fa-map-location-dot text-[11px] xl:text-xs 2xl:text-sm"></i>
+                    <span>Lokasi &amp; Peta</span>
+                </button>
+                <button type="button" id="kiosk-pill-announcement" onclick="Settings.switchKioskPill('announcement')"
+                    class="flex-1 min-w-[140px] py-1.5 xl:py-2 2xl:py-2.5 px-3 2xl:px-4 text-xs xl:text-sm 2xl:text-base font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200">
+                    <i class="fa-solid fa-bullhorn text-[11px] xl:text-xs 2xl:text-sm"></i>
+                    <span>Aturan &amp; Pengumuman</span>
+                </button>
+                <button type="button" id="kiosk-pill-tv" onclick="Settings.switchKioskPill('tv')"
+                    class="flex-1 min-w-[120px] py-1.5 xl:py-2 2xl:py-2.5 px-3 2xl:px-4 text-xs xl:text-sm 2xl:text-base font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200">
+                    <i class="fa-solid fa-tv text-[11px] xl:text-xs 2xl:text-sm"></i>
+                    <span>Tampilan TV</span>
+                </button>
+            </div>
 
-                <!-- 1. Unggah QRIS (Paling Atas) -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <span class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Gambar
-                            QRIS Pembayaran</span>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Unggah gambar QRIS statis baru untuk
-                            pembayaran di Kiosk.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Format: JPG/PNG/WEBP, maksimal 5MB</p>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-amber-400/80 mt-0.5">💡 Tips: Gunakan foto
-                            vertikal/portrait agar QRIS
-                            terlihat jelas dan proporsional di layar Kiosk.</p>
+            <!-- VIEW 1: PROFIL & STRUK WARNET -->
+            <div id="kiosk-view-profile" class="space-y-2.5">
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                    <div class="flex items-center justify-between mb-2 pb-2 border-b border-[#1c1c1c]">
+                        <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-store text-emerald-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                            <span>Profil &amp; Identitas Struk Warnet</span>
+                        </h3>
+                        <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Tampil di Kiosk &amp; Struk Belanja</span>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <div id="qris-preview-container"
-                            class="w-16 lg:max-xl:w-28 xl:w-40 h-16 lg:max-xl:h-28 xl:h-40 bg-[#050505] border border-[#1c1c1c] rounded flex items-center justify-center overflow-hidden cursor-pointer"
-                            onclick="Settings.viewQRIS()">
-                            <img id="settings-qris-preview" src="/static/uploads/qris/default_qris.png"
-                                class="max-w-full max-h-full object-contain" alt="QRIS Preview">
-                        </div>
-                        <label for="qris-file-input"
-                            class="cursor-pointer px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-300 transition-colors">
-                            Pilih File
-                            <input type="file" id="qris-file-input" accept="image/*" class="hidden"
-                                onchange="Settings.previewQRIS(this)">
-                        </label>
-                    </div>
-                </div>
 
-                <div class="w-full h-px bg-[#1c1c1c]"></div>
-
-                <!-- 2. Identitas Warnet -->
-                <!-- Judul Kiosk -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <label for="warnet-title-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Nama
-                            Warnet / Judul Kiosk</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Nama warnet yang akan ditampilkan di
-                            pojok kiri atas Kiosk.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Maksimal 100 karakter</p>
-                    </div>
-                    <input type="text" id="warnet-title-input"
-                        class="w-full md:w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
-                        placeholder="Contoh: TMBilling">
-                </div>
-
-                <div class="w-full h-px bg-[#1c1c1c]"></div>
-
-                <!-- Alamat Warnet -->
-                <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                    <div class="max-w-md">
-                        <label for="warnet-address-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Alamat
-                            Warnet</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Alamat warnet yang akan dicetak di
-                            bagian atas struk belanja dan ditampilkan di peta publik.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Maksimal 255 karakter</p>
-                    </div>
-                    <textarea id="warnet-address-input" rows="2"
-                        class="w-full md:w-80 lg:w-[480px] xl:w-[580px] 2xl:w-[680px] min-h-[64px] lg:min-h-[76px] xl:min-h-[88px] px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 resize-y font-sans leading-relaxed"
-                        placeholder="Contoh: Jl. Merdeka No. 123, Kel. Gambir, Kec. Gambir, Kota Jakarta Pusat 10110"></textarea>
-                </div>
-
-                <div class="w-full h-px bg-[#1c1c1c]"></div>
-
-                <!-- No. Telepon Warnet -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <label for="warnet-phone-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">No.
-                            Telepon Warnet</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Nomor telepon yang akan dicetak di
-                            bagian atas struk belanja.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Format nomor telepon (8-20 digit, contoh: 08123456789)</p>
-                    </div>
-                    <input type="text" id="warnet-phone-input"
-                        class="w-full md:w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
-                        placeholder="Contoh: 0812-3456-7890">
-                </div>
-
-                <div class="w-full h-px bg-[#1c1c1c]"></div>
-
-                <!-- Pesan Kaki Struk (Input Textarea format mirip Alamat) -->
-                <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                    <div class="max-w-md">
-                        <label for="warnet-footer-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Pesan Kaki
-                            Struk</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Pesan footer yang dicetak di bagian
-                            paling bawah struk belanja.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Maksimal 255 karakter</p>
-                    </div>
-                    <textarea id="warnet-footer-input" rows="2"
-                        class="w-full md:w-80 lg:w-[480px] xl:w-[580px] 2xl:w-[680px] min-h-[64px] lg:min-h-[76px] xl:min-h-[88px] px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 resize-y font-sans leading-relaxed"
-                        placeholder="Contoh: Terima kasih atas kunjungan Anda, selamat bermain kembali!"></textarea>
-                </div>
-
-                <div class="w-full h-px bg-[#1c1c1c]"></div>
-
-                <!-- 3. Google Maps / Lokasi Warnet -->
-                <div class="flex flex-col gap-3">
-                    <div>
-                        <label for="warnet-gmaps-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Lokasi &amp; Google Maps</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Kode embed &lt;iframe&gt; atau tautan Google Maps untuk peta lokasi di halaman Publik.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Format kode iframe embed &lt;iframe ...&gt; atau URL link peta</p>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-amber-400/80 mt-0.5">💡 Tips: Salin kode embed dari Google Maps (Bagikan ➔ Sematkan peta) atau tempelkan URL share peta.</p>
-                    </div>
-                    <div class="space-y-3">
-                        <textarea id="warnet-gmaps-input" rows="2"
-                            class="w-full min-h-[64px] lg:min-h-[115px] xl:min-h-[135px] 2xl:min-h-[150px] px-3 py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono resize-y leading-relaxed"
-                            placeholder='Contoh: <iframe src="https://www.google.com/maps/embed?pb=..." ...></iframe> atau https://maps.app.goo.gl/...'
-                            oninput="Settings.updateGmapsPreview()"></textarea>
-
-                        <!-- Preview Container -->
-                        <div id="settings-gmaps-preview-box" class="w-full bg-[#050505] border border-[#1c1c1c] rounded overflow-hidden hidden">
-                            <div class="px-3 py-1.5 bg-[#0c0c0c] border-b border-[#1c1c1c] flex items-center justify-between">
-                                <span class="text-[10px] font-mono uppercase text-neutral-400 font-bold">🗺️ Preview Peta Live</span>
-                                <span id="settings-gmaps-status-badge" class="text-[9px] font-mono text-emerald-400">Embed Aktif</span>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 xl:gap-3.5">
+                        <!-- Nama Warnet / Judul Kiosk -->
+                        <div class="bg-[#080808] border border-[#191919] rounded p-2.5 sm:p-3 xl:p-3.5 2xl:p-4 space-y-1.5 xl:space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="warnet-title-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                    Nama Warnet / Judul Kiosk
+                                </label>
+                                <span class="text-[8px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Max 100 char</span>
                             </div>
-                            <div id="settings-gmaps-iframe-wrapper" class="w-full h-48 sm:h-64 flex items-center justify-center p-2">
-                                <!-- Dinamis dimasukkan iframe / preview -->
+                            <div class="flex items-center gap-1.5">
+                                <input type="text" id="warnet-title-input"
+                                    class="flex-1 px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-sans"
+                                    placeholder="Contoh: TMBilling Warnet">
+                                <button type="button" onclick="Settings.saveWarnetTitle()"
+                                    class="px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                    <span>Simpan</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- No. Telepon Warnet -->
+                        <div class="bg-[#080808] border border-[#191919] rounded p-2.5 sm:p-3 xl:p-3.5 2xl:p-4 space-y-1.5 xl:space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="warnet-phone-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                    No. Telepon Warnet
+                                </label>
+                                <span class="text-[8px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Struk Belanja</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <input type="text" id="warnet-phone-input"
+                                    class="flex-1 px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
+                                    placeholder="Contoh: 0812-3456-7890">
+                                <button type="button" onclick="Settings.saveWarnetPhone()"
+                                    class="px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                    <span>Simpan</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Alamat Warnet -->
+                        <div class="bg-[#080808] border border-[#191919] rounded p-2.5 sm:p-3 xl:p-3.5 2xl:p-4 space-y-1.5 xl:space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="warnet-address-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                    Alamat Warnet (Struk &amp; Publik)
+                                </label>
+                                <span class="text-[8px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Max 255 char</span>
+                            </div>
+                            <div class="flex items-start gap-1.5">
+                                <textarea id="warnet-address-input" rows="5"
+                                    class="flex-1 px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 resize-none font-sans leading-relaxed"
+                                    placeholder="Contoh: Jl. Merdeka No. 123..."></textarea>
+                                <button type="button" onclick="Settings.saveWarnetAddress()"
+                                    class="px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm mt-0.5">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                    <span>Simpan</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Pesan Kaki Struk -->
+                        <div class="bg-[#080808] border border-[#191919] rounded p-2.5 sm:p-3 xl:p-3.5 2xl:p-4 space-y-1.5 xl:space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="warnet-footer-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                    Pesan Kaki Struk (Footer Struk)
+                                </label>
+                                <span class="text-[8px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Max 255 char</span>
+                            </div>
+                            <div class="flex items-start gap-1.5">
+                                <textarea id="warnet-footer-input" rows="5"
+                                    class="flex-1 px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 resize-none font-sans leading-relaxed"
+                                    placeholder="Contoh: Terima kasih atas kunjungan Anda..."></textarea>
+                                <button type="button" onclick="Settings.saveWarnetFooter()"
+                                    class="px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm mt-0.5">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                    <span>Simpan</span>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="w-full h-px bg-[#1c1c1c]"></div>
-
-                <!-- 4. Pengumuman / Aturan -->
-                <div class="flex flex-col gap-3">
-                    <div>
-                        <span class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Pengumuman / Aturan</span>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Aturan atau pengumuman yang akan ditampilkan di layar Kiosk Client, TV Signage, dan Public Landing Page.</p>
+            <!-- VIEW 2: LOKASI & PETA GOOGLE MAPS -->
+            <div id="kiosk-view-maps" class="space-y-2.5 hidden">
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                    <div class="flex items-center justify-between mb-2 pb-2 border-b border-[#1c1c1c]">
+                        <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-map-location-dot text-blue-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                            <span>Lokasi &amp; Peta Google Maps</span>
+                        </h3>
+                        <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Tampil di Halaman Publik Warnet</span>
                     </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+                        <!-- Kolom Kiri: Input GMaps Embed Code & Actions -->
+                        <div class="space-y-2">
+                            <div>
+                                <label for="warnet-gmaps-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                    Kode Embed Peta (&lt;iframe&gt;) atau URL Google Maps
+                                </label>
+                                <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5">
+                                    Salin dari Google Maps: <em>Bagikan ➔ Sematkan peta</em> atau tempelkan link URL.
+                                </p>
+                            </div>
+                            <textarea id="warnet-gmaps-input" rows="10"
+                                class="w-full h-64 sm:h-72 lg:h-[280px] px-2.5 py-2 xl:py-2.5 2xl:py-3 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono resize-none leading-relaxed"
+                                placeholder='Contoh: <iframe src="https://www.google.com/maps/embed?pb=..." ...></iframe>'
+                                oninput="Settings.updateGmapsPreview()"></textarea>
+
+                            <div class="flex items-center justify-between gap-2 pt-1">
+                                <button type="button" onclick="Settings.toggleGmapsPreview()"
+                                    class="px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold transition-colors flex items-center gap-1.5 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-map text-[11px]"></i>
+                                    <span>Toggle Preview Peta</span>
+                                </button>
+                                <button type="button" onclick="Settings.saveWarnetGmaps()"
+                                    class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                    <span>Simpan Lokasi</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Kolom Kanan: Preview Container -->
+                        <div class="space-y-1">
+                            <div id="settings-gmaps-preview-box" class="w-full bg-[#050505] border border-[#1c1c1c] rounded overflow-hidden">
+                                <div class="px-2.5 py-1 xl:px-3 xl:py-1.5 2xl:px-3.5 2xl:py-2 bg-[#0c0c0c] border-b border-[#1c1c1c] flex items-center justify-between">
+                                    <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-mono uppercase text-neutral-400 font-bold flex items-center gap-1">
+                                        <i class="fa-solid fa-location-dot text-emerald-400 text-[10px] xl:text-xs 2xl:text-sm"></i>
+                                        <span>Preview Peta Live</span>
+                                    </span>
+                                    <span id="settings-gmaps-status-badge" class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-mono text-emerald-400">Embed Aktif</span>
+                                </div>
+                                <div id="settings-gmaps-iframe-wrapper" class="w-full h-64 sm:h-72 lg:h-[280px] flex items-center justify-center p-1.5">
+                                    <!-- Dinamis dimasukkan iframe / preview -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: ATURAN & PENGUMUMAN KIOSK -->
+            <div id="kiosk-view-announcement" class="space-y-2.5 hidden">
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                    <div class="flex items-center justify-between mb-2 pb-2 border-b border-[#1c1c1c]">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-bullhorn text-amber-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                                <span>Aturan &amp; Pengumuman Kiosk</span>
+                            </h3>
+                            <span class="px-1.5 sm:px-2 xl:px-2.5 2xl:px-3 py-0.5 xl:py-1 2xl:py-1.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                Kiosk &amp; TV
+                            </span>
+                        </div>
+                        <button type="button" onclick="Settings.saveWarnetAnnouncement()"
+                            class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                            <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                            <span>Simpan Aturan Kiosk</span>
+                        </button>
+                    </div>
+
                     <div class="w-full">
-                        <div id="warnet-announcement-editor" class="text-xs lg:max-xl:text-xs xl:text-base"></div>
+                        <div id="warnet-announcement-editor" class="text-xs"></div>
                         <input type="hidden" id="warnet-announcement-input">
                     </div>
                 </div>
-
-                <div class="flex justify-end mt-4">
-                    <button onclick="Settings.saveKioskSettings()"
-                        class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Simpan
-                        Pengaturan Kiosk</button>
-                </div>
             </div>
-        </div>
 
-        <!-- ==================== SUB-TAB: TV SIGNAGE ==================== -->
-        <div id="subtab-tv" class="subtab-content hidden space-y-6">
-            <!-- Card: Konfigurasi TV Signage -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6 space-y-4 sm:space-y-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">📺 Konfigurasi TV Signage &amp; Digital Signage</h3>
-
-                <!-- Running Text -->
-                <div class="flex flex-col md:flex-row gap-3 md:gap-4">
-                    <div class="md:w-1/3">
-                        <label for="tv-running-text" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Running Text Footer</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Teks berjalan di footer lobi Smart TV. Buat minimalis dan informatif.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Maksimal 255 karakter</p>
+            <!-- VIEW 4: TAMPILAN TV SIGNAGE -->
+            <div id="kiosk-view-tv" class="space-y-2.5 hidden">
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5 space-y-3 xl:space-y-4">
+                    <div class="flex items-center justify-between pb-2 border-b border-[#1c1c1c]">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-tv text-purple-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                                <span>Konfigurasi TV Signage &amp; Digital Signage</span>
+                            </h3>
+                            <span class="px-1.5 sm:px-2 xl:px-2.5 2xl:px-3 py-0.5 xl:py-1 2xl:py-1.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                                Smart TV Lobi
+                            </span>
+                        </div>
+                        <button type="button" onclick="Settings.saveTVSignageSettings()"
+                            class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                            <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                            <span>Simpan Pengaturan TV</span>
+                        </button>
                     </div>
-                    <textarea id="tv-running-text" rows="2"
-                        class="flex-1 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
-                        placeholder="Contoh: Selamat datang di warnet kami! Dapatkan promo paket malam murah mulai pukul 22.00 WIB..."></textarea>
-                </div>
 
-                <div class="w-full h-px bg-[#1c1c1c]"></div>
-
-                <!-- URL Akses LAN Smart TV -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#050505] p-3.5 sm:p-4 rounded border border-[#171717]">
-                    <div>
-                        <p class="text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-300">🔗 Link Akses Smart TV (Jaringan LAN)</p>
-                        <p class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 mt-0.5">Buka link ini pada browser Smart TV / monitor lobi yang terhubung ke jaringan router warnet yang sama.</p>
+                    <!-- Running Text Footer -->
+                    <div class="bg-[#080808] border border-[#191919] rounded p-3 xl:p-3.5 2xl:p-4 space-y-1.5 xl:space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label for="tv-running-text" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                Running Text Footer
+                            </label>
+                            <span class="text-[8px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Max 255 char</span>
+                        </div>
+                        <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400">Teks berjalan di footer lobi Smart TV. Buat minimalis dan informatif.</p>
+                        <textarea id="tv-running-text" rows="4"
+                            class="w-full px-2.5 py-2 xl:py-2.5 2xl:py-3 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-sans resize-none leading-relaxed"
+                            placeholder="Contoh: Selamat datang di warnet kami! Dapatkan promo paket malam murah mulai pukul 22.00 WIB..."></textarea>
                     </div>
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full md:w-auto shrink-0">
-                        <code class="px-3.5 py-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-sm text-emerald-400 font-mono tracking-wide break-all text-center sm:text-left" id="tv-lan-url-preview">http://IP_SERVER:7015/tv</code>
-                        <a href="/tv" target="_blank" class="w-full sm:w-auto justify-center px-3 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs font-bold text-neutral-200 transition-colors inline-flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                            </svg>
-                            <span>Buka TV</span>
-                        </a>
-                    </div>
-                </div>
 
-                <div class="flex justify-end mt-4">
-                    <button onclick="Settings.saveTVSignageSettings()"
-                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan Pengaturan TV Signage</button>
+                    <!-- Link Akses LAN Smart TV -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#080808] border border-[#191919] rounded p-3 xl:p-3.5 2xl:p-4">
+                        <div class="space-y-0.5">
+                            <p class="text-xs xl:text-sm 2xl:text-base font-bold text-neutral-200 flex items-center gap-1.5">
+                                <i class="fa-solid fa-link text-neutral-400 text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                <span>Link Akses Smart TV (Jaringan LAN)</span>
+                            </p>
+                            <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400">Buka link ini pada browser Smart TV / monitor lobi yang terhubung ke router warnet yang sama.</p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto min-w-0">
+                            <code class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-emerald-400 font-mono tracking-wide break-all text-center sm:text-left min-w-0" id="tv-lan-url-preview">http://IP_SERVER:7015/tv</code>
+                            <a href="/tv" target="_blank" class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs xl:text-sm 2xl:text-base font-bold text-neutral-200 transition-colors inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-sm shrink-0">
+                                <i class="fa-solid fa-arrow-up-right-from-square text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                <span>Buka TV</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -897,4 +1064,4 @@
 </div>
 
 
-
+

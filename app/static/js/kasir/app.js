@@ -347,6 +347,16 @@ const App = {
             Modal.close();
         }
         if (tab.startsWith('settings_') || tab === 'whitelist_ip') {
+            if (tab === 'settings_tv') {
+                if (typeof Settings !== 'undefined') {
+                    await Settings.load(true);
+                    Settings.switchSubTab('kiosk');
+                    if (typeof Settings.switchKioskPill === 'function') {
+                        Settings.switchKioskPill('tv');
+                    }
+                }
+                return;
+            }
             const sub = tab === 'whitelist_ip' ? 'whitelist_ip' : tab.replace('settings_', '');
             if (typeof Settings !== 'undefined') {
                 await Settings.load(true);

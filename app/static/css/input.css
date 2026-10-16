@@ -326,6 +326,46 @@ body[data-branch-mode="remote"] .remote-readonly-disabled {
     cursor: not-allowed !important;
 }
 
+/* =========================================================================
+   Settings Kiosk CKEditor Internal Scroll Height Constraint (Responsive)
+   ========================================================================= */
+#kiosk-view-announcement .ck-editor__editable_inline {
+    min-height: 200px !important;
+    max-height: 280px !important;
+    overflow-y: auto !important;
+}
 
+@media (min-width: 768px) {
+    #kiosk-view-announcement .ck-editor__editable_inline {
+        min-height: 260px !important;
+        max-height: 360px !important;
+    }
+}
 
+@media (min-width: 1024px) {
+    #kiosk-view-announcement .ck-editor__editable_inline {
+        min-height: 320px !important;
+        max-height: 420px !important;
+    }
+}
 
+@media (min-width: 1280px) {
+    #kiosk-view-announcement .ck-editor__editable_inline {
+        min-height: 460px !important;
+        max-height: 560px !important;
+    }
+}
+
+@media (min-width: 1536px) {
+    #kiosk-view-announcement .ck-editor__editable_inline {
+        min-height: 540px !important;
+        max-height: 660px !important;
+    }
+}
+
+@media (min-height: 950px) and (min-width: 1280px) {
+    #kiosk-view-announcement .ck-editor__editable_inline {
+        min-height: 560px !important;
+        max-height: 680px !important;
+    }
+}
