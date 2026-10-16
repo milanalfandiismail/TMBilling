@@ -173,20 +173,38 @@ class CloudflareTunnelService:
     def _do_start_process(cls, token):
         try:
             cmd = [cls.BIN_PATH, "tunnel", "--no-autoupdate", "run", "--token", token]
+            log_dir = os.path.join(cls.TUNNEL_DIR, "..", "logs")
+            os.makedirs(log_dir, exist_ok=True)
+            log_file_path = os.path.join(log_dir, "cloudflared.log")
+            if os.path.exists(log_file_path) and os.path.getsize(log_file_path) > 5 * 1024 * 1024:
+                try:
+                    old_log = log_file_path + ".old"
+                    if os.path.exists(old_log):
+                        os.remove(old_log)
+                    os.rename(log_file_path, old_log)
+                except Exception as rot_e:
+                    logger.warning(f"Gagal rotasi cloudflared.log: {rot_e}")
+
+            log_file = open(log_file_path, "a", encoding="utf-8")
             cls._process = subprocess.Popen(
                 cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=log_file,
+                stderr=log_file,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             )
             import time
             time.sleep(1.0)
             if cls._process.poll() is not None:
-                _, err = cls._process.communicate()
-                err_str = err.decode('utf-8', errors='ignore').strip()
+                err_str = ""
+                try:
+                    with open(log_file_path, "r", encoding="utf-8", errors="ignore") as f:
+                        lines = f.readlines()
+                        err_str = "".join(lines[-15:]).strip()
+                except Exception:
+                    pass
                 if "token is not valid" in err_str.lower() or "invalid tunnel token" in err_str.lower():
                     return False, "Token Cloudflare Tunnel tidak valid."
-                return False, f"Proses tunnel gagal start: {err_str}"
+                return False, f"Proses tunnel gagal start: {err_str or 'Unknown error'}"
             
             SettingsService.set("cloudflare_tunnel_enabled", "true")
             return True, "Cloudflare Tunnel berhasil dijalankan"

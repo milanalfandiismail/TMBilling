@@ -3,9 +3,13 @@ import re
 
 def test_vnc_clipboard_no_pointerdown_presync():
     """Memastikan pointerdown tidak memicu preSync yang menghapus clipboard file/folder remote."""
-    js_path = os.path.join("app", "static", "js", "kasir", "modules", "remote", "vnc_client.js")
-    with open(js_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    remote_dir = os.path.join("app", "static", "js", "kasir", "modules", "remote")
+    content = ""
+    for fname in ["vnc_core.js", "vnc_client.js"]:
+        p = os.path.join(remote_dir, fname)
+        if os.path.exists(p):
+            with open(p, "r", encoding="utf-8") as f:
+                content += f.read() + "\n"
     
     # Pastikan tidak ada event listener pointerdown yang menjalankan preSync clipboard
     assert "container.addEventListener('pointerdown', this._boundPreSync)" not in content
@@ -13,9 +17,13 @@ def test_vnc_clipboard_no_pointerdown_presync():
 
 def test_vnc_clipboard_remote_to_host_sync():
     """Memastikan event clipboard dari remote otomatis menyinkronkan teks ke host clipboard."""
-    js_path = os.path.join("app", "static", "js", "kasir", "modules", "remote", "vnc_client.js")
-    with open(js_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    remote_dir = os.path.join("app", "static", "js", "kasir", "modules", "remote")
+    content = ""
+    for fname in ["vnc_core.js", "vnc_client.js"]:
+        p = os.path.join(remote_dir, fname)
+        if os.path.exists(p):
+            with open(p, "r", encoding="utf-8") as f:
+                content += f.read() + "\n"
 
     # Cari blok rfb.addEventListener('clipboard'
     clip_listener_match = re.search(r"this\.rfb\.addEventListener\('clipboard',\s*\(e\)\s*=>\s*\{([\s\S]*?)\}\);", content)
@@ -30,9 +38,13 @@ def test_vnc_clipboard_remote_to_host_sync():
 
 def test_vnc_clipboard_folder_guard_and_host_paste():
     """Memastikan Ctrl+V membedakan antara copy dalam remote (folder/file) dan paste dari host."""
-    js_path = os.path.join("app", "static", "js", "kasir", "modules", "remote", "vnc_client.js")
-    with open(js_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    remote_dir = os.path.join("app", "static", "js", "kasir", "modules", "remote")
+    content = ""
+    for fname in ["vnc_core.js", "vnc_client.js"]:
+        p = os.path.join(remote_dir, fname)
+        if os.path.exists(p):
+            with open(p, "r", encoding="utf-8") as f:
+                content += f.read() + "\n"
 
     # Pastikan flag _isRemoteFileFolder diinisialisasi dan diatur saat copy non-teks di remote
     assert "this._isRemoteFileFolder = false" in content

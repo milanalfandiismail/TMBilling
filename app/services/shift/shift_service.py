@@ -237,13 +237,17 @@ class ShiftService:
             "total_non_tunai": total_non_tunai
         }
 
-        # Update field di shift (disimpan untuk audit)
-        shift.total_billing = total_billing - total_refund
-        shift.total_kantin = total_kantin
-        shift.total_qris = breakdown.get("QRIS", 0)
-        shift.total_refund = total_refund
-        shift.detail_metode_json = json.dumps(rincian_pembayaran)
-        db.session.commit()
+        # Update field di shift (disimpan untuk audit hanya jika shift masih aktif)
+        if shift.status == "AKTIF":
+            shift.total_billing = total_billing - total_refund
+            shift.total_kantin = total_kantin
+            shift.total_qris = breakdown.get("QRIS", 0)
+            shift.total_refund = total_refund
+            shift.detail_metode_json = json.dumps(rincian_pembayaran)
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
 
         total_seharusnya = shift.modal_awal + total_tunai_bersih
 
