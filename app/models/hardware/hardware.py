@@ -118,7 +118,7 @@ class PCProcess(db.Model):
     __tablename__ = "pc_process"
     
     id = db.Column(db.Integer, primary_key=True)
-    pc_id = db.Column(db.Integer, db.ForeignKey("pc.id"), nullable=False)
+    pc_id = db.Column(db.Integer, db.ForeignKey("pc.id"), nullable=False, index=True)
     
     name = db.Column(db.String(100), nullable=False)
     title = db.Column(db.String(255))

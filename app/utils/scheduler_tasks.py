@@ -77,10 +77,26 @@ def run_cleanup_logs(app):
                     line_stripped = line.strip()
                     if not line_stripped:
                         continue
-                    # Format: [YYYY-MM-DD HH:MM:SS] [user] AKSI - detail
-                    match = re.match(r'\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]', line_stripped)
-                    if match:
-                        log_time = datetime.strptime(match.group(1), "%Y-%m-%d %H:%M:%S")
+                    log_time = None
+                    if line_stripped.startswith("{") and line_stripped.endswith("}"):
+                        try:
+                            import json
+                            data = json.loads(line_stripped)
+                            ts = data.get("timestamp")
+                            if ts:
+                                log_time = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+                        except Exception:
+                            pass
+
+                    if not log_time:
+                        match = re.match(r'\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]', line_stripped)
+                        if match:
+                            try:
+                                log_time = datetime.strptime(match.group(1), "%Y-%m-%d %H:%M:%S")
+                            except Exception:
+                                pass
+
+                    if log_time:
                         if log_time >= cutoff:
                             kept_lines.append(line)
                         else:

@@ -61,7 +61,7 @@ class Sesi(db.Model):
     user = db.relationship("User", backref=db.backref("sesi_kasir_list", lazy="dynamic"))
     
     # Relasi ke PC
-    pc_id = db.Column(db.Integer, db.ForeignKey("pc.id", ondelete="SET NULL"), nullable=True)
+    pc_id = db.Column(db.Integer, db.ForeignKey("pc.id", ondelete="SET NULL"), nullable=True, index=True)
     pc = db.relationship('PC', back_populates='sesi_list')    
     
     # Relasi ke Paket
@@ -78,7 +78,7 @@ class Sesi(db.Model):
     selesai_pada = db.Column(db.DateTime, nullable=True)
     durasi_beli_menit = db.Column(db.Integer, default=0)
     total_bayar = db.Column(db.Integer, default=0)
-    status = db.Column(db.String(10), default="aktif")
+    status = db.Column(db.String(10), default="aktif", index=True)
     
 
     # Data untuk menampilkan admin di dashboard
