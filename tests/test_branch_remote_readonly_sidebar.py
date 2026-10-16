@@ -1,3 +1,4 @@
+import os
 # tests/test_branch_remote_readonly_sidebar.py
 import pytest
 from app import create_app
@@ -130,9 +131,15 @@ def test_mutation_buttons_have_remote_hide_action_class(remote_readonly_client):
 
 def test_pc_detail_modal_actions_have_remote_hide_action():
     """Memastikan tombol Monitor Proses, Remote Layar, Ambil Gambar, dan Screenshot container memiliki remote-hide-action."""
-    detail_modal_path = "app/static/js/kasir/modules/dashboard/dashboard_detail_modal.js"
-    with open(detail_modal_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    paths = [
+        "app/static/js/kasir/modules/dashboard/dashboard_detail_modal.js",
+        "app/static/js/kasir/modules/dashboard/detail_modal/modal_core.js",
+    ]
+    content = ""
+    for p in paths:
+        if os.path.exists(p):
+            with open(p, "r", encoding="utf-8") as f:
+                content += f.read() + "\n"
 
     # 1. Monitor proses harus memiliki class remote-hide-action
     assert 'DashboardProcessMonitor.showProcesses' in content

@@ -8,14 +8,14 @@ pindah PC, tambah waktu, dan sinkronisasi waktu real-time.
 
 import secrets
 from datetime import timedelta
-from app.models import Sesi
-from app.models import Transaksi
-from app.models import db, now_local
-from app.repositories import SesiRepository
-from app.repositories import PCRepository
-from app.repositories import MemberRepository
-from app.repositories import PaketRepository
-from app.repositories import TransaksiRepository
+from app.models import Sesi, Transaksi, db, now_local
+from app.repositories import (
+    SesiRepository,
+    PCRepository,
+    MemberRepository,
+    PaketRepository,
+    TransaksiRepository
+)
 from app.services.transaksi.transaksi_service import TransaksiService
 from app.utils.logger import write_log
 from app.utils.validators import (
@@ -23,7 +23,6 @@ from app.utils.validators import (
     validate_integer_range,
     validate_choice
 )
-
 from app.config import Config
 
 
@@ -167,54 +166,54 @@ class SesiService:
         if paket.grup_id != sesi.pc.grup_id:
             raise ValueError(f"Paket zona {paket.grup.nama.upper()} tidak cocok dengan PC!")
         
+        total_menit = paket.durasi_menit * qty
+        total_harga = paket.harga * qty
+        nota = TransaksiService.generate_nota()
+        user_id = TransaksiService.get_user_id(operator)
+
+        detail_tambah = {
+            "tipe_tambahan": "waktu",
+            "nominal_transaksi": total_harga,
+            "metode_pembayaran": metode_pembayaran,
+            "waktu_ditambahkan": total_menit
+        }
+
         if sesi.tipe == "member" and sesi.member:
-            sesi.member.tambah_waktu(paket.durasi_menit * qty, (paket.kadaluarsa_hari or 0) * qty)
-            sesi.waktu_tersimpan_awal += (paket.durasi_menit * qty)
+            sesi.member.tambah_waktu(total_menit, (paket.kadaluarsa_hari or 0) * qty)
+            sesi.waktu_tersimpan_awal += total_menit
             
             transaksi = Transaksi(
                 member_id=sesi.member.id, paket_id=paket.id, sesi_id=sesi.id,
-                jenis="tambah_waktu_sesi", jumlah=paket.harga * qty, menit=paket.durasi_menit * qty,
+                jenis="tambah_waktu_sesi", jumlah=total_harga, menit=total_menit,
                 keterangan=f"Tambah waktu member {sesi.member.username} x{qty}",
-                no_nota=TransaksiService.generate_nota(),
-                user_id=TransaksiService.get_user_id(operator),
+                no_nota=nota,
+                user_id=user_id,
                 metode_pembayaran=metode_pembayaran,
                 operator=operator
             )
             db.session.add(transaksi)
             db.session.commit()
             
-            detail_tambah = {
-                "tipe_tambahan": "waktu",
-                "nominal_transaksi": paket.harga * qty,
-                "metode_pembayaran": metode_pembayaran,
-                "waktu_ditambahkan": paket.durasi_menit * qty
-            }
-            write_log("TAMBAH_WAKTU", f"Member:{sesi.member.username} | +{paket.durasi_menit * qty}m", user=operator, detail_json=detail_tambah)
+            write_log("TAMBAH_WAKTU", f"Member:{sesi.member.username} | +{total_menit}m", user=operator, detail_json=detail_tambah)
             return {"tipe": "member", "waktu_tersimpan": sesi.member.waktu_tersimpan}
 
         elif sesi.tipe == "guest":
-            sesi.durasi_beli_menit += paket.durasi_menit * qty
-            sesi.total_bayar += paket.harga * qty
+            sesi.durasi_beli_menit += total_menit
+            sesi.total_bayar += total_harga
             
             transaksi = Transaksi(
                 sesi_id=sesi.id, paket_id=paket.id, jenis="tambah_waktu_guest",
-                jumlah=paket.harga * qty, menit=paket.durasi_menit * qty,
+                jumlah=total_harga, menit=total_menit,
                 keterangan=f"Tambah waktu guest {sesi.nama_guest} x{qty}",
-                no_nota=TransaksiService.generate_nota(),
-                user_id=TransaksiService.get_user_id(operator),
+                no_nota=nota,
+                user_id=user_id,
                 metode_pembayaran=metode_pembayaran,
                 operator=operator
             )
             db.session.add(transaksi)
             db.session.commit()
             
-            detail_tambah = {
-                "tipe_tambahan": "waktu",
-                "nominal_transaksi": paket.harga * qty,
-                "metode_pembayaran": metode_pembayaran,
-                "waktu_ditambahkan": paket.durasi_menit * qty
-            }
-            write_log("TAMBAH_WAKTU", f"Guest:{sesi.nama_guest} | +{paket.durasi_menit * qty}m", user=operator, detail_json=detail_tambah)
+            write_log("TAMBAH_WAKTU", f"Guest:{sesi.nama_guest} | +{total_menit}m", user=operator, detail_json=detail_tambah)
             return {"tipe": "guest", "sisa_menit": sesi.sisa_menit()}
 
     @staticmethod
@@ -313,27 +312,19 @@ class SesiService:
         
         # Tutup sesi lama secara manual (tanpa repo commit)
         if sesi.member_id:
-            all_sesi = SesiRepository.get_all_aktif_by_member(sesi.member_id)
-            for s in all_sesi:
-                s.status = "selesai"
-                s.selesai_pada = now_local()
-                s.is_afk = False
-                s.afk_pin = None
-                s.afk_sejak = None
+            sesi_list = SesiRepository.get_all_aktif_by_member(sesi.member_id)
         elif sesi.user_id:
-            all_sesi = Sesi.query.filter_by(user_id=sesi.user_id, status="aktif").all()
-            for s in all_sesi:
-                s.status = "selesai"
-                s.selesai_pada = now_local()
-                s.is_afk = False
-                s.afk_pin = None
-                s.afk_sejak = None
+            sesi_list = Sesi.query.filter_by(user_id=sesi.user_id, status="aktif").all()
         else:
-            sesi.status = "selesai"
-            sesi.selesai_pada = now_local()
-            sesi.is_afk = False
-            sesi.afk_pin = None
-            sesi.afk_sejak = None
+            sesi_list = [sesi]
+
+        now = now_local()
+        for s in sesi_list:
+            s.status = "selesai"
+            s.selesai_pada = now
+            s.is_afk = False
+            s.afk_pin = None
+            s.afk_sejak = None
 
         # Buat sesi baru di unit tujuan
         sesi_baru = Sesi(
