@@ -406,8 +406,12 @@
     <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/map_view.js') }}?v={{ v_cache }}"></script>
     <script
         src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_process_monitor.js') }}?v={{ v_cache }}"></script>
-    <script
-        src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_detail_modal.js') }}?v={{ v_cache }}"></script>
+    <!-- Dashboard Detail Modal (Modular Sub-modules + Unified Facade) -->
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/detail_modal/modal_core.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/detail_modal/modal_power.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/detail_modal/modal_remote.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/detail_modal/modal_hardware.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_detail_modal.js') }}?v={{ v_cache }}"></script>
     <script
         src="{{ url_for('static', filename='js/kasir/modules/server_monitor/server_monitor.js') }}?v={{ v_cache }}"></script>
     <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/index.js') }}?v={{ v_cache }}"></script>
@@ -440,6 +444,10 @@
         src="{{ url_for('static', filename='js/kasir/modules/laporan_maintenance/index.js') }}?v={{ v_cache }}"></script>
     <script src="{{ url_for('static', filename='js/kasir/modules/screenshot/index.js') }}?v={{ v_cache }}"></script>
     <script src="{{ url_for('static', filename='js/kasir/modules/blackout/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/branch/branch_core.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/branch/branch_crud.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/branch/branch_operators.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/branch/branch_inbound.js') }}?v={{ v_cache }}"></script>
     <script src="{{ url_for('static', filename='js/kasir/modules/branch/index.js') }}?v={{ v_cache }}"></script>
     <script src="{{ url_for('static', filename='js/kasir/modules/settings/index.js') }}?v={{ v_cache }}"></script>
     <script src="{{ url_for('static', filename='js/kasir/modules/tutorials/index.js') }}?v={{ v_cache }}"></script>
@@ -451,9 +459,14 @@
     <script src="{{ url_for('static', filename='js/kasir/modules/struk/index.js') }}?v={{ v_cache }}"></script>
 
     <!-- Shift Kasir & Serah Terima Handover -->
+    <script src="{{ url_for('static', filename='js/kasir/modules/shift/shift_core.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/shift/shift_history.js') }}?v={{ v_cache }}"></script>
     <script src="{{ url_for('static', filename='js/kasir/modules/shift/index.js') }}?v={{ v_cache }}"></script>
 
     <script src="{{ url_for('static', filename='js/kasir/modules/user/index.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/menu/menu_catalog.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/menu/menu_cart.js') }}?v={{ v_cache }}"></script>
+    <script src="{{ url_for('static', filename='js/kasir/modules/menu/menu_crud.js') }}?v={{ v_cache }}"></script>
     <script src="{{ url_for('static', filename='js/kasir/modules/menu/index.js') }}?v={{ v_cache }}"></script>
     <script src="{{ url_for('static', filename='js/kasir/modules/menu/stock_log.js') }}?v={{ v_cache }}"></script>
     <script src="{{ url_for('static', filename='js/kasir/modules/tournament/index.js') }}?v={{ v_cache }}"></script>

@@ -166,9 +166,11 @@ class VNCSession {
                 credentials: { password: this.options.password },
                 scaleViewport: this.scaleFactor,
                 clipViewport: false,
-                dragViewport: false,
-                showDotCursor: !isMobile
+                dragViewport: false
             });
+            try {
+                this.rfb.showDotCursor = !isMobile;
+            } catch (e) { }
             try {
                 this.rfb.background = 'transparent';
             } catch (e) { }

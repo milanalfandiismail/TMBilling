@@ -46,9 +46,15 @@ def test_vnc_clipboard_folder_guard_and_host_paste():
 
 def test_vnc_modal_toast_feedback():
     """Memastikan modal detail PC juga memberikan Toast feedback saat teks disalin dari remote PC."""
-    js_path = os.path.join("app", "static", "js", "kasir", "modules", "dashboard", "dashboard_detail_modal.js")
-    with open(js_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    js_paths = [
+        os.path.join("app", "static", "js", "kasir", "modules", "dashboard", "dashboard_detail_modal.js"),
+        os.path.join("app", "static", "js", "kasir", "modules", "dashboard", "detail_modal", "modal_remote.js"),
+    ]
+    content = ""
+    for p in js_paths:
+        if os.path.exists(p):
+            with open(p, "r", encoding="utf-8") as f:
+                content += f.read() + "\n"
 
     modal_clip_match = re.search(r"onClipboard:\s*\(text\)\s*=>\s*\{([\s\S]*?)\}", content)
     assert modal_clip_match is not None
