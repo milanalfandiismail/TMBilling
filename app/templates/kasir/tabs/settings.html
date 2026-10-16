@@ -3,193 +3,235 @@
     <!-- Settings Content Area -->
     <div class="w-full space-y-6">
 
-        <!-- ==================== SUB-TAB: GENERAL ==================== -->
         <!-- ==================== SUB-TAB: GENERAL (UMUM & KEAMANAN) ==================== -->
-        <div id="subtab-general" class="subtab-content space-y-6">
-            <!-- Card: Auto Shutdown -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Auto
-                    Shutdown</h3>
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div>
-                        <label for="shutdown-timer" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Timer
-                            shutdown (detik)</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Waktu tunggu sebelum PC mati saat tidak
-                            dipakai</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Minimal 30 detik, maksimal 600 detik</p>
-                    </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <input type="number" id="shutdown-timer"
-                            class="w-24 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 text-center focus:outline-none focus:border-neutral-500"
-                            value="180" step="10" min="30" max="600">
-                        <span class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-500 font-mono">dtk</span>
-                    </div>
-                </div>
-                <div class="flex justify-end mt-4">
-                    <button onclick="Settings.saveAutoShutdown()"
-                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan</button>
-                </div>
+        <div id="subtab-general" class="subtab-content">
+            <!-- Mobile Segmented Tab Switcher (< 768px) -->
+            <div class="flex md:hidden p-1 bg-[#080808] border border-[#1f1f1f] rounded-lg mb-2.5">
+                <button type="button" id="general-mobile-pill-operasional" onclick="Settings.switchGeneralMobileView('operasional')"
+                    class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm">
+                    <i class="fa-solid fa-sliders text-[11px]"></i>
+                    <span>Operasional</span>
+                </button>
+                <button type="button" id="general-mobile-pill-keamanan" onclick="Settings.switchGeneralMobileView('keamanan')"
+                    class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200">
+                    <i class="fa-solid fa-shield-halved text-[11px]"></i>
+                    <span>Keamanan</span>
+                </button>
             </div>
 
-            <!-- Card: Interval Polling & Telemetry PC Client -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-                <div class="flex items-center justify-between gap-2 mb-4">
-                    <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">
-                        Interval Polling & Telemetry PC Client
-                    </h3>
-                    <span class="px-2 py-0.5 rounded text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        Sinkronisasi Global
-                    </span>
-                </div>
-                <div>
-                    <label class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">
-                        Frekuensi Heartbeat & Sinkronisasi Client
-                    </label>
-                    <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">
-                        Pilih frekuensi detak sinkronisasi status billing, remote lock, dan pengiriman telemetry hardware dari seluruh PC Client ke Server.
-                    </p>
-                    <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">
-                        Opsi dibatasi 1s, 5s, atau 10s untuk mencegah celah manipulasi waktu (exploit bonus waktu) dan menjaga efisiensi jaringan.
-                    </p>
-                </div>
-
-                <!-- 3 Preset Pill Selector Buttons -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-                    <!-- Option 1s -->
-                    <button type="button" onclick="Settings.selectPollingInterval(1)" id="polling-interval-btn-1"
-                        class="polling-interval-btn relative flex flex-col items-start p-3 lg:max-xl:p-3.5 xl:p-4 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
-                        <div class="flex items-center justify-between w-full">
-                            <span class="text-xs lg:max-xl:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider">
-                                ⚡ 1 Detik
-                            </span>
-                            <span class="w-2 h-2 lg:max-xl:w-2 xl:w-2.5 2xl:w-2.5 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
+            <!-- Responsive 2-Column Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 xl:gap-3.5">
+                <!-- Kolom Kiri: Operasional Sistem -->
+                <div id="general-col-operasional" class="space-y-2.5 md:block">
+                    <!-- Card 1: Auto Shutdown -->
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-clock text-neutral-400 text-xs"></i>
+                                <span>Auto Shutdown</span>
+                            </h3>
+                            <span class="text-[9px] text-neutral-500 font-mono">Min 30s • Max 600s</span>
                         </div>
-                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans group-hover:text-neutral-400">
-                            Super responsif / Realtime tinggi
-                        </span>
-                    </button>
-
-                    <!-- Option 5s (Default / Recommended) -->
-                    <button type="button" onclick="Settings.selectPollingInterval(5)" id="polling-interval-btn-5"
-                        class="polling-interval-btn relative flex flex-col items-start p-3 lg:max-xl:p-3.5 xl:p-4 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
-                        <div class="flex items-center justify-between w-full">
-                            <span class="text-xs lg:max-xl:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider">
-                                🛡️ 5 Detik
-                            </span>
-                            <span class="w-2 h-2 lg:max-xl:w-2 xl:w-2.5 2xl:w-2.5 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                            <div class="min-w-0 flex-1">
+                                <label for="shutdown-timer" class="text-[11px] lg:max-xl:text-xs xl:text-xs text-neutral-300 font-medium block">
+                                    Waktu Tunggu PC Idle (Detik)
+                                </label>
+                                <p class="text-[9px] lg:max-xl:text-[10px] xl:text-[11px] text-neutral-500 mt-0.5 truncate">
+                                    Shutdown otomatis saat PC client tidak aktif / login
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <div class="flex items-center gap-1 bg-[#050505] border border-[#1c1c1c] rounded px-2 py-1.5">
+                                    <input type="number" id="shutdown-timer"
+                                        class="w-16 bg-transparent text-xs text-neutral-200 text-center focus:outline-none font-mono"
+                                        value="180" step="10" min="30" max="600">
+                                    <span class="text-[10px] text-neutral-500 font-mono">dtk</span>
+                                </div>
+                                <button type="button" onclick="Settings.saveAutoShutdown()"
+                                    class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px]"></i>
+                                    <span>Simpan</span>
+                                </button>
+                            </div>
                         </div>
-                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans group-hover:text-neutral-400">
-                            Standar & Rekomendasi Warnet
-                        </span>
-                    </button>
+                    </div>
 
-                    <!-- Option 10s -->
-                    <button type="button" onclick="Settings.selectPollingInterval(10)" id="polling-interval-btn-10"
-                        class="polling-interval-btn relative flex flex-col items-start p-3 lg:max-xl:p-3.5 xl:p-4 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
-                        <div class="flex items-center justify-between w-full">
-                            <span class="text-xs lg:max-xl:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider">
-                                🍃 10 Detik
+                    <!-- Card 2: Interval Polling & Telemetry PC Client -->
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-bolt text-emerald-400 text-xs"></i>
+                                <span>Interval Polling &amp; Telemetry</span>
+                            </h3>
+                            <span class="px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Auto-Save
                             </span>
-                            <span class="w-2 h-2 lg:max-xl:w-2 xl:w-2.5 2xl:w-2.5 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
                         </div>
-                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans group-hover:text-neutral-400">
-                            Hemat Resource / Jaringan Ramai
-                        </span>
-                    </button>
-                </div>
-
-                <div class="flex justify-end mt-4">
-                    <button onclick="Settings.saveClientPollingInterval()"
-                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">
-                        Simpan
-                    </button>
-                </div>
-            </div>
-
-            <!-- Card: Uninstall Token Client -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Uninstall
-                    Token Client</h3>
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div>
-                        <label for="uninstall-token-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Token
-                            Keamanan Uninstall</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Token dinamis untuk mematikan proteksi
-                            client secara aman
-                            demi maintenance tanpa memicu BSOD.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Maksimal 64 karakter</p>
-                    </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <input type="text" id="uninstall-token-input"
-                            class="w-full sm:w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
-                            placeholder="Contoh: TM_UNINSTALL_SAFE_2026">
-                    </div>
-                </div>
-                <div class="flex justify-end mt-4">
-                    <button onclick="Settings.saveUninstallToken()"
-                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan</button>
-                </div>
-            </div>
-
-            <!-- Card: API Key System -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">API Key
-                    System</h3>
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div>
-                        <label for="client-apikey-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Client API
-                            Key</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">API Key global yang digunakan oleh
-                            klien untuk terhubung
-                            secara aman dengan server.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Minimal 4 karakter, maksimal 128 karakter</p>
-                    </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <input type="text" id="client-apikey-input"
-                            class="w-full sm:w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
-                            placeholder="Contoh: TM2026QWERTY-api-key">
-                    </div>
-                </div>
-                <!-- Highlighted Security Warning Box -->
-                <div class="mt-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded flex items-start gap-3">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-400 text-base mt-0.5 shrink-0"></i>
-                    <div class="space-y-0.5">
-                        <p class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-amber-300 uppercase tracking-wider">
-                            Peringatan Keamanan Kunci Rahasia
+                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-[11px] text-neutral-400">
+                            Frekuensi detak sinkronisasi billing, remote lock &amp; telemetry client:
                         </p>
-                        <p class="text-[11px] lg:max-xl:text-[11px] xl:text-xs text-amber-200/80 leading-relaxed">
-                            Kunci ini digunakan untuk otentikasi koneksi antar sistem dan klien. <strong class="text-amber-300 font-semibold">Jangan pernah menyebarkan kunci ini kepada pihak yang tidak dikenal atau tidak dipercaya!</strong>
-                        </p>
-                    </div>
-                </div>
-                <div class="flex justify-end mt-4">
-                    <button onclick="Settings.saveClientApiKey()"
-                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan
-                        API Key</button>
-                </div>
-            </div>
+                        <!-- 3 Preset Pill Selector Buttons -->
+                        <div class="grid grid-cols-3 gap-1.5 sm:gap-2 mt-2">
+                            <!-- Option 1s -->
+                            <button type="button" onclick="Settings.selectPollingInterval(1, true)" id="polling-interval-btn-1"
+                                class="polling-interval-btn relative flex flex-col items-start p-2 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
+                                <div class="flex items-center justify-between w-full">
+                                    <span class="text-[11px] sm:text-xs font-bold text-neutral-200 flex items-center gap-1 tracking-wider uppercase">
+                                        ⚡ 1s
+                                    </span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
+                                </div>
+                                <span class="text-[8px] sm:text-[9px] text-neutral-500 mt-0.5 group-hover:text-neutral-400 truncate w-full">
+                                    Realtime
+                                </span>
+                            </button>
 
-            <!-- Card: Timezone -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">🌐 Zona
-                    Waktu (Timezone)</h3>
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div>
-                        <label for="timezone-select" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Timezone
-                            Display</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Semua waktu di dashboard &amp; laporan akan
-                            ditampilkan dalam zona waktu ini</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Pilih zona waktu standar (WIB/WITA/WIT/UTC)</p>
+                            <!-- Option 5s (Default / Recommended) -->
+                            <button type="button" onclick="Settings.selectPollingInterval(5, true)" id="polling-interval-btn-5"
+                                class="polling-interval-btn relative flex flex-col items-start p-2 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
+                                <div class="flex items-center justify-between w-full">
+                                    <span class="text-[11px] sm:text-xs font-bold text-neutral-200 flex items-center gap-1 tracking-wider uppercase">
+                                        🛡️ 5s
+                                    </span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
+                                </div>
+                                <span class="text-[8px] sm:text-[9px] text-neutral-500 mt-0.5 group-hover:text-neutral-400 truncate w-full">
+                                    Standar
+                                </span>
+                            </button>
+
+                            <!-- Option 10s -->
+                            <button type="button" onclick="Settings.selectPollingInterval(10, true)" id="polling-interval-btn-10"
+                                class="polling-interval-btn relative flex flex-col items-start p-2 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
+                                <div class="flex items-center justify-between w-full">
+                                    <span class="text-[11px] sm:text-xs font-bold text-neutral-200 flex items-center gap-1 tracking-wider uppercase">
+                                        🍃 10s
+                                    </span>
+                                    <span class="w-1.5 h-1.5 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
+                                </div>
+                                <span class="text-[8px] sm:text-[9px] text-neutral-500 mt-0.5 group-hover:text-neutral-400 truncate w-full">
+                                    Hemat
+                                </span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <select id="timezone-select"
-                            class="w-full sm:w-80 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
-                        </select>
+
+                    <!-- Card 3: Timezone -->
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <span>🌐 Zona Waktu (Timezone)</span>
+                            </h3>
+                            <span class="text-[9px] text-neutral-500 font-mono">WIB / WITA / WIT / UTC</span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                            <div class="min-w-0 flex-1">
+                                <label for="timezone-select" class="text-[11px] lg:max-xl:text-xs xl:text-xs text-neutral-300 font-medium block">
+                                    Format Waktu Laporan &amp; Billing
+                                </label>
+                                <p class="text-[9px] lg:max-xl:text-[10px] xl:text-[11px] text-neutral-500 mt-0.5 truncate">
+                                    Zona display pada log sesi dan struk pembayaran
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <select id="timezone-select"
+                                    class="w-36 sm:w-44 px-2 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500">
+                                </select>
+                                <button type="button" onclick="Settings.saveTimezone()"
+                                    class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px]"></i>
+                                    <span>Simpan</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="flex justify-end mt-4">
-                    <button onclick="Settings.saveTimezone()"
-                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan</button>
+
+                <!-- Kolom Kanan: Kredensial & Keamanan -->
+                <div id="general-col-keamanan" class="space-y-2.5 md:block hidden">
+                    <!-- Card 4: Uninstall Token Client -->
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-shield-halved text-neutral-400 text-xs"></i>
+                                <span>Uninstall Token Client</span>
+                            </h3>
+                            <span class="text-[9px] text-neutral-500 font-mono">Max 64 char</span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                            <div class="min-w-0 flex-1">
+                                <label for="uninstall-token-input" class="text-[11px] lg:max-xl:text-xs xl:text-xs text-neutral-300 font-medium block">
+                                    Token Keamanan Uninstall Client
+                                </label>
+                                <p class="text-[9px] lg:max-xl:text-[10px] xl:text-[11px] text-neutral-500 mt-0.5 truncate">
+                                    Matikan proteksi client saat maintenance tanpa BSOD
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <input type="text" id="uninstall-token-input"
+                                    class="w-40 sm:w-48 px-2.5 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
+                                    placeholder="TM_UNINSTALL_SAFE">
+                                <button type="button" onclick="Settings.saveUninstallToken()"
+                                    class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px]"></i>
+                                    <span>Simpan</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 5: API Key System -->
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-key text-amber-400 text-xs"></i>
+                                <span>Client API Key System</span>
+                            </h3>
+                            <span class="px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                Kunci Global
+                            </span>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                                <label for="client-apikey-input" class="text-[11px] lg:max-xl:text-xs xl:text-xs text-neutral-300 font-medium block">
+                                    Otentikasi Klien ke Server (4 - 128 Karakter)
+                                </label>
+                                <span class="text-[9px] text-neutral-500 font-sans">Tersimpan di .env</span>
+                            </div>
+                            <!-- Input with Eye Toggle, Copy, and Save -->
+                            <div class="flex items-center gap-1.5">
+                                <div class="relative flex-1">
+                                    <input type="password" id="client-apikey-input"
+                                        class="w-full pl-2.5 pr-8 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono tracking-wider"
+                                        placeholder="TM2026QWERTY-api-key">
+                                    <button type="button" id="btn-toggle-apikey-eye" onclick="Settings.toggleApiKeyVisibility()"
+                                        title="Tampilkan / Sembunyikan API Key"
+                                        class="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 p-0.5 transition-colors">
+                                        <i class="fa-solid fa-eye text-xs"></i>
+                                    </button>
+                                </div>
+                                <button type="button" id="btn-copy-apikey" onclick="Settings.copyClientApiKey()"
+                                    title="Salin API Key ke Clipboard"
+                                    class="p-2 sm:px-2.5 sm:py-1.5 bg-[#141414] hover:bg-[#202020] border border-[#252525] hover:border-neutral-500 text-neutral-300 text-xs font-medium rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95">
+                                    <i class="fa-solid fa-copy text-xs"></i>
+                                    <span class="hidden sm:inline">Salin</span>
+                                </button>
+                                <button type="button" onclick="Settings.saveClientApiKey()"
+                                    class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px]"></i>
+                                    <span>Simpan</span>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Micro-Notice 1-baris -->
+                        <div class="mt-2.5 px-2.5 py-1.5 bg-amber-500/10 border border-amber-500/25 rounded flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-xs shrink-0"></i>
+                            <p class="text-[10px] lg:max-xl:text-[11px] xl:text-xs text-amber-200/90 leading-tight truncate">
+                                <strong class="text-amber-300 font-semibold">Rahasia:</strong> Jangan berikan kunci ini kepada pihak yang tidak dikenal atau tidak dipercaya.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

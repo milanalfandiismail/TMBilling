@@ -84,7 +84,73 @@ const SettingsGeneral = {
         }
     },
 
-    selectPollingInterval(val) {
+    switchGeneralMobileView(view) {
+        const colOp = document.getElementById('general-col-operasional');
+        const colSec = document.getElementById('general-col-keamanan');
+        const pillOp = document.getElementById('general-mobile-pill-operasional');
+        const pillSec = document.getElementById('general-mobile-pill-keamanan');
+
+        if (!colOp || !colSec) return;
+
+        if (view === 'keamanan') {
+            colOp.classList.add('hidden');
+            colSec.classList.remove('hidden');
+
+            if (pillOp && pillSec) {
+                pillOp.className = 'flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200';
+                pillSec.className = 'flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm';
+            }
+        } else {
+            colOp.classList.remove('hidden');
+            colSec.classList.add('hidden');
+
+            if (pillOp && pillSec) {
+                pillOp.className = 'flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm';
+                pillSec.className = 'flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200';
+            }
+        }
+    },
+
+    toggleApiKeyVisibility() {
+        const input = document.getElementById('client-apikey-input');
+        const icon = document.querySelector('#btn-toggle-apikey-eye i');
+        if (!input) return;
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            if (icon) {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        } else {
+            input.type = 'password';
+            if (icon) {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    },
+
+    async copyClientApiKey() {
+        const input = document.getElementById('client-apikey-input');
+        if (!input || !input.value) {
+            Toast.error('API Key kosong, tidak ada yang dapat disalin');
+            return;
+        }
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(input.value);
+            } else {
+                input.select();
+                document.execCommand('copy');
+            }
+            Toast.success('API Key berhasil disalin ke clipboard');
+        } catch (err) {
+            Toast.error('Gagal menyalin API Key: ' + err.message);
+        }
+    },
+
+    selectPollingInterval(val, autoSave = false) {
         val = parseInt(val, 10);
         if (![1, 5, 10].includes(val)) {
             val = 5;
@@ -110,6 +176,10 @@ const SettingsGeneral = {
                 }
             }
         });
+
+        if (autoSave === true) {
+            this.saveClientPollingInterval();
+        }
     },
 
     async saveClientPollingInterval() {
