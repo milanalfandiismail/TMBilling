@@ -10,7 +10,7 @@ from app.services.sesi.sesi_service import SesiService
 from app.services.pc.pc_service import PCService
 from app.repositories import TransaksiRepository, MenuRepository
 from app.utils.logger import write_log
-from app.models import now_local
+from app.models import now_local, Sesi, db
 
 
 class DashboardService:
@@ -47,8 +47,39 @@ class DashboardService:
         grup_meta = {}
         now = now_local()
 
+        # Batch fetch sesi aktif dalam 1 query tunggal (eliminasi N+1)
+        active_sessions = Sesi.query.filter_by(status='aktif').order_by(db.text('id DESC')).all()
+        sesi_map = {}
+        for s in active_sessions:
+            if s.pc_id not in sesi_map:
+                sesi_map[s.pc_id] = s
+
+        # Scan direktori screenshot sekali saja per siklus (eliminasi disk I/O per PC)
+        import os
+        from flask import current_app
+        from datetime import datetime, timezone
+        from app.utils.timezone_utils import format_display
+
+        screenshots_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots')
+        screenshot_map = {}
+        if os.path.isdir(screenshots_dir):
+            try:
+                for entry in os.scandir(screenshots_dir):
+                    if entry.is_file() and entry.name.endswith('.png'):
+                        pc_code = entry.name[:-4]
+                        mtime = entry.stat().st_mtime
+                        dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
+                        screenshot_map[pc_code] = {
+                            'has_screenshot': True,
+                            'screenshot_time': format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
+                        }
+            except Exception:
+                pass
+
         for pc in pcs:
-            pc_dict = pc.to_dict()
+            sesi_aktif = sesi_map.get(pc.id)
+            sc_info = screenshot_map.get(pc.kode)
+            pc_dict = pc.to_dict(sesi=sesi_aktif, screenshot_info=sc_info)
             
             # Status Admin & System diambil dari DB / to_dict
             pc_dict['is_admin'] = pc_dict.get('is_admin_mode', False)
@@ -64,7 +95,7 @@ class DashboardService:
                     status_koneksi = "online"
                 else:
                     # Jika koneksi hilang tapi sedang ada sesi aktif / mode admin -> Oranye (Warning)
-                    if pc.sesi_aktif or pc.is_admin_mode:
+                    if sesi_aktif or pc.is_admin_mode:
                         status_koneksi = "no_heartbeat"
             pc_dict['online'] = online
             pc_dict['status_koneksi'] = status_koneksi
@@ -76,7 +107,6 @@ class DashboardService:
             pc_dict['hardware_mismatch_desc'] = pc.hardware.hardware_mismatch_desc if pc.hardware else None
             
             # D. Detail Sesi Aktif (Mapping data sesi ke dalam dict PC)
-            sesi_aktif = pc.sesi_aktif
             if sesi_aktif:
                 pc_dict['sesi_detail'] = sesi_aktif.to_dict()
                 # Status sudah ditentukan di pc.to_dict() (terpakai/blackout)

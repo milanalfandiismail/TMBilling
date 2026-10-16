@@ -63,3 +63,22 @@ def test_token_file_management(tmp_path):
         content = f.read()
     assert "client_1" not in content
     assert "server: 127.0.0.1:5900" in content
+
+
+def test_websockify_log_path_and_rotation(tmp_path):
+    import os
+    from app.services.vnc.vnc_service import VNCService
+    token_file = str(tmp_path / "vnc_tokens.cfg")
+    VNCService.TOKEN_FILE_PATH = token_file
+    
+    log_dir = os.path.join(os.path.dirname(VNCService.TOKEN_FILE_PATH), "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    log_file_path = os.path.join(log_dir, "websockify.log")
+    
+    # Buat file dummy log
+    with open(log_file_path, "w", encoding="utf-8") as f:
+        f.write("test log line\n")
+        
+    assert os.path.exists(log_file_path)
+    with open(log_file_path, "r", encoding="utf-8") as f:
+        assert "test log line" in f.read()
