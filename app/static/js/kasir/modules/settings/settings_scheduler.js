@@ -2,33 +2,123 @@
 /**
  * Sub-modul SettingsScheduler untuk pengaturan Auto-Scheduler PC & Server:
  * jadwal backup otomatis, pembersihan log (cleanup), dan screenshot berkala.
+ * Responsif, zero-page-reload, dengan quick preset pills & live dynamic preview.
  */
 
 const SettingsScheduler = {
+    _capitalize(str) {
+        if (!str) return '';
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    },
+
+    _highlightPills(containerId, activeVal, activeUnit) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const pills = container.querySelectorAll('button');
+        pills.forEach(pill => {
+            const pVal = pill.getAttribute('data-val');
+            const pUnit = pill.getAttribute('data-unit');
+            const isActive = String(pVal) === String(activeVal) && String(pUnit) === String(activeUnit);
+
+            if (isActive) {
+                pill.className = pill.className
+                    .replace(/bg-\[#141414\]/g, '')
+                    .replace(/text-neutral-400/g, '')
+                    .replace(/border-\[#222\]/g, '')
+                    .replace(/hover:bg-\[#1a1a1a\]/g, '')
+                    .trim();
+                if (!pill.classList.contains('bg-white')) {
+                    pill.classList.add('bg-white', 'text-black', 'border-white', 'font-bold');
+                }
+            } else {
+                pill.classList.remove('bg-white', 'text-black', 'border-white', 'font-bold');
+                if (!pill.classList.contains('text-neutral-400')) {
+                    pill.classList.add('bg-[#141414]', 'text-neutral-400', 'border-[#222]', 'hover:bg-[#1a1a1a]', 'font-medium');
+                }
+            }
+        });
+    },
+
+    setBackupPreset(val, unit) {
+        const vInput = document.getElementById('scheduler-backup-value');
+        const uInput = document.getElementById('scheduler-backup-unit');
+        if (vInput) vInput.value = val;
+        if (uInput) uInput.value = unit;
+        this._updateSchedulerPreview();
+    },
+
+    setCleanupPreset(val, unit) {
+        const vInput = document.getElementById('scheduler-cleanup-value');
+        const uInput = document.getElementById('scheduler-cleanup-unit');
+        if (vInput) vInput.value = val;
+        if (uInput) uInput.value = unit;
+        this._updateSchedulerPreview();
+    },
+
+    setScreenshotPreset(val, unit) {
+        const vInput = document.getElementById('scheduler-screenshot-value');
+        const uInput = document.getElementById('scheduler-screenshot-unit');
+        if (vInput) vInput.value = val;
+        if (uInput) uInput.value = unit;
+        this._updateSchedulerPreview();
+    },
+
     _updateSchedulerPreview() {
-        const bVal = document.getElementById('scheduler-backup-value')?.value || '60';
-        const bUnit = document.getElementById('scheduler-backup-unit')?.value || 'menit';
+        const bVal = document.getElementById('scheduler-backup-value')?.value || '1';
+        const bUnit = document.getElementById('scheduler-backup-unit')?.value || 'hari';
         const cVal = document.getElementById('scheduler-cleanup-value')?.value || '30';
         const cUnit = document.getElementById('scheduler-cleanup-unit')?.value || 'hari';
-        const sEnabled = document.getElementById('scheduler-screenshot-enabled')?.checked || false;
+        const sEnabled = !!document.getElementById('scheduler-screenshot-enabled')?.checked;
         const sVal = document.getElementById('scheduler-screenshot-value')?.value || '60';
         const sUnit = document.getElementById('scheduler-screenshot-unit')?.value || 'detik';
 
-        document.getElementById('scheduler-backup-preview').innerHTML = `Backup otomatis setiap <strong class="text-neutral-300">${bVal} ${bUnit}</strong>`;
-        document.getElementById('scheduler-cleanup-preview').innerHTML = `Hapus log lebih dari <strong class="text-neutral-300">${cVal} ${cUnit}</strong>`;
+        // Update Text Previews
+        const bPrev = document.getElementById('scheduler-backup-preview');
+        if (bPrev) {
+            bPrev.innerHTML = `Backup otomatis setiap <strong class="text-neutral-200">${bVal} ${this._capitalize(bUnit)}</strong>.`;
+        }
 
-        const previewEl = document.getElementById('scheduler-screenshot-preview');
-        if (previewEl) {
+        const cPrev = document.getElementById('scheduler-cleanup-preview');
+        if (cPrev) {
+            cPrev.innerHTML = `Hapus log lebih dari <strong class="text-neutral-200">${cVal} ${this._capitalize(cUnit)}</strong>.`;
+        }
+
+        // Toggle Screenshot Status & Controls
+        const sStatus = document.getElementById('scheduler-screenshot-status');
+        if (sStatus) {
+            sStatus.textContent = sEnabled ? 'Aktif' : 'Nonaktif';
+            sStatus.className = sEnabled 
+                ? 'ml-1.5 text-[9px] font-semibold text-emerald-400' 
+                : 'ml-1.5 text-[9px] font-semibold text-neutral-500';
+        }
+
+        const sValEl = document.getElementById('scheduler-screenshot-value');
+        const sUnitEl = document.getElementById('scheduler-screenshot-unit');
+        if (sValEl) sValEl.disabled = !sEnabled;
+        if (sUnitEl) sUnitEl.disabled = !sEnabled;
+
+        const sCfg = document.getElementById('scheduler-screenshot-config');
+        if (sCfg) {
             if (sEnabled) {
-                previewEl.innerHTML = `Screenshot otomatis setiap <strong class="text-neutral-300">${sVal} ${sUnit}</strong>`;
-                previewEl.classList.remove('text-neutral-500');
-                previewEl.classList.add('text-green-500');
+                sCfg.classList.remove('opacity-50', 'pointer-events-none');
             } else {
-                previewEl.innerHTML = `Screenshot otomatis setiap <strong class="text-neutral-300">${sVal} ${sUnit}</strong> (Nonaktif)`;
-                previewEl.classList.remove('text-green-500');
-                previewEl.classList.add('text-neutral-500');
+                sCfg.classList.add('opacity-50', 'pointer-events-none');
             }
         }
+
+        const sPrev = document.getElementById('scheduler-screenshot-preview');
+        if (sPrev) {
+            if (sEnabled) {
+                sPrev.innerHTML = `Screenshot otomatis setiap <strong class="text-neutral-200">${sVal} ${this._capitalize(sUnit)}</strong>.`;
+            } else {
+                sPrev.innerHTML = `Screenshot otomatis setiap <strong class="text-neutral-200">${sVal} ${this._capitalize(sUnit)}</strong> <span class="text-neutral-500">(Nonaktif)</span>.`;
+            }
+        }
+
+        // Highlight preset pills
+        this._highlightPills('scheduler-backup-pills', bVal, bUnit);
+        this._highlightPills('scheduler-cleanup-pills', cVal, cUnit);
+        this._highlightPills('scheduler-screenshot-pills', sVal, sUnit);
     },
 
     async saveSchedulerConfig() {
@@ -40,12 +130,25 @@ const SettingsScheduler = {
         const screenshotValue = document.getElementById('scheduler-screenshot-value')?.value;
         const screenshotUnit = document.getElementById('scheduler-screenshot-unit')?.value;
 
-        if (!backupValue || !cleanupValue || !screenshotValue) {
-            Toast.error('Semua field wajib diisi');
+        if (!backupValue || parseInt(backupValue) < 1 || !cleanupValue || parseInt(cleanupValue) < 1 || !screenshotValue || parseInt(screenshotValue) < 1) {
+            if (typeof Toast !== 'undefined') {
+                Toast.error('Semua nilai interval harus berupa angka positif.');
+            } else {
+                alert('Semua nilai interval harus berupa angka positif.');
+            }
             return;
         }
 
-        Toast.success('Menyimpan konfigurasi scheduler...');
+        const btn = document.getElementById('btn-save-scheduler');
+        const origContent = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="w-4 h-4 animate-spin text-black" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg><span>Menyimpan...</span>`;
+        }
+
         try {
             const res = await API.request('/api/v1/kasir/settings/scheduler', {
                 method: 'PUT',
@@ -60,36 +163,50 @@ const SettingsScheduler = {
                 })
             });
 
-            if (res.success) {
-                Toast.success('Konfigurasi disimpan! Merestart aplikasi...');
-
-                // Tampilkan overlay loading
-                const overlay = document.createElement('div');
-                overlay.id = 'scheduler-restart-overlay';
-                overlay.className = 'fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center';
-                overlay.innerHTML = `<div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-8 text-center max-w-sm">
-                    <div class="text-4xl mb-4 animate-pulse">🔄</div>
-                    <h3 class="text-lg font-bold text-neutral-200 mb-2">Menerapkan Perubahan</h3>
-                    <p class="text-sm text-neutral-400">Server restart, halaman akan dimuat ulang...</p>
-                </div>`;
-                document.body.appendChild(overlay);
-
-                // Trigger restart endpoint — error koneksi diharapkan karena server mati
+            if (res && res.success) {
+                // Trigger background scheduler restart silently
                 try {
                     await API.request('/api/v1/kasir/settings/scheduler/restart', { method: 'POST' });
                 } catch (_) {
-                    // Expected — server restart memutus koneksi
+                    // Ignored: Server restart will briefly disrupt socket or HTTP connection
                 }
 
-                // Reload page setelah jeda biar server baru sempat start
-                setTimeout(() => window.location.reload(), 3000);
-                return;
+                if (typeof Toast !== 'undefined') {
+                    Toast.success('Konfigurasi penjadwalan otomatis berhasil disimpan & diterapkan!');
+                }
+            } else {
+                throw new Error(res?.message || 'Gagal menyimpan konfigurasi scheduler');
             }
         } catch (err) {
-            Toast.error('Gagal menyimpan scheduler: ' + err.message);
+            if (typeof Toast !== 'undefined') {
+                Toast.error('Gagal menyimpan scheduler: ' + (err.message || err));
+            } else {
+                alert('Gagal menyimpan scheduler: ' + (err.message || err));
+            }
+        } finally {
+            if (btn) {
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = origContent;
+                }, 600);
+            }
         }
-    },
-
+    }
 };
+
+// Bind input & change events for real-time reactivity
+document.addEventListener('DOMContentLoaded', () => {
+    ['scheduler-backup-value', 'scheduler-backup-unit', 'scheduler-cleanup-value', 'scheduler-cleanup-unit', 'scheduler-screenshot-enabled', 'scheduler-screenshot-value', 'scheduler-screenshot-unit'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', () => {
+                if (window.SettingsScheduler) window.SettingsScheduler._updateSchedulerPreview();
+            });
+            el.addEventListener('change', () => {
+                if (window.SettingsScheduler) window.SettingsScheduler._updateSchedulerPreview();
+            });
+        }
+    });
+});
 
 window.SettingsScheduler = SettingsScheduler;

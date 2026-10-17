@@ -9,13 +9,85 @@ untuk mengembalikan kapasitas disk secara fisik ke sistem operasi.
 
 import os
 import shutil
-from datetime import timedelta
+from datetime import timedelta, datetime
 from sqlalchemy import text
 from app.models import db, now_local
 
 
 class DBMaintenanceService:
     """Service pemeliharaan database SQLite dan pembersihan data histori."""
+
+    @staticmethod
+    def _format_size(bytes_val: float) -> str:
+        for unit in ["B", "KB", "MB", "GB"]:
+            if bytes_val < 1024.0:
+                return f"{bytes_val:.2f} {unit}"
+            bytes_val /= 1024.0
+        return f"{bytes_val:.2f} TB"
+
+    @classmethod
+    def get_database_stats(cls) -> dict:
+        """Mengambil ukuran fisik database SQLite dan ringkasan total baris data operasional."""
+        db_uri = db.engine.url.database or "warnet.db"
+        if not os.path.isabs(db_uri):
+            db_path = os.path.join(os.getcwd(), db_uri)
+            if not os.path.exists(db_path) and os.path.exists(os.path.join(os.getcwd(), "instance", db_uri)):
+                db_path = os.path.join(os.getcwd(), "instance", db_uri)
+        else:
+            db_path = db_uri
+
+        db_size_bytes = os.path.getsize(db_path) if os.path.exists(db_path) else 0
+
+        tables_to_count = [
+            ("pc_process", "SELECT COUNT(*) FROM pc_process"),
+            ("pc_uptime_log", "SELECT COUNT(*) FROM pc_uptime_log"),
+            ("maintenance_ticket", "SELECT COUNT(*) FROM maintenance_ticket"),
+            ("transaksi_menu", "SELECT COUNT(*) FROM transaksi_menu"),
+            ("transaksi", "SELECT COUNT(*) FROM transaksi"),
+            ("sesi", "SELECT COUNT(*) FROM sesi"),
+            ("shift_record", "SELECT COUNT(*) FROM shift_record"),
+        ]
+
+        history_counts = {}
+        total_history_rows = 0
+        for key, query in tables_to_count:
+            try:
+                cnt = db.session.execute(text(query)).scalar() or 0
+                history_counts[key] = cnt
+                total_history_rows += cnt
+            except Exception:
+                history_counts[key] = 0
+
+        archive_dir = os.path.join(os.getcwd(), "backups", "archive")
+        last_archive = None
+        if os.path.exists(archive_dir):
+            files = [
+                f for f in os.listdir(archive_dir)
+                if f.startswith("warnet_pre_purge_") and f.endswith(".db")
+            ]
+            if files:
+                files.sort(reverse=True)
+                latest_file = files[0]
+                latest_path = os.path.join(archive_dir, latest_file)
+                mtime = os.path.getmtime(latest_path)
+                mtime_dt = datetime.fromtimestamp(mtime)
+                last_archive = {
+                    "filename": latest_file,
+                    "date": f"{mtime_dt.day:02d}/{mtime_dt.month:02d}/{mtime_dt.year} {mtime_dt.hour:02d}:{mtime_dt.minute:02d}",
+                    "size_human": cls._format_size(os.path.getsize(latest_path)),
+                }
+
+        status = "warning" if db_size_bytes > 50 * 1024 * 1024 or total_history_rows > 50000 else "optimal"
+
+        return {
+            "db_path": db_path,
+            "db_size_bytes": db_size_bytes,
+            "db_size_human": cls._format_size(db_size_bytes),
+            "total_history_rows": total_history_rows,
+            "history_breakdown": history_counts,
+            "last_archive": last_archive,
+            "status": status,
+        }
 
     @staticmethod
     def purge_and_vacuum(retention_months: int) -> dict:
