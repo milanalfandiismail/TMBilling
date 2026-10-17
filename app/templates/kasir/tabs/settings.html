@@ -700,34 +700,34 @@
 
         <!-- ==================== SUB-TAB: AUTO SCHEDULER ==================== -->
         <!-- Subtab: Penjadwalan Otomatis (Auto Scheduler) -->
-        <div id="subtab-scheduler" class="subtab-content hidden space-y-2 sm:space-y-3 lg:space-y-4">
-            <!-- Header Banner Compact -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3.5 lg:p-4">
+        <div id="subtab-scheduler" class="subtab-content hidden space-y-2 sm:space-y-2.5 lg:space-y-3">
+            <!-- Header Banner Compact (Zero-Truncate) -->
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 lg:p-3.5">
                 <div class="flex items-center justify-between gap-2.5 sm:gap-3">
                     <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                        <div class="w-7 h-7 sm:w-9 sm:h-9 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
                             <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
                         <div class="min-w-0">
                             <div class="flex items-center gap-2">
-                                <h3 class="text-[11px] sm:text-sm font-bold text-neutral-200 uppercase tracking-wider whitespace-nowrap">
+                                <h3 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider whitespace-nowrap">
                                     Penjadwalan Otomatis
                                 </h3>
-                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 shrink-0">
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                    <span class="hidden sm:inline">Scheduler </span>Aktif
+                                    <span class="hidden sm:inline">SCHEDULER </span>AKTIF
                                 </span>
                             </div>
-                            <p class="text-[9px] sm:text-xs text-neutral-400 mt-0.5 truncate">
+                            <p class="text-[10px] sm:text-[11px] text-neutral-400 mt-0.5 leading-tight">
                                 Eksekusi tugas latar belakang otomatis (Backup database, pembersihan log, &amp; screenshot client).
                             </p>
                         </div>
                     </div>
 
                     <button type="button" id="btn-save-scheduler" onclick="Settings.saveSchedulerConfig()"
-                        class="px-3 sm:px-4 py-1.5 sm:py-2 bg-neutral-100 hover:bg-white text-black text-[11px] sm:text-xs font-bold rounded transition-colors whitespace-nowrap flex items-center justify-center gap-1.5 sm:gap-2 shadow-sm shrink-0">
+                        class="px-3 sm:px-3.5 py-1.5 sm:py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-[0.98] shrink-0">
                         <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
                         </svg>
@@ -736,24 +736,50 @@
                 </div>
             </div>
 
-            <!-- 3-Column Compact Grid Tasks -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 lg:gap-3">
+            <!-- Mobile Segmented Tab Switcher (< 768px) -->
+            <div class="flex md:hidden p-1 bg-[#080808] border border-[#1f1f1f] rounded-lg">
+                <button type="button" id="sched-mobile-pill-backup" onclick="Settings.switchSchedulerMobileView('backup')"
+                    class="flex-1 py-1.5 px-2 text-[10px] sm:text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 bg-neutral-200 text-black shadow-sm">
+                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                    </svg>
+                    <span>Backup DB</span>
+                </button>
+                <button type="button" id="sched-mobile-pill-cleanup" onclick="Settings.switchSchedulerMobileView('cleanup')"
+                    class="flex-1 py-1.5 px-2 text-[10px] sm:text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 text-neutral-400 hover:text-neutral-200">
+                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    <span>Pembersihan Log</span>
+                </button>
+                <button type="button" id="sched-mobile-pill-screenshot" onclick="Settings.switchSchedulerMobileView('screenshot')"
+                    class="flex-1 py-1.5 px-2 text-[10px] sm:text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 text-neutral-400 hover:text-neutral-200">
+                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span>Screenshot</span>
+                </button>
+            </div>
+
+            <!-- 3-Column Responsive Grid on md+ / Single-Card on Mobile -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3 lg:gap-3.5 items-stretch">
                 <!-- Card 1: Backup Database Otomatis -->
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between space-y-2 sm:space-y-2.5">
+                <div id="sched-col-backup" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between space-y-2 sm:space-y-2.5">
                     <div class="space-y-1.5 sm:space-y-2">
                         <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-1.5 sm:pb-2">
-                            <div class="flex items-center gap-2">
-                                <div class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300 shrink-0">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
                                     </svg>
                                 </div>
-                                <div>
+                                <div class="min-w-0">
                                     <h4 class="text-[11px] sm:text-xs font-bold text-neutral-200 uppercase tracking-wider">Backup Otomatis</h4>
-                                    <span class="text-[9px] text-neutral-500">Database warnet.db</span>
+                                    <span class="text-[9px] text-neutral-500 block">Database warnet.db</span>
                                 </div>
                             </div>
-                            <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">Aktif</span>
+                            <span class="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">Aktif</span>
                         </div>
 
                         <!-- Combined Input Group -->
@@ -764,7 +790,7 @@
                                     class="w-full bg-transparent px-1.5 py-0.5 text-xs font-mono font-bold text-neutral-100 text-center focus:outline-none"
                                     value="1" step="1" min="1">
                                 <select id="scheduler-backup-unit"
-                                    class="bg-[#141414] border border-[#262626] rounded px-1.5 py-0.5 text-[11px] sm:text-xs text-neutral-300 focus:outline-none focus:border-neutral-500 font-medium">
+                                    class="bg-[#141414] border border-[#262626] rounded px-1.5 py-0.5 text-[10px] sm:text-xs text-neutral-300 focus:outline-none focus:border-neutral-500 font-medium">
                                     <option value="jam">Jam</option>
                                     <option value="hari" selected>Hari</option>
                                     <option value="minggu">Minggu</option>
@@ -772,24 +798,24 @@
                             </div>
                         </div>
 
-                        <!-- Preset Pills -->
+                        <!-- Preset Pills (Grid Simetris) -->
                         <div class="space-y-1">
                             <span class="text-[9px] text-neutral-500 font-semibold uppercase tracking-wider block">Preset Cepat:</span>
-                            <div id="scheduler-backup-pills" class="flex flex-wrap gap-1 sm:gap-1.5">
+                            <div id="scheduler-backup-pills" class="grid grid-cols-4 sm:grid-cols-2 xl:grid-cols-4 gap-1 sm:gap-1.5">
                                 <button type="button" onclick="Settings.setBackupPreset(6, 'jam')" data-val="6" data-unit="jam"
-                                    class="sched-backup-pill px-2 py-0.5 rounded text-[10px] font-medium border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a]">
+                                    class="sched-backup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
                                     6 Jam
                                 </button>
                                 <button type="button" onclick="Settings.setBackupPreset(12, 'jam')" data-val="12" data-unit="jam"
-                                    class="sched-backup-pill px-2 py-0.5 rounded text-[10px] font-medium border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a]">
+                                    class="sched-backup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
                                     12 Jam
                                 </button>
                                 <button type="button" onclick="Settings.setBackupPreset(1, 'hari')" data-val="1" data-unit="hari"
-                                    class="sched-backup-pill px-2 py-0.5 rounded text-[10px] font-medium border bg-white text-black border-white font-bold">
+                                    class="sched-backup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-white text-black border-white font-bold text-center transition-all">
                                     1 Hari
                                 </button>
                                 <button type="button" onclick="Settings.setBackupPreset(7, 'hari')" data-val="7" data-unit="hari"
-                                    class="sched-backup-pill px-2 py-0.5 rounded text-[10px] font-medium border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a]">
+                                    class="sched-backup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
                                     7 Hari
                                 </button>
                             </div>
@@ -798,28 +824,28 @@
 
                     <!-- Live Preview -->
                     <div class="pt-1.5 border-t border-[#171717]">
-                        <p id="scheduler-backup-preview" class="text-[10px] text-neutral-400 leading-tight">
+                        <p id="scheduler-backup-preview" class="text-[10px] sm:text-[11px] text-neutral-400 leading-tight">
                             Backup otomatis setiap <strong class="text-neutral-200">1 Hari</strong>.
                         </p>
                     </div>
                 </div>
 
                 <!-- Card 2: Pembersihan Log Otomatis -->
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between space-y-2 sm:space-y-2.5">
+                <div id="sched-col-cleanup" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between space-y-2 sm:space-y-2.5 hidden md:flex">
                     <div class="space-y-1.5 sm:space-y-2">
                         <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-1.5 sm:pb-2">
-                            <div class="flex items-center gap-2">
-                                <div class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300 shrink-0">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
                                 </div>
-                                <div>
+                                <div class="min-w-0">
                                     <h4 class="text-[11px] sm:text-xs font-bold text-neutral-200 uppercase tracking-wider">Pembersihan Log</h4>
-                                    <span class="text-[9px] text-neutral-500">Log operasional &amp; audit</span>
+                                    <span class="text-[9px] text-neutral-500 block">Log operasional &amp; audit</span>
                                 </div>
                             </div>
-                            <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">Aktif</span>
+                            <span class="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">Aktif</span>
                         </div>
 
                         <!-- Combined Input Group -->
@@ -830,7 +856,7 @@
                                     class="w-full bg-transparent px-1.5 py-0.5 text-xs font-mono font-bold text-neutral-100 text-center focus:outline-none"
                                     value="30" step="1" min="1">
                                 <select id="scheduler-cleanup-unit"
-                                    class="bg-[#141414] border border-[#262626] rounded px-1.5 py-0.5 text-[11px] sm:text-xs text-neutral-300 focus:outline-none focus:border-neutral-500 font-medium">
+                                    class="bg-[#141414] border border-[#262626] rounded px-1.5 py-0.5 text-[10px] sm:text-xs text-neutral-300 focus:outline-none focus:border-neutral-500 font-medium">
                                     <option value="hari" selected>Hari</option>
                                     <option value="minggu">Minggu</option>
                                     <option value="bulan">Bulan</option>
@@ -838,24 +864,24 @@
                             </div>
                         </div>
 
-                        <!-- Preset Pills -->
+                        <!-- Preset Pills (Grid Simetris) -->
                         <div class="space-y-1">
                             <span class="text-[9px] text-neutral-500 font-semibold uppercase tracking-wider block">Preset Cepat:</span>
-                            <div id="scheduler-cleanup-pills" class="flex flex-wrap gap-1 sm:gap-1.5">
+                            <div id="scheduler-cleanup-pills" class="grid grid-cols-4 sm:grid-cols-2 xl:grid-cols-4 gap-1 sm:gap-1.5">
                                 <button type="button" onclick="Settings.setCleanupPreset(30, 'hari')" data-val="30" data-unit="hari"
-                                    class="sched-cleanup-pill px-2 py-0.5 rounded text-[10px] font-medium border bg-white text-black border-white font-bold">
+                                    class="sched-cleanup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-white text-black border-white font-bold text-center transition-all">
                                     30 Hari
                                 </button>
                                 <button type="button" onclick="Settings.setCleanupPreset(60, 'hari')" data-val="60" data-unit="hari"
-                                    class="sched-cleanup-pill px-2 py-0.5 rounded text-[10px] font-medium border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a]">
+                                    class="sched-cleanup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
                                     60 Hari
                                 </button>
                                 <button type="button" onclick="Settings.setCleanupPreset(90, 'hari')" data-val="90" data-unit="hari"
-                                    class="sched-cleanup-pill px-2 py-0.5 rounded text-[10px] font-medium border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a]">
+                                    class="sched-cleanup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
                                     90 Hari
                                 </button>
                                 <button type="button" onclick="Settings.setCleanupPreset(180, 'hari')" data-val="180" data-unit="hari"
-                                    class="sched-cleanup-pill px-2 py-0.5 rounded text-[10px] font-medium border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a]">
+                                    class="sched-cleanup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
                                     180 Hari
                                 </button>
                             </div>
@@ -864,33 +890,35 @@
 
                     <!-- Live Preview -->
                     <div class="pt-1.5 border-t border-[#171717]">
-                        <p id="scheduler-cleanup-preview" class="text-[10px] text-neutral-400 leading-tight">
+                        <p id="scheduler-cleanup-preview" class="text-[10px] sm:text-[11px] text-neutral-400 leading-tight">
                             Hapus log lebih dari <strong class="text-neutral-200">30 Hari</strong>.
                         </p>
                     </div>
                 </div>
 
                 <!-- Card 3: Screenshot Client Otomatis -->
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between space-y-2 sm:space-y-2.5">
+                <div id="sched-col-screenshot" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between space-y-2 sm:space-y-2.5 hidden md:flex">
                     <div class="space-y-1.5 sm:space-y-2">
-                        <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-1.5 sm:pb-2">
-                            <div class="flex items-center gap-2">
-                                <div class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300">
+                        <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-1.5 sm:pb-2 gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300 shrink-0">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                     </svg>
                                 </div>
-                                <div>
+                                <div class="min-w-0">
                                     <h4 class="text-[11px] sm:text-xs font-bold text-neutral-200 uppercase tracking-wider">Screenshot Client</h4>
-                                    <span class="text-[9px] text-neutral-500">Capture layar PC aktif</span>
+                                    <span class="text-[9px] text-neutral-500 block">Capture layar PC aktif</span>
                                 </div>
                             </div>
-                            <label class="relative inline-flex items-center cursor-pointer select-none">
-                                <input type="checkbox" id="scheduler-screenshot-enabled" class="sr-only peer">
-                                <div class="w-8 h-4 bg-[#222] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
-                                <span id="scheduler-screenshot-status" class="ml-1.5 text-[9px] font-semibold text-neutral-500">Nonaktif</span>
-                            </label>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <span id="scheduler-screenshot-status" class="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono font-semibold bg-neutral-900 text-neutral-500 border border-neutral-800">Nonaktif</span>
+                                <label class="relative inline-flex items-center cursor-pointer select-none">
+                                    <input type="checkbox" id="scheduler-screenshot-enabled" class="sr-only peer">
+                                    <div class="w-7 h-3.5 sm:w-8 sm:h-4 bg-[#222] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] sm:after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
                         </div>
 
                         <!-- Config Wrapper with Toggle-opacity -->
@@ -903,7 +931,7 @@
                                         class="w-full bg-transparent px-1.5 py-0.5 text-xs font-mono font-bold text-neutral-100 text-center focus:outline-none disabled:text-neutral-500"
                                         value="60" step="1" min="1">
                                     <select id="scheduler-screenshot-unit" disabled
-                                        class="bg-[#141414] border border-[#262626] rounded px-1.5 py-0.5 text-[11px] sm:text-xs text-neutral-300 focus:outline-none focus:border-neutral-500 font-medium disabled:text-neutral-500">
+                                        class="bg-[#141414] border border-[#262626] rounded px-1.5 py-0.5 text-[10px] sm:text-xs text-neutral-300 focus:outline-none focus:border-neutral-500 font-medium disabled:text-neutral-500">
                                         <option value="detik" selected>Detik</option>
                                         <option value="menit">Menit</option>
                                         <option value="jam">Jam</option>
@@ -911,24 +939,24 @@
                                 </div>
                             </div>
 
-                            <!-- Preset Pills -->
+                            <!-- Preset Pills (Grid Simetris) -->
                             <div class="space-y-1">
                                 <span class="text-[9px] text-neutral-500 font-semibold uppercase tracking-wider block">Preset Cepat:</span>
-                                <div id="scheduler-screenshot-pills" class="flex flex-wrap gap-1 sm:gap-1.5">
+                                <div id="scheduler-screenshot-pills" class="grid grid-cols-4 sm:grid-cols-2 xl:grid-cols-4 gap-1 sm:gap-1.5">
                                     <button type="button" onclick="Settings.setScreenshotPreset(15, 'detik')" data-val="15" data-unit="detik"
-                                        class="sched-screenshot-pill px-2 py-0.5 rounded text-[10px] font-medium border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a]">
+                                        class="sched-screenshot-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
                                         15 Detik
                                     </button>
                                     <button type="button" onclick="Settings.setScreenshotPreset(30, 'detik')" data-val="30" data-unit="detik"
-                                        class="sched-screenshot-pill px-2 py-0.5 rounded text-[10px] font-medium border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a]">
+                                        class="sched-screenshot-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
                                         30 Detik
                                     </button>
                                     <button type="button" onclick="Settings.setScreenshotPreset(60, 'detik')" data-val="60" data-unit="detik"
-                                        class="sched-screenshot-pill px-2 py-0.5 rounded text-[10px] font-medium border bg-white text-black border-white font-bold">
+                                        class="sched-screenshot-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-white text-black border-white font-bold text-center transition-all">
                                         60 Detik
                                     </button>
                                     <button type="button" onclick="Settings.setScreenshotPreset(5, 'menit')" data-val="5" data-unit="menit"
-                                        class="sched-screenshot-pill px-2 py-0.5 rounded text-[10px] font-medium border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a]">
+                                        class="sched-screenshot-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
                                         5 Menit
                                     </button>
                                 </div>
@@ -938,7 +966,7 @@
 
                     <!-- Live Preview -->
                     <div class="pt-1.5 border-t border-[#171717]">
-                        <p id="scheduler-screenshot-preview" class="text-[10px] text-neutral-400 leading-tight">
+                        <p id="scheduler-screenshot-preview" class="text-[10px] sm:text-[11px] text-neutral-400 leading-tight">
                             Screenshot otomatis setiap <strong class="text-neutral-200">60 Detik</strong> (Nonaktif).
                         </p>
                     </div>
@@ -1178,185 +1206,204 @@
         <!-- ==================== SUB-TAB: PEMBERSIHAN DATABASE ==================== -->
         {% if session.get('kasir_role') == 'admin' or session.get('role') == 'admin' %}
         <!-- Subtab: Pembersihan Database (Admin Only) -->
-        <div id="subtab-db_cleanup" class="subtab-content hidden space-y-3 sm:space-y-4">
-            <!-- Header Banner -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3.5 sm:p-5">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
-                            <svg class="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                </path>
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <h3 class="text-xs sm:text-sm lg:text-base font-bold text-neutral-200 uppercase tracking-wider">
-                                    Pembersihan &amp; Pemeliharaan Database
-                                </h3>
-                                <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
-                                    SQLite Vacuum
-                                </span>
+        <div id="subtab-db_cleanup" class="subtab-content hidden space-y-2 sm:space-y-2.5 lg:space-y-3">
+            <!-- Mobile Segmented Tab Switcher (< 768px) -->
+            <div class="flex md:hidden p-1 bg-[#080808] border border-[#1f1f1f] rounded-lg">
+                <button type="button" id="db-mobile-pill-action" onclick="Settings.switchDbCleanupMobileView('action')"
+                    class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    <span>Pembersihan</span>
+                </button>
+                <button type="button" id="db-mobile-pill-safety" onclick="Settings.switchDbCleanupMobileView('safety')"
+                    class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                    <span>Keamanan Data</span>
+                </button>
+            </div>
+
+            <!-- 2-Column Responsive Grid on md+ -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 items-start">
+                
+                <!-- Kolom Kiri: Header, 3 Stat Chips, Action Card Retensi -->
+                <div id="db-col-action" class="space-y-2.5 sm:space-y-3">
+                    
+                    <!-- Header Banner -->
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 lg:p-3.5">
+                        <div class="flex items-center justify-between gap-2.5">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
+                                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider">
+                                            Pembersihan Database
+                                        </h3>
+                                        <span class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                                            VACUUM
+                                        </span>
+                                    </div>
+                                    <p class="text-[10px] sm:text-[11px] text-neutral-400 mt-0.5 leading-tight">
+                                        Bersihkan histori lama untuk kompresi fisik file SQLite server.
+                                    </p>
+                                </div>
                             </div>
-                            <p class="text-[10px] sm:text-xs text-neutral-400 mt-0.5">
-                                Bersihkan histori operasional lama untuk menghemat kapasitas disk server. Cadangan otomatis dibuat sebelum pembersihan.
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#171717] border border-[#262626] text-[9px] sm:text-[10px] text-emerald-400 font-medium shrink-0">
+                                <svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                </svg>
+                                <span class="hidden sm:inline">Saldo</span> Aman 100%
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 2-Tier Stat Cards (Zero-Truncate) -->
+                    <div class="space-y-1.5 sm:space-y-2">
+                        <!-- Tier 1: Ukuran DB & Histori Aktif (Grid 2 Kolom) -->
+                        <div class="grid grid-cols-2 gap-1.5 sm:gap-2">
+                            <!-- Card 1: Ukuran Database -->
+                            <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2 sm:p-2.5 flex flex-col justify-between">
+                                <div class="flex items-center justify-between gap-1">
+                                    <span class="text-[9px] sm:text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Ukuran Database</span>
+                                    <span id="db-stat-status" class="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">Optimal</span>
+                                </div>
+                                <div class="mt-1">
+                                    <span id="db-stat-size" class="text-xs sm:text-sm lg:text-base font-bold font-mono text-neutral-200 block">-</span>
+                                </div>
+                                <span class="text-[8px] sm:text-[9px] text-neutral-500 block mt-0.5">Berkas: instance/warnet.db</span>
+                            </div>
+
+                            <!-- Card 2: Histori Aktif -->
+                            <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2 sm:p-2.5 flex flex-col justify-between">
+                                <div class="flex items-center justify-between gap-1">
+                                    <span class="text-[9px] sm:text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Histori Aktif</span>
+                                    <span class="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono text-neutral-400 bg-neutral-900 border border-neutral-800 shrink-0">4 Tabel</span>
+                                </div>
+                                <div class="mt-1 flex items-baseline gap-1">
+                                    <span id="db-stat-history-count" class="text-xs sm:text-sm lg:text-base font-bold font-mono text-neutral-200">-</span>
+                                    <span class="text-[9px] sm:text-[10px] text-neutral-400 font-sans">baris data</span>
+                                </div>
+                                <span class="text-[8px] sm:text-[9px] text-neutral-500 block mt-0.5">Sesi, log, telemetri</span>
+                            </div>
+                        </div>
+
+                        <!-- Tier 2: Cadangan & Arsip Terakhir (Full Width Card) -->
+                        <div id="db-stat-archive-card" class="bg-[#050505] border border-[#1c1c1c] rounded p-2 sm:p-2.5 flex items-center justify-between gap-2" title="Arsip cadangan otomatis pra-pembersihan">
+                            <div class="min-w-0">
+                                <span class="text-[9px] sm:text-[10px] text-neutral-500 uppercase font-bold tracking-wider block">Cadangan &amp; Arsip Terakhir</span>
+                                <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                                    <span id="db-stat-last-archive" class="text-[11px] sm:text-xs font-bold font-mono text-neutral-200">-</span>
+                                    <span id="db-stat-last-archive-sub" class="text-[9px] sm:text-[10px] text-neutral-400 font-mono">-</span>
+                                </div>
+                            </div>
+                            <div class="w-7 h-7 rounded bg-[#121212] border border-[#222] flex items-center justify-center shrink-0 text-neutral-400">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 012-2h10a2 2 0 012 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Card: Pembersihan Histori & Optimasi VACUUM -->
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 lg:p-4 space-y-2.5 sm:space-y-3">
+                        <div class="border-b border-[#1c1c1c] pb-2 sm:pb-2.5">
+                            <h4 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider">
+                                Konfigurasi Retensi Histori
+                            </h4>
+                            <p class="text-[10px] sm:text-[11px] text-neutral-400 mt-0.5 leading-tight">
+                                Tentukan batas umur data histori yang ingin dibersihkan. Cadangan otomatis dibuat sebelum pembersihan.
                             </p>
                         </div>
+
+                        <!-- Retention Pills Selector: 2x2 grid on mobile, 4 in 1 row on sm+ -->
+                        <div>
+                            <label class="text-[9px] sm:text-[10px] text-neutral-400 uppercase font-bold tracking-wider block mb-1.5">
+                                Hapus Histori Yang Lebih Tua Dari:
+                            </label>
+                            <div id="db-retention-pills" class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
+                                <button type="button" onclick="Settings.selectRetentionMonths(1)" data-months="1"
+                                    class="db-retention-pill px-2.5 py-1.5 rounded text-[10px] sm:text-xs font-semibold border transition-all text-center bg-[#171717] text-neutral-300 border-[#262626] hover:bg-[#222]">
+                                    1 Bulan
+                                </button>
+                                <button type="button" onclick="Settings.selectRetentionMonths(3)" data-months="3"
+                                    class="db-retention-pill px-2.5 py-1.5 rounded text-[10px] sm:text-xs font-semibold border transition-all text-center bg-[#171717] text-neutral-300 border-[#262626] hover:bg-[#222]">
+                                    3 Bulan
+                                </button>
+                                <button type="button" onclick="Settings.selectRetentionMonths(6)" data-months="6"
+                                    class="db-retention-pill px-2.5 py-1.5 rounded text-[10px] sm:text-xs font-semibold border transition-all text-center bg-white text-black border-white shadow-sm font-bold">
+                                    6 Bulan <span class="hidden xl:inline">(Rekomendasi)</span>
+                                </button>
+                                <button type="button" onclick="Settings.selectRetentionMonths(12)" data-months="12"
+                                    class="db-retention-pill px-2.5 py-1.5 rounded text-[10px] sm:text-xs font-semibold border transition-all text-center bg-[#171717] text-neutral-300 border-[#262626] hover:bg-[#222]">
+                                    1 Tahun
+                                </button>
+                            </div>
+                            <input type="hidden" id="db-retention-months" value="6">
+                        </div>
+
+                        <!-- Cutoff Notice & Action Button -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-[#1c1c1c]">
+                            <div class="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-neutral-400">
+                                <svg class="w-3.5 h-3.5 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <span>Data sebelum <strong id="db-cutoff-date" class="text-neutral-200 underline underline-offset-2 font-mono">-</strong> dihapus.</span>
+                            </div>
+
+                            <button type="button" id="btn-db-maintenance" onclick="Settings.executeDbMaintenance()"
+                                class="w-full sm:w-auto px-3.5 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-[0.98] shrink-0">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                                <span>Backup &amp; Bersihkan Sekarang</span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2 self-start sm:self-auto shrink-0">
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#171717] border border-[#262626] text-[10px] text-emerald-400 font-medium">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                </div>
+
+                <!-- Kolom Kanan: Safety Matrix Card (Transparansi Perlindungan Data) -->
+                <div id="db-col-safety" class="space-y-2.5 sm:space-y-3 hidden md:block">
+                    <!-- Box 1: Data Dijamin 100% Aman -->
+                    <div class="bg-[#0c0c0c] border border-emerald-950/40 rounded p-3 sm:p-3.5 lg:p-4 space-y-2">
+                        <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                             </svg>
-                            Saldo Member Aman 100%
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KPI Cards: Database Health & Storage Stats -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
-                <!-- KPI 1: Ukuran Database -->
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-4 flex items-center justify-between">
-                    <div>
-                        <span class="text-[10px] sm:text-xs text-neutral-400 uppercase font-bold tracking-wider block">Ukuran Database</span>
-                        <div class="flex items-baseline gap-2 mt-1">
-                            <span id="db-stat-size" class="text-base sm:text-lg lg:text-xl font-bold font-mono text-neutral-100">---</span>
-                            <span id="db-stat-status" class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">Optimal</span>
+                            <span>Data Aman &amp; Tidak Dihapus</span>
                         </div>
-                        <span class="text-[9px] sm:text-[10px] text-neutral-500 block mt-0.5">Berkas: instance/warnet.db</span>
+                        <ul class="text-[10px] sm:text-[11px] text-neutral-400 space-y-1.5 list-disc pl-4 leading-relaxed">
+                            <li><strong class="text-neutral-200">Saldo &amp; Akun Member:</strong> Saldo rupiah, nomor telepon, dan status member 100% utuh.</li>
+                            <li><strong class="text-neutral-200">Akun Pengguna &amp; Kasir:</strong> Username, password, dan level hak akses aman.</li>
+                            <li><strong class="text-neutral-200">Paket Billing &amp; Tarif:</strong> Konfigurasi harga per jam, paket promo, dan grup PC.</li>
+                            <li><strong class="text-neutral-200">Master Menu Kantin:</strong> Daftar makanan/minuman dan stok F&amp;B tetap terjaga.</li>
+                        </ul>
                     </div>
-                    <div class="w-8 h-8 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-400 shrink-0">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
-                        </svg>
-                    </div>
-                </div>
 
-                <!-- KPI 2: Total Riwayat Operasional -->
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-4 flex items-center justify-between">
-                    <div>
-                        <span class="text-[10px] sm:text-xs text-neutral-400 uppercase font-bold tracking-wider block">Total Histori Operasional</span>
-                        <div class="flex items-baseline gap-2 mt-1">
-                            <span id="db-stat-history-count" class="text-base sm:text-lg lg:text-xl font-bold font-mono text-neutral-100">---</span>
-                            <span class="text-[10px] text-neutral-500 font-sans">baris data</span>
+                    <!-- Box 2: Data Histori Yang Dibersihkan -->
+                    <div class="bg-[#0c0c0c] border border-amber-950/40 rounded p-3 sm:p-3.5 lg:p-4 space-y-2">
+                        <div class="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <span>Histori Yang Akan Dibersihkan</span>
                         </div>
-                        <span class="text-[9px] sm:text-[10px] text-neutral-500 block mt-0.5">Sesi, transaksi, log &amp; telemetri</span>
-                    </div>
-                    <div class="w-8 h-8 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-400 shrink-0">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                        </svg>
+                        <ul class="text-[10px] sm:text-[11px] text-neutral-400 space-y-1.5 list-disc pl-4 leading-relaxed">
+                            <li><strong class="text-neutral-200">Telemetri Proses PC:</strong> Log aplikasi berjalan client yang lewat dari retensi.</li>
+                            <li><strong class="text-neutral-200">Log Uptime PC:</strong> Catatan waktu aktif komputer lama yang sudah dianalisis.</li>
+                            <li><strong class="text-neutral-200">Riwayat Sesi Selesai:</strong> Catatan sesi bermain lama yang sudah ditutup kasir.</li>
+                            <li><strong class="text-neutral-200">Riwayat Transaksi Lama:</strong> Nota billing &amp; pesanan kantin yang telah lewat batas.</li>
+                        </ul>
                     </div>
                 </div>
 
-                <!-- KPI 3: Arsip Cadangan Terakhir -->
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-4 flex items-center justify-between">
-                    <div>
-                        <span class="text-[10px] sm:text-xs text-neutral-400 uppercase font-bold tracking-wider block">Cadangan Terakhir</span>
-                        <div class="flex items-baseline gap-2 mt-1">
-                            <span id="db-stat-last-archive" class="text-xs sm:text-sm lg:text-base font-bold font-mono text-neutral-200">Belum Ada</span>
-                        </div>
-                        <span id="db-stat-last-archive-sub" class="text-[9px] sm:text-[10px] text-neutral-500 block mt-0.5">Folder: backups/archive/</span>
-                    </div>
-                    <div class="w-8 h-8 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-400 shrink-0">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Card: Pembersihan Histori & Optimasi VACUUM -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-5 space-y-4">
-                <div class="border-b border-[#1c1c1c] pb-3">
-                    <h4 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider">
-                        Konfigurasi Pembersihan &amp; Retensi
-                    </h4>
-                    <p class="text-[10px] sm:text-xs text-neutral-400 mt-0.5">
-                        Tentukan batas umur data histori yang ingin dibersihkan. Sistem akan mengompresi fisik file database setelah pembersihan.
-                    </p>
-                </div>
-
-                <!-- Horizontal Retention Pills Selector -->
-                <div>
-                    <label class="text-[10px] sm:text-xs text-neutral-400 uppercase font-bold tracking-wider block mb-2">
-                        Hapus Histori Yang Lebih Tua Dari:
-                    </label>
-                    <div id="db-retention-pills" class="flex flex-wrap items-center gap-2">
-                        <button type="button" onclick="Settings.selectRetentionMonths(1)" data-months="1"
-                            class="db-retention-pill px-3 py-1.5 rounded text-xs font-semibold border transition-all bg-[#171717] text-neutral-300 border-[#262626] hover:bg-[#222]">
-                            1 Bulan
-                        </button>
-                        <button type="button" onclick="Settings.selectRetentionMonths(3)" data-months="3"
-                            class="db-retention-pill px-3 py-1.5 rounded text-xs font-semibold border transition-all bg-[#171717] text-neutral-300 border-[#262626] hover:bg-[#222]">
-                            3 Bulan
-                        </button>
-                        <button type="button" onclick="Settings.selectRetentionMonths(6)" data-months="6"
-                            class="db-retention-pill px-3 py-1.5 rounded text-xs font-semibold border transition-all bg-white text-black border-white shadow-sm font-bold">
-                            6 Bulan (Rekomendasi)
-                        </button>
-                        <button type="button" onclick="Settings.selectRetentionMonths(12)" data-months="12"
-                            class="db-retention-pill px-3 py-1.5 rounded text-xs font-semibold border transition-all bg-[#171717] text-neutral-300 border-[#262626] hover:bg-[#222]">
-                            1 Tahun
-                        </button>
-                    </div>
-                    <input type="hidden" id="db-retention-months" value="6">
-                </div>
-
-                <!-- Cutoff Notice Box & Action Button -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[#171717]">
-                    <div class="flex items-center gap-2 text-xs text-neutral-400">
-                        <svg class="w-4 h-4 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                        <span>Data sebelum <strong id="db-cutoff-date" class="text-neutral-200 underline underline-offset-2">-- --- ----</strong> akan diarsipkan &amp; dibersihkan.</span>
-                    </div>
-
-                    <button type="button" id="btn-db-maintenance" onclick="Settings.executeDbMaintenance()"
-                        class="w-full sm:w-auto px-4 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded transition-colors whitespace-nowrap flex items-center justify-center gap-2 shadow-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                        <span>Backup &amp; Bersihkan Sekarang</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Safety Matrix Card: Transparansi Perlindungan Data -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <!-- Box 1: Data Dijamin 100% Aman -->
-                <div class="bg-[#0c0c0c] border border-emerald-950/40 rounded p-4 space-y-2.5">
-                    <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                        </svg>
-                        <span>Data Aman &amp; Tidak Dihapus</span>
-                    </div>
-                    <ul class="text-[11px] text-neutral-400 space-y-1.5 list-disc pl-4">
-                        <li><strong class="text-neutral-200">Saldo &amp; Akun Member:</strong> Saldo rupiah, nomor telepon, dan status member 100% utuh.</li>
-                        <li><strong class="text-neutral-200">Akun Pengguna &amp; Kasir:</strong> Username, password, dan level hak akses aman.</li>
-                        <li><strong class="text-neutral-200">Paket Billing &amp; Tarif:</strong> Konfigurasi harga per jam, paket promo, dan grup PC.</li>
-                        <li><strong class="text-neutral-200">Master Menu Kantin:</strong> Daftar makanan/minuman dan stok F&amp;B tetap terjaga.</li>
-                    </ul>
-                </div>
-
-                <!-- Box 2: Data Histori Yang Dibersihkan -->
-                <div class="bg-[#0c0c0c] border border-amber-950/40 rounded p-4 space-y-2.5">
-                    <div class="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
-                        <span>Histori Yang Akan Dibersihkan</span>
-                    </div>
-                    <ul class="text-[11px] text-neutral-400 space-y-1.5 list-disc pl-4">
-                        <li><strong class="text-neutral-200">Telemetri Proses PC:</strong> Log aplikasi berjalan client yang lewat dari retensi.</li>
-                        <li><strong class="text-neutral-200">Log Uptime PC:</strong> Catatan waktu aktif komputer lama yang sudah dianalisis.</li>
-                        <li><strong class="text-neutral-200">Riwayat Sesi Selesai:</strong> Catatan sesi bermain lama yang sudah ditutup kasir.</li>
-                        <li><strong class="text-neutral-200">Riwayat Transaksi Lama:</strong> Nota billing &amp; pesanan kantin yang telah lewat batas.</li>
-                    </ul>
-                </div>
             </div>
         </div>
         {% endif %}

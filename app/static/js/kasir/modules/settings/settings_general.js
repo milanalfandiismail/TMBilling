@@ -118,6 +118,33 @@ const SettingsGeneral = {
         }
     },
 
+    switchDbCleanupMobileView(view) {
+        const colAct = document.getElementById('db-col-action');
+        const colSafe = document.getElementById('db-col-safety');
+        const pillAct = document.getElementById('db-mobile-pill-action');
+        const pillSafe = document.getElementById('db-mobile-pill-safety');
+
+        if (!colAct || !colSafe) return;
+
+        if (view === 'safety') {
+            colAct.classList.add('hidden');
+            colSafe.classList.remove('hidden');
+
+            if (pillAct && pillSafe) {
+                pillAct.className = 'flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200';
+                pillSafe.className = 'flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm';
+            }
+        } else {
+            colAct.classList.remove('hidden');
+            colSafe.classList.add('hidden');
+
+            if (pillAct && pillSafe) {
+                pillAct.className = 'flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm';
+                pillSafe.className = 'flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200';
+            }
+        }
+    },
+
     toggleApiKeyVisibility() {
         const input = document.getElementById('client-apikey-input');
         const icon = document.querySelector('#btn-toggle-apikey-eye i');
@@ -663,15 +690,23 @@ const SettingsGeneral = {
                 if (elStatus) {
                     elStatus.textContent = s.status === 'optimal' ? 'Optimal' : 'Perlu Pemeliharaan';
                     elStatus.className = s.status === 'optimal'
-                        ? 'px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/40'
-                        : 'px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-950/60 text-amber-400 border border-amber-800/40';
+                        ? 'px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0'
+                        : 'px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0';
                 }
                 if (elHistory) elHistory.textContent = (s.total_history_rows || 0).toLocaleString('id-ID');
                 if (elLastArchive) {
                     elLastArchive.textContent = s.last_archive ? s.last_archive.date : 'Belum Ada';
                 }
-                if (elLastArchiveSub && s.last_archive) {
-                    elLastArchiveSub.textContent = `${s.last_archive.filename} (${s.last_archive.size_human})`;
+                if (elLastArchiveSub) {
+                    if (s.last_archive) {
+                        elLastArchiveSub.textContent = `(${s.last_archive.size_human})`;
+                        const archiveCard = document.getElementById('db-stat-archive-card');
+                        if (archiveCard) {
+                            archiveCard.title = `Berkas: ${s.last_archive.filename} (${s.last_archive.size_human})`;
+                        }
+                    } else {
+                        elLastArchiveSub.textContent = '';
+                    }
                 }
             }
         } catch (err) {
@@ -688,9 +723,9 @@ const SettingsGeneral = {
         document.querySelectorAll('.db-retention-pill').forEach(btn => {
             const m = btn.getAttribute('data-months');
             if (m === months.toString()) {
-                btn.className = 'db-retention-pill px-3 py-1.5 rounded text-xs font-semibold border transition-all bg-white text-black border-white shadow-sm font-bold';
+                btn.className = 'db-retention-pill px-2.5 py-1.5 rounded text-[10px] sm:text-xs font-semibold border transition-all text-center bg-white text-black border-white shadow-sm font-bold';
             } else {
-                btn.className = 'db-retention-pill px-3 py-1.5 rounded text-xs font-semibold border transition-all bg-[#171717] text-neutral-300 border-[#262626] hover:bg-[#222]';
+                btn.className = 'db-retention-pill px-2.5 py-1.5 rounded text-[10px] sm:text-xs font-semibold border transition-all text-center bg-[#171717] text-neutral-300 border-[#262626] hover:bg-[#222]';
             }
         });
 

@@ -70,4 +70,73 @@
             </div>
         </div>
     </div>
+    <!-- Modal Detail Item Pesanan Kantin -->
+    <div id="modal-laporan-menu-detail" class="hidden fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-[#0d0d0d] border border-[#222] rounded-lg max-w-lg w-full p-4 sm:p-5 space-y-3.5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-amber-400">
+                        <i class="fa-solid fa-utensils text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm sm:text-base font-bold text-neutral-200">Rincian Item Pesanan Kantin</h3>
+                        <p class="text-[10px] sm:text-[11px] text-neutral-400 font-mono mt-0.5" id="modal-menu-nota-waktu">-</p>
+                    </div>
+                </div>
+                <button type="button" onclick="LaporanMenu.closeDetailItemsModal()" class="w-7 h-7 rounded bg-[#141414] hover:bg-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Chips Summary -->
+            <div class="grid grid-cols-3 gap-2">
+                <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2 text-center">
+                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Total Menu</span>
+                    <span id="modal-menu-total-item" class="text-xs sm:text-sm font-mono font-bold text-neutral-200 block mt-0.5">0 Menu</span>
+                </div>
+                <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2 text-center">
+                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Total Qty</span>
+                    <span id="modal-menu-total-qty" class="text-xs sm:text-sm font-mono font-bold text-neutral-300 block mt-0.5">0 Pcs</span>
+                </div>
+                <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2 text-center">
+                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Total Bayar</span>
+                    <span id="modal-menu-total-harga" class="text-xs sm:text-sm font-mono font-bold text-emerald-400 block mt-0.5">Rp0</span>
+                </div>
+            </div>
+
+            <!-- Itemized Table / List -->
+            <div class="space-y-1.5">
+                <label class="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block">Daftar Menu Yang Dipesan</label>
+                <div class="bg-[#050505] border border-[#1c1c1c] rounded max-h-60 overflow-y-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="bg-[#0c0c0c] border-b border-[#1c1c1c] text-neutral-500 text-[9px] sm:text-[10px] uppercase font-bold sticky top-0">
+                            <tr>
+                                <th class="px-3 py-1.5 text-left w-8">#</th>
+                                <th class="px-3 py-1.5 text-left">Nama Menu</th>
+                                <th class="px-3 py-1.5 text-center w-14">Qty</th>
+                                <th class="px-3 py-1.5 text-right w-24">Harga</th>
+                                <th class="px-3 py-1.5 text-right w-24">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-menu-items-table" class="divide-y divide-[#171717] font-mono text-neutral-300 text-[11px]">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-between border-t border-[#1c1c1c] pt-3">
+                <button type="button" id="modal-menu-print-btn" onclick="" class="px-3 py-1.5 rounded text-xs font-bold bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-[#2a2a2a] transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-print text-neutral-400 text-xs"></i>
+                    <span>Cetak Struk</span>
+                </button>
+                <button type="button" onclick="LaporanMenu.closeDetailItemsModal()" class="px-4 py-1.5 rounded text-xs font-bold bg-neutral-200 hover:bg-white text-black transition-colors">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
 </div>

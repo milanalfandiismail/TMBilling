@@ -11,6 +11,41 @@ const SettingsScheduler = {
         return str.charAt(0).toUpperCase() + str.slice(1);
     },
 
+    switchSchedulerMobileView(view) {
+        const colBackup = document.getElementById('sched-col-backup');
+        const colCleanup = document.getElementById('sched-col-cleanup');
+        const colScreenshot = document.getElementById('sched-col-screenshot');
+
+        const pillBackup = document.getElementById('sched-mobile-pill-backup');
+        const pillCleanup = document.getElementById('sched-mobile-pill-cleanup');
+        const pillScreenshot = document.getElementById('sched-mobile-pill-screenshot');
+
+        if (!colBackup || !colCleanup || !colScreenshot) return;
+
+        colBackup.classList.add('hidden');
+        colCleanup.classList.add('hidden');
+        colScreenshot.classList.add('hidden');
+
+        const activeClass = 'flex-1 py-1.5 px-2 text-[10px] sm:text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 bg-neutral-200 text-black shadow-sm';
+        const inactiveClass = 'flex-1 py-1.5 px-2 text-[10px] sm:text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 text-neutral-400 hover:text-neutral-200';
+
+        if (pillBackup) pillBackup.className = inactiveClass;
+        if (pillCleanup) pillCleanup.className = inactiveClass;
+        if (pillScreenshot) pillScreenshot.className = inactiveClass;
+
+        if (view === 'cleanup') {
+            colCleanup.classList.remove('hidden');
+            if (pillCleanup) pillCleanup.className = activeClass;
+        } else if (view === 'screenshot') {
+            colScreenshot.classList.remove('hidden');
+            if (pillScreenshot) pillScreenshot.className = activeClass;
+        } else {
+            colBackup.classList.remove('hidden');
+            if (pillBackup) pillBackup.className = activeClass;
+        }
+    },
+
+
     _highlightPills(containerId, activeVal, activeUnit) {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -88,8 +123,8 @@ const SettingsScheduler = {
         if (sStatus) {
             sStatus.textContent = sEnabled ? 'Aktif' : 'Nonaktif';
             sStatus.className = sEnabled 
-                ? 'ml-1.5 text-[9px] font-semibold text-emerald-400' 
-                : 'ml-1.5 text-[9px] font-semibold text-neutral-500';
+                ? 'px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                : 'px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono font-semibold bg-neutral-900 text-neutral-500 border border-neutral-800';
         }
 
         const sValEl = document.getElementById('scheduler-screenshot-value');
