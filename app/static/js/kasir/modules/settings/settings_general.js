@@ -648,94 +648,245 @@ const SettingsGeneral = {
         }
     },
 
-    async executeDbMaintenance() {
-        const retentionSelect = document.getElementById('db-retention-months');
-        const retentionMonths = retentionSelect ? retentionSelect.value : '6';
+    async loadDbStats() {
+        try {
+            const res = await API.request('/api/v1/kasir/settings/database/stats', { method: 'GET' });
+            if (res && res.success && res.stats) {
+                const s = res.stats;
+                const elSize = document.getElementById('db-stat-size');
+                const elStatus = document.getElementById('db-stat-status');
+                const elHistory = document.getElementById('db-stat-history-count');
+                const elLastArchive = document.getElementById('db-stat-last-archive');
+                const elLastArchiveSub = document.getElementById('db-stat-last-archive-sub');
 
-        const confirmMsg = `<div class="text-xs lg:text-sm text-neutral-300 space-y-3 leading-relaxed">` +
-            `<p>Apakah Anda yakin ingin melakukan pembersihan histori transaksi yang berumur lebih dari <strong class="text-neutral-100 font-bold underline underline-offset-2">${retentionMonths} bulan</strong>?</p>` +
-            `<ul class="list-disc pl-5 space-y-1.5 text-neutral-400">` +
-            `<li>File cadangan (backup) otomatis disimpan di folder <code class="text-neutral-200 font-mono bg-[#171717] px-1.5 py-0.5 rounded">backups/archive/</code></li>` +
-            `<li>Kapasitas penyimpanan server akan dioptimalkan secara otomatis</li>` +
-            `<li>Saldo member &amp; data utama <strong class="text-emerald-400 font-bold">TIDAK AKAN terhapus</strong></li>` +
-            `</ul>` +
-            `</div>`;
-
-        Modal.confirm(confirmMsg, async () => {
-            Toast.info('Sedang membuat backup &amp; membersihkan histori...');
-
-            try {
-                const res = await API.request('/api/v1/kasir/settings/database/purge-and-vacuum', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ retention_months: parseInt(retentionMonths, 10) })
-                });
-
-                if (res.success) {
-                    const initialStr = res.storage_stats ? res.storage_stats.initial_size_human : '0 B';
-                    const finalStr = res.storage_stats ? res.storage_stats.final_size_human : '0 B';
-                    const savedStr = res.storage_stats ? res.storage_stats.saved_space_human : '0 B';
-
-                    const totalRows = res.deleted_summary
-                        ? Object.values(res.deleted_summary).reduce((a, b) => a + b, 0)
-                        : 0;
-
-                    Toast.success('Pembersihan &amp; pemeliharaan database berhasil diselesaikan!');
-
-                    const modalHtml = `
-                        <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-6 max-w-lg w-full animate-in space-y-5">
-                            <div class="flex items-center justify-between border-b border-[#2a2a2a] pb-4">
-                                <div class="flex items-center gap-3.5">
-                                    <div class="w-11 h-11 rounded-lg bg-emerald-950/40 border border-emerald-900/50 flex items-center justify-center text-emerald-400 shrink-0">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-sm lg:text-base font-bold text-neutral-100 uppercase tracking-wider">Pembersihan Database Berhasil</h3>
-                                        <p class="text-xs text-neutral-400 mt-0.5">Kapasitas penyimpanan server berhasil dioptimalkan</p>
-                                    </div>
-                                </div>
-                                <button onclick="Modal.closeModal(); Settings.loadBackupFiles();" class="text-neutral-500 hover:text-neutral-300 text-2xl leading-none">&times;</button>
-                            </div>
-
-                            <div class="space-y-3 text-xs lg:text-sm text-neutral-300">
-                                <div class="p-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg flex items-center justify-between">
-                                    <span class="text-neutral-400">📁 File Cadangan</span>
-                                    <span class="font-mono text-neutral-100 font-bold">${res.backup_file}</span>
-                                </div>
-                                <div class="p-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg flex items-center justify-between">
-                                    <span class="text-neutral-400">🧹 Riwayat Dihapus</span>
-                                    <span class="font-bold text-emerald-400 text-sm lg:text-base">${totalRows.toLocaleString()} baris</span>
-                                </div>
-                                <div class="p-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg flex items-center justify-between">
-                                    <span class="text-neutral-400">💾 Ukuran Storage</span>
-                                    <span class="font-mono text-neutral-200">${initialStr} ➔ <strong class="text-emerald-400">${finalStr}</strong></span>
-                                </div>
-                                <div class="p-3.5 bg-emerald-950/20 border border-emerald-900/30 rounded-lg text-center font-bold text-xs lg:text-sm text-emerald-400">
-                                    ✨ Berhasil menghemat ${savedStr} ruang disk server!
-                                </div>
-                            </div>
-
-                            <div class="flex justify-end pt-3 border-t border-[#2a2a2a]">
-                                <button onclick="Modal.closeModal(); Settings.loadBackupFiles();" class="px-5 py-2.5 bg-neutral-100 hover:bg-white text-black text-xs lg:text-sm font-bold rounded-lg transition-colors">
-                                    Selesai
-                                </button>
-                            </div>
-                        </div>
-                    `;
-
-                    Modal.show(modalHtml);
-                    this.loadBackupFiles();
-                } else {
-                    Toast.error(res.error || 'Gagal melakukan pembersihan database.');
+                if (elSize) elSize.textContent = s.db_size_human || '---';
+                if (elStatus) {
+                    elStatus.textContent = s.status === 'optimal' ? 'Optimal' : 'Perlu Pemeliharaan';
+                    elStatus.className = s.status === 'optimal'
+                        ? 'px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/40'
+                        : 'px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-950/60 text-amber-400 border border-amber-800/40';
                 }
-            } catch (err) {
-                Toast.error('Gagal melakukan pembersihan database: ' + err.message);
+                if (elHistory) elHistory.textContent = (s.total_history_rows || 0).toLocaleString('id-ID');
+                if (elLastArchive) {
+                    elLastArchive.textContent = s.last_archive ? s.last_archive.date : 'Belum Ada';
+                }
+                if (elLastArchiveSub && s.last_archive) {
+                    elLastArchiveSub.textContent = `${s.last_archive.filename} (${s.last_archive.size_human})`;
+                }
             }
-        });
+        } catch (err) {
+            console.warn('Gagal memuat statistik database:', err);
+        }
+        const retentionMonths = parseInt(document.getElementById('db-retention-months')?.value || '6', 10);
+        this.updateCutoffDateDisplay(retentionMonths);
     },
 
+    selectRetentionMonths(months) {
+        const input = document.getElementById('db-retention-months');
+        if (input) input.value = months;
+
+        document.querySelectorAll('.db-retention-pill').forEach(btn => {
+            const m = btn.getAttribute('data-months');
+            if (m === months.toString()) {
+                btn.className = 'db-retention-pill px-3 py-1.5 rounded text-xs font-semibold border transition-all bg-white text-black border-white shadow-sm font-bold';
+            } else {
+                btn.className = 'db-retention-pill px-3 py-1.5 rounded text-xs font-semibold border transition-all bg-[#171717] text-neutral-300 border-[#262626] hover:bg-[#222]';
+            }
+        });
+
+        this.updateCutoffDateDisplay(months);
+    },
+
+    updateCutoffDateDisplay(months) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - months);
+        const monthsId = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        const formatted = `${d.getDate()} ${monthsId[d.getMonth()]} ${d.getFullYear()}`;
+        const el = document.getElementById('db-cutoff-date');
+        if (el) el.textContent = formatted;
+        return formatted;
+    },
+
+    async executeDbMaintenance() {
+        const retentionInput = document.getElementById('db-retention-months');
+        const retentionMonths = retentionInput ? parseInt(retentionInput.value, 10) : 6;
+        const cutoffStr = this.updateCutoffDateDisplay(retentionMonths);
+
+        const modalContent = `
+            <div class="bg-[#111] border border-[#262626] rounded-xl p-5 sm:p-6 max-w-md w-full space-y-4">
+                <div class="flex items-center gap-3 border-b border-[#222] pb-3">
+                    <div class="w-10 h-10 rounded bg-amber-950/40 border border-amber-800/50 flex items-center justify-center text-amber-400 shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm sm:text-base font-bold text-neutral-100 uppercase tracking-wider">Konfirmasi Pembersihan</h3>
+                        <p class="text-xs text-neutral-400">Pembersihan data histori &amp; optimasi VACUUM</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3 text-xs text-neutral-300">
+                    <p>Anda akan membersihkan riwayat operasional yang berumur lebih dari <strong class="text-white font-bold underline underline-offset-2">${retentionMonths} Bulan</strong> (sebelum ${cutoffStr}).</p>
+                    
+                    <div class="p-3 bg-[#080808] border border-[#1c1c1c] rounded space-y-2 text-[11px]">
+                        <div class="flex items-center gap-2 text-emerald-400">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <span>Cadangan otomatis disimpan di <strong>backups/archive/</strong></span>
+                        </div>
+                        <div class="flex items-center gap-2 text-emerald-400">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <span>Saldo &amp; data member <strong>100% aman (tidak disentuh)</strong></span>
+                        </div>
+                    </div>
+
+                    <label class="flex items-start gap-2 pt-1 cursor-pointer select-none">
+                        <input type="checkbox" id="db-confirm-check" class="mt-0.5 rounded bg-[#171717] border-[#333] text-white focus:ring-0">
+                        <span class="text-neutral-300 text-[11px]">Saya memahami bahwa data sebelum tanggal tersebut akan diarsipkan &amp; dibersihkan.</span>
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-[#222]">
+                    <button type="button" onclick="Modal.closeModal()" class="px-3.5 py-1.5 rounded text-xs text-neutral-400 hover:text-white bg-[#171717] hover:bg-[#222] transition-colors">
+                        Batalkan
+                    </button>
+                    <button type="button" id="btn-do-purge" onclick="Settings.startPurgeProcess(${retentionMonths})" disabled class="px-4 py-1.5 rounded text-xs font-bold bg-neutral-600 text-neutral-300 cursor-not-allowed transition-all flex items-center gap-1.5">
+                        <span>Ya, Mulai Pembersihan</span>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        Modal.show(modalContent);
+        setTimeout(() => {
+            const check = document.getElementById('db-confirm-check');
+            const btn = document.getElementById('btn-do-purge');
+            if (check && btn) {
+                check.addEventListener('change', () => {
+                    btn.disabled = !check.checked;
+                    if (check.checked) {
+                        btn.className = 'px-4 py-1.5 rounded text-xs font-bold bg-white text-black hover:bg-neutral-200 transition-all flex items-center gap-1.5 shadow-sm';
+                    } else {
+                        btn.className = 'px-4 py-1.5 rounded text-xs font-bold bg-neutral-600 text-neutral-300 cursor-not-allowed transition-all flex items-center gap-1.5';
+                    }
+                });
+            }
+        }, 50);
+    },
+
+    async startPurgeProcess(retentionMonths) {
+        const btn = document.getElementById('btn-do-purge');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg><span>Memproses Backup &amp; VACUUM...</span>';
+        }
+
+        Toast.info('Sedang membuat backup &amp; membersihkan histori...');
+
+        try {
+            const res = await API.request('/api/v1/kasir/settings/database/purge-and-vacuum', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ retention_months: parseInt(retentionMonths, 10) })
+            });
+
+            Modal.closeModal();
+
+            if (res.success) {
+                const initialStr = res.storage_stats ? res.storage_stats.initial_size_human : '0 B';
+                const finalStr = res.storage_stats ? res.storage_stats.final_size_human : '0 B';
+                const savedStr = res.storage_stats ? res.storage_stats.saved_space_human : '0 B';
+
+                const totalRows = res.deleted_summary
+                    ? Object.values(res.deleted_summary).reduce((a, b) => a + b, 0)
+                    : 0;
+
+                Toast.success('Pembersihan &amp; pemeliharaan database berhasil diselesaikan!');
+
+                const tableRowsHtml = res.deleted_summary
+                    ? Object.entries(res.deleted_summary).map(([tbl, count]) => `
+                        <tr class="border-b border-[#222]">
+                            <td class="py-1.5 px-3 font-mono text-neutral-300">${tbl}</td>
+                            <td class="py-1.5 px-3 text-right font-mono font-bold text-neutral-100">${(count || 0).toLocaleString('id-ID')}</td>
+                        </tr>
+                    `).join('')
+                    : '';
+
+                const modalHtml = `
+                    <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-5 sm:p-6 max-w-lg w-full space-y-4">
+                        <div class="flex items-center justify-between border-b border-[#2a2a2a] pb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-emerald-950/40 border border-emerald-900/50 flex items-center justify-center text-emerald-400 shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm sm:text-base font-bold text-white uppercase tracking-wider">Pemeliharaan Selesai</h3>
+                                    <p class="text-[11px] text-neutral-400">Database berhasil dibersihkan &amp; dioptimasi</p>
+                                </div>
+                            </div>
+                            <button onclick="Modal.closeModal()" class="text-neutral-400 hover:text-white transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-[#181818] p-2.5 rounded-lg border border-[#262626]">
+                                <span class="text-[10px] text-neutral-400 uppercase font-medium block">Ukuran Awal</span>
+                                <span class="text-xs sm:text-sm font-bold font-mono text-neutral-200">${initialStr}</span>
+                            </div>
+                            <div class="bg-[#181818] p-2.5 rounded-lg border border-[#262626]">
+                                <span class="text-[10px] text-neutral-400 uppercase font-medium block">Ukuran Akhir</span>
+                                <span class="text-xs sm:text-sm font-bold font-mono text-emerald-400">${finalStr}</span>
+                            </div>
+                            <div class="bg-[#181818] p-2.5 rounded-lg border border-[#262626]">
+                                <span class="text-[10px] text-neutral-400 uppercase font-medium block">Ruang Hemat</span>
+                                <span class="text-xs sm:text-sm font-bold font-mono text-emerald-400">${savedStr}</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <span class="text-[10px] text-neutral-400 uppercase font-bold tracking-wider">Rincian Data Yang Dibersihkan:</span>
+                            <div class="bg-[#080808] border border-[#222] rounded overflow-hidden max-h-40 overflow-y-auto">
+                                <table class="w-full text-xs">
+                                    <tbody>
+                                        ${tableRowsHtml}
+                                        <tr class="bg-[#141414] font-bold">
+                                            <td class="py-1.5 px-3 text-neutral-300">Total Baris Terhapus</td>
+                                            <td class="py-1.5 px-3 text-right font-mono text-emerald-400">${totalRows.toLocaleString('id-ID')}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="p-2.5 bg-[#0a0a0a] border border-[#222] rounded flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2 truncate text-neutral-300">
+                                <svg class="w-4 h-4 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                                <span class="truncate text-[11px]">Arsip: <strong class="text-neutral-200 font-mono">${res.backup_file || 'cadangan.db'}</strong></span>
+                            </div>
+                            <span class="text-[10px] text-neutral-500 shrink-0">Folder: backups/archive/</span>
+                        </div>
+
+                        <div class="flex justify-end pt-2 border-t border-[#222]">
+                            <button onclick="Modal.closeModal()" class="px-4 py-1.5 bg-neutral-200 hover:bg-white text-black text-xs font-bold rounded transition-colors">
+                                Selesai
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                Modal.show(modalHtml);
+                await this.loadDbStats();
+            } else {
+                Toast.error(res.error || 'Gagal melakukan pemeliharaan database');
+            }
+        } catch (err) {
+            Modal.closeModal();
+            Toast.error('Terjadi kesalahan: ' + err.message);
+        }
+    },
     async previewQRIS(input) {
         if (!input.files || !input.files[0]) return;
         const file = input.files[0];

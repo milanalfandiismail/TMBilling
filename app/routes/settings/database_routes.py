@@ -132,6 +132,19 @@ def get_uninstall_token_for_client():
 
 
 
+@settings_api_bp.route("/database/stats", methods=["GET"])
+@login_required
+@admin_required
+def get_database_stats():
+    """Endpoint untuk mengambil statistik ukuran database dan baris histori operasional."""
+    try:
+        from app.services.settings.db_maintenance_service import DBMaintenanceService
+        stats = DBMaintenanceService.get_database_stats()
+        return jsonify({"success": True, "stats": stats}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @settings_api_bp.route("/database/purge-and-vacuum", methods=["POST"])
 @login_required
 @admin_required

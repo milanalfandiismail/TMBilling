@@ -210,6 +210,13 @@ const Settings = {
             target.classList.remove('hidden');
         }
 
+        // Pembersihan Database — load stats
+        if (this.currentSubTab === 'db_cleanup') {
+            if (typeof this.loadDbStats === 'function') {
+                this.loadDbStats();
+            }
+        }
+
         // Backup & Local files — fetch backup list
         if (this.currentSubTab === 'local_backup' || this.currentSubTab === 'cloud_backup' || this.currentSubTab === 'backup') {
             this.loadBackupFiles();

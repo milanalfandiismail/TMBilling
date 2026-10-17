@@ -1,72 +1,254 @@
 <!-- ==================== SUB-TAB: MIGRASI & UPDATE ==================== -->
-<div id="subtab-migration" class="subtab-content hidden space-y-6">
-    <!-- Card: Status Versi -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">📊 Status Sistem</h3>
-        <div id="migration-status-content" class="space-y-4">
-            <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-3">
-                <span class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-400 uppercase font-bold">Status Skema</span>
-                <span id="migration-status-badge" class="px-3 py-1 rounded text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold font-mono bg-neutral-800 text-neutral-400">Memuat...</span>
+<div id="subtab-migration" class="subtab-content hidden space-y-2.5 sm:space-y-3">
+    <!-- Mobile Segmented Tab Switcher (< 768px) -->
+    <div class="flex md:hidden p-1 bg-[#080808] border border-[#1f1f1f] rounded mb-1">
+        <button type="button" id="migration-pill-status" onclick="MigrationModule.switchMobileView('status')"
+            class="flex-1 py-1.5 px-3 text-[11px] font-bold rounded transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Status &amp; Update</span>
+        </button>
+        <button type="button" id="migration-pill-history" onclick="MigrationModule.switchMobileView('history')"
+            class="flex-1 py-1.5 px-3 text-[11px] font-bold rounded transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Riwayat Migrasi</span>
+        </button>
+    </div>
+
+    <!-- 2-Column Responsive Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 lg:gap-3.5 items-start">
+        <!-- Kolom Kiri: Status Sistem & Upload Update -->
+        <div id="migration-col-status" class="space-y-2.5 sm:space-y-3">
+            <!-- Card 1: Status Sistem & Database -->
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 lg:p-4 space-y-2.5">
+                <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider">Status Sistem &amp; Skema</h3>
+                    </div>
+                    <span id="migration-status-badge" class="px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold font-mono bg-neutral-800 text-neutral-400">Memuat...</span>
+                </div>
+
+                <!-- 6 Stat Chips (3x2 on sm/lg, 2x3 on xs) -->
+                <div id="migration-status-content" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
+                        <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Versi Aplikasi</span>
+                        <span id="migration-app-version" class="text-xs sm:text-sm font-mono font-bold text-neutral-200 truncate block mt-0.5">-</span>
+                    </div>
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
+                        <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Status Skema</span>
+                        <span id="migration-schema-summary" class="text-xs sm:text-sm font-mono font-bold text-emerald-400 truncate block mt-0.5">Sinkron</span>
+                    </div>
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
+                        <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Skema Aktif</span>
+                        <span id="migration-current-revision" class="text-xs sm:text-sm font-mono font-bold text-neutral-300 truncate block mt-0.5">-</span>
+                    </div>
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
+                        <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Skema HEAD</span>
+                        <span id="migration-head-revision" class="text-xs sm:text-sm font-mono font-bold text-neutral-300 truncate block mt-0.5">-</span>
+                    </div>
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
+                        <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Engine Database</span>
+                        <span id="migration-db-engine" class="text-xs sm:text-sm font-mono font-bold text-neutral-300 truncate block mt-0.5">SQLite 3 WAL</span>
+                    </div>
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
+                        <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Status Backup</span>
+                        <span id="migration-backup-status" class="text-xs sm:text-sm font-mono font-bold text-emerald-400 truncate block mt-0.5">Tersedia &amp; Siap</span>
+                    </div>
+                </div>
             </div>
-            <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-3">
-                <span class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-400 uppercase font-bold">Versi Aplikasi</span>
-                <span id="migration-app-version" class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 font-mono font-bold">-</span>
+
+            <!-- Card 2: Upload Update Aplikasi -->
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 lg:p-4 space-y-2.5">
+                <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider">Upload Update Aplikasi</h3>
+                    </div>
+                    <span class="text-[9px] text-neutral-500 font-mono">Format .zip</span>
+                </div>
+
+                <!-- Dropzone Compact -->
+                <div id="migration-dropzone" onclick="document.getElementById('migration-file-input').click()"
+                    class="border border-dashed border-[#262626] hover:border-neutral-500 rounded p-3 sm:p-4 text-center cursor-pointer transition-colors bg-[#080808]">
+                    <div class="w-8 h-8 rounded-full bg-[#141414] border border-[#222] flex items-center justify-center mx-auto mb-1.5 text-neutral-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                        </svg>
+                    </div>
+                    <p class="text-[11px] sm:text-xs text-neutral-300 font-semibold">Klik atau seret berkas ZIP pembaruan ke sini</p>
+                    <p class="text-[9px] text-neutral-500 mt-0.5">TMBilling_Server_v*.zip</p>
+                    <input type="file" id="migration-file-input" accept=".zip" class="hidden" onchange="MigrationModule.previewFile(this)">
+                </div>
+
+                <!-- File Preview Strip -->
+                <div id="migration-file-preview" class="hidden bg-[#050505] border border-[#1c1c1c] rounded p-2 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="text-xs">📦</span>
+                        <span id="migration-file-name" class="text-[11px] text-neutral-200 font-mono truncate"></span>
+                    </div>
+                    <button type="button" onclick="MigrationModule.clearSelectedFile(event)" class="text-[10px] text-neutral-400 hover:text-red-400 shrink-0 font-medium">Batal</button>
+                </div>
+
+                <!-- Box Panduan Update Cepat -->
+                <div class="bg-[#050505] border border-[#1a1a1a] rounded p-2.5 space-y-1 text-[10px] sm:text-[11px] text-neutral-400">
+                    <div class="flex items-center gap-1.5 text-neutral-300 font-semibold mb-1">
+                        <span class="text-emerald-400">⚡</span>
+                        <span>Panduan Pembaruan Sistem:</span>
+                    </div>
+                    <p class="flex items-center gap-1.5"><span class="text-emerald-500 text-[10px]">✓</span> Snapshot database warnet.db otomatis dicadangkan sebelum ekstraksi</p>
+                    <p class="flex items-center gap-1.5"><span class="text-emerald-500 text-[10px]">✓</span> Integritas arsip ZIP diverifikasi secara otomatis</p>
+                    <p class="flex items-center gap-1.5"><span class="text-emerald-500 text-[10px]">✓</span> Eksekusi migrasi skema alembic &amp; restart server tanpa kehilangan data sesi</p>
+                </div>
+
+                <!-- Upload Action Button -->
+                <button type="button" id="migration-upload-btn" onclick="MigrationModule.uploadUpdate()" disabled
+                    class="w-full py-2 bg-neutral-800 text-neutral-500 text-xs font-bold rounded cursor-not-allowed transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                    </svg>
+                    <span>Unggah &amp; Update Aplikasi</span>
+                </button>
             </div>
-            <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-3">
-                <span class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-400 uppercase font-bold">Skema Aktif</span>
-                <span id="migration-current-revision" class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 font-mono">-</span>
+        </div>
+
+        <!-- Kolom Kanan: Riwayat Migrasi -->
+        <div id="migration-col-history" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 lg:p-4 flex flex-col justify-between space-y-2.5 hidden md:flex">
+            <div>
+                <!-- Header with Title, Count, & Search Mini -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#1c1c1c] pb-2 mb-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider">Riwayat Migrasi</h3>
+                        <span id="migration-total-count" class="px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-semibold bg-[#141414] text-neutral-400 border border-[#222]">0 Migrasi</span>
+                    </div>
+
+                    <!-- Search Input Mini -->
+                    <div class="relative w-full sm:w-48 lg:w-56">
+                        <input type="text" id="migration-search-input" placeholder="Cari revisi / deskripsi..."
+                            class="w-full bg-[#050505] border border-[#222] rounded px-2.5 py-1 pl-7 text-[10px] sm:text-[11px] text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-neutral-400 transition-colors font-mono">
+                        <svg class="w-3.5 h-3.5 text-neutral-500 absolute left-2 top-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Table with Responsive Columns -->
+                <div class="overflow-x-hidden w-full">
+                    <table class="w-full text-left border-collapse table-fixed">
+                        <thead>
+                            <tr class="border-b border-[#1c1c1c] text-neutral-500 text-[9px] sm:text-[10px] uppercase font-bold">
+                                <th class="pb-1.5 w-14 sm:w-16">Revisi</th>
+                                <th class="pb-1.5 w-14 sm:w-16 hidden sm:table-cell">Induk</th>
+                                <th class="pb-1.5">Deskripsi</th>
+                                <th class="pb-1.5 w-16 sm:w-20 text-center">Status</th>
+                                <th class="pb-1.5 w-9 sm:w-11 2xl:w-20 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="migration-history-table" class="text-neutral-300 text-[10px] sm:text-[11px] font-mono divide-y divide-[#171717]">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="flex items-center justify-between">
-                <span class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-400 uppercase font-bold">Skema Terbaru (HEAD)</span>
-                <span id="migration-head-revision" class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-200 font-mono">-</span>
+
+            <!-- Pagination Bar -->
+            <div class="pt-2 border-t border-[#171717] flex items-center justify-between gap-2">
+                <button type="button" id="migration-prev-btn" onclick="MigrationModule.prevPage()" disabled
+                    class="px-2.5 py-1 rounded text-[10px] font-medium border bg-[#141414] text-neutral-500 border-[#222] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#1a1a1a]">
+                    &larr; Prev
+                </button>
+                <span id="migration-page-info" class="text-[10px] text-neutral-400 font-medium">
+                    Hal 1 dari 1
+                </span>
+                <button type="button" id="migration-next-btn" onclick="MigrationModule.nextPage()" disabled
+                    class="px-2.5 py-1 rounded text-[10px] font-medium border bg-[#141414] text-neutral-500 border-[#222] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#1a1a1a]">
+                    Next &rarr;
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Card: Upload Update Aplikasi -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">📦 Upload Update Aplikasi</h3>
-        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mb-4">Unggah berkas <strong class="text-neutral-300">TMBilling_Server_v*.zip</strong> untuk memperbarui kode aplikasi secara otomatis.</p>
-        <div class="border-2 border-dashed border-[#262626] rounded-xl p-8 text-center hover:border-neutral-500 transition-colors cursor-pointer" id="migration-dropzone" onclick="document.getElementById('migration-file-input').click()">
-            <div class="text-3xl mb-2">📁</div>
-            <p class="text-xs lg:max-xl:text-xs xl:text-sm text-neutral-400 font-semibold">Klik untuk pilih file ZIP</p>
-            <p class="text-[9px] lg:max-xl:text-[9px] xl:text-xs text-neutral-600 mt-1">Hanya file .zip</p>
-            <label for="migration-file-input" class="sr-only">Pilih Berkas Pembaruan ZIP</label>
-            <input type="file" id="migration-file-input" accept=".zip" class="hidden" onchange="MigrationModule.previewFile(this)">
-            <div id="migration-file-preview" class="hidden mt-4 text-left bg-[#050505] border border-[#1c1c1c] rounded p-3">
-                <p id="migration-file-name" class="text-xs text-neutral-200 font-mono"></p>
+    <!-- Modal Detail Migrasi -->
+    <div id="modal-migration-detail" class="hidden fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl max-w-lg w-full p-4 sm:p-5 shadow-2xl space-y-4">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider">Detail Revisi Migrasi</h3>
+                        <p class="text-[10px] text-neutral-400">Informasi skema basis data Alembic</p>
+                    </div>
+                </div>
+                <button type="button" onclick="MigrationModule.closeDetail()" class="text-neutral-400 hover:text-white p-1 rounded hover:bg-[#1a1a1a] transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
             </div>
-        </div>
-        <div class="flex justify-end mt-4">
-            <button id="migration-upload-btn" onclick="MigrationModule.uploadUpdate()" disabled
-                class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-800 text-neutral-500 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded cursor-not-allowed transition-colors">Unggah & Update Aplikasi</button>
+
+            <!-- Modal Body: Meta Grid & Full Description -->
+            <div class="space-y-3">
+                <!-- 3 Stat Chips -->
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
+                        <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">ID Revisi</span>
+                        <span id="modal-mig-revision" class="text-xs font-mono font-bold text-neutral-200 truncate block mt-0.5">-</span>
+                    </div>
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
+                        <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Revisi Induk</span>
+                        <span id="modal-mig-down" class="text-xs font-mono font-bold text-neutral-400 truncate block mt-0.5">-</span>
+                    </div>
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
+                        <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Status</span>
+                        <div id="modal-mig-status" class="mt-0.5 text-[10px]">-</div>
+                    </div>
+                </div>
+
+                <!-- Full Description Box -->
+                <div class="space-y-1">
+                    <label class="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block">Deskripsi Lengkap</label>
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-3 text-xs sm:text-sm font-mono text-neutral-200 leading-relaxed break-words whitespace-pre-wrap max-h-48 overflow-y-auto" id="modal-mig-desc">
+                        -
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-between border-t border-[#1c1c1c] pt-3">
+                <button type="button" onclick="MigrationModule.copyRevision()" id="btn-copy-revision"
+                    class="px-3 py-1.5 rounded text-xs font-medium border bg-[#141414] hover:bg-[#1f1f1f] text-neutral-300 border-[#262626] transition-colors flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    <span>Salin ID Revisi</span>
+                </button>
+                <button type="button" onclick="MigrationModule.closeDetail()"
+                    class="px-4 py-1.5 rounded text-xs font-bold bg-neutral-200 hover:bg-white text-black transition-colors">
+                    Tutup
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Card: Riwayat Migrasi -->
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">📜 Riwayat Migrasi</h3>
-        <div class="overflow-x-auto w-full">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] lg:max-xl:text-[10px] xl:text-xs uppercase font-bold">
-                        <th class="pb-2">Revisi</th>
-                        <th class="pb-2">Induk</th>
-                        <th class="pb-2">Deskripsi</th>
-                        <th class="pb-2 text-right">Status</th>
-                    </tr>
-                </thead>
-                <tbody id="migration-history-table" class="text-neutral-300 text-xs lg:max-xl:text-xs xl:text-sm font-mono divide-y divide-[#1c1c1c]">
-                    {% for _ in range(4) %}
-                    <tr class="border-b border-[#1c1c1c] animate-pulse">
-                        <td class="py-3"><div class="h-3.5 bg-[#262626] rounded w-24"></div></td>
-                        <td class="py-3"><div class="h-3 bg-[#202020] rounded w-24"></div></td>
-                        <td class="py-3"><div class="h-3 bg-[#1e1e1e] rounded w-48"></div></td>
-                        <td class="py-3 text-right"><div class="h-5 w-16 bg-[#202020] rounded-full ml-auto"></div></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
 </div>
