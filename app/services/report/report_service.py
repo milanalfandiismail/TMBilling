@@ -157,11 +157,22 @@ class ReportService:
                 item_names = [f"{tm.menu.nama} x{tm.jumlah}" if tm.menu else f"Menu Terhapus x{tm.jumlah}" for tm in nota_group]
                 total_qty = sum(tm.jumlah for tm in nota_group)
                 total_harga = sum(tm.total_harga for tm in nota_group)
+                items_detail = [
+                    {
+                        "nama": tm.menu.nama if tm.menu else "Menu Terhapus",
+                        "jumlah": tm.jumlah,
+                        "harga": tm.total_harga,
+                        "harga_satuan": (tm.total_harga // tm.jumlah) if tm.jumlah else 0
+                    }
+                    for tm in nota_group
+                ]
 
                 history_menu.append({
                     "id": first_item.id,
                     "no_nota": first_item.no_nota,
                     "menu_nama": ", ".join(item_names),
+                    "items_detail": items_detail,
+                    "item_count": len(items_detail),
                     "jumlah": total_qty,
                     "total_harga": total_harga,
                     "pc_kode": first_item.pc_kode or "-",

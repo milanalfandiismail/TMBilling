@@ -37,30 +37,30 @@
                 </div>
 
                 <!-- 6 Stat Chips (3x2 on sm/lg, 2x3 on xs) -->
-                <div id="migration-status-content" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div id="migration-status-content" class="grid grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-2.5">
                     <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
                         <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Versi Aplikasi</span>
-                        <span id="migration-app-version" class="text-xs sm:text-sm font-mono font-bold text-neutral-200 truncate block mt-0.5">-</span>
+                        <span id="migration-app-version" class="text-xs sm:text-sm font-mono font-bold text-neutral-200 block mt-0.5">-</span>
                     </div>
                     <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
                         <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Status Skema</span>
-                        <span id="migration-schema-summary" class="text-xs sm:text-sm font-mono font-bold text-emerald-400 truncate block mt-0.5">Sinkron</span>
+                        <span id="migration-schema-summary" class="text-xs sm:text-sm font-mono font-bold text-emerald-400 block mt-0.5">Sinkron</span>
                     </div>
                     <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
                         <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Skema Aktif</span>
-                        <span id="migration-current-revision" class="text-xs sm:text-sm font-mono font-bold text-neutral-300 truncate block mt-0.5">-</span>
+                        <span id="migration-current-revision" class="text-xs sm:text-sm font-mono font-bold text-neutral-300 block mt-0.5">-</span>
                     </div>
                     <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
                         <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Skema HEAD</span>
-                        <span id="migration-head-revision" class="text-xs sm:text-sm font-mono font-bold text-neutral-300 truncate block mt-0.5">-</span>
+                        <span id="migration-head-revision" class="text-xs sm:text-sm font-mono font-bold text-neutral-300 block mt-0.5">-</span>
                     </div>
                     <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
                         <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Engine Database</span>
-                        <span id="migration-db-engine" class="text-xs sm:text-sm font-mono font-bold text-neutral-300 truncate block mt-0.5">SQLite 3 WAL</span>
+                        <span id="migration-db-engine" class="text-xs sm:text-sm font-mono font-bold text-neutral-300 block mt-0.5">SQLite 3 WAL</span>
                     </div>
                     <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
                         <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Status Backup</span>
-                        <span id="migration-backup-status" class="text-xs sm:text-sm font-mono font-bold text-emerald-400 truncate block mt-0.5">Tersedia &amp; Siap</span>
+                        <span id="migration-backup-status" class="text-xs sm:text-sm font-mono font-bold text-emerald-400 block mt-0.5">Tersedia &amp; Siap</span>
                     </div>
                 </div>
             </div>
@@ -96,7 +96,7 @@
                 <div id="migration-file-preview" class="hidden bg-[#050505] border border-[#1c1c1c] rounded p-2 flex items-center justify-between gap-2">
                     <div class="flex items-center gap-2 min-w-0">
                         <span class="text-xs">📦</span>
-                        <span id="migration-file-name" class="text-[11px] text-neutral-200 font-mono truncate"></span>
+                        <span id="migration-file-name" class="text-[11px] text-neutral-200 font-mono break-all leading-tight"></span>
                     </div>
                     <button type="button" onclick="MigrationModule.clearSelectedFile(event)" class="text-[10px] text-neutral-400 hover:text-red-400 shrink-0 font-medium">Batal</button>
                 </div>
@@ -139,8 +139,8 @@
                     </div>
 
                     <!-- Search Input Mini -->
-                    <div class="relative w-full sm:w-48 lg:w-56">
-                        <input type="text" id="migration-search-input" placeholder="Cari revisi / deskripsi..."
+                    <div class="relative w-full sm:w-36 md:w-40 lg:w-48">
+                        <input type="text" id="migration-search-input" placeholder="Cari revisi / log..."
                             class="w-full bg-[#050505] border border-[#222] rounded px-2.5 py-1 pl-7 text-[10px] sm:text-[11px] text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-neutral-400 transition-colors font-mono">
                         <svg class="w-3.5 h-3.5 text-neutral-500 absolute left-2 top-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -153,8 +153,8 @@
                     <table class="w-full text-left border-collapse table-fixed">
                         <thead>
                             <tr class="border-b border-[#1c1c1c] text-neutral-500 text-[9px] sm:text-[10px] uppercase font-bold">
-                                <th class="pb-1.5 w-14 sm:w-16">Revisi</th>
-                                <th class="pb-1.5 w-14 sm:w-16 hidden sm:table-cell">Induk</th>
+                                <th class="pb-1.5 w-16 sm:w-20">Revisi</th>
+                                <th class="pb-1.5 w-16 sm:w-20 hidden xl:table-cell">Induk</th>
                                 <th class="pb-1.5">Deskripsi</th>
                                 <th class="pb-1.5 w-16 sm:w-20 text-center">Status</th>
                                 <th class="pb-1.5 w-9 sm:w-11 2xl:w-20 text-right">Aksi</th>
@@ -213,11 +213,11 @@
                 <div class="grid grid-cols-3 gap-2">
                     <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
                         <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">ID Revisi</span>
-                        <span id="modal-mig-revision" class="text-xs font-mono font-bold text-neutral-200 truncate block mt-0.5">-</span>
+                        <span id="modal-mig-revision" class="text-xs font-mono font-bold text-neutral-200 break-all block mt-0.5">-</span>
                     </div>
                     <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
                         <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Revisi Induk</span>
-                        <span id="modal-mig-down" class="text-xs font-mono font-bold text-neutral-400 truncate block mt-0.5">-</span>
+                        <span id="modal-mig-down" class="text-xs font-mono font-bold text-neutral-400 break-all block mt-0.5">-</span>
                     </div>
                     <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
                         <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Status</span>

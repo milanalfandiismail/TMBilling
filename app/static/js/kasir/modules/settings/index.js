@@ -210,10 +210,23 @@ const Settings = {
             target.classList.remove('hidden');
         }
 
-        // Pembersihan Database — load stats
+        // Pembersihan Database — load stats & reset view
         if (this.currentSubTab === 'db_cleanup') {
             if (typeof this.loadDbStats === 'function') {
                 this.loadDbStats();
+            }
+
+        // Penjadwalan Otomatis — reset mobile view & update preview
+        if (this.currentSubTab === 'scheduler') {
+            if (typeof this.switchSchedulerMobileView === 'function') {
+                this.switchSchedulerMobileView('backup');
+            }
+            if (typeof this._updateSchedulerPreview === 'function') {
+                this._updateSchedulerPreview();
+            }
+        }
+            if (typeof this.switchDbCleanupMobileView === 'function') {
+                this.switchDbCleanupMobileView('action');
             }
         }
 

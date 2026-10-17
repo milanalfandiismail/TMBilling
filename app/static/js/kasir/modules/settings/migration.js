@@ -139,14 +139,14 @@ const MigrationModule = {
                 badge.className = 'px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold font-mono bg-amber-500/20 text-amber-400 border border-amber-500/30';
                 if (summary) {
                     summary.textContent = 'Perlu Upgrade';
-                    summary.className = 'text-xs sm:text-sm font-mono font-bold text-amber-400 truncate block mt-0.5';
+                    summary.className = 'text-xs sm:text-sm font-mono font-bold text-amber-400 block mt-0.5';
                 }
             } else {
                 badge.textContent = '✅ Up-to-Date';
                 badge.className = 'px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
                 if (summary) {
                     summary.textContent = 'Sinkron';
-                    summary.className = 'text-xs sm:text-sm font-mono font-bold text-emerald-400 truncate block mt-0.5';
+                    summary.className = 'text-xs sm:text-sm font-mono font-bold text-emerald-400 block mt-0.5';
                 }
             }
         }
@@ -209,13 +209,13 @@ const MigrationModule = {
 
             return `
                 <tr class="border-b border-[#171717] hover:bg-[#0a0a0a] transition-colors group">
-                    <td class="py-2 text-[10px] sm:text-[11px] font-mono text-neutral-200 truncate w-14 sm:w-16">${h.revision || '-'}</td>
-                    <td class="py-2 text-[10px] sm:text-[11px] font-mono text-neutral-500 truncate w-14 sm:w-16 hidden sm:table-cell">${h.down_revision || '-'}</td>
-                    <td class="py-2 text-[10px] sm:text-[11px] text-neutral-300 truncate cursor-pointer hover:text-white" onclick="MigrationModule.showDetail('${safeRev}')" title="Klik untuk lihat detail">
-                        <span class="truncate block hover:underline underline-offset-2 decoration-neutral-500">${h.description || '-'}</span>
+                    <td class="py-2 text-[10px] sm:text-[11px] font-mono text-neutral-200 w-16 sm:w-20 align-top">${h.revision || '-'}</td>
+                    <td class="py-2 text-[10px] sm:text-[11px] font-mono text-neutral-500 w-16 sm:w-20 hidden xl:table-cell align-top">${h.down_revision || '-'}</td>
+                    <td class="py-2 text-[10px] sm:text-[11px] text-neutral-300 cursor-pointer hover:text-white align-top" onclick="MigrationModule.showDetail('${safeRev}')" title="Klik untuk lihat detail">
+                        <span class="break-words whitespace-normal leading-tight block hover:underline underline-offset-2 decoration-neutral-500">${h.description || '-'}</span>
                     </td>
-                    <td class="py-2 text-center w-16 sm:w-20">${statusBadge}</td>
-                    <td class="py-2 text-right w-9 sm:w-11 2xl:w-20">
+                    <td class="py-2 text-center w-16 sm:w-20 align-top">${statusBadge}</td>
+                    <td class="py-2 text-right w-9 sm:w-11 2xl:w-20 align-top">
                         <button type="button" onclick="MigrationModule.showDetail('${safeRev}')" title="Lihat detail lengkap"
                             class="p-1 sm:px-1.5 sm:py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-[#141414] hover:bg-neutral-800 text-neutral-300 hover:text-white border border-[#222] transition-colors inline-flex items-center gap-1 shadow-sm">
                             <svg class="w-3 h-3 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
