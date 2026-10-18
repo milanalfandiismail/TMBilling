@@ -163,14 +163,19 @@ const Screenshot = {
             const cardEl = document.querySelector(`.screenshot-card[data-pcid="${pc.pc_id}"]`);
             if (!cardEl) return;
 
-            const timeChanged = !oldPc || oldPc.screenshot_time !== pc.screenshot_time;
+            const timeChanged = !oldPc || oldPc.screenshot_time !== pc.screenshot_time || oldPc.screenshot_time_display !== pc.screenshot_time_display;
             const urlChanged = !oldPc || oldPc.screenshot_url !== pc.screenshot_url;
 
             if (timeChanged || urlChanged) {
                 // Update waktu update
                 const timeEl = cardEl.querySelector('.screenshot-update-time');
                 if (timeEl) {
-                    timeEl.textContent = pc.screenshot_time || 'N/A';
+                    const timeInfo = this._formatScreenshotTime(pc.screenshot_time, pc.mtime, pc.screenshot_time_display);
+                    timeEl.textContent = timeInfo.display;
+                    const footerEl = cardEl.querySelector('.screenshot-footer') || timeEl.parentElement;
+                    if (footerEl) {
+                        footerEl.title = timeInfo.full;
+                    }
                 }
 
                 // Update container preview gambar tanpa flicker pada PC lain
@@ -325,6 +330,48 @@ const Screenshot = {
         }
     },
 
+    _formatScreenshotTime(rawTime, mtime, displayTime) {
+        if (displayTime) {
+            return {
+                display: displayTime,
+                full: rawTime || displayTime
+            };
+        }
+        if (!rawTime || rawTime === 'N/A' || rawTime === '-') {
+            return {
+                display: '—',
+                full: 'Belum ada tangkapan layar'
+            };
+        }
+        const parts = String(rawTime).trim().split(/\s+/);
+        if (parts.length >= 2) {
+            const datePart = parts[0];
+            const timePart = parts[1];
+            const tzPart = parts.slice(2).join(' ') || '';
+            const sub = datePart.split('/');
+            if (sub.length === 3) {
+                const [d, m, y] = sub;
+                const now = new Date();
+                const isToday = parseInt(d, 10) === now.getDate() &&
+                                parseInt(m, 10) === (now.getMonth() + 1) &&
+                                parseInt(y, 10) === now.getFullYear();
+
+                const display = isToday
+                    ? `${timePart}${tzPart ? ' ' + tzPart : ''}`
+                    : `${d}/${m} ${timePart.slice(0, 5)}${tzPart ? ' ' + tzPart : ''}`;
+
+                return {
+                    display,
+                    full: rawTime
+                };
+            }
+        }
+        return {
+            display: rawTime,
+            full: rawTime
+        };
+    },
+
     renderGrid() {
         let data = this.cachedData || [];
 
@@ -362,6 +409,7 @@ const Screenshot = {
             const hasImage = Boolean(pc.screenshot_url);
             const resolvedUrl = hasImage && window.API ? API.resolveMediaUrl(pc.screenshot_url) : (pc.screenshot_url || '');
             const imageUrl = hasImage ? `${resolvedUrl}?t=${new Date().getTime()}` : '';
+            const timeInfo = this._formatScreenshotTime(pc.screenshot_time, pc.mtime, pc.screenshot_time_display);
 
             return `
                 <div class="screenshot-card w-full h-full flex flex-col bg-[#121212] border border-[#1c1c1c] hover:border-[#2a2a2a] rounded-lg overflow-hidden transition-all shadow-sm" data-pcid="${pc.pc_id}">
@@ -387,9 +435,11 @@ const Screenshot = {
                         </div>
                     </div>
                     
-                    <div class="px-2 py-1 text-[10px] 2xl:text-[11px] text-neutral-400 flex justify-between items-center bg-[#0c0c0c] border-t border-[#1c1c1c] mt-auto">
-                        <span>Update:</span>
-                        <span class="screenshot-update-time font-mono font-medium text-neutral-300 text-[10px]">${pc.screenshot_time || 'N/A'}</span>
+                    <div class="screenshot-footer px-2 py-1 min-h-[26px] text-[10px] 2xl:text-[11px] text-neutral-400 flex justify-between items-center bg-[#0c0c0c] border-t border-[#1c1c1c] mt-auto" title="${timeInfo.full}">
+                        <span class="flex items-center text-neutral-500 shrink-0" title="Tangkapan Layar">
+                            <svg class="w-3 h-3 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </span>
+                        <span class="screenshot-update-time font-mono font-medium text-neutral-300 text-[10px] 2xl:text-[11px] truncate ml-auto text-right">${timeInfo.display}</span>
                     </div>
                 </div>
             `;

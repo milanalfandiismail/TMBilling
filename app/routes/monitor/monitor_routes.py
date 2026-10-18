@@ -170,7 +170,7 @@ def get_pc_processes_kasir(pc_id):
     """Endpoint kasir untuk mengambil daftar proses yang sedang berjalan di PC tertentu."""
     try:
         from datetime import timezone
-        from app.utils.timezone_utils import format_display
+        from app.utils.timezone_utils import format_display, display_in_tz, get_tz_short_name
         from app.repositories import HardwareRepository
         processes = HardwareService.get_processes_by_pc(pc_id)
         hw = HardwareRepository.get_by_pc_id(pc_id)
@@ -456,7 +456,7 @@ def get_screenshot_status(pc_id):
         import os
         from flask import current_app
         from app.repositories import PCRepository
-        from app.utils.timezone_utils import format_display
+        from app.utils.timezone_utils import format_display, display_in_tz, get_tz_short_name
         from datetime import datetime, timezone
 
         pc = PCRepository.get_by_id(pc_id)
@@ -467,11 +467,19 @@ def get_screenshot_status(pc_id):
         if os.path.exists(screenshot_path):
             mtime = os.path.getmtime(screenshot_path)
             dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
-            screenshot_time = format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
+            local_dt = display_in_tz(dt_utc)
+            now_local = display_in_tz(datetime.now(timezone.utc))
+            tz_label = get_tz_short_name()
+            full_time = format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
+            if local_dt.date() == now_local.date():
+                display_time = f"{local_dt.strftime('%H:%M:%S')} {tz_label}"
+            else:
+                display_time = f"{local_dt.strftime('%d/%m %H:%M')} {tz_label}"
             return jsonify({
                 "success": True,
                 "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
-                "screenshot_time": screenshot_time,
+                "screenshot_time": full_time,
+                "screenshot_time_display": display_time,
                 "mtime": mtime
             }), 200
         else:
@@ -479,6 +487,7 @@ def get_screenshot_status(pc_id):
                 "success": True,
                 "screenshot_url": None,
                 "screenshot_time": None,
+                "screenshot_time_display": None,
                 "mtime": 0
             }), 200
     except Exception as e:
@@ -493,7 +502,7 @@ def get_all_screenshot_status():
         import os
         from flask import current_app
         from app.repositories import PCRepository
-        from app.utils.timezone_utils import format_display
+        from app.utils.timezone_utils import format_display, display_in_tz, get_tz_short_name
         from datetime import datetime, timezone
 
         pcs = PCRepository.get_all()
@@ -501,19 +510,28 @@ def get_all_screenshot_status():
         pcs_sorted = sorted(pcs, key=lambda pc: (pc.grup_id or 0, natural_sort_key(pc.kode)))
         result = []
 
+        tz_label = get_tz_short_name()
+        now_local = display_in_tz(datetime.now(timezone.utc))
+
         for pc in pcs_sorted:
             screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{pc.kode}.png")
             if os.path.exists(screenshot_path):
                 mtime = os.path.getmtime(screenshot_path)
                 dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
-                screenshot_time = format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
+                local_dt = display_in_tz(dt_utc)
+                full_time = format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
+                if local_dt.date() == now_local.date():
+                    display_time = f"{local_dt.strftime('%H:%M:%S')} {tz_label}"
+                else:
+                    display_time = f"{local_dt.strftime('%d/%m %H:%M')} {tz_label}"
                 result.append({
                     "pc_id": pc.id,
                     "pc_kode": pc.kode,
                     "pc_grup_id": pc.grup_id or 0,
                     "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",
                     "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
-                    "screenshot_time": screenshot_time,
+                    "screenshot_time": full_time,
+                    "screenshot_time_display": display_time,
                     "mtime": mtime
                 })
             else:
@@ -524,6 +542,7 @@ def get_all_screenshot_status():
                     "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",
                     "screenshot_url": None,
                     "screenshot_time": None,
+                    "screenshot_time_display": None,
                     "mtime": 0
                 })
                 
