@@ -7,9 +7,10 @@ module.exports = {
     theme: {
         extend: {
             fontFamily: {
-                'space-grotesk': ['Space Grotesk', 'sans-serif'],
-                'inter': ['Inter', 'sans-serif'],
-                mono: ['JetBrains Mono', 'monospace'],
+                sans: ['Segoe UI', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                'space-grotesk': ['Segoe UI', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                'inter': ['Segoe UI', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                mono: ['Consolas', 'JetBrains Mono', 'monospace'],
             },
             colors: {
                 surface: '#0a0a0a',

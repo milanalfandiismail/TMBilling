@@ -1,7 +1,7 @@
 {
   "name": "tmbilling",
   "version": "1.6.4",
-  "description": "<!-- markdownlint-disable MD033 MD041 -->\r <h1 align=\"center\">🖥️ TMBilling</h1>",
+  "description": "<!-- markdownlint-disable MD033 MD041 -->\r <h1 align=\"center\">\ud83d\udda5\ufe0f TMBilling</h1>",
   "main": "index.js",
   "directories": {
     "doc": "docs"
@@ -9,7 +9,10 @@
   "scripts": {
     "dev:css": "tailwindcss -i ./app/static/css/input.css -o ./app/static/css/tailwind.css --watch",
     "build:css": "tailwindcss -i ./app/static/css/input.css -o ./app/static/css/tailwind.css --minify",
-    "build:ckeditor": "cd tools/ckeditor-builder && npm install && npm run build"
+    "build:ckeditor": "cd tools/ckeditor-builder && npm install && npm run build",
+    "build:vendor": "node tools/sync-vendor.js",
+    "build": "npm run build:vendor && npm run build:css",
+    "postinstall": "npm run build:vendor && npm run build:css"
   },
   "repository": {
     "type": "git",
@@ -27,6 +30,8 @@
     "tailwindcss": "^3.4.19"
   },
   "dependencies": {
-    "chart.js": "^4.5.1"
+    "@fortawesome/fontawesome-free": "^6.4.0",
+    "qrcodejs": "^1.0.0",
+    "@novnc/novnc": "^1.4.0"
   }
 }

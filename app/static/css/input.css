@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+    body {
+        font-family: 'Segoe UI', Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
     /* Hide number input spinners globally across all browsers */
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {

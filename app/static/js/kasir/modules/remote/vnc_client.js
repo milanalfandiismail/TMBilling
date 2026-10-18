@@ -18,7 +18,7 @@ const VNCClient = {
             return this.RFBClass;
         }
         try {
-            const mod = await import('https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.js');
+            const mod = await import('/static/vendor/novnc/core/rfb.js');
             this.RFBClass = mod.default;
             window.RFB = mod.default;
             return this.RFBClass;
