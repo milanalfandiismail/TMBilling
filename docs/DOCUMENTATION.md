@@ -4,8 +4,8 @@
 
 # Master Dokumentasi Teknis & Operasional TMBilling (Single Source of Truth)
 
-> **Versi Rilis:** v1.6.4  
-> **Branch:** `1.6.4` ("Multi-Branch Nexus")  
+> **Versi Rilis:** v1.6.5  
+> **Branch:** `v1.6.5` ("Autonomous Offline Studio")  
 > **Status:** Single Source of Truth Resmi Repositori TMBilling  
 > **Target Audiens:** Pengembang Backend/Frontend, Pengembang Rust/Tauri, Operator/Kasir, dan Administrator Sistem Warnet & Game Center.
 
@@ -166,7 +166,7 @@ graph TB
 ```text
 c:\Project GIT\TMBilling
 ├── app/                                # Backend Server Flask & Frontend Kasir
-│   ├── config.py                       # Single Source of Version Truth (VERSION = "1.6.4")
+│   ├── config.py                       # Single Source of Version Truth (VERSION = "1.6.5")
 │   ├── models/                         # 25 Database Model SQLAlchemy
 │   │   ├── branch/                     # Branch & BranchInbound
 │   │   ├── game/                       # Game & GameKategori
@@ -382,7 +382,7 @@ c:\Project GIT\TMBilling
   - Kemudahan akses bagi Owner untuk melihat laporan keuangan dan analitik dari mana saja melalui smartphone.
 
 ### 4.13 Centralized Versioning System (`config.py` Truth)
-- **Deskripsi**: Standarisasi nomor versi aplikasi terpusat pada file [app/config.py](file:///c:/Project%20GIT/TMBilling/app/config.py) (`VERSION = "1.6.4"`).
+- **Deskripsi**: Standarisasi nomor versi aplikasi terpusat pada file [app/config.py](file:///c:/Project%20GIT/TMBilling/app/config.py) (`VERSION = "1.6.5"`).
 - **Penyebaran Otomatis**: Variabel versi ini otomatis diinjeksikan ke template Jinja2 (footer UI kasir), endpoint REST `/api/version`, dan response handshake klien agent.
 
 ### 4.14 RBAC Kasir & Centralized Audit Log System
