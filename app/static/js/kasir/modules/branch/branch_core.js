@@ -253,6 +253,7 @@ window.BranchCore = {
         const badgeContainer = document.getElementById('sidebar-brand-badge-container');
         const badgeText = document.getElementById('sidebar-brand-badge-text');
         const logoImg = document.getElementById('sidebar-brand-logo-img');
+        const textContainer = document.getElementById('sidebar-brand-text-container');
         const fileExplorerBtn = document.getElementById('sidebar-fileexplorer-btn');
         const documentationBtn = document.getElementById('sidebar-documentation-btn');
         const remoteHiddenElements = document.querySelectorAll('.sidebar-remote-hidden, .sidebar-branch-group, #sidebar-branch-wrapper, #sidebar-branch-section, #sidebar-staff-group, #sidebar-settings-group');
@@ -272,10 +273,13 @@ window.BranchCore = {
                 subTitleEl.className = 'text-[10px] text-neutral-500 leading-tight mt-0.5';
             }
             if (badgeContainer) {
-                badgeContainer.className = 'w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center shrink-0 transition-all overflow-hidden select-none';
+                badgeContainer.className = 'h-7 w-auto max-w-[64px] flex items-center justify-center shrink-0 transition-all overflow-hidden select-none';
             }
             if (logoImg) {
                 logoImg.classList.remove('hidden');
+            }
+            if (textContainer) {
+                textContainer.classList.add('hidden');
             }
             if (badgeText) {
                 badgeText.classList.add('hidden');
@@ -304,6 +308,9 @@ window.BranchCore = {
             }
             if (badgeContainer) {
                 badgeContainer.className = 'w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-500 text-black flex items-center justify-center shrink-0 shadow-lg shadow-emerald-950/40 transition-all select-none';
+            }
+            if (textContainer) {
+                textContainer.classList.remove('hidden');
             }
             if (logoImg) {
                 logoImg.classList.add('hidden');

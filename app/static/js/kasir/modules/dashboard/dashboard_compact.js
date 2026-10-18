@@ -333,9 +333,12 @@ const CompactGrid = {
             ? 'text-[10px] lg:text-[10px] xl:text-[11px] 2xl:text-xs' 
             : 'text-[11px] lg:text-xs xl:text-xs 2xl:text-sm';
             
-        const kodeFontSizeClass = (pc.kode || '').length > 7 
-            ? 'text-[10px] lg:text-[11px] xl:text-xs 2xl:text-sm' 
-            : 'text-xs lg:text-xs xl:text-sm 2xl:text-base';
+        const kodeLen = (pc.kode || '').length;
+        const kodeFontSizeClass = kodeLen > 8
+            ? 'text-[9px] lg:text-[9.5px] xl:text-[10.5px] 2xl:text-xs tracking-tighter'
+            : (kodeLen > 5
+                ? 'text-[10px] lg:text-[11px] xl:text-xs 2xl:text-sm tracking-tight'
+                : 'text-xs lg:text-xs xl:text-sm 2xl:text-base tracking-tight');
 
         const isSelected = window.DashboardSelection && window.DashboardSelection.isSelected(pc.id);
         const selectionClasses = isSelected ? 'ring-2 ring-indigo-500 border-indigo-400 bg-indigo-950/30' : '';
@@ -370,9 +373,9 @@ const CompactGrid = {
                 
                 <!-- Row 1: Kode PC - Inline Selection Checkmark - Status DOT (Lebar leluasa tanpa badge pendesak) -->
                 <div class="flex items-center justify-between gap-1">
-                    <div class="flex items-center gap-1 min-w-0 flex-1">
-                        <span class="selection-check-badge text-indigo-400 font-black text-[10px] lg:text-xs xl:text-xs 2xl:text-sm shrink-0 ${isSelected ? '' : 'hidden'}">✓</span>
-                        <span class="${kodeFontSizeClass} font-black text-neutral-100 tracking-tight truncate flex-1">${pc.kode}</span>
+                    <div class="flex items-center gap-0.5 min-w-0 flex-1">
+                        <span class="selection-check-badge text-indigo-400 font-black text-[10px] lg:text-xs xl:text-xs 2xl:text-sm shrink-0 mr-0.5 ${isSelected ? '' : 'hidden'}">✓</span>
+                        <span class="pc-card-kode ${kodeFontSizeClass} font-black text-neutral-100 whitespace-nowrap overflow-visible flex-1 leading-none" title="${pc.kode}">${pc.kode}</span>
                     </div>
                     <span class="pc-card-dot w-2 h-2 xl:w-2.5 xl:h-2.5 rounded-full ${indicatorColorClass} shrink-0 bg-current"></span>
                 </div>

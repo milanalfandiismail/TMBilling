@@ -446,11 +446,12 @@ const API = {
             if (xhr.status === 200) {
                 try {
                     var data = JSON.parse(xhr.responseText);
-                    if (!data.logged_in) {
+                    if (data && data.logged_in === false) {
                         window.location.href = '/kasir/login';
                     }
                 } catch (e) {
-                    window.location.href = '/kasir/login';
+                    // Hindari redirect palsu jika server merespons non-JSON sementara
+                    console.warn('[Session Polling] Respons bukan JSON yang valid:', e);
                 }
             }
         };

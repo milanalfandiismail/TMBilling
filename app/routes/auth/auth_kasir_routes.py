@@ -70,6 +70,7 @@ def login():
                 pass
 
         # Inisialisasi Session Flask
+        session.permanent = True
         session["kasir_id"] = result["user"]["id"]
         session["kasir_username"] = result["user"]["username"]
         session["kasir_role"] = result["user"]["role"]
@@ -113,8 +114,9 @@ def check_session():
     kasir_id = session.get("kasir_id")
     result = AuthKasirService.check_session(user_id=kasir_id)
 
-    # Jika session valid, cek juga IP whitelist
+    # Jika session valid, pertahankan durasi cookie permanent & cek IP whitelist
     if result.get("logged_in"):
+        session.permanent = True
         try:
             from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
             auth_flag = session.get("ip_wh_authenticated")

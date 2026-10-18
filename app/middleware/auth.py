@@ -124,6 +124,7 @@ def login_required(f):
             clear_kasir_session()
             return jsonify({"error": "Sesi tidak valid, silakan login kembali"}), 401
             
+        session.permanent = True
         return f(*args, **kwargs)
     return decorated_function
 
@@ -173,6 +174,7 @@ def login_required_html(f):
             clear_kasir_session()
             return redirect("/kasir/login")
             
+        session.permanent = True
         return f(*args, **kwargs)
     return decorated_function
 

@@ -8,6 +8,7 @@ termasuk identifikasi berbasis IP dan MAC address.
 
 from app.models import db
 from app.models import PC
+from sqlalchemy.orm import joinedload
 
 
 class PCRepository:
@@ -21,7 +22,7 @@ class PCRepository:
     @staticmethod
     def get_all(aktif_only=False, grup_id=None, search_query=None):
         """Mengambil daftar PC dengan sorting grup dan kode, serta filter opsional."""
-        query = PC.query
+        query = PC.query.options(joinedload(PC.grup), joinedload(PC.hardware))
         if aktif_only:
             query = query.filter_by(aktif=True)
         if grup_id:
@@ -37,7 +38,7 @@ class PCRepository:
     @staticmethod
     def get_paginated(aktif_only=False, grup_id=None, page=1, per_page=12, search_query=None):
         """Mengambil daftar PC terpaginasi dengan filter opsional."""
-        query = PC.query
+        query = PC.query.options(joinedload(PC.grup), joinedload(PC.hardware))
         if aktif_only:
             query = query.filter_by(aktif=True)
         if grup_id:

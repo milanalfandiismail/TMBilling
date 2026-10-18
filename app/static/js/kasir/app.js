@@ -21,28 +21,32 @@ const App = {
         // Dynamic interval heartbeat untuk Dashboard, Seluruh Tab, dan In-Place Modal Sync
         this.startDashboardPolling();
 
+        // Page Visibility API: kurangi frekuensi polling saat browser minimize / tab background (anti resource thrashing)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.startDashboardPolling(10000); // 10 detik saat tab tersembunyi
+            } else {
+                this.startDashboardPolling(); // restore normal
+                if (this.currentTab === 'dash' || this.currentTab === 'dashboard') {
+                    if (typeof Dashboard !== 'undefined') Dashboard.load(true);
+                }
+            }
+        });
+
         // Session polling sudah di api.js (startSessionCheck)
     },
 
-    startDashboardPolling() {
+    startDashboardPolling(customInterval = null) {
         if (this._dashboardTimer) {
             clearInterval(this._dashboardTimer);
             this._dashboardTimer = null;
         }
-        const interval = (typeof Dashboard !== 'undefined' && Dashboard.getRefreshInterval) ? Dashboard.getRefreshInterval() : 1000;
+        const interval = customInterval || ((typeof Dashboard !== 'undefined' && Dashboard.getRefreshInterval) ? Dashboard.getRefreshInterval() : 1000);
         this._dashboardTimer = setInterval(() => {
             // 1. Shift sync (ikut ritme interval pilihan dashboard)
             if (typeof Shift !== 'undefined') Shift.load(false);
 
-            // 2. Live Modal Sync (In-place update tanpa perlu keluar dari modal)
-            if (typeof DashboardDetailModal !== 'undefined' && DashboardDetailModal.syncLive) {
-                DashboardDetailModal.syncLive();
-            }
-            if (typeof TambahModal !== 'undefined' && TambahModal.syncLive) {
-                TambahModal.syncLive();
-            }
-
-            // 3. Tab-specific live polling (In-place & Silent, state-preserving across all tabs)
+            // 2. Tab-specific live polling (In-place & Silent, state-preserving across all tabs)
             switch (this.currentTab) {
                 case 'dashboard':
                 case 'dash':

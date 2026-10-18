@@ -31,7 +31,13 @@ class Config:
     
     SECRET_KEY = os.environ.get('SECRET_KEY', 'tm-billing-secret-key-default-2026')
     import sys
-    if "pytest" in sys.modules or os.environ.get("FLASK_ENV") == "testing":
+    _is_testing = (
+        "pytest" in sys.modules
+        or "unittest" in sys.modules
+        or any("unittest" in str(arg) for arg in sys.argv)
+        or os.environ.get("FLASK_ENV") == "testing"
+    )
+    if _is_testing:
         SQLALCHEMY_DATABASE_URI = "sqlite:///test_warnet.db"
     else:
         SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///warnet.db')

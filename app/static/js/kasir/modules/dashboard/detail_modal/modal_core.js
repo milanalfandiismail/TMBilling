@@ -410,6 +410,34 @@ window.DashboardModalCore = {
         Modal.show(modalHtml, () => {
             DashboardDetailModal.onModalClose(pc.id);
         });
+        this.fetchScreenshotStatus(pc.id);
+    },
+
+    async fetchScreenshotStatus(pcId) {
+        try {
+            const statusData = await API.request(`/api/v1/kasir/monitor/screenshot/status/${pcId}`);
+            if (statusData && statusData.success && statusData.screenshot_url && this.currentPcId === pcId) {
+                const timeSpan = document.getElementById('screenshot-time');
+                const img = document.getElementById('screenshot-img');
+                const placeholder = document.getElementById('screenshot-placeholder');
+                const hint = document.getElementById('screenshot-fullscreen-hint');
+
+                if (timeSpan && statusData.screenshot_time) {
+                    timeSpan.innerText = statusData.screenshot_time;
+                }
+                if (img) {
+                    const resolvedUrl = window.API ? API.resolveMediaUrl(statusData.screenshot_url) : statusData.screenshot_url;
+                    img.src = resolvedUrl + '?t=' + Date.now();
+                    img.classList.remove('hidden');
+                }
+                if (placeholder) placeholder.classList.add('hidden');
+                if (hint) hint.classList.remove('hidden');
+                this.lastScreenshotTime = statusData.screenshot_time;
+                this.lastScreenshotUrl = statusData.screenshot_url;
+            }
+        } catch (e) {
+            // Abaikan jika request gagal atau modal telah ditutup
+        }
     },
 
     async takeScreenshot(pcId) {
@@ -445,9 +473,14 @@ window.DashboardModalCore = {
             Toast.success('Permintaan screenshot dikirim ke PC!');
             if (text) text.innerText = 'MENUNGGU...';
 
+            if (this._screenshotTimer) {
+                clearInterval(this._screenshotTimer);
+                this._screenshotTimer = null;
+            }
+
             let attempts = 0;
             const maxAttempts = 15; // 15 attempts * 2 seconds = 30 seconds total timeout
-            const interval = setInterval(async () => {
+            this._screenshotTimer = setInterval(async () => {
                 attempts++;
                 try {
                     const statusData = await API.request(`/api/v1/kasir/monitor/screenshot/status/${pcId}`);
@@ -461,7 +494,10 @@ window.DashboardModalCore = {
                         const isUpdated = initialMtime > 0 ? (currentMtime > initialMtime) : (currentMtime > 0);
 
                         if (isUpdated) {
-                            clearInterval(interval);
+                            if (this._screenshotTimer) {
+                                clearInterval(this._screenshotTimer);
+                                this._screenshotTimer = null;
+                            }
                             if (timeSpan && statusData.screenshot_time) {
                                 timeSpan.innerText = statusData.screenshot_time;
                             }
@@ -485,7 +521,10 @@ window.DashboardModalCore = {
                 }
 
                 if (attempts >= maxAttempts) {
-                    clearInterval(interval);
+                    if (this._screenshotTimer) {
+                        clearInterval(this._screenshotTimer);
+                        this._screenshotTimer = null;
+                    }
                     Toast.error('Batas waktu habis: PC klien tidak merespon permintaan screenshot.');
                     btn.disabled = false;
                     btn.classList.remove('opacity-40', 'cursor-not-allowed');
@@ -508,10 +547,24 @@ window.DashboardModalCore = {
         this.lastScreenshotUrl = null;
         this._lastActionStateKey = null;
 
+        if (this._screenshotTimer) {
+            clearInterval(this._screenshotTimer);
+            this._screenshotTimer = null;
+        }
+
         if (this._hardwarePollingTimer) {
             clearInterval(this._hardwarePollingTimer);
             this._hardwarePollingTimer = null;
         }
+        if (typeof DashboardModalHardware !== 'undefined' && DashboardModalHardware._hardwarePollingTimer) {
+            clearInterval(DashboardModalHardware._hardwarePollingTimer);
+            DashboardModalHardware._hardwarePollingTimer = null;
+        }
+
+        if (typeof DashboardProcessMonitor !== 'undefined' && DashboardProcessMonitor.backToMenu) {
+            DashboardProcessMonitor.backToMenu();
+        }
+
         this.currentHardwarePcId = null;
         this.currentHardwarePcKode = null;
         this._lastHwFingerprint = null;

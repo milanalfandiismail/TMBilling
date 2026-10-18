@@ -15,16 +15,29 @@ from app.services.settings.settings_service import SettingsService
 from app.utils.logger import write_log
 
 
+MAX_COMMAND_QUEUE_PER_PC = 10
+
+
 class CommandQueueDict(dict):
-    """Dict yang mendukung antrean perintah FIFO per PC dan tetap 100% kompatibel dengan akses dict lama."""
+    """Dict yang mendukung antrean perintah FIFO per PC dengan batas antrean (anti memory leak)."""
     def push_cmd(self, pc_id, cmd):
         q = super().get(pc_id)
         if q is None:
             super().__setitem__(pc_id, [cmd])
-        elif isinstance(q, list):
-            q.append(cmd)
-        else:
-            super().__setitem__(pc_id, [q, cmd])
+            return
+
+        if not isinstance(q, list):
+            q = [q]
+            super().__setitem__(pc_id, q)
+
+        # Deduplikasi perintah identik berkala (misal screenshot/lock saat PC offline)
+        if cmd in q and cmd in ("screenshot", "lock", "unlock"):
+            return
+
+        q.append(cmd)
+        # Batasi panjang antrean maksimal agar tidak memicu memory leak jika PC offline lama
+        if len(q) > MAX_COMMAND_QUEUE_PER_PC:
+            q.pop(0)
 
     def pop_cmd(self, pc_id, default=None):
         q = super().get(pc_id)
