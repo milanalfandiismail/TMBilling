@@ -123,6 +123,7 @@ def sync_all_mikrotik_members():
         member_data = [{"username": m.username} for m in members]
         
         def background_sync(member_list, h, p, u, mp, prof):
+            cli = None
             try:
                 cli = MikroTikAPIClient(h, u, mp, p)
                 if cli.login():
@@ -137,6 +138,9 @@ def sync_all_mikrotik_members():
                     write_log("MIKROTIK_SYNC", f"Sinkronisasi massal selesai. {success_count}/{len(member_list)} member ditambahkan.")
             except Exception as e:
                 write_log("MIKROTIK_ERROR", f"Gagal sinkronisasi massal: {str(e)}")
+            finally:
+                if cli:
+                    cli.close()
 
         threading.Thread(target=background_sync, args=(member_data, host, port, username, mikrotik_password, profile), daemon=True).start()
 

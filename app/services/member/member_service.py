@@ -60,6 +60,7 @@ class MemberService:
             return
 
         def task():
+            client = None
             try:
                 client = MikroTikAPIClient(host, username, mikrotik_password, port)
                 if client.login():
@@ -75,6 +76,9 @@ class MemberService:
                             client.remove_user(user['.id'])
             except Exception as e:
                 write_log("MIKROTIK_ERROR", f"Gagal {action} user {member.username}: {str(e)}")
+            finally:
+                if client:
+                    client.close()
 
         threading.Thread(target=task, daemon=True).start()
 

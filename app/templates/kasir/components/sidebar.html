@@ -1,13 +1,13 @@
 <aside id="sidebar"
     class="fixed lg:relative top-0 left-0 z-40 w-44 h-[100dvh] lg:h-screen bg-[#0a0a0a] border-r border-[#171717] flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0 shrink-0">
-    <div class="flex items-center justify-between px-2 h-12 border-b border-[#171717] shrink-0">
-        <div class="flex items-center gap-1.5 min-w-0">
+    <div class="flex items-center justify-between px-3 h-12 border-b border-[#171717] shrink-0">
+        <div class="flex items-center gap-2 min-w-0">
             <div id="sidebar-brand-badge-container"
-                class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center shrink-0 transition-all overflow-hidden select-none">
-                <img id="sidebar-brand-logo-img" src="{{ url_for('static', filename='img/logo.png') }}?v={{ v_cache }}" alt="TM Logo" class="w-full h-full object-contain">
+                class="h-7 w-auto max-w-[64px] flex items-center justify-center shrink-0 transition-all overflow-hidden select-none">
+                <img id="sidebar-brand-logo-img" src="{{ url_for('static', filename='img/logo.png') }}?v={{ v_cache }}" alt="TM Logo" class="h-6 w-auto object-contain">
                 <span id="sidebar-brand-badge-text" class="hidden text-black font-black text-xs uppercase"></span>
             </div>
-            <div class="min-w-0">
+            <div id="sidebar-brand-text-container" class="hidden min-w-0">
                 <h1 id="sidebar-brand-title"
                     class="text-xs font-extrabold text-neutral-100 leading-none truncate w-full"
                     data-default-title="{{ warnet_title }}" title="{{ warnet_title }}">{{ warnet_title }}</h1>

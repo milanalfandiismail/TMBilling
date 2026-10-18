@@ -108,6 +108,17 @@ const VNCClient = {
         const vncPassword = (pwdInput && pwdInput.value) ? pwdInput.value : serverVncPassword;
         badge.textContent = 'Menghubungkan...';
 
+        // Disconnect sesi lama jika ada sebelum membuka koneksi baru (anti orphan socket/session leak)
+        if (this.session) {
+            try {
+                this.session.disconnect();
+            } catch (e) {
+                console.warn('[VNCClient] Error disconnecting previous session:', e);
+            }
+            this.session = null;
+            this.rfb = null;
+        }
+
         this.session = new VNCSession({
             screenContainer: screen,
             vncContainer: container,

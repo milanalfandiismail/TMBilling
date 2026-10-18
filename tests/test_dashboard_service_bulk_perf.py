@@ -7,13 +7,17 @@ class TestDashboardBulkPerf(unittest.TestCase):
     def setUp(self):
         self.app = create_app()
         self.app.config["TESTING"] = True
-        self.app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
         self.app_context = self.app.app_context()
         self.app_context.push()
-        db.create_all()
 
-        self.grup = Grup(nama="regular", warna="#3b82f6")
-        db.session.add(self.grup)
+        self.grup = Grup.query.filter_by(nama="regular").first()
+        if not self.grup:
+            self.grup = Grup(nama="regular", warna="#3b82f6")
+            db.session.add(self.grup)
+            db.session.commit()
+
+        # Pastikan tidak ada PC duplicate dari run sebelumnya
+        PC.query.filter_by(kode="PC-BULK-01").delete()
         db.session.commit()
 
         self.pc = PC(kode="PC-BULK-01", nama="PC Bulk 01", ip_address="192.168.1.101", grup_id=self.grup.id, aktif=True)
@@ -21,8 +25,11 @@ class TestDashboardBulkPerf(unittest.TestCase):
         db.session.commit()
 
     def tearDown(self):
+        if hasattr(self, 'pc') and self.pc:
+            Sesi.query.filter_by(pc_id=self.pc.id).delete()
+            PC.query.filter_by(kode="PC-BULK-01").delete()
+            db.session.commit()
         db.session.remove()
-        db.drop_all()
         self.app_context.pop()
 
     def test_get_pc_list_with_active_session_bulk(self):

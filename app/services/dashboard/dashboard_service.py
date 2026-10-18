@@ -11,6 +11,10 @@ from app.services.pc.pc_service import PCService
 from app.repositories import TransaksiRepository, MenuRepository
 from app.utils.logger import write_log
 from app.models import now_local, Sesi, db
+import time
+
+_last_cleanup_ts = 0.0
+CLEANUP_INTERVAL_SECONDS = 15.0
 
 
 class DashboardService:
@@ -36,9 +40,13 @@ class DashboardService:
     @staticmethod
     def get_pc_list():
         """Ambil daftar PC lengkap dengan status online & detail sesi aktif."""
-        # A. Cleanup: Tutup sesi yang sudah expired sebelum data ditarik
-        SesiService.cleanup_expired()
-        SesiService.cleanup_inactive_admin_sessions()
+        # A. Cleanup: Tutup sesi yang sudah expired (throttled 15s agar tidak membebani DB per detik)
+        global _last_cleanup_ts
+        now_ts = time.time()
+        if now_ts - _last_cleanup_ts >= CLEANUP_INTERVAL_SECONDS:
+            _last_cleanup_ts = now_ts
+            SesiService.cleanup_expired()
+            SesiService.cleanup_inactive_admin_sessions()
         
         # B. Ambil semua PC aktif
         pcs = PCService.get_all(aktif_only=True)
@@ -54,32 +62,10 @@ class DashboardService:
             if s.pc_id not in sesi_map:
                 sesi_map[s.pc_id] = s
 
-        # Scan direktori screenshot sekali saja per siklus (eliminasi disk I/O per PC)
-        import os
-        from flask import current_app
-        from datetime import datetime, timezone
-        from app.utils.timezone_utils import format_display
-
-        screenshots_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots')
-        screenshot_map = {}
-        if os.path.isdir(screenshots_dir):
-            try:
-                for entry in os.scandir(screenshots_dir):
-                    if entry.is_file() and entry.name.endswith('.png'):
-                        pc_code = entry.name[:-4]
-                        mtime = entry.stat().st_mtime
-                        dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
-                        screenshot_map[pc_code] = {
-                            'has_screenshot': True,
-                            'screenshot_time': format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
-                        }
-            except Exception:
-                pass
-
         for pc in pcs:
             sesi_aktif = sesi_map.get(pc.id)
-            sc_info = screenshot_map.get(pc.kode)
-            pc_dict = pc.to_dict(sesi=sesi_aktif, screenshot_info=sc_info)
+            # Screenshot di-load on-demand via API screenshot/status/<id> saat modal dibuka (zero disk I/O di polling 1s)
+            pc_dict = pc.to_dict(sesi=sesi_aktif, screenshot_info={})
             
             # Status Admin & System diambil dari DB / to_dict
             pc_dict['is_admin'] = pc_dict.get('is_admin_mode', False)

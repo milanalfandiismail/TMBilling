@@ -12,8 +12,8 @@
 <body class="bg-[#050505] text-neutral-200 min-h-screen flex items-center justify-center p-4 font-space-grotesk">
     <div class="w-full max-w-sm">
         <div class="text-center mb-6 sm:mb-8">
-            <div class="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 sm:mb-4 select-none">
-                <img src="{{ url_for('static', filename='img/logo.png') }}?v={{ v_cache }}" alt="TM Logo" class="w-full h-full object-contain drop-shadow">
+            <div class="inline-flex items-center justify-center h-10 sm:h-12 w-auto max-w-[120px] mx-auto mb-3 sm:mb-4 select-none">
+                <img src="{{ url_for('static', filename='img/logo.png') }}?v={{ v_cache }}" alt="TM Logo" class="h-full w-auto object-contain drop-shadow">
             </div>
             <h1 class="text-xl sm:text-2xl font-extrabold text-neutral-100">{{ warnet_title }}</h1>
             <p class="text-[10px] sm:text-xs text-neutral-500 leading-tight mt-0.5">Management Studio</p>
