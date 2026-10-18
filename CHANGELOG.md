@@ -6,6 +6,34 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [1.6.5] - 2026-10-18 - Autonomous Offline Studio
+
+### Ditambahkan
+- **Arsitektur 100% Pure Offline & Local Vendor Management**:
+  - Mengintegrasikan seluruh dependensi frontend pihak ketiga (`@fortawesome/fontawesome-free@6.4.0`, `qrcodejs@1.0.0`, `@novnc/novnc@1.4.0`) ke dalam `package.json`.
+  - Menghadirkan skrip otomatisasi lintas-platform `tools/sync-vendor.js` yang otomatis menyalin aset runtime ke `app/static/vendor/` saat `npm install` via hook `postinstall`.
+  - Menghapus ketergantungan CDN eksternal (Google Fonts, Cloudflare cdnjs, jsDelivr) dengan 0 request outbound saat runtime.
+  - Memutakhirkan font stack utama ke sistem native (`Segoe UI`, `Inter`, `Consolas`) untuk tampilan tipografi yang tajam, presisi, dan konsisten 100% antara kondisi online dan offline.
+- **Redesain Footer Kartu Monitor Screenshot**:
+  - Merombak footer kartu screenshot menjadi layout minimalis 1 baris ramping terkunci di 26px di semua breakpoint tanpa wrap canggung.
+  - Menghapus label kaku `Update:` dan menggantinya dengan icon gambar tangkapan layar SVG di kiri serta timestamp cerdas berbasis zona waktu warnet aktif (`WITA`/`WIB`).
+  - Menghilangkan scrollbar horizontal abu-abu native pada tab grup screenshot di tampilan mobile via utility modern Tailwind.
+- **Penyelarasan Responsif & Zero-Truncate Multi-Tab**:
+  - **Tab Laporan Kantin**: Mengoptimalkan tabel fit-to-screen bebas scrollbar horizontal/vertikal dan menghadirkan modal popover interaktif untuk pratinjau daftar menu panjang (>3 item).
+  - **Tab Pengaturan & Penjadwalan Otomatis**: Skala tipografi adaptif dan eliminasi teks terpotong (*zero-truncate*) di seluruh breakpoint desktop hingga mobile.
+  - **Tab Migrasi & Update**: Desain responsif terpadu tanpa overflow dan scrollbar ganda.
+
+### Diubah
+- Menaikkan versi seluruh ekosistem Server Flask dan Klien WarnetAgent Tauri/Rust ke `v1.6.5`.
+- Memperbarui codename rilis aplikasi di `app/config.py` menjadi `"Autonomous Offline Studio"`.
+- Pembaruan otomatis cache buster asset browser (`v_cache = 165`).
+
+### Dihapus
+- Menghapus dependensi tidak terpakai `chart.js` dari `package.json`.
+- Menghapus dead links stylesheet CDN eksternal `flatpickr` dan `tom-select` dari `base.html`.
+
+---
+
 ## [1.6.4] - 2026-10-14
 
 ### Ditambahkan
