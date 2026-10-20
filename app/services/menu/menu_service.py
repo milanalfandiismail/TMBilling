@@ -11,7 +11,7 @@ from app.models import MenuItem, TransaksiMenu, MenuStockLog
 from app.repositories import MenuRepository
 from app.repositories import UserRepository
 from app.utils.logger import write_log
-from app.utils.validators import validate_string_length, validate_integer_range, validate_choice
+from app.utils.validators import validate_string_length, validate_integer_range, validate_choice, validate_payment_method
 
 class MenuService:
     """Service class untuk memproses data Menu dan Transaksinya."""
@@ -417,12 +417,7 @@ class MenuService:
             if not parsed_items:
                 raise ValueError("Daftar pesanan tidak boleh kosong")
 
-            metode_pembayaran = validate_choice(
-                metode_pembayaran or "Tunai",
-                ["Tunai", "QRIS", "Transfer", "Transfer Bank", "Deposit"],
-                field_name="Metode pembayaran",
-                case_sensitive=False
-            )
+            metode_pembayaran = validate_payment_method(metode_pembayaran)
 
             # Validasi Pembayaran Tunai
             tunai_val = validate_integer_range(tunai or 0, min_val=0, max_val=1_000_000_000, field_name="Uang tunai")

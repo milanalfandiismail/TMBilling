@@ -28,7 +28,8 @@ from app.utils.validators import (
     validate_email_format,
     validate_string_length,
     validate_integer_range,
-    validate_choice
+    validate_choice,
+    validate_payment_method
 )
 
 class MemberService:
@@ -262,12 +263,7 @@ class MemberService:
     def tambah_waktu(member_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
         """Tambah waktu member & suntik Nota Transaksi (TM)."""
         qty = validate_integer_range(qty, 1, 100, field_name="Kuantitas paket")
-        metode_pembayaran = validate_choice(
-            metode_pembayaran or "Tunai",
-            ["Tunai", "QRIS", "Transfer", "Transfer Bank", "Deposit"],
-            field_name="Metode pembayaran",
-            case_sensitive=False
-        )
+        metode_pembayaran = validate_payment_method(metode_pembayaran)
 
         member = MemberRepository.get_by_id(member_id)
         if SesiRepository.get_aktif_by_member(member.id):

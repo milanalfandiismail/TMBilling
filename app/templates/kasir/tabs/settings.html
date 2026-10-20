@@ -277,11 +277,25 @@
                             </div>
                         </div>
 
+                        <!-- Hint Metode Pembayaran Digital / Non-Tunai -->
+                        <div class="p-2.5 xl:p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] xl:text-xs leading-relaxed flex items-start gap-2.5 mb-2.5">
+                            <i class="fa-solid fa-circle-info text-amber-400 text-xs xl:text-sm mt-0.5 shrink-0"></i>
+                            <div>
+                                <span class="font-bold text-amber-200">Panduan Metode Pembayaran:</span>
+                                <p class="text-neutral-300 mt-0.5">
+                                    Pastikan metode yang ditambahkan adalah pembayaran <span class="text-amber-300 font-semibold">Digital / Non-Tunai</span> (contoh: QRIS, Transfer Bank, DANA, GoPay, OVO, EDC/Debit).
+                                </p>
+                                <p class="text-neutral-400 mt-1">
+                                    Uang fisik/cash sudah otomatis dikelola sistem sebagai <span class="text-emerald-400 font-bold">'Tunai'</span> untuk rekonsiliasi laci kasir & shift. Hindari menambahkan metode yang mengandung kata <em>'Tunai'</em> atau <em>'Cash'</em>.
+                                </p>
+                            </div>
+                        </div>
+
                         <!-- Input Custom Method dengan Tombol Inline + Tambah -->
                         <div class="flex items-center gap-1.5 mb-2.5">
                             <input type="text" id="new-payment-method-input"
                                 class="flex-1 px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-sans"
-                                placeholder="Ketik nama metode lain (misal: BCA, Mandiri)..."
+                                placeholder="Ketik metode digital/bank baru (misal: BCA, DANA, Mandiri)..."
                                 onkeydown="if(event.key==='Enter'){event.preventDefault(); Settings.addPaymentMethod();}">
                             <button type="button" onclick="Settings.addPaymentMethod()"
                                 class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
