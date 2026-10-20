@@ -145,6 +145,14 @@ def handle_setting(key):
         if key == "warnet_announcement":
             from app.utils.helpers import sanitize_html
             value = sanitize_html(str(value))
+
+        if key == "payment_methods":
+            methods = [m.strip() for m in str(value).split(",") if m.strip()]
+            for m in methods:
+                if m.lower() != "tunai" and ("tunai" in m.lower() or "cash" in m.lower()):
+                    return jsonify({
+                        "error": f"Metode '{m}' tidak valid. Uang fisik/cash sudah dikelola sebagai 'Tunai'. Tambahkan hanya metode digital/non-tunai."
+                    }), 400
             
         old_val = SettingsService.get(key, "-")
         SettingsService.set(key, str(value))

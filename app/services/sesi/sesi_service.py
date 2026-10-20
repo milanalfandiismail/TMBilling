@@ -21,7 +21,8 @@ from app.utils.logger import write_log
 from app.utils.validators import (
     validate_string_length,
     validate_integer_range,
-    validate_choice
+    validate_choice,
+    validate_payment_method
 )
 from app.config import Config
 
@@ -39,12 +40,7 @@ class SesiService:
     def buka_guest(pc_kode, paket_id, nama_guest="Guest", operator="system", metode_pembayaran="Tunai"):
         """Buka sesi baru untuk guest dan generate nota pembelian."""
         nama_guest = validate_string_length(nama_guest or "Guest", min_len=1, max_len=50, field_name="Nama Guest", required=True)
-        metode_pembayaran = validate_choice(
-            metode_pembayaran or "Tunai",
-            ["Tunai", "QRIS", "Transfer", "Transfer Bank", "Deposit"],
-            field_name="Metode pembayaran",
-            case_sensitive=False
-        )
+        metode_pembayaran = validate_payment_method(metode_pembayaran)
         pc = PCRepository.get_by_kode(pc_kode)
         if not pc: raise ValueError("PC tidak ditemukan")
         if SesiRepository.get_aktif_by_pc(pc.id): raise ValueError("PC sedang dipakai")
@@ -153,12 +149,7 @@ class SesiService:
     def tambah_waktu_sesi(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
         """Tambah durasi pada sesi berjalan (Guest/Member) + Suntik Nota TM."""
         qty = validate_integer_range(qty, 1, 100, field_name="Kuantitas paket")
-        metode_pembayaran = validate_choice(
-            metode_pembayaran or "Tunai",
-            ["Tunai", "QRIS", "Transfer", "Transfer Bank", "Deposit"],
-            field_name="Metode pembayaran",
-            case_sensitive=False
-        )
+        metode_pembayaran = validate_payment_method(metode_pembayaran)
 
         sesi = SesiRepository.get_aktif_by_id(sesi_id)
         if not sesi: raise ValueError("Sesi tidak aktif")

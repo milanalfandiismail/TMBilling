@@ -285,6 +285,37 @@ def validate_choice(val, choices, field_name: str = "Pilihan", case_sensitive: b
         raise ValueError(f"{field_name} tidak valid. Pilihan yang tersedia: {', '.join(str(c) for c in choices_list)}")
 
 
+def get_allowed_payment_methods():
+    """Mengambil daftar metode pembayaran yang sah dari Settings dan default sistem."""
+    defaults = ["Tunai", "QRIS", "Transfer", "Transfer Bank", "Deposit"]
+    try:
+        from app.services.settings.settings_service import SettingsService
+        raw = SettingsService.get("payment_methods")
+        if raw:
+            if isinstance(raw, str):
+                configured = [m.strip() for m in raw.split(",") if m.strip()]
+            elif isinstance(raw, list):
+                configured = [str(m).strip() for m in raw if str(m).strip()]
+            else:
+                configured = []
+            merged = list(defaults)
+            existing_lower = {m.lower() for m in merged}
+            for c in configured:
+                if c.lower() not in existing_lower:
+                    merged.append(c)
+                    existing_lower.add(c.lower())
+            return merged
+    except Exception:
+        pass
+    return defaults
+
+
+def validate_payment_method(val):
+    """Memvalidasi bahwa metode pembayaran valid sesuai konfigurasi sistem & settings."""
+    allowed = get_allowed_payment_methods()
+    return validate_choice(val or "Tunai", allowed, field_name="Metode pembayaran", case_sensitive=False)
+
+
 def validate_filename(filename: str, allowed_extensions: set | None = None, field_name: str = "Berkas") -> str:
     """Memvalidasi dan mengamankan nama berkas dari directory traversal dan ekstensi berbahaya.
     

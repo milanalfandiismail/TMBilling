@@ -426,6 +426,13 @@ const SettingsGeneral = {
 
         if (!this.currentPaymentMethods) this.currentPaymentMethods = [];
 
+        // Validasi: pastikan metode yang ditambahkan adalah non-tunai/digital
+        const lowerVal = cleanVal.toLowerCase();
+        if (lowerVal !== 'tunai' && (lowerVal.includes('tunai') || lowerVal.includes('cash'))) {
+            Toast.warning("Uang fisik/cash sudah otomatis dikelola oleh sistem sebagai 'Tunai'. Tambahkan hanya metode pembayaran digital/non-tunai (contoh: QRIS, Transfer Bank, DANA, EDC).");
+            return;
+        }
+
         // Cek duplikat (case insensitive)
         const exists = this.currentPaymentMethods.some(m => m.toLowerCase() === cleanVal.toLowerCase());
         if (exists) {
