@@ -6,6 +6,17 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [1.6.5-rc1] - 2026-10-24 - Release Candidate 1
+
+### Diperbaiki
+- **Interaktivitas Menu Stok Habis (Out-of-Stock Restock)**:
+  - Memperbaiki tombol aksi kartu produk di katalog kasir sehingga tombol **Restock**, Edit, dan Hapus tetap dapat diakses saat stok mencapai `0`.
+  - Mengubah badge pasif `Habis` menjadi tombol interaktif **`+ Restock`** yang dapat langsung diklik oleh Kasir (shift aktif) dan Admin untuk menambah stok barang secara instan.
+  - Memperbaiki aksi klik kartu menu berstok 0 agar langsung membuka modal Restock disertai notifikasi toast panduan.
+  - Menjaga integritas keranjang kasir dari penambahan item yang stok fisiknya habis.
+- **Standarisasi Rilis Semantic Versioning**:
+  - Mengubah skema rilis dan cabang git menjadi `v1.6.5-rc1` sebagai Release Candidate sebelum rilis stabil `v1.6.5`.
+
 ## [1.6.5] - 2026-10-18 - Autonomous Offline Studio
 
 ### Ditambahkan

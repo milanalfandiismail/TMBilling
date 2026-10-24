@@ -4,8 +4,8 @@
 
 # Master Dokumentasi Teknis & Operasional TMBilling (Single Source of Truth)
 
-> **Versi Rilis:** v1.6.5  
-> **Branch:** `v1.6.5` ("Autonomous Offline Studio")  
+> **Versi Rilis:** v1.6.5-rc1  
+> **Branch:** `v1.6.5-rc1` ("Autonomous Offline Studio")  
 > **Status:** Single Source of Truth Resmi Repositori TMBilling  
 > **Target Audiens:** Pengembang Backend/Frontend, Pengembang Rust/Tauri, Operator/Kasir, dan Administrator Sistem Warnet & Game Center.
 

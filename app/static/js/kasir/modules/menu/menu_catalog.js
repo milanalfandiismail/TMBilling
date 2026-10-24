@@ -294,12 +294,14 @@ window.MenuCatalog = {
             const escapedName = (m.nama || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
             const cardBorderClass = (isOutOfStock && inCartQty === 0)
-                ? 'bg-[#0a0a0a] border-[#181818] opacity-50 cursor-not-allowed select-none'
+                ? 'bg-[#0e0a08] border-amber-900/40 hover:border-amber-600/60 hover:bg-[#140e0a] cursor-pointer select-none active:scale-[0.98]'
                 : inCartQty > 0
                     ? 'bg-[#08130d] border-emerald-500/60 shadow-[0_0_12px_rgba(16,185,129,0.12)] cursor-pointer active:scale-[0.98]'
                     : 'bg-[#0c0c0c] border-[#1c1c1c] hover:border-[#2a2a2a] hover:bg-[#0f0f0f] cursor-pointer active:scale-[0.98]';
 
-            const cardClickAction = isOutOfStock ? '' : `onclick="Menu.addToCart(${m.id})"`;
+            const cardClickAction = isOutOfStock
+                ? `onclick="Menu.showRestockModal(${m.id})"`
+                : `onclick="Menu.addToCart(${m.id})"`;
             const cardContextMenuAction = (isOutOfStock && inCartQty === 0) ? '' : `oncontextmenu="event.preventDefault(); Menu.decrementCart(${m.id})"`;
 
             const inCartBadge = inCartQty > 0 ? `
@@ -317,10 +319,16 @@ window.MenuCatalog = {
                 </div>
             ` : '';
 
-            const adminDesktopActions = (isKasir || isOutOfStock) ? '' : `
+            const adminDesktopActions = isKasir ? (isUnlimited ? '' : `
+                <div class="hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button type="button" onclick="event.stopPropagation(); Menu.showRestockModal(${m.id})" class="p-1 rounded bg-black/85 hover:bg-emerald-950 text-neutral-300 hover:text-emerald-400 border border-[#2a2a2a] hover:border-emerald-800 transition-colors shadow" title="Tambah Stok (Restock)">
+                        <svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                    </button>
+                </div>
+            `) : `
                 <div class="hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity remote-hide-action">
                     ${isUnlimited ? '' : `
-                    <button type="button" onclick="event.stopPropagation(); Menu.showRestockModal(${m.id})" class="p-1 rounded bg-black/85 hover:bg-emerald-950 text-neutral-300 hover:text-emerald-400 border border-[#2a2a2a] hover:border-emerald-800 transition-colors shadow" title="Tambah Stok">
+                    <button type="button" onclick="event.stopPropagation(); Menu.showRestockModal(${m.id})" class="p-1 rounded bg-black/85 hover:bg-emerald-950 text-neutral-300 hover:text-emerald-400 border border-[#2a2a2a] hover:border-emerald-800 transition-colors shadow" title="Tambah Stok (Restock)">
                         <svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                     </button>`}
                     <button type="button" onclick="event.stopPropagation(); Menu.showEditModal(${m.id})" class="p-1 rounded bg-black/85 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-[#2a2a2a] transition-colors shadow" title="Edit Menu">
@@ -369,7 +377,12 @@ window.MenuCatalog = {
                                 <button type="button" ${isOutOfStock ? 'disabled' : `onclick="event.stopPropagation(); Menu.addToCart(${m.id})"`} class="w-5 h-5 rounded ${isOutOfStock ? 'bg-neutral-800 text-neutral-600 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-400 text-black active:scale-95'} flex items-center justify-center font-bold text-xs transition-colors" title="${isOutOfStock ? 'Stok habis' : 'Tambah (Klik Kiri di card)'}">+</button>
                             </div>
                         ` : isOutOfStock ? `
-                            <span class="px-1.5 py-0.5 rounded bg-neutral-900 border border-[#1c1c1c] text-[9px] text-neutral-600 font-bold uppercase">Habis</span>
+                            <button type="button" onclick="event.stopPropagation(); Menu.showRestockModal(${m.id})"
+                                class="px-2 py-0.5 rounded bg-amber-950/80 hover:bg-amber-900 border border-amber-700/60 text-amber-300 hover:text-amber-200 font-bold text-[10px] sm:text-xs flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95"
+                                title="Stok habis, klik untuk tambah stok (Restock)">
+                                <svg class="w-3 h-3 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                <span>Restock</span>
+                            </button>
                         ` : `
                             <button type="button" class="px-2 py-0.5 rounded bg-neutral-100 hover:bg-white text-black font-bold text-[10px] transition-colors shadow flex items-center gap-1 shrink-0">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
