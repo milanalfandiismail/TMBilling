@@ -1,6 +1,6 @@
 {
   "name": "tmbilling-tauri",
-  "version": "1.6.5",
+  "version": "1.6.5-rc1",
   "description": "TMBilling Client with Tauri",
   "scripts": {
     "tauri": "tauri",

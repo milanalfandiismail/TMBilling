@@ -8,6 +8,13 @@ window.MenuCart = {
         const menu = this.items.find(m => m.id === menuId);
         if (!menu) return;
 
+        const isUnlimited = menu.stok < 0;
+        if (!isUnlimited && menu.stok <= 0) {
+            Toast.error(`Stok '${menu.nama}' habis. Silakan lakukan Restock terlebih dahulu.`);
+            this.showRestockModal(menuId);
+            return;
+        }
+
         const cartItem = this.cart.find(c => c.menu.id === menuId);
         if (cartItem) {
             const isUnlimited = menu.stok < 0;
