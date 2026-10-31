@@ -14,6 +14,7 @@ class ProcessMemoryStore:
     """Store in-memory untuk daftar proses (Task Manager) PC client."""
     _lock = threading.Lock()
     _store = {}  # pc_id -> list of {"name": str, "title": str}
+    _timestamps = {}  # pc_id -> int (ms timestamp)
 
     @classmethod
     def set(cls, pc_id: int, process_list: list):
@@ -28,6 +29,7 @@ class ProcessMemoryStore:
                 })
         with cls._lock:
             cls._store[pc_id] = cleaned
+            cls._timestamps[pc_id] = int(time.time() * 1000)
 
     @classmethod
     def get(cls, pc_id: int) -> list:
@@ -36,14 +38,21 @@ class ProcessMemoryStore:
             return list(procs) if procs is not None else []
 
     @classmethod
+    def get_last_updated(cls, pc_id: int) -> int:
+        with cls._lock:
+            return cls._timestamps.get(pc_id, 0)
+
+    @classmethod
     def remove(cls, pc_id: int):
         with cls._lock:
             cls._store.pop(pc_id, None)
+            cls._timestamps.pop(pc_id, None)
 
     @classmethod
     def clear(cls):
         with cls._lock:
             cls._store.clear()
+            cls._timestamps.clear()
 
 
 class HardwareMetricsStore:

@@ -11,6 +11,7 @@ from app.services.cache.telemetry_store import (
 def test_process_memory_store_crud():
     ProcessMemoryStore.clear()
     assert ProcessMemoryStore.get(1) == []
+    assert ProcessMemoryStore.get_last_updated(1) == 0
 
     # Set process list
     procs = [
@@ -22,10 +23,12 @@ def test_process_memory_store_crud():
     assert len(saved) == 2
     assert saved[0]["name"] == "chrome.exe"
     assert saved[1]["title"] == "Valorant"
+    assert ProcessMemoryStore.get_last_updated(1) > 0
 
     # Remove single PC
     ProcessMemoryStore.remove(1)
     assert ProcessMemoryStore.get(1) == []
+    assert ProcessMemoryStore.get_last_updated(1) == 0
 
 
 def test_hardware_metrics_store():

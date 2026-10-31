@@ -302,6 +302,14 @@ window.DashboardModalHardware = {
             }
         }
 
+        const restoreHwBtn = () => {
+            if (refreshBtn) {
+                refreshBtn.disabled = false;
+                refreshBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                refreshBtn.innerText = 'Segarkan Data';
+            }
+        };
+
         if (!isSilent && refreshBtn) {
             refreshBtn.disabled = true;
             refreshBtn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -309,12 +317,14 @@ window.DashboardModalHardware = {
         }
 
         try {
-            const res = await API.monitor.all();
-            if (refreshBtn) {
-                refreshBtn.disabled = false;
-                refreshBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                refreshBtn.innerText = 'Segarkan Data';
+            if (!isSilent) {
+                try {
+                    await API.request(`/api/v1/kasir/monitor/processes/${pcId}/trigger`, { method: 'POST' });
+                    await new Promise(r => setTimeout(r, 600));
+                } catch (_) {}
             }
+
+            const res = await API.monitor.all();
 
             if (res && res.success && Array.isArray(res.data)) {
                 const hwData = res.data.find(item => item.pc_id === pcId);
@@ -332,20 +342,17 @@ window.DashboardModalHardware = {
 
                 if (this._lastHwStructureKey === structureKey && this.updateHardwareTelemetryInPlace(pcId, pcKode, hwData)) {
                     if (statusEl) statusEl.innerHTML = this.getHwStatusBadge(hwData);
+                    if (!isSilent) Toast.success('Data hardware berhasil diperbarui!');
                     return;
                 }
 
                 this._lastHwStructureKey = structureKey;
                 this.renderHardwareView(pcId, pcKode, hwData);
+                if (!isSilent) Toast.success('Data hardware berhasil diperbarui!');
             } else if (!isSilent) {
                 throw new Error((res && res.error) || 'Gagal mengambil data hardware');
             }
         } catch (err) {
-            if (refreshBtn) {
-                refreshBtn.disabled = false;
-                refreshBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                refreshBtn.innerText = 'Segarkan Data';
-            }
             if (!isSilent) {
                 console.error('[DashboardDetailModal] Load hardware error:', err);
                 if (contentEl) {
@@ -362,6 +369,11 @@ window.DashboardModalHardware = {
                 if (statusEl) {
                     statusEl.innerHTML = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-950/60 border border-red-800 text-red-400">ERROR</span>`;
                 }
+                Toast.error(`Gagal menyegarkan data hardware: ${err.message || 'Error'}`);
+            }
+        } finally {
+            if (!isSilent) {
+                restoreHwBtn();
             }
         }
     },

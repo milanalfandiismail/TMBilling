@@ -184,6 +184,13 @@ const DashboardProcessMonitor = {
                         this.renderProcessRows(pcId, this._activeProcesses);
                     }
                     this._setupSearchFilter(pcId);
+
+                    if (this._refreshIntervals[pcId]) {
+                        clearInterval(this._refreshIntervals[pcId]);
+                        delete this._refreshIntervals[pcId];
+                        restoreBtn();
+                        Toast.success('Daftar proses PC berhasil diperbarui!');
+                    }
                 }
             } catch (err) {
                 if (!isSilent) {
@@ -217,6 +224,7 @@ const DashboardProcessMonitor = {
                 } catch (_) {}
             }
 
+            const triggerTime = Date.now();
             if (!skipTrigger) {
                 // Kirim trigger refresh processes ke PC client
                 const triggerRes = await API.request(`/api/v1/kasir/monitor/processes/${pcId}/trigger`, {
@@ -240,14 +248,17 @@ const DashboardProcessMonitor = {
                     const pollRes = await API.request(`/api/v1/kasir/monitor/processes/${pcId}`);
                     if (pollRes && pollRes.success) {
                         const currentTs = pollRes.last_updated_ts || 0;
+                        const sorted = this._sortProcesses(pollRes.data || []);
                         const isUpdated = initialTs > 0 ? (currentTs > initialTs) : (currentTs > 0);
+                        const isRecent = currentTs >= triggerTime - 1000;
+                        const isDataChanged = JSON.stringify(sorted) !== JSON.stringify(this._activeProcesses);
 
-                        if (isUpdated) {
+                        if (isUpdated || isRecent || isDataChanged || (attempts >= 2 && Array.isArray(pollRes.data) && pollRes.data.length > 0)) {
                             clearInterval(this._refreshIntervals[pcId]);
                             delete this._refreshIntervals[pcId];
 
-                            this._lastUpdatedTsMap[pcId] = currentTs;
-                            this._activeProcesses = this._sortProcesses(pollRes.data || []);
+                            this._lastUpdatedTsMap[pcId] = currentTs || Date.now();
+                            this._activeProcesses = sorted;
                             this.renderProcessRows(pcId, this._activeProcesses);
                             this._setupSearchFilter(pcId);
 

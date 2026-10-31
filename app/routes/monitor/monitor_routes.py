@@ -86,10 +86,13 @@ def get_pc_processes(pc_id):
     """Endpoint untuk mengambil daftar proses yang sedang berjalan di PC tertentu."""
     try:
         processes = HardwareService.get_processes_by_pc(pc_id)
+        from app.services.cache.telemetry_store import ProcessMemoryStore
+        last_updated_ts = ProcessMemoryStore.get_last_updated(pc_id) or int(time.time() * 1000)
         return jsonify({
             "success": True, 
             "data": processes,
-            "count": len(processes)
+            "count": len(processes),
+            "last_updated_ts": last_updated_ts
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -181,14 +184,23 @@ def delete_hardware_data_kasir(hardware_id):
 def get_pc_processes_kasir(pc_id):
     """Endpoint kasir untuk mengambil daftar proses yang sedang berjalan di PC tertentu."""
     try:
-        from datetime import timezone
+        from datetime import datetime, timezone
         from app.utils.timezone_utils import format_display, display_in_tz, get_tz_short_name
         from app.repositories import HardwareRepository
+        from app.services.cache.telemetry_store import ProcessMemoryStore
         processes = HardwareService.get_processes_by_pc(pc_id)
         hw = HardwareRepository.get_by_pc_id(pc_id)
-        
-        last_updated_ts = int(hw.last_update.replace(tzinfo=timezone.utc).timestamp() * 1000) if (hw and hw.last_update) else 0
-        last_updated_str = format_display(hw.last_update) if (hw and hw.last_update) else None
+
+        mem_ts = ProcessMemoryStore.get_last_updated(pc_id)
+        db_ts = int(hw.last_update.replace(tzinfo=timezone.utc).timestamp() * 1000) if (hw and hw.last_update) else 0
+        last_updated_ts = max(mem_ts or 0, db_ts)
+
+        if mem_ts and mem_ts >= db_ts:
+            last_updated_str = format_display(datetime.fromtimestamp(mem_ts / 1000.0, tz=timezone.utc))
+        elif hw and hw.last_update:
+            last_updated_str = format_display(hw.last_update)
+        else:
+            last_updated_str = None
 
         return jsonify({
             "success": True, 
