@@ -129,3 +129,13 @@ def run_auto_screenshots(app):
                         count += 1
         except Exception as e:
             write_log("SCHEDULER_ERROR", f"Error auto-screenshot: {str(e)}", user="SYSTEM")
+
+
+def run_flush_uptime(app):
+    """Wrapper untuk batch flush akumulasi uptime PC ke SQLite yang dijalankan setiap 1 menit."""
+    with app.app_context():
+        try:
+            from app.services.hardware.uptime_service import UptimeService
+            UptimeService.flush_uptime_to_db(app=app)
+        except Exception as e:
+            write_log("SCHEDULER_ERROR", f"Error flush uptime: {str(e)}", user="SYSTEM")

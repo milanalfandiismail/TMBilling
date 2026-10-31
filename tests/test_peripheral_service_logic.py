@@ -174,6 +174,10 @@ class TestHardwareServiceLogic(unittest.TestCase):
                 "DiskSerials": ["DISK1"]
             }
         }
+        # Simulasi masa toleransi booting 60 detik telah terlewati
+        from app.services.cache.memory_store import AntiTheftGraceTracker
+        import time
+        AntiTheftGraceTracker._boot_timestamps[self.pc.id] = time.time() - 70.0
         HardwareService.process_hardware_metric("192.168.1.101", theft_payload)
 
         hw = HardwareMonitor.query.filter_by(pc_id=self.pc.id).first()

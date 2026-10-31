@@ -30,6 +30,7 @@ Services:
 from app.services.settings.settings_service import SettingsService
 from app.services.backup.backup_service import BackupService
 from app.services.hardware.hardware_service import HardwareService
+from app.services.hardware.uptime_service import UptimeService
 from app.services.menu.menu_service import MenuService
 from app.services.transaksi.transaksi_service import TransaksiService
 from app.services.user.user_service import UserService
@@ -58,6 +59,16 @@ from app.services.maintenance.maintenance_service import MaintenanceService
 from app.services.cloudflare_tunnel.cloudflare_tunnel_service import CloudflareTunnelService
 from app.services.vnc.vnc_service import VNCService
 from app.services.tutorial.tutorial_service import TutorialService
+from app.services.cache.memory_store import (
+    ProcessMemoryStore,
+    HardwareMetricsStore,
+    UptimeMemoryStore,
+    OnlineStatusStore,
+    SettingsCacheStore,
+    PCNetworkCacheStore,
+    AntiTheftGraceTracker,
+)
+
 
 __all__ = [
     "ShiftService",
@@ -69,6 +80,7 @@ __all__ = [
     "DashboardService",
     "GrupService",
     "HardwareService",
+    "UptimeService",
     "MemberService",
     "MenuService",
     "OwnerAnalyticsService",
@@ -89,5 +101,13 @@ __all__ = [
     "MaintenanceService",
     "CloudflareTunnelService",
     "VNCService",
-    "TutorialService"
-]
+    "TutorialService",
+    "ProcessMemoryStore",
+    "HardwareMetricsStore",
+    "UptimeMemoryStore",
+    "OnlineStatusStore",
+    "SettingsCacheStore",
+    "PCNetworkCacheStore",
+    "AntiTheftGraceTracker",
+
+]

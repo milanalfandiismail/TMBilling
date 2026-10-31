@@ -4,46 +4,51 @@
 
 Module ini menangani sinkronisasi daftar proses yang sedang berjalan
 di PC client guna keperluan monitoring dan audit keamanan.
+Menggunakan In-Memory Store untuk menghindari I/O disk SQLite per detik.
 """
 
-from app.models import db
-from app.models import PCProcess
+from app.models import db, PCProcess
+from app.services.cache.telemetry_store import ProcessMemoryStore
+from app.models.base.base import now_local
+from app.utils.timezone_utils import format_display
+
+
+class InMemProcess:
+    """Wrapper kompatibel untuk data proses in-memory agar to_dict() dan attribute match."""
+    def __init__(self, name, title, last_update=None):
+        self.name = name
+        self.title = title
+        self.last_update = last_update or now_local()
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "title": self.title,
+            "last_update": format_display(self.last_update, fmt="%H:%M") if self.last_update else None
+        }
+
 
 class ProcessRepository:
-    """Repository untuk entitas PCProcess."""
+    """Repository untuk entitas PCProcess (In-Memory Powered)."""
 
     @staticmethod
     def sync_processes(pc_id, process_data_list):
-        """Singkronisasi daftar proses untuk satu PC.
+        """Sinkronisasi daftar proses untuk satu PC ke In-Memory RAM Store.
         
-        Menghapus data proses lama untuk PC tersebut dan menggantinya
-        dengan data terbaru (snapshot) yang dikirim oleh client.
+        Zero disk I/O: Menghindari DELETE dan bulk INSERT ke database SQLite setiap detik.
         
         Args:
             pc_id (int): ID dari PC yang bersangkutan.
             process_data_list (list): Daftar dictionary berisi 'Name' dan 'Title'.
         """
-        # 1. Hapus snapshot proses lama
-        PCProcess.query.filter_by(pc_id=pc_id).delete()
-        
-        # 2. Bulk Insert snapshot proses baru
-        new_processes = []
-        for p in process_data_list:
-            new_processes.append(
-                PCProcess(
-                    pc_id=pc_id,
-                    name=p.get("Name", p.get("name", "Unknown")),
-                    title=p.get("Title", p.get("title", ""))
-                )
-            )
-        
-        if new_processes:
-            db.session.bulk_save_objects(new_processes)
-        
-        # NOTE: Commit akan dilakukan di level Service berbarengan dengan update Hardware
-        # agar transaksinya atomik.
+        ProcessMemoryStore.set(pc_id, process_data_list)
 
     @staticmethod
     def get_by_pc(pc_id):
-        """Mengambil semua proses aktif untuk satu PC."""
+        """Mengambil semua proses aktif untuk satu PC dari RAM (dengan fallback DB)."""
+        cached = ProcessMemoryStore.get(pc_id)
+        if cached:
+            return [InMemProcess(p["name"], p["title"]) for p in cached]
+        
+        # Fallback ke DB jika cache RAM belum terisi
         return PCProcess.query.filter_by(pc_id=pc_id).order_by(PCProcess.name).all()

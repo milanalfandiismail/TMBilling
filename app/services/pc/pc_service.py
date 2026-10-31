@@ -152,6 +152,8 @@ class PCService:
             "grup": grup_nama
         }
         write_log("TAMBAH_PC", f"PC {kode} ({grup_nama}) didaftarkan", user=operator, detail_json=detail_pc)
+        from app.services.cache import PCNetworkCacheStore
+        PCNetworkCacheStore.invalidate()
         return pc
 
     @staticmethod
@@ -216,6 +218,8 @@ class PCService:
             "grup": pc.grup.nama if pc.grup else ""
         }
         write_log("EDIT_PC", f"Data PC {pc.kode} diperbarui", user=operator, detail_json=detail_pc)
+        from app.services.cache import PCNetworkCacheStore
+        PCNetworkCacheStore.invalidate()
         return pc
 
     @staticmethod

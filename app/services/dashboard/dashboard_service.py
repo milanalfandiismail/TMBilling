@@ -71,26 +71,37 @@ class DashboardService:
             pc_dict['is_admin'] = pc_dict.get('is_admin_mode', False)
             pc_dict['is_system'] = pc_dict.get('is_system_mode', False)
             
-            # C. Cek Status Online & Heartbeat (Online jika < 15s. Jika >= 15s dan ada sesi/admin -> Oranye/No Heartbeat, jika kosong -> Abu-abu/Offline)
+            # C. Cek Status Online & Heartbeat (In-Memory First dengan fallback DB)
+            from app.services.cache.memory_store import OnlineStatusStore, HardwareMetricsStore, ProcessMemoryStore, AntiTheftGraceTracker
             status_koneksi = "offline"
             online = False
-            if pc.last_activity:
+            
+            if OnlineStatusStore.is_online(pc.id, timeout_seconds=15):
+                online = True
+                status_koneksi = "online"
+            elif pc.last_activity:
                 diff_seconds = abs((now - pc.last_activity).total_seconds())
                 if diff_seconds < 15:
                     online = True
                     status_koneksi = "online"
-                else:
-                    # Jika koneksi hilang tapi sedang ada sesi aktif / mode admin -> Oranye (Warning)
-                    if sesi_aktif or pc.is_admin_mode:
-                        status_koneksi = "no_heartbeat"
+            
+            if not online:
+                # Jika koneksi hilang tapi sedang ada sesi aktif / mode admin -> Oranye (Warning)
+                if sesi_aktif or pc.is_admin_mode:
+                    status_koneksi = "no_heartbeat"
+                # Bersihkan snapshot proses PC offline dari RAM untuk efisiensi server
+                ProcessMemoryStore.remove(pc.id)
+                AntiTheftGraceTracker.mark_offline(pc.id)
+                
             pc_dict['online'] = online
             pc_dict['status_koneksi'] = status_koneksi
             
-            # --- Active Window & Hardware Telemetry for Dashboard Card ---
-            pc_dict['active_window'] = pc.hardware.active_window if pc.hardware else ""
-            pc_dict['nic_speed'] = pc.hardware.nic_speed if pc.hardware else None
-            pc_dict['hardware_mismatch'] = bool(pc.hardware and pc.hardware.hardware_mismatch)
-            pc_dict['hardware_mismatch_desc'] = pc.hardware.hardware_mismatch_desc if pc.hardware else None
+            # --- Active Window & Hardware Telemetry for Dashboard Card (Live RAM Store) ---
+            cached_hw = HardwareMetricsStore.get(pc.id)
+            pc_dict['active_window'] = cached_hw.get('active_window', pc.hardware.active_window if pc.hardware else "")
+            pc_dict['nic_speed'] = cached_hw.get('nic_speed', pc.hardware.nic_speed if pc.hardware else None)
+            pc_dict['hardware_mismatch'] = cached_hw.get('hardware_mismatch', bool(pc.hardware and pc.hardware.hardware_mismatch))
+            pc_dict['hardware_mismatch_desc'] = cached_hw.get('hardware_mismatch_desc', pc.hardware.hardware_mismatch_desc if pc.hardware else None)
             
             # D. Detail Sesi Aktif (Mapping data sesi ke dalam dict PC)
             if sesi_aktif:

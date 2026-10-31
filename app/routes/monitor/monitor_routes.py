@@ -28,8 +28,14 @@ def get_all_hardware():
     try:
         monitors = HardwareService.get_all_with_pc()
         result = []
+        from app.services.cache.memory_store import HardwareMetricsStore
         for m in monitors:
             m_dict = m.to_dict()
+            cached = HardwareMetricsStore.get(m.pc_id)
+            if cached:
+                for k in ["cpu_usage", "cpu_temp", "gpu_temp", "total_ram", "nic_speed", "motherboard", "cpu_name", "gpu_name", "active_window"]:
+                    if k in cached:
+                        m_dict[k] = cached[k]
             m_dict["pc_kode"] = m.pc.kode if m.pc else "Unknown"
             m_dict["pc_nama"] = m.pc.nama if m.pc else "Unknown"
             m_dict["pc_grup_id"] = m.pc.grup_id if m.pc else 0
@@ -132,8 +138,14 @@ def get_all_hardware_kasir():
     try:
         monitors = HardwareService.get_all_with_pc()
         result = []
+        from app.services.cache.memory_store import HardwareMetricsStore
         for m in monitors:
             m_dict = m.to_dict()
+            cached = HardwareMetricsStore.get(m.pc_id)
+            if cached:
+                for k in ["cpu_usage", "cpu_temp", "gpu_temp", "total_ram", "nic_speed", "motherboard", "cpu_name", "gpu_name", "active_window"]:
+                    if k in cached:
+                        m_dict[k] = cached[k]
             m_dict["pc_kode"] = m.pc.kode if m.pc else "Unknown"
             m_dict["pc_nama"] = m.pc.nama if m.pc else "Unknown"
             m_dict["pc_grup_id"] = m.pc.grup_id if m.pc else 0

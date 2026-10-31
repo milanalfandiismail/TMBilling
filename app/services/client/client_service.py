@@ -15,62 +15,14 @@ from app.services.settings.settings_service import SettingsService
 from app.utils.logger import write_log
 
 
-MAX_COMMAND_QUEUE_PER_PC = 10
-
-
-class CommandQueueDict(dict):
-    """Dict yang mendukung antrean perintah FIFO per PC dengan batas antrean (anti memory leak)."""
-    def push_cmd(self, pc_id, cmd):
-        q = super().get(pc_id)
-        if q is None:
-            super().__setitem__(pc_id, [cmd])
-            return
-
-        if not isinstance(q, list):
-            q = [q]
-            super().__setitem__(pc_id, q)
-
-        # Deduplikasi perintah identik berkala (misal screenshot/lock saat PC offline)
-        if cmd in q and cmd in ("screenshot", "lock", "unlock"):
-            return
-
-        q.append(cmd)
-        # Batasi panjang antrean maksimal agar tidak memicu memory leak jika PC offline lama
-        if len(q) > MAX_COMMAND_QUEUE_PER_PC:
-            q.pop(0)
-
-    def pop_cmd(self, pc_id, default=None):
-        q = super().get(pc_id)
-        if q is None:
-            return default
-        if isinstance(q, list):
-            cmd = q.pop(0) if len(q) > 0 else default
-            if not q:
-                super().pop(pc_id, None)
-            return cmd
-        else:
-            return super().pop(pc_id, default)
-
-    def pop(self, pc_id, default=None):
-        return self.pop_cmd(pc_id, default)
-
-    def get(self, pc_id, default=None):
-        q = super().get(pc_id, default)
-        if isinstance(q, list):
-            return q[-1] if len(q) > 0 else default
-        return q
-
-    def __getitem__(self, pc_id):
-        q = super().__getitem__(pc_id)
-        if isinstance(q, list):
-            return q[-1] if len(q) > 0 else None
-        return q
-
-
-# Antrean instruksi perintah real-time per PC (Key: pc_id, Value: list of command_types)
-PENDING_COMMANDS = CommandQueueDict()
-PENDING_FAST_COMMANDS = CommandQueueDict()
-PENDING_VNC_COMMANDS = PENDING_FAST_COMMANDS
+from app.services.cache.command_store import (
+    MAX_COMMAND_QUEUE_PER_PC,
+    CommandQueueStore,
+    CommandQueueDict,
+    PENDING_COMMANDS,
+    PENDING_FAST_COMMANDS,
+    PENDING_VNC_COMMANDS
+)
 
 
 class ClientService:
@@ -79,22 +31,22 @@ class ClientService:
     @staticmethod
     def queue_command(pc_id, command_type):
         """Menambahkan perintah ke antrean polling reguler PC (GUI)."""
-        PENDING_COMMANDS.push_cmd(pc_id, command_type)
+        CommandQueueStore.push_command(pc_id, command_type)
 
     @staticmethod
     def queue_fast_command(pc_id, command_type):
         """Menambahkan perintah cepat on-demand ke antrean PC (Monitor Agent / Remote Control)."""
-        PENDING_FAST_COMMANDS.push_cmd(pc_id, command_type)
+        CommandQueueStore.push_fast_command(pc_id, command_type)
 
     @staticmethod
     def pop_command(pc_id):
         """Mengambil perintah reguler FIFO dari antrean."""
-        return PENDING_COMMANDS.pop_cmd(pc_id)
+        return CommandQueueStore.pop_command(pc_id)
 
     @staticmethod
     def pop_fast_command(pc_id):
         """Mengambil perintah cepat FIFO dari antrean."""
-        return PENDING_FAST_COMMANDS.pop_cmd(pc_id)
+        return CommandQueueStore.pop_fast_command(pc_id)
 
     @staticmethod
     def queue_vnc_command(pc_id, command_type):
@@ -191,9 +143,10 @@ class ClientService:
                     write_log("STATUS_REJECTED", f"Polling ditolak: {ip_address} mismatch MAC. DB:{norm_db_mac} Client:{norm_client_mac}")
                     raise ValueError("Identitas PC tidak valid (MAC Mismatch)")
 
-            # Update Last Activity
+            # Update Last Activity in RAM Store
+            from app.services.cache.memory_store import OnlineStatusStore
             pc.last_activity = now_local()
-            db.session.commit()
+            OnlineStatusStore.mark_active(pc.id, dt=pc.last_activity)
 
             # B. Cek Sesi Aktif
             sesi = SesiRepository.get_aktif_by_pc(pc.id)
@@ -241,12 +194,10 @@ class ClientService:
                     }
 
                 else:
-                    # C. Sesi Ada -> Update Sync & Hitung Sisa Waktu
+                    # C. Sesi Ada -> Update Sync & Hitung Sisa Waktu (In-Memory timestamp)
                     try:
                         sesi.last_sync = now_local()
-                        db.session.commit()
-                    except:
-                        write_log("SYNC_ERROR", f"Gagal update last_sync PC {pc.kode}")
+                    except Exception:
                         pass
 
                     try:

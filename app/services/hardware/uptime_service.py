@@ -1,69 +1,50 @@
-# app/services/hardware/uptime_service.py
+# app/services/uptime_service.py
 
-"""Service untuk mencatat dan mengelola log uptime dan utilisasi PC client."""
+"""Service untuk manajemen dan pelaporan log uptime PC.
 
-from datetime import datetime
+Module ini mengelola pencatatan detak jantung (heartbeat) PC
+dan menghitung utilisasi harian. Menggunakan In-Memory Store untuk
+menghindari penulisan disk SQLite setiap detik, dengan batch flush
+berkala setiap 1 menit.
+"""
+
+from datetime import datetime, timedelta, date
 from app.models import db, PCUptimeLog, PC, Sesi
-from app.utils.timezone_utils import now_utc, get_display_tz, display_in_tz
 from app.utils.logger import write_log
+from app.utils.timezone_utils import now_utc, get_display_tz, display_in_tz
 
 
 class UptimeService:
-    """Service untuk mencatat detak jantung (heartbeat) PC dan menghitung utilisasi harian."""
+    """Service untuk agregasi dan pencatatan log uptime PC (In-Memory Powered)."""
 
     @staticmethod
-    def record_heartbeat(pc_id):
-        """Mencatat detak jantung PC dan memperbarui akumulasi waktu online & billing.
+    def record_heartbeat(pc_id, is_billing=None):
+        """Mencatat detak jantung PC ke In-Memory Uptime Store.
+        
+        Zero Disk I/O: Menghindari commit ke database SQLite setiap detik.
+        Akumulasi akan di-flush ke tabel pc_uptime_log secara batch setiap 1 menit.
         
         Args:
             pc_id (int): ID PC yang mengirim heartbeat telemetry.
+            is_billing (bool, optional): Apakah PC sedang dalam sesi billing aktif.
         """
         try:
-            # 1. Dapatkan tanggal hari ini berdasarkan zona waktu lokal warnet
-            tz = get_display_tz()
-            now_local = now_utc().astimezone(tz)
-            today = now_local.date()
-            
-            # Waktu UTC naive untuk disimpan di DB
-            now_naive = now_utc().replace(tzinfo=None)
-
-            # 2. Cari atau buat log hari ini untuk PC ini
-            log = PCUptimeLog.query.filter_by(pc_id=pc_id, tanggal=today).first()
-            
-            if not log:
-                log = PCUptimeLog(
-                    pc_id=pc_id,
-                    tanggal=today,
-                    first_seen=now_naive,
-                    last_seen=now_naive,
-                    total_online_seconds=0,
-                    total_billing_seconds=0
-                )
-                db.session.add(log)
-                db.session.commit()
-                return
-
-            # 3. Hitung selisih waktu dari heartbeat terakhir
-            if log.last_seen:
-                diff_seconds = (now_naive - log.last_seen).total_seconds()
-                
-                # Throttling: Hanya akumulasikan jika detak jantung wajar (5 detik s.d 2 menit)
-                # Mencegah penambahan durasi saat PC baru menyala kembali setelah mati lama.
-                if 5 <= diff_seconds <= 120:
-                    log.total_online_seconds += int(diff_seconds)
-                    
-                    # Cek apakah sedang ada sesi billing aktif di PC ini
-                    pc = PC.query.get(pc_id)
-                    if pc and pc.sesi_aktif:
-                        log.total_billing_seconds += int(diff_seconds)
-
-            # 4. Perbarui waktu detak jantung terakhir
-            log.last_seen = now_naive
-            db.session.commit()
-
+            from app.services.cache.uptime_store import UptimeMemoryStore
+            if is_billing is None:
+                pc = PC.query.get(pc_id)
+                is_billing = bool(pc and pc.sesi_aktif)
+            UptimeMemoryStore.record_heartbeat(pc_id, is_billing=is_billing)
         except Exception as e:
-            db.session.rollback()
             write_log("UPTIME_SERVICE_ERROR", f"Gagal mencatat heartbeat PC ID {pc_id}: {str(e)}")
+
+    @staticmethod
+    def flush_uptime_to_db(app=None):
+        """Flush akumulasi uptime dari RAM ke database SQLite."""
+        try:
+            from app.services.cache.uptime_store import UptimeMemoryStore
+            UptimeMemoryStore.flush_to_database(app=app)
+        except Exception as e:
+            write_log("UPTIME_SERVICE_ERROR", f"Gagal flush uptime ke database: {str(e)}")
 
     @staticmethod
     def get_daily_report(tanggal):
@@ -76,6 +57,9 @@ class UptimeService:
             list: List dictionary berisi laporan uptime per PC.
         """
         try:
+            # Pastikan akumulasi terbaru di RAM sudah ter-flush ke DB
+            UptimeService.flush_uptime_to_db()
+
             import re
             def natural_sort_key(s):
                 return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s or '')]
@@ -100,6 +84,9 @@ class UptimeService:
             dict: Berisi 'summary' (agregat total) dan 'pcs' (detail per PC).
         """
         try:
+            # Pastikan akumulasi terbaru di RAM sudah ter-flush ke DB
+            UptimeService.flush_uptime_to_db()
+
             # Query log dalam rentang tanggal
             logs = PCUptimeLog.query.filter(
                 PCUptimeLog.tanggal >= start_date,
@@ -130,59 +117,62 @@ class UptimeService:
                 
                 pc_stats[pc_kode]["total_online_seconds"] += log.total_online_seconds
                 pc_stats[pc_kode]["total_billing_seconds"] += log.total_billing_seconds
-                pc_stats[pc_kode]["hari_aktif"] += 1
+                if log.total_online_seconds > 0:
+                    pc_stats[pc_kode]["hari_aktif"] += 1
                 
                 total_seconds_online += log.total_online_seconds
                 total_seconds_billing += log.total_billing_seconds
 
-            # Format data untuk output
-            pc_list = []
-            for stat in pc_stats.values():
-                online_menit = round(stat["total_online_seconds"] / 60, 1)
-                billing_menit = round(stat["total_billing_seconds"] / 60, 1)
+            # Format list PC
+            pcs_list = []
+            for pc_kode, stats in pc_stats.items():
+                on_menit = round(stats["total_online_seconds"] / 60, 1)
+                bill_menit = round(stats["total_billing_seconds"] / 60, 1)
                 utilisasi = 0.0
-                if stat["total_online_seconds"] > 0:
-                    utilisasi = round((stat["total_billing_seconds"] / stat["total_online_seconds"]) * 100, 1)
+                if stats["total_online_seconds"] > 0:
+                    utilisasi = round((stats["total_billing_seconds"] / stats["total_online_seconds"]) * 100, 1)
                     if utilisasi > 100.0:
                         utilisasi = 100.0
-                
-                pc_list.append({
-                    "pc_kode": stat["pc_kode"],
-                    "grup": stat["grup"],
-                    "grup_warna": stat.get("grup_warna", "#888888"),
-                    "pc_grup_id": stat["pc_grup_id"],
-                    "total_online_menit": online_menit,
-                    "total_billing_menit": billing_menit,
-                    "utilisasi_persen": utilisasi,
-                    "hari_aktif": stat["hari_aktif"]
+
+                pcs_list.append({
+                    "pc_kode": stats["pc_kode"],
+                    "grup": stats["grup"],
+                    "grup_warna": stats["grup_warna"],
+                    "pc_grup_id": stats["pc_grup_id"],
+                    "total_online_menit": on_menit,
+                    "total_billing_menit": bill_menit,
+                    "hari_aktif": stats["hari_aktif"],
+                    "utilisasi_persen": utilisasi
                 })
 
-            # Urutkan secara natural/alphabetical berdasarkan grup_id dan kode PC
             import re
-            def natural_sort_key(s):
+            def natural_sort_key(item):
+                s = item.get("pc_kode", "")
                 return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s or '')]
-            
-            pc_list = sorted(pc_list, key=lambda item: (item.get("pc_grup_id") or 0, natural_sort_key(item["pc_kode"])))
 
-            # Hitung rata-rata utilisasi keseluruhan
-            avg_utilisasi = 0.0
+            pcs_list.sort(key=lambda item: (item.get("pc_grup_id", 0), natural_sort_key(item)))
+
+            summary_online_menit = round(total_seconds_online / 60, 1)
+            summary_billing_menit = round(total_seconds_billing / 60, 1)
+            summary_utilisasi = 0.0
             if total_seconds_online > 0:
-                avg_utilisasi = round((total_seconds_billing / total_seconds_online) * 100, 1)
+                summary_utilisasi = round((total_seconds_billing / total_seconds_online) * 100, 1)
+                if summary_utilisasi > 100.0:
+                    summary_utilisasi = 100.0
 
             return {
-                "success": True,
                 "summary": {
-                    "total_online_menit": round(total_seconds_online / 60, 1),
-                    "total_billing_menit": round(total_seconds_billing / 60, 1),
-                    "avg_utilisasi_persen": avg_utilisasi
+                    "total_online_menit": summary_online_menit,
+                    "total_billing_menit": summary_billing_menit,
+                    "utilisasi_persen": summary_utilisasi,
+                    "total_pc_tercatat": len(pcs_list)
                 },
-                "pcs": pc_list
+                "pcs": pcs_list
             }
+
         except Exception as e:
             write_log("UPTIME_SERVICE_ERROR", f"Gagal mengambil laporan rentang {start_date} s/d {end_date}: {str(e)}")
             return {
-                "success": False,
-                "error": str(e),
-                "summary": {"total_online_menit": 0, "total_billing_menit": 0, "avg_utilisasi_persen": 0},
+                "summary": {"total_online_menit": 0, "total_billing_menit": 0, "utilisasi_persen": 0, "total_pc_tercatat": 0},
                 "pcs": []
             }

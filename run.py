@@ -17,7 +17,7 @@ Usage:
 
 from app import create_app
 from apscheduler.schedulers.background import BackgroundScheduler
-from app.utils.scheduler_tasks import run_cleanup_expired, run_database_backup, run_cleanup_logs, run_auto_screenshots, UNIT_MULTIPLIER
+from app.utils.scheduler_tasks import run_cleanup_expired, run_database_backup, run_cleanup_logs, run_auto_screenshots, run_flush_uptime, UNIT_MULTIPLIER
 import os
 import time
 
@@ -77,6 +77,18 @@ def start_scheduler(app):
         seconds=screenshot_seconds,
         id="auto_screenshots"
     )
+
+    # Task 5: Batch Flush Uptime In-Memory ke SQLite (interval 60 detik)
+    scheduler.add_job(
+        func=run_flush_uptime,
+        args=[app],
+        trigger="interval",
+        seconds=60,
+        id="flush_uptime"
+    )
+
+    import atexit
+    atexit.register(lambda: run_flush_uptime(app))
 
     return scheduler
 

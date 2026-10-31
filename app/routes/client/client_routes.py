@@ -217,8 +217,9 @@ def get_warnet_config():
 
 
 def _resolve_client_pc(data):
-    """Helper untuk meresolve PC dari request payload atau remote header."""
+    """Helper untuk meresolve PC dari request payload atau remote header (Cache-Accelerated)."""
     from app.repositories import PCRepository
+    from app.services.cache.memory_store import PCNetworkCacheStore
     raw_ip = data.get("ip_address")
     if raw_ip in ["Unknown", "unknown", "", None]:
         raw_ip = None
@@ -226,9 +227,15 @@ def _resolve_client_pc(data):
     ip_address = raw_ip or request.headers.get("X-IP-Address") or request.remote_addr
     mac_address = data.get("mac_address", "").upper().strip()
     
-    pc = PCRepository.get_by_ip(ip_address)
-    if not pc and mac_address:
-        pc = PCRepository.find_by_mac(mac_address)
+    cached = PCNetworkCacheStore.resolve_pc(ip=ip_address, mac=mac_address)
+    if cached:
+        pc = PCRepository.get_by_id(cached["id"])
+    else:
+        pc = PCRepository.get_by_ip(ip_address)
+        if not pc and mac_address:
+            pc = PCRepository.find_by_mac(mac_address)
+        if pc:
+            PCNetworkCacheStore.invalidate()
     return pc, ip_address, mac_address
 
 

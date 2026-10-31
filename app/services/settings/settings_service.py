@@ -20,14 +20,25 @@ class SettingsService:
 
     @staticmethod
     def get(key, default=None):
-        """Mengambil nilai setting berdasarkan key dengan fallback ke default."""
+        """Mengambil nilai setting berdasarkan key dari RAM cache (fallback DB)."""
+        from app.services.cache.system_cache_store import SettingsCacheStore
+        val = SettingsCacheStore.get(key)
+        if val is not None:
+            return val
         setting = SettingsRepository.get(key)
-        return setting if setting is not None else default
+        if setting is not None:
+            SettingsCacheStore.set(key, str(setting))
+            return setting
+        return default
 
     @staticmethod
     def get_all():
-        """Mengambil semua pengaturan dalam bentuk dictionary (Key: Value)."""
-        data = SettingsRepository.get_all()
+        """Mengambil semua pengaturan dalam bentuk dictionary (Key: Value) dari RAM cache."""
+        from app.services.cache.system_cache_store import SettingsCacheStore
+        data = SettingsCacheStore.get_all()
+        if not data:
+            data = SettingsRepository.get_all()
+            SettingsCacheStore.update_dict(data)
         defaults = {
             "warnet_title": "TMBilling",
             "warnet_announcement": "",
@@ -114,9 +125,11 @@ class SettingsService:
 
     @staticmethod
     def set(key, value):
-        """Menyimpan atau memperbarui nilai pengaturan."""
+        """Menyimpan atau memperbarui nilai pengaturan (Write-Through DB & RAM)."""
         SettingsRepository.set(key, value)
         db.session.commit()
+        from app.services.cache.system_cache_store import SettingsCacheStore
+        SettingsCacheStore.set(key, str(value))
 
     @staticmethod
     def get_or_create_branch_api_key():
