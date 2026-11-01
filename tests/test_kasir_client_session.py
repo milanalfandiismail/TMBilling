@@ -2,7 +2,7 @@
 
 import pytest
 from app import create_app, db
-from app.models import User, PC, Grup, Sesi, now_local
+from app.models import User, PC, Grup, Sesi, Member, now_local
 from app.services.auth.auth_service import AuthService
 from app.services.sesi.sesi_service import SesiService
 
@@ -107,3 +107,25 @@ def test_kasir_session_tutup_sesi_syncs_quota(app_ctx):
     assert saved_user.sisa_kuota_menit <= 120
     saved_sesi = Sesi.query.get(sesi_id)
     assert saved_sesi.status == "selesai"
+
+
+def test_buka_member_prevents_duplicate_active_session(app_ctx):
+    grup = Grup(nama="Reguler", warna="#0055FF")
+    db.session.add(grup)
+    db.session.flush()
+
+    pc1 = PC(kode="PC-M-01", grup_id=grup.id, ip_address="192.168.1.111", mac_address="AA:BB:CC:DD:EE:11")
+    pc2 = PC(kode="PC-M-02", grup_id=grup.id, ip_address="192.168.1.112", mac_address="AA:BB:CC:DD:EE:12")
+    member = Member(username="member_race", nama_lengkap="Member Race", no_hp="081234567890", grup_id=grup.id, waktu_tersimpan=180)
+    member.set_password("pin123")
+    db.session.add_all([pc1, pc2, member])
+    db.session.commit()
+
+    # Sesi pertama dibuka di PC 1
+    sesi1 = SesiService.buka_member("PC-M-01", "member_race", operator="kasir")
+    assert sesi1.status == "aktif"
+    assert sesi1.member_id == member.id
+
+    # Sesi kedua untuk member yang sama di PC 2 harus ditolak (mencegah double-click race condition)
+    with pytest.raises(ValueError, match="Member sudah memiliki sesi aktif"):
+        SesiService.buka_member("PC-M-02", "member_race", operator="kasir")

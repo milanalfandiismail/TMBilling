@@ -8,6 +8,7 @@ pindah PC, tambah waktu, dan sinkronisasi waktu real-time.
 
 import secrets
 from datetime import timedelta
+from sqlalchemy.exc import IntegrityError
 from app.models import Sesi, Transaksi, db, now_local
 from app.repositories import (
     SesiRepository,
@@ -105,13 +106,24 @@ class SesiService:
         member.cek_kadaluarsa()
         if member.waktu_tersimpan <= 0: raise ValueError("Waktu habis")
 
+        # Cegah race condition / double-click: pastikan member belum memiliki sesi aktif
+        if SesiRepository.get_aktif_by_member(member.id):
+            raise ValueError("Member sudah memiliki sesi aktif")
+
         sesi = Sesi(
             tipe="member", member_id=member.id, pc_id=pc.id, status="aktif",
             token_sesi=secrets.token_hex(32), waktu_mulai_sesi=now_local(),
             waktu_tersimpan_awal=member.waktu_tersimpan
         )
-        db.session.add(sesi)
-        db.session.commit()
+        try:
+            db.session.add(sesi)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            raise ValueError("Member sudah memiliki sesi aktif")
+        except Exception:
+            db.session.rollback()
+            raise
         
         detail_member = {
             "member_id": member.id,
