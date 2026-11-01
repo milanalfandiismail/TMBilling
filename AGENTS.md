@@ -166,7 +166,7 @@ Subsystem kritis pengeliminasi query disk SQLite berulang pada loop polling klie
 
 | Berkas Modul | Tanggung Jawab & Store |
 |---|---|
-| `client_state_store.py` | `OnlineStatusStore` (detak jantung PC < 15s), `AntiTheftGraceTracker` (toleransi boot 60s anti false-alarm hardware), dan `ApiKeyMismatchStore` (pelacakan client dengan API key salah/mismatch). |
+| `client_state_store.py` | `OnlineStatusStore` (detak jantung PC < 15s), `AntiTheftGraceTracker` (toleransi cold boot 60s anti false-alarm hardware dengan auto-reboot detection saat PC bangun dari offline), dan `ApiKeyMismatchStore` (pelacakan client dengan API key salah/mismatch). |
 | `command_store.py` | `CommandQueueStore` & `CommandQueueDict` (antrean perintah FIFO GUI & VNC fast-command per PC dengan proteksi memory leak). |
 | `telemetry_store.py` | `ProcessMemoryStore` (snapshot Task Manager PC di RAM), `HardwareMetricsStore`, dan `TelemetryHistoryStore` (sliding window 3 snapshot). |
 | `system_cache_store.py` | `SettingsCacheStore` (write-through cache pengaturan global) dan `PCNetworkCacheStore` (cache mapping IP/MAC -> metadata PC). |
@@ -184,7 +184,7 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 | `TMBillingTauri/` | Source code klien utama: UI HTML/CSS kiosk lockscreen (`src/kiosk/`) & floating overlay bar (`src/overlay/`), Rust backend (`src-tauri/`) dengan Win32 low-level hooks penonaktifan tombol sistem Windows. |
 | `MGCTM/` | Watchdog daemon C++ yang bertugas mengawasi proses `TMBilling.exe` dan memulihkan aplikasi secara otomatis jika dihentikan paksa. |
 | `mtm/` | Auxiliary watchdog & resilience guard pelindung integritas service klien. |
-| `TMBilling_Monitor/` | Daemon C# pengumpul metrik hardware (CPU/GPU load & temp, RAM, active window, NIC speed) via LibreHardwareMonitor. |
+| `TMBilling_Monitor/` | Daemon telemetri Rust (`src/main.rs`) & helper C# `HardwareHelper.exe` berbasis kernel driver LibreHardwareMonitor dengan sinkronisasi startup cold boot (pengumpul metrik CPU/GPU load & temp, RAM, active window, native Win32 NIC speed). |
 | `TMBilling_Uninstaller/` | Program uninstaller aman yang membersihkan hash registry, Win32 service, dan konfigurasi klien. |
 | `Deploy/` | Skrip automasi firewall Windows (`allow_firewall.bat`), skrip sync registry, installer & uninstaller biner lengkap (`install.bat` / `uninstall.bat` untuk fresh install & clean update), dan TightVNC server loopback port 5900. |
 
@@ -225,7 +225,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Process Monitor & Task Killer** | `modules/dashboard/dashboard_process_monitor.js` | `routes/monitor/monitor_routes.py`, `services/cache/telemetry_store.py` | `PCProcess`, in-memory store |
 | **VNC Remote Control & Clipboard** | `modules/remote.js`, `core/vnc_client.js` | `routes/vnc/vnc_routes.py`, `services/vnc/` | `PC`, `Branch` |
 | **POS Kantin & Billing FnB** | `modules/menu.js`, `modules/struk.js` | `routes/menu/menu_routes.py`, `services/menu/` | `MenuItem`, `TransaksiMenu` |
-| **Hardware Baseline Anti-Maling** | `modules/hardware_checker.js` | `routes/hardware/`, `services/hardware/` | `HardwareMonitor` |
+| **Hardware Baseline Anti-Maling** | `modules/hardware_checker.js` | `routes/monitor/monitor_routes.py`, `routes/hardware/`, `services/hardware/` | `HardwareMonitor` |
 | **Shift Kasir (Blind Cash)** | `modules/shift.js` | `routes/shift/shift_routes.py`, `services/shift/` | `ShiftRecord`, `Transaksi` |
 | **Multi-Branch Proxy Relay** | `modules/branch.js` | `routes/branch/branch_routes.py`, `services/branch/` | `Branch`, `BranchInbound` |
 | **Web File Explorer Remote** | `modules/fileexplorer.js` | `routes/fileexplorer/`, `services/fileexplorer/` | `PC` |
