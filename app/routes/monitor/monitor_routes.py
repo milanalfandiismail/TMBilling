@@ -51,6 +51,7 @@ def get_all_hardware():
         return jsonify({"error": str(e)}), 500
 
 @monitor_api_bp.route("/", methods=["POST"], strict_slashes=False)
+@api_key_required
 def receive_hardware_data():
     """Endpoint untuk menerima data telemetry dari Hardware Monitor Agent (C#).
     

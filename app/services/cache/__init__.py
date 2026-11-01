@@ -19,7 +19,8 @@ from app.services.cache.telemetry_store import (
 )
 from app.services.cache.client_state_store import (
     OnlineStatusStore,
-    AntiTheftGraceTracker
+    AntiTheftGraceTracker,
+    ApiKeyMismatchStore
 )
 from app.services.cache.command_store import (
     CommandQueueStore,
@@ -46,6 +47,7 @@ def cleanup_pc_cache(pc_id: int):
     TelemetryHistoryStore.remove(pc_id)
     OnlineStatusStore.remove(pc_id)
     AntiTheftGraceTracker.mark_offline(pc_id)
+    ApiKeyMismatchStore.clear_mismatch(pc_id=pc_id)
     CommandQueueStore.remove(pc_id)
     UptimeMemoryStore.remove(pc_id)
     PCNetworkCacheStore.invalidate()
@@ -58,6 +60,7 @@ def reset_all_cache():
     TelemetryHistoryStore.clear()
     OnlineStatusStore.clear()
     AntiTheftGraceTracker.clear_all()
+    ApiKeyMismatchStore.clear_all()
     CommandQueueStore.clear()
     UptimeMemoryStore.clear()
     SettingsCacheStore.invalidate()
@@ -70,6 +73,7 @@ __all__ = [
     "TelemetryHistoryStore",
     "OnlineStatusStore",
     "AntiTheftGraceTracker",
+    "ApiKeyMismatchStore",
     "CommandQueueStore",
     "CommandQueueDict",
     "PENDING_COMMANDS",
@@ -79,5 +83,5 @@ __all__ = [
     "SettingsCacheStore",
     "PCNetworkCacheStore",
     "cleanup_pc_cache",
-    "reset_all_cache",
+    "reset_all_cache"
 ]

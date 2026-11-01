@@ -215,11 +215,12 @@ const CompactGrid = {
     },
 
     renderCompactCard(pc) {
-        const isActive = pc.status === 'terpakai';
+        const isKeyMismatch = pc.status_koneksi === 'api_key_mismatch' || pc.api_key_mismatch === true;
+        const isActive = !isKeyMismatch && pc.status === 'terpakai';
         const sesi = pc.sesi_detail;
         const isAfk = isActive && sesi && (pc.is_afk || sesi.is_afk);
-        const isLostConnection = isActive && (pc.status_koneksi === 'no_heartbeat' || pc.status_koneksi === 'offline');
-        const isOnline = pc.status_koneksi === 'online' || pc.online === true || isActive || pc.is_admin_mode;
+        const isLostConnection = !isKeyMismatch && isActive && (pc.status_koneksi === 'no_heartbeat' || pc.status_koneksi === 'offline');
+        const isOnline = !isKeyMismatch && (pc.status_koneksi === 'online' || pc.online === true || isActive || pc.is_admin_mode);
         const isSpeedDrop = !isLostConnection && isOnline && this.isNicSpeedDrop(pc.nic_speed);
         const customColor = Dashboard.lastData?.grup_meta?.[pc.grup]?.warna || '#737373';
 
@@ -236,7 +237,17 @@ const CompactGrid = {
         // Persistent group border color for all cards
         let borderStyle = `border-color: ${customColor}80`;
 
-        if (isLostConnection) {
+        if (isKeyMismatch) {
+            cardBgClass = 'animate-pulse-fuchsia-bg';
+            cardBorderClass = 'border';
+            statusIndicator = '[!]';
+            indicatorColorClass = 'text-fuchsia-400 animate-pulse';
+
+            timerStr = 'KEY SALAH';
+            activeAppName = '🔑 API KEY TIDAK COCOK';
+            memberName = pc.ip_address || 'API Key Error';
+            borderStyle = '';
+        } else if (isLostConnection) {
             cardBgClass = 'animate-pulse-red-bg';
             cardBorderClass = 'border';
             statusIndicator = '[!]';
@@ -327,7 +338,9 @@ const CompactGrid = {
         const isAdminCard = !isSystemCard && (pc.is_admin_mode || pc.status === 'admin' || sesi?.tipe === 'admin');
 
         const borderAttr = borderStyle ? `style="${borderStyle}"` : '';
-        const timerColorClass = isAfk ? 'text-amber-400' : (isSystemCard ? 'text-indigo-400' : (isAdminCard ? 'text-amber-400' : (isActive && sesi && sesi.sisa_menit <= 5 ? 'text-red-400 animate-pulse' : 'text-emerald-300')));
+        const timerColorClass = isKeyMismatch 
+            ? 'text-fuchsia-400 font-bold'
+            : (isAfk ? 'text-amber-400' : (isSystemCard ? 'text-indigo-400' : (isAdminCard ? 'text-amber-400' : (isActive && sesi && sesi.sisa_menit <= 5 ? 'text-red-400 animate-pulse' : 'text-emerald-300'))));
         // Tipografi dinamis yang fit dan proporsional untuk 8 kolom (lg), 10 kolom (xl), dan 12 kolom (2xl)
         const timerFontSizeClass = timerStr.length > 8 
             ? 'text-[10px] lg:text-[10px] xl:text-[11px] 2xl:text-xs' 
@@ -343,9 +356,11 @@ const CompactGrid = {
         const isSelected = window.DashboardSelection && window.DashboardSelection.isSelected(pc.id);
         const selectionClasses = isSelected ? 'ring-2 ring-indigo-500 border-indigo-400 bg-indigo-950/30' : '';
 
-        // Row 2 styling: Prioritas Terputus (Merah) -> Speed Drop (Oranye) -> AFK -> Judul Proses Normal
+        // Row 2 styling: Prioritas Mismatch API Key (Fuchsia) -> Terputus (Merah) -> Speed Drop (Oranye) -> AFK -> Judul Proses Normal
         let row2Html = '';
-        if (isLostConnection) {
+        if (isKeyMismatch) {
+            row2Html = `<div class="text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs text-fuchsia-400 font-bold truncate mt-0.5 animate-pulse" title="⚠️ API Key Client tidak cocok dengan Server! Cek config.ini pada PC ini.">🔑 KEY TIDAK COCOK</div>`;
+        } else if (isLostConnection) {
             row2Html = `<div class="text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs text-red-400 font-bold truncate mt-0.5 animate-pulse" title="⚠️ TERPUTUS">⚠️ TERPUTUS</div>`;
         } else if (isSpeedDrop) {
             const displaySpeed = pc.nic_speed || '100 Mbps';
@@ -405,11 +420,12 @@ const CompactGrid = {
             const cardEl = document.querySelector(`.pc-card-item[data-pc-id="${pc.id}"]`);
             if (!cardEl) return;
 
-            const isActive = pc.status === 'terpakai';
+            const isKeyMismatch = pc.status_koneksi === 'api_key_mismatch' || pc.api_key_mismatch === true;
+            const isActive = !isKeyMismatch && pc.status === 'terpakai';
             const sesi = pc.sesi_detail;
             const isAfk = isActive && sesi && (pc.is_afk || sesi.is_afk);
-            const isLostConnection = isActive && (pc.status_koneksi === 'no_heartbeat' || pc.status_koneksi === 'offline');
-            const isOnline = pc.status_koneksi === 'online' || pc.online === true || isActive || pc.is_admin_mode;
+            const isLostConnection = !isKeyMismatch && isActive && (pc.status_koneksi === 'no_heartbeat' || pc.status_koneksi === 'offline');
+            const isOnline = !isKeyMismatch && (pc.status_koneksi === 'online' || pc.online === true || isActive || pc.is_admin_mode);
             const isSpeedDrop = !isLostConnection && isOnline && this.isNicSpeedDrop(pc.nic_speed);
             const customColor = Dashboard.lastData?.grup_meta?.[pc.grup]?.warna || '#737373';
 
@@ -423,7 +439,15 @@ const CompactGrid = {
             let memberName = '';
             let borderStyle = `border-color: ${customColor}80`;
 
-            if (isLostConnection) {
+            if (isKeyMismatch) {
+                cardBgClass = 'animate-pulse-fuchsia-bg';
+                cardBorderClass = 'border';
+                indicatorColorClass = 'text-fuchsia-400 animate-pulse';
+                timerStr = 'KEY SALAH';
+                activeAppName = '🔑 API KEY TIDAK COCOK';
+                memberName = pc.ip_address || 'API Key Error';
+                borderStyle = '';
+            } else if (isLostConnection) {
                 cardBgClass = 'animate-pulse-red-bg';
                 cardBorderClass = 'border';
                 indicatorColorClass = 'text-red-500 animate-pulse';
@@ -495,11 +519,15 @@ const CompactGrid = {
 
             const isSystemCard = pc.is_system_mode || pc.status === 'system' || (sesi?.tipe === 'admin' && ((sesi.nama_guest || '').toUpperCase() === 'SYSTEM' || (sesi.member_nama || '').toUpperCase() === 'SYSTEM'));
             const isAdminCard = !isSystemCard && (pc.is_admin_mode || pc.status === 'admin' || sesi?.tipe === 'admin');
-            const timerColorClass = isAfk ? 'text-amber-400' : (isSystemCard ? 'text-indigo-400' : (isAdminCard ? 'text-amber-400' : (isActive && sesi && sesi.sisa_menit <= 5 ? 'text-red-400 animate-pulse' : 'text-emerald-300')));
+            const timerColorClass = isKeyMismatch 
+                ? 'text-fuchsia-400 font-bold'
+                : (isAfk ? 'text-amber-400' : (isSystemCard ? 'text-indigo-400' : (isAdminCard ? 'text-amber-400' : (isActive && sesi && sesi.sisa_menit <= 5 ? 'text-red-400 animate-pulse' : 'text-emerald-300'))));
             const timerFontSizeClass = timerStr.length > 8 ? 'text-[10px] lg:text-[10px] xl:text-[11px] 2xl:text-xs' : 'text-[11px] lg:text-xs xl:text-xs 2xl:text-sm';
 
             let row2Html = '';
-            if (isLostConnection) {
+            if (isKeyMismatch) {
+                row2Html = `<div class="text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs text-fuchsia-400 font-bold truncate mt-0.5 animate-pulse" title="⚠️ API Key Client tidak cocok dengan Server! Cek config.ini pada PC ini.">🔑 KEY TIDAK COCOK</div>`;
+            } else if (isLostConnection) {
                 row2Html = `<div class="text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs text-red-400 font-bold truncate mt-0.5 animate-pulse" title="⚠️ TERPUTUS">⚠️ TERPUTUS</div>`;
             } else if (isSpeedDrop) {
                 const displaySpeed = pc.nic_speed || '100 Mbps';

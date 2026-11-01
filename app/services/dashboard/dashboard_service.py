@@ -72,11 +72,25 @@ class DashboardService:
             pc_dict['is_system'] = pc_dict.get('is_system_mode', False)
             
             # C. Cek Status Online & Heartbeat (In-Memory First dengan fallback DB)
-            from app.services.cache.memory_store import OnlineStatusStore, HardwareMetricsStore, ProcessMemoryStore, AntiTheftGraceTracker
+            from app.services.cache.memory_store import (
+                OnlineStatusStore,
+                HardwareMetricsStore,
+                ProcessMemoryStore,
+                AntiTheftGraceTracker,
+                ApiKeyMismatchStore
+            )
             status_koneksi = "offline"
             online = False
-            
-            if OnlineStatusStore.is_online(pc.id, timeout_seconds=15):
+            is_key_mismatch = ApiKeyMismatchStore.is_mismatch(pc_id=pc.id, ip=pc.ip_address)
+
+            if is_key_mismatch:
+                # PC terdeteksi mencoba request tapi API Key tidak valid / mismatch
+                status_koneksi = "api_key_mismatch"
+                online = False  # Jangan nyala bang!
+                OnlineStatusStore.remove(pc.id)
+                ProcessMemoryStore.remove(pc.id)
+                AntiTheftGraceTracker.mark_offline(pc.id)
+            elif OnlineStatusStore.is_online(pc.id, timeout_seconds=15):
                 online = True
                 status_koneksi = "online"
             elif pc.last_activity:
@@ -84,17 +98,18 @@ class DashboardService:
                 if diff_seconds < 15:
                     online = True
                     status_koneksi = "online"
-            
-            if not online:
+
+            if not online and not is_key_mismatch:
                 # Jika koneksi hilang tapi sedang ada sesi aktif / mode admin -> Oranye (Warning)
                 if sesi_aktif or pc.is_admin_mode:
                     status_koneksi = "no_heartbeat"
                 # Bersihkan snapshot proses PC offline dari RAM untuk efisiensi server
                 ProcessMemoryStore.remove(pc.id)
                 AntiTheftGraceTracker.mark_offline(pc.id)
-                
+
             pc_dict['online'] = online
             pc_dict['status_koneksi'] = status_koneksi
+            pc_dict['api_key_mismatch'] = is_key_mismatch
             
             # --- Active Window & Hardware Telemetry for Dashboard Card (Live RAM Store) ---
             cached_hw = HardwareMetricsStore.get(pc.id)

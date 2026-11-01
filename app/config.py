@@ -50,7 +50,7 @@ class Config:
 
     @classmethod
     def get_version_tag(cls) -> str:
-        """Mengembalikan format versi dengan prefix 'v' (contoh: 'v1.6.5-rc1')."""
+        """Mengembalikan format versi dengan prefix 'v' (contoh: 'v1.6.5-rc2')."""
         return f"v{cls.VERSION}" if not str(cls.VERSION).startswith("v") else str(cls.VERSION)
 
     @classmethod

@@ -87,3 +87,59 @@ class AntiTheftGraceTracker:
     def clear(cls):
         """Alias untuk standardisasi interface reset store."""
         cls.clear_all()
+
+
+class ApiKeyMismatchStore:
+    """Store in-memory untuk melacak PC client yang mencoba connect tapi API key tidak valid / mismatch."""
+    _lock = threading.Lock()
+    _mismatch_ips = {}     # ip_address -> float (time.time())
+    _mismatch_pc_ids = {}  # pc_id -> float (time.time())
+
+    @classmethod
+    def record_mismatch(cls, ip: str = None, pc_id: int = None):
+        """Catat waktu mismatch API key untuk IP dan/atau PC ID."""
+        ts = time.time()
+        with cls._lock:
+            if ip:
+                cls._mismatch_ips[ip] = ts
+            if pc_id:
+                cls._mismatch_pc_ids[pc_id] = ts
+
+    @classmethod
+    def is_mismatch(cls, pc_id: int = None, ip: str = None, timeout_seconds: int = 30) -> bool:
+        """Cek apakah PC ID atau IP sedang dalam status mismatch API key aktif."""
+        ts = time.time()
+        with cls._lock:
+            if pc_id and pc_id in cls._mismatch_pc_ids:
+                if (ts - cls._mismatch_pc_ids[pc_id]) < timeout_seconds:
+                    return True
+                else:
+                    cls._mismatch_pc_ids.pop(pc_id, None)
+
+            if ip and ip in cls._mismatch_ips:
+                if (ts - cls._mismatch_ips[ip]) < timeout_seconds:
+                    return True
+                else:
+                    cls._mismatch_ips.pop(ip, None)
+
+            return False
+
+    @classmethod
+    def clear_mismatch(cls, ip: str = None, pc_id: int = None):
+        """Hapus status mismatch saat PC berhasil mengirim request dengan API key yang sah."""
+        with cls._lock:
+            if ip:
+                cls._mismatch_ips.pop(ip, None)
+            if pc_id:
+                cls._mismatch_pc_ids.pop(pc_id, None)
+
+    @classmethod
+    def clear_all(cls):
+        with cls._lock:
+            cls._mismatch_ips.clear()
+            cls._mismatch_pc_ids.clear()
+
+    @classmethod
+    def clear(cls):
+        cls.clear_all()
+

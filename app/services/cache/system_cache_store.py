@@ -77,6 +77,16 @@ class PCNetworkCacheStore:
             return None
 
     @classmethod
+    def get_by_ip(cls, ip: str) -> dict:
+        """Alias helper untuk resolve PC via IP address."""
+        return cls.resolve_pc(ip=ip)
+
+    @classmethod
+    def get_by_mac(cls, mac: str) -> dict:
+        """Alias helper untuk resolve PC via MAC address."""
+        return cls.resolve_pc(mac=mac)
+
+    @classmethod
     def invalidate(cls):
         """Invalidasi cache agar dibangun ulang saat PC ditambah, diubah, atau dihapus."""
         with cls._lock:

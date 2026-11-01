@@ -26,12 +26,37 @@ def api_key_required(f):
     def decorated(*args, **kwargs):
         """Wrapper untuk memastikan request memiliki API Key valid."""
         api_key = request.headers.get("X-Client-Key")
-        # Ambil key dari config, fallback ke key default jika tidak diset
         expected_key = current_app.config.get("CLIENT_API_KEY")
+        sender_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip() or request.remote_addr or ""
         
         if not api_key or not expected_key or not hmac.compare_digest(str(api_key), str(expected_key)):
-            write_log("API_KEY_GAGAL", f"Invalid/Missing API Key from {request.remote_addr}")
+            write_log("API_KEY_GAGAL", f"Invalid/Missing API Key from {sender_ip}")
+            try:
+                from app.services.cache.client_state_store import ApiKeyMismatchStore
+                from app.services.cache.system_cache_store import PCNetworkCacheStore
+                cached = PCNetworkCacheStore.get_by_ip(sender_ip)
+                pc_id = cached.get("id") if cached else None
+                ApiKeyMismatchStore.record_mismatch(ip=sender_ip, pc_id=pc_id)
+                if request.is_json:
+                    data = request.get_json(silent=True) or {}
+                    body_ip = data.get("ip_address")
+                    if body_ip and body_ip != sender_ip:
+                        cached_body = PCNetworkCacheStore.get_by_ip(body_ip)
+                        ApiKeyMismatchStore.record_mismatch(ip=body_ip, pc_id=cached_body.get("id") if cached_body else None)
+            except Exception:
+                pass
             return jsonify({"error": "Akses ditolak. API Key tidak valid atau belum dikonfigurasi"}), 401
+        
+        # Jika API Key valid, bersihkan penanda mismatch untuk IP/PC ini
+        try:
+            from app.services.cache.client_state_store import ApiKeyMismatchStore
+            from app.services.cache.system_cache_store import PCNetworkCacheStore
+            cached = PCNetworkCacheStore.get_by_ip(sender_ip)
+            pc_id = cached.get("id") if cached else None
+            ApiKeyMismatchStore.clear_mismatch(ip=sender_ip, pc_id=pc_id)
+        except Exception:
+            pass
+
         return f(*args, **kwargs)
     return decorated
 

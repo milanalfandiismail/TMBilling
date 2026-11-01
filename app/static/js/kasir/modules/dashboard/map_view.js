@@ -295,6 +295,8 @@ const MapView = {
 
     _state: function(pc) {
         if (!pc) return { dot:'bg-neutral-600', text:'text-neutral-400', label:'' };
+        if (pc.status_koneksi === 'api_key_mismatch' || pc.api_key_mismatch)
+            return { dot:'bg-fuchsia-400 animate-pulse', text:'text-fuchsia-300', label:'KEY SALAH' };
         if (pc.status==='terpakai'&&(pc.status_koneksi==='no_heartbeat'||pc.status_koneksi==='offline'))
             return { dot:'bg-red-400 animate-pulse', text:'text-red-300', label:'⚠ TERPUTUS' };
         if (pc.status==='terpakai'&&pc.sesi_detail) {

@@ -6,6 +6,20 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [1.6.5-rc2] - 2026-11-01 - Release Candidate 2
+
+### Keamanan & Perbaikan Bug
+- **Validasi API Key Menyeluruh pada Endpoint Member Client & Hardware Monitor**:
+  - Memproteksi rute `/api/v1/public/auth/login`, `/logout`, dan `/status` dengan decorator `@api_key_required`.
+  - Memperbaiki fungsi `member_login` pada client Tauri agar menyertakan header `X-Client-Key`.
+  - Memproteksi rute `/api/v1/public/monitor` dengan `@api_key_required` untuk mencegah telemetry dari client tanpa API key yang sah menandai PC aktif.
+- **Deteksi Mismatch API Key & Visual Alert Khusus pada Dashboard**:
+  - Menghadirkan in-memory store `ApiKeyMismatchStore` untuk melacak IP dan PC yang mengalami penolakan API key.
+  - Menandai PC dengan status koneksi `api_key_mismatch` (`online: False`) agar kartu meja tidak menyala online secara keliru.
+  - Menghadirkan visual alert bertema warna **Fuchsia / Magenta** (`pulse-fuchsia-bg`, `text-fuchsia-400`, `KEY SALAH`, `🔑 KEY TIDAK COCOK`) yang eksklusif dan berbeda dari warna status lainnya (merah terputus, hijau aktif, oranye admin/afk).
+- **Pembaruan Sistem Otomatis 1-Klik**:
+  - Integrasi fitur cek rilis GitHub dan runner updater mandiri anti file-locking Windows (`updater.bat`).
+
 ## [1.6.5-rc1] - 2026-10-24 - Release Candidate 1
 
 ### Diperbaiki

@@ -341,6 +341,7 @@ impl ApiService {
         let url = format!("{}/api/v1/public/auth/login", base_url);
 
         let res = self.client.post(&url)
+            .header("X-Client-Key", &self.api_key)
             .json(&body)
             .send()
             .await

@@ -77,7 +77,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 #### C. Route Blueprints HTTP REST & WebSocket (`app/routes/` — 28 Sub-Domain)
 | Subfolder Rute | Tanggung Jawab Endpoint |
 |---|---|
-| `routes/auth/` | Autentikasi kasir & admin (`/login`, `/logout`, verifikasi sesi). |
+| `routes/auth/` | Autentikasi kasir & admin (`/kasir/auth/`) serta autentikasi member client PC dengan validasi API key (`/public/auth/`). |
 | `routes/backup/` | Manajemen backup database lokal SQLite dan integrasi cloud backup. |
 | `routes/blackout/` | Endpoint penanganan toleransi pemulihan sesi pasca mati lampu. |
 | `routes/branch/` | API multi-branch control panel, relay proxy inbound, dan sinkronisasi cabang. |
@@ -166,7 +166,7 @@ Subsystem kritis pengeliminasi query disk SQLite berulang pada loop polling klie
 
 | Berkas Modul | Tanggung Jawab & Store |
 |---|---|
-| `client_state_store.py` | `OnlineStatusStore` (detak jantung PC < 15s) dan `AntiTheftGraceTracker` (toleransi boot 60s anti false-alarm hardware). |
+| `client_state_store.py` | `OnlineStatusStore` (detak jantung PC < 15s), `AntiTheftGraceTracker` (toleransi boot 60s anti false-alarm hardware), dan `ApiKeyMismatchStore` (pelacakan client dengan API key salah/mismatch). |
 | `command_store.py` | `CommandQueueStore` & `CommandQueueDict` (antrean perintah FIFO GUI & VNC fast-command per PC dengan proteksi memory leak). |
 | `telemetry_store.py` | `ProcessMemoryStore` (snapshot Task Manager PC di RAM), `HardwareMetricsStore`, dan `TelemetryHistoryStore` (sliding window 3 snapshot). |
 | `system_cache_store.py` | `SettingsCacheStore` (write-through cache pengaturan global) dan `PCNetworkCacheStore` (cache mapping IP/MAC -> metadata PC). |
@@ -234,6 +234,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **MikroTik Bandwidth QoS** | `modules/mikrotik.js` | `routes/mikrotik/`, `services/mikrotik/` | `MikroTikConfig` |
 | **Turnamen eSports & Bracket** | `modules/tournament.js` | `routes/tournament/`, `services/tournament/` | `Tournament`, `TournamentMatch` |
 | **Auto-Update & Migrasi Skema** | `modules/settings/migration.js` | `routes/settings/migration_routes.py`, `install_scripts/updater.bat` | Alembic skema, SQLite backups |
+| **Client Security & API Key Guard** | `modules/dashboard/dashboard_compact.js` | `routes/auth/auth_routes.py`, `routes/client/client_routes.py` | `PC`, `ApiKeyMismatchStore` |
 
 ---
 
