@@ -34,6 +34,18 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 
 ---
 
+### 1.1 Skrip Otomasi Instalasi & Pembaruan Server (`install_scripts/`)
+
+| Berkas Skrip | Tanggung Jawab & Cakupan |
+|---|---|
+| `install_scripts/updater.bat` | Runner batch Windows mandiri (detached) yang mematikan server Python, mengekstrak berkas pembaruan, menjalankan migrasi database, dan menyalakan kembali server bersih tanpa kendala file-locking Windows. |
+| `install_scripts/extract_update.py` | Ekstraksi aman paket update ZIP (anti path-traversal, auto-backup SQLite ke `backups/`, proteksi berkas `.env` dan `instance/warnet.db`). |
+| `install_scripts/run_migration.py` | Runner CLI one-shot untuk eksekusi migrasi skema database Alembic (`flask_migrate.upgrade`) dan safety-net sync kolom/tabel baru pada fresh process. |
+| `install_scripts/gen_env.py` | Generator otomatis berkas konfigurasi `.env` dengan `SECRET_KEY` acak saat instalasi awal. |
+| `install_scripts/init_db.py` | Inisialisasi awal skema database SQLite dan akun admin default saat instalasi awal. |
+
+---
+
 ### 2. Backend Server (`app/`)
 
 #### A. Konfigurasi & Inisialisasi
@@ -87,7 +99,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `routes/report/` | Laporan pendapatan berkala, ekspor PDF/Excel kasir, dan rekonsiliasi keuangan. |
 | `routes/server_monitor/` | Status kesehatan internal server billing (CPU, RAM, Disk, CPU Temp Server). |
 | `routes/sesi/` | Siklus hidup sesi (buka sesi, tambah waktu, pindah PC, tutup sesi paksa, stop sementara). |
-| `routes/settings/` | Konfigurasi IP whitelist, token API, integrasi Cloudflare Tunnel, dan vacuum SQLite. |
+| `routes/settings/` | Konfigurasi IP whitelist, token API, integrasi Cloudflare Tunnel, vacuum SQLite, dan manajemen pembaruan sistem (GitHub 1-Klik / manual upload via runner mandiri). |
 | `routes/shift/` | Buka shift, tutup shift kasir dengan hitung buta (*blind cash reconciliation*). |
 | `routes/tournament/` | Manajemen turnamen game, pendaftaran tim eSports, dan generator bagan bracket. |
 | `routes/tutorial/` | CMS panduan sistem, artikel tutorial, dan upload media rich-text editor. |
