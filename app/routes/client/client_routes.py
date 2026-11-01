@@ -287,14 +287,32 @@ def vnc_stopped():
 def fast_poll():
     """Endpoint bagi background monitor agent untuk mengecek perintah cepat masuk (VNC, Refresh, Kill, dll)."""
     data = request.get_json() or {}
-    pc, ip_address, mac_address = _resolve_client_pc(data)
-        
-    if not pc:
-        return jsonify({"success": False, "error": "PC tidak dikenal"}), 404
-        
+    raw_ip = data.get("ip_address")
+    if raw_ip in ["Unknown", "unknown", "", None]:
+        raw_ip = None
+    ip_address = raw_ip or request.headers.get("X-IP-Address") or request.remote_addr
+    mac_address = data.get("mac_address", "").upper().strip()
+
+    from app.services.cache.memory_store import PCNetworkCacheStore
     from app.services.client.client_service import ClientService
-    cmd = ClientService.pop_fast_command(pc.id)
+
+    cached = PCNetworkCacheStore.resolve_pc(ip=ip_address, mac=mac_address)
+    if cached:
+        pc_id = cached["id"]
+        pc_kode = cached.get("kode", "PC")
+    else:
+        from app.repositories import PCRepository
+        pc = PCRepository.get_by_ip(ip_address)
+        if not pc and mac_address:
+            pc = PCRepository.find_by_mac(mac_address)
+        if not pc:
+            return jsonify({"success": False, "error": "PC tidak dikenal"}), 404
+        PCNetworkCacheStore.invalidate()
+        pc_id = pc.id
+        pc_kode = pc.kode
+
+    cmd = ClientService.pop_fast_command(pc_id)
     if cmd:
-        write_log("FAST_COMMAND_DISPATCHED", f"Perintah cepat [{cmd}] diambil oleh PC {pc.kode} ({ip_address})", detail_json={"pc_id": pc.id, "cmd": cmd})
-    
+        write_log("FAST_COMMAND_DISPATCHED", f"Perintah cepat [{cmd}] diambil oleh PC {pc_kode} ({ip_address})", detail_json={"pc_id": pc_id, "cmd": cmd})
+
     return jsonify({"success": True, "command": cmd}), 200

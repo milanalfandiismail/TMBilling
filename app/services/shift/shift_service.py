@@ -109,27 +109,39 @@ class ShiftService:
 
         waktu_akhir = shift.waktu_selesai or now_local()
 
-        # Hitung billing PC dalam rentang shift (dibatasi hingga waktu_akhir)
-        total_billing = db.session.query(
+        # Hitung billing PC gross dalam rentang shift
+        total_billing_gross = db.session.query(
             db.func.coalesce(db.func.sum(Transaksi.jumlah), 0)
         ).filter(
             Transaksi.dibuat_pada >= shift.waktu_mulai,
             Transaksi.dibuat_pada <= waktu_akhir,
             Transaksi.user_id == shift.kasir_id,
-            Transaksi.is_refunded == False,
+            Transaksi.jumlah > 0,
             Transaksi.jenis.notin_(["tutup_sesi", "pindah_pc", "refund_paket"]),
         ).scalar() or 0
 
-        # Hitung refund dalam rentang shift (pastikan selalu bernilai positif/magnitude)
-        total_refund_raw = db.session.query(
-            db.func.coalesce(db.func.sum(Transaksi.jumlah), 0)
+        # Hitung refund dalam rentang shift per metode pembayaran
+        refund_by_method = db.session.query(
+            Transaksi.metode_pembayaran.label("method"),
+            db.func.sum(Transaksi.jumlah).label("total")
         ).filter(
             Transaksi.dibuat_pada >= shift.waktu_mulai,
             Transaksi.dibuat_pada <= waktu_akhir,
             Transaksi.user_id == shift.kasir_id,
             Transaksi.jenis == "refund_paket",
-        ).scalar() or 0
-        total_refund = abs(int(total_refund_raw))
+        ).group_by(Transaksi.metode_pembayaran).all()
+
+        refund_map = {}
+        total_refund = 0
+        for row in refund_by_method:
+            m = row.method
+            if m in ["Cash", "Tunai", "None", None, ""]:
+                m = "Tunai"
+            val = abs(int(row.total or 0))
+            refund_map[m] = refund_map.get(m, 0) + val
+            total_refund += val
+
+        total_billing = max(0, total_billing_gross - total_refund)
 
         # Hitung kantin dalam rentang shift
         total_kantin = db.session.query(
@@ -149,7 +161,7 @@ class ShiftService:
         elif isinstance(raw_methods, list):
             configured_methods = [str(m).strip() for m in raw_methods if str(m).strip()]
 
-        # Hitung breakdown berdasarkan metode pembayaran dari database
+        # Hitung breakdown berdasarkan metode pembayaran dari database (gross)
         billing_by_method = db.session.query(
             Transaksi.metode_pembayaran.label("method"),
             db.func.sum(Transaksi.jumlah).label("total")
@@ -157,7 +169,7 @@ class ShiftService:
             Transaksi.dibuat_pada >= shift.waktu_mulai,
             Transaksi.dibuat_pada <= waktu_akhir,
             Transaksi.user_id == shift.kasir_id,
-            Transaksi.is_refunded == False,
+            Transaksi.jumlah > 0,
             Transaksi.jenis.notin_(["tutup_sesi", "pindah_pc", "refund_paket"]),
         ).group_by(Transaksi.metode_pembayaran).all()
 
@@ -184,9 +196,12 @@ class ShiftService:
                 m = "Tunai"
             kantin_map[m] = kantin_map.get(m, 0) + (row.total or 0)
 
-        billing_tunai = billing_map.get("Tunai", 0)
+        # Kurangi billing_map dengan refund_map per metode masing-masing
+        refund_tunai = refund_map.get("Tunai", 0)
+        billing_tunai_gross = billing_map.get("Tunai", 0)
+        billing_tunai_net = max(0, billing_tunai_gross - refund_tunai)
         kantin_tunai = kantin_map.get("Tunai", 0)
-        total_tunai_bersih = billing_tunai + kantin_tunai - total_refund
+        total_tunai_bersih = billing_tunai_net + kantin_tunai
 
         # Kumpulkan semua metode non-tunai unik (dari konfigurasi dan transaksi aktual)
         all_methods = set()
@@ -197,6 +212,9 @@ class ShiftService:
             if m != "Tunai":
                 all_methods.add(m)
         for m in kantin_map:
+            if m != "Tunai":
+                all_methods.add(m)
+        for m in refund_map:
             if m != "Tunai":
                 all_methods.add(m)
 
@@ -214,13 +232,16 @@ class ShiftService:
         breakdown = {"Tunai": total_tunai_bersih}
 
         for m in ordered_non_tunai_keys:
-            b_val = billing_map.get(m, 0)
+            b_gross = billing_map.get(m, 0)
+            r_val = refund_map.get(m, 0)
+            b_net = max(0, b_gross - r_val)
             k_val = kantin_map.get(m, 0)
-            t_val = b_val + k_val
+            t_val = b_net + k_val
             non_tunai_list.append({
                 "method": m,
-                "billing": b_val,
+                "billing": b_net,
                 "kantin": k_val,
+                "refund": r_val,
                 "total": t_val
             })
             total_non_tunai += t_val
@@ -228,9 +249,9 @@ class ShiftService:
 
         rincian_pembayaran = {
             "tunai": {
-                "billing": billing_tunai,
+                "billing": billing_tunai_net,
                 "kantin": kantin_tunai,
-                "refund": total_refund,
+                "refund": refund_tunai,
                 "total": total_tunai_bersih
             },
             "non_tunai": non_tunai_list,
@@ -239,7 +260,7 @@ class ShiftService:
 
         # Update field di shift (disimpan untuk audit hanya jika shift masih aktif)
         if shift.status == "AKTIF":
-            shift.total_billing = total_billing - total_refund
+            shift.total_billing = total_billing
             shift.total_kantin = total_kantin
             shift.total_qris = breakdown.get("QRIS", 0)
             shift.total_refund = total_refund
@@ -311,6 +332,8 @@ class ShiftService:
         selisih = uang_fisik - total_seharusnya
 
         # Update shift record
+        shift.total_billing = summary.get("total_billing", 0)
+        shift.total_kantin = summary.get("total_kantin", 0)
         shift.uang_fisik = uang_fisik
         shift.selisih = selisih
         shift.catatan = (catatan or "").strip()
@@ -406,6 +429,8 @@ class ShiftService:
 
         shift.status = "SELESAI"
         shift.catatan = catatan_lengkap
+        shift.total_billing = summary.get("total_billing", 0)
+        shift.total_kantin = summary.get("total_kantin", 0)
         shift.total_qris = summary["breakdown"].get("QRIS", 0)
         shift.total_refund = summary.get("total_refund", 0)
         shift.detail_metode_json = json.dumps(summary["rincian_pembayaran"])

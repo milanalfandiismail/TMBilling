@@ -357,7 +357,8 @@ class MemberService:
             keterangan=f"Refund paket '{transaksi.paket.nama if transaksi.paket else '?'}'",
             no_nota=TransaksiService.generate_nota(),
             user_id=TransaksiService.get_user_id(operator),
-            operator=operator
+            operator=operator,
+            metode_pembayaran=transaksi.metode_pembayaran or "Tunai"
         )
         db.session.add(transaksi_refund)
         db.session.commit()

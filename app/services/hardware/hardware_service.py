@@ -78,15 +78,21 @@ class HardwareService:
 
             pc = None
 
-            # 2. Cari PC dengan prioritas: MAC -> IP dikirim -> IP koneksi HTTP
-            if mac_address:
-                pc = PCRepository.find_by_mac(mac_address)
-            
-            if not pc and ip_address:
-                pc = PCRepository.find_by_ip(ip_address)
-            
+            # 2. Cari PC dengan prioritas: RAM Cache -> MAC -> IP dikirim -> IP koneksi HTTP
+            from app.services.cache.memory_store import PCNetworkCacheStore
+            cached = PCNetworkCacheStore.resolve_pc(ip=ip_address or client_ip, mac=mac_address)
+            if cached:
+                pc = PCRepository.get_by_id(cached["id"])
+
             if not pc:
-                pc = PCRepository.get_by_ip(client_ip)
+                if mac_address:
+                    pc = PCRepository.find_by_mac(mac_address)
+                if not pc and ip_address:
+                    pc = PCRepository.find_by_ip(ip_address)
+                if not pc:
+                    pc = PCRepository.get_by_ip(client_ip)
+                if pc:
+                    PCNetworkCacheStore.invalidate()
 
             # Jika tidak terdaftar sama sekali di database kasir, lemparkan error terhormat!
             if not pc:

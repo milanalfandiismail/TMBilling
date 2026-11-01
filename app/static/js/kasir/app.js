@@ -42,11 +42,30 @@ const App = {
             this._dashboardTimer = null;
         }
         const interval = customInterval || ((typeof Dashboard !== 'undefined' && Dashboard.getRefreshInterval) ? Dashboard.getRefreshInterval() : 1000);
-        this._dashboardTimer = setInterval(() => {
-            // 1. Shift sync (ikut ritme interval pilihan dashboard)
-            if (typeof Shift !== 'undefined') Shift.load(false);
+        let lastShiftCheck = 0;
+        let lastStaticCheck = 0;
 
-            // 2. Tab-specific live polling (In-place & Silent, state-preserving across all tabs)
+        this._dashboardTimer = setInterval(() => {
+            const now = Date.now();
+
+            // 1. Shift sync: di-throttle ke 60 detik (instan saat aksi buka/tutup shift)
+            if (now - lastShiftCheck >= 60000) {
+                lastShiftCheck = now;
+                if (typeof Shift !== 'undefined') Shift.load(false);
+            }
+
+            // 2. Tab-specific live polling:
+            // Tab live berjalan setiap tick (1-2s): dashboard, dash, monitor, server_statistic, screenshot
+            // Tab statis di-throttle ke 60 detik saat dibiarkan aktif
+            const isLiveTab = ['dashboard', 'dash', 'monitor', 'server_statistic', 'screenshot'].includes(this.currentTab);
+            if (!isLiveTab) {
+                if (now - lastStaticCheck < 60000) {
+                    return;
+                }
+                lastStaticCheck = now;
+            }
+
+            // 3. Tab-specific live polling (In-place & Silent, state-preserving across all tabs)
             switch (this.currentTab) {
                 case 'dashboard':
                 case 'dash':
