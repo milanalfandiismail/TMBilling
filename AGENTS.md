@@ -186,7 +186,7 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 | `mtm/` | Auxiliary watchdog & resilience guard pelindung integritas service klien. |
 | `TMBilling_Monitor/` | Daemon C# pengumpul metrik hardware (CPU/GPU load & temp, RAM, active window, NIC speed) via LibreHardwareMonitor. |
 | `TMBilling_Uninstaller/` | Program uninstaller aman yang membersihkan hash registry, Win32 service, dan konfigurasi klien. |
-| `Deploy/` | Skrip automasi firewall Windows (`allow_firewall.bat`), skrip sync registry, installer biner lengkap, dan TightVNC server loopback port 5900. |
+| `Deploy/` | Skrip automasi firewall Windows (`allow_firewall.bat`), skrip sync registry, installer & uninstaller biner lengkap (`install.bat` / `uninstall.bat` untuk fresh install & clean update), dan TightVNC server loopback port 5900. |
 
 ---
 

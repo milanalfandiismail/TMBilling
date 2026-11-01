@@ -151,7 +151,13 @@ c:\Project GIT\TMBilling
    - Mendaftarkan shortcut Startup Windows agar agen otomatis aktif saat PC booting.
    - Menghitung hash SHA-256 binary untuk proteksi integritas dan langsung menjalankan agen di background.
 
-5. **Uninstalasi Klien**:
+5. **Cara Pembaruan / Update Versi Klien**:
+   Karena biner klien memiliki proteksi anti-tamper dan pengawas supervisor ganda (*watchdog mutual guard*), pembaruan versi klien dilakukan dengan alur bersih berikut:
+   1. Jalankan **`uninstall.bat`** (atau `TMBilling_Uninstaller.exe`) di PC klien untuk menghentikan seluruh proses proteksi secara legal dan membersihkan instalasi versi lama.
+   2. Unduh dan ekstrak paket klien versi terbaru (`TMBilling_Client_v<versi>.zip`) dari **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)**.
+   3. Jalankan **`install.bat`** seperti biasa, lalu masukkan IP Server Billing dan API Key yang sesuai.
+
+6. **Uninstalasi Klien**:
    Jalankan **`uninstall.bat`** di PC klien untuk meluncurkan panel uninstalasi aman.
 
 ---
