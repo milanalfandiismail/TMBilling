@@ -24,6 +24,12 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
   - Memperkuat alur migrasi database (`migration_routes.py`) dengan pembersihan berkas sementara ZIP terpusat (`_safe_remove_temp`) dan logging error.
 - **Pembaruan Sistem Otomatis 1-Klik**:
   - Integrasi fitur cek rilis GitHub dan runner updater mandiri anti file-locking Windows (`updater.bat`).
+- **Perbaikan False Alarm Hardware Checker & Anti-Theft Cold Boot**:
+  - Mengeliminasi false positive `Model GPU berubah (ke 'Unknown')` saat boot dengan mengabaikan nilai placeholder `Unknown` dan menerapkan proteksi grace period 60 detik pada model GPU.
+  - Memastikan jika PCI PNP ID kartu fisik sama persis dengan baseline, status pembacaan nama sementara tidak memicu alarm pencurian.
+  - Menghadirkan deteksi reboot otomatis pada `OnlineStatusStore` dan `AntiTheftGraceTracker` saat PC online kembali setelah offline (> 15 detik) untuk menjamin grace period 60 detik selalu aktif.
+  - Mencegah penimpaan cache nama hardware valid di database dengan string `Unknown`.
+  - Menambahkan sinkronisasi cold boot wait (maks 3 detik) pada agen `TMMonitor.exe` agar menunggu `hardware_temp.json` dari `HardwareHelper.exe` selesai dibuat sebelum mengirim telemetri perdana.
 
 ### Optimasi Performa & Refactoring
 - **Batch Flush Uptime (Eliminasi N+1 Queries)**:

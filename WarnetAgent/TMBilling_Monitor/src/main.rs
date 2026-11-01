@@ -64,6 +64,21 @@ fn cleanup_runtime_temp_files() {
     let _ = fs::remove_file("hardware_interval.txt");
 }
 
+fn wait_for_hardware_temp_ready(max_wait_secs: u64) {
+    let start = Instant::now();
+    while start.elapsed() < Duration::from_secs(max_wait_secs) {
+        if Path::new("hardware_temp.json").exists() {
+            let (_, _, m, c, g) = read_cached_temperature_and_specs();
+            if g.is_some() || c.is_some() || m.is_some() {
+                let _ = get_effective_hardware_specs(m, c, g);
+                log_debug("hardware_temp.json siap dari HardwareHelper.exe.");
+                break;
+            }
+        }
+        thread::sleep(Duration::from_millis(200));
+    }
+}
+
 fn get_effective_hardware_specs(
     mobo_cache: Option<String>,
     cpu_cache: Option<String>,
@@ -1320,6 +1335,7 @@ fn main() {
     
     extract_embedded_files();
     ensure_hardware_helper_daemon();
+    wait_for_hardware_temp_ready(3);
     stop_tightvnc_portable();
 
     // Inisialisasi cached specs & serials di awal saat startup

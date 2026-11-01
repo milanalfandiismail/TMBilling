@@ -59,6 +59,11 @@ class AntiTheftGraceTracker:
     _boot_timestamps = {}  # pc_id -> float (time.time())
 
     @classmethod
+    def record_boot(cls, pc_id: int):
+        with cls._lock:
+            cls._boot_timestamps[pc_id] = time.time()
+
+    @classmethod
     def record_boot_if_needed(cls, pc_id: int):
         with cls._lock:
             if pc_id not in cls._boot_timestamps:

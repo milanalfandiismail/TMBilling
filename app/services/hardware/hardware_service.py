@@ -99,8 +99,12 @@ class HardwareService:
                 raise ValueError(f"PC dengan MAC '{mac_address}' atau IP '{ip_address}' belum terdaftar di database kasir.")
 
             # 3. Update In-Memory Online Status & Anti-Theft Boot Tracker
+            was_offline = not OnlineStatusStore.is_online(pc.id, timeout_seconds=15)
+            if was_offline:
+                AntiTheftGraceTracker.record_boot(pc.id)
+            else:
+                AntiTheftGraceTracker.record_boot_if_needed(pc.id)
             OnlineStatusStore.mark_active(pc.id)
-            AntiTheftGraceTracker.record_boot_if_needed(pc.id)
             in_grace = AntiTheftGraceTracker.is_in_grace_period(pc.id, grace_seconds=60)
 
             # 4. Parse nilai metrik hardware
@@ -134,41 +138,51 @@ class HardwareService:
                 hardware = HardwareMonitor(pc_id=pc.id)
                 needs_commit = True
 
-            # Update cache object model
+            # Update cache object model (jangan timpa data valid dengan Unknown)
             hardware.cpu_usage = cpu_usage
             hardware.cpu_temp = cpu_temp
             hardware.gpu_temp = gpu_temp
             hardware.total_ram = total_ram
             hardware.nic_speed = nic_speed
-            hardware.motherboard = motherboard
-            hardware.cpu_name = cpu_name
-            hardware.gpu_name = gpu_name
+            if motherboard and motherboard != "Unknown":
+                hardware.motherboard = motherboard
+            if cpu_name and cpu_name != "Unknown":
+                hardware.cpu_name = cpu_name
+            if gpu_name and gpu_name != "Unknown":
+                hardware.gpu_name = gpu_name
             hardware.active_window = active_window
 
             serials = data.get("HardwareSerials", data.get("hardwareSerials", data.get("hardware_serials")))
             if serials and isinstance(serials, dict):
-                # Lengkapi serials dictionary jika ada info model
-                if "GpuName" not in serials and gpu_name and gpu_name != "Unknown":
-                    serials["GpuName"] = gpu_name
-                elif "GpuName" not in serials and data.get("GpuName"):
-                    serials["GpuName"] = str(data.get("GpuName"))
+                # Lengkapi serials dictionary jika ada info model valid
+                if "GpuName" not in serials:
+                    cand_gpu = gpu_name if gpu_name != "Unknown" else data.get("GpuName")
+                    if cand_gpu and cand_gpu != "Unknown":
+                        serials["GpuName"] = str(cand_gpu).strip()
+                    elif hardware.gpu_name and hardware.gpu_name != "Unknown":
+                        serials["GpuName"] = hardware.gpu_name
 
-                if "Motherboard" not in serials and motherboard and motherboard != "Unknown":
-                    serials["Motherboard"] = motherboard
-                elif "Motherboard" not in serials and data.get("Motherboard"):
-                    serials["Motherboard"] = str(data.get("Motherboard"))
+                if "Motherboard" not in serials:
+                    cand_mobo = motherboard if motherboard != "Unknown" else data.get("Motherboard")
+                    if cand_mobo and cand_mobo != "Unknown":
+                        serials["Motherboard"] = str(cand_mobo).strip()
+                    elif hardware.motherboard and hardware.motherboard != "Unknown":
+                        serials["Motherboard"] = hardware.motherboard
 
                 # Simpan specs telemetry saat ini
                 hardware.hardware_current_specs = json.dumps(serials)
 
-                # Jika baseline kosong, daftarkan baseline awal secara otomatis
+                # Jika baseline kosong dan hardware teridentifikasi, daftarkan baseline awal secara otomatis
                 if not hardware.hardware_baseline:
-                    hardware.hardware_baseline = json.dumps(serials)
-                    hardware.hardware_mismatch = False
-                    hardware.hardware_mismatch_desc = None
-                    hardware.hardware_mismatch_time = None
-                    hardware.hardware_last_sync = now_utc()
-                    needs_commit = True
+                    gpu_valid = (serials.get("GpuPnpId") not in ("Unknown", None, "") 
+                                 or serials.get("GpuName") not in ("Unknown", None, ""))
+                    if gpu_valid or not in_grace:
+                        hardware.hardware_baseline = json.dumps(serials)
+                        hardware.hardware_mismatch = False
+                        hardware.hardware_mismatch_desc = None
+                        hardware.hardware_mismatch_time = None
+                        hardware.hardware_last_sync = now_utc()
+                        needs_commit = True
                 else:
                     try:
                         baseline = json.loads(hardware.hardware_baseline)
@@ -232,8 +246,18 @@ class HardwareService:
                                 # Kartu fisik ada, verifikasi Hardware PNP ID atau nama model
                                 if base_gpu_pnp != "Unknown" and curr_gpu_pnp != "Unknown" and base_gpu_pnp != curr_gpu_pnp:
                                     mismatch_reasons.append("GPU/VGA ditukar (PNP Device ID berbeda)")
-                                elif base_gpu_name and curr_gpu_name and base_gpu_name.lower() != curr_gpu_name.lower():
-                                    mismatch_reasons.append(f"Model GPU berubah (dari '{base_gpu_name}' ke '{curr_gpu_name}')")
+                                elif (
+                                    base_gpu_name
+                                    and curr_gpu_name
+                                    and curr_gpu_name.lower() not in ("unknown", "none", "")
+                                    and base_gpu_name.lower() not in ("unknown", "none", "")
+                                    and base_gpu_name.lower() != curr_gpu_name.lower()
+                                ):
+                                    if base_gpu_pnp != "Unknown" and curr_gpu_pnp != "Unknown" and base_gpu_pnp == curr_gpu_pnp:
+                                        # PNP ID fisik sama persis (kartu fisik tidak ditukar)
+                                        pass
+                                    elif not in_grace:
+                                        mismatch_reasons.append(f"Model GPU berubah (dari '{base_gpu_name}' ke '{curr_gpu_name}')")
 
                         # D. RAM Serials
                         base_rams = set(baseline.get("RamSerials") or [])
