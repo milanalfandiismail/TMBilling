@@ -114,6 +114,21 @@ c:\Project GIT\TMBilling
    stop.bat
    ```
 
+5. **Cara Pembaruan / Update Versi Server**:
+   - **Update Otomatis 1-Klik (Mulai v1.6.5-rc2)**:
+     Buka Dashboard Kasir > menu **Pengaturan** > sub-tab **Migrasi & Update**, klik tombol **Cek Pembaruan GitHub**, lalu tekan **Mulai Update 1-Klik**. Sistem otomatis mencadangkan database, mengekstrak rilis baru, menjalankan migrasi skema, dan memulai ulang server tanpa mengunci file.
+   - **Update Manual (Bagi yang memperbarui dari versi terdahulu)**:
+     1. Hentikan server dengan menjalankan:
+        ```cmd
+        stop.bat
+        ```
+     2. Unduh paket rilis server terbaru (`TMBilling_Server_v<versi>.zip`) dari **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)**.
+     3. Ekstrak dan timpa (*replace/overwrite*) seluruh berkas ke dalam folder instalasi TMBilling Anda *(Data aman: berkas konfigurasi `.env` dan database `instance/warnet.db` tidak ada di dalam file ZIP dan tidak akan tertimpa)*.
+     4. Nyalakan kembali server:
+        ```cmd
+        start.bat
+        ```
+
 ---
 
 ### 2. Setup & Instalasi WarnetAgent (PC Klien Warnet)

@@ -102,261 +102,238 @@ def _get_current_revision():
 
 
 # =========================================================================
-# 2. UPLOAD UPDATE APLIKASI (ZIP RILIS)
+# =========================================================================
+# 2. HELPER & EXTERNAL RUNNER DISPATCHER
+# =========================================================================
+
+def _parse_version(v_str: str):
+    """Mengurai format versi semver/rc menjadi tuple untuk perbandingan akurat."""
+    if not v_str:
+        return (0, 0, 0, 0, 0)
+    v_clean = v_str.lstrip("vV").strip()
+    parts = v_clean.split("-")
+    core = tuple(int(x) if x.isdigit() else 0 for x in parts[0].split("."))
+    # Padding tuple core ke 3 elemen (major, minor, patch)
+    while len(core) < 3:
+        core = core + (0,)
+    if len(parts) == 1:
+        prerelease = (999, 0)  # Versi final lebih tinggi dari rc
+    else:
+        pre = parts[1].lower()
+        num = int("".join(c for c in pre if c.isdigit()) or 0)
+        prerelease = (1, num)
+    return core + prerelease
+
+
+def _launch_updater():
+    """Menjalankan updater.bat secara detached dari proses Flask."""
+    root_dir = os.path.abspath(os.path.join(current_app.root_path, ".."))
+    updater_bat = os.path.join(root_dir, "install_scripts", "updater.bat")
+    if not os.path.exists(updater_bat):
+        raise FileNotFoundError("Skrip updater.bat tidak ditemukan di install_scripts/")
+
+    DETACHED_PROCESS = 0x00000008
+    CREATE_NEW_PROCESS_GROUP = 0x00000200
+    creation_flags = DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+
+    subprocess.Popen(
+        ["cmd.exe", "/c", updater_bat],
+        cwd=root_dir,
+        creationflags=creation_flags,
+        close_fds=True,
+    )
+
+
+# =========================================================================
+# 3. GITHUB RELEASES AUTO-UPDATE
+# =========================================================================
+
+@migration_api_bp.route("/check_github", methods=["GET"])
+@login_required
+@admin_required
+def check_github_update():
+    """Mengecek rilis terbaru dari repositori GitHub."""
+    import urllib.request
+    from app.models.sesi.sesi import Sesi
+
+    try:
+        url = "https://api.github.com/repos/milanalfandiismail/TMBilling/releases/latest"
+        req = urllib.request.Request(url, headers={"User-Agent": "TMBilling-Update-Check"})
+        with urllib.request.urlopen(req, timeout=8) as res:
+            if res.status != 200:
+                return jsonify({"success": False, "error": f"GitHub API mengembalikan status {res.status}"}), 502
+            data = json.loads(res.read().decode("utf-8"))
+
+        tag_name = data.get("tag_name", "")
+        current_v = current_app.config.get("VERSION", Config.get_version_tag())
+        is_newer = _parse_version(tag_name) > _parse_version(current_v)
+
+        server_asset = None
+        for asset in data.get("assets", []):
+            name = asset.get("name", "")
+            if name.startswith("TMBilling_Server_") and name.endswith(".zip"):
+                server_asset = asset
+                break
+
+        active_sessions = Sesi.query.filter_by(status="AKTIF").count()
+
+        return jsonify({
+            "success": True,
+            "current_version": current_v,
+            "latest_version": tag_name,
+            "is_newer": is_newer,
+            "release_name": data.get("name") or tag_name,
+            "release_notes": data.get("body") or "",
+            "published_at": data.get("published_at", ""),
+            "asset_name": server_asset.get("name") if server_asset else None,
+            "asset_size": server_asset.get("size") if server_asset else 0,
+            "asset_url": server_asset.get("browser_download_url") if server_asset else None,
+            "active_sessions_count": active_sessions,
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Gagal mengecek pembaruan GitHub: {str(e)}"}), 500
+
+
+@migration_api_bp.route("/update_github", methods=["POST"])
+@login_required
+@admin_required
+def update_github():
+    """Mengunduh paket rilis server dari GitHub dan mendelegasikan eksekusi ke updater.bat."""
+    import urllib.request
+
+    try:
+        operator = session.get("kasir_username", "admin")
+        body = request.get_json(silent=True) or {}
+        asset_url = body.get("asset_url")
+
+        if not asset_url:
+            url = "https://api.github.com/repos/milanalfandiismail/TMBilling/releases/latest"
+            req = urllib.request.Request(url, headers={"User-Agent": "TMBilling-Update-Check"})
+            with urllib.request.urlopen(req, timeout=8) as res:
+                data = json.loads(res.read().decode("utf-8"))
+            for asset in data.get("assets", []):
+                name = asset.get("name", "")
+                if name.startswith("TMBilling_Server_") and name.endswith(".zip"):
+                    asset_url = asset.get("browser_download_url")
+                    break
+
+        if not asset_url:
+            return jsonify({"error": "Asset paket pembaruan server tidak ditemukan di rilis GitHub"}), 400
+
+        temp_path = os.path.join(current_app.instance_path, "temp_update.zip")
+        os.makedirs(current_app.instance_path, exist_ok=True)
+
+        req = urllib.request.Request(asset_url, headers={"User-Agent": "TMBilling-Update-Download"})
+        with urllib.request.urlopen(req, timeout=60) as resp, open(temp_path, "wb") as out_file:
+            while True:
+                chunk = resp.read(64 * 1024)
+                if not chunk:
+                    break
+                out_file.write(chunk)
+
+        # Validasi integritas berkas ZIP
+        is_valid_structure = False
+        try:
+            with zipfile.ZipFile(temp_path, "r") as zf:
+                all_files = zf.namelist()
+                has_run = any(f.replace("\\", "/") == "run.py" for f in all_files)
+                has_app = any(f.replace("\\", "/").startswith("app/") for f in all_files)
+                if has_run and has_app:
+                    is_valid_structure = True
+        except zipfile.BadZipFile:
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
+            return jsonify({"error": "Berkas ZIP dari GitHub rusak / bukan format ZIP valid"}), 400
+
+        if not is_valid_structure:
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
+            return jsonify({"error": "Berkas ZIP dari GitHub bukan paket rilis TMBilling yang valid"}), 400
+
+        write_log("APPLICATION_UPDATE", "Pembaruan otomatis dari GitHub dipicu melalui dashboard", user=operator)
+        _launch_updater()
+
+        return jsonify({
+            "success": True,
+            "message": "Pembaruan berhasil diunduh. Server sedang memperbarui dan akan dimulai ulang...",
+        }), 200
+    except Exception as e:
+        return jsonify({"error": f"Gagal memproses pembaruan GitHub: {str(e)}"}), 500
+
+
+# =========================================================================
+# 4. UPLOAD UPDATE APLIKASI MANUAL (ZIP RILIS)
 # =========================================================================
 
 @migration_api_bp.route("/upload", methods=["POST"])
 @login_required
 @admin_required
 def upload_update():
-    """Menerima berkas ZIP rilis penuh, validasi, ekstrak, lalu restart server."""
+    """Menerima berkas ZIP rilis manual, validasi, lalu delegasikan ke updater.bat."""
     try:
         operator = session.get("kasir_username", "admin")
         file = request.files.get("update_file")
         if not file or file.filename == "":
             return jsonify({"error": "File update wajib dipilih"}), 400
 
-        # Simpan sementara
         temp_path = os.path.join(current_app.instance_path, "temp_update.zip")
+        os.makedirs(current_app.instance_path, exist_ok=True)
         file.save(temp_path)
 
-        def _is_safe_path(base_dir: str, path: str) -> bool:
-            base = os.path.abspath(base_dir)
-            target = os.path.abspath(os.path.join(base, path))
-            return os.path.commonpath([base]) == os.path.commonpath([base, target])
-
-        root_dir = os.path.abspath(os.path.join(current_app.root_path, '..'))
-        migrations_dir = os.path.join(root_dir, 'migrations')
-        zip_migrations_dir = False
-
+        is_valid_structure = False
+        is_safe = True
         try:
-            with zipfile.ZipFile(temp_path, 'r') as zf:
+            with zipfile.ZipFile(temp_path, "r") as zf:
                 all_files = zf.namelist()
-                has_run_py = any(f.replace('\\', '/') == 'run.py' for f in all_files)
-                has_app_folder = any(f.replace('\\', '/').startswith('app/') for f in all_files)
+                has_run = any(f.replace("\\", "/") == "run.py" for f in all_files)
+                has_app = any(f.replace("\\", "/").startswith("app/") for f in all_files)
+                if has_run and has_app:
+                    is_valid_structure = True
 
-                if not has_run_py or not has_app_folder:
-                    return jsonify({
-                        "error": "Berkas ZIP bukan paket rilis TMBilling yang valid. Pastikan file berisi run.py dan folder app/."
-                    }), 400
-
-                # Validasi keamanan seluruh entri ZIP terlebih dahulu
                 for member in all_files:
-                    norm = member.replace('\\', '/')
-                    if norm.startswith('/') or '..' in norm.split('/'):
-                        return jsonify({"error": "Berkas ZIP mengandung path tidak aman (path traversal detected)"}), 400
-
-                # Proteksi: skip .env, instance/, backups/ dan ekstrak hanya path aman
-                for member in zf.namelist():
-                    normalized = member.replace('\\', '/')
-                    skip_prefixes = ('.env', 'instance/', 'backups/', '.git/')
-                    if normalized.startswith(skip_prefixes):
-                        continue
-                    if not _is_safe_path(root_dir, member):
-                        return jsonify({"error": f"Path berkas {member} berada di luar direktori aman aplikasi"}), 400
-                    zf.extract(member, root_dir)
-
-                # Cek apakah ada folder migrations/ di ZIP
-                for member in all_files:
-                    normalized = member.replace('\\', '/')
-                    if normalized.startswith('migrations/'):
-                        zip_migrations_dir = True
+                    norm = member.replace("\\", "/")
+                    if norm.startswith("/") or ".." in norm.split("/"):
+                        is_safe = False
                         break
-
         except zipfile.BadZipFile:
-            return jsonify({"error": "File bukan format ZIP yang valid"}), 400
-        finally:
             if os.path.exists(temp_path):
                 try:
                     os.remove(temp_path)
                 except Exception:
                     pass
+            return jsonify({"error": "Berkas bukan format ZIP yang valid"}), 400
 
-        if zip_migrations_dir and os.path.exists(migrations_dir):
-            # Backup database sebelum migrasi
-            _auto_backup_before_migration()
+        if not is_valid_structure:
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
+            return jsonify({
+                "error": "Berkas ZIP bukan paket rilis TMBilling yang valid (wajib memuat run.py dan folder app/)."
+            }), 400
 
-            try:
-                from flask_migrate import upgrade, stamp
-                from sqlalchemy import inspect, text
-                from app import db
+        if not is_safe:
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
+            return jsonify({"error": "Path traversal terdeteksi pada berkas ZIP"}), 400
 
-                inspector = inspect(db.engine)
-                current_rev = _get_current_revision()
+        write_log("APPLICATION_UPDATE", "Pembaruan manual melalui upload ZIP dipicu melalui dashboard", user=operator)
+        _launch_updater()
 
-                # Kasus Cerdas: Jika database sudah ada data (misal tabel transaksi ada)
-                # namun alembic_version masih kosong / None (karena database dibuat tanpa tracking Alembic):
-                # Stamp dulu ke revisi sebelum HEAD (e8f9a0b1c2d3) agar Alembic tidak mencoba
-                # menjalankan migrasi dari nol, lalu upgrade ke HEAD untuk memasang kolom operator!
-                if current_rev is None and inspector.has_table('transaksi'):
-                    try:
-                        stamp(directory=migrations_dir, revision='e8f9a0b1c2d3')
-                        write_log("DATABASE_MIGRATION_STAMP", "Alembic di-stamp ke e8f9a0b1c2d3 sebelum upgrade", user=operator)
-                    except Exception as stamp_err:
-                        current_app.logger.warning(f"Alembic auto-stamp warning: {stamp_err}")
-
-                upgrade(directory=migrations_dir)
-                write_log("DATABASE_MIGRATION_UPGRADE", "Skema database auto-upgrade ke HEAD setelah update", user=operator)
-            except Exception as e:
-                write_log("DATABASE_MIGRATION_ERROR", f"Auto-upgrade gagal: {str(e)}", user=operator)
-
-            # Safety Net: Pastikan kolom 'operator' dan tabel baru benar-benar ada di SQLite
-            try:
-                from sqlalchemy import inspect, text
-                from app import db
-                inspector = inspect(db.engine)
-
-                db.create_all()
-
-                if inspector.has_table('transaksi'):
-                    cols = [c['name'] for c in inspector.get_columns('transaksi')]
-                    if 'operator' not in cols:
-                        with db.engine.connect() as conn:
-                            conn.execute(text("ALTER TABLE transaksi ADD COLUMN operator VARCHAR(100)"))
-                            conn.commit()
-
-                if inspector.has_table('transaksi_menu'):
-                    cols = [c['name'] for c in inspector.get_columns('transaksi_menu')]
-                    if 'operator' not in cols:
-                        with db.engine.connect() as conn:
-                            conn.execute(text("ALTER TABLE transaksi_menu ADD COLUMN operator VARCHAR(100)"))
-                            conn.commit()
-
-                if not inspector.has_table('cabang'):
-                    from app.models.branch import Branch
-                    Branch.__table__.create(db.engine)
-
-                if not inspector.has_table('cabang_inbound'):
-                    from app.models.branch import BranchInbound
-                    BranchInbound.__table__.create(db.engine)
-
-                # v1.6.1 Migration Safety: Kolom 'tipe' pada tabel 'game' dan tabel 'game_kategori'
-                if inspector.has_table('game'):
-                    cols = [c['name'] for c in inspector.get_columns('game')]
-                    if 'tipe' not in cols:
-                        with db.engine.connect() as conn:
-                            conn.execute(text("ALTER TABLE game ADD COLUMN tipe VARCHAR(50) DEFAULT 'game'"))
-                            conn.commit()
-                else:
-                    from app.models.game.game import Game
-                    Game.__table__.create(db.engine)
-
-                if not inspector.has_table('game_kategori'):
-                    from app.models.game.game_kategori import GameKategori
-                    GameKategori.__table__.create(db.engine)
-
-                # v1.6.2 Migration Safety: Kolom kuota user, user_id sesi, dan catatan shift_record
-                if inspector.has_table('user'):
-                    user_cols = [c['name'] for c in inspector.get_columns('user')]
-                    with db.engine.connect() as conn:
-                        if 'kuota_main_bulanan' not in user_cols:
-                            conn.execute(text("ALTER TABLE user ADD COLUMN kuota_main_bulanan INTEGER DEFAULT 0"))
-                        if 'sisa_kuota_menit' not in user_cols:
-                            conn.execute(text("ALTER TABLE user ADD COLUMN sisa_kuota_menit INTEGER DEFAULT 0"))
-                        if 'terakhir_reset_kuota' not in user_cols:
-                            conn.execute(text("ALTER TABLE user ADD COLUMN terakhir_reset_kuota VARCHAR(7)"))
-                        conn.commit()
-
-                if inspector.has_table('sesi'):
-                    sesi_cols = [c['name'] for c in inspector.get_columns('sesi')]
-                    with db.engine.connect() as conn:
-                        if 'user_id' not in sesi_cols:
-                            conn.execute(text("ALTER TABLE sesi ADD COLUMN user_id INTEGER REFERENCES user(id)"))
-                        if 'is_afk' not in sesi_cols:
-                            conn.execute(text("ALTER TABLE sesi ADD COLUMN is_afk BOOLEAN DEFAULT 0"))
-                        if 'afk_pin' not in sesi_cols:
-                            conn.execute(text("ALTER TABLE sesi ADD COLUMN afk_pin VARCHAR(100)"))
-                        if 'afk_sejak' not in sesi_cols:
-                            conn.execute(text("ALTER TABLE sesi ADD COLUMN afk_sejak DATETIME"))
-                        if 'sesi_asal_id' not in sesi_cols:
-                            conn.execute(text("ALTER TABLE sesi ADD COLUMN sesi_asal_id INTEGER REFERENCES sesi(id)"))
-                        conn.commit()
-
-                if inspector.has_table('shift_record'):
-                    shift_cols = [c['name'] for c in inspector.get_columns('shift_record')]
-                    with db.engine.connect() as conn:
-                        if 'catatan' not in shift_cols:
-                            conn.execute(text("ALTER TABLE shift_record ADD COLUMN catatan VARCHAR(255)"))
-                        if 'total_qris' not in shift_cols:
-                            conn.execute(text("ALTER TABLE shift_record ADD COLUMN total_qris INTEGER DEFAULT 0"))
-                        if 'total_refund' not in shift_cols:
-                            conn.execute(text("ALTER TABLE shift_record ADD COLUMN total_refund INTEGER DEFAULT 0"))
-                        if 'detail_metode_json' not in shift_cols:
-                            conn.execute(text("ALTER TABLE shift_record ADD COLUMN detail_metode_json TEXT"))
-                        conn.commit()
-
-                # v1.6.2 Migration Safety: Tabel menu_stock_log
-                if not inspector.has_table('menu_stock_log'):
-                    from app.models.menu.menu import MenuStockLog
-                    MenuStockLog.__table__.create(db.engine)
-
-                # Pastikan alembic_version tercatat HEAD
-                from flask_migrate import stamp
-                stamp(directory=migrations_dir, revision='head')
-
-            except Exception as fix_err:
-                write_log("DATABASE_MIGRATION_SAFETY_ERROR", f"Safety sync gagal: {str(fix_err)}", user=operator)
-
-        # Hapus file temp jika masih ada
-        if os.path.exists(temp_path):
-            try:
-                os.remove(temp_path)
-            except Exception:
-                pass
-
-        # Install dependencies di background
-        def _install_deps():
-            import time
-            time.sleep(0.5)
-            try:
-                pip_path = os.path.join(root_dir, '.venv', 'Scripts', 'pip')
-                if os.path.exists(pip_path):
-                    subprocess.Popen(
-                        [pip_path, 'install', '-r', os.path.join(root_dir, 'requirements.txt')],
-                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-                    )
-            except Exception:
-                pass
-
-        write_log("APPLICATION_UPDATE", f"Aplikasi berhasil diperbarui melalui dashboard", user=operator)
-
-        threading.Thread(target=_install_deps, daemon=True).start()
-
-        # Kirim response dulu sebelum restart
-        resp = jsonify({"success": True, "message": "Update berhasil! Server akan restart..."})
-        _schedule_restart()
-        return resp
-
+        return jsonify({
+            "success": True,
+            "message": "Berkas berhasil diunggah. Server sedang memperbarui dan akan dimulai ulang...",
+        }), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"Gagal memproses upload update: {str(e)}"}), 500
 
-
-# =========================================================================
-# HELPER: Restart Server
-# =========================================================================
-
-def _schedule_restart():
-    """Restart server di background setelah response terkirim."""
-    def _do_restart():
-        import time
-        time.sleep(1.5)
-        env = os.environ.copy()
-        env.pop('WERKZEUG_SERVER_FD', None)
-        env.pop('WERKZEUG_RUN_MAIN', None)
-        subprocess.Popen([sys.executable] + sys.argv, env=env)
-        os._exit(0)
-
-    threading.Thread(target=_do_restart, daemon=True).start()
-
-
-def _auto_backup_before_migration():
-    """Backup otomatis database sebelum migrasi."""
-    try:
-        db_path = os.path.join(current_app.instance_path, 'warnet.db')
-        backup_dir = os.path.abspath(os.path.join(current_app.instance_path, '..', 'backups'))
-        from app.services import BackupService
-        manager = BackupService(db_path=db_path, backup_dir=backup_dir)
-        manager.create_backup()
-        manager.cleanup_old_backups(max_keep=5)
-    except Exception:
-        pass  # Backup gagal bukan halangan untuk lanjut migrasi

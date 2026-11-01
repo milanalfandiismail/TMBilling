@@ -65,7 +65,58 @@
                 </div>
             </div>
 
-            <!-- Card 2: Upload Update Aplikasi -->
+            <!-- Card 1.5: Pembaruan Otomatis via GitHub (1-Klik) -->
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 lg:p-4 space-y-2.5">
+                <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider">Pembaruan Otomatis (GitHub)</h3>
+                    </div>
+                    <span id="migration-github-badge" class="px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold font-mono bg-neutral-800 text-neutral-400">Siap Periksa</span>
+                </div>
+
+                <div class="space-y-2">
+                    <p class="text-[10px] sm:text-[11px] text-neutral-400 leading-relaxed">
+                        Periksa rilis terbaru langsung dari repositori GitHub resmi. Proses unduh, pencadangan basis data, ekstraksi, dan pembaruan skema ditangani otomatis secara terpisah tanpa mengunci sistem.
+                    </p>
+
+                    <!-- Info Box Update Tersedia (Dynamic) -->
+                    <div id="migration-github-info" class="hidden bg-[#050505] border border-emerald-500/30 rounded p-2.5 space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                                <span>🎉</span> <span id="github-release-tag">-</span> Tersedia!
+                            </span>
+                            <span id="github-release-size" class="text-[10px] text-neutral-400 font-mono">-</span>
+                        </div>
+                        <p id="github-release-name" class="text-[11px] text-neutral-300 font-medium"></p>
+                    </div>
+
+                    <!-- Tombol Cek & Update -->
+                    <div class="flex items-center gap-2 pt-1">
+                        <button type="button" id="btn-check-github" onclick="MigrationModule.checkGitHubUpdate()"
+                            class="flex-1 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs font-bold rounded transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                            <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <span id="btn-check-github-text">Cek Pembaruan GitHub</span>
+                        </button>
+
+                        <button type="button" id="btn-start-github-update" onclick="MigrationModule.openConfirmModal()"
+                            class="hidden flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold rounded transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                            </svg>
+                            <span>Mulai Update 1-Klik</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Upload Update Aplikasi (Manual Offline Fallback) -->
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 lg:p-4 space-y-2.5">
                 <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2">
                     <div class="flex items-center gap-2">
@@ -251,4 +302,115 @@
         </div>
     </div>
 
+    <!-- Modal Konfirmasi Cerdas Update GitHub -->
+    <div id="modal-github-confirm" class="hidden fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl max-w-lg w-full p-4 sm:p-5 shadow-2xl space-y-4">
+            <!-- Header -->
+            <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-neutral-100 uppercase tracking-wider">Konfirmasi Pembaruan Sistem</h3>
+                        <p id="confirm-version-subtitle" class="text-[11px] text-neutral-400 font-mono">Versi Baru: -</p>
+                    </div>
+                </div>
+                <button type="button" onclick="MigrationModule.closeConfirmModal()" class="text-neutral-400 hover:text-white p-1 rounded hover:bg-[#1a1a1a]">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="space-y-3">
+                <!-- Peringatan Sesi PC Aktif -->
+                <div id="confirm-active-session-warning" class="hidden bg-amber-500/10 border border-amber-500/20 rounded p-2.5 flex items-start gap-2.5">
+                    <span class="text-amber-400 text-sm">⚠️</span>
+                    <div class="text-[11px] text-amber-200/90 leading-relaxed">
+                        <span class="font-bold text-amber-300" id="confirm-active-pc-count">0 PC</span> sedang aktif bermain. Sesi billing aman tersimpan di database, namun PC klien akan mengalami jeda koneksi sementara (~2-4 detik) sebelum otomatis terhubung kembali.
+                    </div>
+                </div>
+
+                <!-- Release Notes Box -->
+                <div class="space-y-1">
+                    <label class="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block">Catatan Rilis (Changelog):</label>
+                    <div id="confirm-release-notes" class="bg-[#050505] border border-[#1c1c1c] rounded p-3 text-xs font-mono text-neutral-300 leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">
+                        Memuat catatan rilis...
+                    </div>
+                </div>
+
+                <!-- Ringkasan Keamanan -->
+                <div class="bg-[#050505] border border-[#1a1a1a] rounded p-2.5 text-[10px] text-neutral-400 space-y-1">
+                    <div class="text-neutral-300 font-semibold flex items-center gap-1.5">
+                        <span class="text-emerald-400">🛡️</span> Jaminan Keamanan Pembaruan:
+                    </div>
+                    <p class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> Database <span class="font-mono text-neutral-300">warnet.db</span> otomatis dicadangkan ke folder backups/</p>
+                    <p class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> File konfigurasi <span class="font-mono text-neutral-300">.env</span> dan saldo kasir tidak akan tertimpa</p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-end gap-2 border-t border-[#1c1c1c] pt-3">
+                <button type="button" onclick="MigrationModule.closeConfirmModal()"
+                    class="px-3.5 py-1.5 rounded text-xs font-medium bg-[#141414] hover:bg-[#1f1f1f] text-neutral-300 border border-[#262626] transition-colors">
+                    Batal
+                </button>
+                <button type="button" id="btn-execute-update" onclick="MigrationModule.executeGitHubUpdate()"
+                    class="px-4 py-1.5 rounded text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black transition-colors flex items-center gap-1.5 shadow-sm">
+                    <span>Mulai Update Sekarang</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Stepper Progress Interaktif & Auto-Reconnect -->
+    <div id="modal-update-stepper" class="hidden fixed inset-0 z-[10000] bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl max-w-md w-full p-5 shadow-2xl space-y-5 text-center">
+            <!-- Spinner / Success Icon Header -->
+            <div class="mx-auto w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <svg id="stepper-main-spinner" class="w-6 h-6 animate-spin text-emerald-400" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <svg id="stepper-main-success" class="hidden w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+
+            <div>
+                <h3 id="stepper-title" class="text-sm sm:text-base font-bold text-neutral-100 uppercase tracking-wider">Memproses Pembaruan...</h3>
+                <p id="stepper-subtitle" class="text-xs text-neutral-400 mt-1">Mohon tunggu, proses berlangsung di latar belakang.</p>
+            </div>
+
+            <!-- 4 Visual Steps -->
+            <div class="space-y-2 text-left bg-[#050505] border border-[#1c1c1c] rounded-lg p-3 text-xs font-medium">
+                <div id="step-item-1" class="flex items-center gap-2.5 text-neutral-400">
+                    <span id="step-dot-1" class="w-5 h-5 rounded-full bg-[#171717] border border-[#333] flex items-center justify-center text-[10px] font-mono shrink-0">1</span>
+                    <span id="step-text-1">Mengunduh paket rilis resmi (~3.7 MB)...</span>
+                </div>
+                <div id="step-item-2" class="flex items-center gap-2.5 text-neutral-500">
+                    <span id="step-dot-2" class="w-5 h-5 rounded-full bg-[#171717] border border-[#222] flex items-center justify-center text-[10px] font-mono shrink-0">2</span>
+                    <span id="step-text-2">Mencadangkan basis data (warnet.db)...</span>
+                </div>
+                <div id="step-item-3" class="flex items-center gap-2.5 text-neutral-500">
+                    <span id="step-dot-3" class="w-5 h-5 rounded-full bg-[#171717] border border-[#222] flex items-center justify-center text-[10px] font-mono shrink-0">3</span>
+                    <span id="step-text-3">Mengekstrak berkas &amp; migrasi skema...</span>
+                </div>
+                <div id="step-item-4" class="flex items-center gap-2.5 text-neutral-500">
+                    <span id="step-dot-4" class="w-5 h-5 rounded-full bg-[#171717] border border-[#222] flex items-center justify-center text-[10px] font-mono shrink-0">4</span>
+                    <span id="step-text-4">Menghubungkan kembali ke server baru...</span>
+                </div>
+            </div>
+
+            <p id="stepper-footer-hint" class="text-[10px] text-neutral-500 leading-normal">
+                Halaman kasir akan me-refresh secara otomatis begitu server baru online.
+            </p>
+        </div>
+    </div>
+
 </div>
+
