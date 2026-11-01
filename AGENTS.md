@@ -91,7 +91,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `routes/member/` | Registrasi member, top-up saldo, reset password, dan riwayat transaksi member. |
 | `routes/menu/` | Kasir FnB kantin, manajemen inventaris stok, kategori menu, dan cetak struk thermal. |
 | `routes/mikrotik/` | Sinkronisasi queue bandwidth MikroTik dan monitoring traffic internet. |
-| `routes/monitor/` | Telemetry metrik CPU/GPU/RAM real-time, task manager remote, dan task killer. |
+| `routes/monitor/` | Telemetry hardware & proses PC (`monitor_routes.py`), aksi remote AFK/shutdown/restart (`remote_action_routes.py`), manajemen screenshot PC (`screenshot_routes.py`), dan proxy VNC client (`vnc_client_routes.py`). |
 | `routes/notes/` | Scratchpad / sticky notes serah terima pesan antar shift kasir. |
 | `routes/paket/` | CRUD paket billing jam-jaman dan promosi khusus warnet. |
 | `routes/pc/` | CRUD registrasi meja PC, pengaturan denah koordinat meja, dan status koneksi. |
