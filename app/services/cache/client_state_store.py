@@ -96,10 +96,13 @@ class ApiKeyMismatchStore:
     _mismatch_pc_ids = {}  # pc_id -> float (time.time())
 
     @classmethod
-    def record_mismatch(cls, ip: str = None, pc_id: int = None):
-        """Catat waktu mismatch API key untuk IP dan/atau PC ID."""
+    def record_mismatch(cls, ip: str = None, pc_id: int = None, ttl_seconds: int = 300):
+        """Catat waktu mismatch API key untuk IP dan/atau PC ID serta prune entri usang."""
         ts = time.time()
         with cls._lock:
+            # Prune entry yang sudah melewati batas TTL (5 menit)
+            cls._mismatch_ips = {k: v for k, v in cls._mismatch_ips.items() if (ts - v) < ttl_seconds}
+            cls._mismatch_pc_ids = {k: v for k, v in cls._mismatch_pc_ids.items() if (ts - v) < ttl_seconds}
             if ip:
                 cls._mismatch_ips[ip] = ts
             if pc_id:

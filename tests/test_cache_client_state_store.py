@@ -4,7 +4,8 @@ import time
 import pytest
 from app.services.cache.client_state_store import (
     OnlineStatusStore,
-    AntiTheftGraceTracker
+    AntiTheftGraceTracker,
+    ApiKeyMismatchStore
 )
 
 
@@ -50,3 +51,20 @@ def test_antitheft_grace_tracker():
     AntiTheftGraceTracker.mark_offline(1)
     assert 1 not in AntiTheftGraceTracker._boot_timestamps
     assert AntiTheftGraceTracker.is_in_grace_period(1) is False
+
+
+def test_api_key_mismatch_store_prune():
+    ApiKeyMismatchStore.clear()
+    now = time.time()
+    # Old entry (> 300s)
+    ApiKeyMismatchStore._mismatch_ips["192.168.1.99"] = now - 350.0
+    ApiKeyMismatchStore._mismatch_pc_ids[99] = now - 350.0
+
+    # New entry recorded
+    ApiKeyMismatchStore.record_mismatch(ip="192.168.1.100", pc_id=100)
+
+    # Old entries should be automatically pruned
+    assert "192.168.1.99" not in ApiKeyMismatchStore._mismatch_ips
+    assert 99 not in ApiKeyMismatchStore._mismatch_pc_ids
+    assert "192.168.1.100" in ApiKeyMismatchStore._mismatch_ips
+    assert 100 in ApiKeyMismatchStore._mismatch_pc_ids
