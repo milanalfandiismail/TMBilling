@@ -67,8 +67,8 @@ def get_migration_status():
                     "is_current": rev.revision.startswith(current_revision) if current_revision else False,
                     "is_head": rev.revision == head if head else False,
                 })
-        except Exception:
-            pass
+        except Exception as rev_err:
+            write_log("MIGRATION_STATUS", f"Gagal membaca riwayat revisi alembic: {rev_err}")
 
         return jsonify({
             "success": True,
@@ -97,7 +97,8 @@ def _get_current_revision():
         from app import db
         result = db.session.execute(db.text("SELECT version_num FROM alembic_version")).scalar()
         return result[:8] if result else None
-    except Exception:
+    except Exception as e:
+        write_log("MIGRATION_STATUS", f"Gagal membaca version_num: {e}")
         return None
 
 
@@ -123,6 +124,15 @@ def _parse_version(v_str: str):
         num = int("".join(c for c in pre if c.isdigit()) or 0)
         prerelease = (1, num)
     return core + prerelease
+
+
+def _safe_remove_temp(path: str):
+    """Menghapus berkas sementara dengan proteksi error dan audit log."""
+    if os.path.exists(path):
+        try:
+            os.remove(path)
+        except Exception as e:
+            write_log("UPDATE_CLEANUP", f"Gagal menghapus temp file {path}: {e}")
 
 
 def _launch_updater():
@@ -241,19 +251,11 @@ def update_github():
                 if has_run and has_app:
                     is_valid_structure = True
         except zipfile.BadZipFile:
-            if os.path.exists(temp_path):
-                try:
-                    os.remove(temp_path)
-                except Exception:
-                    pass
+            _safe_remove_temp(temp_path)
             return jsonify({"error": "Berkas ZIP dari GitHub rusak / bukan format ZIP valid"}), 400
 
         if not is_valid_structure:
-            if os.path.exists(temp_path):
-                try:
-                    os.remove(temp_path)
-                except Exception:
-                    pass
+            _safe_remove_temp(temp_path)
             return jsonify({"error": "Berkas ZIP dari GitHub bukan paket rilis TMBilling yang valid"}), 400
 
         write_log("APPLICATION_UPDATE", "Pembaruan otomatis dari GitHub dipicu melalui dashboard", user=operator)
@@ -302,29 +304,17 @@ def upload_update():
                         is_safe = False
                         break
         except zipfile.BadZipFile:
-            if os.path.exists(temp_path):
-                try:
-                    os.remove(temp_path)
-                except Exception:
-                    pass
+            _safe_remove_temp(temp_path)
             return jsonify({"error": "Berkas bukan format ZIP yang valid"}), 400
 
         if not is_valid_structure:
-            if os.path.exists(temp_path):
-                try:
-                    os.remove(temp_path)
-                except Exception:
-                    pass
+            _safe_remove_temp(temp_path)
             return jsonify({
                 "error": "Berkas ZIP bukan paket rilis TMBilling yang valid (wajib memuat run.py dan folder app/)."
             }), 400
 
         if not is_safe:
-            if os.path.exists(temp_path):
-                try:
-                    os.remove(temp_path)
-                except Exception:
-                    pass
+            _safe_remove_temp(temp_path)
             return jsonify({"error": "Path traversal terdeteksi pada berkas ZIP"}), 400
 
         write_log("APPLICATION_UPDATE", "Pembaruan manual melalui upload ZIP dipicu melalui dashboard", user=operator)
