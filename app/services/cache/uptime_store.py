@@ -7,9 +7,12 @@ Menyediakan:
 """
 
 import time
+import logging
 import threading
 from datetime import datetime, timedelta
 from app.utils.timezone_utils import now_utc, get_display_tz
+
+logger = logging.getLogger(__name__)
 
 
 class UptimeMemoryStore:
@@ -79,8 +82,18 @@ class UptimeMemoryStore:
 
         def _do_flush():
             try:
+                pc_ids = list({item[0] for item in to_flush})
+                dates = list({item[1] for item in to_flush})
+                existing = {
+                    (log.pc_id, log.tanggal): log
+                    for log in PCUptimeLog.query.filter(
+                        PCUptimeLog.pc_id.in_(pc_ids),
+                        PCUptimeLog.tanggal.in_(dates)
+                    ).all()
+                }
+
                 for pc_id, today, online_sec, billing_sec, first_seen, last_seen in to_flush:
-                    log = PCUptimeLog.query.filter_by(pc_id=pc_id, tanggal=today).first()
+                    log = existing.get((pc_id, today))
                     if not log:
                         log = PCUptimeLog(
                             pc_id=pc_id,
@@ -91,13 +104,15 @@ class UptimeMemoryStore:
                             total_billing_seconds=billing_sec
                         )
                         db.session.add(log)
+                        existing[(pc_id, today)] = log
                     else:
                         log.total_online_seconds += online_sec
                         log.total_billing_seconds += billing_sec
                         log.last_seen = last_seen
                 db.session.commit()
-            except Exception:
+            except Exception as e:
                 db.session.rollback()
+                logger.error(f"UptimeMemoryStore flush failed: {e}")
                 # Jika gagal flush, kembalikan delta ke RAM agar tidak hilang
                 with cls._lock:
                     for pc_id, today, online_sec, billing_sec, _, _ in to_flush:

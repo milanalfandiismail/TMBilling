@@ -76,3 +76,53 @@ def test_uptime_auto_prune_past_dates(app_uptime):
     # Kemarin harus ter-prune, hari ini tetap ada dengan delta 0
     assert (pc_id, yesterday) not in UptimeMemoryStore._accumulator
     assert (pc_id, today) in UptimeMemoryStore._accumulator
+
+
+def test_uptime_bulk_flush_multiple_pcs(app_uptime):
+    app, pc_id1 = app_uptime
+    with app.app_context():
+        grup = Grup.query.first()
+        pc2 = PC(kode="PC-UP-TEST-2", ip_address="192.168.1.81", grup_id=grup.id)
+        db.session.add(pc2)
+        db.session.commit()
+        pc_id2 = pc2.id
+
+    UptimeMemoryStore.clear()
+    today = date.today()
+    now = datetime.now()
+
+    # Pre-existing record for pc_id1
+    with app.app_context():
+        existing_log = PCUptimeLog(
+            pc_id=pc_id1,
+            tanggal=today,
+            first_seen=now,
+            last_seen=now,
+            total_online_seconds=100,
+            total_billing_seconds=50
+        )
+        db.session.add(existing_log)
+        db.session.commit()
+
+    # Accumulate delta for both pc_id1 and pc_id2
+    UptimeMemoryStore._accumulator[(pc_id1, today)] = {
+        "online_delta": 20,
+        "billing_delta": 10,
+        "first_seen": now,
+        "last_seen": now
+    }
+    UptimeMemoryStore._accumulator[(pc_id2, today)] = {
+        "online_delta": 60,
+        "billing_delta": 30,
+        "first_seen": now,
+        "last_seen": now
+    }
+
+    # Flush bulk
+    UptimeMemoryStore.flush_to_database(app=app)
+
+    with app.app_context():
+        log1 = PCUptimeLog.query.filter_by(pc_id=pc_id1, tanggal=today).first()
+        log2 = PCUptimeLog.query.filter_by(pc_id=pc_id2, tanggal=today).first()
+        assert log1 is not None and log1.total_online_seconds == 120 and log1.total_billing_seconds == 60
+        assert log2 is not None and log2.total_online_seconds == 60 and log2.total_billing_seconds == 30
