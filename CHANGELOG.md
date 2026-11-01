@@ -6,24 +6,6 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
-## [1.6.5-rc3] - 2026-11-01 - Release Candidate 3
-
-### Optimasi Performa & Refactoring
-- **Batch Flush Uptime (Eliminasi N+1 Queries)**:
-  - Mengubah kalkulasi akumulasi `UptimeMemoryStore.flush_to_database()` dari N+1 query loop tunggal menjadi satu `WHERE pc_id IN (...) AND tanggal IN (...)` bulk-fetch.
-- **Dekomposisi Modular Rute Monitor**:
-  - Memisahkan file monolitik `monitor_routes.py` menjadi 4 modul terfokus: `monitor_routes.py` (telemetri & hardware baseline), `remote_action_routes.py` (AFK lock/unlock, shutdown, restart batch), `screenshot_routes.py` (capture & upload screenshot), dan `vnc_client_routes.py` (proxy VNC client).
-  - Mengonsolidasikan kode duplikat handler hardware, penghapusan, dan kill process.
-- **Pembersihan Silent Exceptions & Resilience**:
-  - Menghilangkan `except: pass` pada middleware auth dan rute client API key mismatch dengan pencatatan audit log terstruktur.
-  - Memperkuat alur migrasi database (`migration_routes.py`) dengan pembersihan berkas sementara ZIP terpusat (`_safe_remove_temp`) dan logging error.
-- **In-Memory Cache TTL Pruning**:
-  - Menambahkan auto-pruning entri usang (> 5 menit) pada `ApiKeyMismatchStore` untuk mencegah akumulasi memori.
-- **Pencegahan Race Condition Sesi Member**:
-  - Menambahkan pengecekan sesi aktif member dan migrasi SQLite partial index `uq_aktif_sesi_member` untuk menolak double-click pembukaan sesi secara atomik.
-- **Optimalisasi Query Laporan Finansial Owner**:
-  - Membatasi kueri analitik member trend dengan filter tanggal atas-bawah yang ketat di level database dan normalisasi timezone range otomatis.
-
 ## [1.6.5-rc2] - 2026-11-01 - Release Candidate 2
 
 ### Keamanan & Perbaikan Bug
@@ -35,8 +17,24 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
   - Menghadirkan in-memory store `ApiKeyMismatchStore` untuk melacak IP dan PC yang mengalami penolakan API key.
   - Menandai PC dengan status koneksi `api_key_mismatch` (`online: False`) agar kartu meja tidak menyala online secara keliru.
   - Menghadirkan visual alert bertema warna **Fuchsia / Magenta** (`pulse-fuchsia-bg`, `text-fuchsia-400`, `KEY SALAH`, `🔑 KEY TIDAK COCOK`) yang eksklusif dan berbeda dari warna status lainnya (merah terputus, hijau aktif, oranye admin/afk).
+- **Pencegahan Race Condition Sesi Member**:
+  - Menambahkan pengecekan sesi aktif member dan migrasi SQLite partial index `uq_aktif_sesi_member` untuk menolak double-click pembukaan sesi secara atomik.
+- **Pembersihan Silent Exceptions & Resilience**:
+  - Menghilangkan `except: pass` pada middleware auth dan rute client API key mismatch dengan pencatatan audit log terstruktur.
+  - Memperkuat alur migrasi database (`migration_routes.py`) dengan pembersihan berkas sementara ZIP terpusat (`_safe_remove_temp`) dan logging error.
 - **Pembaruan Sistem Otomatis 1-Klik**:
   - Integrasi fitur cek rilis GitHub dan runner updater mandiri anti file-locking Windows (`updater.bat`).
+
+### Optimasi Performa & Refactoring
+- **Batch Flush Uptime (Eliminasi N+1 Queries)**:
+  - Mengubah kalkulasi akumulasi `UptimeMemoryStore.flush_to_database()` dari N+1 query loop tunggal menjadi satu `WHERE pc_id IN (...) AND tanggal IN (...)` bulk-fetch.
+- **Dekomposisi Modular Rute Monitor**:
+  - Memisahkan file monolitik `monitor_routes.py` menjadi 4 modul terfokus: `monitor_routes.py` (telemetri & hardware baseline), `remote_action_routes.py` (AFK lock/unlock, shutdown, restart batch), `screenshot_routes.py` (capture & upload screenshot), dan `vnc_client_routes.py` (proxy VNC client).
+  - Mengonsolidasikan kode duplikat handler hardware, penghapusan, dan kill process.
+- **In-Memory Cache TTL Pruning**:
+  - Menambahkan auto-pruning entri usang (> 5 menit) pada `ApiKeyMismatchStore` untuk mencegah akumulasi memori.
+- **Optimalisasi Query Laporan Finansial Owner**:
+  - Membatasi kueri analitik member trend dengan filter tanggal atas-bawah yang ketat di level database dan normalisasi timezone range otomatis.
 
 ## [1.6.5-rc1] - 2026-10-24 - Release Candidate 1
 
