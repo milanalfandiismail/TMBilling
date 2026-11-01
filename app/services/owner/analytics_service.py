@@ -48,7 +48,17 @@ class OwnerAnalyticsService:
         return labels
 
     @staticmethod
+    def _normalize_range(start, end):
+        """Normalisasi datetime offset-aware menjadi naive UTC untuk query SQLite."""
+        if start and getattr(start, "tzinfo", None) is not None:
+            start = start.astimezone(UTC).replace(tzinfo=None)
+        if end and getattr(end, "tzinfo", None) is not None:
+            end = end.astimezone(UTC).replace(tzinfo=None)
+        return start, end
+
+    @staticmethod
     def get_pendapatan_harian(start, end):
+        start, end = OwnerAnalyticsService._normalize_range(start, end)
         billing = db.session.query(Transaksi.dibuat_pada, Transaksi.jumlah)\
             .filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end, Transaksi.jumlah > 0).all()
 
@@ -85,6 +95,7 @@ class OwnerAnalyticsService:
 
     @staticmethod
     def get_heatmap_jam_sibuk(start, end):
+        start, end = OwnerAnalyticsService._normalize_range(start, end)
         sessions = Sesi.query.filter(Sesi.mulai_pada >= start, Sesi.mulai_pada <= end).all()
         jam_counts = {}
         for s in sessions:
@@ -100,8 +111,10 @@ class OwnerAnalyticsService:
 
     @staticmethod
     def get_member_trend(start, end):
+        start, end = OwnerAnalyticsService._normalize_range(start, end)
         members = Member.query.filter(
-            (Member.dibuat_pada >= start) | (Member.kadaluarsa_pada >= start)
+            ((Member.dibuat_pada >= start) & (Member.dibuat_pada <= end)) |
+            ((Member.kadaluarsa_pada >= start) & (Member.kadaluarsa_pada <= end))
         ).all()
         
         b_map, k_map = {}, {}
