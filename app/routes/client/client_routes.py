@@ -43,8 +43,8 @@ def api_key_required(f):
                     if body_ip and body_ip != sender_ip:
                         cached_body = PCNetworkCacheStore.get_by_ip(body_ip)
                         ApiKeyMismatchStore.record_mismatch(ip=body_ip, pc_id=cached_body.get("id") if cached_body else None)
-            except Exception:
-                pass
+            except Exception as e:
+                write_log("CLIENT_SECURITY", f"Gagal mencatat mismatch API key: {e}")
             return jsonify({"error": "Akses ditolak. API Key tidak valid atau belum dikonfigurasi"}), 401
         
         # Jika API Key valid, bersihkan penanda mismatch untuk IP/PC ini
@@ -54,8 +54,8 @@ def api_key_required(f):
             cached = PCNetworkCacheStore.get_by_ip(sender_ip)
             pc_id = cached.get("id") if cached else None
             ApiKeyMismatchStore.clear_mismatch(ip=sender_ip, pc_id=pc_id)
-        except Exception:
-            pass
+        except Exception as e:
+            write_log("CLIENT_SECURITY", f"Gagal membersihkan mismatch API key: {e}")
 
         return f(*args, **kwargs)
     return decorated

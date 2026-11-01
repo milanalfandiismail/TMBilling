@@ -3,8 +3,11 @@
 """Middleware dan dekorator untuk autentikasi dan otorisasi kasir/admin."""
 
 from functools import wraps
+import logging
 import secrets
 from flask import session, jsonify, redirect, request, g
+
+logger = logging.getLogger(__name__)
 
 def clear_kasir_session():
     """Pembersihan session kasir secara terpusat (DRY)."""
@@ -38,8 +41,8 @@ def _apply_branch_relay_identity():
                 matched = Branch.query.filter(Branch.url.contains(sender_ip), Branch.aktif == True).first()
                 if matched and matched.nama:
                     matched_branch_name = matched.nama.strip()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Branch origin resolution error: {e}")
 
         if matched_branch_name and matched_branch_name.lower() not in ("cabang", "remote"):
             origin_name = matched_branch_name
@@ -61,8 +64,8 @@ def _apply_branch_relay_identity():
             operator=remote_op,
             ip_address=sender_ip
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Branch record_inbound_access error: {e}")
 
     # Cek apakah nama warnet pengirim sama dengan warnet lokal
     is_name_conflict = (origin_name.lower() == local_title.lower())
@@ -71,8 +74,8 @@ def _apply_branch_relay_identity():
             from app.models.branch import Branch
             if Branch.query.filter(Branch.nama.ilike(origin_name)).count() > 1:
                 is_name_conflict = True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Branch name conflict check error: {e}")
 
     # Disambiguasi: Jika nama warnet sama/bentrok dan ada MAC address, sertakan tag MAC fisik
     if is_name_conflict and origin_mac:
