@@ -179,7 +179,7 @@ window.DashboardModalCore = {
         const isAdminMode = !isSystemMode && (pc.is_admin_mode || pc.status === 'admin' || (sesi?.tipe === 'admin'));
 
         const modalHtml = `
-            <div id="pc-detail-modal-card" class="bg-[#111] border border-[#2a2a2a] rounded-xl w-[calc(100%-2rem)] lg:w-[92vw] xl:w-[88vw] 2xl:w-[84vw] max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[1500px] h-[85vh] xl:h-[90vh] 2xl:h-[92vh] max-h-[94vh] xl:max-h-[94vh] 2xl:max-h-[96vh] flex flex-col overflow-hidden shadow-2xl animate-in transition-all duration-300">
+            <div id="pc-detail-modal-card" class="bg-[#111] border border-[#2a2a2a] rounded-xl w-[calc(100%-2rem)] lg:w-[92vw] xl:w-[88vw] 2xl:w-[84vw] max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[1500px] h-[85vh] xl:h-[90vh] 2xl:h-[92vh] max-h-[94vh] xl:max-h-[94vh] 2xl:max-h-[96vh] flex flex-col overflow-hidden shadow-2xl transition-all duration-300">
                 <div class="px-5 md:px-6 py-3.5 md:py-4 border-b border-[#2a2a2a] flex items-center justify-between shrink-0">
                     <div>
                         <div class="flex items-center gap-2">
@@ -222,7 +222,7 @@ window.DashboardModalCore = {
                                         onclick="DashboardDetailModal.viewFullscreen(this)" />
                                     <div id="screenshot-placeholder" class="text-neutral-600 text-xs lg:text-sm font-mono ${pc.screenshot_url ? 'hidden' : ''}">Tidak ada gambar</div>
                                     <div id="screenshot-fullscreen-hint" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${pc.screenshot_url ? '' : 'hidden'}">
-                                        <div class="bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-lg flex items-center gap-2">
+                                        <div class="bg-black/80 px-3 py-1.5 rounded-lg flex items-center gap-2">
                                             <svg class="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
                                             <span class="text-[10px] lg:text-xs font-bold text-white/80 uppercase tracking-wider">Fullscreen</span>
                                         </div>

@@ -57,7 +57,7 @@ const DashboardProcessMonitor = {
         let items = '';
         for (let i = 0; i < count; i++) {
             items += `
-                <div class="flex items-center justify-between p-3 bg-[#141414] border border-[#222] rounded-xl gap-3 animate-pulse select-none">
+                <div class="flex items-center justify-between p-3 bg-[#141414] border border-[#222] rounded-xl gap-3 select-none">
                     <div class="min-w-0 flex-1 space-y-2">
                         <div class="h-3.5 bg-neutral-800 rounded w-7/12"></div>
                         <div class="h-2.5 bg-neutral-800/60 rounded w-9/12"></div>
@@ -338,9 +338,9 @@ const DashboardProcessMonitor = {
     async killProcess(pcId, name) {
         if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const overlay = document.createElement('div');
-        overlay.className = 'fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200';
+        overlay.className = 'fixed inset-0 z-[60] flex items-center justify-center bg-black/90';
         overlay.innerHTML = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-sm flex flex-col overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-sm flex flex-col overflow-hidden shadow-2xl">
                 <div class="p-6 text-center">
                     <div class="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-4 border border-red-500/20">
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -246,6 +246,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Staff Kasir/Admin & RBAC** | `modules/user/` | `routes/user/user_routes.py`, `services/user/` | `User`, `AuditLog` |
 | **Screenshot Monitor PC** | `modules/screenshot.js` | `routes/monitor/screenshot_routes.py`, `services/cache/telemetry_store.py` | In-memory store |
 | **Server Health Telemetry** | `modules/server_monitor.js` | `routes/server_monitor/`, `services/server_monitor/` | Host sensors |
+| **Frontend CPU & Zero-Thrashing** | `modules/dashboard/dashboard_compact.js`, `core/skeleton.js` | `templates/kasir/base.html`, `tailwind.config.js` | Strict dirty-checking, zero infinite keyframe loops |
 
 ---
 
@@ -314,7 +315,14 @@ build_and_deploy.bat
 - **Single Source of Version**: `app/config.py` (`Config.VERSION`).
 - **Cache Transient**: Seluruh data yang sering di-polling klien WAJIB melalui in-memory store di `app/services/cache/` untuk melindungi disk SQLite.
 
-### 5. Komunikasi
+### 5. Arsitektur & Standar Performa Frontend Kasir (Zero CPU Thrashing)
+Untuk menjaga agar penggunaan CPU browser (Brave, Chrome, Edge) tetap sangat rendah (< 2%) saat idle dan monitoring dashboard:
+- **Zero Infinite Keyframe Loops**: DILARANG menambahkan CSS keyframes looping tak berhingga seperti `pulse-*-bg`, `animate-ping`, `animate-pulse`, `animate-modal-in`, `animate-in`, `fade-in`, atau `zoom-in`. Status darurat meja (Terputus, API Key Salah, LAN Drop, Hardware Swapped) WAJIB menggunakan badge visual solid berkontras tinggi dan teks tegas (`[ ⚠️ TERPUTUS ]`, `[ 🔑 KEY TIDAK COCOK ]`, `[ ⚠️ LAN 100M ]`) tanpa animasi berkedip.
+- **Zero Compositing Blur Filter**: DILARANG menggunakan CSS filter `backdrop-blur-*` dan `hover:brightness-*` pada modal overlay atau kartu meja. Modal overlay WAJIB menggunakan solid dark semi-transparan (`bg-black/90` atau `bg-black/95`) untuk mencegah GPU/CPU convolution composite pass berulang.
+- **Strict Dirty-Checking pada Polling**: Setiap fungsi update berulang (seperti `syncLiveCards` setiap 1 detik) WAJIB membandingkan nilai sebelum menyentuh DOM (`textContent`, `className`, `innerHTML`, `style`). Mutasi DOM hanya boleh dieksekusi bila terdapat perbedaan nilai riil.
+- **Static Skeletons**: Seluruh placeholder loading skeleton di 32 tab dan `skeleton.js` menggunakan balok statis netral (`bg-[#202020]` atau `bg-neutral-800`) tanpa animasi denyut `animate-pulse`.
+
+### 6. Komunikasi
 - Respon selalu menggunakan **Bahasa Indonesia** kecuali jika diminta lain oleh pengguna.
 - Lugas, teknis, praktis, dan langsung pada pokok permasalahan.
 - Paparkan alasan teknis di balik setiap keputusan arsitektural atau perbaikan bug.

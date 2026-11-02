@@ -141,7 +141,7 @@ const Blackout = {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <tr class="animate-pulse">
+                <tr>
                     <td class="w-[32%] sm:w-[22%] md:w-[17%] lg:w-[14%] xl:w-[14%] 2xl:w-[14%] px-2 sm:px-2.5 py-1.5 text-left">
                         <div class="h-3.5 bg-[#202020] rounded w-16"></div>
                     </td>
@@ -209,7 +209,7 @@ const Blackout = {
             </button>
             <button type="button" onclick="Blackout.setStatusFilter('pending')" data-status="pending"
                 class="blackout-status-pill px-2 py-0.5 sm:px-2.5 sm:py-1 rounded text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${st === 'pending' ? 'bg-[#161616] text-white border border-red-500/60 shadow-sm' : 'bg-[#0a0a0a] text-neutral-400 border border-[#1f1f1f] hover:border-[#333] hover:text-neutral-200'}">
-                <span class="w-1.5 h-1.5 rounded-full bg-red-500 ${pendingCount > 0 ? 'animate-pulse' : ''}"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                 <span>Menunggu</span>
                 <span class="text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full ${st === 'pending' ? 'bg-red-950 text-red-300' : 'bg-[#161616] text-neutral-500'} font-mono">${pendingCount}</span>
             </button>
@@ -538,7 +538,7 @@ const Blackout = {
 
         const statusBadge = isResolved
             ? '<span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-neutral-900 text-neutral-400 border border-neutral-700/50"><svg class="w-2.5 h-2.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>Selesai</span>'
-            : '<span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-red-950/40 text-red-400 border border-red-800/40"><span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>Tertunda</span>';
+            : '<span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-red-950/40 text-red-400 border border-red-800/40"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>Tertunda</span>';
 
         const rowOpacity = isResolved ? 'opacity-60 hover:opacity-100' : '';
 

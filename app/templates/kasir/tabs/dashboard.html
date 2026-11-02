@@ -5,7 +5,7 @@
         <!-- Billing Pill -->
         <div onclick="App.switchTab('laporan')" class="flex-1 flex items-center justify-between gap-2 px-3 py-2 bg-[#050505] hover:bg-[#121212] border border-[#1c1c1c] hover:border-neutral-500 rounded transition-all cursor-pointer group" title="Lihat Laporan Omzet Billing Hari Ini">
             <div class="flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse shadow-sm shadow-sky-400/50 shrink-0"></span>
+                <span class="w-2 h-2 rounded-full bg-sky-400 shadow-sm shadow-sky-400/50 shrink-0"></span>
                 <span class="text-[9px] sm:text-xs font-bold text-neutral-400 uppercase tracking-wider">Billing Hari Ini</span>
             </div>
             <span id="dashboard-omzet-billing-mobile" class="text-xs sm:text-sm font-black font-mono text-sky-400 tracking-tight group-hover:text-sky-300">
@@ -16,7 +16,7 @@
         <!-- Kantin Pill -->
         <div onclick="App.switchTab('laporan_menu')" class="flex-1 flex items-center justify-between gap-2 px-3 py-2 bg-[#050505] hover:bg-[#121212] border border-[#1c1c1c] hover:border-neutral-500 rounded transition-all cursor-pointer group" title="Lihat Laporan Omzet Kantin Hari Ini">
             <div class="flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shadow-sm shadow-amber-400/50 shrink-0"></span>
+                <span class="w-2 h-2 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50 shrink-0"></span>
                 <span class="text-[9px] sm:text-xs font-bold text-neutral-400 uppercase tracking-wider">Kantin Hari Ini</span>
             </div>
             <span id="dashboard-omzet-kantin-mobile" class="text-xs sm:text-sm font-black font-mono text-amber-400 tracking-tight group-hover:text-amber-300">
@@ -50,7 +50,7 @@
     <div id="pc-area">
         <div class="grid gap-2 grid-cols-2 md:grid-cols-4 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 auto-rows-fr p-1">
             {% for _ in range(12) %}
-            <div class="skeleton-pc-card bg-[#141414] border border-transparent rounded-xl p-2 lg:p-2 xl:p-2.5 2xl:p-3 min-h-[96px] lg:min-h-[102px] xl:min-h-[108px] 2xl:min-h-[120px] flex flex-col justify-between animate-pulse select-none">
+            <div class="skeleton-pc-card bg-[#141414] border border-transparent rounded-xl p-2 lg:p-2 xl:p-2.5 2xl:p-3 min-h-[96px] lg:min-h-[102px] xl:min-h-[108px] 2xl:min-h-[120px] flex flex-col justify-between select-none">
                 <!-- Row 1: PC Code & Status Dot -->
                 <div class="flex items-center justify-between gap-2">
                     <div class="h-3.5 bg-[#262626] rounded w-12"></div>

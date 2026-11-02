@@ -540,7 +540,7 @@ const MigrationModule = {
 
             if (state === 'active') {
                 item.className = 'flex items-center gap-2.5 text-emerald-400 font-bold';
-                dot.className = 'w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500 flex items-center justify-center text-[10px] font-mono shrink-0 animate-pulse';
+                dot.className = 'w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500 flex items-center justify-center text-[10px] font-mono shrink-0';
                 dot.textContent = String(num);
             } else if (state === 'done') {
                 item.className = 'flex items-center gap-2.5 text-neutral-300';

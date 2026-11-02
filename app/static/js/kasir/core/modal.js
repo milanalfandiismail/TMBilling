@@ -31,7 +31,7 @@ const Modal = {
         if (this.activeModal) this.closeModal();
 
         const modalDiv = document.createElement('div');
-        modalDiv.className = 'fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+        modalDiv.className = 'fixed inset-0 bg-black/85 flex items-center justify-center z-50 p-4';
         modalDiv.innerHTML = html;
 
         document.body.appendChild(modalDiv);

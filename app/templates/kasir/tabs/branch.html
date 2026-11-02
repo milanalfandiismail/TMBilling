@@ -71,7 +71,7 @@
                 </thead>
                 <tbody id="branch-settings-tbody" class="text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-mono block lg:table-row-group divide-y divide-[#2a2a2a] lg:divide-transparent">
                     {% for _ in range(3) %}
-                    <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
+                    <tr class="border-b border-[#1c1c1c] flex flex-col lg:table-row p-3 lg:p-0">
                         <td class="py-3 px-3"><div class="h-3 bg-[#202020] rounded w-16"></div></td>
                         <td class="py-3 px-3"><div class="h-3.5 bg-[#262626] rounded w-36"></div></td>
                         <td class="py-3 px-3 text-right"><div class="h-7 w-20 bg-[#202020] rounded ml-auto"></div></td>
@@ -83,8 +83,8 @@
     </div>
 
     <!-- Modal Tambah / Edit Cabang -->
-    <div id="modal-add-branch" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto scrollbar-thin animate-modal-in">
+    <div id="modal-add-branch" class="fixed inset-0 bg-black/85 z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto scrollbar-thin">
             <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
                 <h3 id="modal-branch-title" class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Hubungkan Cabang Baru</h3>
                 <button type="button" onclick="BranchManager.closeAddBranchModal()" class="text-neutral-500 hover:text-neutral-200 text-xl leading-none">&times;</button>
@@ -141,8 +141,8 @@
     </div>
 
     <!-- Modal Konfirmasi Regenerate Branch API Key -->
-    <div id="modal-regen-branch-key" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto scrollbar-thin animate-modal-in">
+    <div id="modal-regen-branch-key" class="fixed inset-0 bg-black/85 z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto scrollbar-thin">
             <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-rotate"></i>
@@ -177,8 +177,8 @@
     </div>
 
     <!-- Modal Konfirmasi Hapus Cabang Keluar (Outbound) -->
-    <div id="modal-delete-branch" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto scrollbar-thin animate-modal-in">
+    <div id="modal-delete-branch" class="fixed inset-0 bg-black/85 z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto scrollbar-thin">
             <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-trash"></i>

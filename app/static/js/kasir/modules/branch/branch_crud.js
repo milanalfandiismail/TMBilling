@@ -304,7 +304,7 @@ window.BranchCrud = {
             btnTest.disabled = true;
             btnTest.textContent = 'Menguji...';
         }
-        resultDiv.innerHTML = '<span class="text-xs text-neutral-400 animate-pulse">Menghubungi server remote...</span>';
+        resultDiv.innerHTML = '<span class="text-xs text-neutral-400">Menghubungi server remote...</span>';
 
         try {
             const res = await API.branch.test(url, apiKey);

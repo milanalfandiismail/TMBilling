@@ -48,13 +48,13 @@ const PCGrid = {
                 statusDot = '<span class="w-2 h-2 2xl:w-2.5 2xl:h-2.5 rounded-full bg-neutral-600 shrink-0" title="MAINTENANCE"></span>';
             } else if (pc.status === 'terpakai') {
                 statusBadge = '<span class="text-[8px] sm:text-[9px] 2xl:text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-950/60 border border-sky-800/50 text-sky-400 shrink-0">TERPAKAI</span>';
-                statusDot = '<span class="relative flex h-2 w-2 2xl:h-2.5 2xl:w-2.5 shrink-0" title="TERPAKAI"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 2xl:h-2.5 2xl:w-2.5 bg-sky-500 shadow-[0_0_6px_rgba(14,165,233,0.6)]"></span></span>';
+                statusDot = '<span class="relative flex h-2 w-2 2xl:h-2.5 2xl:w-2.5 shrink-0" title="TERPAKAI"><span class="relative inline-flex rounded-full h-2 w-2 2xl:h-2.5 2xl:w-2.5 bg-sky-500 shadow-[0_0_6px_rgba(14,165,233,0.6)]"></span></span>';
             } else if (pc.status === 'admin') {
                 statusBadge = '<span class="text-[8px] sm:text-[9px] 2xl:text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-950/60 border border-purple-800/50 text-purple-400 shrink-0">ADMIN</span>';
-                statusDot = '<span class="relative flex h-2 w-2 2xl:h-2.5 2xl:w-2.5 shrink-0" title="ADMIN"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 2xl:h-2.5 2xl:w-2.5 bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.6)]"></span></span>';
+                statusDot = '<span class="relative flex h-2 w-2 2xl:h-2.5 2xl:w-2.5 shrink-0" title="ADMIN"><span class="relative inline-flex rounded-full h-2 w-2 2xl:h-2.5 2xl:w-2.5 bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.6)]"></span></span>';
             } else {
                 statusBadge = '<span class="text-[8px] sm:text-[9px] 2xl:text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/50 text-emerald-400 shrink-0">TERSEDIA</span>';
-                statusDot = '<span class="relative flex h-2 w-2 2xl:h-2.5 2xl:w-2.5 shrink-0" title="TERSEDIA"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 2xl:h-2.5 2xl:w-2.5 bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]"></span></span>';
+                statusDot = '<span class="relative flex h-2 w-2 2xl:h-2.5 2xl:w-2.5 shrink-0" title="TERSEDIA"><span class="relative inline-flex rounded-full h-2 w-2 2xl:h-2.5 2xl:w-2.5 bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]"></span></span>';
             }
 
             return `

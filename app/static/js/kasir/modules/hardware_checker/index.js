@@ -34,7 +34,7 @@ const HardwareChecker = {
         if (isGigabitOrMore) {
             return `<span class="px-1.5 sm:px-2 py-0.5 rounded border border-[#262626] bg-[#121212] text-neutral-300 font-mono font-bold text-[10px] sm:text-[11px] xl:text-xs whitespace-nowrap inline-flex items-center justify-center shrink-0"><span class="sm:hidden">1G</span><span class="hidden sm:inline">1 Gbps</span></span>`;
         } else {
-            return `<span class="px-1.5 sm:px-2 py-0.5 rounded border border-red-950 bg-red-950/40 text-red-400 font-mono font-bold text-[10px] sm:text-[11px] xl:text-xs whitespace-nowrap inline-flex items-center justify-center shrink-0 animate-pulse" title="Kecepatan LAN di bawah 1 Gbps">${this.escapeHtml(displayText)}</span>`;
+            return `<span class="px-1.5 sm:px-2 py-0.5 rounded border border-red-950 bg-red-950/40 text-red-400 font-mono font-bold text-[10px] sm:text-[11px] xl:text-xs whitespace-nowrap inline-flex items-center justify-center shrink-0" title="Kecepatan LAN di bawah 1 Gbps">${this.escapeHtml(displayText)}</span>`;
         }
     },
 
@@ -48,7 +48,7 @@ const HardwareChecker = {
         this.isLoading = true;
 
         const container = document.getElementById('hardware-checker-container');
-        const isShowingSkeleton = container && (container.querySelector('.animate-pulse') !== null || !container.querySelector('.hardware-checker-table'));
+        const isShowingSkeleton = container && (!container.querySelector('.hardware-checker-table') || container.querySelector('.hw-skeleton-row') !== null);
 
         if (container && (isShowingSkeleton || isInitial) && !isSilent) {
             container.innerHTML = `
@@ -75,7 +75,7 @@ const HardwareChecker = {
                         </thead>
                         <tbody class="divide-y divide-[#1c1c1c] bg-[#050505]">
                             ${Array.from({ length: 5 }).map(() => `
-                                <tr class="animate-pulse">
+                                <tr class="hw-skeleton-row">
                                     <td class="px-2 xl:px-4 py-2 xl:py-3.5"><div class="h-4 w-16 bg-[#202020] rounded"></div></td>
                                     <td class="hidden 2xl:table-cell px-3 xl:px-4 py-3.5"><div class="h-5 w-24 bg-[#1a1a1a] rounded"></div></td>
                                     <td class="2xl:hidden px-2 xl:px-3 py-2 xl:py-3.5"><div class="h-4 w-32 bg-[#1a1a1a] rounded"></div></td>
@@ -299,7 +299,7 @@ const HardwareChecker = {
         let hwBadge = '';
         if (isHwMismatch) {
             hwBadge = `
-                <span class="px-2 py-0.5 rounded bg-red-950/80 border border-red-500/80 text-red-200 text-[10px] font-bold uppercase tracking-wider animate-pulse flex items-center gap-1 shrink-0">
+                <span class="px-2 py-0.5 rounded bg-red-950/80 border border-red-500/80 text-red-200 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shrink-0">
                     🚨 Ditukar
                 </span>`;
         } else if (hasBaseline) {
@@ -340,7 +340,7 @@ const HardwareChecker = {
                     isMatched = baselineSpecs.RamSerials.includes(r);
                 }
                 if (!isMatched) {
-                    return `<span class="inline-block bg-red-950/90 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1.5 mb-1.5 font-bold text-[11px] font-mono animate-pulse">🚨 ${this.escapeHtml(r)}</span>`;
+                    return `<span class="inline-block bg-red-950/90 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1.5 mb-1.5 font-bold text-[11px] font-mono">🚨 ${this.escapeHtml(r)}</span>`;
                 }
                 return `<span class="inline-block bg-[#121212] text-purple-300 border border-purple-900/50 px-2 py-0.5 rounded mr-1.5 mb-1.5 font-bold text-[11px] font-mono">🏷️ ${this.escapeHtml(r)}</span>`;
             }).join('');
@@ -354,7 +354,7 @@ const HardwareChecker = {
                     isMatched = baselineSpecs.DiskSerials.includes(d);
                 }
                 if (!isMatched) {
-                    return `<span class="inline-block bg-red-950/90 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1.5 mb-1.5 font-bold text-[11px] font-mono animate-pulse">🚨 ${this.escapeHtml(d)}</span>`;
+                    return `<span class="inline-block bg-red-950/90 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1.5 mb-1.5 font-bold text-[11px] font-mono">🚨 ${this.escapeHtml(d)}</span>`;
                 }
                 return `<span class="inline-block bg-[#121212] text-cyan-300 border border-cyan-900/50 px-2 py-0.5 rounded mr-1.5 mb-1.5 font-bold text-[11px] font-mono">💽 ${this.escapeHtml(d)}</span>`;
             }).join('');
@@ -562,11 +562,11 @@ const HardwareChecker = {
         let hwStatusBadge = '';
         if (isHwMismatch) {
             hwBadge = `
-                <span class="px-1.5 sm:px-2 py-0.5 rounded bg-red-950/80 border border-red-500/80 text-red-200 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider animate-pulse flex items-center gap-0.5 sm:gap-1 shrink-0 whitespace-nowrap" title="🚨 Ditukar">
+                <span class="px-1.5 sm:px-2 py-0.5 rounded bg-red-950/80 border border-red-500/80 text-red-200 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider flex items-center gap-0.5 sm:gap-1 shrink-0 whitespace-nowrap" title="🚨 Ditukar">
                     <span class="sm:hidden">🚨</span><span class="hidden sm:inline">🚨 Ditukar</span>
                 </span>`;
             hwStatusBadge = `
-                <span class="px-2.5 py-1 rounded bg-red-950/80 border border-red-500/80 text-red-200 text-xs font-bold uppercase tracking-wider animate-pulse inline-flex items-center gap-1.5 shadow-sm">
+                <span class="px-2.5 py-1 rounded bg-red-950/80 border border-red-500/80 text-red-200 text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 shadow-sm">
                     🚨 Ditukar
                 </span>`;
         } else if (hasBaseline) {

@@ -80,7 +80,7 @@
                     <tbody id="maintenance-tickets-tbody"
                         class="divide-y divide-[#1c1c1c] text-xs lg:text-[10px] xl:text-[11px] 2xl:text-sm text-neutral-300">
                         {% for _ in range(5) %}
-                        <tr class="border-b border-[#1c1c1c] animate-pulse">
+                        <tr class="border-b border-[#1c1c1c]">
                             <td class="py-1.5 px-2.5"><div class="h-3 bg-[#262626] rounded w-16"></div></td>
                             <td class="py-1.5 px-2.5"><div class="h-3 bg-[#262626] rounded w-40"></div></td>
                             <td class="py-1.5 px-2.5"><div class="h-3 bg-[#1e1e1e] rounded w-24"></div></td>
@@ -112,7 +112,7 @@
 
 <!-- Form Modal: Lapor Masalah Baru -->
 <div id="modal-create-ticket"
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 hidden">
     <div
         class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md p-5 sm:p-6 shadow-2xl relative text-xs lg:max-xl:text-xs xl:text-base max-h-[90vh] overflow-y-auto scrollbar-thin">
         <button onclick="Maintenance.closeCreateModal()"
@@ -180,7 +180,7 @@
 
 <!-- Form Modal: Update Status Tiket -->
 <div id="modal-update-ticket"
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 hidden">
     <div
         class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md p-5 sm:p-6 shadow-2xl relative text-xs lg:max-xl:text-xs xl:text-base max-h-[90vh] overflow-y-auto scrollbar-thin">
         <button onclick="Maintenance.closeUpdateModal()"
@@ -243,7 +243,7 @@
 
 <!-- Modal: Detail View Tiket (2-Column Responsive Layout) -->
 <div id="modal-detail-ticket"
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 hidden">
+    class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
     <div
         class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl shadow-2xl relative flex flex-col max-h-[90vh] overflow-hidden text-xs lg:text-[11px] xl:text-xs 2xl:text-sm">
         <!-- Header -->

@@ -33,8 +33,8 @@
         <!-- 2. Baris Tab Pills Grup Horizontal -->
         <div id="paket-group-tabs" class="flex items-center gap-1.5 2xl:gap-2.5 overflow-x-auto scrollbar-none py-0.5 2xl:py-1">
             <!-- Render pills dinamis: Reguler, VIP, VVIP dll -->
-            <div class="h-7 2xl:h-9 w-20 2xl:w-24 bg-[#161616] rounded animate-pulse"></div>
-            <div class="h-7 2xl:h-9 w-16 2xl:w-20 bg-[#161616] rounded animate-pulse"></div>
+            <div class="h-7 2xl:h-9 w-20 2xl:w-24 bg-[#161616] rounded"></div>
+            <div class="h-7 2xl:h-9 w-16 2xl:w-20 bg-[#161616] rounded"></div>
         </div>
 
         <!-- 3. Kontainer Tabel Paket & Pagination -->
@@ -52,7 +52,7 @@
                     </thead>
                     <tbody class="divide-y divide-[#1a1a1a]">
                         {% for _ in range(5) %}
-                        <tr class="animate-pulse">
+                        <tr class="">
                             <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left"><div class="h-3 2xl:h-4 bg-[#1e1e1e] rounded w-28 sm:w-36 2xl:w-48"></div></td>
                             <td class="px-2 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center"><div class="h-3 2xl:h-4 bg-[#181818] rounded w-14 2xl:w-16 mx-auto"></div></td>
                             <td class="px-2 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center"><div class="h-3 2xl:h-4 bg-[#1e1e1e] rounded w-16 2xl:w-20 mx-auto"></div></td>

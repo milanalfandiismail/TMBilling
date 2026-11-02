@@ -157,7 +157,7 @@ window.BranchInbound = {
                      Diblokir
                    </span>`
                 : `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                      Terhubung
                    </span>`;
 

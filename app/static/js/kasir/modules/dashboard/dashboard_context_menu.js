@@ -20,8 +20,7 @@ Object.assign(window.Dashboard, {
         menu.id = 'pc-context-menu';
         menu.className = [
             'fixed z-[9999] min-w-[200px] py-1.5',
-            'bg-[#141414] border border-[#2a2a2a] rounded-xl shadow-2xl',
-            'animate-in fade-in slide-in-from-top-1 duration-100'
+            'bg-[#141414] border border-[#2a2a2a] rounded-xl shadow-2xl'
         ].join(' ');
 
         // Context Menu khusus untuk Mode SYSTEM (Operasional dinonaktifkan, hanya Clear Sesi & Detail)

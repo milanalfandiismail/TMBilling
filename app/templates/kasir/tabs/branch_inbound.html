@@ -16,7 +16,7 @@
             </div>
             <div class="flex items-center gap-3 shrink-0">
                 <div class="px-4 py-2.5 bg-[#050505] border border-[#1c1c1c] rounded flex items-center gap-2.5 w-full sm:w-auto">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
                     <div>
                         <div class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-neutral-200">Proteksi Aktif</div>
                         <div class="text-[10px] text-neutral-500 font-mono">Bearer Auth Enforced</div>
@@ -91,7 +91,7 @@
                 </thead>
                 <tbody id="inbound-branch-table-body" class="text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-mono block lg:table-row-group divide-y divide-[#2a2a2a] lg:divide-transparent">
                     {% for _ in range(4) %}
-                    <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
+                    <tr class="border-b border-[#1c1c1c] flex flex-col lg:table-row p-3 lg:p-0">
                         <td class="py-3 px-3"><div class="h-3 bg-[#202020] rounded w-16"></div></td>
                         <td class="py-3 px-3"><div class="h-3.5 bg-[#262626] rounded w-32"></div></td>
                         <td class="py-3 px-3"><div class="h-3 bg-[#1e1e1e] rounded w-28"></div></td>
@@ -105,8 +105,8 @@
     </div>
 
     <!-- Modal Konfirmasi Blokir Akses Cabang -->
-    <div id="modal-block-inbound" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto scrollbar-thin animate-modal-in">
+    <div id="modal-block-inbound" class="fixed inset-0 bg-black/85 z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto scrollbar-thin">
             <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-ban"></i>
@@ -147,8 +147,8 @@
     </div>
 
     <!-- Modal Konfirmasi Buka Blokir Akses Cabang -->
-    <div id="modal-unblock-inbound" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto scrollbar-thin animate-modal-in">
+    <div id="modal-unblock-inbound" class="fixed inset-0 bg-black/85 z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto scrollbar-thin">
             <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-lock-open"></i>
@@ -182,8 +182,8 @@
     </div>
 
     <!-- Modal Konfirmasi Hapus Riwayat Cabang Masuk -->
-    <div id="modal-delete-inbound" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto scrollbar-thin animate-modal-in">
+    <div id="modal-delete-inbound" class="fixed inset-0 bg-black/85 z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded w-full max-w-md shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto scrollbar-thin">
             <div class="flex items-center justify-between pb-4 border-b border-[#1c1c1c]">
                 <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-trash"></i>

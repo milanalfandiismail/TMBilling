@@ -131,7 +131,7 @@ window.BranchCore = {
         const iconElem = document.getElementById('branch-selector-icon');
         if (iconElem) {
             if (isRemote) {
-                iconElem.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+                iconElem.className = 'w-2 h-2 rounded-full bg-emerald-400';
             } else {
                 iconElem.className = 'w-2 h-2 rounded-full bg-blue-400';
             }
@@ -303,7 +303,7 @@ window.BranchCore = {
                 titleEl.title = `${branchName} (Remote - Read Only)`;
             }
             if (subTitleEl) {
-                subTitleEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-emerald-400 font-bold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Cabang Remote (Read-Only)</span>`;
+                subTitleEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-emerald-400 font-bold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Cabang Remote (Read-Only)</span>`;
                 subTitleEl.className = 'text-[10px] leading-tight mt-0.5';
             }
             if (badgeContainer) {
@@ -446,7 +446,7 @@ window.BranchCore = {
         // Tampilkan feedback visual & loading overlay saat menguji koneksi
         if (btn) btn.disabled = true;
         if (iconElem) {
-            iconElem.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+            iconElem.className = 'w-2 h-2 rounded-full bg-amber-400';
         }
 
         this.showSwitchLoading(targetBranch.nama, 'Menguji koneksi & verifikasi kunci API cabang...');

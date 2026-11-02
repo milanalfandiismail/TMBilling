@@ -56,7 +56,7 @@ window.DashboardModalHardware = {
         const tempVal = parseFloat(temp);
         if (isNaN(tempVal)) return `<span class="text-neutral-500 font-mono text-xs lg:max-xl:text-xs xl:text-base">${escapeHtml(temp)}</span>`;
         if (tempVal >= 78) {
-            return `<span class="px-2 py-0.5 rounded bg-red-950/80 border border-red-500 text-red-200 font-mono font-black text-xs lg:max-xl:text-xs xl:text-base uppercase animate-pulse shadow-sm shadow-red-950/50 flex items-center gap-1">🔥 ${tempVal}°C (HOT)</span>`;
+            return `<span class="px-2 py-0.5 rounded bg-red-950/80 border border-red-500 text-red-200 font-mono font-black text-xs lg:max-xl:text-xs xl:text-base uppercase shadow-sm shadow-red-950/50 flex items-center gap-1">🔥 ${tempVal}°C (HOT)</span>`;
         }
         if (tempVal >= 65) {
             return `<span class="px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/80 text-amber-300 font-mono font-bold text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1">⚠️ ${tempVal}°C (WARM)</span>`;
@@ -89,7 +89,7 @@ window.DashboardModalHardware = {
         if (isGigabitOrMore) {
             return `<span class="px-2 py-0.5 rounded border border-emerald-500/60 bg-emerald-950/60 text-emerald-300 font-bold font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1 shadow-sm shadow-emerald-950/40">⚡ ${escapeHtml(speed)} (Gigabit OK)</span>`;
         } else {
-            return `<span class="px-2 py-0.5 rounded border border-red-500 bg-red-950/80 text-red-200 font-black font-mono text-xs lg:max-xl:text-xs xl:text-base animate-pulse flex items-center gap-1 shadow-sm shadow-red-950/50">⚠️ ${escapeHtml(speed)} (< 1 Gbps)</span>`;
+            return `<span class="px-2 py-0.5 rounded border border-red-500 bg-red-950/80 text-red-200 font-black font-mono text-xs lg:max-xl:text-xs xl:text-base flex items-center gap-1 shadow-sm shadow-red-950/50">⚠️ ${escapeHtml(speed)} (< 1 Gbps)</span>`;
         }
     },
 
@@ -179,7 +179,7 @@ window.DashboardModalHardware = {
 
         if (isHwMismatch) {
             return `
-                <span class="px-2.5 py-1 rounded bg-red-900/60 border border-red-500 text-red-200 text-[10px] lg:max-xl:text-xs xl:text-xs font-black uppercase tracking-wider animate-pulse flex items-center gap-1 font-mono shadow-sm shadow-red-950/50">
+                <span class="px-2.5 py-1 rounded bg-red-900/60 border border-red-500 text-red-200 text-[10px] lg:max-xl:text-xs xl:text-xs font-black uppercase tracking-wider flex items-center gap-1 font-mono shadow-sm shadow-red-950/50">
                     🚨 Hardware Ditukar / Hilang
                 </span>`;
         } else if (hasBaseline) {
@@ -213,7 +213,7 @@ window.DashboardModalHardware = {
                 isMatched = baselineSpecs.RamSerials.includes(r);
             }
             if (!isMatched) {
-                return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono animate-pulse">🚨 ${escapeHtml(r)} (Tukar!)</span>`;
+                return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">🚨 ${escapeHtml(r)} (Tukar!)</span>`;
             }
             return `<span class="inline-block bg-[#121212] text-purple-300 border border-purple-900/50 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">🏷️ ${escapeHtml(r)}</span>`;
         }).join('');
@@ -237,7 +237,7 @@ window.DashboardModalHardware = {
                 isMatched = baselineSpecs.DiskSerials.includes(d);
             }
             if (!isMatched) {
-                return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono animate-pulse">🚨 ${escapeHtml(d)} (Tukar!)</span>`;
+                return `<span class="inline-block bg-red-950/80 text-red-200 border border-red-500 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">🚨 ${escapeHtml(d)} (Tukar!)</span>`;
             }
             return `<span class="inline-block bg-[#121212] text-cyan-300 border border-cyan-900/50 px-2 py-0.5 rounded mr-1 mb-1 font-bold text-[10px] lg:max-xl:text-xs xl:text-sm font-mono">💽 ${escapeHtml(d)}</span>`;
         }).join('');
@@ -427,7 +427,7 @@ window.DashboardModalHardware = {
         if (isHwMismatch) {
             const cctvWindowDisplay = hwData.hardware_cctv_window || `${hwData.hardware_mismatch_time || '--:--'} (saat booting)`;
             alertBannerHtml += `
-                <div class="p-3.5 sm:p-4 bg-red-950/30 border border-red-500/40 rounded-xl text-xs lg:max-xl:text-xs xl:text-sm text-red-200 space-y-2 shadow-lg shadow-red-950/30 animate-in min-w-0 w-full">
+                <div class="p-3.5 sm:p-4 bg-red-950/30 border border-red-500/40 rounded-xl text-xs lg:max-xl:text-xs xl:text-sm text-red-200 space-y-2 shadow-lg shadow-red-950/30 min-w-0 w-full">
                     <div class="flex items-center justify-between min-w-0">
                         <div class="flex items-center gap-2 font-bold text-red-400 min-w-0">
                             <span class="text-base shrink-0">🚨</span>
@@ -680,7 +680,7 @@ window.DashboardModalHardware = {
 
         const overlay = document.createElement('div');
         overlay.id = confirmOverlayId;
-        overlay.className = 'fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in';
+        overlay.className = 'fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4';
         overlay.innerHTML = `
             <div class="bg-[#0e0e0e] border border-[#262626] rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
                 <div class="flex items-center gap-3">

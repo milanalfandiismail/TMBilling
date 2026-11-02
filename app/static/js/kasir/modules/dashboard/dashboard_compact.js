@@ -238,20 +238,20 @@ const CompactGrid = {
         let borderStyle = `border-color: ${customColor}80`;
 
         if (isKeyMismatch) {
-            cardBgClass = 'animate-pulse-fuchsia-bg';
-            cardBorderClass = 'border';
+            cardBgClass = 'bg-[#26092b]';
+            cardBorderClass = 'border-2 border-fuchsia-500';
             statusIndicator = '[!]';
-            indicatorColorClass = 'text-fuchsia-400 animate-pulse';
+            indicatorColorClass = 'text-fuchsia-400';
 
             timerStr = 'KEY SALAH';
             activeAppName = '🔑 API KEY TIDAK COCOK';
             memberName = pc.ip_address || 'API Key Error';
             borderStyle = '';
         } else if (isLostConnection) {
-            cardBgClass = 'animate-pulse-red-bg';
-            cardBorderClass = 'border';
+            cardBgClass = 'bg-[#2a0b0b]';
+            cardBorderClass = 'border-2 border-red-500';
             statusIndicator = '[!]';
-            indicatorColorClass = 'text-red-500 animate-pulse';
+            indicatorColorClass = 'text-red-500';
 
             timerStr = sesi ? Utils.formatMenit(sesi.sisa_menit) : '--:--';
             activeAppName = '⚠️ TERPUTUS';
@@ -260,8 +260,8 @@ const CompactGrid = {
         } else if (isActive && sesi) {
             if (isAfk) {
                 statusIndicator = '●';
-                indicatorColorClass = 'text-amber-400 animate-pulse';
-                cardBgClass = 'bg-[#1a1308] hover:bg-[#261c0c] border-amber-500/40';
+                indicatorColorClass = 'text-amber-400';
+                cardBgClass = 'bg-[#1a1308] hover:bg-[#261c0c] border border-amber-500/40';
 
                 if (sesi.sisa_menit !== null && sesi.sisa_menit !== undefined) {
                     timerStr = Utils.formatMenit(sesi.sisa_menit);
@@ -327,10 +327,10 @@ const CompactGrid = {
             activeAppName = '-';
         }
 
-        // Jika PC online dan mengalami speed drop NIC (< 1 Gbps / 100M), aktifkan animasi card oranye berdenyut
+        // Jika PC online dan mengalami speed drop NIC (< 1 Gbps / 100M), aktifkan card solid oranye peringatan
         if (isSpeedDrop) {
-            cardBgClass = 'animate-pulse-orange-bg';
-            cardBorderClass = 'border';
+            cardBgClass = 'bg-[#291404]';
+            cardBorderClass = 'border-2 border-amber-500';
             borderStyle = '';
         }
 
@@ -340,7 +340,7 @@ const CompactGrid = {
         const borderAttr = borderStyle ? `style="${borderStyle}"` : '';
         const timerColorClass = isKeyMismatch 
             ? 'text-fuchsia-400 font-bold'
-            : (isAfk ? 'text-amber-400' : (isSystemCard ? 'text-indigo-400' : (isAdminCard ? 'text-amber-400' : (isActive && sesi && sesi.sisa_menit <= 5 ? 'text-red-400 animate-pulse' : 'text-emerald-300'))));
+            : (isAfk ? 'text-amber-400' : (isSystemCard ? 'text-indigo-400' : (isAdminCard ? 'text-amber-400' : (isActive && sesi && sesi.sisa_menit <= 5 ? 'text-red-400 font-bold' : 'text-emerald-300'))));
         // Tipografi dinamis yang fit dan proporsional untuk 8 kolom (lg), 10 kolom (xl), dan 12 kolom (2xl)
         const timerFontSizeClass = timerStr.length > 8 
             ? 'text-[10px] lg:text-[10px] xl:text-[11px] 2xl:text-xs' 
@@ -356,16 +356,16 @@ const CompactGrid = {
         const isSelected = window.DashboardSelection && window.DashboardSelection.isSelected(pc.id);
         const selectionClasses = isSelected ? 'ring-2 ring-indigo-500 border-indigo-400 bg-indigo-950/30' : '';
 
-        // Row 2 styling: Prioritas Mismatch API Key (Fuchsia) -> Terputus (Merah) -> Speed Drop (Oranye) -> AFK -> Judul Proses Normal
+        // Row 2 styling: Solid Pill Badges untuk error / warning, teks biasa untuk status normal
         let row2Html = '';
         if (isKeyMismatch) {
-            row2Html = `<div class="text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs text-fuchsia-400 font-bold truncate mt-0.5 animate-pulse" title="⚠️ API Key Client tidak cocok dengan Server! Cek config.ini pada PC ini.">🔑 KEY TIDAK COCOK</div>`;
+            row2Html = `<div class="mt-0.5"><span class="inline-block px-1.5 py-0.5 rounded bg-fuchsia-600 text-white font-black text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs tracking-wider" title="⚠️ API Key Client tidak cocok dengan Server! Cek config.ini pada PC ini.">🔑 KEY TIDAK COCOK</span></div>`;
         } else if (isLostConnection) {
-            row2Html = `<div class="text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs text-red-400 font-bold truncate mt-0.5 animate-pulse" title="⚠️ TERPUTUS">⚠️ TERPUTUS</div>`;
+            row2Html = `<div class="mt-0.5"><span class="inline-block px-1.5 py-0.5 rounded bg-red-600 text-white font-black text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs tracking-wider" title="⚠️ TERPUTUS">⚠️ TERPUTUS</span></div>`;
         } else if (isSpeedDrop) {
             const displaySpeed = pc.nic_speed || '100 Mbps';
             const tooltipTitle = `⚠️ Kecepatan LAN Drop: ${displaySpeed} (Normal: 1 Gbps) | Proses: ${pc.active_window || '-'}`;
-            row2Html = `<div class="text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs text-amber-400 font-bold truncate mt-0.5 animate-pulse" title="${tooltipTitle}">⚠️ LAN ${displaySpeed}</div>`;
+            row2Html = `<div class="mt-0.5"><span class="inline-block px-1.5 py-0.5 rounded bg-amber-500 text-black font-black text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs tracking-wider" title="${tooltipTitle}">⚠️ LAN ${displaySpeed}</span></div>`;
         } else if (isActive && sesi && isAfk) {
             const afkText = pc.active_window ? `🔒 ${pc.active_window}` : '🔒 AFK / Istirahat';
             row2Html = `<div class="text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs text-amber-400 font-bold truncate mt-0.5" title="${afkText}">${afkText}</div>`;
@@ -374,7 +374,7 @@ const CompactGrid = {
         }
 
         return `
-            <div class="pc-card-item relative ${cardBorderClass} ${cardBgClass} ${cardOpacityClass} ${selectionClasses} rounded-xl p-2 lg:p-2 xl:p-2.5 2xl:p-3 cursor-pointer transition-colors hover:brightness-125 flex flex-col justify-between text-left min-h-[96px] lg:min-h-[102px] xl:min-h-[108px] 2xl:min-h-[120px] h-auto w-full shadow-lg select-none" 
+            <div class="pc-card-item relative ${cardBorderClass} ${cardBgClass} ${cardOpacityClass} ${selectionClasses} rounded-xl p-2 lg:p-2 xl:p-2.5 2xl:p-3 cursor-pointer transition-colors hover:border-neutral-500 flex flex-col justify-between text-left min-h-[96px] lg:min-h-[102px] xl:min-h-[108px] 2xl:min-h-[120px] h-auto w-full shadow-lg select-none" 
                  data-pc-id="${pc.id}"
                  data-pc-kode="${pc.kode}"
                  data-pc-grup="${pc.grup || ''}"
@@ -440,25 +440,25 @@ const CompactGrid = {
             let borderStyle = `border-color: ${customColor}80`;
 
             if (isKeyMismatch) {
-                cardBgClass = 'animate-pulse-fuchsia-bg';
-                cardBorderClass = 'border';
-                indicatorColorClass = 'text-fuchsia-400 animate-pulse';
+                cardBgClass = 'bg-[#26092b]';
+                cardBorderClass = 'border-2 border-fuchsia-500';
+                indicatorColorClass = 'text-fuchsia-400';
                 timerStr = 'KEY SALAH';
                 activeAppName = '🔑 API KEY TIDAK COCOK';
                 memberName = pc.ip_address || 'API Key Error';
                 borderStyle = '';
             } else if (isLostConnection) {
-                cardBgClass = 'animate-pulse-red-bg';
-                cardBorderClass = 'border';
-                indicatorColorClass = 'text-red-500 animate-pulse';
+                cardBgClass = 'bg-[#2a0b0b]';
+                cardBorderClass = 'border-2 border-red-500';
+                indicatorColorClass = 'text-red-500';
                 timerStr = sesi ? Utils.formatMenit(sesi.sisa_menit) : '--:--';
                 activeAppName = '⚠️ TERPUTUS';
                 memberName = sesi ? (sesi.nama_guest || sesi.member_nama || 'Guest') : '';
                 borderStyle = '';
             } else if (isActive && sesi) {
                 if (isAfk) {
-                    indicatorColorClass = 'text-amber-400 animate-pulse';
-                    cardBgClass = 'bg-[#1a1308] hover:bg-[#261c0c] border-amber-500/40';
+                    indicatorColorClass = 'text-amber-400';
+                    cardBgClass = 'bg-[#1a1308] hover:bg-[#261c0c] border border-amber-500/40';
                     timerStr = (sesi.sisa_menit !== null && sesi.sisa_menit !== undefined) ? Utils.formatMenit(sesi.sisa_menit) : 'Unlimited';
                     memberName = sesi.nama_guest || sesi.member_nama || 'Guest';
                     activeAppName = pc.active_window ? `🔒 ${pc.active_window}` : '🔒 AFK / Istirahat';
@@ -512,8 +512,8 @@ const CompactGrid = {
             }
 
             if (isSpeedDrop) {
-                cardBgClass = 'animate-pulse-orange-bg';
-                cardBorderClass = 'border';
+                cardBgClass = 'bg-[#291404]';
+                cardBorderClass = 'border-2 border-amber-500';
                 borderStyle = '';
             }
 
@@ -521,18 +521,18 @@ const CompactGrid = {
             const isAdminCard = !isSystemCard && (pc.is_admin_mode || pc.status === 'admin' || sesi?.tipe === 'admin');
             const timerColorClass = isKeyMismatch 
                 ? 'text-fuchsia-400 font-bold'
-                : (isAfk ? 'text-amber-400' : (isSystemCard ? 'text-indigo-400' : (isAdminCard ? 'text-amber-400' : (isActive && sesi && sesi.sisa_menit <= 5 ? 'text-red-400 animate-pulse' : 'text-emerald-300'))));
+                : (isAfk ? 'text-amber-400' : (isSystemCard ? 'text-indigo-400' : (isAdminCard ? 'text-amber-400' : (isActive && sesi && sesi.sisa_menit <= 5 ? 'text-red-400 font-bold' : 'text-emerald-300'))));
             const timerFontSizeClass = timerStr.length > 8 ? 'text-[10px] lg:text-[10px] xl:text-[11px] 2xl:text-xs' : 'text-[11px] lg:text-xs xl:text-xs 2xl:text-sm';
 
             let row2Html = '';
             if (isKeyMismatch) {
-                row2Html = `<div class="text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs text-fuchsia-400 font-bold truncate mt-0.5 animate-pulse" title="⚠️ API Key Client tidak cocok dengan Server! Cek config.ini pada PC ini.">🔑 KEY TIDAK COCOK</div>`;
+                row2Html = `<div class="mt-0.5"><span class="inline-block px-1.5 py-0.5 rounded bg-fuchsia-600 text-white font-black text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs tracking-wider" title="⚠️ API Key Client tidak cocok dengan Server! Cek config.ini pada PC ini.">🔑 KEY TIDAK COCOK</span></div>`;
             } else if (isLostConnection) {
-                row2Html = `<div class="text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs text-red-400 font-bold truncate mt-0.5 animate-pulse" title="⚠️ TERPUTUS">⚠️ TERPUTUS</div>`;
+                row2Html = `<div class="mt-0.5"><span class="inline-block px-1.5 py-0.5 rounded bg-red-600 text-white font-black text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs tracking-wider" title="⚠️ TERPUTUS">⚠️ TERPUTUS</span></div>`;
             } else if (isSpeedDrop) {
                 const displaySpeed = pc.nic_speed || '100 Mbps';
                 const tooltipTitle = `⚠️ Kecepatan LAN Drop: ${displaySpeed} (Normal: 1 Gbps) | Proses: ${pc.active_window || '-'}`;
-                row2Html = `<div class="text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs text-amber-400 font-bold truncate mt-0.5 animate-pulse" title="${tooltipTitle}">⚠️ LAN ${displaySpeed}</div>`;
+                row2Html = `<div class="mt-0.5"><span class="inline-block px-1.5 py-0.5 rounded bg-amber-500 text-black font-black text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs tracking-wider" title="${tooltipTitle}">⚠️ LAN ${displaySpeed}</span></div>`;
             } else if (isActive && sesi && isAfk) {
                 const afkText = pc.active_window ? `🔒 ${pc.active_window}` : '🔒 AFK / Istirahat';
                 row2Html = `<div class="text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs text-amber-400 font-bold truncate mt-0.5" title="${afkText}">${afkText}</div>`;
@@ -540,17 +540,24 @@ const CompactGrid = {
                 row2Html = `<div class="text-[9px] lg:text-[10px] xl:text-[11px] 2xl:text-xs text-neutral-400 truncate mt-0.5" title="${activeAppName || '-'}">${activeAppName || '-'}</div>`;
             }
 
+            // 1. Timer dirty check
             const timerEl = cardEl.querySelector('.pc-card-timer');
             if (timerEl) {
                 if (timerEl.textContent.trim() !== timerStr) timerEl.textContent = timerStr;
-                timerEl.className = `pc-card-timer ${timerFontSizeClass} font-black font-mono ${timerColorClass} mt-0.5`;
+                const targetTimerClass = `pc-card-timer ${timerFontSizeClass} font-black font-mono ${timerColorClass} mt-0.5`;
+                if (timerEl.className !== targetTimerClass) timerEl.className = targetTimerClass;
             }
 
+            // 2. Row 2 content dirty check
             const row2El = cardEl.querySelector('.pc-card-row2');
             if (row2El) {
-                if (row2El.innerHTML !== row2Html) row2El.innerHTML = row2Html;
+                if (cardEl._lastRow2Html !== row2Html) {
+                    row2El.innerHTML = row2Html;
+                    cardEl._lastRow2Html = row2Html;
+                }
             }
 
+            // 3. User dirty check
             const userEl = cardEl.querySelector('.pc-card-user');
             if (userEl) {
                 if (userEl.textContent.trim() !== memberName) {
@@ -559,21 +566,25 @@ const CompactGrid = {
                 }
             }
 
+            // 4. Status dot dirty check
             const dotEl = cardEl.querySelector('.pc-card-dot');
             if (dotEl) {
-                dotEl.className = `pc-card-dot w-2 h-2 xl:w-2.5 xl:h-2.5 rounded-full ${indicatorColorClass} shrink-0 bg-current`;
+                const targetDotClass = `pc-card-dot w-2 h-2 xl:w-2.5 xl:h-2.5 rounded-full ${indicatorColorClass} shrink-0 bg-current`;
+                if (dotEl.className !== targetDotClass) dotEl.className = targetDotClass;
             }
 
+            // 5. Card container class dirty check
             const isSelected = window.DashboardSelection && window.DashboardSelection.isSelected(pc.id);
             const selectionClasses = isSelected ? 'ring-2 ring-indigo-500 border-indigo-400 bg-indigo-950/30' : '';
-            const targetClassName = `pc-card-item relative ${cardBorderClass} ${cardBgClass} ${cardOpacityClass} ${selectionClasses} rounded-xl p-2 lg:p-2 xl:p-2.5 2xl:p-3 cursor-pointer transition-colors hover:brightness-125 flex flex-col justify-between text-left min-h-[96px] lg:min-h-[102px] xl:min-h-[108px] 2xl:min-h-[120px] h-auto w-full shadow-lg select-none`;
+            const targetClassName = `pc-card-item relative ${cardBorderClass} ${cardBgClass} ${cardOpacityClass} ${selectionClasses} rounded-xl p-2 lg:p-2 xl:p-2.5 2xl:p-3 cursor-pointer transition-colors hover:border-neutral-500 flex flex-col justify-between text-left min-h-[96px] lg:min-h-[102px] xl:min-h-[108px] 2xl:min-h-[120px] h-auto w-full shadow-lg select-none`;
             if (cardEl.className !== targetClassName) {
                 cardEl.className = targetClassName;
             }
-            if (borderStyle) {
-                cardEl.style.borderColor = `${customColor}80`;
-            } else {
-                cardEl.style.borderColor = '';
+
+            // 6. Border color dirty check
+            const targetBorderColor = borderStyle ? `${customColor}80` : '';
+            if (cardEl.style.borderColor !== targetBorderColor) {
+                cardEl.style.borderColor = targetBorderColor;
             }
         });
     },

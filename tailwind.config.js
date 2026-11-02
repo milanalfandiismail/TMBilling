@@ -33,25 +33,8 @@ module.exports = {
                 '24': 'repeat(24, minmax(0, 1fr))',
                 '30': 'repeat(30, minmax(0, 1fr))',
             },
-            keyframes: {
-                'pulse-red-bg': {
-                    '0%, 100%': { backgroundColor: '#161616', borderColor: '#ef4444' },
-                    '50%': { backgroundColor: '#7f1d1d', borderColor: '#b91c1c' },
-                },
-                'pulse-orange-bg': {
-                    '0%, 100%': { backgroundColor: '#161616', borderColor: '#f59e0b' },
-                    '50%': { backgroundColor: '#78350f', borderColor: '#d97706' },
-                },
-                'pulse-fuchsia-bg': {
-                    '0%, 100%': { backgroundColor: '#161616', borderColor: '#d946ef' },
-                    '50%': { backgroundColor: '#4a044e', borderColor: '#c026d3' },
-                }
-            },
-            animation: {
-                'pulse-red-bg': 'pulse-red-bg 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                'pulse-orange-bg': 'pulse-orange-bg 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                'pulse-fuchsia-bg': 'pulse-fuchsia-bg 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            },
+            keyframes: {},
+            animation: {},
         },
     },
     plugins: [],

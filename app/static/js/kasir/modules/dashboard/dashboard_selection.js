@@ -34,7 +34,7 @@ const DashboardSelection = {
         if (document.getElementById('batch-action-toolbar')) return;
         const toolbar = document.createElement('div');
         toolbar.id = 'batch-action-toolbar';
-        toolbar.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[9995] bg-[#111111]/95 backdrop-blur-md border border-[#2a2a2a] rounded-full px-4 py-2 shadow-[0_10px_35px_rgba(0,0,0,0.8)] flex items-center gap-3 hidden animate-in slide-in-from-bottom-3 duration-200';
+        toolbar.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[9995] bg-[#111111] border border-[#2a2a2a] rounded-full px-4 py-2 shadow-[0_10px_35px_rgba(0,0,0,0.8)] flex items-center gap-3 hidden';
         document.body.appendChild(toolbar);
     },
 
@@ -352,7 +352,7 @@ const DashboardSelection = {
 
         toolbar.innerHTML = `
             <div class="flex items-center gap-2.5">
-                <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+                <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
                 <span class="text-xs font-mono font-medium text-neutral-300">
                     <strong class="text-indigo-300 font-bold">${count} PC Terpilih:</strong> ${pcKodeSummary}
                 </span>
@@ -391,7 +391,7 @@ const DashboardSelection = {
 
         const menu = document.createElement('div');
         menu.id = 'pc-context-menu';
-        menu.className = 'fixed z-[9999] w-56 lg:w-60 xl:w-64 max-w-[280px] py-1.5 bg-[#141414] border border-[#2a2a2a] rounded-xl shadow-2xl animate-in fade-in slide-in-from-top-1 duration-100 overflow-hidden select-none';
+        menu.className = 'fixed z-[9999] w-56 lg:w-60 xl:w-64 max-w-[280px] py-1.5 bg-[#141414] border border-[#2a2a2a] rounded-xl shadow-2xl overflow-hidden select-none';
 
         menu.innerHTML = `
             <div class="px-3.5 py-2 border-b border-[#222] mb-1 min-w-0">

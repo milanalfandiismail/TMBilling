@@ -60,7 +60,7 @@ window.ShiftCore = {
                     <div class="px-2.5 py-2 rounded-lg bg-neutral-900/90 border border-[#222] text-xs">
                         <div class="flex items-center justify-between mb-1.5">
                             <div class="flex items-center gap-1.5 min-w-0">
-                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
                                 <span class="text-neutral-200 font-semibold truncate text-[11px]">${Utils.escapeHtml(this.activeShift.kasir_nama || 'Kasir')}</span>
                             </div>
                             <span class="text-[10px] font-mono text-neutral-400">${startTime}</span>
@@ -89,7 +89,7 @@ window.ShiftCore = {
                 <div class="px-2.5 py-2 rounded-lg bg-emerald-950/20 border border-emerald-800/30 text-xs">
                     <div class="flex items-center justify-between mb-1">
                         <div class="flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
                             <span class="text-emerald-400 font-bold text-[11px]">Shift Aktif</span>
                         </div>
                         <span class="text-[10px] font-mono text-neutral-400">${startTime}</span>
@@ -129,7 +129,7 @@ window.ShiftCore = {
             : '-';
 
         const modalHtml = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in">
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden shadow-2xl">
                 <div class="px-6 py-5 border-b border-[#2a2a2a] flex items-center justify-between">
                     <div>
                         <h3 class="text-sm lg:max-xl:text-base xl:text-lg font-bold text-red-400 flex items-center gap-2">
@@ -208,7 +208,7 @@ window.ShiftCore = {
         if (this.activeShift) return;
 
         const modalHtml = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in">
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden shadow-2xl">
                 <div class="px-6 py-5 border-b border-[#2a2a2a]">
                     <h3 class="text-sm lg:max-xl:text-base xl:text-lg font-bold text-neutral-100">Buka Shift Kasir</h3>
                     <p class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-500 mt-1">Masukkan modal awal (uang receh/kembalian) di laci</p>
@@ -271,7 +271,7 @@ window.ShiftCore = {
 
         // HITUNG BUTA — angka pendapatan seharusnya TIDAK ditampilkan
         const modalHtml = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in">
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden shadow-2xl">
                 <div class="px-6 py-5 border-b border-[#2a2a2a]">
                     <div class="flex items-center gap-3 mb-1">
                         <div class="w-8 h-8 rounded-lg bg-amber-900/30 border border-amber-800/40 flex items-center justify-center">
@@ -472,7 +472,7 @@ window.ShiftCore = {
         const isForceClose = (result.catatan || '').includes('[FORCE CLOSE');
 
         const modalHtml = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-lg lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl overflow-hidden shadow-2xl animate-in flex flex-col max-h-[92vh]">
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-lg lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
                 <!-- Header -->
                 <div class="px-4 py-3 lg:px-5 lg:py-3.5 xl:px-6 xl:py-4 border-b border-[#2a2a2a] flex items-center justify-between bg-[#141414] shrink-0">
                     <div>

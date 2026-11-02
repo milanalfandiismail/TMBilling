@@ -44,7 +44,7 @@ const ModalConfirmTambah = {
         `;
 
         const modalDiv = document.createElement('div');
-        modalDiv.className = 'fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-[60] p-4 modal-confirm-overlay';
+        modalDiv.className = 'fixed inset-0 bg-black/85 flex items-center justify-center z-[60] p-4 modal-confirm-overlay';
         modalDiv.innerHTML = html;
         document.body.appendChild(modalDiv);
 

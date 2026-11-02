@@ -281,14 +281,14 @@ window.MenuCatalog = {
             const imgHtml = resolvedImg 
                 ? `<div class="w-full aspect-[4/3] rounded-lg overflow-hidden border border-[#1f1f1f] bg-[#0c0c0c] relative">
                      <img src="${resolvedImg}" alt="${m.nama}" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" loading="lazy">
-                     <span class="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/85 backdrop-blur-sm border border-[#2a2a2a] ${stokColor} rounded text-[9px] font-mono shadow">${stokText}</span>
+                     <span class="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/90 border border-[#2a2a2a] ${stokColor} rounded text-[9px] font-mono shadow">${stokText}</span>
                    </div>`
                 : `<div class="w-full aspect-[4/3] rounded-lg border border-[#1f1f1f] bg-[#090909] flex flex-col items-center justify-center text-neutral-600 relative">
                      <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"></path>
                      </svg>
                      <span class="text-[9px] text-neutral-600 mt-1 font-medium">No Image</span>
-                     <span class="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/85 backdrop-blur-sm border border-[#2a2a2a] ${stokColor} rounded text-[9px] font-mono shadow">${stokText}</span>
+                     <span class="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/90 border border-[#2a2a2a] ${stokColor} rounded text-[9px] font-mono shadow">${stokText}</span>
                    </div>`;
 
             const escapedName = (m.nama || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
