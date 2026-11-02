@@ -34,6 +34,7 @@
 
 ## ✨ Sorotan Fitur Utama (v1.6.5-rc2)
 
+- 🔐 **Zero-Config Out-of-the-Box Security**: Instalasi instan tanpa konfigurasi manual yang rumit. Server otomatis meng-generate `SECRET_KEY` kuat 64-hex persisten ke `.env`, membuat password superadmin acak sekali-pakai (`initial_admin.txt`), auto-generate password VNC unik, dan memproteksi pembaruan sistem via URL Whitelist anti-SSRF.
 - 🌐 **Multi-Branch Control Panel**: Akses, kelola, dan pantau banyak cabang warnet dari satu dashboard terpusat tanpa memerlukan IP publik statis.
 - ⚡ **Multi-PC Selection & Batch Actions (`remoteBatch`)**: Seleksi banyak PC sekaligus (drag select/checkbox) untuk Shutdown, Restart, Kunci, Pindah PC, atau Terapkan Paket promosi secara massal.
 - 🖥️ **TightVNC Remote Control + Dual-Clipboard Sync**: Kendalikan layar, keyboard, dan mouse PC klien langsung dari browser web kasir dengan sinkronisasi clipboard teks dua arah otomatis (Port 5900 Loopback).
@@ -107,7 +108,8 @@ c:\Project GIT\TMBilling
    start.bat
    ```
    > Server otomatis berjalan di background pada port `7015`. Buka browser ke:
-   > **`http://localhost:7015`** *(Login Default: `admin` / `admin123`)*.
+   > **`http://localhost:7015`**  
+   > *(Kredensial Superadmin Awal: Username `admin`, Password acak dicetak di terminal startup dan disimpan pada berkas `initial_admin.txt` di root folder. Harap login dan segera ganti di menu **Manajemen Staff > Akun Kasir & Admin**)*.
 
 4. **Menghentikan Server**:
    ```cmd
@@ -117,6 +119,12 @@ c:\Project GIT\TMBilling
 5. **Cara Pembaruan / Update Versi Server**:
    - **Update Otomatis 1-Klik (Mulai v1.6.5-rc2)**:
      Buka Dashboard Kasir > menu **Pengaturan** > sub-tab **Migrasi & Update**, klik tombol **Cek Pembaruan GitHub**, lalu tekan **Mulai Update 1-Klik**. Sistem otomatis mencadangkan database, mengekstrak rilis baru, menjalankan migrasi skema, dan memulai ulang server tanpa mengunci file.
+   - **Update Cepat via `update.bat`**:
+     Unduh rilis `TMBilling_Server_v<versi>.zip`, lalu jalankan:
+     ```cmd
+     update.bat TMBilling_Server_v1.6.5-rc2.zip
+     ```
+     Atau cukup *drag-and-drop* file ZIP rilis ke file `update.bat`.
    - **Update Manual (Bagi yang memperbarui dari versi terdahulu)**:
      1. Hentikan server dengan menjalankan:
         ```cmd
