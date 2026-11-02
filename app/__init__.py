@@ -15,6 +15,8 @@ Exports:
 from flask import Flask, current_app, redirect, render_template, request, g
 from flask_cors import CORS
 import os
+import secrets
+import string
 
 from flask_migrate import Migrate
 from flask_wtf import CSRFProtect
@@ -285,20 +287,37 @@ def _init_app_context(app):
         except Exception as e:
             app.logger.warning(f"Gagal seed tutorial awal: {e}")
         
-        # Otomatis buat user admin default jika database kosong
+        # Otomatis buat user admin awal jika database kosong
         try:
             from app.models import User
             if User.query.count() == 0:
+                chars = string.ascii_letters + string.digits
+                tmp_pwd = "".join(secrets.choice(chars) for _ in range(12))
+
                 admin = User(
                     username="admin",
                     nama_lengkap="Administrator",
                     role="admin",
                     aktif=True
                 )
-                admin.set_password("admin123")
+                admin.set_password(tmp_pwd)
                 db.session.add(admin)
                 db.session.commit()
-                print("[OK] [TMBilling] Database kosong. Admin default otomatis dibuat (username: admin, password: admin123)")
+
+                try:
+                    os.makedirs(app.instance_path, exist_ok=True)
+                    info_path = os.path.join(app.instance_path, "initial_admin.txt")
+                    with open(info_path, "w", encoding="utf-8") as f:
+                        f.write("=== TMBILLING INITIAL SUPERADMIN CREDENTIALS ===\n")
+                        f.write("Username: admin\n")
+                        f.write(f"Password: {tmp_pwd}\n")
+                        f.write("CATATAN: Harap segera login dan ubah password ini di Dashboard Kasir.\n")
+                        f.write("Berkas ini dapat Anda hapus setelah berhasil login.\n")
+                except Exception as io_err:
+                    app.logger.warning(f"Gagal mencatat initial_admin.txt: {io_err}")
+
+                print(f"[PENTING] [TMBilling] Admin awal dibuat. Username: admin | Password sementara: {tmp_pwd}")
+                print(f"[PENTING] Kredensial telah disimpan di: {os.path.join(app.instance_path, 'initial_admin.txt')}")
         except Exception as e:
             app.logger.error(f"Gagal membuat admin default saat bootstrap: {e}")
 
@@ -361,18 +380,28 @@ def _init_app_context(app):
         except Exception as e:
             app.logger.warning(f"Pengecekan bootstrap skema database: {e}")
 
-def create_app():
+def create_app(config_override=None):
     """Membuat dan mengkonfigurasi instance aplikasi Flask.
     
     Factory pattern digunakan agar aplikasi bisa diinstansiasi
     beberapa kali dengan konfigurasi berbeda (contoh: testing).
     
+    Args:
+        config_override (dict, optional): Dictionary konfigurasi untuk menimpa nilai default.
+
     Returns:
         Flask: Instance aplikasi Flask yang sudah terkonfigurasi lengkap
                dengan semua blueprint, database, dan CORS.
     """
-    app = Flask(__name__, template_folder='templates')
+    instance_path = config_override.get("INSTANCE_PATH") if config_override else None
+    if instance_path:
+        app = Flask(__name__, template_folder='templates', instance_path=instance_path)
+    else:
+        app = Flask(__name__, template_folder='templates')
+
     app.config.from_object(Config)
+    if config_override:
+        app.config.update(config_override)
 
     # Konfigurasi CORS yang lebih ketat
     allowed_origins = os.environ.get('ALLOWED_ORIGINS', '*').split(',')
