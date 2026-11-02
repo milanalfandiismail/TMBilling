@@ -42,6 +42,22 @@ def client(app_context):
     return client
 
 
+@pytest.fixture(autouse=True)
+def cleanup_temp_update(app_context):
+    temp_zip = os.path.join(app_context.instance_path, "temp_update.zip")
+    if os.path.exists(temp_zip):
+        try:
+            os.remove(temp_zip)
+        except Exception:
+            pass
+    yield
+    if os.path.exists(temp_zip):
+        try:
+            os.remove(temp_zip)
+        except Exception:
+            pass
+
+
 def test_parse_version_semver():
     """Uji pembanding versi semver & release candidate."""
     assert _parse_version("v1.6.5-rc2") > _parse_version("v1.6.5-rc1")
@@ -122,6 +138,7 @@ def test_upload_update_valid_zip_launches_updater(client):
     with zipfile.ZipFile(zip_buffer, "w") as zf:
         zf.writestr("run.py", "# entry")
         zf.writestr("app/config.py", "# config")
+        zf.writestr("app/__init__.py", "# init")
     zip_buffer.seek(0)
 
     with patch("app.routes.settings.migration_routes._launch_updater") as mock_launch:
@@ -142,6 +159,7 @@ def test_update_github_launches_updater(client):
     with zipfile.ZipFile(zip_buffer, "w") as zf:
         zf.writestr("run.py", "# entry")
         zf.writestr("app/config.py", "# config")
+        zf.writestr("app/__init__.py", "# init")
     zip_bytes = zip_buffer.getvalue()
 
     mock_resp = MagicMock()

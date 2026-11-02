@@ -255,9 +255,11 @@ def update_github():
         try:
             with zipfile.ZipFile(temp_path, "r") as zf:
                 all_files = zf.namelist()
-                has_run = any(f.replace("\\", "/") == "run.py" for f in all_files)
-                has_app = any(f.replace("\\", "/").startswith("app/") for f in all_files)
-                if has_run and has_app:
+                norm_files = [f.replace("\\", "/") for f in all_files]
+                has_run = any(f == "run.py" for f in norm_files)
+                has_app = any(f.startswith("app/") for f in norm_files)
+                has_config = any(f == "app/config.py" for f in norm_files)
+                if has_run and has_app and has_config:
                     is_valid_structure = True
         except zipfile.BadZipFile:
             _safe_remove_temp(temp_path)
@@ -302,9 +304,11 @@ def upload_update():
         try:
             with zipfile.ZipFile(temp_path, "r") as zf:
                 all_files = zf.namelist()
-                has_run = any(f.replace("\\", "/") == "run.py" for f in all_files)
-                has_app = any(f.replace("\\", "/").startswith("app/") for f in all_files)
-                if has_run and has_app:
+                norm_files = [f.replace("\\", "/") for f in all_files]
+                has_run = any(f == "run.py" for f in norm_files)
+                has_app = any(f.startswith("app/") for f in norm_files)
+                has_config = any(f == "app/config.py" for f in norm_files)
+                if has_run and has_app and has_config:
                     is_valid_structure = True
 
                 for member in all_files:

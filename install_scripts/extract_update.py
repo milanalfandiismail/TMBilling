@@ -38,11 +38,13 @@ def main():
     try:
         with zipfile.ZipFile(temp_zip, "r") as zf:
             all_files = zf.namelist()
-            has_run = any(f.replace("\\", "/") == "run.py" for f in all_files)
-            has_app = any(f.replace("\\", "/").startswith("app/") for f in all_files)
+            norm_files = [f.replace("\\", "/") for f in all_files]
+            has_run = any(f == "run.py" for f in norm_files)
+            has_app = any(f.startswith("app/") for f in norm_files)
+            has_config = any(f == "app/config.py" for f in norm_files)
 
-            if not has_run or not has_app:
-                print("[UPDATER ERROR] ZIP bukan paket rilis TMBilling yang valid.")
+            if not has_run or not has_app or not has_config:
+                print("[UPDATER ERROR] ZIP bukan paket rilis TMBilling yang valid (wajib memuat run.py dan app/config.py).")
                 return 1
 
             skip_prefixes = (".env", "instance/", "backups/", ".git/")
