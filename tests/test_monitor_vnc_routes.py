@@ -83,3 +83,19 @@ def test_kasir_trigger_refresh_processes_endpoint(admin_client):
     assert data["success"] is True
     assert "berhasil dikirim" in data["message"]
 
+
+def test_public_monitor_processes_fallback_ts(admin_client):
+    """Memastikan endpoint /processes/<pc_id> tidak crash saat telemetry RAM kosong (fallback time.time())."""
+    client, pc_id = admin_client
+    from app.services.cache.telemetry_store import ProcessMemoryStore
+    # Bersihkan memori telemetry PC untuk memicu pemanggilan time.time()
+    ProcessMemoryStore.remove(pc_id)
+
+    res = client.get(f"/api/v1/public/monitor/processes/{pc_id}")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["success"] is True
+    assert isinstance(data["last_updated_ts"], int)
+    assert data["last_updated_ts"] > 0
+
+
