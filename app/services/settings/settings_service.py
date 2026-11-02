@@ -148,3 +148,14 @@ class SettingsService:
         key = "tmb_sec_" + secrets.token_hex(24)
         SettingsService.set("branch_api_key", key)
         return key
+
+    @staticmethod
+    def get_or_create_vnc_password():
+        """Mengambil vnc_password atau membuatnya secara otomatis jika belum ada / masih default publik."""
+        import secrets
+        current_pwd = (SettingsService.get("vnc_password") or "").strip()
+        if not current_pwd or current_pwd == "tmbilling123":
+            current_pwd = secrets.token_urlsafe(8)
+            SettingsService.set("vnc_password", current_pwd)
+        return current_pwd
+

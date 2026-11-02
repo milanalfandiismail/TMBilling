@@ -69,7 +69,7 @@ def handle_start_vnc_client(pc_id):
         
         # Cek jika proxy sudah aktif
         active_proxy = VNCClientProxyService.get_proxy(pc.id)
-        vnc_password = SettingsService.get("vnc_password", "") or "tmbilling123"
+        vnc_password = SettingsService.get_or_create_vnc_password()
         
         if active_proxy:
             return jsonify({
