@@ -153,7 +153,7 @@ def test_update_github_launches_updater(client):
          patch("app.routes.settings.migration_routes._launch_updater") as mock_launch:
         res = client.post(
             "/api/v1/kasir/settings/migration/update_github",
-            data=json.dumps({"asset_url": "https://github.com/mock/TMBilling_Server_v1.6.5-rc2.zip"}),
+            data=json.dumps({"asset_url": "https://github.com/milanalfandiismail/TMBilling/releases/download/v1.6.5-rc2/TMBilling_Server_v1.6.5-rc2.zip"}),
             content_type="application/json",
         )
         assert res.status_code == 200
@@ -189,5 +189,25 @@ def test_check_github_update_counts_active_sessions_correctly(client, app_contex
         assert res.status_code == 200
         data = res.get_json()
         assert data["active_sessions_count"] == 1
+
+
+def test_update_github_rejects_ssrf_url(client):
+    """Memastikan URL unduhan yang bukan berasal dari rilis GitHub resmi ditolak (anti-SSRF)."""
+    malicious_urls = [
+        "http://192.168.1.1/admin/reboot",
+        "https://evil-site.com/fake_update.zip",
+        "http://127.0.0.1:5000/api/v1/kasir/settings",
+        "https://github.com/attacker/malicious_repo/releases/download/v1.0/update.zip",
+    ]
+    for bad_url in malicious_urls:
+        res = client.post(
+            "/api/v1/kasir/settings/migration/update_github",
+            data=json.dumps({"asset_url": bad_url}),
+            content_type="application/json"
+        )
+        assert res.status_code == 400
+        data = res.get_json()
+        assert "tidak diizinkan" in data["error"].lower()
+
 
 

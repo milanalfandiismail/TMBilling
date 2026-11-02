@@ -216,6 +216,15 @@ def update_github():
         body = request.get_json(silent=True) or {}
         asset_url = body.get("asset_url")
 
+        ALLOWED_UPDATE_ORIGINS = (
+            "https://github.com/milanalfandiismail/",
+            "https://objects.githubusercontent.com/",
+        )
+        if asset_url:
+            clean_url = asset_url.strip()
+            if not any(clean_url.startswith(origin) for origin in ALLOWED_UPDATE_ORIGINS):
+                return jsonify({"error": "URL unduhan tidak diizinkan. Hanya domain rilis resmi GitHub yang diperbolehkan."}), 400
+
         if not asset_url:
             url = "https://api.github.com/repos/milanalfandiismail/TMBilling/releases/latest"
             req = urllib.request.Request(url, headers={"User-Agent": "TMBilling-Update-Check"})
