@@ -161,3 +161,33 @@ def test_update_github_launches_updater(client):
         assert data["success"] is True
         mock_launch.assert_called_once()
 
+
+def test_check_github_update_counts_active_sessions_correctly(client, app_context):
+    """Memastikan check_github menghitung sesi aktif dengan status lowercase 'aktif'."""
+    with app_context.app_context():
+        from app.models import PC, Grup, Sesi
+        grup = Grup(nama="regular_update_test")
+        db.session.add(grup)
+        db.session.commit()
+        pc = PC(kode="PC-TEST-99", ip_address="192.168.1.240", mac_address="AA:BB:CC:DD:EE:88", grup_id=grup.id)
+        db.session.add(pc)
+        db.session.commit()
+        sesi = Sesi(pc_id=pc.id, status="aktif", tipe="postpaid")
+        db.session.add(sesi)
+        db.session.commit()
+
+    mock_resp = MagicMock()
+    mock_resp.status = 200
+    mock_resp.read.return_value = json.dumps({
+        "tag_name": "v1.6.5-rc2",
+        "assets": []
+    }).encode("utf-8")
+    mock_resp.__enter__.return_value = mock_resp
+
+    with patch("urllib.request.urlopen", return_value=mock_resp):
+        res = client.get("/api/v1/kasir/settings/migration/check_github")
+        assert res.status_code == 200
+        data = res.get_json()
+        assert data["active_sessions_count"] == 1
+
+

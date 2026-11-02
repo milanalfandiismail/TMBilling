@@ -185,7 +185,7 @@ def check_github_update():
                 server_asset = asset
                 break
 
-        active_sessions = Sesi.query.filter_by(status="AKTIF").count()
+        active_sessions = Sesi.query.filter_by(status="aktif").count()
 
         return jsonify({
             "success": True,
