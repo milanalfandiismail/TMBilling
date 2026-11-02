@@ -7,6 +7,8 @@ import zipfile
 from datetime import datetime
 
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
 instance_dir = os.path.join(root_dir, "instance")
 temp_zip = os.path.join(instance_dir, "temp_update.zip")
 backups_dir = os.path.join(root_dir, "backups")

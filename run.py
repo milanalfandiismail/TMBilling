@@ -116,7 +116,8 @@ if __name__ == "__main__":
     # Mode produksi menggunakan Waitress jika DEBUG_MODE = False
     is_debug = app.config.get("DEBUG_MODE", False)
     if is_debug:
-        app.run(debug=True, host=server_host, port=server_port)
+        is_gui = "pythonw" in sys.executable.lower()
+        app.run(debug=True, host=server_host, port=server_port, use_reloader=not is_gui)
     else:
         # Menjalankan server dalam mode produksi menggunakan Waitress (direkomendasikan untuk Windows)
         # Mengambil konfigurasi threads dari app.config (default: 8)

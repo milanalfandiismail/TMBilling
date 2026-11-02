@@ -87,15 +87,20 @@ echo ==========================================================
 echo   INSTALASI SELESAI!
 echo ==========================================================
 echo.
-echo   Informasi Login Default:
+echo   Informasi Login Superadmin Awal:
 echo     Username : admin
-echo     Password : admin123
+if exist initial_admin.txt (
+    type initial_admin.txt
+) else (
+    echo     Password acak telah dibuat di berkas: initial_admin.txt
+)
 echo.
 echo   Langkah selanjutnya:
-echo     1. Edit file .env jika perlu menyesuaikan konfigurasi
-echo     2. Jalankan "start.bat" untuk menyalakan server kasir
-echo     3. Buka browser ke http://localhost:7015
+echo     1. Simpan password acak dari berkas "initial_admin.txt"
+echo     2. Edit file .env jika perlu menyesuaikan konfigurasi
+echo     3. Jalankan "start.bat" untuk menyalakan server kasir
+echo     4. Buka browser ke http://localhost:7015
+echo     5. Login lalu ubah password di menu: Manajemen Staff ^> Akun Kasir ^& Admin
 echo.
-echo   PENTING: Ganti password admin setelah login pertama!
 echo ==========================================================
 pause

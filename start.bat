@@ -1,6 +1,7 @@
 @echo off
 title TMBilling Server
 color 0A
+cd /d "%~dp0"
 
 if not exist .venv goto :no_venv
 if not exist .env goto :no_env
@@ -19,7 +20,7 @@ echo     http://localhost:7015
 echo.
 echo   Untuk menghentikan server, jalankan stop.bat
 echo ==========================================================
-timeout /t 4 >nul
+timeout /t 4 /nobreak >nul 2>&1 || ping 127.0.0.1 -n 4 >nul
 goto :eof
 
 :no_venv

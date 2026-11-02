@@ -15,11 +15,11 @@ if not exist "instance\temp_update.zip" (
 )
 
 :: 2. Beri jeda 2 detik agar respon HTTP 200 sampai ke browser kasir
-timeout /t 2 /nobreak >nul
+timeout /t 2 /nobreak >nul 2>&1 || ping 127.0.0.1 -n 2 >nul
 
 :: 3. Matikan paksa proses server python agar file lock dan port 7015 terlepas
 taskkill /f /im pythonw.exe >nul 2>&1
-timeout /t 1 /nobreak >nul
+timeout /t 1 /nobreak >nul 2>&1 || ping 127.0.0.1 -n 1 >nul
 
 :: 4. Jalankan ekstraksi aman, backup database, dan migrasi skema
 if exist ".venv\Scripts\python.exe" (
