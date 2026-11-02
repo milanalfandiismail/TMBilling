@@ -8,12 +8,58 @@ Semua parameter bisa di-override via environment variables.
 """
 
 import os
+import re
+import secrets
 from dotenv import load_dotenv
 
 # Load .env from current working directory first
 load_dotenv()
 # Also load/override from the app directory relative to this config file
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
+
+
+def get_or_create_secret_key(env_path=None) -> str:
+    """Mengambil SECRET_KEY dari env, atau meng-generate kunci acak aman dan menyimpannya ke .env."""
+    target_env = env_path or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+    INSECURE_DEFAULT = "tm-billing-secret-key-default-2026"
+
+    # Jika file target_env sudah ada, baca kuncinya
+    if env_path and os.path.exists(target_env):
+        with open(target_env, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("SECRET_KEY="):
+                    val = line.split("=", 1)[1].strip().strip('"').strip("'")
+                    if val and val != INSECURE_DEFAULT:
+                        return val
+
+    # Jika env_path default, cek os.environ terlebih dahulu
+    if not env_path:
+        current_key = os.environ.get("SECRET_KEY", "").strip()
+        if current_key and current_key != INSECURE_DEFAULT:
+            return current_key
+
+    new_key = secrets.token_hex(32)
+
+    try:
+        if os.path.exists(target_env):
+            with open(target_env, "r", encoding="utf-8") as f:
+                content = f.read()
+            if "SECRET_KEY=" in content:
+                content = re.sub(r"SECRET_KEY=.*", f"SECRET_KEY={new_key}", content)
+            else:
+                content += f"\nSECRET_KEY={new_key}\n"
+        else:
+            content = f"SECRET_KEY={new_key}\n"
+
+        with open(target_env, "w", encoding="utf-8") as f:
+            f.write(content)
+        if not env_path:
+            os.environ["SECRET_KEY"] = new_key
+    except Exception:
+        if not env_path:
+            os.environ["SECRET_KEY"] = new_key
+
+    return new_key
 
 
 class Config:
@@ -29,7 +75,7 @@ class Config:
         DEBUG_MODE (bool): Flag mode debug aplikasi.
     """
     
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'tm-billing-secret-key-default-2026')
+    SECRET_KEY = get_or_create_secret_key()
     import sys
     _is_testing = (
         "pytest" in sys.modules
