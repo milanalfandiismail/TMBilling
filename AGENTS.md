@@ -49,8 +49,8 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 ### 2. Backend Server (`app/`)
 
 #### A. Konfigurasi & Inisialisasi
-- `app/config.py`: **Single Source of Version Truth** (`VERSION = "1.6.5-rc2"`), konfigurasi database SQLite, session lifetime, dan environment loader.
-- `app/__init__.py`: Application Factory (`create_app()`), inisialisasi CORS, custom `TMBillingCSRFProtect`, Flask-Migrate, dan pendaftaran 31 blueprint.
+- `app/config.py`: **Single Source of Version Truth** (`VERSION = "1.6.5-rc2"`), dynamic random `SECRET_KEY` generator with write-through `.env` persistence, konfigurasi database SQLite, session lifetime, dan environment loader.
+- `app/__init__.py`: Application Factory (`create_app(config_override=None)`), inisialisasi CORS, custom `TMBillingCSRFProtect`, Flask-Migrate, bootstrap superadmin acak unik (`initial_admin.txt`), dan pendaftaran 31 blueprint.
 
 #### B. Model ORM SQLAlchemy (`app/models/` — 18 Sub-Domain)
 | Subfolder Model | Model SQLAlchemy & Entitas Data |
@@ -133,7 +133,7 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/report/`: Kompilasi laporan keuangan harian/bulanan kasir.
 - `services/server_monitor/`: Sensor telemetri performa mesin server utama.
 - `services/sesi/`: Engine kalkulasi tarif per menit, sisa waktu billing, dan refund saldo.
-- `services/settings/`: Cache write-through pengaturan aplikasi.
+- `services/settings/`: Cache write-through pengaturan aplikasi, generator `branch_api_key`, dan auto-generator random `vnc_password`.
 - `services/shift/`: Verifikasi selisih uang kas fisik kasir (blind reconciliation).
 - `services/tournament/`: Engine pairing babak dan alur skor turnamen eSports.
 - `services/transaksi/`: Pencatatan buku besar transaksi pembayaran.
@@ -223,7 +223,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 |---|---|---|---|
 | **Blackout Recovery** | `modules/blackout.js` | `routes/blackout/`, `services/blackout/` | `Sesi`, `PCUptimeLog` |
 | **Process Monitor & Task Killer** | `modules/dashboard/dashboard_process_monitor.js` | `routes/monitor/monitor_routes.py`, `services/cache/telemetry_store.py` | `PCProcess`, in-memory store |
-| **VNC Remote Control & Clipboard** | `modules/remote.js`, `core/vnc_client.js` | `routes/vnc/vnc_routes.py`, `services/vnc/` | `PC`, `Branch` |
+| **VNC Remote Control & Clipboard** | `modules/remote.js`, `core/vnc_client.js` | `routes/vnc/vnc_routes.py`, `services/vnc/`, `services/settings/` (random VNC password) | `PC`, `Branch`, `Settings` |
 | **POS Kantin & Billing FnB** | `modules/menu.js`, `modules/struk.js` | `routes/menu/menu_routes.py`, `services/menu/` | `MenuItem`, `TransaksiMenu` |
 | **Hardware Baseline Anti-Maling** | `modules/hardware_checker.js` | `routes/monitor/monitor_routes.py`, `routes/hardware/`, `services/hardware/` | `HardwareMonitor` |
 | **Shift Kasir (Blind Cash)** | `modules/shift.js` | `routes/shift/shift_routes.py`, `services/shift/` | `ShiftRecord`, `Transaksi` |
@@ -233,7 +233,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **CMS Artikel & Tutorial** | `modules/tutorials.js` | `routes/tutorial/`, `services/tutorial/` | `SystemTutorial` |
 | **MikroTik Bandwidth QoS** | `modules/mikrotik.js` | `routes/mikrotik/`, `services/mikrotik/` | `MikroTikConfig` |
 | **Turnamen eSports & Bracket** | `modules/tournament.js` | `routes/tournament/`, `services/tournament/` | `Tournament`, `TournamentMatch` |
-| **Auto-Update & Migrasi Skema** | `modules/settings/migration.js` | `routes/settings/migration_routes.py`, `install_scripts/updater.bat` | Alembic skema, SQLite backups |
+| **Auto-Update & Migrasi Skema** | `modules/settings/migration.js` | `routes/settings/migration_routes.py` (anti-SSRF whitelist & active session count), `install_scripts/updater.bat` | Alembic skema, SQLite backups |
 | **Client Security & API Key Guard** | `modules/dashboard/dashboard_compact.js` | `routes/auth/auth_routes.py`, `routes/client/client_routes.py` | `PC`, `ApiKeyMismatchStore` |
 
 ---
