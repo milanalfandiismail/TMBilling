@@ -49,6 +49,7 @@ tmp/
 # Environment variables and secrets
 .env
 .flaskenv
+initial_admin.txt
 
 # Testing and coverage
 .pytest_cache/

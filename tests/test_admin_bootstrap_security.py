@@ -13,6 +13,7 @@ def test_bootstrap_admin_never_uses_hardcoded_admin123(tmp_path):
         "TESTING": True,
         "SQLALCHEMY_DATABASE_URI": f"sqlite:///{test_db}",
         "INSTANCE_PATH": str(test_instance),
+        "PROJECT_ROOT": str(tmp_path),
     })
 
     with app.app_context():
@@ -21,7 +22,7 @@ def test_bootstrap_admin_never_uses_hardcoded_admin123(tmp_path):
         assert admin is not None
         assert not admin.check_password("admin123")
         
-        info_file = test_instance / "initial_admin.txt"
+        info_file = tmp_path / "initial_admin.txt"
         assert info_file.exists()
         content = info_file.read_text(encoding="utf-8")
         assert "Username: admin" in content

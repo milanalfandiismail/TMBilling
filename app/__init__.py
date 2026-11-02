@@ -305,8 +305,8 @@ def _init_app_context(app):
                 db.session.commit()
 
                 try:
-                    os.makedirs(app.instance_path, exist_ok=True)
-                    info_path = os.path.join(app.instance_path, "initial_admin.txt")
+                    project_root = app.config.get("PROJECT_ROOT") or os.path.abspath(os.path.join(app.root_path, ".."))
+                    info_path = os.path.join(project_root, "initial_admin.txt")
                     with open(info_path, "w", encoding="utf-8") as f:
                         f.write("=== TMBILLING INITIAL SUPERADMIN CREDENTIALS ===\n")
                         f.write("Username: admin\n")
@@ -317,7 +317,7 @@ def _init_app_context(app):
                     app.logger.warning(f"Gagal mencatat initial_admin.txt: {io_err}")
 
                 print(f"[PENTING] [TMBilling] Admin awal dibuat. Username: admin | Password sementara: {tmp_pwd}")
-                print(f"[PENTING] Kredensial telah disimpan di: {os.path.join(app.instance_path, 'initial_admin.txt')}")
+                print(f"[PENTING] Kredensial telah disimpan di: {os.path.join(project_root, 'initial_admin.txt')}")
         except Exception as e:
             app.logger.error(f"Gagal membuat admin default saat bootstrap: {e}")
 
