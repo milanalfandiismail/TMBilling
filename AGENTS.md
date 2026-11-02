@@ -23,6 +23,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `build_and_deploy.bat` | Skrip batch Windows untuk kompilasi otomatis seluruh biner klien (Rust/C#) dan build aset CSS. |
 | `developer_install.bat` | Skrip instalasi cepat virtual environment Python, dependencies pip, dan node modules. |
 | `install.bat` | Skrip instalasi server produksi untuk pengguna akhir. |
+| `update.bat` | Runner batch Windows mandiri di root direktori untuk pembaruan manual aplikasi via CLI atau drag-and-drop berkas ZIP rilis. |
 | `start.bat` & `stop.bat` | Skrip otomasi start/stop background service server pada Windows. |
 | `package.json` | Konfigurasi npm, devDependencies (TailwindCSS 3.4, Tauri CLI), dan skrip build vendor/CSS. |
 | `requirements.txt` | Daftar pustaka Python backend (Flask 3.1.3, SQLAlchemy 2.0, APScheduler, Waitress, dll). |
@@ -50,7 +51,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 
 #### A. Konfigurasi & Inisialisasi
 - `app/config.py`: **Single Source of Version Truth** (`VERSION = "1.6.5-rc2"`), dynamic random `SECRET_KEY` generator with write-through `.env` persistence, konfigurasi database SQLite, session lifetime, dan environment loader.
-- `app/__init__.py`: Application Factory (`create_app(config_override=None)`), inisialisasi CORS, custom `TMBillingCSRFProtect`, Flask-Migrate, bootstrap superadmin acak unik (`initial_admin.txt`), dan pendaftaran 31 blueprint.
+- `app/__init__.py`: Application Factory (`create_app(config_override=None)`), inisialisasi CORS, custom `TMBillingCSRFProtect`, Flask-Migrate, bootstrap superadmin acak unik (`initial_admin.txt` di root direktori), dan pendaftaran 31 blueprint.
 
 #### B. Model ORM SQLAlchemy (`app/models/` — 18 Sub-Domain)
 | Subfolder Model | Model SQLAlchemy & Entitas Data |
