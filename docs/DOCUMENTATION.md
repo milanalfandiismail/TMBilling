@@ -53,6 +53,7 @@
    - [4.30 Arsitektur Proteksi Triple-Layer Session Expiry & Heartbeat](#430-arsitektur-proteksi-triple-layer-session-expiry--heartbeat)
    - [4.31 Standardized Skeleton Loader Engine v1.6.3 di Seluruh Tab Kasir](#431-standardized-skeleton-loader-engine-v163-di-seluruh-tab-kasir)
    - [4.32 In-Place Reactive Rerender & Zero Page Reload Engine](#432-in-place-reactive-rerender--zero-page-reload-engine)
+   - [4.33 Zero-Config Security & Credential Bootstrap Architecture](#433-zero-config-security--credential-bootstrap-architecture)
 5. [Panduan Teknis Backend (Flask & Python)](#5-panduan-teknis-backend-flask--python)
    - [5.1 Daftar Blueprint & Routing (31 Blueprint)](#51-daftar-blueprint--routing)
    - [5.2 Service Layer & Pola Arsitektur (41 Service Classes)](#52-service-layer--pola-arsitektur)
@@ -280,6 +281,7 @@ c:\Project GIT\TMBilling
 - **WebSocket RFB Proxy**: Backend Flask meneruskan binary frame RFB ke canvas HTML5 di dashboard (`vnc_client.js`).
 - **Bi-directional Clipboard Sync**: Teks yang disalin di browser kasir otomatis terkirim ke clipboard Windows PC klien, dan sebaliknya teks yang disalin di PC klien disinkronkan ke browser kasir via channel WebSocket.
 - **Auto-Firewall & Fail-Fast Multiplexing**: Skrip `allow_firewall.bat` memastikan port TightVNC diizinkan oleh Windows Firewall, dan mekanisme multiplexing token mencegah tabrakan sesi VNC antar kasir.
+- **Auto-Generated Random VNC Password**: Sistem secara otomatis meng-generate password acak 8 karakter saat pertama kali dijalankan jika belum dikonfigurasi di tabel settings (`SettingsService.get_or_create_vnc_password`), menggantikan ketergantungan pada password default statis demi keamanan jaringan LAN.
 
 ### 4.4 Blackout Auto-Recovery System (Toleransi Mati Lampu & Uptime Tracker)
 - **Deskripsi**: Proteksi otomatis terhadap pemadaman listrik (*blackout*) mendadak di warnet.
@@ -531,6 +533,22 @@ c:\Project GIT\TMBilling
 - **Deskripsi**: Mekanisme pembaruan UI dashboard secara reaktif di tempat tanpa melakukan `location.reload()` browser secara penuh saat terjadi perubahan struktur PC.
 - **Deteksi Struktur (`_hasStructureChanged`)**: Membandingkan jumlah PC, ID PC, nama unit, dan koordinat denah untuk menentukan apakah denah perlu dibangun ulang atau cukup memperbarui status indikator live.
 - **Keuntungan**: Mencegah kedipan layar (*screen flicker*), mempertahankan state input kasir, dan menghemat konsumsi bandwidth lokal.
+
+### 4.33 Zero-Config Security & Credential Bootstrap Architecture
+- **Filosofi**: Memberikan perlindungan keamanan maksimal pada instalasi warnet baru secara *out-of-the-box* tanpa menuntut keahlian konfigurasi rumit dari operator.
+- **Auto-Generated Persistent `SECRET_KEY`**:
+  - Saat startup pertama, jika `.env` belum memiliki `SECRET_KEY` atau masih menggunakan nilai insecure default, sistem otomatis meng-generate string heksadesimal acak 64-karakter menggunakan `secrets.token_hex(32)`.
+  - Kunci ini langsung ditulis persisten ke berkas `.env` lokal untuk menjamin integritas sesi cookie kasir.
+- **Superadmin Password Randomizer & Root Storage**:
+  - Pada pembuatan database awal (tabel `user` kosong), sistem meng-generate password acak 12-karakter alfanumerik unik via `secrets.choice()`.
+  - Kredensial dicetak ke terminal dan disimpan ke berkas satu-kali-pakai `initial_admin.txt` di root direktori.
+  - Berkas `initial_admin.txt` otomatis dilindungi oleh `.gitignore` agar tidak sengaja ter-commit ke repositori publik.
+  - Operator diarahkan untuk mengganti password di menu **Manajemen Staff > Akun Kasir & Admin**.
+- **Dynamic Random VNC Password**:
+  - Pengaturan password VNC otomatis di-generate acak 8 karakter (`secrets.token_urlsafe(8)`) saat pertama kali diakses jika belum disetel di tabel database settings.
+- **Anti-SSRF Protection & Active Session Guard**:
+  - Endpoint updater `/api/v1/kasir/settings/migration/update_github` membatasi domain unduhan secara ketat hanya pada domain resmi GitHub (`https://github.com/milanalfandiismail/` dan `https://objects.githubusercontent.com/`).
+  - Indikator pembaruan mendeteksi jumlah sesi bermain aktif (`status="aktif"`) sebelum proses update dijalankan.
 
 ---
 
