@@ -194,10 +194,10 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 ### 5. Frontend Dashboard Kasir (`app/static/` & `app/templates/`)
 
 #### A. Modular ES6 JavaScript (`app/static/js/kasir/`)
-- `app.js`: Entry point inisialisasi aplikasi kasir, event delegation, dan routing tab.
+- `app.js`: Entry point inisialisasi aplikasi kasir, event delegation, dan routing 32 tab.
 - `core/api.js`: Klien HTTP REST terpusat dengan penanganan CSRF otomatis dan error reporting.
 - `core/modal.js`: Pengendali modal dialog modular.
-- `core/skeleton.js`: Standardized animated skeleton loader untuk 26 tab tampilan.
+- `core/skeleton.js`: Standardized animated skeleton loader untuk 32 tab tampilan.
 - `core/toast.js`: Sistem notifikasi toast floating modern.
 - `core/utils.js`: Formatter mata uang Rupiah, kalkulator waktu, dan escape HTML sanitizer.
 - `components/modal-buka.js`: Modal alur pembukaan sesi baru meja PC (Prepaid/Postpaid/Member).
@@ -208,11 +208,12 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 
 #### B. Template Jinja2 HTML (`app/templates/`)
 - `templates/kasir/base.html`: Shell induk HTML dashboard kasir, deklarasi CSS/JS dan meta CSRF.
-- `templates/kasir/index.html`: Kontainer view 26 tab modular kasir.
+- `templates/kasir/index.html`: Kontainer view 32 tab modular kasir.
 - `templates/kasir/login.html`: Halaman login kasir dan administrator.
+- `templates/kasir/documentation.html`: Portal internal dokumentasi interaktif & CMS tutorial sistem (`/kasir/documentation`).
 - `templates/kasir/components/`: Partisi navbar (`navbar.html`), sidebar (`sidebar.html`, `sidebar_admin.html`, `sidebar_kasir.html`), dan modal induk (`modals.html`).
-- `templates/kasir/tabs/`: 32 Tampilan tab independen (`dashboard.html`, `menu.html`, `member.html`, `shift_history.html`, `fileexplorer.html`, `blackout.html`, dll).
-- `templates/public/`: Halaman publik billboard TV (`tv/`), live scoreboard game (`livepc/`), portal member kiosk (`member/`), dan landing page info billing (`landing/`).
+- `templates/kasir/tabs/`: 32 Tampilan tab independen lengkap (`dashboard.html`, `pc.html`, `grup.html`, `paket.html`, `menu.html`, `menu_stock_log.html`, `laporan_menu.html`, `member.html`, `monitor.html`, `hardware_checker.html`, `uptime.html`, `screenshot.html`, `maintenance.html`, `laporan_maintenance.html`, `shift_history.html`, `catatan.html`, `tournament.html`, `game.html`, `fileexplorer.html`, `remote_server.html`, `branch.html`, `branch_inbound.html`, `branch_kasir.html`, `user.html`, `user_logs.html`, `log.html`, `laporan.html`, `struk.html`, `blackout.html`, `mikrotik.html`, `analytics.html`, `settings.html`).
+- `templates/public/`: 7 Halaman portal publik (`landing/` info billing, `tv/` billboard display, `livepc/` live scoreboard, `member/` kiosk login & dashboard, `game/` katalog game, `paket/` daftar tarif, `specs/` spesifikasi PC).
 
 ---
 
@@ -236,6 +237,15 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Turnamen eSports & Bracket** | `modules/tournament.js` | `routes/tournament/`, `services/tournament/` | `Tournament`, `TournamentMatch` |
 | **Auto-Update & Migrasi Skema** | `modules/settings/migration.js` | `routes/settings/migration_routes.py` (anti-SSRF whitelist & active session count), `install_scripts/updater.bat` | Alembic skema, SQLite backups |
 | **Client Security & API Key Guard** | `modules/dashboard/dashboard_compact.js` | `routes/auth/auth_routes.py`, `routes/client/client_routes.py` | `PC`, `ApiKeyMismatchStore` |
+| **Katalog Game & Crop Cover** | `modules/game/` | `routes/game/game_routes.py`, `services/game/` | `Game`, `GameKategori` |
+| **Tiket Servis & Perawatan PC** | `modules/maintenance/`, `modules/laporan_maintenance/` | `routes/maintenance/maintenance_routes.py`, `services/maintenance/` | `MaintenanceTicket` |
+| **Uptime Tracker Meja PC** | `modules/uptime.js` | `routes/pc/pc_routes.py`, `services/cache/uptime_store.py` | `PCUptimeLog` |
+| **Owner Analytics & Tren** | `modules/owner.js` | `routes/report/`, `services/owner/` | `Transaksi`, `Sesi` |
+| **Member, Saldo, & Refill** | `modules/member/` | `routes/member/member_routes.py`, `services/member/` | `Member` |
+| **Paket Billing Jam-Jaman** | `modules/paket/` | `routes/paket/paket_routes.py`, `services/paket/` | `Paket` |
+| **Staff Kasir/Admin & RBAC** | `modules/user/` | `routes/user/user_routes.py`, `services/user/` | `User`, `AuditLog` |
+| **Screenshot Monitor PC** | `modules/screenshot.js` | `routes/monitor/screenshot_routes.py`, `services/cache/telemetry_store.py` | In-memory store |
+| **Server Health Telemetry** | `modules/server_monitor.js` | `routes/server_monitor/`, `services/server_monitor/` | Host sensors |
 
 ---
 
@@ -261,6 +271,9 @@ python run.py
 
 # Kompilasi ulang seluruh biner deploy klien & server
 build_and_deploy.bat
+
+# Eksekusi Comprehensive E2E Playwright Suite (32 Tab, Subtabs, 58+ Modals, Full CRUD)
+# via MCP Playwright tool browser_run_code_unsafe dengan tests/playwright_e2e_full_suite.js
 ```
 
 ---
