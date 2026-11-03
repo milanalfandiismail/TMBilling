@@ -2,7 +2,7 @@
 """Modul utilitas validasi terpusat untuk TMBilling.
 
 Menyediakan fungsi validasi dan sanitasi input pengguna untuk
-seluruh modul sistem (User, Member, PC, Grup, Paket, Menu, Sesi, Branch).
+seluruh modul sistem (User, Member, PC, Grup, Paket, Menu, Sesi).
 """
 
 import re

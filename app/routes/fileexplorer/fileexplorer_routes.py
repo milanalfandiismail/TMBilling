@@ -12,9 +12,7 @@ def admin_required():
 def enforce_admin_and_local():
     if not admin_required():
         return jsonify({"success": False, "error": "Akses Ditolak: Hanya Admin yang dapat mengakses File Explorer"}), 403
-    branch_id = request.headers.get("X-Branch-ID")
-    if branch_id and branch_id not in ("0", "null", "undefined", ""):
-        return jsonify({"success": False, "error": "File Explorer hanya tersedia untuk server cabang lokal"}), 400
+
 
 @fileexplorer_api_bp.route("/roots", methods=["GET"])
 def get_roots():

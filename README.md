@@ -28,14 +28,14 @@
 **TMBilling** adalah solusi manajemen operasional terpadu untuk warnet, cybercafe, dan arena esports modern. Dirancang dengan arsitektur **3-Layer Separation of Concerns (SoC)** yang tangguh, sistem ini mengintegrasikan server billing kasir, kasir kantin/FnB terpadu, kendali jarak jauh (remote control TightVNC berbasis web), monitoring hardware baseline anti-maling, dan pertahanan klien 5-lapis (*5-Layer Anti-Tamper Security*).
 
 > 📚 **Dokumentasi Lengkap (Single Source of Truth):**  
-> Untuk panduan arsitektur mendalam, 28 spesifikasi fitur lengkap, katalog 250 endpoint API, dan skema database, buka **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)**.
+> Untuk panduan arsitektur mendalam, spesifikasi fitur lengkap, katalog 232 endpoint API, dan skema database, buka **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)**.
 
 ---
 
 ## ✨ Sorotan Fitur Utama (v1.6.5-rc2)
 
 - 🔐 **Zero-Config Out-of-the-Box Security**: Instalasi instan tanpa konfigurasi manual yang rumit. Server otomatis meng-generate `SECRET_KEY` kuat 64-hex persisten ke `.env`, membuat password superadmin acak sekali-pakai (`initial_admin.txt`), auto-generate password VNC unik, dan memproteksi pembaruan sistem via URL Whitelist anti-SSRF.
-- 🌐 **Multi-Branch Control Panel**: Akses, kelola, dan pantau banyak cabang warnet dari satu dashboard terpusat tanpa memerlukan IP publik statis.
+- ☁️ **Cloudflare Tunnel & Remote Access**: Akses dashboard kasir & owner dari internet secara instan tanpa perlu port-forwarding router atau IP publik statis.
 - ⚡ **Multi-PC Selection & Batch Actions (`remoteBatch`)**: Seleksi banyak PC sekaligus (drag select/checkbox) untuk Shutdown, Restart, Kunci, Pindah PC, atau Terapkan Paket promosi secara massal.
 - 🖥️ **TightVNC Remote Control + Dual-Clipboard Sync**: Kendalikan layar, keyboard, dan mouse PC klien langsung dari browser web kasir dengan sinkronisasi clipboard teks dua arah otomatis (Port 5900 Loopback).
 - 🔌 **Blackout Auto-Recovery System**: Toleransi pemadaman listrik otomatis. Durasi dan saldo pelanggan tidak hilang ketika terjadi mati lampu mendadak (*Auto Session Resume*).

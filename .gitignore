@@ -53,6 +53,8 @@ initial_admin.txt
 
 # Testing and coverage
 .pytest_cache/
+.pytest_temp/
+test_warnet.db
 .coverage
 htmlcov/
 

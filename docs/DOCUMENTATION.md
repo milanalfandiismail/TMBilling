@@ -18,42 +18,41 @@
    - [2.1 Backend Server (Flask + SQLite ORM + WebSocket Server)](#21-backend-server)
    - [2.2 Frontend Dashboard (Modular ES6 Vanilla JS + Responsive UI)](#22-frontend-dashboard)
    - [2.3 WarnetAgent Klien (Tauri v2 + Rust Core + Kiosk Shell)](#23-warnetagent-klien)
-   - [2.4 WebSocket VNC Proxy Relay & Multi-Branch Forwarder](#24-websocket-vnc-proxy-relay--multi-branch-forwarder)
+   - [2.4 WebSocket VNC Proxy Relay & Remote Bridge](#24-websocket-vnc-proxy-relay--remote-bridge)
 3. [Struktur Direktori & Pemetaan Kode Repositori](#3-struktur-direktori--pemetaan-kode-repositori)
 4. [Katalog & Spesifikasi Mendalam Seluruh Fitur (32 Domain Fitur)](#4-katalog--spesifikasi-mendalam-seluruh-fitur-32-domain-fitur)
-   - [4.1 Multi-Branch Control Panel & Remote Proxy Relay](#41-multi-branch-control-panel--remote-proxy-relay)
-   - [4.2 Multi-PC Selection & Batch Actions Engine (`remoteBatch`)](#42-multi-pc-selection--batch-actions-engine)
-   - [4.3 TightVNC Remote Control System & Bi-directional Clipboard Sync](#43-tightvnc-remote-control-system--bi-directional-clipboard-sync)
-   - [4.4 Blackout Auto-Recovery System (Toleransi Mati Lampu & Uptime Tracker)](#44-blackout-auto-recovery-system-toleransi-mati-lampu--uptime-tracker)
-   - [4.5 5-Layer WarnetAgent Anti-Tamper Security & Registry Hash Verification](#45-5-layer-warnetagent-anti-tamper-security--registry-hash-verification)
-   - [4.6 Hardware Checker, Security Audit & CCTV Smart Reference](#46-hardware-checker-security-audit--cctv-smart-reference)
-   - [4.7 Remote Process Monitor & Task Killer](#47-remote-process-monitor--task-killer)
-   - [4.8 Web File Explorer (Remote Disk Explorer)](#48-web-file-explorer-remote-disk-explorer)
-   - [4.9 Screenshot Monitor with Natural Sorting](#49-screenshot-monitor-with-natural-sorting)
-   - [4.10 POS Kantin & Billing FnB Multi-Payment (Cash/QRIS/Bank + Struk Thermal)](#410-pos-kantin--billing-fnb-multi-payment)
-   - [4.11 Dynamic Tutorials CMS & Custom CKEditor Builder](#411-dynamic-tutorials-cms--custom-ckeditor-builder)
-   - [4.12 Cloudflare Tunnel Auto-Service](#412-cloudflare-tunnel-auto-service)
-   - [4.13 Centralized Versioning System (`config.py` Truth)](#413-centralized-versioning-system)
-   - [4.14 RBAC Kasir & Centralized Audit Log System](#414-rbac-kasir--centralized-audit-log-system)
-   - [4.15 Floor Plan & Dynamic Visual Room Layout (v1.6.3 Engine)](#415-floor-plan--dynamic-visual-room-layout-v163-engine)
-   - [4.16 Database Maintenance & Cloud/Local Backup UI](#416-database-maintenance--cloudlocal-backup-ui)
-   - [4.17 Manajemen Member, Paket & Billing Rates](#417-manajemen-member-paket--billing-rates)
-   - [4.18 Shift Kasir & Serah Terima Shift (Hitung Buta / Blind Cash Reconciliation)](#418-shift-kasir--serah-terima-shift-hitung-buta--blind-cash-reconciliation)
-   - [4.19 Catatan Kasir & Shift Handover Scratchpad](#419-catatan-kasir--shift-handover-scratchpad)
-   - [4.20 Turnamen & Bracket eSports Engine](#420-turnamen--bracket-esports-engine)
-   - [4.21 Public TV Billboard & Scoreboard Display](#421-public-tv-billboard--scoreboard-display)
-   - [4.22 Owner Analytics & Business Intelligence](#422-owner-analytics--business-intelligence)
-   - [4.23 Emergency Mode & Offline Fallback (SHA-256 Auth)](#423-emergency-mode--offline-fallback)
-   - [4.24 Audio Warning Intervals & Sound System (15m, 10m, 5m, 1m)](#424-audio-warning-intervals--sound-system)
-   - [4.25 Responsive Dual-Layout (1024px vs 1920px & Mobile Touch)](#425-responsive-dual-layout)
-   - [4.26 Live Search Debouncing & PC Code Auto-Dash Formatting](#426-live-search-debouncing--pc-code-auto-dash-formatting)
-   - [4.27 Integrasi Mikrotik Bandwidth Management (RouterOS Queue API)](#427-integrasi-mikrotik-bandwidth-management)
-   - [4.28 Maintenance Ticket & Issue Reporting System](#428-maintenance-ticket--issue-reporting-system)
-   - [4.29 Fitur Kunci Meja AFK / Istirahat Sementara (Temporary AFK Screen Lock)](#429-fitur-kunci-meja-afk--istirahat-sementara-temporary-afk-screen-lock)
-   - [4.30 Arsitektur Proteksi Triple-Layer Session Expiry & Heartbeat](#430-arsitektur-proteksi-triple-layer-session-expiry--heartbeat)
-   - [4.31 Standardized Skeleton Loader Engine v1.6.3 di Seluruh Tab Kasir](#431-standardized-skeleton-loader-engine-v163-di-seluruh-tab-kasir)
-   - [4.32 In-Place Reactive Rerender & Zero Page Reload Engine](#432-in-place-reactive-rerender--zero-page-reload-engine)
-   - [4.33 Zero-Config Security & Credential Bootstrap Architecture](#433-zero-config-security--credential-bootstrap-architecture)
+   - [4.1 Multi-PC Selection & Batch Actions Engine (`remoteBatch`)](#41-multi-pc-selection--batch-actions-engine)
+   - [4.2 TightVNC Remote Control System & Bi-directional Clipboard Sync](#42-tightvnc-remote-control-system--bi-directional-clipboard-sync)
+   - [4.3 Blackout Auto-Recovery System (Toleransi Mati Lampu & Uptime Tracker)](#43-blackout-auto-recovery-system-toleransi-mati-lampu--uptime-tracker)
+   - [4.4 5-Layer WarnetAgent Anti-Tamper Security & Registry Hash Verification](#44-5-layer-warnetagent-anti-tamper-security--registry-hash-verification)
+   - [4.5 Hardware Checker, Security Audit & CCTV Smart Reference](#45-hardware-checker-security-audit--cctv-smart-reference)
+   - [4.6 Remote Process Monitor & Task Killer](#46-remote-process-monitor--task-killer)
+   - [4.7 Web File Explorer (Remote Disk Explorer)](#47-web-file-explorer-remote-disk-explorer)
+   - [4.8 Screenshot Monitor with Natural Sorting](#48-screenshot-monitor-with-natural-sorting)
+   - [4.9 POS Kantin & Billing FnB Multi-Payment (Cash/QRIS/Bank + Struk Thermal)](#49-pos-kantin--billing-fnb-multi-payment)
+   - [4.10 Dynamic Tutorials CMS & Custom CKEditor Builder](#410-dynamic-tutorials-cms--custom-ckeditor-builder)
+   - [4.11 Cloudflare Tunnel Auto-Service](#411-cloudflare-tunnel-auto-service)
+   - [4.12 Centralized Versioning System (`config.py` Truth)](#412-centralized-versioning-system)
+   - [4.13 RBAC Kasir & Centralized Audit Log System](#413-rbac-kasir--centralized-audit-log-system)
+   - [4.14 Floor Plan & Dynamic Visual Room Layout (v1.6.3 Engine)](#414-floor-plan--dynamic-visual-room-layout-v163-engine)
+   - [4.15 Database Maintenance & Cloud/Local Backup UI](#415-database-maintenance--cloudlocal-backup-ui)
+   - [4.16 Manajemen Member, Paket & Billing Rates](#416-manajemen-member-paket--billing-rates)
+   - [4.17 Shift Kasir & Serah Terima Shift (Hitung Buta / Blind Cash Reconciliation)](#417-shift-kasir--serah-terima-shift-hitung-buta--blind-cash-reconciliation)
+   - [4.18 Catatan Kasir & Shift Handover Scratchpad](#418-catatan-kasir--shift-handover-scratchpad)
+   - [4.19 Turnamen & Bracket eSports Engine](#419-turnamen--bracket-esports-engine)
+   - [4.20 Public TV Billboard & Scoreboard Display](#420-public-tv-billboard--scoreboard-display)
+   - [4.21 Owner Analytics & Business Intelligence](#421-owner-analytics--business-intelligence)
+   - [4.22 Emergency Mode & Offline Fallback (SHA-256 Auth)](#422-emergency-mode--offline-fallback)
+   - [4.23 Audio Warning Intervals & Sound System (15m, 10m, 5m, 1m)](#423-audio-warning-intervals--sound-system)
+   - [4.24 Responsive Dual-Layout (1024px vs 1920px & Mobile Touch)](#424-responsive-dual-layout)
+   - [4.25 Live Search Debouncing & PC Code Auto-Dash Formatting](#425-live-search-debouncing--pc-code-auto-dash-formatting)
+   - [4.26 Integrasi Mikrotik Bandwidth Management (RouterOS Queue API)](#426-integrasi-mikrotik-bandwidth-management)
+   - [4.27 Maintenance Ticket & Issue Reporting System](#427-maintenance-ticket--issue-reporting-system)
+   - [4.28 Fitur Kunci Meja AFK / Istirahat Sementara (Temporary AFK Screen Lock)](#428-fitur-kunci-meja-afk--istirahat-sementara-temporary-afk-screen-lock)
+   - [4.29 Arsitektur Proteksi Triple-Layer Session Expiry & Heartbeat](#429-arsitektur-proteksi-triple-layer-session-expiry--heartbeat)
+   - [4.30 Standardized Skeleton Loader Engine v1.6.3 di Seluruh Tab Kasir](#430-standardized-skeleton-loader-engine-v163-di-seluruh-tab-kasir)
+   - [4.31 In-Place Reactive Rerender & Zero Page Reload Engine](#431-in-place-reactive-rerender--zero-page-reload-engine)
+   - [4.32 Zero-Config Security & Credential Bootstrap Architecture](#432-zero-config-security--credential-bootstrap-architecture)
 5. [Panduan Teknis Backend (Flask & Python)](#5-panduan-teknis-backend-flask--python)
    - [5.1 Daftar Blueprint & Routing (31 Blueprint)](#51-daftar-blueprint--routing)
    - [5.2 Service Layer & Pola Arsitektur (41 Service Classes)](#52-service-layer--pola-arsitektur)
@@ -82,7 +81,7 @@
 1. **Resilience First (Zero Session Loss)**: Sesi billing pelanggan tidak boleh hilang akibat mati lampu (*blackout*), PC hang/crash, atau server restart. Sistem mampu melanjutkan sisa waktu secara otomatis.
 2. **Ironclad Anti-Tamper**: Klien warnet diproteksi berlapis (Tauri v2 Rust + Win32 API hooks + Dual-Hive Registry SHA-256 Hashes + Watchdog Daemon terpisah) agar tidak bisa di-bypass oleh software cheat, Task Manager, ataupun penggantian file binary.
 3. **Triple-Layer Session Protection**: Penutupan dan pemotongan sesi billing kadaluwarsa dilindungi secara berlapis: Layer 1 (Background Scheduler 60s), Layer 2 (Client Polling 1-3s), dan Layer 3 (Kasir Dashboard Polling 1, 2, 3, 5s).
-4. **Seamless Multi-Branch & Remote Operation**: Owner atau operator dapat mengawasi, mengontrol, dan berpindah antar-cabang dari satu dashboard terpusat tanpa memerlukan IP publik statis (via Cloudflare Tunnel & Proxy Relay).
+4. **Remote Operation & Cloud Access**: Owner atau operator dapat mengawasi, mengontrol, dan memantau billing secara aman melalui Cloudflare Tunnel & TightVNC Remote tanpa memerlukan IP publik statis.
 5. **Clean SoC & Zero-Slop Architecture**: Backend Flask terstruktur dengan *Clean Architecture* (Routes -> Services -> Repositories -> Models), Frontend menggunakan Vanilla JS modular tanpa framework berat, dan Klien Kiosk menggunakan Rust + Webview2 yang sangat hemat memori.
 
 ---
@@ -100,12 +99,11 @@ graph TB
     end
 
     subgraph "Layer 2: Backend (Server Billing Flask)"
-        API[Flask REST API Engine<br/>31 Blueprints / 41 Services]
+        API[Flask REST API Engine<br/>30 Blueprints / 40 Services]
         Scheduler[APScheduler Background Daemon<br/>Triple-Layer Expiry Layer 1]
         WS[WebSocket Proxy Engine<br/>Simple-WebSocket & VNC Bridge]
-        DB[(SQLite Database<br/>25 Models SQLAlchemy)]
+        DB[(SQLite Database<br/>23 Models SQLAlchemy)]
         Cloudflare[Cloudflare Tunnel Service<br/>Zero-Trust Ingress]
-        BranchRelay[Multi-Branch Proxy Forwarder]
     end
 
     subgraph "Layer 3: WarnetAgent Client (PC Klien)"
@@ -132,7 +130,6 @@ graph TB
     API -->|SQLite ORM| DB
     API <-->|HTTP / Heartbeat| TauriCore
     ClientPoll -->|Status Polling| API
-    BranchRelay <-->|Inbound Relay| Cloudflare
     MGCTM -->|Supervise & Respawn| TauriCore
     MGCTM -->|Check Hashes| RegIntegrity
     TMMonitor -->|Live Temp & Specs| API
@@ -155,10 +152,9 @@ graph TB
 - **Kiosk Shell**: Mengunci tampilan Windows (Disable `WinKey`, `Ctrl+Alt+Del`, `Alt+Tab`, `Alt+F4`, `Ctrl+Shift+Esc`), menutup akses taskbar dan desktop sebelum sesi dibuka.
 - **Overlay State**: Menampilkan floating bar widget (sisa waktu, tarif, billing FnB, QRIS payment, tombol ganti password, report tiket).
 
-### 2.4 WebSocket VNC Proxy Relay & Multi-Branch Forwarder
+### 2.4 WebSocket VNC Proxy Relay & Remote Bridge
 - Menjembatani canvas web kasir dengan TightVNC Server yang berjalan di port `5900` PC klien.
 - Meneruskan frame RFB (Remote FrameBuffer), event mouse/keyboard, dan pertukaran teks clipboard secara dua arah.
-- Mendukung *Multi-Branch Inbound Relay* untuk memanipulasi dan memonitor PC cabang lain langsung dari dashboard lokal.
 
 ---
 
@@ -169,7 +165,6 @@ c:\Project GIT\TMBilling
 ├── app/                                # Backend Server Flask & Frontend Kasir
 │   ├── config.py                       # Single Source of Version Truth (VERSION = "1.6.5")
 │   ├── models/                         # 25 Database Model SQLAlchemy
-│   │   ├── branch/                     # Branch & BranchInbound
 │   │   ├── game/                       # Game & GameKategori
 │   │   ├── grup/                       # Grup Ruangan / Tarif (Reguler/VIP)
 │   │   ├── hardware/                   # HardwareMonitor & PCProcess
@@ -190,7 +185,6 @@ c:\Project GIT\TMBilling
 │   │   ├── auth/                       # Login/Logout kasir & admin
 │   │   ├── backup/                     # Database local & cloud backup
 │   │   ├── blackout/                   # Toleransi & recovery mati lampu
-│   │   ├── branch/                     # Multi-branch routing & inbound proxy
 │   │   ├── client/                     # Handshake & telemetry client agent
 │   │   ├── dashboard/                  # Dashboard summary & stats
 │   │   ├── fileexplorer/               # Remote web disk explorer
@@ -255,13 +249,7 @@ c:\Project GIT\TMBilling
 
 ## 4. Katalog & Spesifikasi Mendalam Seluruh Fitur (32 Domain Fitur)
 
-### 4.1 Multi-Branch Control Panel & Remote Proxy Relay
-- **Deskripsi**: Memungkinkan kasir atau owner di satu cabang (atau via Cloudflare Tunnel) mengelola dan beralih (*switch*) ke cabang lain secara instan tanpa perlu login ulang.
-- **Mekanisme Inbound**: Model `BranchInbound` dan `Branch` mencatat token autentikasi, URL ingress remote, dan status latensi cabang.
-- **Session Isolation**: Kasir lokal beroperasi di database lokal, sedangkan ketika beralih ke cabang remote, `branch_proxy_service.py` meneruskan request REST/WebSocket secara aman ke server cabang target.
-- **Zona Waktu Multi-Cabang**: Mendukung sinkronisasi zona waktu otomatis (`WIB`, `WITA`, `WIT`) pada pencatatan transaksi dan durasi sesi.
-
-### 4.2 Multi-PC Selection & Batch Actions Engine (`remoteBatch`)
+### 4.1 Multi-PC Selection & Batch Actions Engine (`remoteBatch`)
 - **Deskripsi**: Operator kasir dapat memilih banyak PC sekaligus untuk melakukan aksi massal hanya dengan beberapa klik.
 - **Metode Seleksi**:
   - *Checkbox Selection*: Centang pada card PC di dashboard.
@@ -275,7 +263,7 @@ c:\Project GIT\TMBilling
   - `Batch Apply Paket`: Menerapkan paket promosi secara bersamaan ke beberapa PC.
 - **Implementasi API**: `API.monitor.remoteBatch({ action, pc_ids })` di [app/static/js/kasir/core/api.js](file:///c:/Project%20GIT/TMBilling/app/static/js/kasir/core/api.js) memanggil endpoint `/api/monitor/remote-batch`.
 
-### 4.3 TightVNC Remote Control System & Bi-directional Clipboard Sync
+### 4.2 TightVNC Remote Control System & Bi-directional Clipboard Sync
 - **Deskripsi**: Kasir dapat melihat layar dan mengontrol keyboard/mouse PC klien secara *real-time* langsung dari browser tanpa perlu menginstall VNC viewer eksternal.
 - **Arsitektur Loopback 5900**: TightVNC Server di klien mendengarkan pada port `127.0.0.1:5900`.
 - **WebSocket RFB Proxy**: Backend Flask meneruskan binary frame RFB ke canvas HTML5 di dashboard (`vnc_client.js`).
@@ -283,13 +271,13 @@ c:\Project GIT\TMBilling
 - **Auto-Firewall & Fail-Fast Multiplexing**: Skrip `allow_firewall.bat` memastikan port TightVNC diizinkan oleh Windows Firewall, dan mekanisme multiplexing token mencegah tabrakan sesi VNC antar kasir.
 - **Auto-Generated Random VNC Password**: Sistem secara otomatis meng-generate password acak 8 karakter saat pertama kali dijalankan jika belum dikonfigurasi di tabel settings (`SettingsService.get_or_create_vnc_password`), menggantikan ketergantungan pada password default statis demi keamanan jaringan LAN.
 
-### 4.4 Blackout Auto-Recovery System (Toleransi Mati Lampu & Uptime Tracker)
+### 4.3 Blackout Auto-Recovery System (Toleransi Mati Lampu & Uptime Tracker)
 - **Deskripsi**: Proteksi otomatis terhadap pemadaman listrik (*blackout*) mendadak di warnet.
 - **Pencatatan Uptime & Offline Tracker**: Menggunakan tabel `PCUptimeLog` yang merekam *heartbeat* klien setiap beberapa detik.
 - **Toleransi Blackout**: Jika listrik padam mendadak, server mendeteksi status offline seluruh PC secara serentak. Saat listrik menyala kembali dan PC booting, sistem secara cerdas **tidak memotong durasi pelanggan** selama masa mati lampu, melainkan memulihkan sisa waktu dan paket sesi secara otomatis (*Auto Session Resume*).
 - **Hard Delete Uptime Log**: Admin dapat membersihkan riwayat log uptime lama dengan konfirmasi aman.
 
-### 4.5 5-Layer WarnetAgent Anti-Tamper Security & Registry Hash Verification
+### 4.4 5-Layer WarnetAgent Anti-Tamper Security & Registry Hash Verification
 - **Deskripsi**: Pertahanan 5 lapis untuk mencegah kecurangan (*bypass billing*), mematikan process lockscreen, atau mengganti binary klien.
 - **Lapis 1 - Win32 Low-Level Hooks**: Mencegah hotkey sistem Windows (`WinKey`, `Ctrl+Alt+Del`, `Alt+Tab`, `Alt+F4`, `Ctrl+Shift+Esc`).
 - **Lapis 2 - Taskbar & Desktop Shield**: Menyembunyikan Start Menu, Taskbar, dan ikon Desktop saat layar terkunci.
@@ -303,7 +291,7 @@ c:\Project GIT\TMBilling
 - **Lapis 4 - Watchdog Daemon (`MGCTM.exe` & `mtm.exe`)**: Process independen berhak Administrator yang terus memantau `TMBilling.exe`. Jika `TMBilling.exe` dimatikan paksa, watchdog seketika me-respawn klien dan mengunci sistem.
 - **Lapis 5 - Emergency Credentials SHA-256**: Autentikasi darurat offline berbasis hash SHA-256 yang aman untuk membuka kunci PC oleh teknisi saat jaringan server terputus.
 
-### 4.6 Hardware Checker, Security Audit & CCTV Smart Reference
+### 4.5 Hardware Checker, Security Audit & CCTV Smart Reference
 
 #### A. Pemisahan Mobo Model vs Mobo Serial & Deteksi Pergantian Komponen
 - **Deskripsi**: Merekam *snapshot* spesifikasi hardware PC klien ke dalam tabel `HardwareMonitor` sebagai baseline resmi yang terkunci:
@@ -337,13 +325,13 @@ c:\Project GIT\TMBilling
 3. Seluruh flag mismatch direset, dan monitoring berjalan kembali dari titik awal.
 4. Endpoint: `POST /api/v1/kasir/monitor/register/<pc_id>`.
 
-### 4.7 Remote Process Monitor & Task Killer
+### 4.6 Remote Process Monitor & Task Killer
 - **Deskripsi**: Kasir dapat melihat seluruh aplikasi dan proses yang sedang berjalan di PC klien tertentu secara langsung dari modal web dashboard.
 - **Fitur**:
   - Menampilkan nama proses, PID, CPU usage, dan Memory usage.
   - Tombol **End Task / Kill Process** jarak jauh untuk mematikan game yang not-responding atau software terlarang.
 
-### 4.8 Web File Explorer (Remote Disk Explorer)
+### 4.7 Web File Explorer (Remote Disk Explorer)
 - **Deskripsi**: File manager jarak jauh berbasis web untuk PC klien.
 - **Fitur**:
   - Menjelajahi drive (`C:\`, `D:\`, dll.) dan direktori PC klien.
@@ -351,12 +339,12 @@ c:\Project GIT\TMBilling
   - Download file dari klien ke komputer kasir.
   - Preview file teks dan gambar langsung di browser kasir.
 
-### 4.9 Screenshot Monitor with Natural Sorting
+### 4.8 Screenshot Monitor with Natural Sorting
 - **Deskripsi**: Layar pengawasan visual yang menampilkan *thumbnail live screenshot* dari seluruh PC klien yang aktif.
 - **Natural Sorting**: Daftar PC terurut secara natural (`PC-01`, `PC-02`, ..., `PC-09`, `PC-10`, `PC-11`, bukan urutan ASCII yang melompat).
 - **Live Zoom**: Klik thumbnail untuk memperbesar screenshot secara instan tanpa lag.
 
-### 4.10 POS Kantin & Billing FnB Multi-Payment (Cash/QRIS/Bank + Struk Thermal)
+### 4.9 POS Kantin & Billing FnB Multi-Payment (Cash/QRIS/Bank + Struk Thermal)
 - **Deskripsi**: Modul kasir kantin / FnB lengkap yang terintegrasi langsung dengan billing PC.
 - **Fitur**:
   - Manajemen katalog menu (`MenuItem`), kategori (Makanan, Minuman, Snack, Voucher), dan stok barang.
@@ -369,30 +357,30 @@ c:\Project GIT\TMBilling
     - Tab **Log Stok Menu** dengan filter rentang tanggal cepat (Hari Ini, 7 Hari, 30 Hari, Bulan Ini, Semua), filter operator, pagination server-side, dan fit-to-table responsive layout.
     - Otorisasi RBAC: Kasir/Staff dapat melakukan restock barang dengan pencatatan audit log otomatis dan identitas operator.
 
-### 4.11 Dynamic Tutorials CMS & Custom CKEditor Builder
+### 4.10 Dynamic Tutorials CMS & Custom CKEditor Builder
 - **Deskripsi**: Sistem Content Management System (CMS) mandiri di dalam aplikasi kasir untuk membuat SOP, tutorial pemakaian, dan panduan operator warnet.
 - **Fitur**:
   - Custom CKEditor 5 Build (berada di `tools/ckeditor-builder`) yang mendukung format teks kaya, tabel, highlight, dan upload gambar lokal otomatis saat artikel disimpan.
   - *Smart Tutorial Seeding*: Server otomatis menginisialisasi panduan standar saat database baru dibuat.
   - *Export / Import Tutorial*: Kemampuan backup dan restore artikel panduan.
 
-### 4.12 Cloudflare Tunnel Auto-Service
+### 4.11 Cloudflare Tunnel Auto-Service
 - **Deskripsi**: Integrasi Cloudflare Tunnel bawaan untuk menghubungkan server billing lokal ke domain internet secara aman tanpa perlu port forwarding atau IP publik statis.
 - **Fitur**:
   - Penyimpanan token Cloudflare yang persisten di database `Settings`.
   - Instalasi otomatis service background `cloudflared.exe`.
   - Kemudahan akses bagi Owner untuk melihat laporan keuangan dan analitik dari mana saja melalui smartphone.
 
-### 4.13 Centralized Versioning System (`config.py` Truth)
+### 4.12 Centralized Versioning System (`config.py` Truth)
 - **Deskripsi**: Standarisasi nomor versi aplikasi terpusat pada file [app/config.py](file:///c:/Project%20GIT/TMBilling/app/config.py) (`VERSION = "1.6.5"`).
 - **Penyebaran Otomatis**: Variabel versi ini otomatis diinjeksikan ke template Jinja2 (footer UI kasir), endpoint REST `/api/version`, dan response handshake klien agent.
 
-### 4.14 RBAC Kasir & Centralized Audit Log System
+### 4.13 RBAC Kasir & Centralized Audit Log System
 - **Deskripsi**: Role-Based Access Control dengan 3 tingkatan pengguna: `Super Admin`, `Admin`, dan `Kasir`.
 - **Audit Logs**: Seluruh aktivitas krusial (buka sesi, tambah waktu, hapus member, edit harga paket, diskon, refund, pembukaan laci kas) dicatat dalam tabel audit log berformat terstandarisasi.
 - **Pembersihan Log dengan Otorisasi Supervisor**: Riwayat audit log tidak dapat dihapus sembarangan dan membutuhkan verifikasi password level Administrator/Super Admin.
 
-### 4.15 Floor Plan & Dynamic Visual Room Layout (v1.6.3 Engine)
+### 4.14 Floor Plan & Dynamic Visual Room Layout (v1.6.3 Engine)
 - **Deskripsi**: Denah visual warnet interaktif 2 dimensi di dashboard kasir (`map_view.js`).
 - **Fitur & Peningkatan v1.6.3**:
   - **Async Batching dengan `Promise.all()`**: Penyimpanan koordinat posisi seluruh meja dieksekusi secara asinkronus bersamaan tanpa freeze UI, diikuti pemanggilan `Dashboard.load(true)` untuk sinkronisasi state.
@@ -401,7 +389,7 @@ c:\Project GIT\TMBilling
   - **Indikator Warna Dinamis**: Hijau (Kosong/Tersedia), Merah (Sesi Aktif), Oranye (Sisa Waktu < 10 Menit), Abu-abu (Offline).
   - **Quick Action Click**: Klik langsung pada node meja untuk membuka sesi, menambah durasi, atau melihat detail PC.
 
-### 4.16 Database Maintenance & Cloud/Local Backup UI
+### 4.15 Database Maintenance & Cloud/Local Backup UI
 - **Deskripsi**: Fasilitas pemeliharaan database SQLite internal agar tetap kencang dan aman dari korupsi data.
 - **Fitur**:
   - *Auto Backup Lokal*: Backup terjadwal berkala ke folder arsip lokal.
@@ -409,7 +397,7 @@ c:\Project GIT\TMBilling
   - *SQLite VACUUM & Optimize*: Mengompresi dan merapikan indeks database langsung dari tombol di pengaturan.
   - *Database Restore Modal*: Antarmuka pemulihan database dengan proteksi konfirmasi ganda.
 
-### 4.17 Manajemen Member, Paket & Billing Rates
+### 4.16 Manajemen Member, Paket & Billing Rates
 - **Deskripsi**: Pengelolaan akun pelanggan member, saldo deposit, dan paket promosi warnet.
 - **Fitur**:
   - Akun Member: Login dengan username/password di PC klien, auto-potong saldo deposit per detik.
@@ -417,7 +405,7 @@ c:\Project GIT\TMBilling
   - Custom Group Rates: Tarif berbeda untuk tipe ruangan Reguler, VIP, Sofa, atau VVIP Simulator.
   - Reset State Sesi: Proteksi pembersihan data sesi sementara saat PC selesai digunakan.
 
-### 4.18 Shift Kasir & Serah Terima Shift (Hitung Buta / Blind Cash Reconciliation)
+### 4.17 Shift Kasir & Serah Terima Shift (Hitung Buta / Blind Cash Reconciliation)
 - **Deskripsi**: Sistem manajemen jam kerja dan serah terima shift kasir anti-manipulasi berbasis *Blind Count (Hitung Buta)*, rekonsiliasi laci fisik, dan struk handover thermal.
 - **Fitur & Alur Kerja**:
   - **Buka Shift Kasir**: Kasir baru memasukkan nominal **Modal Awal Kas** (uang receh/kembalian fisik yang dihitung di laci) saat mulai bertugas. Modal awal bersifat dinamis per shift dan tidak menggelembungkan omzet toko.
@@ -428,72 +416,72 @@ c:\Project GIT\TMBilling
   - **Struk Thermal Handover 58mm / 80mm**: Pencetakan bukti serah terima shift fisik lengkap dengan rincian penerimaan tunai, non-tunai, modal awal, rekonsiliasi laci, dan selisih keuangan untuk ditandatangani kedua kasir.
   - **Tab Riwayat Serah Terima Shift**: Menampilkan rekapitulasi seluruh shift sebelumnya dengan filter tanggal otomatis, badge status, modal detail, dan tata letak responsif (*fit-to-table* pada breakpoint LG/XL).
 
-### 4.19 Catatan Kasir & Shift Handover Scratchpad
+### 4.18 Catatan Kasir & Shift Handover Scratchpad
 - **Deskripsi**: Papan catatan (*scratchpad*) digital terintegrasi di dashboard kasir (`catatan`).
 - **Fitur**:
   - Tempat operator meninggalkan pesan operasional untuk shift berikutnya.
   - Catatan disimpan persisten di database dan dapat dibaca oleh seluruh kasir dan admin.
 
-### 4.20 Turnamen & Bracket eSports Engine
+### 4.19 Turnamen & Bracket eSports Engine
 - **Deskripsi**: Sistem manajemen turnamen warnet bawaan untuk game kompetitif (Valorant, MLBB, Dota 2, dll.).
 - **Fitur**:
   - Pembuatan bagan turnamen (*Single Elimination*, *Double Elimination*, *Swiss Round*).
   - Pendaftaran nama tim dan daftar susunan pemain (*roster*).
   - Update skor pertandingan secara *live* yang terhubung ke layar TV Public.
 
-### 4.21 Public TV Billboard & Scoreboard Display
+### 4.20 Public TV Billboard & Scoreboard Display
 - **Deskripsi**: Halaman antarmuka khusus untuk ditampilkan pada layar TV besar atau monitor proyektor di lobi warnet (`/tv`).
 - **Fitur**:
   - Menampilkan daftar PC yang sedang kosong / terpakai beserta sisa waktu.
   - Menampilkan *Running Text* pengumuman promo, harga paket, atau peraturan warnet.
   - Menampilkan bagan dan klasemen turnamen game yang sedang berjalan.
 
-### 4.22 Owner Analytics & Business Intelligence
+### 4.21 Owner Analytics & Business Intelligence
 - **Deskripsi**: Dashboard grafik analitik bisnis khusus untuk pemilik warnet (*Owner*).
 - **Metode Utama**:
   - Grafik tren pendapatan harian, mingguan, dan bulanan.
   - Analisis jam sibuk (*Peak Hours Occupancy Heatmap*) untuk optimasi promosi.
   - Perbandingan rasio keuntungan antara pendapatan sewa PC vs penjualan F&B kantin.
 
-### 4.23 Emergency Mode & Offline Fallback (SHA-256 Auth)
+### 4.22 Emergency Mode & Offline Fallback (SHA-256 Auth)
 - **Deskripsi**: Mekanisme penanganan darurat ketika jaringan lokal warnet terputus total dari server billing.
 - **Fitur**:
   - Klien agent menyediakan jendela darurat dengan verifikasi hash SHA-256 password admin.
   - Memungkinkan teknisi masuk ke mode desktop Windows untuk perbaikan driver/jaringan tanpa harus mematikan PC secara paksa.
 
-### 4.24 Audio Warning Intervals & Sound System (15m, 10m, 5m, 1m)
+### 4.23 Audio Warning Intervals & Sound System (15m, 10m, 5m, 1m)
 - **Deskripsi**: Sistem peringatan suara otomatis pada PC klien saat sesi pelanggan hampir habis.
 - **Interval Peringatan**:
   - Suara notifikasi berbunyi pada sisa waktu **15 Menit**, **10 Menit**, **5 Menit**, dan **1 Menit**.
   - Mengingatkan pelanggan untuk segera menambah durasi ke kasir sebelum PC otomatis terkunci.
   - Volume audio notifikasi dapat dikonfigurasi dari backend.
 
-### 4.25 Responsive Dual-Layout (1024px vs 1920px & Mobile Touch)
+### 4.24 Responsive Dual-Layout (1024px vs 1920px & Mobile Touch)
 - **Deskripsi**: Desain antarmuka fleksibel yang menyesuaikan resolusi monitor kasir secara otomatis.
 - **Dukungan Tampilan**:
   - *Compact Dual-Row Table Layout*: Optimal pada monitor kasir beresolusi 1024x768 atau 1366x768.
   - *Widescreen Grid View*: Optimal pada monitor Full HD 1920x1080.
   - *Mobile Touch Scrolling*: Pengoperasian mulus menggunakan layar sentuh tablet/smartphone.
 
-### 4.26 Live Search Debouncing & PC Code Auto-Dash Formatting
+### 4.25 Live Search Debouncing & PC Code Auto-Dash Formatting
 - **Deskripsi**: Standarisasi input kasir untuk kecepatan dan akurasi tinggi.
 - **Fitur**:
   - Pencarian nomor PC atau member dilengkapi filter *Debounce (300ms)* untuk mengurangi beban query.
   - *Auto-Prefix Dash*: Input kasir secara otomatis memformat nomor PC (misal mengetik `1` otomatis menjadi `PC-01`).
 
-### 4.27 Integrasi Mikrotik Bandwidth Management (RouterOS Queue API)
+### 4.26 Integrasi Mikrotik Bandwidth Management (RouterOS Queue API)
 - **Deskripsi**: Integrasi langsung antara server billing dan router Mikrotik warnet via RouterOS API.
 - **Fitur**:
   - Secara otomatis mengatur limit bandwidth download/upload pada IP PC klien saat sesi billing aktif.
   - Memutus (*drop/block*) akses internet PC klien ketika sesi billing habis atau PC dalam status terkunci.
 
-### 4.28 Maintenance Ticket & Issue Reporting System
+### 4.27 Maintenance Ticket & Issue Reporting System
 - **Deskripsi**: Sistem tiket pelaporan kerusakan perangkat keras atau kendala teknis di warnet.
 - **Fitur**:
   - Pelanggan dapat melaporkan kendala langsung dari widget overlay PC klien (misal mouse macet atau headset mati sebelah).
   - Kasir menerima notifikasi tiket, mengubah status menjadi `In-Progress` atau `Resolved`, dan merekam riwayat perbaikan oleh teknisi.
 
-### 4.29 Fitur Kunci Meja AFK / Istirahat Sementara (Temporary AFK Screen Lock)
+### 4.28 Fitur Kunci Meja AFK / Istirahat Sementara (Temporary AFK Screen Lock)
 - **Deskripsi**: Solusi keamanan privasi pelanggan saat meninggalkan meja sementara (istirahat makan, ibadah, atau toilet) tanpa mematikan sesi billing.
 - **Fitur Utama**:
   - **Minimal Pure Black UI**: Layar PC klien berganti ke tampilan hitam polos minimalis (`#000000`) dengan mono countdown sisa billing, info unit PC, dan nama pengguna.
@@ -504,7 +492,7 @@ c:\Project GIT\TMBilling
   - **Remote Kasir & Master Unlock**: Operator/kasir dapat memicu penguncian AFK dari jarak jauh atau membuka kunci darurat (*Master Unlock*) melalui tombol aksi di Detail Modal PC pada Dashboard Kasir jika pelanggan lupa PIN/password.
   - **Indikator Amber Real-Time**: Kartu PC di Dashboard Kasir menampilkan badge amber menyala `🔒 AFK / Istirahat` sementara timer dan nama pengguna tetap terpantau aktif.
 
-### 4.30 Arsitektur Proteksi Triple-Layer Session Expiry & Heartbeat
+### 4.29 Arsitektur Proteksi Triple-Layer Session Expiry & Heartbeat
 - **Deskripsi**: Arsitektur perlindungan 3 lapis untuk memastikan penghitungan sisa waktu presisi dan penutupan otomatis sesi billing yang telah habis tanpa ada celah *free playtime*.
 - **Lapisan Proteksi**:
   1. **Layer 1 - Server Background Scheduler (APScheduler)**:
@@ -519,7 +507,7 @@ c:\Project GIT\TMBilling
 - **Formula Sisa Waktu Presisi**:
   $$\text{Sisa Menit} = \text{durasi\_beli\_menit} - \text{round}\left(\frac{\text{now}() - \text{mulai\_pada}}{60}\right)$$
 
-### 4.31 Standardized Skeleton Loader Engine v1.6.3 di Seluruh Tab Kasir
+### 4.30 Standardized Skeleton Loader Engine v1.6.3 di Seluruh Tab Kasir
 - **Deskripsi**: Standarisasi transisi pemuatan data menggunakan placeholder skeleton bernuansa gelap dan animasi shimmer modern di seluruh 26 tab antarmuka kasir.
 - **Engine Terpusat**: [`app/static/js/kasir/core/skeleton.js`](file:///c:/Project%20GIT/TMBilling/app/static/js/kasir/core/skeleton.js).
 - **Metode Pembantu**:
@@ -529,12 +517,12 @@ c:\Project GIT\TMBilling
 - **Cakupan 26 Tab**: Dashboard PC, POS Kantin, Manajemen Member, Paket Billing, Hardware Checker, Process Monitor, Shift Kasir, Log Mutasi Stok, Audit Log, Blackout Recovery, Tournament, Mikrotik, Tutorial CMS, Backup, dll.
 - **Zero-Slop UI**: Mengeliminasi seluruh spinner berputar usang (`fa-spin`, `animate-spin`) demi pengalaman pengguna yang mulus dan elegan.
 
-### 4.32 In-Place Reactive Rerender & Zero Page Reload Engine
+### 4.31 In-Place Reactive Rerender & Zero Page Reload Engine
 - **Deskripsi**: Mekanisme pembaruan UI dashboard secara reaktif di tempat tanpa melakukan `location.reload()` browser secara penuh saat terjadi perubahan struktur PC.
 - **Deteksi Struktur (`_hasStructureChanged`)**: Membandingkan jumlah PC, ID PC, nama unit, dan koordinat denah untuk menentukan apakah denah perlu dibangun ulang atau cukup memperbarui status indikator live.
 - **Keuntungan**: Mencegah kedipan layar (*screen flicker*), mempertahankan state input kasir, dan menghemat konsumsi bandwidth lokal.
 
-### 4.33 Zero-Config Security & Credential Bootstrap Architecture
+### 4.32 Zero-Config Security & Credential Bootstrap Architecture
 - **Filosofi**: Memberikan perlindungan keamanan maksimal pada instalasi warnet baru secara *out-of-the-box* tanpa menuntut keahlian konfigurasi rumit dari operator.
 - **Auto-Generated Persistent `SECRET_KEY`**:
   - Saat startup pertama, jika `.env` belum memiliki `SECRET_KEY` atau masih menggunakan nilai insecure default, sistem otomatis meng-generate string heksadesimal acak 64-karakter menggunakan `secrets.token_hex(32)`.
@@ -555,11 +543,10 @@ c:\Project GIT\TMBilling
 ## 5. Panduan Teknis Backend (Flask & Python)
 
 ### 5.1 Daftar Blueprint & Routing
-Backend TMBilling terbagi ke dalam **31 Blueprint** modular di `app/routes/`:
+Backend TMBilling terbagi ke dalam **30 Blueprint** modular di `app/routes/`:
 - `auth_routes.py` & `auth_kasir_routes.py`: Manajemen autentikasi login session kasir dan administrator.
 - `backup_routes.py`: Endpoint pemicu backup database, download backup `.db`, dan restore database.
 - `blackout_routes.py`: Handler deteksi pemadaman listrik dan pemulihan sesi pelanggan.
-- `branch_routes.py`: Routing multi-cabang, registrasi inbound connection, dan relay proxy.
 - `client_routes.py`: Komunikasi IPC dan heartbeat agent klien warnet.
 - `dashboard_routes.py`: API penyedia data statistik ringkas dashboard kasir.
 - `fileexplorer_routes.py`: API file manager jarak jauh untuk PC klien.
@@ -586,16 +573,15 @@ Backend TMBilling terbagi ke dalam **31 Blueprint** modular di `app/routes/`:
 - `vnc_routes.py`: WebSocket proxy stream TightVNC RFB.
 
 ### 5.2 Service Layer & Pola Arsitektur
-Logika bisnis diisolasi secara ketat dalam 41 class di `app/services/`. Blueprint routes hanya bertugas memvalidasi request HTTP dan mengembalikan response JSON, sedangkan eksekusi aturan bisnis dilakukan oleh service:
-- `branch_service.py` & `branch_proxy_service.py`: Menangani logika komunikasi antar-cabang.
+Logika bisnis diisolasi secara ketat dalam 40 class di `app/services/`. Blueprint routes hanya bertugas memvalidasi request HTTP dan mengembalikan response JSON, sedangkan eksekusi aturan bisnis dilakukan oleh service:
 - `blackout_service.py`: Logika toleransi pemadaman listrik dan pemulihan sesi.
 - `vnc_service.py` & `fileexplorer_service.py`: Menangani komunikasi low-level dengan klien.
 - `sesi_service.py`: Menangani perhitungan tarif per detik, sisa waktu, pembersihan kadaluwarsa, dan promo paket.
 - `hardware_service.py`: Menangani kalkulasi baseline mismatch, pemisahan Mobo Model vs Mobo Serial, dan jendela waktu CCTV.
 - `dashboard_service.py`: Agregator status real-time PC, server metrics, dan billing quick summary.
 
-### 5.3 Skema Database & 25 Model SQLAlchemy
-TMBilling menggunakan 25 model ORM terdefinisi di `app/models/`:
+### 5.3 Skema Database & 23 Model SQLAlchemy
+TMBilling menggunakan 23 model ORM terdefinisi di `app/models/`:
 1. `User`: Akun pengguna dashboard kasir/admin (`id`, `username`, `password_hash`, `role`, `status`).
 2. `PC`: Data unit PC klien (`id`, `nama_pc`, `ip_address`, `mac_address`, `grup_id`, `pos_x`, `pos_y`, `status_pc`).
 3. `Sesi`: Sesi penggunaan PC (`id`, `tipe`, `member_id`, `user_id`, `pc_id`, `paket_id`, `nama_guest`, `token_sesi`, `mulai_pada`, `selesai_pada`, `durasi_beli_menit`, `total_bayar`, `status`, `is_admin`, `waktu_mulai_sesi`, `waktu_tersimpan_awal`, `last_sync`, `menit_pause_total`, `sisa_menit_saat_mati`, `is_blackout_suspect`, `is_blackout_resolved`, `waktu_resolved`, `is_afk`, `afk_pin`, `afk_sejak`, `sesi_asal_id`).
@@ -613,18 +599,16 @@ TMBilling menggunakan 25 model ORM terdefinisi di `app/models/`:
     - *Audit Internal*: `hardware_baseline`, `hardware_current_specs`, `hardware_mismatch`, `hardware_mismatch_desc`, `hardware_mismatch_time`, `hardware_cctv_window`, `hardware_last_sync`.
 13. `PCProcess`: Snapshot proses yang sedang berjalan di klien.
 14. `PCUptimeLog`: Catatan uptime & downtime PC untuk toleransi blackout (`id`, `pc_id`, `status`, `timestamp`).
-15. `Branch`: Registrasi cabang warnet (`id`, `nama_cabang`, `api_url`, `api_key`, `timezone`).
-16. `BranchInbound`: Koneksi inbound proxy dari cabang remote.
-17. `SystemTutorial`: Artikel panduan CMS (`id`, `judul`, `konten_html`, `kategori`, `urutan`).
-18. `MaintenanceTicket`: Tiket kerusakan perangkat (`id`, `pc_id`, `judul_masalah`, `deskripsi`, `prioritas`, `status`).
-19. `Turnamen`: Data kompetisi game (`id`, `nama_turnamen`, `game`, `status`).
-20. `TurnamenTahap`: Babak turnamen (Penyisihan, Semi-Final, Grand Final).
-21. `TurnamenTim`: Tim peserta kompetisi.
-22. `TurnamenMatch`: Jadwal & hasil pertandingan.
-23. `MikroTikConfig`: Pengaturan RouterOS (`host`, `port`, `username`, `password_encrypted`).
-24. `Game`: Katalog launcher game (`id`, `nama_game`, `path_executable`, `icon_url`, `kategori_id`).
-25. `GameKategori`: Kategori game (FPS, MOBA, Battle Royale, RPG).
-26. `Settings`: Pengaturan global key-value (nama warnet, logo, Cloudflare token, opsi thermal printer).
+15. `SystemTutorial`: Artikel panduan CMS (`id`, `judul`, `konten_html`, `kategori`, `urutan`).
+16. `MaintenanceTicket`: Tiket kerusakan perangkat (`id`, `pc_id`, `judul_masalah`, `deskripsi`, `prioritas`, `status`).
+17. `Turnamen`: Data kompetisi game (`id`, `nama_turnamen`, `game`, `status`).
+18. `TurnamenTahap`: Babak turnamen (Penyisihan, Semi-Final, Grand Final).
+19. `TurnamenTim`: Tim peserta kompetisi.
+20. `TurnamenMatch`: Jadwal & hasil pertandingan.
+21. `MikroTikConfig`: Pengaturan RouterOS (`host`, `port`, `username`, `password_encrypted`).
+22. `Game`: Katalog launcher game (`id`, `nama_game`, `path_executable`, `icon_url`, `kategori_id`).
+23. `GameKategori`: Kategori game (FPS, MOBA, Battle Royale, RPG).
+24. `Settings`: Pengaturan global key-value (nama warnet, logo, Cloudflare token, opsi thermal printer).
 
 ---
 
@@ -632,7 +616,7 @@ TMBilling menggunakan 25 model ORM terdefinisi di `app/models/`:
 
 ### 6.1 Arsitektur Core JS (`core/`)
 Frontend dashboard kasir dibangun tanpa dependensi framework runtime (Vanilla JS murni berstandar ES6 Modules) yang terletak di `app/static/js/kasir/`:
-- `core/api.js`: Lapisan komunikasi HTTP terpadu. Berisi objek `API` dengan namespace lengkap (`API.auth`, `API.sesi`, `API.monitor`, `API.branch`, `API.menu`, dll.). Seluruh pemanggilan fetch API memiliki penanganan error dan parsing JSON standar.
+- `core/api.js`: Lapisan komunikasi HTTP terpadu. Berisi objek `API` dengan namespace lengkap (`API.auth`, `API.sesi`, `API.monitor`, `API.menu`, dll.). Seluruh pemanggilan fetch API memiliki penanganan error dan parsing JSON standar.
 - `core/skeleton.js`: Standardized shimmer skeleton loading generator (`renderTableSkeleton`, `renderCardSkeleton`, `renderDetailSkeleton`) yang diintegrasikan di seluruh 26 tab kasir.
 - `core/modal.js`: Library lifecycle manajemen modal dialog (animasi slide/fade, trapping fokus keyboard, tombol `Escape` to close, backdrop dismiss).
 - `core/toast.js`: Sistem notifikasi toast non-blocking (Success, Error, Warning, Info) dengan auto-dismissal.
@@ -726,7 +710,7 @@ Jika terjadi kegagalan:
 
 ### 8.2 Katalog Lengkap Seluruh Endpoint REST API (250 Endpoints Terdaftar)
 
-Total Blueprint Terdaftar: **31 Blueprint** | Total Endpoint Terdaftar: **250 Endpoints**
+Total Blueprint Terdaftar: **30 Blueprint** | Total Endpoint Terdaftar: **232 Endpoints**
 
 #### 🔹 Blueprint: auth (3 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
@@ -765,27 +749,6 @@ Total Blueprint Terdaftar: **31 Blueprint** | Total Endpoint Terdaftar: **250 En
 | POST | /api/v1/kasir/blackout/resolve/guest/tutup/<int:sesi_id> | blackout.resolve_guest_tutup |
 | POST | /api/v1/kasir/blackout/resolve/member/<int:sesi_id> | blackout.resolve_member |
 
-#### 🔹 Blueprint: branch_api (18 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| DELETE | /api/v1/kasir/branch/<int:branch_id> | branch_api.delete_branch |
-| PUT | /api/v1/kasir/branch/<int:branch_id> | branch_api.update_branch |
-| GET | /api/v1/kasir/branch/<int:branch_id>/media/<path:filename> | branch_api.proxy_branch_media |
-| POST | /api/v1/kasir/branch/<int:branch_id>/test | branch_api.test_saved_branch_connection |
-| POST | /api/v1/kasir/branch/add | branch_api.add_branch |
-| GET | /api/v1/kasir/branch/inbound | branch_api.list_inbound_branches |
-| DELETE | /api/v1/kasir/branch/inbound/<int:inbound_id> | branch_api.delete_inbound_branch |
-| POST | /api/v1/kasir/branch/inbound/<int:inbound_id>/block | branch_api.block_inbound_branch |
-| POST | /api/v1/kasir/branch/inbound/<int:inbound_id>/unblock | branch_api.unblock_inbound_branch |
-| GET | /api/v1/kasir/branch/list | branch_api.list_branches |
-| GET | /api/v1/kasir/branch/my-key | branch_api.get_my_branch_key |
-| POST | /api/v1/kasir/branch/my-key/regenerate | branch_api.regenerate_my_branch_key |
-| GET | /api/v1/kasir/branch/operators | branch_api.get_remote_operators |
-| POST | /api/v1/kasir/branch/operators/delete | branch_api.delete_remote_operator |
-| POST | /api/v1/kasir/branch/operators/hide | branch_api.hide_remote_operator |
-| POST | /api/v1/kasir/branch/operators/restore | branch_api.restore_remote_operator |
-| POST | /api/v1/kasir/branch/switch-context | branch_api.switch_branch_context |
-| POST | /api/v1/kasir/branch/test | branch_api.test_branch_connection |
 
 #### 🔹 Blueprint: client (9 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |

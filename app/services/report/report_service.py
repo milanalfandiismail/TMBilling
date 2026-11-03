@@ -327,16 +327,8 @@ class ReportService:
             for op in MenuRepository.get_distinct_remote_operators():
                 if op:
                     remote_ops.add(op)
-            hidden_ops = set()
-            try:
-                from app.services.branch.branch_service import BranchService
-                hidden_ops = BranchService.get_hidden_operators()
-            except Exception:
-                pass
-
             for op in sorted(remote_ops):
-                if op not in hidden_ops:
-                    result.append({"id": f"operator:{op}", "nama": op})
+                result.append({"id": f"operator:{op}", "nama": op})
             return result
         else:
             user = UserRepository.get_by_id(kasir_id)

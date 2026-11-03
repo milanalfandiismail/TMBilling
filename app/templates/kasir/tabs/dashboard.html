@@ -25,7 +25,7 @@
         </div>
     </div>
 
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-4 mt-2">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-4 mt-2">
         <div id="dashboard-tabs" class="flex flex-wrap gap-2"></div>
         <div class="flex gap-2 items-center">
             <button onclick="Dashboard.tambahWaktuMember()"
@@ -48,7 +48,7 @@
         </div>
     </div>
     <div id="pc-area">
-        <div class="grid gap-2 grid-cols-2 md:grid-cols-4 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 auto-rows-fr p-1">
+        <div class="grid gap-2 grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 auto-rows-fr p-1">
             {% for _ in range(12) %}
             <div class="skeleton-pc-card bg-[#141414] border border-transparent rounded-xl p-2 lg:p-2 xl:p-2.5 2xl:p-3 min-h-[96px] lg:min-h-[102px] xl:min-h-[108px] 2xl:min-h-[120px] flex flex-col justify-between select-none">
                 <!-- Row 1: PC Code & Status Dot -->

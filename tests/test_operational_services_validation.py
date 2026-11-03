@@ -99,13 +99,18 @@ def test_tutorial_service_validation(app_context):
         })
 
 
-def test_note_service_validation(app_context):
-    import time
-    title = f"SOP Kasir {int(time.time())}"
-    note = NoteService.create_note(title, "Isi catatan operasional pagi.")
-    assert note["title"] == title
+def test_note_service_validation(app_context, tmp_path):
+    orig_notes_dir = NoteService.get_notes_dir
+    NoteService.get_notes_dir = classmethod(lambda cls: str(tmp_path))
+    try:
+        import time
+        title = f"SOP Kasir {int(time.time())}"
+        note = NoteService.create_note(title, "Isi catatan operasional pagi.")
+        assert note["title"] == title
 
-    # Invalid directory traversal attempt in note path
-    with pytest.raises(ValueError, match="Akses tidak sah"):
-        NoteService.validate_path("../../etc/shadow")
+        # Invalid directory traversal attempt in note path
+        with pytest.raises(ValueError, match="Akses tidak sah"):
+            NoteService.validate_path("../../etc/shadow")
+    finally:
+        NoteService.get_notes_dir = orig_notes_dir
 

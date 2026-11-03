@@ -59,13 +59,7 @@ def run():
                         conn.execute(text("ALTER TABLE transaksi_menu ADD COLUMN operator VARCHAR(100)"))
                         conn.commit()
 
-            if not inspector.has_table("cabang"):
-                from app.models.branch import Branch
-                Branch.__table__.create(db.engine)
-
-            if not inspector.has_table("cabang_inbound"):
-                from app.models.branch import BranchInbound
-                BranchInbound.__table__.create(db.engine)
+            # Auto-migration v1.6.5-rc2: Subsystem multi-branch dihapus (tabel cabang & cabang_inbound di-drop via migration)
 
             if inspector.has_table("game"):
                 cols = [c["name"] for c in inspector.get_columns("game")]

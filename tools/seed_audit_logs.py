@@ -9,7 +9,7 @@ def seed_logs(include_legacy=True):
     app = create_app()
     with app.app_context():
         operator = "admin"
-        print("🌱 Menyuntikkan sampel log lengkap (12 domain) ke warnet.log...")
+        print("[SEED] Menyuntikkan sampel log lengkap (12 domain) ke warnet.log...")
 
         # 1. Format Legacy & Corrupted / Raw
         if include_legacy:

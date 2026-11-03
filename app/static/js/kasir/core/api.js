@@ -7,13 +7,7 @@ const API = {
             const method = (options.method || 'GET').toUpperCase();
             const headers = { ...options.headers };
 
-            // Injeksi X-Branch-ID jika sedang memilih cabang remote
-            const activeBranchId = sessionStorage.getItem('active_branch_id');
-            if (activeBranchId && activeBranchId !== '0' && !headers['X-Branch-ID']) {
-                if (!url.includes('/api/v1/kasir/branch/') && !url.includes('/api/v1/kasir/auth/')) {
-                    headers['X-Branch-ID'] = activeBranchId;
-                }
-            }
+
 
             const isFormData = (typeof FormData !== 'undefined' && options.body instanceof FormData) ||
                 (options.body && typeof options.body.append === 'function');
@@ -39,27 +33,6 @@ const API = {
             let data;
             try { data = JSON.parse(txt); } catch (e) { data = { error: txt }; }
             if (!res.ok) {
-                // Jika cabang remote offline, jangan redirect login, tapi beri peringatan & failover
-                if (data && data.is_branch_offline) {
-                    if (window.Toast) {
-                        window.Toast.show(data.error || "Cabang sedang offline", "error");
-                    }
-                    if (window.BranchManager && typeof window.BranchManager.handleActiveBranchDisconnect === 'function') {
-                        window.BranchManager.handleActiveBranchDisconnect();
-                    }
-                    return data;
-                }
-                // Jika request cabang remote ditolak (401/403 misal kunci API cabang berubah/tidak valid),
-                // JANGAN tendang session kasir lokal ke login! Lakukan failover kembali ke Cabang Lokal.
-                if ((res.status === 401 || res.status === 403) && activeBranchId && activeBranchId !== '0') {
-                    if (window.Toast) {
-                        window.Toast.show(data?.error || `Otentikasi ke cabang remote ditolak (HTTP ${res.status}). Kembali ke Cabang Lokal.`, "error");
-                    }
-                    if (window.BranchManager && typeof window.BranchManager.handleActiveBranchDisconnect === 'function') {
-                        window.BranchManager.handleActiveBranchDisconnect();
-                    }
-                    return data;
-                }
                 // Session expired — redirect ke login (hanya 401 unauthenticated, bukan 403)
                 if (res.status === 401 && !url.includes('/api/v1/kasir/auth/login') && !url.includes('/api/v1/kasir/auth/check')) {
                     window.location.href = '/kasir/login';
@@ -378,27 +351,6 @@ const API = {
         })
     },
 
-    // 🏢 MULTI-CABANG (BRANCH MANAGEMENT)
-    branch: {
-        list: (includeKey = false) => API.request(`/api/v1/kasir/branch/list?include_key=${includeKey ? 1 : 0}`),
-        add: (data) => API.request('/api/v1/kasir/branch/add', { method: 'POST', body: JSON.stringify(data) }),
-        update: (id, data) => API.request(`/api/v1/kasir/branch/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: (id) => API.request(`/api/v1/kasir/branch/${id}`, { method: 'DELETE' }),
-        test: (url, apiKey) => API.request('/api/v1/kasir/branch/test', { method: 'POST', body: JSON.stringify({ url, api_key: apiKey }) }),
-        testBranch: (id) => API.request(`/api/v1/kasir/branch/${id}/test`, { method: 'POST' }),
-        myKey: () => API.request('/api/v1/kasir/branch/my-key'),
-        regenerateKey: () => API.request('/api/v1/kasir/branch/my-key/regenerate', { method: 'POST' }),
-        operators: () => API.request('/api/v1/kasir/branch/operators'),
-        hideOperator: (operatorName) => API.request('/api/v1/kasir/branch/operators/hide', { method: 'POST', body: JSON.stringify({ operator: operatorName }) }),
-        restoreOperator: (operatorName) => API.request('/api/v1/kasir/branch/operators/restore', { method: 'POST', body: JSON.stringify({ operator: operatorName }) }),
-        deleteOperator: (operatorName) => API.request('/api/v1/kasir/branch/operators/delete', { method: 'POST', body: JSON.stringify({ operator: operatorName }) }),
-        inboundList: () => API.request('/api/v1/kasir/branch/inbound'),
-        inboundBlock: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}/block`, { method: 'POST' }),
-        inboundUnblock: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}/unblock`, { method: 'POST' }),
-        inboundDelete: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}`, { method: 'DELETE' }),
-        switchContext: (branchId) => API.request('/api/v1/kasir/branch/switch-context', { method: 'POST', body: JSON.stringify({ branch_id: branchId }) })
-    },
-
     // 🔗 MANAJEMEN SHIFT KASIR
     shift: {
         active: () => API.request('/api/v1/kasir/shift/active'),
@@ -423,14 +375,6 @@ const API = {
 
     resolveMediaUrl(url) {
         if (!url || typeof url !== 'string') return '';
-        if (url.startsWith('data:') || url.startsWith('blob:')) return url;
-        const activeBranchId = (window.BranchManager && window.BranchManager.activeBranchId) || sessionStorage.getItem('active_branch_id') || '0';
-        if (activeBranchId && activeBranchId !== '0') {
-            if (url.startsWith('/static/')) {
-                const relPath = url.substring('/static/'.length);
-                return `/api/v1/kasir/branch/${activeBranchId}/media/${relPath}`;
-            }
-        }
         return url;
     }
 

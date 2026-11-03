@@ -153,11 +153,6 @@ const App = {
                 case 'server_statistic':
                     if (typeof ServerMonitor !== 'undefined' && typeof ServerMonitor.refreshLive === 'function') ServerMonitor.refreshLive();
                     break;
-                case 'branch':
-                case 'branch_inbound':
-                case 'branch_kasir':
-                    if (typeof BranchManager !== 'undefined' && typeof BranchManager.refreshLive === 'function') BranchManager.refreshLive();
-                    break;
                 case 'settings':
                 case 'settings_general':
                 case 'settings_payment':
@@ -242,10 +237,10 @@ const App = {
             'game', 'game_management',
             'user', 'shift_history', 'user_logs', 'log',
             'server_statistic', 'monitor', 'hardware_checker', 'uptime', 'maintenance', 'screenshot', 'remote_server',
-            'settings', 'settings_general', 'settings_branch', 'settings_payment', 'settings_kiosk', 'settings_tv', 
+            'settings', 'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv', 
             'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup', 
             'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'whitelist_ip',
-            'mikrotik', 'analytics', 'plugins', 'plugin-spa', 'fileexplorer', 'branch', 'branch_inbound', 'branch_kasir'
+            'mikrotik', 'analytics', 'plugins', 'plugin-spa', 'fileexplorer'
         ];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');
@@ -254,26 +249,6 @@ const App = {
             subTab = null;
         }
 
-        // Jika sedang mengontrol cabang remote, proteksi seluruh tab server lokal, staff, utilitas & pengaturan
-        if (typeof BranchManager !== 'undefined' && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0') {
-            const remoteRestrictedTabs = [
-                'branch', 'branch_inbound', 'branch_kasir', 'fileexplorer', 'tutorials',
-                'user', 'shift_history', 'user_logs',
-                'hardware_checker', 'remote_server', 'catatan', 'blackout',
-                'mikrotik', 'log', 'plugins', 'plugin-spa',
-                'settings', 'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv',
-                'whitelist_ip', 'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup',
-                'settings_db_cleanup', 'settings_scheduler', 'settings_migration'
-            ];
-            if (remoteRestrictedTabs.includes(tab) || mainTab === 'settings') {
-                if (window.Toast) {
-                    window.Toast.show('Menu ini hanya dapat dikonfigurasi pada Cabang Lokal', 'info');
-                }
-                tab = 'dash';
-                mainTab = 'dash';
-                subTab = null;
-            }
-        }
 
         document.querySelectorAll('.tab-btn').forEach(btn => {
             const onClick = btn.getAttribute('onclick') || '';
@@ -353,10 +328,7 @@ const App = {
             analytics: 'Analytics Owner',
             plugins: 'Plugins & Ekstensi',
             mikrotik: 'MikroTik Hotspot',
-            fileexplorer: 'File Explorer',
-            branch: 'Multi Cabang: Koneksi Cabang',
-            branch_inbound: 'Multi Cabang: List Koneksi Cabang',
-            branch_kasir: 'Multi Cabang: Akun Kasir Cabang'
+            fileexplorer: 'File Explorer'
         };
 
         const titleEl = document.getElementById('page-title');
@@ -432,23 +404,7 @@ const App = {
             case 'tutorials': if (typeof Tutorials !== 'undefined') await Tutorials.load(); break;
             case 'fileexplorer': if (typeof FileExplorer !== 'undefined') await FileExplorer.load(); break;
             case 'remote_server': if (typeof VNCClient !== 'undefined') await VNCClient.load(); break;
-            case 'branch':
-                if (typeof BranchManager !== 'undefined') {
-                    await BranchManager.loadMyBranchKey();
-                    await BranchManager.loadBranches();
-                    BranchManager.renderBranchesSettingsTable();
-                }
-                break;
-            case 'branch_inbound':
-                if (typeof BranchManager !== 'undefined') {
-                    await BranchManager.loadInboundBranches();
-                }
-                break;
-            case 'branch_kasir':
-                if (typeof BranchManager !== 'undefined') {
-                    await BranchManager.loadRemoteOperators();
-                }
-                break;
+
         }
     },
  
@@ -526,5 +482,4 @@ window.Tutorials = typeof Tutorials !== 'undefined' ? Tutorials : undefined;
 window.FileExplorer = typeof FileExplorer !== 'undefined' ? FileExplorer : undefined;
 window.VNCClient = typeof VNCClient !== 'undefined' ? VNCClient : undefined;
 window.VNCSession = typeof VNCSession !== 'undefined' ? VNCSession : undefined;
-window.BranchManager = typeof BranchManager !== 'undefined' ? BranchManager : undefined;
 window.Catatan = typeof Catatan !== 'undefined' ? Catatan : undefined;

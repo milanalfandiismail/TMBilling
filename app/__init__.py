@@ -78,7 +78,6 @@ def _register_blueprints(app):
         tv_public_api_bp,
         tutorial_api_bp,
         fileexplorer_api_bp,
-        branch_api_bp,
         notes_api_bp
     )
 
@@ -117,7 +116,6 @@ def _register_blueprints(app):
     app.register_blueprint(uptime_api_bp, url_prefix="/api/v1/kasir/uptime")
     app.register_blueprint(tutorial_api_bp, url_prefix="/api/v1/kasir/tutorials")
     app.register_blueprint(fileexplorer_api_bp, url_prefix="/api/v1/kasir/fileexplorer")
-    app.register_blueprint(branch_api_bp, url_prefix="/api/v1/kasir/branch")
     app.register_blueprint(notes_api_bp, url_prefix="/api/v1/kasir/notes")
 
     # ==========================================
@@ -304,20 +302,22 @@ def _init_app_context(app):
                 db.session.add(admin)
                 db.session.commit()
 
-                try:
-                    project_root = app.config.get("PROJECT_ROOT") or os.path.abspath(os.path.join(app.root_path, ".."))
-                    info_path = os.path.join(project_root, "initial_admin.txt")
-                    with open(info_path, "w", encoding="utf-8") as f:
-                        f.write("=== TMBILLING INITIAL SUPERADMIN CREDENTIALS ===\n")
-                        f.write("Username: admin\n")
-                        f.write(f"Password: {tmp_pwd}\n")
-                        f.write("CATATAN: Harap segera login dan ubah password ini di Dashboard Kasir.\n")
-                        f.write("Berkas ini dapat Anda hapus setelah berhasil login.\n")
-                except Exception as io_err:
-                    app.logger.warning(f"Gagal mencatat initial_admin.txt: {io_err}")
-
-                print(f"[PENTING] [TMBilling] Admin awal dibuat. Username: admin | Password sementara: {tmp_pwd}")
-                print(f"[PENTING] Kredensial telah disimpan di: {os.path.join(project_root, 'initial_admin.txt')}")
+                is_testing = app.config.get("TESTING") or os.environ.get("FLASK_ENV") == "testing"
+                project_root = app.config.get("PROJECT_ROOT")
+                if project_root or not is_testing:
+                    try:
+                        target_root = project_root or os.path.abspath(os.path.join(app.root_path, ".."))
+                        info_path = os.path.join(target_root, "initial_admin.txt")
+                        with open(info_path, "w", encoding="utf-8") as f:
+                            f.write("=== TMBILLING INITIAL SUPERADMIN CREDENTIALS ===\n")
+                            f.write("Username: admin\n")
+                            f.write(f"Password: {tmp_pwd}\n")
+                            f.write("CATATAN: Harap segera login dan ubah password ini di Dashboard Kasir.\n")
+                            f.write("Berkas ini dapat Anda hapus setelah berhasil login.\n")
+                        print(f"[PENTING] [TMBilling] Admin awal dibuat. Username: admin | Password sementara: {tmp_pwd}")
+                        print(f"[PENTING] Kredensial telah disimpan di: {info_path}")
+                    except Exception as io_err:
+                        app.logger.warning(f"Gagal mencatat initial_admin.txt: {io_err}")
         except Exception as e:
             app.logger.error(f"Gagal membuat admin default saat bootstrap: {e}")
 
@@ -325,10 +325,7 @@ def _init_app_context(app):
         try:
             from sqlalchemy import inspect, text
             inspector = inspect(db.engine)
-            if not inspector.has_table('cabang'):
-                from app.models.branch import Branch
-                Branch.__table__.create(db.engine)
-                app.logger.info("[OK] [TMBilling] Tabel 'cabang' berhasil dibuat secara otomatis.")
+            # Auto-migration v1.6.5-rc2: Subsystem multi-branch dihapus (tabel cabang & cabang_inbound di-drop via migration)
 
             # Auto-migration v1.6.2: User kuota benefit columns
             if inspector.has_table('user'):
@@ -409,9 +406,8 @@ def create_app(config_override=None):
 
     db.init_app(app)
 
-    # IP Whitelist & Branch Proxy Relay middleware
-    from app.middleware import check_ip_whitelist, handle_branch_proxy_relay
-    app.before_request(handle_branch_proxy_relay)
+    # IP Whitelist middleware
+    from app.middleware import check_ip_whitelist
     app.before_request(check_ip_whitelist)
 
     csrf.init_app(app)
@@ -421,7 +417,7 @@ def create_app(config_override=None):
     def _isolate_stateless_bearer_sessions(response):
         """Mencegah pencemaran cookie sesi browser pada request API stateless Bearer relay."""
         auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Bearer ") or getattr(g, "is_branch_api_call", False):
+        if auth_header.startswith("Bearer "):
             from flask import session as flask_sess
             flask_sess.modified = False
             if "Set-Cookie" in response.headers:

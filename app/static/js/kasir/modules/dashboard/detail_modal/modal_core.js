@@ -179,7 +179,7 @@ window.DashboardModalCore = {
         const isAdminMode = !isSystemMode && (pc.is_admin_mode || pc.status === 'admin' || (sesi?.tipe === 'admin'));
 
         const modalHtml = `
-            <div id="pc-detail-modal-card" class="bg-[#111] border border-[#2a2a2a] rounded-xl w-[calc(100%-2rem)] lg:w-[92vw] xl:w-[88vw] 2xl:w-[84vw] max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[1500px] h-[85vh] xl:h-[90vh] 2xl:h-[92vh] max-h-[94vh] xl:max-h-[94vh] 2xl:max-h-[96vh] flex flex-col overflow-hidden shadow-2xl transition-all duration-300">
+            <div id="pc-detail-modal-card" class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[1500px] max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl transition-all duration-300">
                 <div class="px-5 md:px-6 py-3.5 md:py-4 border-b border-[#2a2a2a] flex items-center justify-between shrink-0">
                     <div>
                         <div class="flex items-center gap-2">
@@ -201,7 +201,7 @@ window.DashboardModalCore = {
                         <!-- Left Column: Action Buttons -->
                         <div class="col-span-full lg:col-span-7 xl:col-span-5 2xl:col-span-5 space-y-2.5 flex flex-col justify-start">
                             <div class="text-[10px] lg:text-xs text-neutral-400 uppercase font-bold tracking-wider font-mono">Aksi & Kontrol PC</div>
-                            <div id="modal-action-buttons-grid" class="grid grid-cols-3 gap-2.5 md:gap-3">
+                            <div id="modal-action-buttons-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 md:gap-3">
                                 ${this.renderActionButtonsHtml(pc, isOnline, sesi, isAfk, isSystemMode, isAdminMode)}
                             </div>
                         </div>

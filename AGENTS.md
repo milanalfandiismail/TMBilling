@@ -15,7 +15,6 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | Berkas Root | Tanggung Jawab & Cakupan |
 |---|---|
 | `run.py` | Entry point utama server Flask development & inisialisasi daemon background scheduler (APScheduler). |
-| `run_branch2.py` | Entry point simulasi server cabang kedua (port 5001) untuk pengujian multi-branch proxy relay. |
 | `create_admin.py` | Skrip CLI interaktif untuk pembuatan akun superadmin pertama kali. |
 | `seed.py` | Skrip pengisian data awal database (paket billing, grup PC reguler/VIP, pengaturan default). |
 | `seed_games.py` | Skrip seeding metadata katalog game populer dan ikon default. |
@@ -51,13 +50,12 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 
 #### A. Konfigurasi & Inisialisasi
 - `app/config.py`: **Single Source of Version Truth** (`VERSION = "1.6.5-rc2"`), dynamic random `SECRET_KEY` generator with write-through `.env` persistence, konfigurasi database SQLite, session lifetime, dan environment loader.
-- `app/__init__.py`: Application Factory (`create_app(config_override=None)`), inisialisasi CORS, custom `TMBillingCSRFProtect`, Flask-Migrate, bootstrap superadmin acak unik (`initial_admin.txt` di root direktori), dan pendaftaran 31 blueprint.
+- `app/__init__.py`: Application Factory (`create_app(config_override=None)`), inisialisasi CORS, custom `TMBillingCSRFProtect`, Flask-Migrate, bootstrap superadmin acak unik (`initial_admin.txt` di root direktori), dan pendaftaran 30 blueprint.
 
-#### B. Model ORM SQLAlchemy (`app/models/` — 18 Sub-Domain)
+#### B. Model ORM SQLAlchemy (`app/models/` — 17 Sub-Domain)
 | Subfolder Model | Model SQLAlchemy & Entitas Data |
 |---|---|
 | `models/base/` | Model dasar, helper mixin, dan relasi umum. |
-| `models/branch/` | `Branch` (cabang remote) & `BranchInbound` (koneksi inbound multi-branch). |
 | `models/game/` | `Game` (daftar game klien) & `GameKategori` (kategori eSports/casual/FPS). |
 | `models/grup/` | `Grup` (kategori ruangan PC: VIP, Reguler, VVIP beserta tarif per menit). |
 | `models/hardware/` | `HardwareMonitor` (baseline spek CPU, GPU, RAM, Mobo) & `PCProcess` (daftar proses aktif). |
@@ -75,13 +73,12 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `models/tutorial/` | `SystemTutorial` (artikel panduan operasional & CMS internal kasir). |
 | `models/user/` | `User` (akun kasir & admin) & `AuditLog` (catatan jejak audit aktivitas kasir). |
 
-#### C. Route Blueprints HTTP REST & WebSocket (`app/routes/` — 28 Sub-Domain)
+#### C. Route Blueprints HTTP REST & WebSocket (`app/routes/` — 27 Sub-Domain)
 | Subfolder Rute | Tanggung Jawab Endpoint |
 |---|---|
 | `routes/auth/` | Autentikasi kasir & admin (`/kasir/auth/`) serta autentikasi member client PC dengan validasi API key (`/public/auth/`). |
 | `routes/backup/` | Manajemen backup database lokal SQLite dan integrasi cloud backup. |
 | `routes/blackout/` | Endpoint penanganan toleransi pemulihan sesi pasca mati lampu. |
-| `routes/branch/` | API multi-branch control panel, relay proxy inbound, dan sinkronisasi cabang. |
 | `routes/client/` | Handshake client agent PC, detak jantung (heartbeat), dan penerimaan status sesi. |
 | `routes/dashboard/` | Data agregat statistik dashboard kasir, total pendapatan hari ini, dan summary PC. |
 | `routes/fileexplorer/` | Remote web disk explorer (browse folder, upload file, download file dari PC klien). |
@@ -107,12 +104,11 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `routes/user/` | RBAC manajemen user kasir/admin dan penelusuran audit log lengkap. |
 | `routes/vnc/` | WebSocket proxy relay streaming RFB TightVNC port 5900 dan bi-directional clipboard. |
 
-#### D. Business Logic Services (`app/services/` — 32 Sub-Domain)
+#### D. Business Logic Services (`app/services/` — 31 Sub-Domain)
 Seluruh aturan bisnis murni berada di layer service:
 - `services/auth/`: Validasi kredensial, hashing password, dan manajemen token.
 - `services/backup/`: Backup otomatis rotasi harian dan restore snapshot SQLite.
 - `services/blackout/`: Logika pemulihan sesi berdasarkan threshold blackout terkonfigurasi.
-- `services/branch/`: Proxy forwarding HTTP request dan WebSocket relay antar cabang.
 - `services/cache/`: Subsystem in-memory cache berkecepatan tinggi (rincian di Bagian 3).
 - `services/client/`: Manajemen handshake dan antrean perintah cepat client PC.
 - `services/cloudflare_tunnel/`: Integrasi zero-trust Cloudflare Ingress daemon.
@@ -134,7 +130,7 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/report/`: Kompilasi laporan keuangan harian/bulanan kasir.
 - `services/server_monitor/`: Sensor telemetri performa mesin server utama.
 - `services/sesi/`: Engine kalkulasi tarif per menit, sisa waktu billing, dan refund saldo.
-- `services/settings/`: Cache write-through pengaturan aplikasi, generator `branch_api_key`, dan auto-generator random `vnc_password`.
+- `services/settings/`: Cache write-through pengaturan aplikasi dan auto-generator random `vnc_password`.
 - `services/shift/`: Verifikasi selisih uang kas fisik kasir (blind reconciliation).
 - `services/tournament/`: Engine pairing babak dan alur skor turnamen eSports.
 - `services/transaksi/`: Pencatatan buku besar transaksi pembayaran.
@@ -148,7 +144,6 @@ Pemisahan query ORM mentah dari service:
 
 #### F. Middleware & Utilities (`app/middleware/` & `app/utils/`)
 - `middleware/auth.py`: Decorator `@login_required`, `@admin_required`, `@shift_required`.
-- `middleware/branch_proxy.py`: Inspeksi token server-to-server antar cabang.
 - `middleware/ip_whitelist_middleware.py`: Filter akses IP subnet warnet.
 - `utils/constants.py`: Konstanta global durasi, status sesi, dan kode error.
 - `utils/helpers.py`: Response formatter JSON terstandar (`success_response`, `error_response`).
@@ -194,25 +189,25 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 ### 5. Frontend Dashboard Kasir (`app/static/` & `app/templates/`)
 
 #### A. Modular ES6 JavaScript (`app/static/js/kasir/`)
-- `app.js`: Entry point inisialisasi aplikasi kasir, event delegation, dan routing 32 tab.
+- `app.js`: Entry point inisialisasi aplikasi kasir, event delegation, dan routing 29 tab.
 - `core/api.js`: Klien HTTP REST terpusat dengan penanganan CSRF otomatis dan error reporting.
 - `core/modal.js`: Pengendali modal dialog modular.
-- `core/skeleton.js`: Standardized animated skeleton loader untuk 32 tab tampilan.
+- `core/skeleton.js`: Standardized animated skeleton loader untuk 29 tab tampilan.
 - `core/toast.js`: Sistem notifikasi toast floating modern.
 - `core/utils.js`: Formatter mata uang Rupiah, kalkulator waktu, dan escape HTML sanitizer.
 - `components/modal-buka.js`: Modal alur pembukaan sesi baru meja PC (Prepaid/Postpaid/Member).
 - `components/modal-tambah.js`: Modal penambahan durasi waktu bermain.
 - `components/modal-confirm-tambah.js`: Konfirmasi pembayaran perpanjangan durasi.
 - `modules/dashboard/`: Logika view dashboard utama (`dashboard_card.js`, `dashboard_compact.js`, `dashboard_detail_modal.js`, `dashboard_process_monitor.js`, `dashboard_selection.js`, `map_view.js`, `sidebar.js`).
-- `modules/`: 29 Modul fitur independen (`blackout.js`, `branch.js`, `catatan.js`, `fileexplorer.js`, `game.js`, `grup.js`, `hardware_checker.js`, `laporan.js`, `laporan_maintenance.js`, `laporan_menu.js`, `log.js`, `maintenance.js`, `member.js`, `menu.js`, `mikrotik.js`, `monitor.js`, `owner.js`, `paket.js`, `pc.js`, `remote.js`, `screenshot.js`, `server_monitor.js`, `settings.js`, `shift.js`, `struk.js`, `tournament.js`, `tutorials.js`, `uptime.js`, `user.js`).
+- `modules/`: 28 Modul fitur independen (`blackout.js`, `catatan.js`, `fileexplorer.js`, `game.js`, `grup.js`, `hardware_checker.js`, `laporan.js`, `laporan_maintenance.js`, `laporan_menu.js`, `log.js`, `maintenance.js`, `member.js`, `menu.js`, `mikrotik.js`, `monitor.js`, `owner.js`, `paket.js`, `pc.js`, `remote.js`, `screenshot.js`, `server_monitor.js`, `settings.js`, `shift.js`, `struk.js`, `tournament.js`, `tutorials.js`, `uptime.js`, `user.js`).
 
 #### B. Template Jinja2 HTML (`app/templates/`)
 - `templates/kasir/base.html`: Shell induk HTML dashboard kasir, deklarasi CSS/JS dan meta CSRF.
-- `templates/kasir/index.html`: Kontainer view 32 tab modular kasir.
+- `templates/kasir/index.html`: Kontainer view 29 tab modular kasir.
 - `templates/kasir/login.html`: Halaman login kasir dan administrator.
 - `templates/kasir/documentation.html`: Portal internal dokumentasi interaktif & CMS tutorial sistem (`/kasir/documentation`).
 - `templates/kasir/components/`: Partisi navbar (`navbar.html`), sidebar (`sidebar.html`, `sidebar_admin.html`, `sidebar_kasir.html`), dan modal induk (`modals.html`).
-- `templates/kasir/tabs/`: 32 Tampilan tab independen lengkap (`dashboard.html`, `pc.html`, `grup.html`, `paket.html`, `menu.html`, `menu_stock_log.html`, `laporan_menu.html`, `member.html`, `monitor.html`, `hardware_checker.html`, `uptime.html`, `screenshot.html`, `maintenance.html`, `laporan_maintenance.html`, `shift_history.html`, `catatan.html`, `tournament.html`, `game.html`, `fileexplorer.html`, `remote_server.html`, `branch.html`, `branch_inbound.html`, `branch_kasir.html`, `user.html`, `user_logs.html`, `log.html`, `laporan.html`, `struk.html`, `blackout.html`, `mikrotik.html`, `analytics.html`, `settings.html`).
+- `templates/kasir/tabs/`: 29 Tampilan tab independen lengkap (`dashboard.html`, `pc.html`, `grup.html`, `paket.html`, `menu.html`, `menu_stock_log.html`, `laporan_menu.html`, `member.html`, `monitor.html`, `hardware_checker.html`, `uptime.html`, `screenshot.html`, `maintenance.html`, `laporan_maintenance.html`, `shift_history.html`, `catatan.html`, `tournament.html`, `game.html`, `fileexplorer.html`, `remote_server.html`, `user.html`, `user_logs.html`, `log.html`, `laporan.html`, `struk.html`, `blackout.html`, `mikrotik.html`, `analytics.html`, `settings.html`).
 - `templates/public/`: 7 Halaman portal publik (`landing/` info billing, `tv/` billboard display, `livepc/` live scoreboard, `member/` kiosk login & dashboard, `game/` katalog game, `paket/` daftar tarif, `specs/` spesifikasi PC).
 
 ---
@@ -225,11 +220,10 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 |---|---|---|---|
 | **Blackout Recovery** | `modules/blackout.js` | `routes/blackout/`, `services/blackout/` | `Sesi`, `PCUptimeLog` |
 | **Process Monitor & Task Killer** | `modules/dashboard/dashboard_process_monitor.js` | `routes/monitor/monitor_routes.py`, `services/cache/telemetry_store.py` | `PCProcess`, in-memory store |
-| **VNC Remote Control & Clipboard** | `modules/remote.js`, `core/vnc_client.js` | `routes/vnc/vnc_routes.py`, `services/vnc/`, `services/settings/` (random VNC password) | `PC`, `Branch`, `Settings` |
+| **VNC Remote Control & Clipboard** | `modules/remote.js`, `core/vnc_client.js` | `routes/vnc/vnc_routes.py`, `services/vnc/`, `services/settings/` (random VNC password) | `PC`, `Settings` |
 | **POS Kantin & Billing FnB** | `modules/menu.js`, `modules/struk.js` | `routes/menu/menu_routes.py`, `services/menu/` | `MenuItem`, `TransaksiMenu` |
 | **Hardware Baseline Anti-Maling** | `modules/hardware_checker.js` | `routes/monitor/monitor_routes.py`, `routes/hardware/`, `services/hardware/` | `HardwareMonitor` |
 | **Shift Kasir (Blind Cash)** | `modules/shift.js` | `routes/shift/shift_routes.py`, `services/shift/` | `ShiftRecord`, `Transaksi` |
-| **Multi-Branch Proxy Relay** | `modules/branch.js` | `routes/branch/branch_routes.py`, `services/branch/` | `Branch`, `BranchInbound` |
 | **Web File Explorer Remote** | `modules/fileexplorer.js` | `routes/fileexplorer/`, `services/fileexplorer/` | `PC` |
 | **Floor Plan / Visual Denah Meja** | `modules/dashboard/map_view.js` | `routes/pc/pc_routes.py`, `services/pc/` | `PC`, `Grup` |
 | **CMS Artikel & Tutorial** | `modules/tutorials.js` | `routes/tutorial/`, `services/tutorial/` | `SystemTutorial` |
@@ -247,6 +241,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Screenshot Monitor PC** | `modules/screenshot.js` | `routes/monitor/screenshot_routes.py`, `services/cache/telemetry_store.py` | In-memory store |
 | **Server Health Telemetry** | `modules/server_monitor.js` | `routes/server_monitor/`, `services/server_monitor/` | Host sensors |
 | **Frontend CPU & Zero-Thrashing** | `modules/dashboard/dashboard_compact.js`, `core/skeleton.js` | `templates/kasir/base.html`, `tailwind.config.js` | Strict dirty-checking, zero infinite keyframe loops |
+| **Responsive Tailwind Reflow** | `modules/dashboard/dashboard_compact.js`, `core/modal.js` | `templates/kasir/base.html`, `templates/kasir/components/navbar.html`, `sidebar.html` | Pure Tailwind Breakpoints (`sm`, `md`, `lg`, `xl`, `2xl`), `max-h-[90dvh]`, zero horizontal overflow across 29 tabs |
 
 ---
 
@@ -273,8 +268,11 @@ python run.py
 # Kompilasi ulang seluruh biner deploy klien & server
 build_and_deploy.bat
 
-# Eksekusi Comprehensive E2E Playwright Suite (32 Tab, Subtabs, 58+ Modals, Full CRUD)
+# Eksekusi Comprehensive E2E Playwright Suite (29 Tab, Subtabs, 58+ Modals, Full CRUD)
 # via MCP Playwright tool browser_run_code_unsafe dengan tests/playwright_e2e_full_suite.js
+
+# Eksekusi Responsive Breakpoints Verification (174 Checks across 29 Tabs & 6 Tailwind Breakpoints)
+# via MCP Playwright tool browser_run_code_unsafe dengan tests/playwright_responsive_breakpoints.js
 ```
 
 ---
@@ -320,7 +318,7 @@ Untuk menjaga agar penggunaan CPU browser (Brave, Chrome, Edge) tetap sangat ren
 - **Zero Infinite Keyframe Loops**: DILARANG menambahkan CSS keyframes looping tak berhingga seperti `pulse-*-bg`, `animate-ping`, `animate-pulse`, `animate-modal-in`, `animate-in`, `fade-in`, atau `zoom-in`. Status darurat meja (Terputus, API Key Salah, LAN Drop, Hardware Swapped) WAJIB menggunakan badge visual solid berkontras tinggi dan teks tegas (`[ ⚠️ TERPUTUS ]`, `[ 🔑 KEY TIDAK COCOK ]`, `[ ⚠️ LAN 100M ]`) tanpa animasi berkedip.
 - **Zero Compositing Blur Filter**: DILARANG menggunakan CSS filter `backdrop-blur-*` dan `hover:brightness-*` pada modal overlay atau kartu meja. Modal overlay WAJIB menggunakan solid dark semi-transparan (`bg-black/90` atau `bg-black/95`) untuk mencegah GPU/CPU convolution composite pass berulang.
 - **Strict Dirty-Checking pada Polling**: Setiap fungsi update berulang (seperti `syncLiveCards` setiap 1 detik) WAJIB membandingkan nilai sebelum menyentuh DOM (`textContent`, `className`, `innerHTML`, `style`). Mutasi DOM hanya boleh dieksekusi bila terdapat perbedaan nilai riil.
-- **Static Skeletons**: Seluruh placeholder loading skeleton di 32 tab dan `skeleton.js` menggunakan balok statis netral (`bg-[#202020]` atau `bg-neutral-800`) tanpa animasi denyut `animate-pulse`.
+- **Static Skeletons**: Seluruh placeholder loading skeleton di 29 tab dan `skeleton.js` menggunakan balok statis netral (`bg-[#202020]` atau `bg-neutral-800`) tanpa animasi denyut `animate-pulse`.
 
 ### 6. Komunikasi
 - Respon selalu menggunakan **Bahasa Indonesia** kecuali jika diminta lain oleh pengguna.

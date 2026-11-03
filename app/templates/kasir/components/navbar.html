@@ -3,14 +3,14 @@
     class="relative h-12 bg-[#0a0a0a] border-b border-[#171717] flex items-center justify-between px-3 md:px-4 sticky top-0 z-20 shrink-0">
     <div class="flex items-center gap-2.5 min-w-0">
         <button id="navbar-toggle-btn" onclick="Dashboard.toggleSidebar()"
-            class="p-1 rounded hover:bg-neutral-900 transition-colors text-neutral-400 hover:text-neutral-200 flex items-center justify-center lg:hidden"
+            class="w-10 h-10 -ml-1 rounded-lg hover:bg-neutral-900 active:bg-neutral-800 transition-colors text-neutral-400 hover:text-neutral-200 flex items-center justify-center lg:hidden shrink-0 touch-manipulation"
             title="Tampilkan Sidebar">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M4 6h16M4 12h16M4 18h16"></path>
             </svg>
         </button>
-        <h2 id="page-title" class="text-xs font-extrabold text-neutral-100 tracking-wide uppercase truncate">Dashboard</h2>
+        <h2 id="page-title" class="text-xs sm:text-sm font-extrabold text-neutral-100 tracking-wide uppercase truncate">Dashboard</h2>
     </div>
 
     <!-- ===== OMZET HARI INI (DASHBOARD ONLY - CENTERED, DIPISAH BILLING & KANTIN) ===== -->
@@ -40,25 +40,9 @@
         </div>
     </div>
     <div class="flex items-center gap-3">
-        {% if session.get('kasir_role') == 'admin' %}
-        <!-- Branch Selector Dropdown (Admin Only) -->
-        <div id="branch-selector-container" class="relative">
-            <div id="branch-selector-dropdown" class="relative">
-                <button type="button" id="branch-selector-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#141414] hover:bg-[#1a1a1a] border border-[#2a2a2a] hover:border-neutral-500 text-neutral-200 transition-all text-xs font-semibold shadow-sm focus:outline-none">
-                    <span id="branch-selector-icon" class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-                    <span id="branch-selector-current-label" class="truncate max-w-[120px] sm:max-w-[160px]">Cabang Lokal</span>
-                    <svg class="w-3 h-3 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                </button>
-                <div id="branch-selector-menu" class="hidden absolute right-0 mt-1 w-60 rounded-xl bg-[#0c0c0c] border border-[#262626] shadow-2xl z-50 overflow-hidden">
-                    <div id="branch-selector-list"></div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
 
-        <div class="text-right hidden sm:block leading-tight" data-timezone="{{ user_timezone }}" data-timezone-label="{{ user_timezone_label }}">
+
+        <div class="text-right hidden md:block leading-tight shrink-0" data-timezone="{{ user_timezone }}" data-timezone-label="{{ user_timezone_label }}">
             <div class="text-xs font-bold text-neutral-200 font-mono" id="current-time">--:--</div>
             <div class="text-[9px] text-neutral-500 font-mono" id="current-date">--/--/----</div>
         </div>

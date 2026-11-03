@@ -9,11 +9,11 @@
         onclick="Dashboard.toggleSidebar()"></div>
 
     <!-- ===== MAIN ===== -->
-    <main class="flex-1 flex flex-col min-h-0 bg-[#050505] overflow-x-hidden">
+    <main class="flex-1 flex flex-col min-h-0 bg-[#050505] overflow-x-hidden min-w-0">
         <!-- ===== HEADER/NAVBAR ===== -->
         {% include 'kasir/components/navbar.html' %}
 
-        <div id="main-scroll" class="flex-1 p-2 sm:p-4 md:p-6 space-y-3 sm:space-y-6 overflow-y-auto overflow-x-hidden scrollbar-mono">
+        <div id="main-scroll" class="flex-1 p-2 sm:p-3 md:p-4 lg:p-5 xl:p-6 space-y-3 sm:space-y-4 md:space-y-5 overflow-y-auto overflow-x-hidden scrollbar-mono min-w-0">
             <!-- Tabs Content (Umum: Kasir & Admin) -->
             {% include 'kasir/tabs/dashboard.html' %}
             {% include 'kasir/tabs/blackout.html' %}
@@ -50,9 +50,6 @@
             {% include 'kasir/tabs/settings.html' %}
             {% include 'kasir/settings/plugins.html' %}
             {% include 'kasir/tabs/analytics.html' %}
-            {% include 'kasir/tabs/branch.html' %}
-            {% include 'kasir/tabs/branch_inbound.html' %}
-            {% include 'kasir/tabs/branch_kasir.html' %}
             
             <div id="tab-plugin-spa" class="tab-content hidden w-full" style="height: calc(100vh - 140px);">
                 <iframe id="plugin-spa-iframe" class="w-full h-full rounded-xl bg-[#0d0d0d]" src="about:blank"></iframe>

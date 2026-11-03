@@ -186,7 +186,7 @@ const TambahModal = {
             `;
 
             const html = `
-                <div id="modal-tambah-waktu-card" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6 max-w-md md:max-w-4xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[1500px] w-[calc(100%-2rem)] lg:w-[92vw] xl:w-[88vw] 2xl:w-[84vw] max-h-[92vh] xl:max-h-[88vh] mx-auto flex flex-col my-auto shadow-2xl relative overflow-hidden">
+                <div id="modal-tambah-waktu-card" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3.5 sm:p-5 md:p-6 max-w-md md:max-w-4xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[1500px] w-full max-h-[90dvh] mx-auto flex flex-col my-auto shadow-2xl relative overflow-hidden">
                     <!-- Header -->
                     <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#1c1c1c] shrink-0">
                         <div class="flex items-center gap-3">

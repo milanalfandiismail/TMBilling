@@ -2,7 +2,6 @@ import pytest
 from datetime import datetime, date
 from app import create_app, db
 from app.models import User, PC, Paket, Grup, Sesi, Transaksi, MenuItem, TransaksiMenu
-from app.models.branch import Branch
 from app.services.report.report_service import ReportService
 from app.services.sesi.sesi_service import SesiService
 from app.services.menu.menu_service import MenuService
@@ -60,10 +59,6 @@ def test_setup(app_instance):
         menu = MenuItem(nama="Kopi Tubruk", harga=5000, stok=50, is_active=True)
         db.session.add(menu)
 
-        # Buat data cabang aktif
-        branch = Branch(nama="Milan Net", url="https://milan.local", api_key="test-key-123", aktif=True)
-        db.session.add(branch)
-
         db.session.commit()
 
         yield {
@@ -71,8 +66,7 @@ def test_setup(app_instance):
             "kasir1": kasir1,
             "pc": pc,
             "paket": paket,
-            "menu": menu,
-            "branch": branch
+            "menu": menu
         }
 
 

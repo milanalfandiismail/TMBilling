@@ -157,7 +157,7 @@ def delete_hardware_data(hardware_id):
 @monitor_kasir_bp.route("/all", methods=["GET"])
 @login_required
 def get_all_hardware_kasir():
-    """Endpoint kasir untuk mengambil semua data hardware monitor beserta data PC (relayed via multi-branch)."""
+    """Endpoint kasir untuk mengambil semua data hardware monitor beserta data PC ."""
     try:
         return jsonify({"success": True, "data": _build_hardware_list()}), 200
     except Exception as e:

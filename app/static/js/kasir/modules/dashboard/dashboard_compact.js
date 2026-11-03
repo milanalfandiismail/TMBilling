@@ -66,7 +66,8 @@ const CompactGrid = {
         if (w >= 1536) return 12; // 2xl
         if (w >= 1280) return 10; // xl
         if (w >= 1024) return 8;  // lg
-        return 8; // fallback md / tablet
+        if (w >= 768) return 6;   // md
+        return 4; // sm / mobile fallback
     },
 
     updateGroupSlideUI(grupKey, animate = false) {
@@ -682,7 +683,7 @@ const CompactGrid = {
                     <!-- Grid Container -->
                     ${isAutoSort ? (isMobile ? `
                         <!-- Auto-Sort Mobile Grid: 2 columns natural wrap -->
-                        <div class="grid gap-2 grid-cols-2 p-1">
+                        <div class="grid gap-2 grid-cols-2 sm:grid-cols-4 p-1">
                             ${pcs.map(pc => {
                         return `
                                     <div>
@@ -694,7 +695,7 @@ const CompactGrid = {
                     ` : `
                         <!-- Auto-Sort Grid: flows naturally in 8 (lg), 10 (xl), 12 (2xl) columns without overflow clipping -->
                         <div class="auto-grid-wrapper w-full p-1">
-                            <div class="auto-grid-container grid gap-2 grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 auto-rows-fr">
+                            <div class="auto-grid-container grid gap-2 grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 auto-rows-fr">
                                 ${pcs.map(pc => {
                         return `
                                         <div>
