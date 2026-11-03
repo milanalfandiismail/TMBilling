@@ -280,6 +280,17 @@ build_and_deploy.bat
 
 # Eksekusi Responsive Breakpoints Verification (174 Checks across 29 Tabs & 6 Tailwind Breakpoints)
 # via MCP Playwright tool browser_run_code_unsafe dengan tests/playwright_responsive_breakpoints.js
+
+# Menjalankan Master Runner E2E Sandbox Terisolasi (Zero Database Mutation Guarantee)
+npm run test:e2e
+# atau langsung via Python: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py
+
+# Menjalankan Sandbox Server Standalone Port 7016 untuk pengetesan interaktif Playwright
+npm run test:e2e:sandbox
+# atau langsung via Python: .venv\Scripts\python.exe tests/e2e/e2e_sandbox_server.py --standalone 7016
+
+# Eksekusi Rangkaian 8 Modul Interaktif E2E User-Journey Playwright (125 Checks, 0 Failures)
+# via MCP Playwright tool browser_run_code_unsafe dengan tests/e2e/run_all_e2e.js
 ```
 
 ---

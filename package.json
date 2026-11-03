@@ -12,7 +12,9 @@
     "build:ckeditor": "cd tools/ckeditor-builder && npm install && npm run build",
     "build:vendor": "node tools/sync-vendor.js",
     "build": "npm run build:vendor && npm run build:css",
-    "postinstall": "npm run build:vendor && npm run build:css"
+    "postinstall": "npm run build:vendor && npm run build:css",
+    "test:e2e": "python tests/e2e/run_all_e2e.py",
+    "test:e2e:sandbox": "python tests/e2e/e2e_sandbox_server.py --standalone 7016"
   },
   "repository": {
     "type": "git",
