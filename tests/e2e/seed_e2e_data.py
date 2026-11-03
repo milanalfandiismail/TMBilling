@@ -11,7 +11,8 @@ Skrip ini mengisi database sandbox terisolasi secara idempotent:
 """
 
 from datetime import datetime, timedelta
-from app.models import db, User, Grup, PC, Paket, MenuItem, Member, Settings
+import json
+from app.models import db, User, Grup, PC, Paket, MenuItem, Member, Settings, HardwareMonitor
 
 
 def seed_sandbox(app):
@@ -139,3 +140,30 @@ def seed_sandbox(app):
             else:
                 s.value = v
         db.session.commit()
+
+        # 8. Hardware Baseline untuk PC-01
+        pc1 = PC.query.filter_by(kode="PC-01").first()
+        if pc1:
+            hw = HardwareMonitor.query.filter_by(pc_id=pc1.id).first()
+            specs_json = json.dumps({
+                "cpu": "Intel Core i5-12400F",
+                "gpu": "NVIDIA GeForce RTX 3060",
+                "ram": "16 GB DDR4",
+                "motherboard": "ASUS TUF GAMING B660M-PLUS"
+            })
+            if not hw:
+                hw = HardwareMonitor(
+                    pc_id=pc1.id,
+                    cpu_name="Intel Core i5-12400F",
+                    gpu_name="NVIDIA GeForce RTX 3060",
+                    total_ram="16 GB",
+                    motherboard="ASUS TUF GAMING B660M-PLUS",
+                    hardware_current_specs=specs_json,
+                    hardware_baseline=specs_json
+                )
+                db.session.add(hw)
+            else:
+                hw.hardware_current_specs = specs_json
+                if not hw.hardware_baseline:
+                    hw.hardware_baseline = specs_json
+            db.session.commit()
