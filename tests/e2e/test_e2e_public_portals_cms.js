@@ -1,0 +1,109 @@
+/**
+ * E2E Test Suite - Public Portals & CMS Documentation
+ * 
+ * Verifies:
+ * 1. CMS Interactive Documentation (/kasir/documentation).
+ * 2. Public Landing Page (/ or /info).
+ * 3. TV Signage Billboard (/tv).
+ * 4. TV Static Signage Fallback (/tv/static).
+ * 5. Public Live PC Availability & Scoreboard (/livepc).
+ * 6. Public Member Kiosk Login (/member/login).
+ * 7. Public Games Showcase (/games).
+ * 8. Public Billing Packages Pricing (/paket).
+ * 9. Public PC Specs Showcase (/spesifikasi).
+ */
+
+async function runPublicPortalsCMSE2ETest(page) {
+    const results = [];
+    const record = (name, passed, message = '') => {
+        results.push({ name, passed, message });
+        console.log(`[${passed ? 'PASS' : 'FAIL'}] ${name}${message ? ': ' + message : ''}`);
+    };
+
+    const BASE_URL = 'http://127.0.0.1:7016';
+
+    try {
+        console.log('--- Step 1: CMS Documentation (/kasir/documentation) ---');
+        const docRes = await page.goto(`${BASE_URL}/kasir/documentation`, { waitUntil: 'networkidle' });
+        const docOk = docRes && docRes.status() === 200;
+        const hasDocContent = await page.evaluate(() => {
+            return document.body.innerText.length > 50;
+        });
+        record('CMS Documentation Page Load (HTTP 200)', docOk && hasDocContent, `Status: ${docRes ? docRes.status() : 'none'}`);
+
+        console.log('--- Step 2: Public Landing Page (/) ---');
+        const landingRes = await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
+        const landingOk = landingRes && landingRes.status() === 200;
+        const hasLandingContent = await page.evaluate(() => {
+            return document.body.innerText.length > 50;
+        });
+        record('Public Landing Page Load (HTTP 200)', landingOk && hasLandingContent, `Status: ${landingRes ? landingRes.status() : 'none'}`);
+
+        console.log('--- Step 3: TV Signage Billboard (/tv) ---');
+        const tvRes = await page.goto(`${BASE_URL}/tv`, { waitUntil: 'networkidle' });
+        const tvOk = tvRes && tvRes.status() === 200;
+        const hasTvContainer = await page.evaluate(() => {
+            return !!document.getElementById('tv-container') || !!document.querySelector('.tv-container') || document.body.innerText.length > 20;
+        });
+        record('TV Signage Billboard Page Load (HTTP 200)', tvOk && hasTvContainer);
+
+        console.log('--- Step 4: TV Static Signage Fallback (/tv/static) ---');
+        const tvStaticRes = await page.goto(`${BASE_URL}/tv/static`, { waitUntil: 'networkidle' });
+        const tvStaticOk = tvStaticRes && tvStaticRes.status() === 200;
+        record('TV Static Fallback Load (HTTP 200)', tvStaticOk);
+
+        console.log('--- Step 5: Live PC Availability & Scoreboard (/livepc) ---');
+        const livepcRes = await page.goto(`${BASE_URL}/livepc`, { waitUntil: 'networkidle' });
+        const livepcOk = livepcRes && livepcRes.status() === 200;
+        const hasLivepcGrid = await page.evaluate(() => {
+            return document.body.innerText.length > 20;
+        });
+        record('Live PC Scoreboard Page Load (HTTP 200)', livepcOk && hasLivepcGrid);
+
+        console.log('--- Step 6: Public Member Kiosk Login (/member/login) ---');
+        const memberLoginRes = await page.goto(`${BASE_URL}/member/login`, { waitUntil: 'networkidle' });
+        const memberLoginOk = memberLoginRes && memberLoginRes.status() === 200;
+        const hasMemberForm = await page.evaluate(() => {
+            const inputs = document.querySelectorAll('input');
+            return inputs.length >= 1;
+        });
+        record('Member Kiosk Login Page Load (HTTP 200)', memberLoginOk && hasMemberForm);
+
+        console.log('--- Step 7: Public Games Showcase (/games) ---');
+        const gamesRes = await page.goto(`${BASE_URL}/games`, { waitUntil: 'networkidle' });
+        const gamesOk = gamesRes && gamesRes.status() === 200;
+        const hasGamesList = await page.evaluate(() => {
+            return document.body.innerText.length > 20;
+        });
+        record('Public Games Showcase Load (HTTP 200)', gamesOk && hasGamesList);
+
+        console.log('--- Step 8: Public Billing Packages Pricing (/paket) ---');
+        const paketRes = await page.goto(`${BASE_URL}/paket`, { waitUntil: 'networkidle' });
+        const paketOk = paketRes && paketRes.status() === 200;
+        const hasPaketCards = await page.evaluate(() => {
+            return document.body.innerText.length > 20;
+        });
+        record('Public Billing Packages Load (HTTP 200)', paketOk && hasPaketCards);
+
+        console.log('--- Step 9: Public PC Specs Showcase (/spesifikasi) ---');
+        const specsRes = await page.goto(`${BASE_URL}/spesifikasi`, { waitUntil: 'networkidle' });
+        const specsOk = specsRes && specsRes.status() === 200;
+        const hasSpecsContent = await page.evaluate(() => {
+            return document.body.innerText.length > 20;
+        });
+        record('Public PC Specs Showcase Load (HTTP 200)', specsOk && hasSpecsContent);
+
+    } catch (err) {
+        console.error('Fatal error in Public Portals & CMS E2E test:', err);
+        record('Execution Flow', false, err.message);
+    }
+
+    const passedCount = results.filter(r => r.passed).length;
+    const failedCount = results.filter(r => !r.passed).length;
+
+    return { total: results.length, passed: passedCount, failed: failedCount, results };
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = { runPublicPortalsCMSE2ETest };
+}
