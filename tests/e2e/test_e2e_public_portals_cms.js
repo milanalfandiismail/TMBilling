@@ -131,6 +131,57 @@ async function runPublicPortalsCMSE2ETest(page) {
                 return modal && modal.classList.contains('hidden');
             });
             record('PC Spec Modal Closes on Escape Key', isClosedEsc);
+
+            // Test Debounced Search & Filtering
+            await page.fill('#specs-search-input', '01');
+            await page.waitForTimeout(350); // wait for 250ms debounce
+
+            const searchFilterState = await page.evaluate(() => {
+                const visibleCards = Array.from(document.querySelectorAll('.pc-spec-card:not(.hidden)'));
+                const hiddenCards = Array.from(document.querySelectorAll('.pc-spec-card.hidden'));
+                const clearBtn = document.getElementById('specs-search-clear');
+                const clearVisible = clearBtn && !clearBtn.classList.contains('hidden');
+                return {
+                    visibleCount: visibleCards.length,
+                    hiddenCount: hiddenCards.length,
+                    clearVisible,
+                    allVisibleCodesMatch: visibleCards.every(c => (c.getAttribute('data-pc-kode') || '').includes('01') || (c.getAttribute('data-pc-kode') || '').includes('1'))
+                };
+            });
+            record('PC Specs Debounced Search Filters Cards', searchFilterState.clearVisible && searchFilterState.visibleCount > 0 && searchFilterState.allVisibleCodesMatch, `Visible: ${searchFilterState.visibleCount}`);
+
+            // Clear via clear button
+            await page.click('#specs-search-clear');
+            await page.waitForTimeout(100);
+            const clearState = await page.evaluate(() => {
+                const inputVal = document.getElementById('specs-search-input').value;
+                const visibleCards = Array.from(document.querySelectorAll('.pc-spec-card:not(.hidden)'));
+                return { inputVal, visibleCount: visibleCards.length };
+            });
+            record('PC Specs Clear Button Restores All Cards', clearState.inputVal === '' && clearState.visibleCount > searchFilterState.visibleCount);
+
+            // Test Non-existent search shows Empty State
+            await page.fill('#specs-search-input', 'XYZ999');
+            await page.waitForTimeout(350);
+            const emptyState = await page.evaluate(() => {
+                const emptyEl = document.getElementById('specs-empty-search');
+                const isVisible = emptyEl && !emptyEl.classList.contains('hidden');
+                const visibleCards = document.querySelectorAll('.pc-spec-card:not(.hidden)');
+                return { isVisible, visibleCardsCount: visibleCards.length };
+            });
+            record('PC Specs Empty State Shown on No Match', emptyState.isVisible && emptyState.visibleCardsCount === 0);
+
+            // Reset via Empty State reset button
+            await page.click('#specs-empty-search button');
+            await page.waitForTimeout(100);
+            const resetState = await page.evaluate(() => {
+                const emptyEl = document.getElementById('specs-empty-search');
+                const isHidden = emptyEl && emptyEl.classList.contains('hidden');
+                const inputVal = document.getElementById('specs-search-input').value;
+                const visibleCards = document.querySelectorAll('.pc-spec-card:not(.hidden)');
+                return { isHidden, inputVal, count: visibleCards.length };
+            });
+            record('PC Specs Empty State Reset Button Restores Cards', resetState.isHidden && resetState.inputVal === '' && resetState.count > 0);
         }
 
     } catch (err) {

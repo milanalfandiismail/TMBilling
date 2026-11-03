@@ -181,7 +181,7 @@ def test_public_specs_compact_cards_markup(test_setup):
     assert res.status_code == 200
     html = res.data.decode("utf-8")
 
-    assert "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5" in html
+    assert "grid-cols-2 gap-2 sm:gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5" in html
     assert 'onclick="openSpecModal(\'TM-SPEC01\')"' in html
     assert 'data-pc-kode="TM-SPEC01"' in html
     assert 'role="button"' in html
@@ -212,3 +212,28 @@ def test_public_specs_modal_structure_and_controller(test_setup):
     assert 'id="spec-modal-close"' in html
     assert 'function openSpecModal' in html
     assert 'function closeSpecModal' in html
+
+
+def test_public_specs_markup_has_search_toolbar_and_mobile_2col_grid(test_setup):
+    """Pastikan search bar ter-debounce, tombol clear, grid 2-kolom mobile, dan empty state tersedia di HTML."""
+    app, client, _ = test_setup
+
+    res = client.get("/spesifikasi")
+    assert res.status_code == 200
+    html = res.data.decode("utf-8")
+
+    # Search bar & Clear button
+    assert 'id="specs-search-input"' in html
+    assert 'id="specs-search-clear"' in html
+
+    # Grid 2 kolom mobile
+    assert 'grid-cols-2' in html
+
+    # Empty state container & reset action
+    assert 'id="specs-empty-search"' in html
+    assert 'id="specs-empty-query"' in html
+
+    # Filter logic and debounce in JS
+    assert 'debounce' in html
+    assert 'applySpecsFilter' in html
+

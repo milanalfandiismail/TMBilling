@@ -15,7 +15,7 @@
     <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-8 space-y-6 sm:space-y-8">
 
         <!-- Header Section -->
-        <section class="flex flex-col md:flex-row md:items-end justify-between gap-4 relative">
+        <section class="space-y-4 relative">
             <div class="absolute -inset-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 blur-xl opacity-30 pointer-events-none rounded-full"></div>
             <div class="space-y-3 sm:space-y-4 max-w-2xl relative z-10">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-800 bg-[#0c0c0c]/80 text-xs font-mono text-neutral-400">
@@ -29,15 +29,41 @@
                 </p>
             </div>
 
-            <!-- Filters -->
-            <div class="inline-flex flex-wrap rounded-lg bg-[#111] p-1 border border-neutral-800 text-xs shrink-0 self-start md:self-end gap-1">
-                <button onclick="filterSpecs('all')" id="filter-btn-all"
-                    class="px-3 py-1.5 rounded-md font-bold transition-all bg-neutral-800 text-neutral-100 filter-btn uppercase tracking-wider">Semua</button>
-                {% for g in groups %}
-                {% set g_name = g.nama.lower().strip() %}
-                <button onclick="filterSpecs('{{ g_name }}')" id="filter-btn-{{ g_name }}"
-                    class="px-3 py-1.5 rounded-md font-bold transition-all text-neutral-400 hover:text-neutral-200 filter-btn uppercase tracking-wider">{{ g.nama }}</button>
-                {% endfor %}
+            <!-- Toolbar: Debounced Search & Zone Filter Pills -->
+            <div id="specs-toolbar" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pt-2 relative z-10">
+                <!-- Search Box -->
+                <div class="relative w-full sm:w-72 md:w-80 shrink-0">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </span>
+                    <input type="text" id="specs-search-input"
+                        placeholder="Cari nomor / kode meja (cth: 01, TM-05)..."
+                        class="w-full pl-9 pr-8 py-2 bg-[#111] border border-neutral-800 rounded-lg text-xs sm:text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+                        autocomplete="off"
+                        spellcheck="false"
+                        oninput="onSearchInput(this.value)">
+                    <button id="specs-search-clear" onclick="clearSearch()"
+                        class="absolute inset-y-0 right-0 pr-2.5 hidden items-center text-neutral-500 hover:text-neutral-300 focus:outline-none"
+                        title="Bersihkan pencarian"
+                        aria-label="Bersihkan pencarian">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Zone Filter Pills -->
+                <div class="inline-flex flex-wrap rounded-lg bg-[#111] p-1 border border-neutral-800 text-xs shrink-0 self-start sm:self-auto gap-1">
+                    <button onclick="filterSpecs('all')" id="filter-btn-all"
+                        class="px-3 py-1.5 rounded-md font-bold transition-all bg-neutral-800 text-neutral-100 filter-btn uppercase tracking-wider">Semua</button>
+                    {% for g in groups %}
+                    {% set g_name = g.nama.lower().strip() %}
+                    <button onclick="filterSpecs('{{ g_name }}')" id="filter-btn-{{ g_name }}"
+                        class="px-3 py-1.5 rounded-md font-bold transition-all text-neutral-400 hover:text-neutral-200 filter-btn uppercase tracking-wider">{{ g.nama }}</button>
+                    {% endfor %}
+                </div>
             </div>
         </section>
 
@@ -56,12 +82,12 @@
                         g.pc_list|length }} PC</span>
                 </div>
 
-                <!-- Group Compact Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4">
+                <!-- Group Compact Grid (2 columns on mobile, scaling up smoothly) -->
+                <div class="grid grid-cols-2 gap-2 sm:gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                     {% for pc in g.sorted_pc_list %}
                     {% set h = pc.hardware %}
                     {% set warna_grup = g.warna %}
-                    <div class="bg-[#0c0c0c] border border-neutral-800/80 hover:border-neutral-700 rounded-xl p-3.5 flex flex-col justify-between relative overflow-hidden pc-spec-card shadow-lg shadow-black/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer select-none text-left focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                    <div class="bg-[#0c0c0c] border border-neutral-800/80 hover:border-neutral-700 rounded-xl p-2.5 sm:p-3.5 flex flex-col justify-between relative overflow-hidden pc-spec-card shadow-lg shadow-black/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer select-none text-left focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[148px] sm:min-h-[160px]"
                         data-warna="{{ warna_grup }}"
                         data-pc-kode="{{ pc.kode }}"
                         role="button"
@@ -71,52 +97,52 @@
                         <div class="absolute -right-8 -top-8 w-20 h-20 rounded-full blur-xl card-glow pointer-events-none"></div>
 
                         <!-- Header: Kode PC & Status -->
-                        <div class="border-b border-[#1f1f1f] pb-2.5 flex items-center justify-between">
-                            <div class="min-w-0 pr-2">
-                                <h4 class="font-black text-neutral-100 text-sm md:text-base uppercase tracking-wider truncate">{{ pc.kode }}</h4>
-                                <p class="text-[11px] text-neutral-500 font-mono truncate capitalize">{{ (pc.nama or pc.kode)|lower|replace('unit', '')|trim }}</p>
+                        <div class="border-b border-[#1f1f1f] pb-2 sm:pb-2.5 flex items-center justify-between gap-1">
+                            <div class="min-w-0 pr-1">
+                                <h4 class="font-black text-neutral-100 text-xs sm:text-base uppercase tracking-wider truncate">{{ pc.kode }}</h4>
+                                <p class="text-[10px] sm:text-[11px] text-neutral-500 font-mono truncate capitalize">{{ (pc.nama or pc.kode)|lower|replace('unit', '')|trim }}</p>
                             </div>
                             {% if pc.aktif %}
-                            <span class="px-2 py-0.5 bg-emerald-950/60 border border-emerald-800/30 text-emerald-400 rounded text-[10px] font-mono font-bold flex items-center gap-1 shrink-0">
+                            <span class="px-1.5 sm:px-2 py-0.5 bg-emerald-950/60 border border-emerald-800/30 text-emerald-400 rounded text-[9px] sm:text-[10px] font-mono font-bold flex items-center gap-1 shrink-0">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ON
                             </span>
                             {% else %}
-                            <span class="px-2 py-0.5 bg-neutral-900 border border-neutral-800 text-neutral-500 rounded text-[10px] font-mono font-bold flex items-center gap-1 shrink-0">
+                            <span class="px-1.5 sm:px-2 py-0.5 bg-neutral-900 border border-neutral-800 text-neutral-500 rounded text-[9px] sm:text-[10px] font-mono font-bold flex items-center gap-1 shrink-0">
                                 <span class="w-1.5 h-1.5 rounded-full bg-neutral-600"></span> OFF
                             </span>
                             {% endif %}
                         </div>
 
                         <!-- Body: Compact Specs Badges -->
-                        <div class="py-2.5 space-y-1.5 flex-1">
+                        <div class="py-2 sm:py-2.5 space-y-1 sm:space-y-1.5 flex-1">
                             <!-- CPU Badge -->
-                            <div class="bg-[#141414] border border-neutral-800/60 rounded px-2 py-1 flex items-center gap-1.5">
-                                <span class="text-[9px] font-mono font-extrabold uppercase px-1 py-0.5 rounded bg-purple-950/80 text-purple-300 shrink-0">CPU</span>
-                                <span class="text-[11px] font-mono font-bold text-neutral-200 truncate" title="{{ h.cpu_name if h and h.cpu_name else 'Belum Terkumpul' }}">
+                            <div class="bg-[#141414] border border-neutral-800/60 rounded px-1.5 sm:px-2 py-0.5 sm:py-1 flex items-center gap-1 sm:gap-1.5">
+                                <span class="text-[8px] sm:text-[9px] font-mono font-extrabold uppercase px-1 py-0.5 rounded bg-purple-950/80 text-purple-300 shrink-0">CPU</span>
+                                <span class="text-[10px] sm:text-[11px] font-mono font-bold text-neutral-200 truncate" title="{{ h.cpu_name if h and h.cpu_name else 'Belum Terkumpul' }}">
                                     {{ h.cpu_name if h and h.cpu_name else 'Belum Terkumpul' }}
                                 </span>
                             </div>
                             <!-- GPU Badge -->
-                            <div class="bg-[#141414] border border-neutral-800/60 rounded px-2 py-1 flex items-center gap-1.5">
-                                <span class="text-[9px] font-mono font-extrabold uppercase px-1 py-0.5 rounded bg-emerald-950/80 text-emerald-300 shrink-0">GPU</span>
-                                <span class="text-[11px] font-mono font-bold text-neutral-200 truncate" title="{{ h.gpu_name if h and h.gpu_name else 'Belum Terkumpul' }}">
+                            <div class="bg-[#141414] border border-neutral-800/60 rounded px-1.5 sm:px-2 py-0.5 sm:py-1 flex items-center gap-1 sm:gap-1.5">
+                                <span class="text-[8px] sm:text-[9px] font-mono font-extrabold uppercase px-1 py-0.5 rounded bg-emerald-950/80 text-emerald-300 shrink-0">GPU</span>
+                                <span class="text-[10px] sm:text-[11px] font-mono font-bold text-neutral-200 truncate" title="{{ h.gpu_name if h and h.gpu_name else 'Belum Terkumpul' }}">
                                     {{ h.gpu_name if h and h.gpu_name else 'Belum Terkumpul' }}
                                 </span>
                             </div>
                             <!-- RAM Badge -->
-                            <div class="flex items-center justify-between text-[11px] font-mono text-neutral-400 px-0.5 pt-0.5">
+                            <div class="flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-neutral-400 px-0.5 pt-0.5">
                                 <span>RAM: <strong class="text-neutral-200 font-bold">{{ h.total_ram if h and h.total_ram else '-' }}</strong></span>
-                                <span class="text-[10px] text-neutral-500 uppercase tracking-widest">{{ g.nama }}</span>
+                                <span class="text-[9px] sm:text-[10px] text-neutral-500 uppercase tracking-widest truncate max-w-[60px] sm:max-w-none">{{ g.nama }}</span>
                             </div>
                         </div>
 
                         <!-- Footer: Action hint CTA -->
-                        <div class="border-t border-[#1f1f1f] pt-2 flex items-center justify-between text-[11px] font-mono text-purple-400 hover:text-purple-300">
+                        <div class="border-t border-[#1f1f1f] pt-1.5 sm:pt-2 flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-purple-400 hover:text-purple-300">
                             <span class="flex items-center gap-1">
-                                <span>Lihat Spek Lengkap</span>
-                                <svg class="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                <span>Lihat Spek</span>
+                                <svg class="w-3 sm:w-3.5 h-3 sm:h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                             </span>
-                            <span class="text-[10px] text-neutral-600">Buka</span>
+                            <span class="text-[9px] sm:text-[10px] text-neutral-600">Buka</span>
                         </div>
                     </div>
                     {% endfor %}
@@ -127,6 +153,22 @@
                 Belum ada PC client yang terdaftar di sistem database.
             </div>
             {% endfor %}
+
+            <!-- Empty state for search results -->
+            <div id="specs-empty-search" class="hidden py-16 px-4 text-center border border-[#1f1f1f] rounded-2xl bg-[#0a0a0a] space-y-3">
+                <div class="w-12 h-12 mx-auto rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+                <h4 class="text-base font-bold text-neutral-200">Tidak ada PC yang cocok</h4>
+                <p class="text-xs sm:text-sm text-neutral-500 max-w-sm mx-auto font-mono">
+                    Tidak ditemukan meja PC yang cocok dengan pencarian "<span id="specs-empty-query" class="text-purple-400 font-bold"></span>".
+                </p>
+                <button onclick="clearSearch()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold transition-colors">
+                    <span>Reset Pencarian</span>
+                </button>
+            </div>
         </section>
 
         <!-- Hardware Specs Detail Modal -->
@@ -428,26 +470,111 @@
             });
         }
 
+        let currentZone = 'all';
+        let searchQuery = '';
+        let searchDebounceTimer = null;
+
+        function debounce(fn, delay = 250) {
+            return function(...args) {
+                clearTimeout(searchDebounceTimer);
+                searchDebounceTimer = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        const debouncedFilter = debounce(() => {
+            applySpecsFilter();
+        }, 250);
+
+        function onSearchInput(val) {
+            searchQuery = val || '';
+            const clearBtn = document.getElementById('specs-search-clear');
+            if (clearBtn) {
+                if (searchQuery.trim().length > 0) {
+                    clearBtn.classList.remove('hidden');
+                    clearBtn.classList.add('flex');
+                } else {
+                    clearBtn.classList.add('hidden');
+                    clearBtn.classList.remove('flex');
+                }
+            }
+            debouncedFilter();
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('specs-search-input');
+            if (input) {
+                input.value = '';
+                input.focus();
+            }
+            const clearBtn = document.getElementById('specs-search-clear');
+            if (clearBtn) {
+                clearBtn.classList.add('hidden');
+                clearBtn.classList.remove('flex');
+            }
+            searchQuery = '';
+            applySpecsFilter();
+        }
+
+        function applySpecsFilter() {
+            const groupSections = document.querySelectorAll('.group-section');
+            const rawQuery = searchQuery.trim().toLowerCase();
+            const queryDigits = rawQuery.replace(/\D/g, '');
+            let totalVisible = 0;
+
+            groupSections.forEach(section => {
+                const groupZone = (section.getAttribute('data-grup') || '').toLowerCase().trim();
+                const matchesZone = (currentZone === 'all' || groupZone === currentZone);
+                let visibleInGroup = 0;
+
+                const cards = section.querySelectorAll('.pc-spec-card');
+                cards.forEach(card => {
+                    const pcKode = (card.getAttribute('data-pc-kode') || '').toLowerCase().trim();
+                    const pcDigits = pcKode.replace(/\D/g, '');
+
+                    let matchesSearch = true;
+                    if (rawQuery) {
+                        const codeMatches = pcKode.includes(rawQuery);
+                        const numMatches = queryDigits && (pcDigits === queryDigits || parseInt(pcDigits, 10) === parseInt(queryDigits, 10));
+                        matchesSearch = Boolean(codeMatches || numMatches);
+                    }
+
+                    const isVisible = matchesZone && matchesSearch;
+                    card.classList.toggle('hidden', !isVisible);
+                    if (isVisible) {
+                        visibleInGroup++;
+                        totalVisible++;
+                    }
+                });
+
+                // Sembunyikan grup jika zona tidak cocok atau tidak ada kartu yang cocok
+                section.classList.toggle('hidden', !matchesZone || visibleInGroup === 0);
+            });
+
+            // Handle empty state
+            const emptyState = document.getElementById('specs-empty-search');
+            if (emptyState) {
+                emptyState.classList.toggle('hidden', totalVisible > 0);
+                const queryDisplay = document.getElementById('specs-empty-query');
+                if (queryDisplay) {
+                    queryDisplay.textContent = rawQuery || (currentZone !== 'all' ? `Zona ${currentZone}` : 'filter');
+                }
+            }
+        }
+
         function filterSpecs(group) {
+            currentZone = (group || 'all').toLowerCase().trim();
+
             // Toggle active styling on tabs
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                const g = btn.id.replace('filter-btn-', '');
-                if (g === group) {
+                const g = btn.id.replace('filter-btn-', '').toLowerCase().trim();
+                if (g === currentZone) {
                     btn.className = "px-3 py-1.5 rounded-md font-bold transition-all bg-neutral-800 text-neutral-100 filter-btn uppercase tracking-wider";
                 } else {
                     btn.className = "px-3 py-1.5 rounded-md font-bold transition-all text-neutral-400 hover:text-neutral-200 filter-btn uppercase tracking-wider";
                 }
             });
 
-            // Filter group sections
-            document.querySelectorAll('.group-section').forEach(section => {
-                const sectionGroup = section.getAttribute('data-grup') || 'reguler';
-                if (group === 'all' || sectionGroup === group) {
-                    section.style.display = 'block';
-                } else {
-                    section.style.display = 'none';
-                }
-            });
+            applySpecsFilter();
         }
 
         window.addEventListener('DOMContentLoaded', () => {
