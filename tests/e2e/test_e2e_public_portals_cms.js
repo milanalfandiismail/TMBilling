@@ -93,6 +93,46 @@ async function runPublicPortalsCMSE2ETest(page) {
         });
         record('Public PC Specs Showcase Load (HTTP 200)', specsOk && hasSpecsContent);
 
+        const cardsCount = await page.evaluate(() => {
+            return document.querySelectorAll('.pc-spec-card').length;
+        });
+        record('PC Spec Cards Rendered', cardsCount > 0, `Count: ${cardsCount}`);
+
+        if (cardsCount > 0) {
+            // Click first card to open modal
+            await page.click('.pc-spec-card');
+            await page.waitForTimeout(100);
+
+            const modalState = await page.evaluate(() => {
+                const modal = document.getElementById('spec-modal');
+                const isVisible = modal && !modal.classList.contains('hidden');
+                const kode = document.getElementById('modal-pc-kode') ? document.getElementById('modal-pc-kode').textContent : '';
+                const cpu = document.getElementById('modal-cpu-name') ? document.getElementById('modal-cpu-name').textContent : '';
+                return { isVisible, kode, cpu };
+            });
+            record('PC Spec Modal Opens on Card Click', modalState.isVisible && modalState.kode.length > 0, `PC: ${modalState.kode}`);
+
+            // Close via close button
+            await page.click('#spec-modal-close');
+            await page.waitForTimeout(100);
+            const isClosed = await page.evaluate(() => {
+                const modal = document.getElementById('spec-modal');
+                return modal && modal.classList.contains('hidden');
+            });
+            record('PC Spec Modal Closes on Close Button', isClosed);
+
+            // Open again and close via Escape
+            await page.click('.pc-spec-card');
+            await page.waitForTimeout(100);
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(100);
+            const isClosedEsc = await page.evaluate(() => {
+                const modal = document.getElementById('spec-modal');
+                return modal && modal.classList.contains('hidden');
+            });
+            record('PC Spec Modal Closes on Escape Key', isClosedEsc);
+        }
+
     } catch (err) {
         console.error('Fatal error in Public Portals & CMS E2E test:', err);
         record('Execution Flow', false, err.message);

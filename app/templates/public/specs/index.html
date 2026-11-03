@@ -12,27 +12,25 @@
     {% include 'public/components/_navbar_public.html' %}
 
     <!-- Main Content -->
-    <main class="flex-1 w-full max-w-7xl mx-auto px-6 md:px-10 py-8 space-y-8">
+    <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-8 space-y-6 sm:space-y-8">
 
         <!-- Header Section -->
         <section class="flex flex-col md:flex-row md:items-end justify-between gap-4 relative">
             <div class="absolute -inset-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 blur-xl opacity-30 pointer-events-none rounded-full"></div>
-            <div class="space-y-4 max-w-2xl relative z-10">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-800 bg-[#0c0c0c]/80 backdrop-blur-md text-xs font-mono text-neutral-400">
+            <div class="space-y-3 sm:space-y-4 max-w-2xl relative z-10">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-800 bg-[#0c0c0c]/80 text-xs font-mono text-neutral-400">
                     <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span> Hardware Specifications
                 </div>
-                <h2 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-500 tracking-tight leading-tight">
+                <h2 class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-500 tracking-tight leading-tight">
                     Spesifikasi PC Sultan
                 </h2>
                 <p class="text-neutral-400 text-xs md:text-sm leading-relaxed">
-                    Lihat detail spesifikasi hardware komputer di setiap zona. Data spesifikasi diambil langsung dan
-                    akurat dari unit komputer client.
+                    Pilih kartu PC untuk melihat detail lengkap spesifikasi hardware (CPU, GPU, RAM, Motherboard, Storage & Jaringan). Data diambil langsung dan akurat dari unit komputer client.
                 </p>
             </div>
 
             <!-- Filters -->
-            <div
-                class="inline-flex rounded-lg bg-[#111] p-1 border border-neutral-800 text-xs shrink-0 self-start md:self-end">
+            <div class="inline-flex flex-wrap rounded-lg bg-[#111] p-1 border border-neutral-800 text-xs shrink-0 self-start md:self-end gap-1">
                 <button onclick="filterSpecs('all')" id="filter-btn-all"
                     class="px-3 py-1.5 rounded-md font-bold transition-all bg-neutral-800 text-neutral-100 filter-btn uppercase tracking-wider">Semua</button>
                 {% for g in groups %}
@@ -44,84 +42,212 @@
         </section>
 
         <!-- Specs Sections (Grouped) -->
-        <section id="specs-container" class="space-y-12">
+        <section id="specs-container" class="space-y-8 sm:space-y-10">
             {% for g in groups %}
             {% set nama_grup = g.nama.lower().strip() %}
-            <div class="group-section space-y-4" data-grup="{{ nama_grup }}">
+            <div class="group-section space-y-3 sm:space-y-4" data-grup="{{ nama_grup }}">
                 <!-- Group Heading -->
                 <div class="flex items-center gap-3 border-b border-[#1f1f1f] pb-3">
                     <span class="w-3.5 h-3.5 rounded-md block border shrink-0 spec-group-bullet"
                         data-warna="{{ g.warna }}"></span>
-                    <h3 class="text-xl font-extrabold text-neutral-100 uppercase tracking-wider">{{ g.nama }} Zone</h3>
+                    <h3 class="text-lg sm:text-xl font-extrabold text-neutral-100 uppercase tracking-wider">{{ g.nama }} Zone</h3>
                     <span
                         class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-neutral-900 border border-neutral-800 text-neutral-400 uppercase tracking-widest">{{
                         g.pc_list|length }} PC</span>
                 </div>
 
-                <!-- Group Grid (2 Columns on Desktop, 1 Column on Mobile) -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <!-- Group Compact Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4">
                     {% for pc in g.sorted_pc_list %}
                     {% set h = pc.hardware %}
                     {% set warna_grup = g.warna %}
-                    <div class="bg-[#0a0a0a] border rounded-2xl p-5 md:p-6 flex flex-col justify-between space-y-5 relative overflow-hidden pc-spec-card shadow-xl shadow-black/35 hover:border-neutral-800 transition-all duration-300"
-                        data-warna="{{ warna_grup }}">
-                        <div class="absolute -right-10 -top-10 w-24 h-24 rounded-full blur-2xl card-glow"></div>
+                    <div class="bg-[#0c0c0c] border border-neutral-800/80 hover:border-neutral-700 rounded-xl p-3.5 flex flex-col justify-between relative overflow-hidden pc-spec-card shadow-lg shadow-black/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer select-none text-left focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                        data-warna="{{ warna_grup }}"
+                        data-pc-kode="{{ pc.kode }}"
+                        role="button"
+                        tabindex="0"
+                        onclick="openSpecModal('{{ pc.kode }}')"
+                        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSpecModal('{{ pc.kode }}');}">
+                        <div class="absolute -right-8 -top-8 w-20 h-20 rounded-full blur-xl card-glow pointer-events-none"></div>
 
-                        <!-- Card Header -->
-                        <div class="border-b border-[#1f1f1f] pb-4 flex items-center justify-between">
-                            <div>
-                                <h4 class="font-black text-neutral-100 text-base md:text-lg uppercase tracking-wider">{{ pc.kode }}</h4>
-                                <p class="text-xs text-neutral-500 font-mono mt-0.5 capitalize">{{ (pc.nama or pc.kode)|lower|replace('unit', '')|trim }}</p>
+                        <!-- Header: Kode PC & Status -->
+                        <div class="border-b border-[#1f1f1f] pb-2.5 flex items-center justify-between">
+                            <div class="min-w-0 pr-2">
+                                <h4 class="font-black text-neutral-100 text-sm md:text-base uppercase tracking-wider truncate">{{ pc.kode }}</h4>
+                                <p class="text-[11px] text-neutral-500 font-mono truncate capitalize">{{ (pc.nama or pc.kode)|lower|replace('unit', '')|trim }}</p>
                             </div>
-                            <span class="px-2 py-1 text-[10px] font-bold rounded uppercase tracking-wider spec-badge">
-                                {{ g.nama }}
-                            </span>
-                        </div>
-
-                        <!-- Specs Details (Compact and Clean) -->
-                        <div class="space-y-3 flex-1 text-xs md:text-sm font-mono text-neutral-300">
-                            <div class="flex items-start gap-2 border-b border-[#111] pb-1.5">
-                                <span class="text-neutral-500 shrink-0 select-none w-20 sm:w-28 text-[10px] sm:text-xs">Processor:</span>
-                                <span class="text-neutral-100 font-bold leading-normal break-words whitespace-normal">{{ h.cpu_name if h and h.cpu_name else 'Belum Terkumpul' }}</span>
-                            </div>
-                            <div class="flex items-start gap-2 border-b border-[#111] pb-1.5">
-                                <span class="text-neutral-500 shrink-0 select-none w-20 sm:w-28 text-[10px] sm:text-xs">Graphics:</span>
-                                <span class="text-neutral-100 font-bold leading-normal break-words whitespace-normal">{{ h.gpu_name if h and h.gpu_name else 'Belum Terkumpul' }}</span>
-                            </div>
-                            <div class="flex items-start gap-2 border-b border-[#111] pb-1.5">
-                                <span class="text-neutral-500 shrink-0 select-none w-20 sm:w-28 text-[10px] sm:text-xs">RAM:</span>
-                                <span class="text-neutral-100 font-bold leading-normal break-words whitespace-normal">{{ h.total_ram if h and h.total_ram else 'Belum Terkumpul' }}</span>
-                            </div>
-                            <div class="flex items-start gap-2 pb-1">
-                                <span class="text-neutral-500 shrink-0 select-none w-20 sm:w-28 text-[10px] sm:text-xs">Motherboard:</span>
-                                <span class="text-neutral-100 leading-normal break-words whitespace-normal">{{ h.motherboard if h and h.motherboard else 'Belum Terkumpul' }}</span>
-                            </div>
-                        </div>
-
-                        <!-- Card Footer (Status Online/Offline) -->
-                        <div class="border-t border-[#1f1f1f] pt-4 flex items-center justify-between">
-                            <span class="text-[10px] text-neutral-500 font-mono">Last Sync: {{ format_display(h.last_update, fmt="%H:%M:%S") if h and h.last_update else '-' }}</span>
                             {% if pc.aktif %}
-                            <span class="px-2 py-0.5 bg-emerald-950/60 border border-emerald-800/30 text-emerald-400 rounded-md text-[10px] font-mono font-bold flex items-center gap-1 shadow-md shadow-emerald-500/5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ONLINE
+                            <span class="px-2 py-0.5 bg-emerald-950/60 border border-emerald-800/30 text-emerald-400 rounded text-[10px] font-mono font-bold flex items-center gap-1 shrink-0">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ON
                             </span>
                             {% else %}
-                            <span class="px-2 py-0.5 bg-neutral-900 border border-neutral-800 text-neutral-500 rounded-md text-[10px] font-mono font-bold flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-neutral-600"></span> OFFLINE
+                            <span class="px-2 py-0.5 bg-neutral-900 border border-neutral-800 text-neutral-500 rounded text-[10px] font-mono font-bold flex items-center gap-1 shrink-0">
+                                <span class="w-1.5 h-1.5 rounded-full bg-neutral-600"></span> OFF
                             </span>
                             {% endif %}
+                        </div>
+
+                        <!-- Body: Compact Specs Badges -->
+                        <div class="py-2.5 space-y-1.5 flex-1">
+                            <!-- CPU Badge -->
+                            <div class="bg-[#141414] border border-neutral-800/60 rounded px-2 py-1 flex items-center gap-1.5">
+                                <span class="text-[9px] font-mono font-extrabold uppercase px-1 py-0.5 rounded bg-purple-950/80 text-purple-300 shrink-0">CPU</span>
+                                <span class="text-[11px] font-mono font-bold text-neutral-200 truncate" title="{{ h.cpu_name if h and h.cpu_name else 'Belum Terkumpul' }}">
+                                    {{ h.cpu_name if h and h.cpu_name else 'Belum Terkumpul' }}
+                                </span>
+                            </div>
+                            <!-- GPU Badge -->
+                            <div class="bg-[#141414] border border-neutral-800/60 rounded px-2 py-1 flex items-center gap-1.5">
+                                <span class="text-[9px] font-mono font-extrabold uppercase px-1 py-0.5 rounded bg-emerald-950/80 text-emerald-300 shrink-0">GPU</span>
+                                <span class="text-[11px] font-mono font-bold text-neutral-200 truncate" title="{{ h.gpu_name if h and h.gpu_name else 'Belum Terkumpul' }}">
+                                    {{ h.gpu_name if h and h.gpu_name else 'Belum Terkumpul' }}
+                                </span>
+                            </div>
+                            <!-- RAM Badge -->
+                            <div class="flex items-center justify-between text-[11px] font-mono text-neutral-400 px-0.5 pt-0.5">
+                                <span>RAM: <strong class="text-neutral-200 font-bold">{{ h.total_ram if h and h.total_ram else '-' }}</strong></span>
+                                <span class="text-[10px] text-neutral-500 uppercase tracking-widest">{{ g.nama }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Footer: Action hint CTA -->
+                        <div class="border-t border-[#1f1f1f] pt-2 flex items-center justify-between text-[11px] font-mono text-purple-400 hover:text-purple-300">
+                            <span class="flex items-center gap-1">
+                                <span>Lihat Spek Lengkap</span>
+                                <svg class="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                            </span>
+                            <span class="text-[10px] text-neutral-600">Buka</span>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
             {% else %}
-            <div
-                class="col-span-full py-16 text-center text-neutral-500 font-mono text-sm border border-[#1f1f1f] rounded-2xl bg-[#0a0a0a]">
+            <div class="col-span-full py-16 text-center text-neutral-500 font-mono text-sm border border-[#1f1f1f] rounded-2xl bg-[#0a0a0a]">
                 Belum ada PC client yang terdaftar di sistem database.
             </div>
             {% endfor %}
         </section>
+
+        <!-- Hardware Specs Detail Modal -->
+        <div id="spec-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-3 sm:p-4 md:p-6" role="dialog" aria-modal="true" aria-labelledby="modal-pc-kode">
+            <!-- Solid backdrop per AGENTS.md performance standards -->
+            <div id="spec-modal-backdrop" class="fixed inset-0 bg-black/90 transition-opacity duration-200" onclick="closeSpecModal()"></div>
+
+            <!-- Modal Dialog Box -->
+            <div class="relative w-full max-w-2xl bg-[#0c0c0c] border border-neutral-800 rounded-2xl shadow-2xl shadow-black overflow-hidden z-10 flex flex-col max-h-[90dvh] my-auto">
+                <!-- Modal Header -->
+                <div class="px-5 py-4 border-b border-neutral-800 flex items-center justify-between bg-[#111111]/80 shrink-0">
+                    <div class="flex items-center gap-3">
+                        <span id="modal-grup-badge" class="px-2.5 py-1 text-[11px] font-black rounded uppercase tracking-wider border"></span>
+                        <div>
+                            <h3 id="modal-pc-kode" class="text-lg md:text-xl font-black text-neutral-100 uppercase tracking-wide"></h3>
+                            <p id="modal-pc-nama" class="text-xs text-neutral-400 font-mono"></p>
+                        </div>
+                    </div>
+                    <button id="spec-modal-close" onclick="closeSpecModal()" class="w-8 h-8 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-800 flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500/50" aria-label="Tutup Modal">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <!-- Modal Content (Scrollable if screen is small) -->
+                <div class="p-5 sm:p-6 overflow-y-auto space-y-4 divide-y divide-neutral-800/60 font-sans text-xs sm:text-sm">
+                    <!-- Status & Tarif Banner -->
+                    <div class="pb-3 flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-neutral-500 text-xs font-mono">Status Operasional:</span>
+                            <span id="modal-online-badge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1.5 border"></span>
+                        </div>
+                        <div id="modal-rate-container" class="text-neutral-400 text-xs font-mono">
+                            Estimasi Tarif: <span id="modal-hourly-rate" class="font-bold text-neutral-200"></span>
+                        </div>
+                    </div>
+
+                    <!-- Hardware Sections -->
+                    <!-- Processor (CPU) -->
+                    <div class="pt-3 space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider text-purple-400 font-mono flex items-center gap-1.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M3 9h2m-2 6h2m14-6h2m-2 6h2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                                Processor (CPU)
+                            </span>
+                            <span id="modal-cpu-telemetry" class="text-[11px] font-mono text-neutral-500"></span>
+                        </div>
+                        <div class="bg-[#141414] border border-neutral-800/80 rounded-lg p-3">
+                            <p id="modal-cpu-name" class="font-bold text-neutral-100 text-sm sm:text-base font-mono"></p>
+                            <p id="modal-cpu-cores" class="text-xs text-neutral-400 font-mono mt-0.5"></p>
+                        </div>
+                    </div>
+
+                    <!-- Graphics (GPU) -->
+                    <div class="pt-3 space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 font-mono flex items-center gap-1.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg>
+                                Kartu Grafis (GPU)
+                            </span>
+                            <span id="modal-gpu-telemetry" class="text-[11px] font-mono text-neutral-500"></span>
+                        </div>
+                        <div class="bg-[#141414] border border-neutral-800/80 rounded-lg p-3">
+                            <p id="modal-gpu-name" class="font-bold text-neutral-100 text-sm sm:text-base font-mono"></p>
+                        </div>
+                    </div>
+
+                    <!-- RAM Memory -->
+                    <div class="pt-3 space-y-1.5">
+                        <span class="text-xs font-bold uppercase tracking-wider text-blue-400 font-mono flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            Memory (RAM)
+                        </span>
+                        <div class="bg-[#141414] border border-neutral-800/80 rounded-lg p-3 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-neutral-400 font-mono">Total Kapasitas:</span>
+                                <span id="modal-ram-total" class="font-bold text-neutral-100 font-mono text-sm"></span>
+                            </div>
+                            <div id="modal-ram-sticks-container" class="space-y-1"></div>
+                        </div>
+                    </div>
+
+                    <!-- Motherboard & Network -->
+                    <div class="pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="space-y-1.5">
+                            <span class="text-xs font-bold uppercase tracking-wider text-amber-400 font-mono flex items-center gap-1.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                Motherboard
+                            </span>
+                            <div class="bg-[#141414] border border-neutral-800/80 rounded-lg p-3">
+                                <p id="modal-mobo-name" class="font-bold text-neutral-100 text-xs sm:text-sm font-mono"></p>
+                            </div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400 font-mono flex items-center gap-1.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                Kecepatan Jaringan
+                            </span>
+                            <div class="bg-[#141414] border border-neutral-800/80 rounded-lg p-3">
+                                <p id="modal-nic-speed" class="font-bold text-neutral-100 text-xs sm:text-sm font-mono"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Storage / Disks -->
+                    <div class="pt-3 space-y-1.5">
+                        <span class="text-xs font-bold uppercase tracking-wider text-rose-400 font-mono flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                            Penyimpanan (Storage)
+                        </span>
+                        <div id="modal-disks-container" class="bg-[#141414] border border-neutral-800/80 rounded-lg p-3 space-y-1.5 text-xs font-mono text-neutral-300">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="px-5 py-3 border-t border-neutral-800 flex items-center justify-between bg-[#111111]/80 shrink-0">
+                    <span class="text-[11px] text-neutral-500 font-mono">TMBilling Verified Hardware</span>
+                    <button onclick="closeSpecModal()" class="px-4 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold transition-colors">Tutup</button>
+                </div>
+            </div>
+        </div>
 
     </main>
 
@@ -129,8 +255,161 @@
     {% set footer_label = "E-Sports & Gaming Arena" %}
     {% include 'public/components/_footer.html' %}
 
-    <!-- Script Inline untuk Warna Grup Dinamis & Filter -->
+    <!-- Structured Data Catalog & Scripts -->
+    <script id="specs-catalog-data" type="application/json">
+        {{ specs_catalog_json|safe }}
+    </script>
+
     <script>
+        let specsCatalog = {};
+        try {
+            const rawData = document.getElementById('specs-catalog-data');
+            if (rawData && rawData.textContent) {
+                specsCatalog = JSON.parse(rawData.textContent);
+            }
+        } catch (e) {
+            console.error('Failed to parse specs catalog', e);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function openSpecModal(kode) {
+            const item = specsCatalog[kode];
+            if (!item) return;
+
+            // Header info
+            document.getElementById('modal-pc-kode').textContent = item.kode;
+            document.getElementById('modal-pc-nama').textContent = item.nama;
+
+            const grupBadge = document.getElementById('modal-grup-badge');
+            if (grupBadge && item.grup) {
+                grupBadge.textContent = item.grup.nama;
+                grupBadge.style.backgroundColor = `${item.grup.warna}20`;
+                grupBadge.style.color = item.grup.warna;
+                grupBadge.style.borderColor = `${item.grup.warna}40`;
+            }
+
+            // Status badge
+            const onlineBadge = document.getElementById('modal-online-badge');
+            if (onlineBadge) {
+                if (item.online) {
+                    onlineBadge.className = 'px-2 py-0.5 bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 rounded text-[10px] font-mono font-bold flex items-center gap-1.5';
+                    onlineBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ONLINE';
+                } else {
+                    onlineBadge.className = 'px-2 py-0.5 bg-neutral-900 border border-neutral-800 text-neutral-500 rounded text-[10px] font-mono font-bold flex items-center gap-1.5';
+                    onlineBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-neutral-600"></span> OFFLINE';
+                }
+            }
+
+            // Rate container
+            const rateContainer = document.getElementById('modal-rate-container');
+            const hourlyRateEl = document.getElementById('modal-hourly-rate');
+            if (rateContainer && hourlyRateEl) {
+                if (item.grup && item.grup.hourly_rate) {
+                    hourlyRateEl.textContent = `Rp ${item.grup.hourly_rate.toLocaleString('id-ID')} / jam`;
+                    rateContainer.style.display = 'block';
+                } else {
+                    rateContainer.style.display = 'none';
+                }
+            }
+
+            // CPU
+            document.getElementById('modal-cpu-name').textContent = item.cpu ? item.cpu.name : 'Belum Terkumpul';
+            const cpuCoresEl = document.getElementById('modal-cpu-cores');
+            if (cpuCoresEl) {
+                if (item.cpu && item.cpu.cores) {
+                    cpuCoresEl.textContent = `${item.cpu.cores} Cores / Threads`;
+                    cpuCoresEl.style.display = 'block';
+                } else {
+                    cpuCoresEl.style.display = 'none';
+                }
+            }
+            const cpuTelemEl = document.getElementById('modal-cpu-telemetry');
+            if (cpuTelemEl) {
+                const telemParts = [];
+                if (item.cpu && item.cpu.temp !== null && item.cpu.temp !== undefined) telemParts.push(`${item.cpu.temp}°C`);
+                if (item.cpu && item.cpu.usage !== null && item.cpu.usage !== undefined) telemParts.push(`${item.cpu.usage}% Load`);
+                cpuTelemEl.textContent = telemParts.join(' • ');
+            }
+
+            // GPU
+            document.getElementById('modal-gpu-name').textContent = item.gpu ? item.gpu.name : 'Belum Terkumpul';
+            const gpuTelemEl = document.getElementById('modal-gpu-telemetry');
+            if (gpuTelemEl) {
+                const gpuParts = [];
+                if (item.gpu && item.gpu.temp !== null && item.gpu.temp !== undefined) gpuParts.push(`${item.gpu.temp}°C`);
+                if (item.gpu && item.gpu.usage !== null && item.gpu.usage !== undefined) gpuParts.push(`${item.gpu.usage}% Load`);
+                gpuTelemEl.textContent = gpuParts.join(' • ');
+            }
+
+            // RAM
+            document.getElementById('modal-ram-total').textContent = item.ram ? item.ram.total : 'Belum Terkumpul';
+            const ramSticksContainer = document.getElementById('modal-ram-sticks-container');
+            if (ramSticksContainer) {
+                ramSticksContainer.innerHTML = '';
+                if (item.ram && item.ram.sticks && item.ram.sticks.length > 0) {
+                    item.ram.sticks.forEach(stick => {
+                        const div = document.createElement('div');
+                        div.className = 'text-xs text-neutral-400 font-mono flex items-center gap-2';
+                        div.innerHTML = `<span class="text-neutral-600">•</span> <span>${escapeHtml(stick)}</span>`;
+                        ramSticksContainer.appendChild(div);
+                    });
+                }
+            }
+
+            // Motherboard & NIC
+            document.getElementById('modal-mobo-name').textContent = item.motherboard || 'Belum Terkumpul';
+            document.getElementById('modal-nic-speed').textContent = item.nic_speed || 'Belum Terkumpul';
+
+            // Disks
+            const disksContainer = document.getElementById('modal-disks-container');
+            if (disksContainer) {
+                disksContainer.innerHTML = '';
+                if (item.disks && item.disks.length > 0) {
+                    item.disks.forEach(disk => {
+                        const div = document.createElement('div');
+                        div.className = 'flex items-center gap-2';
+                        div.innerHTML = `<span class="text-neutral-500">•</span> <span>${escapeHtml(disk)}</span>`;
+                        disksContainer.appendChild(div);
+                    });
+                } else {
+                    disksContainer.innerHTML = '<span class="text-neutral-500 italic">Data storage internal</span>';
+                }
+            }
+
+            // Show modal & prevent body scroll
+            const modal = document.getElementById('spec-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            }
+        }
+
+        function closeSpecModal() {
+            const modal = document.getElementById('spec-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('spec-modal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeSpecModal();
+                }
+            }
+        });
+
         function applyCardStyles() {
             // Warnai bullet indicator grup
             document.querySelectorAll('.spec-group-bullet').forEach(bullet => {
@@ -141,24 +420,10 @@
 
             document.querySelectorAll('.pc-spec-card').forEach(card => {
                 const warna = card.getAttribute('data-warna') || '#888888';
-
-                // 1. Border card (opacity 30%)
                 card.style.borderColor = `${warna}30`;
-
-                // 2. Glow circle (opacity 8%)
                 const glow = card.querySelector('.card-glow');
                 if (glow) {
                     glow.style.backgroundColor = `${warna}08`;
-                }
-
-                // 3. Badge background, text, border
-                const badge = card.querySelector('.spec-badge');
-                if (badge) {
-                    badge.style.backgroundColor = `${warna}20`;
-                    badge.style.color = warna;
-                    badge.style.borderColor = `${warna}30`;
-                    badge.style.borderWidth = '1px';
-                    badge.style.borderStyle = 'solid';
                 }
             });
         }

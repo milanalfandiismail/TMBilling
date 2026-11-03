@@ -183,22 +183,76 @@ def _register_public_routes(app):
     @app.route("/spesifikasi")
     def public_specs():
         """Render halaman grid spesifikasi hardware PC dinamis terkelompok per grup."""
+        import json
         import re
         from app.models import Grup
         groups = Grup.query.all()
         
         def extract_number(pc):
-            match = re.search(r'\d+', pc.kode)
+            match = re.search(r"\d+", pc.kode)
             return int(match.group()) if match else 0
             
         # Ambil grup yang memiliki PC terdaftar dan urutkan secara natural (TM-1, TM-2, ..., TM-10)
         groups_with_pcs = []
+        specs_catalog = {}
+
         for g in groups:
             if len(g.pc_list) > 0:
                 g.sorted_pc_list = sorted(g.pc_list, key=extract_number)
                 groups_with_pcs.append(g)
-                
-        return render_template("public/specs/index.html", groups=groups_with_pcs)
+
+                # Estimasi tarif per jam dari paket termurah jika tersedia
+                hourly_rate = None
+                if getattr(g, "paket_list", None):
+                    for p in g.paket_list:
+                        if p.aktif and p.durasi_menit > 0:
+                            rate = (p.harga / p.durasi_menit) * 60
+                            if hourly_rate is None or rate < hourly_rate:
+                                hourly_rate = int(round(rate))
+
+                for pc in g.sorted_pc_list:
+                    hw = pc.hardware
+                    baseline = {}
+                    if hw and hw.hardware_baseline:
+                        try:
+                            baseline = json.loads(hw.hardware_baseline) if isinstance(hw.hardware_baseline, str) else hw.hardware_baseline
+                        except Exception:
+                            baseline = {}
+
+                    specs_catalog[pc.kode] = {
+                        "kode": pc.kode,
+                        "nama": pc.nama or pc.kode,
+                        "grup": {
+                            "nama": g.nama,
+                            "warna": g.warna or "#3b82f6",
+                            "hourly_rate": hourly_rate,
+                        },
+                        "online": bool(pc.aktif),
+                        "cpu": {
+                            "name": hw.cpu_name if (hw and hw.cpu_name) else "Belum Terkumpul",
+                            "cores": baseline.get("cpu", {}).get("cores", None) if isinstance(baseline.get("cpu"), dict) else None,
+                            "temp": getattr(hw, "cpu_temp", None) if hw else None,
+                            "usage": getattr(hw, "cpu_usage", None) if hw else None,
+                        },
+                        "gpu": {
+                            "name": hw.gpu_name if (hw and hw.gpu_name) else "Belum Terkumpul",
+                            "temp": getattr(hw, "gpu_temp", None) if hw else None,
+                        },
+                        "ram": {
+                            "total": hw.total_ram if (hw and hw.total_ram) else "Belum Terkumpul",
+                            "sticks": baseline.get("ram_sticks", []) if isinstance(baseline.get("ram_sticks"), list) else [],
+                        },
+                        "motherboard": hw.motherboard if (hw and hw.motherboard) else "Belum Terkumpul",
+                        "nic_speed": hw.nic_speed if (hw and hw.nic_speed) else "Belum Terkumpul",
+                        "disks": baseline.get("disks", []) if isinstance(baseline.get("disks"), list) else [],
+                        "peripherals": baseline.get("peripherals", {}) if isinstance(baseline.get("peripherals"), dict) else {},
+                    }
+
+        return render_template(
+            "public/specs/index.html",
+            groups=groups_with_pcs,
+            specs_catalog_json=json.dumps(specs_catalog),
+        )
 
     @app.route("/games")
     def public_games():
