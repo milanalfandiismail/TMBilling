@@ -15,6 +15,9 @@ import urllib.request
 import urllib.error
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 INSTANCE_DIR = os.path.join(PROJECT_ROOT, "instance")
 SANDBOX_DB_NAME = "warnet_e2e_sandbox.db"
 SANDBOX_DB_PATH = os.path.join(INSTANCE_DIR, SANDBOX_DB_NAME)
@@ -25,7 +28,7 @@ def prepare_sandbox_database():
     os.makedirs(INSTANCE_DIR, exist_ok=True)
     
     # Inisialisasi DB menggunakan Flask App Context
-    os.environ["DATABASE_URL"] = f"sqlite:///{SANDBOX_DB_PATH}"
+    os.environ["DATABASE_URL"] = f"sqlite:///{SANDBOX_DB_PATH.replace(os.sep, '/')}"
     os.environ["FLASK_ENV"] = "testing"
     os.environ["TESTING"] = "1"
 
@@ -64,7 +67,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 db_path = r"{SANDBOX_DB_PATH}"
-os.environ["DATABASE_URL"] = f"sqlite:///{{db_path}}"
+os.environ["DATABASE_URL"] = f"sqlite:///{{db_path.replace(os.sep, '/')}}"
 os.environ["FLASK_ENV"] = "testing"
 os.environ["TESTING"] = "1"
 
@@ -79,7 +82,7 @@ if __name__ == "__main__":
 
     env = os.environ.copy()
     env["PYTHONPATH"] = PROJECT_ROOT
-    env["DATABASE_URL"] = f"sqlite:///{SANDBOX_DB_PATH}"
+    env["DATABASE_URL"] = f"sqlite:///{SANDBOX_DB_PATH.replace(os.sep, '/')}"
     env["FLASK_ENV"] = "testing"
     env["TESTING"] = "1"
 
