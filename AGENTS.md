@@ -203,12 +203,12 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 
 #### B. Template Jinja2 HTML (`app/templates/`)
 - `templates/kasir/base.html`: Shell induk HTML dashboard kasir, deklarasi CSS/JS dan meta CSRF.
-- `templates/kasir/index.html`: Kontainer view 29 tab modular kasir.
+- `templates/kasir/index.html`: Kontainer view 31 tab modular kasir & 1 container iframe plugin-spa.
 - `templates/kasir/login.html`: Halaman login kasir dan administrator.
 - `templates/kasir/documentation.html`: Portal internal dokumentasi interaktif & CMS tutorial sistem (`/kasir/documentation`).
 - `templates/kasir/components/`: Partisi navbar (`navbar.html`), sidebar (`sidebar.html`, `sidebar_admin.html`, `sidebar_kasir.html`), dan modal induk (`modals.html`).
-- `templates/kasir/tabs/`: 29 Tampilan tab independen lengkap (`dashboard.html`, `pc.html`, `grup.html`, `paket.html`, `menu.html`, `menu_stock_log.html`, `laporan_menu.html`, `member.html`, `monitor.html`, `hardware_checker.html`, `uptime.html`, `screenshot.html`, `maintenance.html`, `laporan_maintenance.html`, `shift_history.html`, `catatan.html`, `tournament.html`, `game.html`, `fileexplorer.html`, `remote_server.html`, `user.html`, `user_logs.html`, `log.html`, `laporan.html`, `struk.html`, `blackout.html`, `mikrotik.html`, `analytics.html`, `settings.html`).
-- `templates/public/`: 7 Halaman portal publik (`landing/` info billing, `tv/` billboard display, `livepc/` live scoreboard, `member/` kiosk login & dashboard, `game/` katalog game, `paket/` daftar tarif, `specs/` spesifikasi PC).
+- `templates/kasir/tabs/`: 29 Tampilan tab independen lengkap (`dashboard.html`, `pc.html`, `grup.html`, `paket.html`, `menu.html`, `menu_stock_log.html`, `laporan_menu.html`, `member.html`, `monitor.html`, `hardware_checker.html`, `uptime.html`, `screenshot.html`, `maintenance.html`, `laporan_maintenance.html`, `shift_history.html`, `catatan.html`, `tournament.html`, `game.html`, `fileexplorer.html`, `remote_server.html`, `user.html`, `user_logs.html`, `log.html`, `laporan.html`, `struk.html`, `blackout.html`, `mikrotik.html`, `analytics.html`, `settings.html`) ditambah tab `server_statistic.html` (di `server_monitor/`) dan `plugins.html` (di `settings/`).
+- `templates/public/`: 8 Halaman portal publik (`landing/` info billing, `tv/` & `tv/static` billboard display, `livepc/` live scoreboard, `member/` kiosk login & dashboard, `game/` katalog game, `paket/` daftar tarif, `specs/` spesifikasi PC).
 
 ---
 
@@ -239,9 +239,16 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Paket Billing Jam-Jaman** | `modules/paket/` | `routes/paket/paket_routes.py`, `services/paket/` | `Paket` |
 | **Staff Kasir/Admin & RBAC** | `modules/user/` | `routes/user/user_routes.py`, `services/user/` | `User`, `AuditLog` |
 | **Screenshot Monitor PC** | `modules/screenshot.js` | `routes/monitor/screenshot_routes.py`, `services/cache/telemetry_store.py` | In-memory store |
-| **Server Health Telemetry** | `modules/server_monitor.js` | `routes/server_monitor/`, `services/server_monitor/` | Host sensors |
+| **Unit PC & Meja Klien** | `modules/pc.js`, `modules/pc/` | `routes/pc/pc_routes.py`, `services/pc/` | `PC`, `Grup` |
+| **Log Mutasi Stok FnB** | `modules/menu/stock_log.js` | `routes/menu/menu_routes.py`, `services/menu/` | `MenuItem`, in-memory store |
+| **Laporan Penjualan FnB** | `modules/laporan_menu.js` | `routes/menu/menu_routes.py`, `services/menu/` | `TransaksiMenu`, `MenuItem` |
+| **Sticky Notes Antar Shift** | `modules/catatan.js` | `routes/notes/note_routes.py`, `services/notes/` | Scratchpad disk store |
+| **Audit Log Terpusat** | `modules/log.js` | `routes/user/user_routes.py`, `services/user/` | `AuditLog` |
+| **Cetak Ulang Struk Kasir** | `modules/struk.js` | `routes/transaksi/`, `services/transaksi/` | `Transaksi` |
+| **Server Health & LHM Telemetry** | `modules/server_monitor/server_monitor.js` | `routes/server_monitor/`, `services/server_monitor/` | Host sensors, LHM Engine |
+| **Manajemen Plugins & Ekstensi** | `modules/settings/plugins.js` | `routes/settings/plugin_routes.py`, `services/plugins/` | Plugin manifest |
 | **Frontend CPU & Zero-Thrashing** | `modules/dashboard/dashboard_compact.js`, `core/skeleton.js` | `templates/kasir/base.html`, `tailwind.config.js` | Strict dirty-checking, zero infinite keyframe loops |
-| **Responsive Tailwind Reflow** | `modules/dashboard/dashboard_compact.js`, `core/modal.js` | `templates/kasir/base.html`, `templates/kasir/components/navbar.html`, `sidebar.html` | Pure Tailwind Breakpoints (`sm`, `md`, `lg`, `xl`, `2xl`), `max-h-[90dvh]`, zero horizontal overflow across 29 tabs |
+| **Responsive Tailwind Reflow** | `modules/dashboard/dashboard_compact.js`, `core/modal.js` | `templates/kasir/base.html`, `templates/kasir/components/navbar.html`, `sidebar.html` | Pure Tailwind Breakpoints (`sm`, `md`, `lg`, `xl`, `2xl`), `max-h-[90dvh]`, zero horizontal overflow across 31 tabs |
 
 ---
 
