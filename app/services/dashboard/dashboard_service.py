@@ -11,10 +11,6 @@ from app.services.pc.pc_service import PCService
 from app.repositories import TransaksiRepository, MenuRepository
 from app.utils.logger import write_log
 from app.models import now_local, Sesi, PC, db
-import time
-
-_last_cleanup_ts = 0.0
-CLEANUP_INTERVAL_SECONDS = 15.0
 
 
 class DashboardService:
@@ -40,15 +36,7 @@ class DashboardService:
     @staticmethod
     def get_pc_list():
         """Ambil daftar PC lengkap dengan status online & detail sesi aktif."""
-        # A. Cleanup: Tutup sesi yang sudah expired (throttled 15s agar tidak membebani DB per detik)
-        global _last_cleanup_ts
-        now_ts = time.time()
-        if now_ts - _last_cleanup_ts >= CLEANUP_INTERVAL_SECONDS:
-            _last_cleanup_ts = now_ts
-            SesiService.cleanup_expired()
-            SesiService.cleanup_inactive_admin_sessions()
-        
-        # B. Ambil semua PC aktif
+        # A. Ambil semua PC aktif
         pcs = PCService.get_all(aktif_only=True)
         pc_list = []
         by_grup = {}

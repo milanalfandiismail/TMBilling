@@ -26,6 +26,7 @@ def run_cleanup_expired(app):
     """
     with app.app_context():
         SesiService.cleanup_expired()
+        SesiService.cleanup_inactive_admin_sessions()
 
 
 def run_database_backup(app):
