@@ -69,6 +69,12 @@ const suites = [
     runner: require('./test_e2e_coverage_matrix.js').runCoverageMatrixE2ETest,
   },
   {
+    id: 'perf_invariants',
+    title: 'Invariant zero-thrash, polling, dirty-check, dan reflow responsif',
+    browser: true,
+    runner: require('./test_e2e_perf_invariants.js').runPerfInvariantsE2ETest,
+  },
+  {
     id: '_selftest',
     title: 'Self-test: membuktikan runner meneruskan kegagalan',
     browser: false,

@@ -406,7 +406,7 @@ const Dashboard = {
         }).join('');
 
         const html = `
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-5 sm:p-6 md:p-7 max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl w-[95vw] sm:w-[calc(100%-2rem)] md:w-full shadow-2xl relative flex flex-col my-auto space-y-4 sm:space-y-5 lg:space-y-6 animate-in">
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-5 sm:p-6 md:p-7 max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl w-[95vw] sm:w-[calc(100%-2rem)] md:w-full shadow-2xl relative flex flex-col my-auto space-y-4 sm:space-y-5 lg:space-y-6">
                 <!-- Header (Fixed) -->
                 <div class="flex items-center justify-between pb-3.5 sm:pb-4 lg:pb-5 border-b border-[#1c1c1c] shrink-0">
                     <div class="flex items-center gap-3 sm:gap-3.5">

@@ -19,6 +19,10 @@
  * `null` berarti belum ada suite yang menguji tab tersebut; suite `coverage`
  * akan gagal dengan pesan `tab <id> belum punya suite E2E`.
  *
+ * Catatan lintas-suite: `perf_invariants` menjaga SEMUA container di bawah ini
+ * (animasi infinite, backdrop-filter, dirty-check, reflow 6 breakpoint) tetapi
+ * tidak mengambil alih kepemilikan fungsional — pemilik tetap suite domain.
+ *
  * Catatan: `plugin-spa` tidak tercantum di peta suite spec §7. Tab ini dibuka
  * dari tombol plugin di sidebar (`App.openPluginSPA`) sehingga dibina oleh
  * `settings_admin_logs`, yang juga memverifikasi container + iframe-nya.

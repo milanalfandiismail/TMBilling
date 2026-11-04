@@ -6,7 +6,7 @@ window.DashboardModalRemote = {
     viewFullscreen(imgEl) {
         if (!imgEl || !imgEl.src) return;
         const overlay = document.createElement('div');
-        overlay.className = 'fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4 cursor-pointer animate-in';
+        overlay.className = 'fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4 cursor-pointer';
         overlay.onclick = () => overlay.remove();
         overlay.innerHTML = `
             <div class="relative w-full h-full flex items-center justify-center">
