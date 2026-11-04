@@ -17,6 +17,11 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Stok Kantin Atomik**: Pengurangan stok memakai satu `UPDATE ... WHERE stok >= jumlah` untuk mencegah oversell saat checkout bersamaan.
 - **Bersih-Bersih**: Menghapus CLI `--release` pada `run.py` (rusak: `UnboundLocalError`, ekstraksi ZIP tanpa proteksi path traversal, tidak pernah menyalin payload) dan route ringkasan shift duplikat yang tidak terjangkau.
 
+### Performa & Optimasi
+- **Heartbeat Klien**: `sesi.last_sync` kini disimpan tiap 30 detik (`ClientService.HEARTBEAT_PERSIST_SECONDS`) sehingga deteksi blackout berlaku untuk sesi guest; penulisan `pc.last_activity` per poll tanpa commit dihapus (poll turun dari 5 statement menjadi 3 SELECT tanpa UPDATE).
+- **Jalur Panas**: Eager load hardware/PC/grup pada tab monitor, cache stat file screenshot 5 detik, batch sesi portal member publik, katalog `/spesifikasi` bebas N+1, arsip menu satu query `GROUP BY`, prefetch sesi aktif pada daftar PC, dan pagination opsional katalog game publik.
+- **Infrastruktur**: `SettingsCacheStore.update_dict` ditambahkan (mencegah error 500 saat tabel settings kosong) dan warmup dijalankan di luar lock; `ProcessMemoryStore` diberi TTL 300 detik; rebuild `PCNetworkCacheStore` di luar lock; logger tanpa `print` per entri dan membaca ekor file saja; guard anti-tumpuk serta jeda polling saat tab dashboard disembunyikan.
+
 ---
 
 ## [1.6.5-rc2] - 2026-11-01 - Release Candidate 2

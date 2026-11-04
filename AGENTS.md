@@ -108,9 +108,9 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 Seluruh aturan bisnis murni berada di layer service:
 - `services/auth/`: Validasi kredensial, hashing password, dan manajemen token.
 - `services/backup/`: Backup otomatis rotasi harian dan restore snapshot SQLite.
-- `services/blackout/`: Logika pemulihan sesi berdasarkan threshold blackout terkonfigurasi.
-- `services/cache/`: Subsystem in-memory cache berkecepatan tinggi (rincian di Bagian 3).
-- `services/client/`: Manajemen handshake dan antrean perintah cepat client PC.
+- `services/blackout/`: Logika pemulihan sesi berdasarkan threshold blackout terkonfigurasi; deteksi memakai `sesi.last_sync` yang kini tersimpan untuk sesi guest lewat heartbeat 30 detik.
+- `services/cache/`: Subsystem in-memory cache berkecepatan tinggi (rincian di Bagian 3); `ProcessMemoryStore` ber-TTL 300 detik dan `PCNetworkCacheStore` di-rebuild di luar lock.
+- `services/client/`: Manajemen handshake, antrean perintah cepat client PC, dan heartbeat `sesi.last_sync` throttled 30 detik (`ClientService.HEARTBEAT_PERSIST_SECONDS`).
 - `services/cloudflare_tunnel/`: Integrasi zero-trust Cloudflare Ingress daemon.
 - `services/dashboard/`: Kalkulasi metrik visual denah meja dan kartu status PC.
 - `services/fileexplorer/`: Validasi path keamanan (anti zip-slip/path traversal) remote explorer.
@@ -146,8 +146,8 @@ Pemisahan query ORM mentah dari service:
 - `middleware/auth.py`: Decorator `@login_required`, `@admin_required`, `@shift_required`.
 - `middleware/ip_whitelist_middleware.py`: Filter akses IP subnet warnet.
 - `utils/constants.py`: Konstanta global durasi, status sesi, dan kode error.
-- `utils/helpers.py`: Response formatter JSON terstandar (`success_response`, `error_response`).
-- `utils/logger.py`: Centralized audit logger ke file dan database.
+- `utils/helpers.py`: Response formatter JSON terstandar (`success_response`, `error_response`) dan `natural_sort_key` bersama untuk pengurutan kode PC.
+- `utils/logger.py`: Centralized audit logger ke file dan database; tanpa `print` per entri, dan `read_logs` hanya membaca ekor file.
 - `utils/mikrotik_api.py`: Klien API RouterOS MikroTik berbasis socket.
 - `utils/pdf_helper.py`: Generator laporan PDF struk kasir & rekap keuangan (ReportLab).
 - `utils/scheduler_tasks.py`: Daemon tugas berkala APScheduler (auto-flush, auto-backup, expired cleanup).
@@ -218,10 +218,10 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 
 | Domain Fitur | Frontend JS | Backend Route & Service | Model Terkait |
 |---|---|---|---|
-| **Blackout Recovery** | `modules/blackout.js` | `routes/blackout/`, `services/blackout/` | `Sesi`, `PCUptimeLog` |
+| **Blackout Recovery** | `modules/blackout.js` | `routes/blackout/`, `services/blackout/` (deteksi via `sesi.last_sync` yang di-heartbeat tiap 30 detik) | `Sesi`, `PCUptimeLog` |
 | **Process Monitor & Task Killer** | `modules/dashboard/dashboard_process_monitor.js` | `routes/monitor/monitor_routes.py`, `services/cache/telemetry_store.py` | `PCProcess`, in-memory store |
 | **VNC Remote Control & Clipboard** | `modules/remote.js`, `core/vnc_client.js` | `routes/vnc/vnc_routes.py`, `services/vnc/`, `services/settings/` (random VNC password & 5m periodic orphaned proxy reaper) | `PC`, `Settings` |
-| **POS Kantin & Billing FnB** | `modules/menu.js`, `modules/struk.js` | `routes/menu/menu_routes.py`, `services/menu/` (anti-skip monotonic receipt generator & local timezone boundaries) | `MenuItem`, `TransaksiMenu` |
+| **POS Kantin & Billing FnB** | `modules/menu.js`, `modules/struk.js` | `routes/menu/menu_routes.py`, `services/menu/` (anti-skip monotonic receipt generator, local timezone boundaries, stok atomik & arsip satu query `GROUP BY`) | `MenuItem`, `TransaksiMenu` |
 | **Hardware Baseline Anti-Maling** | `modules/hardware_checker.js` | `routes/monitor/monitor_routes.py`, `routes/hardware/`, `services/hardware/` | `HardwareMonitor` |
 | **Shift Kasir (Blind Cash)** | `modules/shift.js` | `routes/shift/shift_routes.py`, `services/shift/` | `ShiftRecord`, `Transaksi` |
 | **Web File Explorer Remote** | `modules/fileexplorer.js` | `routes/fileexplorer/`, `services/fileexplorer/` (sandbox root traversal validation & sensitive blacklist protection: `.env`, `warnet.db`, `initial_admin.txt`, `.git`) | `PC` |
@@ -232,24 +232,24 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Auto-Update & Migrasi Skema** | `modules/settings/migration.js` | `routes/settings/migration_routes.py` (anti-SSRF whitelist & active session count), `install_scripts/updater.bat` | Alembic skema, SQLite backups |
 | **Client Security & API Key Guard** | `modules/dashboard/dashboard_compact.js` | `routes/auth/auth_routes.py`, `routes/client/client_routes.py`, `app/__init__.py:TMBillingCSRFProtect` (Bearer client API key validation & constant-time comparison, emergency login wajib `emergency_token` via `hmac.compare_digest`) | `PC`, `ApiKeyMismatchStore` |
 | **Receipt / Nota Anti-Collision Generator** | `modules/struk.js` | `services/transaksi/transaksi_service.py`, `services/menu/menu_service.py` (atomic microsecond timestamping + sequential fallback collision-free numbering) | `Transaksi`, `TransaksiMenu` |
-| **Katalog Game & Crop Cover** | `modules/game/` | `routes/game/game_routes.py`, `services/game/` | `Game`, `GameKategori` |
+| **Katalog Game & Crop Cover** | `modules/game/` | `routes/game/game_routes.py`, `services/game/` (katalog publik mendukung `limit`/`offset` opsional) | `Game`, `GameKategori` |
 | **Tiket Servis & Perawatan PC** | `modules/maintenance/`, `modules/laporan_maintenance/` | `routes/maintenance/maintenance_routes.py`, `services/maintenance/` | `MaintenanceTicket` |
 | **Uptime Tracker Meja PC** | `modules/uptime.js` | `routes/pc/pc_routes.py`, `services/cache/uptime_store.py` | `PCUptimeLog` |
 | **Owner Analytics & Tren** | `modules/owner.js` | `routes/report/`, `services/owner/` | `Transaksi`, `Sesi` |
 | **Member, Saldo, & Refill** | `modules/member/` | `routes/member/member_routes.py`, `services/member/` | `Member` |
 | **Paket Billing Jam-Jaman** | `modules/paket/` | `routes/paket/paket_routes.py`, `services/paket/` | `Paket` |
 | **Staff Kasir/Admin & RBAC** | `modules/user/` | `routes/user/user_routes.py`, `services/user/` | `User`, `AuditLog` |
-| **Screenshot Monitor PC** | `modules/screenshot.js` | `routes/monitor/screenshot_routes.py`, `services/cache/telemetry_store.py` | In-memory store |
-| **Unit PC & Meja Klien** | `modules/pc.js`, `modules/pc/` | `routes/pc/pc_routes.py`, `services/pc/` | `PC`, `Grup` |
+| **Screenshot Monitor PC** | `modules/screenshot.js` | `routes/monitor/screenshot_routes.py`, `services/cache/telemetry_store.py` (stat file di-cache 5 detik) | In-memory store |
+| **Unit PC & Meja Klien** | `modules/pc.js`, `modules/pc/` | `routes/pc/pc_routes.py`, `services/pc/` (prefetch sesi aktif sekali query) | `PC`, `Grup` |
 | **Log Mutasi Stok FnB** | `modules/menu/stock_log.js` | `routes/menu/menu_routes.py`, `services/menu/` | `MenuItem`, in-memory store |
 | **Laporan Penjualan FnB** | `modules/laporan_menu.js` | `routes/menu/menu_routes.py`, `services/menu/` | `TransaksiMenu`, `MenuItem` |
 | **Sticky Notes Antar Shift** | `modules/catatan.js` | `routes/notes/note_routes.py`, `services/notes/` | Scratchpad disk store |
 | **Audit Log Terpusat** | `modules/log.js` | `routes/user/user_routes.py`, `services/user/`, `utils/logger.py` (atomic thread-safe file rotation & write-through SQLite) | `AuditLog` |
 | **Cetak Ulang Struk Kasir** | `modules/struk.js` | `routes/transaksi/`, `services/transaksi/` | `Transaksi` |
 | **Server Health & LHM Telemetry** | `modules/server_monitor/server_monitor.js` | `routes/server_monitor/`, `services/server_monitor/` | Host sensors, LHM Engine |
-| **Public Specs & Hardware Catalog** | `templates/public/specs/index.html` (compact 2-column mobile card grid, debounced search & modal controller fokus trio CPU, GPU, RAM) | `app/__init__.py:public_specs()` (minimalist structured catalog JSON tanpa telemetri berlebih) | `PC`, `HardwareMonitor`, `Grup` |
+| **Public Specs & Hardware Catalog** | `templates/public/specs/index.html` (compact 2-column mobile card grid, debounced search & modal controller fokus trio CPU, GPU, RAM) | `app/__init__.py:public_specs()` (minimalist structured catalog JSON tanpa telemetri berlebih, eager load PC/hardware/paket) | `PC`, `HardwareMonitor`, `Grup` |
 | **Manajemen Plugins & Ekstensi** | `modules/settings/plugins.js` | `routes/settings/plugin_routes.py`, `services/plugins/` | Plugin manifest |
-| **Frontend CPU & Zero-Thrashing** | `modules/dashboard/dashboard_compact.js`, `core/skeleton.js` | `templates/kasir/base.html`, `tailwind.config.js` | Strict dirty-checking, zero infinite keyframe loops |
+| **Frontend CPU & Zero-Thrashing** | `modules/dashboard/dashboard_compact.js`, `core/skeleton.js` | `templates/kasir/base.html`, `tailwind.config.js` | Strict dirty-checking, zero infinite keyframe loops, guard anti-tumpuk & jeda polling saat tab hidden |
 | **Responsive Tailwind Reflow** | `modules/dashboard/dashboard_compact.js`, `core/modal.js` | `templates/kasir/base.html`, `templates/kasir/components/navbar.html`, `sidebar.html` | Pure Tailwind Breakpoints (`< sm`, `sm`, `md`, `lg`, `xl`, `2xl`), `max-h-[90dvh]`, zero horizontal overflow across all 40 views (31 kasir tabs, 1 SPA iframe, 8 public portals) |
 
 ---
