@@ -13,6 +13,7 @@
  * 9. Public PC Specs Showcase (/spesifikasi).
  */
 
+(() => {
 async function runPublicPortalsCMSE2ETest(page) {
     const results = [];
     const record = (name, passed, message = '') => {
@@ -195,6 +196,8 @@ async function runPublicPortalsCMSE2ETest(page) {
     return { total: results.length, passed: passedCount, failed: failedCount, results };
 }
 
-if (typeof module !== 'undefined') {
+if (typeof module !== 'undefined' && module.exports) {
     module.exports = { runPublicPortalsCMSE2ETest };
 }
+return runPublicPortalsCMSE2ETest;
+})()

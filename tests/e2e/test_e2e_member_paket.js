@@ -11,6 +11,7 @@
  * 6. Tab Grup: Navigasi, Modal Form, CRUD Grup PC / Zona
  */
 
+(() => {
 async function runMemberPaketE2ETest(page) {
     const report = {
         suite: "E2E: Member, Saldo, Paket & Grup PC",
@@ -378,6 +379,8 @@ async function runMemberPaketE2ETest(page) {
     return report;
 }
 
-if (typeof module !== 'undefined') {
+if (typeof module !== 'undefined' && module.exports) {
     module.exports = { runMemberPaketE2ETest };
 }
+return runMemberPaketE2ETest;
+})()

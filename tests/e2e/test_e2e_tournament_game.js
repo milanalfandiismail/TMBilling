@@ -19,6 +19,7 @@
  *    - Hapus Game (Cleanup)
  */
 
+(() => {
 async function runTournamentGameE2ETest(page) {
     const report = {
         suite: "E2E: Tournament & Game Management",
@@ -272,6 +273,8 @@ async function runTournamentGameE2ETest(page) {
     return report;
 }
 
-if (typeof module !== 'undefined') {
+if (typeof module !== 'undefined' && module.exports) {
     module.exports = { runTournamentGameE2ETest };
 }
+return runTournamentGameE2ETest;
+})()
