@@ -10,6 +10,7 @@ def test_fileexplorer_blocks_access_to_sensitive_files():
     app = create_app()
     with app.app_context():
         cwd = os.getcwd()
+        FileExplorerService.set_allowed_roots([cwd])
 
         sensitive_targets = [
             os.path.join(cwd, ".env"),
@@ -29,6 +30,7 @@ def test_fileexplorer_list_directory_filters_sensitive_entries():
     app = create_app()
     with app.app_context():
         cwd = os.getcwd()
+        FileExplorerService.set_allowed_roots([cwd])
         result = FileExplorerService.list_directory(cwd)
         assert result["success"] is True
 
