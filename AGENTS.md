@@ -50,7 +50,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 
 #### A. Konfigurasi & Inisialisasi
 - `app/config.py`: **Single Source of Version Truth** (`VERSION = "1.6.5-rc2"`), dynamic random `SECRET_KEY` generator with write-through `.env` persistence, konfigurasi database SQLite, session lifetime, dan environment loader.
-- `app/__init__.py`: Application Factory (`create_app(config_override=None)`), inisialisasi CORS, custom `TMBillingCSRFProtect`, Flask-Migrate, bootstrap superadmin acak unik (`initial_admin.txt` di root direktori), dan pendaftaran 30 blueprint.
+- `app/__init__.py`: Application Factory (`create_app(config_override=None)`), inisialisasi CORS, custom `TMBillingCSRFProtect`, Flask-Migrate, bootstrap superadmin acak unik (`initial_admin.txt` di root direktori), dan pendaftaran 34 blueprint.
 
 #### B. Model ORM SQLAlchemy (`app/models/` — 17 Sub-Domain)
 | Subfolder Model | Model SQLAlchemy & Entitas Data |
@@ -79,7 +79,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `routes/auth/` | Autentikasi kasir & admin (`/kasir/auth/`) serta autentikasi member client PC dengan validasi API key (`/public/auth/`). |
 | `routes/backup/` | Manajemen backup database lokal SQLite dan integrasi cloud backup. |
 | `routes/blackout/` | Endpoint penanganan toleransi pemulihan sesi pasca mati lampu. |
-| `routes/client/` | Handshake client agent PC, detak jantung (heartbeat), dan penerimaan status sesi. |
+| `routes/client/` | Handshake client agent PC, detak jantung (heartbeat), penerimaan status sesi, dan emergency login yang mewajibkan `emergency_token` server. |
 | `routes/dashboard/` | Data agregat statistik dashboard kasir, total pendapatan hari ini, dan summary PC. |
 | `routes/fileexplorer/` | Remote web disk explorer (browse folder, upload file, download file dari PC klien). |
 | `routes/game/` | CRUD katalog game klien, uploader cover game, dan crop ikon otomatis. |
@@ -97,7 +97,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `routes/report/` | Laporan pendapatan berkala, ekspor PDF/Excel kasir, dan rekonsiliasi keuangan. |
 | `routes/server_monitor/` | Status kesehatan internal server billing (CPU, RAM, Disk, CPU Temp Server). |
 | `routes/sesi/` | Siklus hidup sesi (buka sesi, tambah waktu, pindah PC, tutup sesi paksa, stop sementara). |
-| `routes/settings/` | Konfigurasi IP whitelist, token API, integrasi Cloudflare Tunnel, vacuum SQLite, dan manajemen pembaruan sistem (GitHub 1-Klik / manual upload via runner mandiri). |
+| `routes/settings/` | Konfigurasi IP whitelist, token API, integrasi Cloudflare Tunnel, vacuum SQLite, dan manajemen pembaruan sistem (GitHub 1-Klik / manual upload via runner mandiri). `GET /api/v1/kasir/settings/` meredaksi kredensial untuk role kasir (hanya `payment_methods` & `vnc_password`). |
 | `routes/shift/` | Buka shift, tutup shift kasir dengan hitung buta (*blind cash reconciliation*). |
 | `routes/tournament/` | Manajemen turnamen game, pendaftaran tim eSports, dan generator bagan bracket. |
 | `routes/tutorial/` | CMS panduan sistem, artikel tutorial, dan upload media rich-text editor. |
@@ -130,7 +130,7 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/report/`: Kompilasi laporan keuangan harian/bulanan kasir.
 - `services/server_monitor/`: Sensor telemetri performa mesin server utama.
 - `services/sesi/`: Engine kalkulasi tarif per menit, sisa waktu billing, dan refund saldo.
-- `services/settings/`: Cache write-through pengaturan aplikasi dan auto-generator random `vnc_password`.
+- `services/settings/`: Cache write-through pengaturan aplikasi, auto-generator random `vnc_password`, serta auto-generator random token emergency & uninstall (`secrets.token_urlsafe`, hanya mengisi bila kosong sehingga token lama di database tetap berlaku).
 - `services/shift/`: Verifikasi selisih uang kas fisik kasir (blind reconciliation).
 - `services/tournament/`: Engine pairing babak dan alur skor turnamen eSports.
 - `services/transaksi/`: Pencatatan buku besar transaksi pembayaran.
@@ -192,7 +192,7 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 - `app.js`: Entry point inisialisasi aplikasi kasir, event delegation, dan routing 29 tab.
 - `core/api.js`: Klien HTTP REST terpusat dengan penanganan CSRF otomatis dan error reporting.
 - `core/modal.js`: Pengendali modal dialog modular.
-- `core/skeleton.js`: Standardized animated skeleton loader untuk 29 tab tampilan.
+- `core/skeleton.js`: Skeleton loader statis (tanpa animasi) untuk 29 tab tampilan.
 - `core/toast.js`: Sistem notifikasi toast floating modern.
 - `core/utils.js`: Formatter mata uang Rupiah, kalkulator waktu, dan escape HTML sanitizer.
 - `components/modal-buka.js`: Modal alur pembukaan sesi baru meja PC (Prepaid/Postpaid/Member).
@@ -230,7 +230,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **MikroTik Bandwidth QoS** | `modules/mikrotik.js` | `routes/mikrotik/`, `services/mikrotik/` | `MikroTikConfig` |
 | **Turnamen eSports & Bracket** | `modules/tournament.js` | `routes/tournament/`, `services/tournament/` | `Tournament`, `TournamentMatch` |
 | **Auto-Update & Migrasi Skema** | `modules/settings/migration.js` | `routes/settings/migration_routes.py` (anti-SSRF whitelist & active session count), `install_scripts/updater.bat` | Alembic skema, SQLite backups |
-| **Client Security & API Key Guard** | `modules/dashboard/dashboard_compact.js` | `routes/auth/auth_routes.py`, `routes/client/client_routes.py`, `app/__init__.py:TMBillingCSRFProtect` (Bearer client API key validation & constant-time comparison) | `PC`, `ApiKeyMismatchStore` |
+| **Client Security & API Key Guard** | `modules/dashboard/dashboard_compact.js` | `routes/auth/auth_routes.py`, `routes/client/client_routes.py`, `app/__init__.py:TMBillingCSRFProtect` (Bearer client API key validation & constant-time comparison, emergency login wajib `emergency_token` via `hmac.compare_digest`) | `PC`, `ApiKeyMismatchStore` |
 | **Receipt / Nota Anti-Collision Generator** | `modules/struk.js` | `services/transaksi/transaksi_service.py`, `services/menu/menu_service.py` (atomic microsecond timestamping + sequential fallback collision-free numbering) | `Transaksi`, `TransaksiMenu` |
 | **Katalog Game & Crop Cover** | `modules/game/` | `routes/game/game_routes.py`, `services/game/` | `Game`, `GameKategori` |
 | **Tiket Servis & Perawatan PC** | `modules/maintenance/`, `modules/laporan_maintenance/` | `routes/maintenance/maintenance_routes.py`, `services/maintenance/` | `MaintenanceTicket` |

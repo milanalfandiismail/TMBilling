@@ -6,6 +6,19 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [Unreleased]
+
+### Keamanan & Perbaikan Bug
+- **Redaksi Setting Sensitif**: `GET /api/v1/kasir/settings/` kini hanya mengembalikan `payment_methods` dan `vnc_password` untuk role kasir; kredensial lain (`client_api_key`, `mikrotik_password`, token, kredensial backup) khusus role admin.
+- **Emergency Login Wajib Token**: Endpoint emergency login menolak request tanpa `emergency_token` server yang sah; bypass pemeriksaan IP loopback (yang tidak bermakna di balik Cloudflare Tunnel) dihapus. Client Tauri mengirim `emergency_token` pada body request.
+- **Token Klien Tanpa Default Hardcoded**: Token emergency & uninstall kini dibuat acak (`secrets.token_urlsafe(32)`) dan disimpan di database. Nilai lama di database tetap dipakai apa adanya.
+- **Atribusi Transaksi**: Operator tak dikenal tidak lagi dibebankan ke admin pertama; checkout kantin menolak kasir yang tidak valid.
+- **Ringkasan Shift Read-Only**: `GET /summary` tidak lagi menulis ke database; force close menyimpan `uang_fisik`/`selisih` kosong (frontend menampilkan `-` / `(Penutupan Paksa)`) alih-alih menganggap PAS, dan struk handover mencetak `BELUM DIHITUNG`.
+- **Stok Kantin Atomik**: Pengurangan stok memakai satu `UPDATE ... WHERE stok >= jumlah` untuk mencegah oversell saat checkout bersamaan.
+- **Bersih-Bersih**: Menghapus CLI `--release` pada `run.py` (rusak: `UnboundLocalError`, ekstraksi ZIP tanpa proteksi path traversal, tidak pernah menyalin payload) dan route ringkasan shift duplikat yang tidak terjangkau.
+
+---
+
 ## [1.6.5-rc2] - 2026-11-01 - Release Candidate 2
 
 ### Keamanan & Perbaikan Bug
