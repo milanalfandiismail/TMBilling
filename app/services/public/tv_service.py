@@ -1,5 +1,8 @@
 # app/services/public/tv_service.py
 
+import threading
+import time
+
 from app.models.pc.pc import PC
 from app.models.paket.paket import Paket
 from app.models.tournament.tournament import Turnamen, TurnamenTahap, TurnamenMatch, TurnamenTim
@@ -13,8 +16,36 @@ from app.models.base.base import db
 class TVSignageService:
     """Service to gather all real-time data needed for TV Mode & Digital Signage."""
 
+    # shortcut: data billboard boleh basi 5 detik (toleransi TV), hapus cache bila butuh realtime murni.
+    CACHE_TTL_SECONDS = 5
+    _cache = None
+    _cache_ts = 0.0
+    _lock = threading.Lock()
+
+    @classmethod
+    def invalidate_cache(cls):
+        """Buang payload TV tersimpan (dipakai saat reset/test)."""
+        with cls._lock:
+            cls._cache = None
+            cls._cache_ts = 0.0
+
     @staticmethod
     def get_live_data():
+        """Data TV dengan cache RAM 5 detik (konsumen hanya membaca payload)."""
+        now = time.monotonic()
+        with TVSignageService._lock:
+            if (TVSignageService._cache is not None
+                    and now - TVSignageService._cache_ts < TVSignageService.CACHE_TTL_SECONDS):
+                return TVSignageService._cache
+        # Build di luar lock supaya request paralel tidak saling menunggu.
+        data = TVSignageService._build_live_data()
+        with TVSignageService._lock:
+            TVSignageService._cache = data
+            TVSignageService._cache_ts = time.monotonic()
+        return data
+
+    @staticmethod
+    def _build_live_data():
         """Retrieve aggregated data for the TV display: PC status, tournament, promos, and settings."""
         # 1. PC List & Occupancy using existing DashboardService logic
         pc_data = DashboardService.get_pc_list()
