@@ -1,5 +1,10 @@
 import pytest
+import unittest
 from unittest.mock import MagicMock, patch
+from datetime import timedelta
+
+from app import create_app
+from app.models import db, Grup, PC, Paket, Sesi, now_local
 
 def make_mock_transaksi(paket_nama=None, keterangan=None, metode="Tunai"):
     t = MagicMock()
@@ -78,5 +83,49 @@ def test_laporan_kantin_includes_breakdown_metode():
         res = ReportService.get_laporan_kantin_by_tanggal("2026-10-10")
         assert "breakdown_metode" in res
         assert isinstance(res["breakdown_metode"], dict)
+
+
+class TestLaporanHarian(unittest.TestCase):
+    def setUp(self):
+        self.app = create_app({
+            "TESTING": True, "WTF_CSRF_ENABLED": False,
+            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            "SECRET_KEY": "test-report-service",
+        })
+        self.ctx = self.app.app_context()
+        self.ctx.push()
+        db.create_all()
+        grup = Grup(nama="reguler")
+        db.session.add(grup)
+        db.session.flush()
+        paket = Paket(nama="1 Jam", durasi_menit=60, harga=5000, grup_id=grup.id, aktif=True)
+        db.session.add(paket)
+        db.session.flush()
+        for i in range(3):
+            pc = PC(kode=f"TM-{i+1:02d}", nama=f"TM-{i+1}", grup_id=grup.id, aktif=True)
+            db.session.add(pc)
+            db.session.flush()
+            if i < 2:  # 2 sesi aktif, 1 PC kosong
+                db.session.add(Sesi(
+                    tipe="guest", nama_guest=f"G{i}", pc_id=pc.id, paket_id=paket.id,
+                    durasi_beli_menit=60, total_bayar=5000, status="aktif",
+                    mulai_pada=now_local() - timedelta(minutes=5),
+                    token_sesi="c" * 20 + str(i),
+                ))
+        db.session.commit()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.ctx.pop()
+
+    def test_count_aktif_matches_active_rows(self):
+        from app.repositories import SesiRepository
+        self.assertEqual(SesiRepository.count_aktif(), 2)
+
+    def test_laporan_harian_sesi_aktif_matches(self):
+        from app.services.report.report_service import ReportService
+        result = ReportService.get_laporan_harian()
+        self.assertEqual(result["sesi_aktif"], 2)
 
 

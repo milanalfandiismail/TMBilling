@@ -59,7 +59,12 @@ class SesiRepository:
             joinedload(Sesi.user),
             joinedload(Sesi.paket)
         ).filter_by(status="aktif").all()
-    
+
+    @staticmethod
+    def count_aktif():
+        """Jumlah sesi aktif tanpa memuat barisnya."""
+        return Sesi.query.filter_by(status="aktif").count()
+
     @staticmethod
     def get_all_aktif_by_member(member_id):
         """Mengambil semua sesi aktif milik satu member (untuk validasi multi-login)."""

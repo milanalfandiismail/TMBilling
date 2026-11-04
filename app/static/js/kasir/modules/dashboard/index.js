@@ -189,8 +189,6 @@ const Dashboard = {
                 return;
             }
 
-            const data = await API.report.harian();
-
             let activeCount = 0;
             let availableCount = 0;
             let disconnectedCount = 0;
@@ -212,7 +210,7 @@ const Dashboard = {
             if (statActive) statActive.innerText = activeCount;
             if (statAvailable) statAvailable.innerText = availableCount;
             if (statDisconnected) statDisconnected.innerText = disconnectedCount;
-            if (statIncome) statIncome.innerText = Utils.formatRupiah(data.total_pendapatan || 0);
+            if (statIncome) statIncome.innerText = Utils.formatRupiah((this.lastData && this.lastData.omzet_hari_ini) || 0);
         } catch (err) {
             console.error('Stats error:', err);
         }

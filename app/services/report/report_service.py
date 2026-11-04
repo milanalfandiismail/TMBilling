@@ -30,7 +30,7 @@ class ReportService:
         total_menu = MenuRepository.get_total_pemasukan_by_date(hari_ini)
         total = int(total_billing or 0) + int(total_menu or 0)
         total_sesi = SesiRepository.count_by_date(hari_ini)
-        aktif_sekarang = len(SesiRepository.get_all_aktif())
+        aktif_sekarang = SesiRepository.count_aktif()
 
         return {
             "tanggal": str(hari_ini),
