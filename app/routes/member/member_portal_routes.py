@@ -94,10 +94,21 @@ def logout_action():
 def public_pc_status():
     """Mengambil status PC secara publik (untuk peta PC di landing page)."""
     try:
+        from sqlalchemy.orm import joinedload
+        from app.models import Sesi
+
         pcs = PCRepository.get_all()
+        active_sessions = (
+            Sesi.query.options(joinedload(Sesi.member))
+            .filter_by(status="aktif").order_by(Sesi.id.desc()).all()
+        )
+        sesi_map = {}
+        for s in active_sessions:
+            sesi_map.setdefault(s.pc_id, s)
+
         result = []
         for pc in pcs:
-            s = pc.sesi_aktif
+            s = sesi_map.get(pc.id)
             is_occupied = not pc.aktif or s is not None or pc.is_admin_mode
             status_visual = "terpakai" if is_occupied else "kosong"
 

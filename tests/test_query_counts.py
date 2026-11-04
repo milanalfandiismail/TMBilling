@@ -3,7 +3,7 @@ import unittest
 from sqlalchemy import event
 
 from app import create_app
-from app.models import db, Grup, PC, HardwareMonitor
+from app.models import db, Grup, PC, HardwareMonitor, Member, Sesi
 
 
 def count_queries(fn):
@@ -82,3 +82,48 @@ class TestHardwareListQueries(unittest.TestCase):
         self.assertLessEqual(queries, 4)
         self.assertEqual(res["member"]["grup"], "reguler")
         self.assertEqual(res["member"]["waktu_tersimpan"], 60)
+
+
+class TestPublicPCPortalQueries(unittest.TestCase):
+    def setUp(self):
+        self.app = create_app({
+            "TESTING": True, "WTF_CSRF_ENABLED": False,
+            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            "SECRET_KEY": "test-query-count",
+        })
+        self.ctx = self.app.app_context()
+        self.ctx.push()
+        db.create_all()
+        grup = Grup(nama="reguler")
+        db.session.add(grup)
+        db.session.flush()
+        for i in range(5):
+            pc = PC(kode=f"TM-{i+1}", nama=f"TM-{i+1}", grup_id=grup.id, aktif=True)
+            db.session.add(pc)
+            db.session.flush()
+            if i < 3:
+                m = Member(username=f"pemain{i}", password_hash="x", grup_id=grup.id,
+                           waktu_tersimpan=60, aktif=True)
+                db.session.add(m)
+                db.session.flush()
+                db.session.add(Sesi(tipe="member", member_id=m.id, pc_id=pc.id,
+                                    durasi_beli_menit=60, status="aktif",
+                                    token_sesi=f"p{i}" * 20))
+        db.session.commit()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.ctx.pop()
+
+    def test_public_pc_status_query_count_constant(self):
+        client = self.app.test_client()
+        res, queries = count_queries(
+            lambda: client.get("/pc-status"))
+        self.assertLessEqual(queries, 8)
+        payload = res.get_json()
+        self.assertEqual(len(payload), 5)
+        self.assertEqual(payload[0]["nama"], "pemain0")
+        self.assertEqual(payload[0]["status"], "terpakai")
+        self.assertEqual(payload[3]["nama"], "Tersedia")
+        self.assertEqual(payload[3]["status"], "kosong")
