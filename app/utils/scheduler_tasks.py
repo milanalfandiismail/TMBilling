@@ -57,7 +57,7 @@ def run_cleanup_logs(app):
     periode yang ditentukan di settings.
     """
     with app.app_context():
-        from app.utils.logger import LOG_FILE
+        from app.utils.logger import atomic_filter_logs, write_log
         from app.services import SettingsService
         
         try:
@@ -66,47 +66,18 @@ def run_cleanup_logs(app):
             seconds = value * UNIT_MULTIPLIER.get(unit, 86400)
             cutoff = datetime.now() - timedelta(seconds=seconds)
             
-            if not os.path.exists(LOG_FILE):
-                return
-            
-            kept_lines = []
-            removed = 0
-            
-            with open(LOG_FILE, "r", encoding="utf-8") as f:
-                for line in f:
-                    line_stripped = line.strip()
-                    if not line_stripped:
-                        continue
-                    log_time = None
-                    if line_stripped.startswith("{") and line_stripped.endswith("}"):
-                        try:
-                            import json
-                            data = json.loads(line_stripped)
-                            ts = data.get("timestamp")
-                            if ts:
-                                log_time = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
-                        except Exception:
-                            pass
+            def should_keep(data):
+                ts = data.get("timestamp")
+                if ts:
+                    try:
+                        log_time = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+                        return log_time >= cutoff
+                    except Exception:
+                        pass
+                return True
 
-                    if not log_time:
-                        match = re.match(r'\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]', line_stripped)
-                        if match:
-                            try:
-                                log_time = datetime.strptime(match.group(1), "%Y-%m-%d %H:%M:%S")
-                            except Exception:
-                                pass
-
-                    if log_time:
-                        if log_time >= cutoff:
-                            kept_lines.append(line)
-                        else:
-                            removed += 1
-                    else:
-                        kept_lines.append(line)
-            
+            removed = atomic_filter_logs(should_keep)
             if removed > 0:
-                with open(LOG_FILE, "w", encoding="utf-8") as f:
-                    f.writelines(kept_lines)
                 write_log("SCHEDULER", f"Cleanup log: {removed} baris lama dihapus (>{value} {unit})", user="SYSTEM")
         except Exception as e:
             write_log("SCHEDULER_ERROR", f"Error cleanup log: {str(e)}", user="SYSTEM")

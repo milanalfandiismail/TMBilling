@@ -18,6 +18,8 @@ import os
 import re
 import json
 import gzip
+import threading
+import tempfile
 from datetime import datetime
 from flask import has_request_context, request
 
@@ -29,6 +31,7 @@ LOG_FILE = os.path.join(LOG_DIR, "warnet.log")
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(LOG_ARCHIVE_DIR, exist_ok=True)
 
+_log_lock = threading.Lock()
 LEGACY_LOG_PATTERN = re.compile(r"^\[(.*?)\] \[(.*?)\] (.*?) - (.*)$")
 
 ACTION_TO_CATEGORY_MAP = {
@@ -250,8 +253,12 @@ def write_log(aksi, detail, user="kasir", detail_json=None, category=None):
     
     log_line = json.dumps(log_entry) + "\n"
     
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(log_line)
+    try:
+        with _log_lock:
+            with open(LOG_FILE, "a", encoding="utf-8") as f:
+                f.write(log_line)
+    except Exception as e:
+        print(f"[LOG_ERROR] Gagal menulis ke log: {e}")
     
     print(f"[LOG] {now} [{user}] {aksi} - {detail}")
 
@@ -355,18 +362,63 @@ def archive_logs(archive_dir: str = LOG_ARCHIVE_DIR) -> dict:
         "total_lines": lines_count
     }
 
-def clear_logs(archive: bool = True) -> dict:
-    """Mengosongkan isi file log dengan opsi auto-archive."""
-    archive_info = {"archived": False, "archive_path": None, "total_lines": 0}
-    if archive and os.path.exists(LOG_FILE):
-        archive_info = archive_logs()
+def atomic_filter_logs(filter_fn) -> int:
+    """Membaca dan memfilter log secara atomik dan thread-safe menggunakan lock dan temporary file.
+    
+    Args:
+        filter_fn: Callable yang menerima dict normalized log dan mengembalikan True jika baris dipertahankan.
+        
+    Returns:
+        int: Jumlah baris yang dihapus/dibersihkan.
+    """
+    if not os.path.exists(LOG_FILE):
+        return 0
+        
+    with _log_lock:
+        kept_lines = []
+        removed = 0
+        with open(LOG_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                line_str = line.strip()
+                if not line_str:
+                    continue
+                data = normalize_legacy_log_line(line_str)
+                if filter_fn(data):
+                    kept_lines.append(line)
+                else:
+                    removed += 1
+        
+        if removed > 0:
+            dir_name = os.path.dirname(LOG_FILE) or "."
+            fd, tmp_path = tempfile.mkstemp(dir=dir_name, prefix="warnet_log_", suffix=".tmp")
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as tmp_file:
+                    tmp_file.writelines(kept_lines)
+                os.replace(tmp_path, LOG_FILE)
+            except Exception as e:
+                if os.path.exists(tmp_path):
+                    try:
+                        os.remove(tmp_path)
+                    except Exception:
+                        pass
+                raise e
+                
+        return removed
 
-    if os.path.exists(LOG_FILE):
-        with open(LOG_FILE, "w", encoding="utf-8") as f:
-            f.write("")
-        return {
-            "success": True,
-            "total_lines": archive_info.get("total_lines", 0),
-            "archive_path": archive_info.get("archive_path")
-        }
-    return {"success": False, "total_lines": 0, "archive_path": None}
+
+def clear_logs(archive: bool = True) -> dict:
+    """Mengosongkan isi file log dengan opsi auto-archive secara thread-safe."""
+    with _log_lock:
+        archive_info = {"archived": False, "archive_path": None, "total_lines": 0}
+        if archive and os.path.exists(LOG_FILE) and os.path.getsize(LOG_FILE) > 0:
+            archive_info = archive_logs()
+
+        if os.path.exists(LOG_FILE):
+            with open(LOG_FILE, "w", encoding="utf-8") as f:
+                f.write("")
+            return {
+                "success": True,
+                "total_lines": archive_info.get("total_lines", 0),
+                "archive_path": archive_info.get("archive_path")
+            }
+        return {"success": False, "total_lines": 0, "archive_path": None}
