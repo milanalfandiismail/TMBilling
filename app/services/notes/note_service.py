@@ -10,6 +10,12 @@ class NoteService:
     @classmethod
     def get_notes_dir(cls) -> str:
         """Mengambil direktori absolut untuk penyimpanan catatan .txt di folder instance."""
+        # Override dipakai sandbox E2E agar tidak menulis ke catatan produksi.
+        override = os.environ.get("TM_NOTES_DIR")
+        if override:
+            abs_override = os.path.realpath(override)
+            os.makedirs(abs_override, exist_ok=True)
+            return abs_override
         try:
             if current_app:
                 base_dir = os.path.join(current_app.instance_path, 'notes')
