@@ -17,13 +17,20 @@ from app.routes.settings.settings_routes import settings_api_bp
 # =========================================================================
 # Fokus: Mengambil seluruh data pengaturan untuk ditampilkan di dashboard.
 
+CASHIER_SAFE_SETTINGS = ("payment_methods", "vnc_password")
+
+
 @settings_api_bp.route("/", methods=["GET"])
 @login_required
 def get_all_settings():
-    """Ambil semua daftar pengaturan sistem dalam format Key-Value."""
+    """Ambil daftar pengaturan sistem; kredensial hanya untuk admin."""
     try:
         data = SettingsService.get_all()
-        data["client_api_key"] = current_app.config.get("CLIENT_API_KEY", "TM2026QWERTY-api-key")
+        if session.get("kasir_role") == "admin":
+            data["client_api_key"] = current_app.config.get("CLIENT_API_KEY", "TM2026QWERTY-api-key")
+        else:
+            # shortcut: key baru yang perlu dibaca kasir harus ditambahkan ke whitelist ini
+            data = {k: v for k, v in data.items() if k in CASHIER_SAFE_SETTINGS}
         return jsonify({"success": True, "settings": data}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
