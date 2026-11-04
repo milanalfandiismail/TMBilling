@@ -109,9 +109,14 @@ async function runPublicPortalsCMSE2ETest(page) {
                 const isVisible = modal && !modal.classList.contains('hidden');
                 const kode = document.getElementById('modal-pc-kode') ? document.getElementById('modal-pc-kode').textContent : '';
                 const cpu = document.getElementById('modal-cpu-name') ? document.getElementById('modal-cpu-name').textContent : '';
-                return { isVisible, kode, cpu };
+                const gpu = document.getElementById('modal-gpu-name') ? document.getElementById('modal-gpu-name').textContent : '';
+                const ram = document.getElementById('modal-ram-total') ? document.getElementById('modal-ram-total').textContent : '';
+                const moboAbsent = !document.getElementById('modal-mobo-name');
+                const nicAbsent = !document.getElementById('modal-nic-speed');
+                const diskAbsent = !document.getElementById('modal-disks-container');
+                return { isVisible, kode, cpu, gpu, ram, minimalistOk: moboAbsent && nicAbsent && diskAbsent };
             });
-            record('PC Spec Modal Opens on Card Click', modalState.isVisible && modalState.kode.length > 0, `PC: ${modalState.kode}`);
+            record('PC Spec Modal Opens on Card Click', modalState.isVisible && modalState.kode.length > 0 && modalState.minimalistOk, `PC: ${modalState.kode}`);
 
             // Close via close button
             await page.click('#spec-modal-close');
