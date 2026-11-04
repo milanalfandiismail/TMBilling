@@ -9,6 +9,25 @@ from app.services.settings.settings_service import SettingsService
 class FileExplorerService:
     MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
+    SENSITIVE_PATTERNS = {
+        ".env",
+        "warnet.db",
+        "warnet.db-wal",
+        "warnet.db-shm",
+        "initial_admin.txt",
+        ".git"
+    }
+
+    @classmethod
+    def is_sensitive(cls, path_obj: pathlib.Path) -> bool:
+        """Cek apakah berkas atau salah satu komponen path merupakan berkas/folder terproteksi."""
+        if path_obj.name.lower() in cls.SENSITIVE_PATTERNS:
+            return True
+        for part in path_obj.parts:
+            if part.lower() in cls.SENSITIVE_PATTERNS:
+                return True
+        return False
+
     @staticmethod
     def get_allowed_roots() -> list[str]:
         """Mengambil daftar direktori yang diizinkan untuk dijelajahi."""
@@ -52,6 +71,11 @@ class FileExplorerService:
             try:
                 # Periksa apakah target_path_obj berada di bawah root_path
                 target_path_obj.relative_to(root_path)
+
+                # Proteksi berkas sensitif dan direktori internal sistem
+                if FileExplorerService.is_sensitive(target_path_obj):
+                    raise PermissionError(f"Akses ditolak: Berkas '{target_path_obj.name}' dilindungi oleh sistem keamanan.")
+
                 return canonical_target
             except ValueError:
                 # Jika target_path_obj bukan di bawah root_path, loop berlanjut
@@ -73,6 +97,9 @@ class FileExplorerService:
 
             items = []
             for entry in os.scandir(canonical_path):
+                # Filter berkas dan direktori sensitif dari tampilan
+                if entry.name.lower() in FileExplorerService.SENSITIVE_PATTERNS:
+                    continue
                 try:
                     stat = entry.stat()
                     items.append({
