@@ -144,3 +144,35 @@ class TestPublicPCPortalQueries(unittest.TestCase):
         client = self.app.test_client()
         _, queries = count_queries(lambda: client.get("/spesifikasi"))
         self.assertLessEqual(queries, 10)
+
+
+class TestArchivedMenuQueries(unittest.TestCase):
+    def setUp(self):
+        self.app = create_app({
+            "TESTING": True, "WTF_CSRF_ENABLED": False,
+            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            "SECRET_KEY": "test-query-count",
+        })
+        self.ctx = self.app.app_context()
+        self.ctx.push()
+        db.create_all()
+        from app.models import MenuItem, TransaksiMenu
+        for i in range(6):
+            menu = MenuItem(nama=f"Arsip {i}", harga=5000, stok=10, is_active=False)
+            db.session.add(menu)
+            db.session.flush()
+            for j in range(i):  # menu ke-i punya i transaksi
+                db.session.add(TransaksiMenu(no_nota=f"N{i}-{j}", menu_id=menu.id,
+                                             jumlah=1, total_harga=5000))
+        db.session.commit()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.ctx.pop()
+
+    def test_archived_menu_query_count_constant(self):
+        from app.services.menu.menu_service import MenuService
+        menus, queries = count_queries(MenuService.get_archived_menu)
+        self.assertLessEqual(queries, 4)
+        self.assertEqual([m["transaksi_count"] for m in menus], [i for i in range(6)])

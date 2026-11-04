@@ -66,6 +66,14 @@ class MenuRepository:
         return TransaksiMenu.query.filter_by(menu_id=menu_id).count()
 
     @staticmethod
+    def count_transaksi_grouped():
+        """Menghitung jumlah transaksi per menu_id dalam satu query GROUP BY."""
+        from sqlalchemy import func
+        rows = (db.session.query(TransaksiMenu.menu_id, func.count(TransaksiMenu.id))
+                .group_by(TransaksiMenu.menu_id).all())
+        return {menu_id: total for menu_id, total in rows}
+
+    @staticmethod
     def delete_transaksi_by_menu(menu_id):
         """Menghapus seluruh transaksi menu yang terkait dengan menu_id."""
         TransaksiMenu.query.filter_by(menu_id=menu_id).delete()

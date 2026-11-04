@@ -245,10 +245,11 @@ class MenuService:
     def get_archived_menu():
         """Mengambil semua menu yang diarsipkan beserta jumlah transaksi historisnya."""
         menus = MenuRepository.get_archived()
+        counts = MenuRepository.count_transaksi_grouped()
         result = []
         for m in menus:
             data = m.to_dict()
-            data["transaksi_count"] = MenuRepository.count_transaksi_by_menu(m.id)
+            data["transaksi_count"] = counts.get(m.id, 0)
             result.append(data)
         return result
 
