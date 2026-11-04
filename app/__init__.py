@@ -228,7 +228,6 @@ def _register_public_routes(app):
 
                     specs_catalog[pc.kode] = {
                         "kode": pc.kode,
-                        "nama": pc.nama or pc.kode,
                         "grup": {
                             "nama": g.nama,
                             "warna": g.warna or "#3b82f6",
@@ -238,21 +237,14 @@ def _register_public_routes(app):
                         "cpu": {
                             "name": hw.cpu_name if (hw and hw.cpu_name) else "Belum Terkumpul",
                             "cores": baseline.get("cpu", {}).get("cores", None) if isinstance(baseline.get("cpu"), dict) else None,
-                            "temp": getattr(hw, "cpu_temp", None) if hw else None,
-                            "usage": getattr(hw, "cpu_usage", None) if hw else None,
                         },
                         "gpu": {
                             "name": hw.gpu_name if (hw and hw.gpu_name) else "Belum Terkumpul",
-                            "temp": getattr(hw, "gpu_temp", None) if hw else None,
                         },
                         "ram": {
                             "total": hw.total_ram if (hw and hw.total_ram) else "Belum Terkumpul",
                             "sticks": baseline.get("ram_sticks", []) if isinstance(baseline.get("ram_sticks"), list) else [],
                         },
-                        "motherboard": hw.motherboard if (hw and hw.motherboard) else "Belum Terkumpul",
-                        "nic_speed": hw.nic_speed if (hw and hw.nic_speed) else "Belum Terkumpul",
-                        "disks": baseline.get("disks", []) if isinstance(baseline.get("disks"), list) else [],
-                        "peripherals": baseline.get("peripherals", {}) if isinstance(baseline.get("peripherals"), dict) else {},
                     }
 
         return render_template(

@@ -100,7 +100,7 @@ def test_setup():
 
 
 def test_public_specs_route_success_and_catalog(test_setup):
-    """Pastikan route /spesifikasi merender HTTP 200 dan menyertakan specs_catalog_json terstruktur."""
+    """Pastikan route /spesifikasi merender HTTP 200 dan menyertakan specs_catalog_json terstruktur hanya CPU, GPU, RAM."""
     app, client, _ = test_setup
 
     res = client.get("/spesifikasi")
@@ -123,10 +123,17 @@ def test_public_specs_route_success_and_catalog(test_setup):
     assert item["cpu"]["name"] == "AMD Ryzen 7 5800X"
     assert item["gpu"]["name"] == "NVIDIA GeForce RTX 4060"
     assert item["ram"]["total"] == "16 GB"
-    assert item["motherboard"] == "B550M AORUS ELITE"
     assert item["online"] is True
     assert len(item["ram"]["sticks"]) == 2
-    assert len(item["disks"]) == 1
+
+    # Verifikasi penghapusan field teknis berlebih
+    assert "motherboard" not in item
+    assert "nic_speed" not in item
+    assert "disks" not in item
+    assert "peripherals" not in item
+    assert "temp" not in item["cpu"]
+    assert "usage" not in item["cpu"]
+    assert "temp" not in item["gpu"]
 
 
 def test_public_specs_route_missing_hardware_fallback(test_setup):
@@ -148,7 +155,8 @@ def test_public_specs_route_missing_hardware_fallback(test_setup):
     assert item["cpu"]["name"] == "Belum Terkumpul"
     assert item["gpu"]["name"] == "Belum Terkumpul"
     assert item["ram"]["total"] == "Belum Terkumpul"
-    assert item["motherboard"] == "Belum Terkumpul"
+    assert "motherboard" not in item
+    assert "nic_speed" not in item
     assert item["online"] is False
 
 
@@ -170,7 +178,7 @@ def test_public_specs_route_malformed_baseline_json_resilience(test_setup):
     item = catalog["TM-CORRUPT"]
     assert item["cpu"]["name"] == "Intel Core i3-10100"
     assert item["ram"]["sticks"] == []
-    assert item["disks"] == []
+    assert "disks" not in item
 
 
 def test_public_specs_compact_cards_markup(test_setup):
