@@ -192,8 +192,16 @@ def _register_public_routes(app):
         """Render halaman grid spesifikasi hardware PC dinamis terkelompok per grup."""
         import json
         import re
-        from app.models import Grup
-        groups = Grup.query.all()
+        from app.models import Grup, PC
+        from sqlalchemy.orm import joinedload, selectinload
+        groups = (
+            Grup.query
+            .options(
+                selectinload(Grup.pc_list).joinedload(PC.hardware),
+                selectinload(Grup.paket_list),
+            )
+            .all()
+        )
         
         def extract_number(pc):
             match = re.search(r"\d+", pc.kode)

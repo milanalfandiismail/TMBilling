@@ -127,3 +127,20 @@ class TestPublicPCPortalQueries(unittest.TestCase):
         self.assertEqual(payload[0]["status"], "terpakai")
         self.assertEqual(payload[3]["nama"], "Tersedia")
         self.assertEqual(payload[3]["status"], "kosong")
+
+    def test_public_specs_query_count_constant(self):
+        from app.models import Paket
+        grup = Grup.query.first()
+        for i in range(5, 13):
+            pc = PC(kode=f"TM-{i+1}", nama=f"TM-{i+1}", grup_id=grup.id, aktif=True)
+            db.session.add(pc)
+            db.session.flush()
+            db.session.add(HardwareMonitor(pc_id=pc.id, cpu_name="i7", gpu_name="GTX"))
+        db.session.add_all([
+            Paket(nama="1 Jam", grup_id=grup.id, durasi_menit=60, harga=5000, aktif=True),
+            Paket(nama="3 Jam", grup_id=grup.id, durasi_menit=180, harga=12000, aktif=True),
+        ])
+        db.session.commit()
+        client = self.app.test_client()
+        _, queries = count_queries(lambda: client.get("/spesifikasi"))
+        self.assertLessEqual(queries, 10)
