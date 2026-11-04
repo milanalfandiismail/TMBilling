@@ -6,6 +6,8 @@ Modul ini menyediakan interface untuk mengambil dan mengubah
 konfigurasi aplikasi yang tersimpan di database.
 """
 
+import secrets
+
 from app.models import db
 from app.repositories import SettingsRepository
 
@@ -134,10 +136,27 @@ class SettingsService:
     @staticmethod
     def get_or_create_vnc_password():
         """Mengambil vnc_password atau membuatnya secara otomatis jika belum ada / masih default publik."""
-        import secrets
         current_pwd = (SettingsService.get("vnc_password") or "").strip()
         if not current_pwd or current_pwd == "tmbilling123":
             current_pwd = secrets.token_urlsafe(8)
             SettingsService.set("vnc_password", current_pwd)
         return current_pwd
+
+    @staticmethod
+    def get_or_create_emergency_token():
+        """Token emergency login; dibuat acak sekali lalu disimpan permanen."""
+        token = SettingsService.get("emergency_token")
+        if not token:
+            token = secrets.token_urlsafe(32)
+            SettingsService.set("emergency_token", token)
+        return token
+
+    @staticmethod
+    def get_or_create_uninstall_token():
+        """Token uninstall klien; dibuat acak sekali lalu disimpan permanen."""
+        token = SettingsService.get("uninstall_token")
+        if not token:
+            token = secrets.token_urlsafe(32)
+            SettingsService.set("uninstall_token", token)
+        return token
 

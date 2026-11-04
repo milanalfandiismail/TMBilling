@@ -114,9 +114,8 @@ def get_uninstall_token_for_client():
     @api_key_required
     def execute_request():
         try:
-            uninstall_token = SettingsService.get("uninstall_token", "TM_UNINSTALL_SAFE_2026")
-            # Ambil emergency token dinamis dari database, fallback ke .env, fallback ke default "TM123qaz!@#"
-            emergency_token = SettingsService.get("emergency_token") or current_app.config.get("EMERGENCY_UNINSTALL_TOKEN", "TM123qaz!@#")
+            uninstall_token = SettingsService.get_or_create_uninstall_token()
+            emergency_token = SettingsService.get_or_create_emergency_token()
             return jsonify({
                 "success": True, 
                 "uninstall_token": uninstall_token,
