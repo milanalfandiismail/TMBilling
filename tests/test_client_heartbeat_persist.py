@@ -1,8 +1,10 @@
 # tests/test_client_heartbeat_persist.py
 import unittest
+from datetime import timedelta
 
 from app import create_app
 from app.models import db, Grup, PC, Paket, Sesi, Settings, now_local
+from app.services.blackout.blackout_service import BlackoutService
 from app.services.cache.memory_store import OnlineStatusStore
 from app.services.client.client_service import ClientService
 
@@ -92,3 +94,52 @@ class TestClientHeartbeatPersist(unittest.TestCase):
     def test_poll_still_marks_pc_online_in_ram(self):
         self._poll()
         self.assertTrue(OnlineStatusStore.is_online(self.pc_id, timeout_seconds=10))
+
+    def _db_sesi(self):
+        db.session.remove()
+        return db.session.get(Sesi, self.sesi_id)
+
+    def test_first_poll_persists_last_sync(self):
+        self.assertIsNone(self._db_sesi().last_sync)
+        self.assertEqual(self._poll().status_code, 200)
+        self.assertIsNotNone(self._db_sesi().last_sync)
+
+    def test_second_poll_within_window_does_not_rewrite(self):
+        self._poll()
+        first = self._db_sesi().last_sync
+        self._poll()
+        self.assertEqual(self._db_sesi().last_sync, first)
+
+    def test_poll_after_window_rewrites_last_sync(self):
+        self._poll()
+        stale = now_local() - timedelta(seconds=31)
+        sesi = self._db_sesi()
+        sesi.last_sync = stale
+        db.session.commit()
+        self._poll()
+        self.assertGreater(self._db_sesi().last_sync, stale)
+
+    def test_blackout_detects_guest_after_poll(self):
+        self._poll()
+        self.assertEqual(BlackoutService.deteksi(0), 1)
+
+    def test_poll_without_session_still_returns_empty_status(self):
+        sesi = self._db_sesi()
+        sesi.status = "selesai"
+        db.session.commit()
+        res = self._poll()
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.get_json()["status"], "kosong")
+
+    def test_expired_session_is_closed_by_poll(self):
+        sesi = self._db_sesi()
+        sesi.mulai_pada = now_local() - timedelta(minutes=61)
+        db.session.commit()
+        self._poll()
+        self.assertEqual(self._db_sesi().status, "selesai")
+
+    def test_second_poll_within_window_issues_no_update(self):
+        self._poll()
+        stmts = self._capture_sql(self._poll)
+        self.assertFalse([s for s in stmts if s.startswith("UPDATE")], stmts)
+        self.assertEqual(len([s for s in stmts if s.startswith("SELECT")]), 3)

@@ -30,6 +30,9 @@ from app.services.cache.command_store import (
 class ClientService:
     """Service untuk endpoint client C# / Rust."""
 
+    # Umur maksimum heartbeat di DB sebelum ditulis ulang (detik)
+    HEARTBEAT_PERSIST_SECONDS = 30
+
     @staticmethod
     def queue_command(pc_id, command_type):
         """Menambahkan perintah ke antrean polling reguler PC (GUI)."""
@@ -108,6 +111,7 @@ class ClientService:
     @staticmethod
     def get_status(ip_address, mac_address, role=None):
         """Polling rutin dari client: Validasi IP & MAC jika sudah terikat."""
+        persist_beat = False
         try:
             pc = PCRepository.get_by_ip(ip_address)
 
@@ -195,11 +199,18 @@ class ClientService:
                     }
 
                 else:
-                    # C. Sesi Ada -> Update Sync & Hitung Sisa Waktu (In-Memory timestamp)
+                    # C. Sesi Ada -> tandai heartbeat & hitung sisa waktu
                     try:
-                        sesi.last_sync = now_local()
-                    except Exception:
-                        pass
+                        now = now_local()
+                        last_persisted = sesi.last_sync
+                        if (last_persisted is None
+                                or (now - last_persisted).total_seconds()
+                                >= ClientService.HEARTBEAT_PERSIST_SECONDS):
+                            sesi.last_sync = now
+                            persist_beat = True
+                    except Exception as beat_err:
+                        write_log("CLIENT_HEARTBEAT_ERROR",
+                                  f"Gagal siapkan heartbeat PC {pc.kode}: {beat_err}")
 
                     try:
                         sisa = SesiService.sync_waktu_member(sesi)
@@ -262,6 +273,14 @@ class ClientService:
                     cmd = ClientService.pop_command(pc.id)
                     if cmd:
                         res["command"] = cmd
+
+            if persist_beat:
+                try:
+                    db.session.commit()
+                except Exception as beat_err:
+                    db.session.rollback()
+                    write_log("CLIENT_HEARTBEAT_ERROR",
+                              f"Gagal simpan heartbeat PC {pc.kode}: {beat_err}")
 
             return res
 
