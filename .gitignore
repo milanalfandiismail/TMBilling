@@ -604,6 +604,11 @@ app/static/assets/tutorials/temp/
 
 # Playwright MCP artifacts
 .playwright-mcp/
+tests/e2e/results/*
+!tests/e2e/results/.gitkeep
+# Folder lib/ di atas hanya untuk virtualenv; suite E2E memakai tests/e2e/lib
+!tests/e2e/lib/
+!tests/e2e/lib/**
 audit-screenshots/
 *.png
 !app/static/img/*.png
