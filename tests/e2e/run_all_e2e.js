@@ -20,6 +20,7 @@ const { runHardwareMaintenanceRemoteE2ETest } = require('./test_e2e_hardware_mai
 const { runTournamentGameE2ETest } = require('./test_e2e_tournament_game.js');
 const { runSettingsAdminLogsE2ETest } = require('./test_e2e_settings_admin_logs.js');
 const { runPublicPortalsCMSE2ETest } = require('./test_e2e_public_portals_cms.js');
+const { runResponsiveBreakpointsTest } = require('../playwright_responsive_breakpoints.js');
 
 async function runAllE2ESuites(page) {
     const summary = {
@@ -91,6 +92,28 @@ async function runAllE2ESuites(page) {
             });
             console.error(`✖ Exception in ${suite.name}:`, err);
         }
+    }
+
+    console.log(`\n=======================================================`);
+    console.log(`▶ Stage 2: Responsive Multi-Breakpoint Audit (40 Views × 6 Breakpoints)...`);
+    console.log(`=======================================================`);
+    try {
+        const bpRes = await runResponsiveBreakpointsTest(page);
+        summary.totalTests += bpRes.totalChecks;
+        summary.passed += bpRes.passed;
+        summary.failed += bpRes.failed;
+        if (bpRes.failed === 0) {
+            summary.passedSuites++;
+        } else {
+            summary.failedSuites++;
+        }
+        summary.totalSuites++;
+        console.log(`✔ Finished Stage 2 Responsive Breakpoint Audit: ${bpRes.passed}/${bpRes.totalChecks} checks passed!`);
+        if (bpRes.failed > 0) {
+            console.error(`✖ Horizontal Overflow detected:`, bpRes.failures);
+        }
+    } catch(err) {
+        console.error(`✖ Exception in Stage 2 Responsive Breakpoint Audit:`, err);
     }
 
     summary.endTime = new Date().toISOString();
