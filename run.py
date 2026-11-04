@@ -17,7 +17,15 @@ Usage:
 
 from app import create_app
 from apscheduler.schedulers.background import BackgroundScheduler
-from app.utils.scheduler_tasks import run_cleanup_expired, run_database_backup, run_cleanup_logs, run_auto_screenshots, run_flush_uptime, UNIT_MULTIPLIER
+from app.utils.scheduler_tasks import (
+    run_cleanup_expired,
+    run_database_backup,
+    run_cleanup_logs,
+    run_auto_screenshots,
+    run_flush_uptime,
+    run_cleanup_vnc_proxies,
+    UNIT_MULTIPLIER,
+)
 import os
 import time
 
