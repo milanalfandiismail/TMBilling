@@ -13,7 +13,7 @@
  */
 
 const assert = require('assert');
-const { login, tab, api, clientPoll, waitFor, unique, check } = require('./lib/harness');
+const { BASE_URL, CLIENT_API_KEY, login, tab, api, clientPoll, waitFor, unique, check } = require('./lib/harness');
 const { dbQuery, dbExec } = require('./lib/db');
 const { createReport, finish } = require('./lib/report');
 
@@ -130,6 +130,51 @@ async function readReceipt(page, noNota, timeout = 5000) {
     throw new Error(`Struk ${noNota} tidak tampil; render terakhir: ${JSON.stringify(last)}`);
 }
 
+/** POST emergency-login persis seperti PC klien (X-Client-Key, body token opsional). */
+async function emergencyLogin(page, { ip, mac, token, username } = {}) {
+    const data = { ip_address: ip, mac_address: mac };
+    if (username !== undefined) data.username = username;
+    if (token !== undefined) data.token = token;
+    const res = await page.request.post(`${BASE_URL}/api/v1/public/client/emergency-login`, {
+        headers: { 'X-Client-Key': CLIENT_API_KEY },
+        data,
+    });
+    const body = await res.json().catch(() => ({}));
+    return { ...body, http_status: res.status() };
+}
+
+/**
+ * Buka tab blackout lalu render tanggal yang benar-benar memuat sesi tsb.
+ * Tanggal daftar dihitung dari mulai_pada (zona tampilan), jadi cari lewat API.
+ */
+async function showBlackoutSesi(page, sesiId) {
+    await tab(page, 'blackout');
+    const dates = (await api(page, 'API.blackout.dates()')).dates || [];
+    for (const date of dates) {
+        const res = await api(page, `API.blackout.list(${JSON.stringify(date)})`);
+        if ((res.data || []).some((s) => Number(s.id) === Number(sesiId))) {
+            await page.evaluate((d) => Blackout.loadList(d), date);
+            await page.waitForSelector('#blackout-table-body tr', { timeout: 5000 });
+            return date;
+        }
+    }
+    throw new Error(`sesi #${sesiId} tidak muncul di daftar blackout`);
+}
+
+function blackoutRow(page, kode) {
+    return page.locator('#blackout-table-body tr', { hasText: kode }).first();
+}
+
+/**
+ * App.switchTab() memanggil loadTab() tanpa await, jadi tunggu kartu analytics
+ * tampil lagi (load() menyembunyikannya sinkron sebelum fetch) lalu baca KPI.
+ */
+async function openAnalytics(page) {
+    await tab(page, 'analytics');
+    await page.waitForSelector('#analytics-cards:not(.hidden)', { timeout: 5000 });
+    return rupiahToInt(await page.textContent('#kpi-total-billing'));
+}
+
 async function runPCBillingLifecycleE2ETest(page) {
     const report = createReport('pc_billing');
 
@@ -146,6 +191,16 @@ async function runPCBillingLifecycleE2ETest(page) {
             'Tutup sesi via UI: status selesai dan total struk = total transaksi sesi',
             'Polling dengan X-Client-Key salah ditolak 401 tanpa mengubah sesi',
             'Heartbeat last_sync tersimpan maksimal 35 detik setelah polling',
+            'Deteksi blackout menandai sesi basi dan menampilkan baris PC-01',
+            'Resolusi guest sama menutup sesi lama dan membuka sesi dengan sisa audit',
+            'Resolusi guest pindah memindahkan sisa audit ke PC-02 satu grup',
+            'Deteksi blackout mengabaikan sesi dengan last_sync segar',
+            'Heartbeat hanya menulis last_sync setelah jendela 30 detik',
+            'Tutup blackout mencatat transaksi tutup_sesi Rp0',
+            'Emergency login tanpa token ditolak 403 tanpa mengubah PC maupun sesi',
+            'Emergency login bertoken menutup sesi aktif, mengaktifkan admin mode, dan mencatat audit',
+            'Force-all menutup semua sesi aktif tanpa membuat transaksi baru',
+            'Pendapatan analytics naik tepat sebesar transaksi pemulihan blackout',
         ]) {
             check(report, name, async () => { throw err; });
         }
@@ -420,6 +475,327 @@ async function runPCBillingLifecycleE2ETest(page) {
             35000
         );
         assert.ok(rows[0].last_sync, 'last_sync tidak boleh null');
+    });
+
+    // ------------------------------------------------------------------
+    // Task 12 — Blackout & emergency recovery
+    // ------------------------------------------------------------------
+    // Catatan prasyarat state: PC-01/02/03 kosong, PC-04 aktif tanpa last_sync,
+    // PC-05 aktif dengan last_sync segar (sisa check heartbeat di atas).
+
+    await check(report, 'Deteksi blackout menandai sesi basi dan menampilkan baris PC-01', async () => {
+        // Baseline pendapatan & id transaksi diambil sebelum satu pun transaksi Task 12 dibuat.
+        state.analyticsStart = await openAnalytics(page);
+        state.transaksiMaxId = (await dbQuery('SELECT COALESCE(MAX(id), 0) AS maxId FROM transaksi'))[0].maxId;
+
+        const paket = await paketByNama('1 Jam Reguler');
+        const open = await api(page, `API.sesi.bukaGuest("PC-01", ${paket.id}, "GuestStale", "Tunai")`);
+        assert.strictEqual(open.success, true);
+        state.staleSesiId = open.sesi_id;
+
+        // mulai_pada T-40', last_sync T-10' -> sisa audit 30 menit (bukan sisa real-time 20).
+        await dbExec("UPDATE sesi SET mulai_pada = datetime(mulai_pada, '-40 minutes') WHERE id = ?", [state.staleSesiId]);
+        await dbExec("UPDATE sesi SET last_sync = datetime(mulai_pada, '+30 minutes') WHERE id = ?", [state.staleSesiId]);
+
+        // Sesi PC-05 dari check heartbeat bisa sync < 1 detik lalu (batas deteksi 0 menit);
+        // mundurkan supaya hasil deteksi deterministik.
+        const pc5 = await pcByKode('PC-05');
+        const pc5Aktif = (await dbQuery('SELECT id FROM sesi WHERE pc_id = ? AND status = ?', [pc5.id, SESI_AKTIF]))[0];
+        assert.ok(pc5Aktif, 'prasyarat: sesi PC-05 aktif dari check heartbeat');
+        state.pc5SesiId = Number(pc5Aktif.id);
+        await dbExec("UPDATE sesi SET last_sync = datetime(last_sync, '-10 minutes') WHERE id = ?", [state.pc5SesiId]);
+
+        const deteksi = await api(page, 'API.blackout.deteksi(0)');
+        assert.strictEqual(deteksi.success, true);
+        assert.ok(deteksi.total >= 1, `harus ada sesi terdeteksi, dapat ${deteksi.total}`);
+
+        const row = (await dbQuery('SELECT status, is_blackout_suspect, is_blackout_resolved, sisa_menit_saat_mati FROM sesi WHERE id = ?', [state.staleSesiId]))[0];
+        assert.strictEqual(row.status, SESI_SELESAI);
+        assert.strictEqual(Number(row.is_blackout_suspect), 1);
+        assert.strictEqual(Number(row.is_blackout_resolved), 0);
+        assert.strictEqual(Number(row.sisa_menit_saat_mati), 30);
+
+        await showBlackoutSesi(page, state.staleSesiId);
+        const text = await blackoutRow(page, 'PC-01').innerText();
+        assert.ok(/GuestStale/.test(text), `baris blackout harus memuat nama guest: ${text}`);
+        assert.ok(/\+30m/.test(text), `baris blackout harus memuat sisa audit 30m: ${text}`);
+    });
+
+    await check(report, 'Resolusi guest sama menutup sesi lama dan membuka sesi dengan sisa audit', async () => {
+        assert.ok(state.staleSesiId, 'prasyarat: sesi blackout belum dibuat');
+
+        await showBlackoutSesi(page, state.staleSesiId);
+        await blackoutRow(page, 'PC-01').locator('button[title="Lanjutkan sesi di PC yang sama"]').click({ timeout: 5000 });
+        await clickConfirm(page, '#modal-confirm-btn');
+
+        const lama = (await dbWait(
+            'SELECT status, is_blackout_resolved, waktu_resolved FROM sesi WHERE id = ?',
+            [state.staleSesiId],
+            (rows) => rows.length === 1 && Number(rows[0].is_blackout_resolved) === 1,
+            'sesi lama ditandai resolved'
+        ))[0];
+        assert.strictEqual(lama.status, SESI_SELESAI);
+        assert.ok(lama.waktu_resolved, 'waktu_resolved harus terisi');
+
+        const pc1 = await pcByKode('PC-01');
+        const aktif = await dbQuery(
+            'SELECT id, tipe, nama_guest, durasi_beli_menit, total_bayar, sesi_asal_id FROM sesi WHERE pc_id = ? AND status = ?',
+            [pc1.id, SESI_AKTIF]
+        );
+        assert.strictEqual(aktif.length, 1, 'PC-01 harus punya tepat satu sesi aktif');
+        assert.strictEqual(aktif[0].tipe, 'guest');
+        assert.strictEqual(aktif[0].nama_guest, 'GuestStale');
+        assert.strictEqual(Number(aktif[0].durasi_beli_menit), 30);
+        assert.strictEqual(Number(aktif[0].total_bayar), 5000);
+        assert.strictEqual(Number(aktif[0].sesi_asal_id), Number(state.staleSesiId));
+        const samaSesiId = Number(aktif[0].id);
+
+        assert.deepStrictEqual(
+            await dbQuery('SELECT id FROM transaksi WHERE sesi_id = ?', [samaSesiId]),
+            [],
+            'lanjut di PC yang sama tidak boleh membuat transaksi baru'
+        );
+    });
+
+    await check(report, 'Resolusi guest pindah memindahkan sisa audit ke PC-02 satu grup', async () => {
+        const paket = await paketByNama('2 Jam Reguler');
+        const open = await api(page, `API.sesi.bukaGuest("PC-03", ${paket.id}, "GuestLanjut", "Tunai")`);
+        assert.strictEqual(open.success, true);
+        state.lanjutSesiId = open.sesi_id;
+
+        await dbExec("UPDATE sesi SET mulai_pada = datetime(mulai_pada, '-40 minutes') WHERE id = ?", [state.lanjutSesiId]);
+        await dbExec("UPDATE sesi SET last_sync = datetime(mulai_pada, '+30 minutes') WHERE id = ?", [state.lanjutSesiId]);
+
+        // Threshold 5 menit, bukan 0: sesi yang baru dibuka (sisa check sebelumnya) tidak boleh ikut tertandai.
+        const deteksi = await api(page, 'API.blackout.deteksi(5)');
+        assert.strictEqual(deteksi.success, true);
+        assert.ok(deteksi.total >= 1, 'sesi PC-03 harus terdeteksi');
+
+        const snap = (await dbQuery('SELECT sisa_menit_saat_mati FROM sesi WHERE id = ?', [state.lanjutSesiId]))[0];
+        assert.strictEqual(Number(snap.sisa_menit_saat_mati), 90);
+
+        await showBlackoutSesi(page, state.lanjutSesiId);
+        await blackoutRow(page, 'PC-03').locator('button[title="Pindahkan sesi ke PC kosong lain"]').click({ timeout: 5000 });
+        await page.locator('.pc-card-tujuan', { hasText: 'PC-02' }).first().click({ timeout: 5000 });
+
+        const pc2 = await pcByKode('PC-02');
+        const aktif = await dbWait(
+            'SELECT id, nama_guest, durasi_beli_menit, total_bayar FROM sesi WHERE pc_id = ? AND status = ?',
+            [pc2.id, SESI_AKTIF],
+            (rows) => rows.length === 1,
+            'sesi pindahan aktif di PC-02'
+        );
+        assert.strictEqual(aktif[0].nama_guest, 'GuestLanjut');
+        assert.strictEqual(Number(aktif[0].durasi_beli_menit), 90);
+        assert.strictEqual(Number(aktif[0].total_bayar), 9000);
+        state.pindahBlackoutSesiId = Number(aktif[0].id);
+
+        const pc3 = await pcByKode('PC-03');
+        assert.deepStrictEqual(
+            await dbQuery('SELECT id FROM sesi WHERE pc_id = ? AND status = ?', [pc3.id, SESI_AKTIF]),
+            [],
+            'PC-03 harus kosong setelah sesi dipindah'
+        );
+        const lama = (await dbQuery('SELECT status, is_blackout_resolved FROM sesi WHERE id = ?', [state.lanjutSesiId]))[0];
+        assert.strictEqual(lama.status, SESI_SELESAI);
+        assert.strictEqual(Number(lama.is_blackout_resolved), 1);
+        assert.deepStrictEqual(
+            await dbQuery('SELECT id FROM transaksi WHERE sesi_id = ?', [state.pindahBlackoutSesiId]),
+            [],
+            'pindah PC tidak boleh membuat transaksi baru'
+        );
+        assert.strictEqual(
+            Number((await dbQuery('SELECT sesi_asal_id FROM sesi WHERE id = ?', [state.pindahBlackoutSesiId]))[0].sesi_asal_id),
+            Number(state.lanjutSesiId)
+        );
+    });
+
+    await check(report, 'Deteksi blackout mengabaikan sesi dengan last_sync segar', async () => {
+        const deteksi = await api(page, 'API.blackout.deteksi(5)');
+        assert.strictEqual(deteksi.success, true);
+        assert.strictEqual(deteksi.total, 0, 'sesi dengan last_sync segar tidak boleh jadi false positive');
+
+        const pc1 = await pcByKode('PC-01');
+        const pc4 = await pcByKode('PC-04');
+        const rows = await dbQuery(
+            'SELECT id, is_blackout_suspect FROM sesi WHERE pc_id IN (?, ?) AND status = ? ORDER BY id',
+            [pc1.id, pc4.id, SESI_AKTIF]
+        );
+        assert.strictEqual(rows.length, 2, 'PC-01 hasil resolusi dan PC-04 harus tetap aktif');
+        for (const r of rows) {
+            assert.strictEqual(Number(r.is_blackout_suspect), 0, `sesi #${r.id} tidak boleh suspect`);
+        }
+    });
+
+    await check(report, 'Heartbeat hanya menulis last_sync setelah jendela 30 detik', async () => {
+        const pc4 = await pcByKode('PC-04');
+        const aktif = (await dbQuery('SELECT id FROM sesi WHERE pc_id = ? AND status = ?', [pc4.id, SESI_AKTIF]))[0];
+        assert.ok(aktif, 'prasyarat: sesi PC-04 aktif');
+
+        const first = await clientPoll(page, { ip: pc4.ip_address, mac: pc4.mac_address });
+        assert.strictEqual(first.http_status, 200);
+        const v1 = (await dbWait(
+            'SELECT last_sync FROM sesi WHERE id = ?',
+            [aktif.id],
+            (r) => r.length === 1 && r[0].last_sync !== null,
+            'heartbeat pertama tersimpan'
+        ))[0].last_sync;
+
+        const second = await clientPoll(page, { ip: pc4.ip_address, mac: pc4.mac_address });
+        assert.strictEqual(second.http_status, 200);
+        const v2 = (await dbQuery('SELECT last_sync FROM sesi WHERE id = ?', [aktif.id]))[0].last_sync;
+        assert.strictEqual(v2, v1, 'polling kedua di dalam 30 detik tidak boleh menulis last_sync');
+
+        await dbExec("UPDATE sesi SET last_sync = datetime(last_sync, '-31 minutes') WHERE id = ?", [aktif.id]);
+        const backdated = (await dbQuery('SELECT last_sync FROM sesi WHERE id = ?', [aktif.id]))[0].last_sync;
+        assert.ok(backdated < v1, `nilai backdate harus lebih lama: ${backdated} vs ${v1}`);
+
+        const third = await clientPoll(page, { ip: pc4.ip_address, mac: pc4.mac_address });
+        assert.strictEqual(third.http_status, 200);
+        const v3 = (await dbWait(
+            'SELECT last_sync FROM sesi WHERE id = ?',
+            [aktif.id],
+            (r) => r.length === 1 && r[0].last_sync !== backdated,
+            'heartbeat setelah backdate tersimpan'
+        ))[0].last_sync;
+        assert.ok(v3 > backdated, `last_sync harus maju: ${v3} vs ${backdated}`);
+        assert.ok(v3 >= v1, `last_sync tidak boleh mundur: ${v3} vs ${v1}`);
+    });
+
+    await check(report, 'Tutup blackout mencatat transaksi tutup_sesi Rp0', async () => {
+        // Sesi PC-05 sudah ditandai suspect oleh deteksi threshold 0 di check pertama.
+        const suspect = await dbQuery(
+            'SELECT id FROM sesi WHERE pc_id = (SELECT id FROM pc WHERE kode = ?) AND is_blackout_suspect = 1 AND is_blackout_resolved = 0',
+            ['PC-05']
+        );
+        assert.strictEqual(suspect.length, 1, 'sesi PC-05 harus suspect dan belum resolved');
+        const sesiId = Number(suspect[0].id);
+
+        const before = await dbQuery('SELECT jenis, jumlah FROM transaksi WHERE sesi_id = ? ORDER BY id', [sesiId]);
+        assert.strictEqual(before.length, 1);
+        assert.strictEqual(Number(before[0].jumlah), 5000);
+
+        await showBlackoutSesi(page, sesiId);
+        await blackoutRow(page, 'PC-05').locator('button[title="Tutup sesi"]').click({ timeout: 5000 });
+        await clickConfirm(page, '#modal-confirm-btn');
+
+        const after = await dbWait(
+            'SELECT jenis, jumlah FROM transaksi WHERE sesi_id = ? ORDER BY id',
+            [sesiId],
+            (rows) => rows.length === 2,
+            'transaksi tutup blackout tercatat'
+        );
+        assert.deepStrictEqual(after.map((t) => t.jenis), [JENIS_BELI_GUEST, 'tutup_sesi']);
+        assert.deepStrictEqual(after.map((t) => Number(t.jumlah)), [5000, 0]);
+
+        const sesi = (await dbQuery('SELECT status, is_blackout_resolved FROM sesi WHERE id = ?', [sesiId]))[0];
+        assert.strictEqual(sesi.status, SESI_SELESAI);
+        assert.strictEqual(Number(sesi.is_blackout_resolved), 1);
+    });
+
+    await check(report, 'Emergency login tanpa token ditolak 403 tanpa mengubah PC maupun sesi', async () => {
+        const pc2 = await pcByKode('PC-02');
+        const pcBefore = await dbQuery('SELECT * FROM pc WHERE id = ?', [pc2.id]);
+        const sesiBefore = await dbQuery('SELECT * FROM sesi WHERE pc_id = ? ORDER BY id', [pc2.id]);
+
+        const tanpaToken = await emergencyLogin(page, { ip: pc2.ip_address, mac: pc2.mac_address });
+        assert.strictEqual(tanpaToken.http_status, 403, `harus 403, dapat ${tanpaToken.http_status}`);
+
+        const tokenSalah = await emergencyLogin(page, { ip: pc2.ip_address, mac: pc2.mac_address, token: 'token-palsu' });
+        assert.strictEqual(tokenSalah.http_status, 403, `harus 403, dapat ${tokenSalah.http_status}`);
+        assert.ok(/Token emergency login tidak valid/.test(String(tokenSalah.error || '')), `pesan error tidak sesuai: ${tokenSalah.error}`);
+
+        assert.deepStrictEqual(await dbQuery('SELECT * FROM pc WHERE id = ?', [pc2.id]), pcBefore, 'baris PC tidak boleh berubah');
+        assert.deepStrictEqual(await dbQuery('SELECT * FROM sesi WHERE pc_id = ? ORDER BY id', [pc2.id]), sesiBefore, 'baris sesi tidak boleh berubah');
+        assert.strictEqual(Number(pcBefore[0].is_admin_mode), 0);
+
+        // get_or_create_emergency_token() sudah berjalan sebelum validasi token.
+        const settingsRow = (await dbQuery("SELECT value FROM settings WHERE key = 'emergency_token'"))[0];
+        assert.ok(settingsRow && settingsRow.value, 'emergency_token harus tersedia di tabel settings');
+        state.emergencyToken = settingsRow.value;
+    });
+
+    await check(report, 'Emergency login bertoken menutup sesi aktif, mengaktifkan admin mode, dan mencatat audit', async () => {
+        assert.ok(state.emergencyToken, 'prasyarat: token emergency belum dibaca');
+        const pc2 = await pcByKode('PC-02');
+        const marker = unique('Emergency');
+
+        const res = await emergencyLogin(page, {
+            ip: pc2.ip_address,
+            mac: pc2.mac_address,
+            token: state.emergencyToken,
+            username: marker,
+        });
+        assert.strictEqual(res.http_status, 200, `harus 200, dapat ${res.http_status}: ${JSON.stringify(res)}`);
+        assert.strictEqual(res.success, true);
+
+        const pc = (await dbQuery('SELECT is_admin_mode FROM pc WHERE id = ?', [pc2.id]))[0];
+        assert.strictEqual(Number(pc.is_admin_mode), 1);
+
+        const lama = (await dbQuery('SELECT status, selesai_pada FROM sesi WHERE id = ?', [state.pindahBlackoutSesiId]))[0];
+        assert.strictEqual(lama.status, SESI_SELESAI, 'sesi guest sebelumnya harus ditutup');
+        assert.ok(lama.selesai_pada, 'selesai_pada sesi lama harus terisi');
+
+        const aktif = await dbQuery(
+            'SELECT tipe, is_admin, nama_guest FROM sesi WHERE pc_id = ? AND status = ?',
+            [pc2.id, SESI_AKTIF]
+        );
+        assert.strictEqual(aktif.length, 1, 'PC-02 harus punya tepat satu sesi aktif (admin)');
+        assert.strictEqual(aktif[0].tipe, 'admin');
+        assert.strictEqual(Number(aktif[0].is_admin), 1);
+        assert.strictEqual(aktif[0].nama_guest, 'SYSTEM');
+
+        const logs = await api(page, `API.report.logs(${JSON.stringify(marker)}, 100)`);
+        assert.ok(Array.isArray(logs.logs), `respons log tidak valid: ${JSON.stringify(logs)}`);
+        assert.ok(
+            logs.logs.some((l) => l.action === 'EMERGENCY_LOGIN' && String(l.detail).includes(marker)),
+            `audit EMERGENCY_LOGIN dengan penanda ${marker} tidak ditemukan`
+        );
+    });
+
+    await check(report, 'Force-all menutup semua sesi aktif tanpa membuat transaksi baru', async () => {
+        const aktifBefore = (await dbQuery('SELECT id FROM sesi WHERE status = ? ORDER BY id', [SESI_AKTIF])).map((r) => Number(r.id));
+        assert.ok(aktifBefore.length >= 1, 'harus ada sesi aktif untuk ditutup');
+
+        const trxBefore = (await dbQuery('SELECT COUNT(*) AS n, COALESCE(MAX(id), 0) AS maxId FROM transaksi'))[0];
+
+        page.once('dialog', (dialog) => dialog.accept());
+        await page.evaluate(() => Blackout.forceAllAndDetect());
+
+        const deadline = Date.now() + 5000;
+        let sisa = null;
+        while (Date.now() < deadline) {
+            sisa = Number((await dbQuery('SELECT COUNT(*) AS n FROM sesi WHERE status = ?', [SESI_AKTIF]))[0].n);
+            if (sisa === 0) break;
+            await sleep(100);
+        }
+        assert.strictEqual(sisa, 0, 'semua sesi aktif harus tertutup');
+
+        const placeholders = aktifBefore.map(() => '?').join(',');
+        const rows = await dbQuery(`SELECT id, status, selesai_pada FROM sesi WHERE id IN (${placeholders})`, aktifBefore);
+        assert.strictEqual(rows.length, aktifBefore.length, 'jumlah sesi yang diubah harus sama');
+        for (const r of rows) {
+            assert.strictEqual(r.status, SESI_SELESAI, `sesi #${r.id} harus selesai`);
+            assert.ok(r.selesai_pada, `sesi #${r.id} harus punya selesai_pada`);
+        }
+
+        const trxAfter = (await dbQuery('SELECT COUNT(*) AS n, COALESCE(MAX(id), 0) AS maxId FROM transaksi'))[0];
+        assert.strictEqual(Number(trxAfter.n), Number(trxBefore.n), 'force-all tidak boleh membuat transaksi');
+        assert.strictEqual(Number(trxAfter.maxId), Number(trxBefore.maxId), 'max(id) transaksi tidak boleh berubah');
+    });
+
+    await check(report, 'Pendapatan analytics naik tepat sebesar transaksi pemulihan blackout', async () => {
+        assert.ok(Number.isInteger(state.analyticsStart), 'prasyarat: baseline analytics belum diambil');
+
+        const uiEnd = await openAnalytics(page);
+
+        const dbDelta = Number((await dbQuery(
+            'SELECT COALESCE(SUM(jumlah), 0) AS total FROM transaksi WHERE id > ? AND jumlah > 0',
+            [state.transaksiMaxId]
+        ))[0].total);
+
+        assert.strictEqual(dbDelta, 14000, `transaksi pemulihan harus Rp14.000, dapat ${dbDelta}`);
+        assert.strictEqual(uiEnd - state.analyticsStart, dbDelta, `delta UI ${uiEnd - state.analyticsStart} != delta DB ${dbDelta}`);
     });
 
     return finish(report);
