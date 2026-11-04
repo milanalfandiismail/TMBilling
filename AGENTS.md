@@ -61,7 +61,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `models/hardware/` | `HardwareMonitor` (baseline spek CPU, GPU, RAM, Mobo) & `PCProcess` (daftar proses aktif). |
 | `models/maintenance/` | `MaintenanceTicket` (pelaporan kerusakan hardware/peripheral PC dari member). |
 | `models/member/` | `Member` (akun member, saldo prabayar, poin, status aktif). |
-| `models/menu/` | `MenuItem` (menu FnB kantin, stok, harga) & `TransaksiMenu` (pesanan kasir). |
+| `models/menu/` | `MenuItem` (menu FnB kantin, stok, harga) & `TransaksiMenu` (pesanan kasir; index `ix_transaksi_menu_tanggal` pada `tanggal`). |
 | `models/mikrotik/` | `MikroTikConfig` (konfigurasi RouterOS API untuk manajemen bandwidth per PC). |
 | `models/paket/` | `Paket` (paket billing waktu tetap: 1 Jam, 3 Jam, Paket Malam, dll). |
 | `models/pc/` | `PC` (registrasi client meja, IP, MAC address) & `PCUptimeLog` (log online & billing). |
@@ -109,28 +109,28 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/auth/`: Validasi kredensial, hashing password, dan manajemen token.
 - `services/backup/`: Backup otomatis rotasi harian dan restore snapshot SQLite.
 - `services/blackout/`: Logika pemulihan sesi berdasarkan threshold blackout terkonfigurasi; deteksi memakai `sesi.last_sync` yang kini tersimpan untuk sesi guest lewat heartbeat 30 detik.
-- `services/cache/`: Subsystem in-memory cache berkecepatan tinggi (rincian di Bagian 3); `ProcessMemoryStore` ber-TTL 300 detik dan `PCNetworkCacheStore` di-rebuild di luar lock.
-- `services/client/`: Manajemen handshake, antrean perintah cepat client PC, dan heartbeat `sesi.last_sync` throttled 30 detik (`ClientService.HEARTBEAT_PERSIST_SECONDS`).
+- `services/cache/`: Subsystem in-memory cache berkecepatan tinggi (rincian di Bagian 3); `ProcessMemoryStore` ber-TTL 300 detik dan `PCNetworkCacheStore` di-rebuild di luar lock; `UptimeMemoryStore` menyimpan flag billing per PC di RAM (dibaca jalur telemetri, bukan query sesi).
+- `services/client/`: Manajemen handshake, antrean perintah cepat client PC, dan heartbeat `sesi.last_sync` throttled 30 detik (`ClientService.HEARTBEAT_PERSIST_SECONDS`); menulis flag billing ke `UptimeMemoryStore` setiap polling status.
 - `services/cloudflare_tunnel/`: Integrasi zero-trust Cloudflare Ingress daemon.
 - `services/dashboard/`: Kalkulasi metrik visual denah meja dan kartu status PC.
 - `services/fileexplorer/`: Validasi path keamanan (anti zip-slip/path traversal) remote explorer.
 - `services/game/`: Manajemen file aset executable game dan integrasi launcher.
 - `services/grup/`: Logika validasi tarif grup meja.
-- `services/hardware/`: Evaluasi diskrepansi hardware baseline (anti pencurian komponen).
+- `services/hardware/`: Evaluasi diskrepansi hardware baseline (anti pencurian komponen); laporan uptime memakai eager load PC/grup dan tidak menulis di jalur GET (flush hanya dari scheduler 60 detik).
 - `services/ip_whitelist/`: Proteksi akses kasir hanya dari subnet IP yang terdaftar.
 - `services/maintenance/`: Alur status tiket perbaikan PC.
-- `services/member/`: Transaksi saldo, potongan diskon tarif member, dan proteksi saldo minus.
+- `services/member/`: Transaksi saldo, potongan diskon tarif member, dan proteksi saldo minus; daftar member eager load grup & sesi.
 - `services/menu/`: Pengurangan stok bahan makanan/minuman otomatis saat transaksi POS terjadi.
 - `services/notes/`: Sinkronisasi catatan serah terima kasir.
 - `services/owner/`: Agregasi statistik finansial khusus peran owner/pemilik warnet.
 - `services/paket/`: Validasi durasi dan jam berlaku paket (contoh: paket malam).
 - `services/pc/`: Manajemen status ketersediaan meja PC dan uptime tracking.
 - `services/plugins/`: Ekstensi modul dinamis tambahan.
-- `services/public/`: Format data tampilan TV billboard publik.
+- `services/public/`: Format data tampilan TV billboard publik; payload TV di-cache 5 detik.
 - `services/report/`: Kompilasi laporan keuangan harian/bulanan kasir.
 - `services/server_monitor/`: Sensor telemetri performa mesin server utama.
 - `services/sesi/`: Engine kalkulasi tarif per menit, sisa waktu billing, dan refund saldo.
-- `services/settings/`: Cache write-through pengaturan aplikasi, auto-generator random `vnc_password`, serta auto-generator random token emergency & uninstall (`secrets.token_urlsafe`, hanya mengisi bila kosong sehingga token lama di database tetap berlaku).
+- `services/settings/`: Cache write-through pengaturan aplikasi, auto-generator random `vnc_password`, serta auto-generator random token emergency & uninstall (`secrets.token_urlsafe`, hanya mengisi bila kosong sehingga token lama di database tetap berlaku); cache miss negatif untuk setting yang tidak ada.
 - `services/shift/`: Verifikasi selisih uang kas fisik kasir (blind reconciliation).
 - `services/tournament/`: Engine pairing babak dan alur skor turnamen eSports.
 - `services/transaksi/`: Pencatatan buku besar transaksi pembayaran.
@@ -234,7 +234,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Receipt / Nota Anti-Collision Generator** | `modules/struk.js` | `services/transaksi/transaksi_service.py`, `services/menu/menu_service.py` (atomic microsecond timestamping + sequential fallback collision-free numbering) | `Transaksi`, `TransaksiMenu` |
 | **Katalog Game & Crop Cover** | `modules/game/` | `routes/game/game_routes.py`, `services/game/` (katalog publik mendukung `limit`/`offset` opsional) | `Game`, `GameKategori` |
 | **Tiket Servis & Perawatan PC** | `modules/maintenance/`, `modules/laporan_maintenance/` | `routes/maintenance/maintenance_routes.py`, `services/maintenance/` | `MaintenanceTicket` |
-| **Uptime Tracker Meja PC** | `modules/uptime.js` | `routes/pc/pc_routes.py`, `services/cache/uptime_store.py` | `PCUptimeLog` |
+| **Uptime Tracker Meja PC** | `modules/uptime.js` | `routes/pc/pc_routes.py`, `services/cache/uptime_store.py` (flush hanya dari scheduler 60 detik; laporan eager load) | `PCUptimeLog` |
 | **Owner Analytics & Tren** | `modules/owner.js` | `routes/report/`, `services/owner/` | `Transaksi`, `Sesi` |
 | **Member, Saldo, & Refill** | `modules/member/` | `routes/member/member_routes.py`, `services/member/` | `Member` |
 | **Paket Billing Jam-Jaman** | `modules/paket/` | `routes/paket/paket_routes.py`, `services/paket/` | `Paket` |
@@ -249,7 +249,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Server Health & LHM Telemetry** | `modules/server_monitor/server_monitor.js` | `routes/server_monitor/`, `services/server_monitor/` | Host sensors, LHM Engine |
 | **Public Specs & Hardware Catalog** | `templates/public/specs/index.html` (compact 2-column mobile card grid, debounced search & modal controller fokus trio CPU, GPU, RAM) | `app/__init__.py:public_specs()` (minimalist structured catalog JSON tanpa telemetri berlebih, eager load PC/hardware/paket) | `PC`, `HardwareMonitor`, `Grup` |
 | **Manajemen Plugins & Ekstensi** | `modules/settings/plugins.js` | `routes/settings/plugin_routes.py`, `services/plugins/` | Plugin manifest |
-| **Frontend CPU & Zero-Thrashing** | `modules/dashboard/dashboard_compact.js`, `core/skeleton.js` | `templates/kasir/base.html`, `tailwind.config.js` | Strict dirty-checking, zero infinite keyframe loops, guard anti-tumpuk & jeda polling saat tab hidden |
+| **Frontend CPU & Zero-Thrashing** | `modules/dashboard/dashboard_compact.js`, `core/skeleton.js` | `templates/kasir/base.html`, `tailwind.config.js` | Strict dirty-checking, zero infinite keyframe loops, guard anti-tumpuk & jeda polling saat tab hidden; throttle 2 detik untuk tab monitor & screenshot |
 | **Responsive Tailwind Reflow** | `modules/dashboard/dashboard_compact.js`, `core/modal.js` | `templates/kasir/base.html`, `templates/kasir/components/navbar.html`, `sidebar.html` | Pure Tailwind Breakpoints (`< sm`, `sm`, `md`, `lg`, `xl`, `2xl`), `max-h-[90dvh]`, zero horizontal overflow across all 40 views (31 kasir tabs, 1 SPA iframe, 8 public portals) |
 
 ---
