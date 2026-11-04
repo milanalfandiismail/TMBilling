@@ -19,7 +19,7 @@
  *    - Hapus Game (Cleanup)
  */
 
-async (page) => {
+async function runTournamentGameE2ETest(page) {
     const report = {
         suite: "E2E: Tournament & Game Management",
         startTime: new Date().toISOString(),
@@ -270,4 +270,8 @@ async (page) => {
 
     report.endTime = new Date().toISOString();
     return report;
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = { runTournamentGameE2ETest };
 }

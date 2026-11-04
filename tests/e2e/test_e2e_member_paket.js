@@ -11,7 +11,7 @@
  * 6. Tab Grup: Navigasi, Modal Form, CRUD Grup PC / Zona
  */
 
-async (page) => {
+async function runMemberPaketE2ETest(page) {
     const report = {
         suite: "E2E: Member, Saldo, Paket & Grup PC",
         startTime: new Date().toISOString(),
@@ -376,4 +376,8 @@ async (page) => {
 
     report.endTime = new Date().toISOString();
     return report;
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = { runMemberPaketE2ETest };
 }

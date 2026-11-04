@@ -2,7 +2,7 @@
  * E2E Test Suite: Autentikasi, Shift Kasir, & Sticky Notes
  * Target: http://127.0.0.1:7016 (Sandbox Isolated Server)
  */
-async (page) => {
+async function runAuthShiftNotesE2ETest(page) {
     const report = {
         suite: "E2E: Autentikasi, Shift Kasir, & Sticky Notes",
         startTime: new Date().toISOString(),
@@ -190,4 +190,8 @@ async (page) => {
 
     report.endTime = new Date().toISOString();
     return report;
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = { runAuthShiftNotesE2ETest };
 }

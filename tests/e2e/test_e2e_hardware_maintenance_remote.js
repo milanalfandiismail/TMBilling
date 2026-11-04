@@ -15,7 +15,7 @@
  * 10. Tab Remote Server: Interface TightVNC RFB Remote Control
  */
 
-async (page) => {
+async function runHardwareMaintenanceRemoteE2ETest(page) {
     const report = {
         suite: "E2E: Hardware, Maintenance & Remote Tools",
         startTime: new Date().toISOString(),
@@ -327,4 +327,8 @@ async (page) => {
 
     report.endTime = new Date().toISOString();
     return report;
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = { runHardwareMaintenanceRemoteE2ETest };
 }

@@ -10,7 +10,7 @@
  * 5. Tab Blackout: Status Toleransi & Recovery Engine
  */
 
-async (page) => {
+async function runPCBillingLifecycleE2ETest(page) {
     const report = {
         suite: "E2E: PC Meja & Billing Lifecycle",
         startTime: new Date().toISOString(),
@@ -256,4 +256,8 @@ async (page) => {
 
     report.endTime = new Date().toISOString();
     return report;
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = { runPCBillingLifecycleE2ETest };
 }

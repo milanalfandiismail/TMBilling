@@ -12,7 +12,7 @@
  * 7. Tab Cetak Struk: Navigasi, Sub-tab Billing & Kantin, Riwayat & Preview
  */
 
-async (page) => {
+async function runFnBPosStrukE2ETest(page) {
     const report = {
         suite: "E2E: FnB POS, Stock Log, Laporan Menu & Struk",
         startTime: new Date().toISOString(),
@@ -321,4 +321,8 @@ async (page) => {
 
     report.endTime = new Date().toISOString();
     return report;
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = { runFnBPosStrukE2ETest };
 }
