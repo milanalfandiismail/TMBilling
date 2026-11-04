@@ -47,6 +47,20 @@ class MenuRepository:
         return MenuItem.query.filter_by(is_active=False).count()
 
     @staticmethod
+    def decrement_stok_if_available(menu_id, jumlah):
+        """Kurangi stok atomik. False bila stok terbatas dan tidak cukup. Stok < 0 = unlimited."""
+        menu = MenuItem.query.filter_by(id=menu_id).first()
+        if not menu:
+            return False
+        if menu.stok < 0:
+            return True
+        rowcount = db.session.query(MenuItem).filter(
+            MenuItem.id == menu_id,
+            MenuItem.stok >= jumlah,
+        ).update({"stok": MenuItem.stok - jumlah}, synchronize_session="fetch")
+        return rowcount > 0
+
+    @staticmethod
     def count_transaksi_by_menu(menu_id):
         """Menghitung jumlah transaksi menu yang terkait dengan menu_id."""
         return TransaksiMenu.query.filter_by(menu_id=menu_id).count()

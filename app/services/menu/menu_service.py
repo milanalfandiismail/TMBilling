@@ -438,9 +438,9 @@ class MenuService:
                 jumlah = p_item["jumlah"]
                 subtotal = p_item["subtotal"]
 
-                # Kurangi stok jika tidak unlimited (stok >= 0)
-                if menu.stok >= 0:
-                    menu.stok -= jumlah
+                # Kurangi stok atomik; keputusan cukup/tidak ada di UPDATE ... WHERE stok >= jumlah
+                if not MenuRepository.decrement_stok_if_available(menu.id, jumlah):
+                    raise ValueError(f"Stok '{menu.nama}' tidak mencukupi")
 
                 transaksi = TransaksiMenu(
                     no_nota=no_nota,
