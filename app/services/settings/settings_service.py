@@ -22,15 +22,20 @@ class SettingsService:
 
     @staticmethod
     def get(key, default=None):
-        """Mengambil nilai setting berdasarkan key dari RAM cache (fallback DB)."""
+        """Mengambil nilai setting berdasarkan key dari RAM cache (fallback DB, cache miss negatif)."""
         from app.services.cache.system_cache_store import SettingsCacheStore
         val = SettingsCacheStore.get(key)
         if val is not None:
             return val
-        setting = SettingsRepository.get(key)
-        if setting is not None:
-            SettingsCacheStore.set(key, str(setting))
-            return setting
+        if SettingsCacheStore.is_missing(key):
+            return default
+        if not SettingsCacheStore.is_complete():
+            # Snapshot cache belum tentu lengkap: konfirmasi ke DB sekali saja.
+            setting = SettingsRepository.get(key)
+            if setting is not None:
+                SettingsCacheStore.set(key, str(setting))
+                return setting
+        SettingsCacheStore.mark_missing(key)
         return default
 
     @staticmethod

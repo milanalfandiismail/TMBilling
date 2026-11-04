@@ -13,6 +13,8 @@ class SettingsCacheStore:
     """Write-through in-memory cache untuk pengaturan global (Settings)."""
     _lock = threading.Lock()
     _cache = None  # dict of key -> value
+    _missing = set()  # key yang dipastikan tidak ada di DB (cache negatif)
+    _complete = False  # True bila _cache memuat seluruh key yang ada di DB
 
     @classmethod
     def get(cls, key: str, default=None):
@@ -28,19 +30,42 @@ class SettingsCacheStore:
         with cls._lock:
             if cls._cache is None:
                 cls._cache = {}
+                cls._complete = False
             cls._cache[key] = str(value)
+            cls._missing.discard(key)
 
     @classmethod
     def update_dict(cls, data: dict):
         with cls._lock:
             if cls._cache is None:
                 cls._cache = {}
+                cls._complete = False
             cls._cache.update({str(k): str(v) for k, v in (data or {}).items()})
+            cls._missing.clear()
 
     @classmethod
     def invalidate(cls):
         with cls._lock:
             cls._cache = None
+            cls._complete = False
+            cls._missing = set()
+
+    @classmethod
+    def mark_missing(cls, key: str):
+        """Tandai key sebagai tidak ada di DB supaya tidak di-query ulang."""
+        with cls._lock:
+            cls._missing.add(key)
+
+    @classmethod
+    def is_missing(cls, key: str) -> bool:
+        with cls._lock:
+            return key in cls._missing
+
+    @classmethod
+    def is_complete(cls) -> bool:
+        """True bila snapshot cache memuat seluruh key yang ada di DB."""
+        with cls._lock:
+            return cls._complete
 
     @classmethod
     def _snapshot(cls):
@@ -49,19 +74,20 @@ class SettingsCacheStore:
                 return dict(cls._cache)
         data = cls._load_from_db()
         with cls._lock:
-            if cls._cache is None:
+            if cls._cache is None and data is not None:
                 cls._cache = data
-            return dict(cls._cache)
+                cls._complete = True
+            return dict(cls._cache or {})
 
     @classmethod
-    def _load_from_db(cls) -> dict:
+    def _load_from_db(cls) -> dict | None:
         from app.models import Settings
         data = {}
         try:
             for item in Settings.query.all():
                 data[item.key] = item.value
         except Exception:
-            pass
+            return None  # load gagal -> snapshot tidak boleh dianggap lengkap
         return data
 
 
