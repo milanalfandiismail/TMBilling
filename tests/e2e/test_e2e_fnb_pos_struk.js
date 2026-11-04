@@ -12,6 +12,7 @@
  * 7. Tab Cetak Struk: Navigasi, Sub-tab Billing & Kantin, Riwayat & Preview
  */
 
+(() => {
 async function runFnBPosStrukE2ETest(page) {
     const report = {
         suite: "E2E: FnB POS, Stock Log, Laporan Menu & Struk",
@@ -315,6 +316,35 @@ async function runFnBPosStrukE2ETest(page) {
         });
         record("Pemuatan Riwayat Transaksi Pembayaran Struk", strukHistoryCheck.success);
 
+        // 8. Pengujian Monotonic Sequential Anti-Collision Nomor Nota Struk Kasir
+        const antiCollisionCheck = await page.evaluate(async () => {
+            const receipts = [];
+            try {
+                const menuListRes = await API.menu.list();
+                const items = menuListRes.data || menuListRes.items || (Array.isArray(menuListRes) ? menuListRes : []);
+                const targetItem = items[0] || { id: 1, harga: 4000 };
+
+                for (let i = 0; i < 5; i++) {
+                    const cartItems = [{ menu_id: targetItem.id, jumlah: 1 }];
+                    const res = await API.menu.checkout(cartItems, null, (targetItem.harga || 4000), 0, 'Tunai');
+                    const transList = res.data || (Array.isArray(res) ? res : []);
+                    const nota = Array.isArray(transList) ? transList[0]?.no_nota : transList?.no_nota;
+                    if (nota) {
+                        receipts.push(nota);
+                    }
+                }
+            } catch(err) {
+                return { error: err.message, receipts };
+            }
+            const uniqueReceipts = new Set(receipts);
+            return {
+                total: receipts.length,
+                isUnique: uniqueReceipts.size === receipts.length && receipts.length === 5,
+                receipts
+            };
+        });
+        record("Anti-Collision Monotonic Receipt Generator (5 Transaksi Cepat Unik)", antiCollisionCheck.isUnique, `Dihasilkan: ${antiCollisionCheck.receipts ? antiCollisionCheck.receipts.join(', ') : 'none'}`);
+
     } catch (err) {
         record("Global Execution Error", false, err.message);
     }
@@ -323,6 +353,8 @@ async function runFnBPosStrukE2ETest(page) {
     return report;
 }
 
-if (typeof module !== 'undefined') {
+if (typeof module !== 'undefined' && module.exports) {
     module.exports = { runFnBPosStrukE2ETest };
 }
+return runFnBPosStrukE2ETest;
+})()
