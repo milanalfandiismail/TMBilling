@@ -277,20 +277,36 @@ python run.py
 # Kompilasi ulang seluruh biner deploy klien & server
 build_and_deploy.bat
 
-# Eksekusi Responsive Breakpoints Verification (240 Checks across 40 Views & 6 Tailwind Breakpoints)
-# via MCP Playwright tool browser_run_code_unsafe dengan tests/playwright_responsive_breakpoints.js
-
 # Menjalankan Master Runner E2E Sandbox Terisolasi (Zero Database Mutation Guarantee)
+# 10 suite Chromium sungguhan (Playwright): 326 check, guard sha256 instance/warnet.db
 npm run test:e2e
 # atau langsung via Python: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py
+
+# Menjalankan satu suite saja (reseed + restart sandbox per suite)
+.venv\Scripts\python.exe tests/e2e/run_all_e2e.py --suite pc_billing
+# Daftar suite: --list  |  Output JSON: --json tests/e2e/results/
 
 # Menjalankan Sandbox Server Standalone Port 7016 untuk pengetesan interaktif Playwright
 npm run test:e2e:sandbox
 # atau langsung via Python: .venv\Scripts\python.exe tests/e2e/e2e_sandbox_server.py --standalone 7016
-
-# Eksekusi Rangkaian E2E Lengkap Stage 1 & Stage 2 (382 Checks, 0 Failures, 100% Pass)
-# via MCP Playwright tool browser_run_code_unsafe dengan tests/e2e/run_all_e2e.js
 ```
+
+### 7.1 Peta Suite E2E (`tests/e2e/`)
+
+Runner Chromium sungguhan (Playwright) dengan sandbox terisolasi; setiap suite dijalankan pada database baru di `instance/warnet_e2e_sandbox.db` dan `instance/warnet.db` dijaga sha256+rowcount.
+
+| Berkas | Tanggung Jawab |
+|---|---|
+| `tests/e2e/run_all_e2e.py` | Orkestrator: snapshot guard DB produksi, reseed + restart sandbox per suite, exit code nyata, `--list/--suite/--json/--no-guard`. |
+| `tests/e2e/run_all_e2e.js` | Registry suite + CLI Node; memuat `lib/browser.js`. |
+| `tests/e2e/e2e_sandbox_server.py` | Sandbox port 7016: Waitress `app:create_app`, DB sementara, `TM_NOTES_DIR`/`PROJECT_ROOT` terisolasi, proses dibungkus Job Object Windows. |
+| `tests/e2e/seed_e2e_data.py` | Seed deterministik (admin/kasir1, member1..3 + member_expired, 5 PC, paket, menu, tutorial, transaksi historis). |
+| `tests/e2e/lib/browser.js` | Driver Chromium, `BASE_URL`, deteksi binary Playwright hilang. |
+| `tests/e2e/lib/harness.js` | `login/logout/tab/settingsTab/api/clientPoll/hardwarePost/waitFor/unique/check`. |
+| `tests/e2e/lib/db.js` | `dbQuery/dbExec` via `.venv` sqlite3 (hanya DB sandbox). |
+| `tests/e2e/lib/report.js` | Kontrak laporan `{total,passed,failed,checks[]}`. |
+| `tests/e2e/lib/coverage_manifest.js` | 32 tab container + 10 sub-tab settings + 8 portal, pemilik suite per tab. |
+| `tests/e2e/test_e2e_*.js` | 10 suite: `pc_billing`, `fnb_pos`, `member_paket`, `auth_shift_notes`, `hardware_maintenance_remote`, `tournament_game`, `settings_admin_logs`, `public_portals_cms`, `coverage`, `perf_invariants`. |
 
 ---
 

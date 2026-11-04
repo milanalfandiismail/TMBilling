@@ -32,6 +32,12 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - Tab monitor & screenshot melewati polling silent yang lebih rapat dari 2 detik;
   polling status Cloudflare Tunnel menjadi 1 detik.
 
+### Pengujian E2E
+- **Suite Chromium Nyata**: `npm run test:e2e` kini menjalankan 10 suite Playwright (326 check) terhadap sandbox terisolasi, dengan guard sha256 + jumlah baris `instance/warnet.db`, reseed database per suite, dan exit code yang benar-benar gagal saat ada check merah. Runner lama yang mencetak total hardcoded `382 PASSED` tanpa menjalankan test dihapus.
+- **Cakupan**: 32 tab container kasir, 10 sub-tab settings, 8 portal publik, plus alur billing, POS kantin, member/paket/grup, shift & rekonsiliasi kas, telemetri hardware & anti-maling, turnamen, RBAC/redaksi setting, blackout & emergency login, serta invarian zero-thrash dan reflow responsif (240 sel).
+- **Isolasi**: direktori catatan sandbox dipisah lewat `TM_NOTES_DIR`; proses Waitress sandbox dibungkus Windows Job Object sehingga port 7016 tidak tertinggal.
+- **Bug Produk Ditemukan & Diperbaiki**: member dengan `kadaluarsa_pada` lampau kini ditolak saat login portal (`403 Masa aktif member sudah kadaluarsa`); dua kelas `animate-in` sisa di modal dashboard dan overlay screenshot dihapus sesuai aturan zero-thrash.
+
 ---
 
 ## [1.6.5-rc2] - 2026-11-01 - Release Candidate 2

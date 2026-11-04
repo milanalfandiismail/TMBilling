@@ -1079,18 +1079,34 @@ Total Blueprint Terdaftar: **30 Blueprint** | Total Endpoint Terdaftar: **232 En
 ## 10. Panduan Kontribusi, Testing & SOP Dual-Engine
 
 ### 10.1 Standar Testing Backend (Pytest)
-Repositori TMBilling dilengkapi **81 file pengujian unit dan integrasi** dengan **264 test specs** aktif:
+Repositori TMBilling dilengkapi **121 file pengujian unit dan integrasi** dengan **372 test specs** aktif:
 ```powershell
 python -m pytest tests/ -q
 ```
-Seluruh pengujian harus berstatus **PASSED (264 passed, 0 failed)** sebelum melakukan commit atau push.
+Seluruh pengujian harus berstatus **PASSED (372 passed, 0 failed)** sebelum melakukan commit atau push.
+
+### 10.1.1 Pengujian End-to-End Browser (Playwright)
+`tests/e2e/` menjalankan **10 suite Chromium sungguhan** (326 check) terhadap sandbox terisolasi:
+
+```powershell
+npm run test:e2e                                            # semua suite
+.venv\Scripts\python.exe tests/e2e/run_all_e2e.py --suite pc_billing
+.venv\Scripts\python.exe tests/e2e/run_all_e2e.py --list
+npm run test:e2e:sandbox                                    # server sandbox interaktif port 7016
+```
+
+- Setiap suite mendapat database baru (`instance/warnet_e2e_sandbox.db`) dan server baru; `instance/warnet.db` dijaga sha256 + jumlah baris dan kegagalan guard membuat exit code 1.
+- Direktori catatan diisolasi lewat `TM_NOTES_DIR`, jadi test tidak menyentuh catatan produksi.
+- Cakupan: 32 tab container, 10 sub-tab settings, 8 portal publik, siklus billing, POS kantin, member/paket/grup, shift & rekonsiliasi kas, telemetri hardware & anti-maling, turnamen, RBAC/redaksi setting, blackout & emergency login, invarian zero-thrash dan reflow responsif.
+- Check harus membuktikan transisi state, baris database, aritmetika uang, atau kontrak error — bukan sekadar "elemen ada".
+
 
 ### 10.2 Standar Dual-Engine SOP (Single Operating Procedure)
 Seluruh aktivitas rekayasa perangkat lunak wajib mematuhi protokol **Dual-Engine**:
 1. **Engine 1 - Planning & Brainstorming (Plugin `superpowers`)**:
    - `brainstorming`: Menganalisis kebutuhan pengguna dan merancang arsitektur sebelum coding.
    - `writing-plans`: Menyusun rencana kerja bertahap yang modular dan terverifikasi.
-   - `systematic-debugging`: Investigasi akar masalah secara mendalam sebelum perbaikan; verifikasi regresi (264 test specs) dan jangan commit/push otomatis setelah bugfix.
+   - `systematic-debugging`: Investigasi akar masalah secara mendalam sebelum perbaikan; verifikasi regresi (372 test specs) dan jangan commit/push otomatis setelah bugfix.
    - `test-driven-development`: Memastikan spesifikasi pengujian ada untuk setiap perubahan fitur krusial.
    - `git-discipline`: Dilarang keras melakukan `git commit` maupun `git push` secara sepihak/otomatis (baik saat fitur baru maupun setelah debugging/bugfix) sebelum ada perintah eksplisit dari USER. Selalu laporkan hasil pekerjaan dan tunggu aba-aba USER.
 2. **Engine 2 - Execution & Verification (MCP `codebase-memory`)**:

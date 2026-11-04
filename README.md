@@ -195,7 +195,13 @@ c:\Project GIT\TMBilling
    .\.venv\Scripts\python.exe -m pytest
    ```
 
-5. **Memeriksa Kompilasi Klien Rust**:
+5. **Menjalankan Pengujian End-to-End Browser (Playwright)**:
+   ```powershell
+   npm run test:e2e
+   ```
+   > 10 suite Chromium (326 check) pada sandbox terisolasi port 7016. Database produksi `instance/warnet.db` tidak pernah ditulis — dijaga guard sha256 dan jumlah baris.
+
+6. **Memeriksa Kompilasi Klien Rust**:
    ```powershell
    cd WarnetAgent\TMBillingTauri\src-tauri
    cargo check
