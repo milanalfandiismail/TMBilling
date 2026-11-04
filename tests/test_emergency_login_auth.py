@@ -1,6 +1,7 @@
 import pytest
 from app import create_app, db
 from app.models import PC, Grup
+from app.services import SettingsService
 from app.services.client.client_service import ClientService
 
 
@@ -43,10 +44,11 @@ def app_client():
         db.session.commit()
 
 
-def test_emergency_login_rejects_socket_ip_mismatch(app_client):
+def test_emergency_login_rejects_missing_token(app_client):
     app, client = app_client
+    with app.app_context():
+        SettingsService.get_or_create_emergency_token()
 
-    # Penyerang dari 192.168.1.88 mencoba membuka PC-EMERG (192.168.1.95)
     response = client.post(
         "/api/v1/public/client/emergency-login",
         json={
@@ -55,17 +57,19 @@ def test_emergency_login_rejects_socket_ip_mismatch(app_client):
             "username": "ATTACKER",
         },
         headers={"X-Client-Key": "test-client-key"},
-        environ_base={"REMOTE_ADDR": "192.168.1.88"},
+        environ_base={"REMOTE_ADDR": "192.168.1.95"},
     )
 
     assert response.status_code == 403
     data = response.get_json()
     assert data["success"] is False
-    assert "IP" in data["error"] or "soket" in data["error"].lower() or "forbidden" in data["error"].lower()
+    assert "token" in data["error"].lower()
 
 
-def test_emergency_login_succeeds_when_socket_ip_matches(app_client):
+def test_emergency_login_succeeds_with_valid_token(app_client):
     app, client = app_client
+    with app.app_context():
+        token = SettingsService.get_or_create_emergency_token()
 
     response = client.post(
         "/api/v1/public/client/emergency-login",
@@ -73,6 +77,7 @@ def test_emergency_login_succeeds_when_socket_ip_matches(app_client):
             "ip_address": "192.168.1.95",
             "mac_address": "AA:BB:CC:DD:EE:95",
             "username": "SYSTEM",
+            "token": token,
         },
         headers={"X-Client-Key": "test-client-key"},
         environ_base={"REMOTE_ADDR": "192.168.1.95"},
@@ -85,6 +90,8 @@ def test_emergency_login_succeeds_when_socket_ip_matches(app_client):
 
 def test_emergency_login_rejects_mac_mismatch(app_client):
     app, client = app_client
+    with app.app_context():
+        token = SettingsService.get_or_create_emergency_token()
 
     response = client.post(
         "/api/v1/public/client/emergency-login",
@@ -92,6 +99,7 @@ def test_emergency_login_rejects_mac_mismatch(app_client):
             "ip_address": "192.168.1.95",
             "mac_address": "FF:FF:FF:FF:FF:FF",
             "username": "SYSTEM",
+            "token": token,
         },
         headers={"X-Client-Key": "test-client-key"},
         environ_base={"REMOTE_ADDR": "192.168.1.95"},

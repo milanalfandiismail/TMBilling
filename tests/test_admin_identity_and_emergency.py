@@ -4,6 +4,7 @@ from app import create_app, db
 from app.models import PC, User, Sesi, Grup
 from app.services.client.client_service import ClientService
 from app.services.dashboard.dashboard_service import DashboardService
+from app.services import SettingsService
 
 @pytest.fixture
 def app():
@@ -101,7 +102,8 @@ def test_emergency_login_sets_system_identity(app, client):
             db.session.add(pc)
             db.session.commit()
 
-        res = ClientService.emergency_login("192.168.1.97", "AA:BB:CC:DD:EE:97")
+        token = SettingsService.get_or_create_emergency_token()
+        res = ClientService.emergency_login("192.168.1.97", "AA:BB:CC:DD:EE:97", token=token)
         assert res["success"] is True
 
         data = DashboardService.get_pc_list()
@@ -110,3 +112,22 @@ def test_emergency_login_sets_system_identity(app, client):
         assert pc_item["is_admin"] is False
         assert pc_item["status"] == "system"
         assert pc_item["sesi_detail"]["member_nama"] == "SYSTEM"
+
+def test_emergency_login_rejects_missing_or_wrong_token(app):
+    with app.app_context():
+        grup = Grup.query.filter_by(nama="reguler").first()
+        if not grup:
+            grup = Grup(nama="reguler", warna="#888888")
+            db.session.add(grup)
+            db.session.commit()
+
+        pc = PC.query.filter_by(kode="PC-96").first()
+        if not pc:
+            pc = PC(kode="PC-96", ip_address="192.168.1.96", mac_address="AA:BB:CC:DD:EE:96", grup_id=grup.id, aktif=True)
+            db.session.add(pc)
+            db.session.commit()
+
+        with pytest.raises(PermissionError, match="[Tt]oken"):
+            ClientService.emergency_login("192.168.1.96", "AA:BB:CC:DD:EE:96")
+        with pytest.raises(PermissionError, match="[Tt]oken"):
+            ClientService.emergency_login("192.168.1.96", "AA:BB:CC:DD:EE:96", token="salah")

@@ -7,6 +7,8 @@ di PC warnet, termasuk identifikasi PC, cek status sesi, dan
 update last activity.
 """
 
+import hmac
+
 from app.models import db, now_local
 from app.repositories import PCRepository
 from app.repositories import SesiRepository
@@ -281,13 +283,12 @@ class ClientService:
     # Emergency login selalu diterima server, dan mengaktifkan is_admin_mode.
 
     @staticmethod
-    def emergency_login(ip_address, mac_address, username="SYSTEM", socket_ip=None):
-        """Login emergency dari PC client (bisa offline/online) dengan Strict Socket IP binding."""
-        # Validasi Strict Socket IP: IP koneksi fisik wajib sama dengan IP target
-        if socket_ip and socket_ip not in ("127.0.0.1", "::1", "localhost"):
-            if socket_ip != ip_address:
-                write_log("SECURITY_ALERT", f"Emergency login ditolak: IP fisik {socket_ip} tidak cocok dengan target {ip_address}")
-                raise PermissionError("Akses emergency login ditolak: IP soket fisik tidak cocok dengan IP PC terdaftar")
+    def emergency_login(ip_address, mac_address, username="SYSTEM", token=None):
+        """Login emergency dari PC client; wajib menyertakan token server."""
+        expected = SettingsService.get_or_create_emergency_token()
+        if not token or not hmac.compare_digest(str(token), str(expected)):
+            write_log("SECURITY_ALERT", f"Emergency login ditolak: token tidak valid (IP {ip_address})")
+            raise PermissionError("Token emergency login tidak valid")
 
         pc = PCRepository.get_by_ip(ip_address)
         if not pc:
@@ -322,10 +323,10 @@ class ClientService:
 
         # Buat sesi khusus emergency admin
         import secrets
-        token = secrets.token_hex(32)
+        session_token = secrets.token_hex(32)
         pc.is_admin_mode = True
         pc.last_activity = now_local()
-        SesiService.buka_admin(pc.id, token, admin_nama="SYSTEM")
+        SesiService.buka_admin(pc.id, session_token, admin_nama="SYSTEM")
         db.session.commit()
 
         # Catat username yang memicu emergency login untuk audit
