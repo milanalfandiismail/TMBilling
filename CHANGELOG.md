@@ -6,7 +6,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
-## [1.6.5-rc3] - 2026-11-05 - Release Candidate 3
+## [Unreleased]
 
 ### Keamanan & Perbaikan Bug
 - **Redaksi Setting Sensitif**: `GET /api/v1/kasir/settings/` kini hanya mengembalikan `payment_methods` dan `vnc_password` untuk role kasir; kredensial lain (`client_api_key`, `mikrotik_password`, token, kredensial backup) khusus role admin.

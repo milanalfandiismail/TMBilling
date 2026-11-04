@@ -32,7 +32,7 @@
 
 ---
 
-## ✨ Sorotan Fitur Utama (v1.6.5-rc3)
+## ✨ Sorotan Fitur Utama (v1.6.5-rc2)
 
 - 🔐 **Zero-Config Out-of-the-Box Security**: Instalasi instan tanpa konfigurasi manual yang rumit. Server otomatis meng-generate `SECRET_KEY` kuat 64-hex persisten ke `.env`, membuat password superadmin acak sekali-pakai (`initial_admin.txt`), auto-generate password VNC unik, dan memproteksi pembaruan sistem via URL Whitelist anti-SSRF.
 - ☁️ **Cloudflare Tunnel & Remote Access**: Akses dashboard kasir & owner dari internet secara instan tanpa perlu port-forwarding router atau IP publik statis.
@@ -56,7 +56,7 @@
 ```text
 c:\Project GIT\TMBilling
 ├── app/                        # Backend Server Flask & Frontend Kasir Web
-│   ├── config.py               # Single Source of Version Truth (v1.6.5-rc3)
+│   ├── config.py               # Single Source of Version Truth (v1.6.5-rc2)
 │   ├── models/                 # 26 Database Model SQLAlchemy
 │   ├── routes/                 # 30 Blueprint REST & WebSocket (250 Endpoints)
 │   ├── services/               # 35+ Service Layer Logika Bisnis
@@ -94,7 +94,7 @@ c:\Project GIT\TMBilling
 ### 1. Setup & Menjalankan Server Billing (Komputer Server / Kasir)
 
 1. **Unduh Paket Server**:
-   Unduh paket rilis server terbaru (misal: `TMBilling_Server_v1.6.5-rc3.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak di komputer server/kasir Anda (contoh: `C:\TMBilling`). *(Bagi developer, silakan gunakan `git clone` pada [Panduan Pengembang](#3-panduan-pengembang-developer--build-pipeline))*.
+   Unduh paket rilis server terbaru (misal: `TMBilling_Server_v1.6.5-rc2.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak di komputer server/kasir Anda (contoh: `C:\TMBilling`). *(Bagi developer, silakan gunakan `git clone` pada [Panduan Pengembang](#3-panduan-pengembang-developer--build-pipeline))*.
 
 2. **Instalasi Server 1-Klik**:
    Jalankan file `install.bat` di direktori utama:
@@ -117,12 +117,12 @@ c:\Project GIT\TMBilling
    ```
 
 5. **Cara Pembaruan / Update Versi Server**:
-   - **Update Otomatis 1-Klik (Mulai v1.6.5-rc3)**:
+   - **Update Otomatis 1-Klik (Mulai v1.6.5-rc2)**:
      Buka Dashboard Kasir > menu **Pengaturan** > sub-tab **Migrasi & Update**, klik tombol **Cek Pembaruan GitHub**, lalu tekan **Mulai Update 1-Klik**. Sistem otomatis mencadangkan database, mengekstrak rilis baru, menjalankan migrasi skema, dan memulai ulang server tanpa mengunci file.
    - **Update Cepat via `update.bat`**:
      Unduh rilis `TMBilling_Server_v<versi>.zip`, lalu jalankan:
      ```cmd
-     update.bat TMBilling_Server_v1.6.5-rc3.zip
+     update.bat TMBilling_Server_v1.6.5-rc2.zip
      ```
      Atau cukup *drag-and-drop* file ZIP rilis ke file `update.bat`.
    - **Update Manual (Bagi yang memperbarui dari versi terdahulu)**:
@@ -142,7 +142,7 @@ c:\Project GIT\TMBilling
 ### 2. Setup & Instalasi WarnetAgent (PC Klien Warnet)
 
 1. **Unduh Paket Klien**:
-   Unduh paket rilis klien terbaru (misal: `TMBilling_Client_v1.6.5-rc3.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak ke PC Klien *(atau salin isi folder `WarnetAgent\Deploy` jika Anda mengunduh full repository)*.
+   Unduh paket rilis klien terbaru (misal: `TMBilling_Client_v1.6.5-rc2.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak ke PC Klien *(atau salin isi folder `WarnetAgent\Deploy` jika Anda mengunduh full repository)*.
 2. Klik kanan **`install.bat`** lalu pilih **Run as administrator** (atau jalankan biasa).
 3. Masukkan **IP Server Billing** saat diminta (contoh: `192.168.1.100`). Port default `7015` akan otomatis digunakan *(kecuali jika Anda mengubah port server billing, Anda dapat memasukkan format `IP:PORT`, contoh: `192.168.1.100:8080`)*. Masukkan juga **API Key** yang dapat Anda cek dan kelola di dashboard server melalui menu **Sidebar > Pengaturan > Umum & Keamanan > API Key System (Client API Key)**.
 
