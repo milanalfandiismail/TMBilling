@@ -78,10 +78,13 @@ class MenuRepository:
 
     @staticmethod
     def count_transactions_today():
-        """Menghitung total transaksi menu hari ini."""
-        from datetime import datetime, time
-        today_start = datetime.combine(datetime.now().date(), time.min)
-        return TransaksiMenu.query.filter(TransaksiMenu.tanggal >= today_start).count()
+        """Menghitung total transaksi menu hari ini dalam timezone lokal warnet."""
+        from app.utils.timezone_utils import get_local_date_range_utc
+        start_utc, end_utc = get_local_date_range_utc()
+        return TransaksiMenu.query.filter(
+            TransaksiMenu.tanggal >= start_utc,
+            TransaksiMenu.tanggal < end_utc
+        ).count()
 
     @staticmethod
     def count_transactions_by_prefix(prefix):
