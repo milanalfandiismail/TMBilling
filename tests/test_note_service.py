@@ -192,3 +192,10 @@ def test_note_routes_unauthenticated(client):
     res = client.get('/api/v1/kasir/notes')
     assert res.status_code == 401
     assert res.get_json()['success'] is False
+
+def test_notes_dir_honors_env_override(tmp_path, monkeypatch):
+    # Sandbox E2E memakai override ini agar tidak menulis ke catatan produksi.
+    target = tmp_path / "sandbox-notes"
+    monkeypatch.setenv("TM_NOTES_DIR", str(target))
+    assert NoteService.get_notes_dir() == os.path.realpath(str(target))
+    assert target.is_dir()
