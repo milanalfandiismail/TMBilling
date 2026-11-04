@@ -45,7 +45,7 @@ class TransaksiMenu(db.Model):
     total_harga = db.Column(db.Integer, nullable=False, default=0)
     
     pc_kode = db.Column(db.String(20), nullable=True) # Penanda opsional PC pemesan
-    tanggal = db.Column(db.DateTime, default=now_local)
+    tanggal = db.Column(db.DateTime, default=now_local, index=True)
     
     kasir_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
 
