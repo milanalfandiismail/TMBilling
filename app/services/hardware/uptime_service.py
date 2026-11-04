@@ -9,6 +9,8 @@ berkala setiap 1 menit.
 """
 
 from datetime import datetime, timedelta, date
+from sqlalchemy.orm import joinedload
+
 from app.models import db, PCUptimeLog, PC, Sesi
 from app.utils.helpers import natural_sort_key
 from app.utils.logger import write_log
@@ -58,10 +60,11 @@ class UptimeService:
             list: List dictionary berisi laporan uptime per PC.
         """
         try:
-            # Pastikan akumulasi terbaru di RAM sudah ter-flush ke DB
-            UptimeService.flush_uptime_to_db()
-
-            logs = PCUptimeLog.query.filter_by(tanggal=tanggal).all()
+            # Akumulasi RAM sudah di-flush scheduler run_flush_uptime tiap 60 detik
+            # (run.py); GET tidak boleh menulis.
+            logs = PCUptimeLog.query.options(
+                joinedload(PCUptimeLog.pc).joinedload(PC.grup)
+            ).filter_by(tanggal=tanggal).all()
             # Urutkan berdasarkan grup_id dan kode PC secara natural
             logs_sorted = sorted(logs, key=lambda log: (log.pc.grup_id if (log.pc and log.pc.grup_id) else 0, natural_sort_key(log.pc.kode if log.pc else "")))
             return [log.to_dict() for log in logs_sorted]
@@ -81,11 +84,13 @@ class UptimeService:
             dict: Berisi 'summary' (agregat total) dan 'pcs' (detail per PC).
         """
         try:
-            # Pastikan akumulasi terbaru di RAM sudah ter-flush ke DB
-            UptimeService.flush_uptime_to_db()
+            # Akumulasi RAM sudah di-flush scheduler run_flush_uptime tiap 60 detik
+            # (run.py); GET tidak boleh menulis.
 
             # Query log dalam rentang tanggal
-            logs = PCUptimeLog.query.filter(
+            logs = PCUptimeLog.query.options(
+                joinedload(PCUptimeLog.pc).joinedload(PC.grup)
+            ).filter(
                 PCUptimeLog.tanggal >= start_date,
                 PCUptimeLog.tanggal <= end_date
             ).all()
