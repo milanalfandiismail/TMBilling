@@ -1,357 +1,428 @@
+'use strict';
+
 /**
- * E2E Test Suite: Manajemen PC Meja & Billing Lifecycle
- * Target: http://127.0.0.1:7016 (Sandbox Isolated Server)
- * 
- * Cakupan:
- * 1. Autentikasi Kasir & Verifikasi Shift Aktif
- * 2. Tab PC: Registrasi Unit PC Baru & Verifikasi di Grid
- * 3. Tab Dashboard: Grid Monitoring & Floor Plan Editor
- * 4. Billing Lifecycle: Buka Sesi (Prepaid) -> Tambah Waktu -> Pindah PC -> Tutup Sesi
- * 5. Tab Blackout: Status Toleransi & Recovery Engine
+ * Task 5 — Billing & PC lifecycle.
+ *
+ * Kontrak tiap check: buktikan transisi state, baris DB, aritmatika uang,
+ * hasil otorisasi, atau kontrak error. Keberadaan elemen saja bukan check.
+ *
+ * Literal status/jenis diambil dari app/utils/constants.py:
+ *   SesiStatus.AKTIF = 'aktif', SesiStatus.SELESAI = 'selesai'
+ *   TransaksiJenis.BELI_PAKET_GUEST = 'beli_paket_guest'
+ *   TransaksiJenis.TAMBAH_WAKTU_GUEST = 'tambah_waktu_guest'
  */
 
-(() => {
-async function runPCBillingLifecycleE2ETest(page) {
-    const report = {
-        suite: "E2E: PC Meja & Billing Lifecycle",
-        startTime: new Date().toISOString(),
-        totalTests: 0,
-        passed: 0,
-        failed: 0,
-        errors: []
-    };
+const assert = require('assert');
+const { login, tab, api, clientPoll, waitFor, unique, check } = require('./lib/harness');
+const { dbQuery, dbExec } = require('./lib/db');
+const { createReport, finish } = require('./lib/report');
 
-    function record(name, isPass, detail = null) {
-        report.totalTests++;
-        if (isPass) {
-            report.passed++;
-            console.log(`[PASS] ${name}`);
-        } else {
-            report.failed++;
-            report.errors.push(`${name}: ${detail || 'Failed'}`);
-            console.error(`[FAIL] ${name}: ${detail}`);
+const SESI_AKTIF = 'aktif';
+const SESI_SELESAI = 'selesai';
+const PC_KOSONG = 'kosong';
+const JENIS_BELI_GUEST = 'beli_paket_guest';
+const JENIS_TAMBAH_WAKTU = 'tambah_waktu_guest';
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function dbWait(sql, params, predicate, label, timeout = 5000) {
+    const deadline = Date.now() + timeout;
+    let rows = [];
+    while (Date.now() < deadline) {
+        rows = await dbQuery(sql, params);
+        if (predicate(rows)) return rows;
+        await sleep(100);
+    }
+    throw new Error(`${label} tidak terpenuhi dalam ${timeout}ms; baris terakhir: ${JSON.stringify(rows)}`);
+}
+
+async function pcByKode(kode) {
+    const rows = await dbQuery('SELECT id, kode, ip_address, mac_address, grup_id FROM pc WHERE kode = ?', [kode]);
+    if (rows.length !== 1) throw new Error(`PC ${kode} tidak ditemukan di DB sandbox`);
+    return rows[0];
+}
+
+async function paketByNama(nama) {
+    const rows = await dbQuery('SELECT id, nama, durasi_menit, harga FROM paket WHERE nama = ?', [nama]);
+    if (rows.length !== 1) throw new Error(`Paket ${nama} tidak ditemukan di DB sandbox`);
+    return rows[0];
+}
+
+async function refreshDashboard(page) {
+    await page.evaluate(async () => {
+        if (window.Dashboard && typeof Dashboard.load === 'function') await Dashboard.load();
+    });
+    await page.waitForSelector('.pc-card-item[data-pc-kode]', { timeout: 5000 });
+}
+
+async function dashboardTimer(page, kode) {
+    return page.evaluate((k) => {
+        const card = document.querySelector('.pc-card-item[data-pc-kode="' + k + '"]');
+        return card ? (card.querySelector('.pc-card-timer')?.textContent || '').trim() : null;
+    }, kode);
+}
+
+async function openContextMenu(page, kode) {
+    const card = page.locator(`.pc-card-item[data-pc-kode="${kode}"]`);
+    await card.click({ button: 'right' });
+    await page.waitForSelector('#pc-context-menu', { state: 'visible', timeout: 5000 });
+}
+
+async function clickMenuItem(page, label) {
+    await page.locator('#pc-context-menu button', { hasText: label }).first().click();
+}
+
+/**
+ * Tombol konfirmasi dipasangi handler di dalam setTimeout, jadi klik pertama
+ * bisa jatuh sebelum listener siap. Klik ulang sampai overlay-nya hilang.
+ */
+async function clickConfirm(page, selector) {
+    await page.waitForSelector(selector, { state: 'visible', timeout: 5000 });
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await page.click(selector);
+        const deadline = Date.now() + 2000;
+        while (Date.now() < deadline) {
+            if (!(await page.$(selector))) return;
+            await sleep(100);
         }
     }
+    throw new Error(`Tombol konfirmasi ${selector} tidak merespons setelah 3 percobaan`);
+}
 
-    const BASE_URL = "http://127.0.0.1:7016";
+async function pcCardText(page, kode) {
+    return page.evaluate((k) => {
+        const span = document.querySelector(`#pc-table span[title="${k}"]`);
+        if (!span) return null;
+        let node = span;
+        while (node.parentElement && !node.parentElement.classList.contains('grid')) node = node.parentElement;
+        return node.innerText;
+    }, kode);
+}
+
+function rupiahToInt(text) {
+    return Number(String(text).replace(/[^0-9]/g, ''));
+}
+
+/**
+ * Buka struk dari riwayat lalu tunggu sampai thermal paper menampilkan nota
+ * yang diminta (bukan sisa render localStorage).
+ */
+async function readReceipt(page, noNota, timeout = 5000) {
+    await page.fill('#struk-search', noNota);
+    await page.waitForSelector(`.struk-history-card[data-history-id="${noNota}"]`, { timeout });
+    await page.click(`.struk-history-card[data-history-id="${noNota}"]`);
+
+    const deadline = Date.now() + timeout;
+    let last = null;
+    while (Date.now() < deadline) {
+        last = await page.evaluate((expected) => {
+            const el = document.querySelector('#struk-preview .thermal-paper');
+            if (!el) return null;
+            const text = (el.innerText || '').replace(/\u00a0/g, ' ');
+            const nota = text.match(/No\. Nota\s+(\S+)/);
+            const total = text.match(/TOTAL BAYAR\s+(Rp[\d.]+)/);
+            if (!nota || !total || nota[1] !== expected) return null;
+            return { nota: nota[1], total: total[1] };
+        }, noNota);
+        if (last) return last;
+        await sleep(100);
+    }
+    throw new Error(`Struk ${noNota} tidak tampil; render terakhir: ${JSON.stringify(last)}`);
+}
+
+async function runPCBillingLifecycleE2ETest(page) {
+    const report = createReport('pc_billing');
 
     try {
-        // 0. Reset Session / Pastikan Logout Terlebih Dahulu
-        await page.goto(`${BASE_URL}/kasir/`, { waitUntil: "networkidle" });
-        await page.evaluate(async () => {
-            if (window.API && API.auth && API.auth.logout) {
-                try { await API.auth.logout(); } catch(e) {}
-            }
-        });
-        const context = page.context();
-        await context.clearCookies();
-
-        // 1. Login Admin
-        await page.goto(`${BASE_URL}/kasir/login`, { waitUntil: "networkidle" });
-        await page.fill('#username', 'admin');
-        await page.fill('#password', 'admin123');
-        await page.click('#btn-login');
-        await page.waitForNavigation({ waitUntil: "networkidle", timeout: 10000 }).catch(() => {});
-
-        const isLoggedIn = page.url().includes('/kasir/') && !page.url().includes('/login');
-        record("Login Admin untuk Operasional Billing & Manajemen PC", isLoggedIn);
-
-        // Pastikan Shift Terbuka
-        let hasShift = await page.evaluate(() => !!(window.Shift && Shift.activeShift));
-        if (!hasShift) {
-            await page.evaluate(() => {
-                if (window.Shift && Shift.showBukaShiftModal) Shift.showBukaShiftModal();
-            });
-            await page.waitForTimeout(500);
-            const modalInput = await page.$('#modal-awal-input');
-            if (modalInput) await page.fill('#modal-awal-input', '50000');
-            await page.evaluate(async () => {
-                if (window.Shift && Shift.submitBukaShift) await Shift.submitBukaShift();
-            });
-            await page.waitForTimeout(1000);
-            hasShift = await page.evaluate(() => !!(window.Shift && Shift.activeShift));
-        }
-        record("Shift Kasir Aktif & Siap Operasional", hasShift);
-
-        // 2. Tab PC: Buka Tab & Registrasi PC Baru
-        await page.evaluate(async () => {
-            if (window.App && App.switchTab) await App.switchTab('pc');
-        });
-        await page.waitForTimeout(800);
-
-        const isTabPCActive = await page.evaluate(() => {
-            const tab = document.getElementById('tab-pc');
-            return tab && !tab.classList.contains('hidden');
-        });
-        record("Navigasi ke Tab Manajemen PC (tab-pc)", isTabPCActive);
-
-        // Buka modal tambah PC
-        await page.evaluate(async () => {
-            if (window.PCModal && PCModal.showAddModal) {
-                await PCModal.showAddModal();
-            }
-        });
-        await page.waitForTimeout(500);
-
-        const isAddModalOpen = await page.evaluate(() => {
-            return !!document.getElementById('modal-pc-prefix') && !!document.getElementById('modal-pc-number');
-        });
-        record("Modal Registrasi PC Baru Terbuka", isAddModalOpen);
-
-        // Input data PC baru (PC-6)
-        if (isAddModalOpen) {
-            await page.fill('#modal-pc-prefix', 'PC');
-            await page.fill('#modal-pc-number', '6');
-            const ipInput = await page.$('#modal-pc-ip');
-            if (ipInput) await page.fill('#modal-pc-ip', '192.168.1.106');
-
-            await page.evaluate(async () => {
-                if (window.PC && PC.add) {
-                    await PC.add();
-                }
-            });
-            await page.waitForTimeout(1000);
-        }
-
-        // Verifikasi PC-6 terdaftar
-        const pcListResult = await page.evaluate(async () => {
-            if (window.API && API.pc && API.pc.list) {
-                const res = await API.pc.list();
-                const list = Array.isArray(res) ? res : (res.pc_list || res.pc || res.data || []);
-                const found = Array.isArray(list) && list.some(p => (p.kode === 'PC-6' || p.kode === 'PC-06'));
-                return { count: Array.isArray(list) ? list.length : 0, found };
-            }
-            return { count: 0, found: false };
-        });
-        record("Registrasi Unit PC Baru (PC-6) Berhasil Tersimpan", pcListResult.found, `Total PC: ${pcListResult.count}`);
-
-        // 3. Tab Dashboard: Navigasi & Map View Editor
-        await page.evaluate(async () => {
-            if (window.App && App.switchTab) await App.switchTab('dash');
-        });
-        await page.waitForTimeout(1000);
-
-        const isDashboardActive = await page.evaluate(() => {
-            const tab = document.getElementById('tab-dash') || document.getElementById('tab-dashboard');
-            return tab && !tab.classList.contains('hidden');
-        });
-        record("Navigasi ke Tab Dashboard Utama (tab-dash)", isDashboardActive);
-
-        // Buka Floor Plan Editor
-        const mapEditorCheck = await page.evaluate(async () => {
-            if (window.MapView && MapView.openEditor) {
-                if (!window.Dashboard || !window.Dashboard.lastData) {
-                    await window.Dashboard.load();
-                }
-                const availableGrup = Object.keys((window.Dashboard.lastData && window.Dashboard.lastData.by_grup) || {})[0] || 'reguler';
-                MapView.openEditor(availableGrup);
-                await new Promise(r => setTimeout(r, 600));
-                const modal = document.querySelector('#modal-content') || document.querySelector('#modal-container') || document.body;
-                const hasEditor = modal && (modal.innerHTML.includes('Edit Denah') || modal.innerHTML.includes('editor-grid'));
-                if (window.Modal && Modal.closeModal) Modal.closeModal();
-                return { hasEditor: !!hasEditor };
-            }
-            return { hasEditor: false };
-        });
-        record("Floor Plan Map View Editor Dapat Dibuka & Ditutup", mapEditorCheck.hasEditor);
-
-        // 4. Billing Lifecycle: Sesi Prepaid -> Tambah Waktu -> Pindah PC -> Tutup Sesi
-        let createdSesiId = null;
-
-        // Pastikan PC-01 dan PC-02 dalam status idle (tutup sesi aktif sebelumnya jika ada)
-        await page.evaluate(async () => {
-            try {
-                const res = await API.dashboard.pcList();
-                const allPcs = Object.values(res.by_grup || {}).flat();
-                for (const code of ['PC-01', 'PC-02']) {
-                    const found = allPcs.find(p => p.kode === code);
-                    if (found && found.sesi_detail && found.sesi_detail.id) {
-                        await API.sesi.tutup(found.sesi_detail.id);
-                    }
-                }
-            } catch(e) {}
-        });
-
-        // A. Buka Sesi Prepaid di PC-01 (Paket ID 1 = 1 Jam Reguler)
-        const bukaSesiRes = await page.evaluate(async () => {
-            try {
-                const res = await API.sesi.bukaGuest('PC-01', 1, 'Guest-E2E-Tester', 'Tunai');
-                return { success: !!(res && (res.success || res.status === 'success')), data: res };
-            } catch (err) {
-                return { success: false, error: err.message };
-            }
-        });
-
-        if (bukaSesiRes.success) {
-            createdSesiId = bukaSesiRes.data.sesi_id || (bukaSesiRes.data.data && bukaSesiRes.data.data.id) || (bukaSesiRes.data.sesi && bukaSesiRes.data.sesi.id);
-        }
-        record("Buka Sesi Billing Prepaid di PC-01 (Paket 1 Jam Tunai)", bukaSesiRes.success && !!createdSesiId, `Sesi ID: ${createdSesiId}`);
-
-        // B. Tambah Durasi Waktu Sesi (+1 Jam)
-        let tambahWaktuSuccess = false;
-        if (createdSesiId) {
-            const tambahRes = await page.evaluate(async (sesiId) => {
-                try {
-                    const res = await API.sesi.tambahWaktu(sesiId, 1, 1, 'Tunai');
-                    return { success: !!(res && (res.success || res.status === 'success')), data: res };
-                } catch (err) {
-                    return { success: false, error: err.message };
-                }
-            }, createdSesiId);
-            tambahWaktuSuccess = tambahRes.success;
-        }
-        record("Perpanjangan Durasi Waktu Bermain (+1 Jam)", tambahWaktuSuccess);
-
-        // C. Pindah PC (PC-01 -> PC-02)
-        let pindahPcSuccess = false;
-        if (createdSesiId) {
-            const pindahRes = await page.evaluate(async (sesiId) => {
-                try {
-                    const res = await API.sesi.pindahPC(sesiId, 'PC-02');
-                    return { success: !!(res && (res.success || res.status === 'success')), data: res };
-                } catch (err) {
-                    return { success: false, error: err.message };
-                }
-            }, createdSesiId);
-            pindahPcSuccess = pindahRes.success;
-        }
-        record("Migrasi / Pindah Sesi PC Meja (PC-01 ke PC-02)", pindahPcSuccess);
-
-        // D. Tutup Sesi Billing di PC-02 (Stop Sesi Pindah)
-        let tutupSesiSuccess = false;
-        const tutupRes = await page.evaluate(async () => {
-            try {
-                // Ambil ID sesi aktif baru di PC-02 setelah pindah
-                const res = await API.dashboard.pcList();
-                const allPcs = Object.values(res.by_grup || {}).flat();
-                const pc2 = allPcs.find(p => p.kode === 'PC-02');
-                const targetSesiId = pc2 && pc2.sesi_detail ? pc2.sesi_detail.id : null;
-                if (!targetSesiId) return { success: false, error: "Sesi PC-02 tidak ditemukan" };
-                const closeRes = await API.sesi.tutup(targetSesiId);
-                return { success: !!(closeRes && (closeRes.success || closeRes.status === 'success')), data: closeRes };
-            } catch (err) {
-                return { success: false, error: err.message };
-            }
-        });
-        tutupSesiSuccess = tutupRes.success;
-        record("Tutup Sesi Billing Meja PC Selesai Bermain", tutupSesiSuccess);
-
-        // E. Buka Sesi Tambahan Guest di PC-03 (Paket ID 2 = 2 Jam Reguler)
-        const bukaGuest3Res = await page.evaluate(async () => {
-            try {
-                const res = await API.sesi.bukaGuest('PC-03', 2, 'Guest-E2E-PC3', 'Tunai');
-                return { success: !!(res && (res.success || res.status === 'success')), data: res };
-            } catch (err) {
-                return { success: false, error: err.message };
-            }
-        });
-        record("Buka Sesi Billing Guest di PC-03 (Paket 2 Jam)", bukaGuest3Res.success);
-
-        // F. Buka Sesi Member di PC-04 (member1 dengan saldo tersimpan)
-        const bukaMemberRes = await page.evaluate(async () => {
-            try {
-                const res = await API.sesi.bukaMember('PC-04', 'member1');
-                return { success: !!(res && (res.success || res.status === 'success')), data: res };
-            } catch (err) {
-                return { success: false, error: err.message };
-            }
-        });
-        record("Buka Sesi Billing Member di PC-04 (Potong Saldo Menit)", bukaMemberRes.success);
-
-        // G. Dashboard Multi-Selection & Batch Operations
-        const batchSelectCheck = await page.evaluate(async () => {
-            if (window.DashboardSelection) {
-                if (DashboardSelection.init) DashboardSelection.init();
-                DashboardSelection.selectedPcIds.add(1);
-                DashboardSelection.selectedPcIds.add(2);
-                const count = DashboardSelection.selectedPcIds ? DashboardSelection.selectedPcIds.size : 0;
-                DashboardSelection.clearSelection();
-                return count >= 2;
-            }
-            return false;
-        });
-        record("Dashboard Multi-Select Kartu Meja (Batch Selection)", batchSelectCheck);
-
-        // H. Modal Detail PC & Process Monitor / Task Killer
-        const processMonitorCheck = await page.evaluate(async () => {
-            if (window.DashboardDetailModal && DashboardDetailModal.showDetail) {
-                const pcListRes = await API.pc.list();
-                const pcs = pcListRes.pc_list || pcListRes || [];
-                const pc1 = Array.isArray(pcs) ? pcs.find(p => p.kode === 'PC-01') : null;
-                const pcId = pc1 ? pc1.id : 1;
-                DashboardDetailModal.showDetail(pcId, window.Dashboard && window.Dashboard.lastData);
-                await new Promise(r => setTimeout(r, 400));
-                const modal = document.querySelector('#modal-content') || document.querySelector('#modal-container') || document.body;
-                const hasModal = !!modal && modal.innerHTML.includes('PC-01');
-
-                // Pemicu Kill Process Remote via API
-                let killSuccess = false;
-                try {
-                    const killRes = await API.monitor.processesKill(pcId, 'malicious_test.exe');
-                    killSuccess = !!(killRes && (killRes.success || killRes.status === 'success'));
-                } catch(e) {
-                    killSuccess = true;
-                }
-                if (window.Modal && Modal.closeModal) Modal.closeModal();
-                return { hasModal, killSuccess };
-            }
-            return { hasModal: false, killSuccess: false };
-        });
-        record("Modal Detail PC & Process Monitor Task Killer", processMonitorCheck.hasModal && processMonitorCheck.killSuccess);
-
-        // I. Remote Controls Meja (Trigger Remote Restart / Shutdown Queue)
-        const remoteActionCheck = await page.evaluate(async () => {
-            let successCount = 0;
-            try {
-                const pcListRes = await API.pc.list();
-                const pcs = pcListRes.pc_list || pcListRes || [];
-                const pc1 = Array.isArray(pcs) ? pcs.find(p => p.kode === 'PC-01') : null;
-                const pcId = pc1 ? pc1.id : 1;
-                const restartRes = await API.monitor.remote(pcId, 'restart');
-                if (restartRes && (restartRes.success || restartRes.status === 'success')) successCount++;
-            } catch(e) {}
-            return successCount >= 1;
-        });
-        record("Antrean Remote Action PC Klien (Restart Command Queue)", remoteActionCheck);
-
-        // J. Tutup Sesi PC-03 & PC-04 (Cleanup)
-        await page.evaluate(async () => {
-            try {
-                const res = await API.dashboard.pcList();
-                const allPcs = Object.values(res.by_grup || {}).flat();
-                for (const code of ['PC-03', 'PC-04']) {
-                    const found = allPcs.find(p => p.kode === code);
-                    if (found && found.sesi_detail && found.sesi_detail.id) {
-                        await API.sesi.tutup(found.sesi_detail.id);
-                    }
-                }
-            } catch(e) {}
-        });
-
-        // 5. Tab Blackout: Verifikasi Interface & State
-        await page.evaluate(async () => {
-            if (window.App && App.switchTab) await App.switchTab('blackout');
-        });
-        await page.waitForTimeout(800);
-
-        const blackoutCheck = await page.evaluate(async () => {
-            const tab = document.getElementById('tab-blackout');
-            const isActive = tab && !tab.classList.contains('hidden');
-            let hasEngine = typeof window.Blackout !== 'undefined';
-            return { isActive, hasEngine };
-        });
-        record("Navigasi & Inisialisasi Tab Blackout Recovery (tab-blackout)", blackoutCheck.isActive && blackoutCheck.hasEngine);
-
+        await login(page, 'admin');
     } catch (err) {
-        record("Global Execution Error", false, err.message);
+        for (const name of [
+            'Seed PC-01 berstatus Tersedia di dashboard dan tab PC',
+            'Buka sesi guest via modal dashboard: sesi aktif 60 menit + transaksi Rp5.000',
+            'Polling client PC-01 mengembalikan kode PC, sisa waktu, dan nama guest',
+            'Tambah waktu via modal dashboard: durasi 120 menit + transaksi Rp5.000',
+            'Pindah PC: sesi aktif pindah ke PC-02 dan PC-01 kembali kosong',
+            'Sesi kedaluwarsa via polling: status selesai tanpa duplikasi transaksi',
+            'Tutup sesi via UI: status selesai dan total struk = total transaksi sesi',
+            'Polling dengan X-Client-Key salah ditolak 401 tanpa mengubah sesi',
+            'Heartbeat last_sync tersimpan maksimal 35 detik setelah polling',
+        ]) {
+            check(report, name, async () => { throw err; });
+        }
+        return finish(report);
     }
 
-    report.endTime = new Date().toISOString();
-    return report;
+    const state = { guestName: null, sesiId: null, pindahSesiId: null };
+
+    await check(report, 'Seed PC-01 berstatus Tersedia di dashboard dan tab PC', async () => {
+        const pc1 = await pcByKode('PC-01');
+        assert.strictEqual(pc1.ip_address, '192.168.1.11');
+
+        await tab(page, 'dash');
+        await refreshDashboard(page);
+
+        const poll = await clientPoll(page, { ip: pc1.ip_address, mac: pc1.mac_address });
+        assert.strictEqual(poll.http_status, 200, 'polling PC-01 harus 200');
+        assert.strictEqual(poll.status, PC_KOSONG, 'PC-01 tanpa sesi harus berstatus kosong');
+
+        await refreshDashboard(page);
+        const timer = await dashboardTimer(page, 'PC-01');
+        assert.strictEqual(timer, 'KOSONG', `kartu PC-01 harus online & kosong, bukan "${timer}"`);
+
+        await tab(page, 'pc');
+        const cardText = await pcCardText(page, 'PC-01');
+        assert.ok(cardText, 'kartu PC-01 harus tampil di tab PC');
+        assert.ok(/TERSEDIA/.test(cardText), `badge PC-01 harus TERSEDIA, dapat: ${cardText}`);
+
+        assert.deepStrictEqual(
+            await dbQuery('SELECT id FROM sesi WHERE pc_id = ? AND status = ?', [pc1.id, SESI_AKTIF]),
+            [],
+            'tidak boleh ada sesi aktif tersisa pada PC-01'
+        );
+    });
+
+    await check(report, 'Buka sesi guest via modal dashboard: sesi aktif 60 menit + transaksi Rp5.000', async () => {
+        const paket = await paketByNama('1 Jam Reguler');
+        assert.strictEqual(paket.durasi_menit, 60);
+        assert.strictEqual(paket.harga, 5000);
+
+        await tab(page, 'dash');
+        await refreshDashboard(page);
+        await openContextMenu(page, 'PC-01');
+        await clickMenuItem(page, 'Buka Sesi');
+        await page.waitForSelector('#buka-guest', { state: 'visible', timeout: 5000 });
+        await page.waitForSelector(`.paket-card[data-paket-id="${paket.id}"]`, { state: 'visible', timeout: 5000 });
+
+        state.guestName = unique('GuestE2E');
+        await page.fill('#buka-guest', state.guestName);
+        await page.click(`.paket-card[data-paket-id="${paket.id}"]`);
+        await page.locator('button', { hasText: 'Mulai Sesi' }).first().click();
+        await clickConfirm(page, '#modal-confirm-submit-btn');
+
+        const pc1 = await pcByKode('PC-01');
+        const sesiRows = await dbWait(
+            'SELECT id, pc_id, tipe, status, durasi_beli_menit, total_bayar, nama_guest FROM sesi WHERE pc_id = ? AND status = ? ORDER BY id DESC',
+            [pc1.id, SESI_AKTIF],
+            (rows) => rows.length === 1 && rows[0].nama_guest === state.guestName,
+            'sesi guest aktif di PC-01'
+        );
+        const sesi = sesiRows[0];
+        state.sesiId = sesi.id;
+
+        assert.strictEqual(sesi.tipe, 'guest');
+        assert.strictEqual(sesi.durasi_beli_menit, 60);
+        assert.strictEqual(sesi.total_bayar, 5000);
+
+        const trx = await dbQuery('SELECT jenis, jumlah, menit FROM transaksi WHERE sesi_id = ? ORDER BY id', [sesi.id]);
+        assert.strictEqual(trx.length, 1, 'harus ada tepat 1 transaksi pembukaan');
+        assert.strictEqual(trx[0].jenis, JENIS_BELI_GUEST);
+        assert.strictEqual(Number(trx[0].jumlah), 5000);
+        assert.strictEqual(Number(trx[0].menit), 60);
+
+        await waitFor(page, () => !document.getElementById('buka-guest'), { label: 'modal buka sesi tertutup' });
+    });
+
+    await check(report, 'Polling client PC-01 mengembalikan kode PC, sisa waktu, dan nama guest', async () => {
+        assert.ok(state.sesiId, 'prasyarat: sesi guest belum dibuat');
+        const pc1 = await pcByKode('PC-01');
+
+        const res = await clientPoll(page, { ip: pc1.ip_address, mac: pc1.mac_address });
+        assert.strictEqual(res.http_status, 200);
+        assert.strictEqual(res.status, 'aktif');
+        assert.strictEqual(res.pc_kode, 'PC-01');
+        assert.strictEqual(res.nama, state.guestName);
+        assert.ok(Number.isInteger(res.sisa_waktu), `sisa_waktu harus integer, dapat ${res.sisa_waktu}`);
+        assert.ok(res.sisa_waktu >= 59 && res.sisa_waktu <= 60, `sisa_waktu harus 59..60, dapat ${res.sisa_waktu}`);
+    });
+
+    await check(report, 'Tambah waktu via modal dashboard: durasi 120 menit + transaksi Rp5.000', async () => {
+        assert.ok(state.sesiId, 'prasyarat: sesi guest belum dibuat');
+        const paket = await paketByNama('1 Jam Reguler');
+
+        await tab(page, 'dash');
+        await refreshDashboard(page);
+        await openContextMenu(page, 'PC-01');
+        await clickMenuItem(page, 'Tambah Waktu');
+        await page.waitForSelector(`#chk-paket-${paket.id}`, { state: 'visible', timeout: 5000 });
+
+        await page.check(`#chk-paket-${paket.id}`);
+        await page.locator('button', { hasText: 'Konfirmasi Penambahan' }).first().click();
+        await clickConfirm(page, '#modal-confirm-submit-btn');
+
+        const sesiRows = await dbWait(
+            'SELECT durasi_beli_menit, total_bayar, status FROM sesi WHERE id = ?',
+            [state.sesiId],
+            (rows) => rows.length === 1 && rows[0].durasi_beli_menit === 120,
+            'durasi sesi menjadi 120 menit'
+        );
+        assert.strictEqual(sesiRows[0].status, SESI_AKTIF);
+        assert.strictEqual(sesiRows[0].total_bayar, 10000);
+
+        const trx = await dbQuery('SELECT jenis, jumlah, menit FROM transaksi WHERE sesi_id = ? ORDER BY id', [state.sesiId]);
+        assert.deepStrictEqual(trx.map((t) => t.jenis), [JENIS_BELI_GUEST, JENIS_TAMBAH_WAKTU]);
+        assert.deepStrictEqual(trx.map((t) => Number(t.jumlah)), [5000, 5000]);
+        assert.deepStrictEqual(trx.map((t) => Number(t.menit)), [60, 60]);
+
+        await refreshDashboard(page);
+        const timer = await dashboardTimer(page, 'PC-01');
+        assert.ok(/^\d+j( \d+m)?$/.test(timer), `kartu PC-01 harus tetap aktif (timer), dapat "${timer}"`);
+    });
+
+    await check(report, 'Pindah PC: sesi aktif pindah ke PC-02 dan PC-01 kembali kosong', async () => {
+        assert.ok(state.sesiId, 'prasyarat: sesi guest belum dibuat');
+        const pc1 = await pcByKode('PC-01');
+        const pc2 = await pcByKode('PC-02');
+
+        const res = await api(page, `API.sesi.pindahPC(${state.sesiId}, "PC-02")`);
+        assert.strictEqual(res.success, true);
+        assert.strictEqual(res.pc_baru, 'PC-02');
+
+        await dbWait(
+            'SELECT status FROM sesi WHERE id = ?',
+            [state.sesiId],
+            (rows) => rows.length === 1 && rows[0].status === SESI_SELESAI,
+            'sesi lama ditutup oleh pindah PC'
+        );
+
+        const aktifRows = await dbWait(
+            'SELECT id, pc_id, status, sesi_asal_id FROM sesi WHERE pc_id = ? AND status = ?',
+            [pc2.id, SESI_AKTIF],
+            (rows) => rows.length === 1,
+            'sesi aktif baru di PC-02'
+        );
+        state.pindahSesiId = aktifRows[0].id;
+        assert.notStrictEqual(state.pindahSesiId, state.sesiId, 'pindah PC harus membuat sesi baru');
+        assert.strictEqual(aktifRows[0].sesi_asal_id, state.sesiId);
+
+        assert.deepStrictEqual(
+            await dbQuery('SELECT id FROM sesi WHERE pc_id = ? AND status = ?', [pc1.id, SESI_AKTIF]),
+            [],
+            'PC-01 tidak boleh punya sesi aktif setelah pindah'
+        );
+
+        await refreshDashboard(page);
+        const timerPc2 = await dashboardTimer(page, 'PC-02');
+        assert.ok(/^\d+j( \d+m)?$/.test(timerPc2), `kartu PC-02 harus aktif, dapat "${timerPc2}"`);
+        const timerPc1 = await dashboardTimer(page, 'PC-01');
+        assert.ok(['KOSONG', 'OFFLINE'].includes(timerPc1), `kartu PC-01 harus kosong, dapat "${timerPc1}"`);
+    });
+
+    await check(report, 'Sesi kedaluwarsa via polling: status selesai tanpa duplikasi transaksi', async () => {
+        const paket = await paketByNama('Uji 1 Menit');
+        assert.strictEqual(paket.durasi_menit, 1);
+        assert.strictEqual(paket.harga, 1000);
+
+        const open = await api(page, `API.sesi.bukaGuest("PC-03", ${paket.id}, "GuestExpire", "Tunai")`);
+        assert.strictEqual(open.success, true);
+        assert.ok(Number.isInteger(open.sesi_id), 'respons buka-guest harus memuat sesi_id');
+
+        const before = await dbQuery('SELECT jenis, jumlah FROM transaksi WHERE sesi_id = ?', [open.sesi_id]);
+        assert.strictEqual(before.length, 1);
+        assert.strictEqual(Number(before[0].jumlah), 1000);
+
+        // Sesi guest mengukur waktu dari mulai_pada (bukan waktu_mulai_sesi).
+        await dbExec("UPDATE sesi SET mulai_pada = datetime(mulai_pada, '-61 minutes') WHERE id = ?", [open.sesi_id]);
+
+        const pc3 = await pcByKode('PC-03');
+        const poll = await clientPoll(page, { ip: pc3.ip_address, mac: pc3.mac_address });
+        assert.strictEqual(poll.http_status, 200);
+        assert.strictEqual(poll.status, PC_KOSONG, 'polling sesi habis harus mengembalikan status kosong');
+        assert.strictEqual(poll.pc_kode, 'PC-03');
+
+        const sesiRows = await dbWait(
+            'SELECT status, selesai_pada FROM sesi WHERE id = ?',
+            [open.sesi_id],
+            (rows) => rows.length === 1 && rows[0].status === SESI_SELESAI,
+            'sesi kedaluwarsa berstatus selesai'
+        );
+        assert.ok(sesiRows[0].selesai_pada, 'selesai_pada harus terisi');
+
+        const after = await dbQuery('SELECT jenis, jumlah FROM transaksi WHERE sesi_id = ?', [open.sesi_id]);
+        assert.strictEqual(after.length, 1, 'kedaluwarsa tidak boleh menambah transaksi tutup');
+        assert.strictEqual(Number(after[0].jumlah), 1000);
+    });
+
+    await check(report, 'Tutup sesi via UI: status selesai dan total struk = total transaksi sesi', async () => {
+        assert.ok(state.pindahSesiId, 'prasyarat: sesi belum dipindah ke PC-02');
+
+        await tab(page, 'dash');
+        await refreshDashboard(page);
+        await openContextMenu(page, 'PC-02');
+        await clickMenuItem(page, 'Tutup Sesi');
+        await clickConfirm(page, '#modal-confirm-btn');
+
+        await dbWait(
+            'SELECT status, selesai_pada FROM sesi WHERE id = ?',
+            [state.pindahSesiId],
+            (rows) => rows.length === 1 && rows[0].status === SESI_SELESAI,
+            'sesi di PC-02 berstatus selesai'
+        );
+
+        const lineage = [state.sesiId, state.pindahSesiId];
+        const rows = await dbQuery(
+            'SELECT no_nota, jenis, jumlah FROM transaksi WHERE sesi_id IN (?, ?) AND no_nota IS NOT NULL ORDER BY id',
+            lineage
+        );
+        assert.strictEqual(rows.length, 2, 'harus ada 2 nota berbayar pada silsilah sesi');
+        assert.ok(rows.every((r) => Number.isInteger(Number(r.jumlah))));
+        const dbTotal = rows.reduce((sum, r) => sum + Number(r.jumlah), 0);
+        assert.strictEqual(dbTotal, 10000, 'total transaksi silsilah sesi harus Rp10.000');
+
+        await tab(page, 'struk');
+        let uiTotal = 0;
+        for (const row of rows) {
+            const receipt = await readReceipt(page, row.no_nota);
+            assert.strictEqual(receipt.nota, row.no_nota);
+            const amount = rupiahToInt(receipt.total);
+            assert.ok(Number.isInteger(amount));
+            assert.strictEqual(amount, Number(row.jumlah), `total struk ${row.no_nota} harus sama dengan baris DB`);
+            uiTotal += amount;
+        }
+        assert.strictEqual(uiTotal, dbTotal, 'jumlah struk yang dicetak harus sama dengan total transaksi sesi');
+    });
+
+    await check(report, 'Polling dengan X-Client-Key salah ditolak 401 tanpa mengubah sesi', async () => {
+        const paket = await paketByNama('1 Jam Reguler');
+        const open = await api(page, `API.sesi.bukaGuest("PC-04", ${paket.id}, "GuestWrongKey", "Tunai")`);
+        assert.strictEqual(open.success, true);
+
+        const pc4 = await pcByKode('PC-04');
+        const bad = await clientPoll(page, {
+            ip: pc4.ip_address,
+            mac: pc4.mac_address,
+            key: 'e2e-wrong-client-key',
+        });
+        assert.strictEqual(bad.http_status, 401, 'API key salah harus ditolak 401');
+        assert.ok(/API Key tidak valid/.test(String(bad.error || '')), `pesan error tidak sesuai: ${bad.error}`);
+
+        const rows = await dbQuery('SELECT status, last_sync FROM sesi WHERE id = ?', [open.sesi_id]);
+        assert.strictEqual(rows.length, 1);
+        assert.strictEqual(rows[0].status, SESI_AKTIF, 'sesi tidak boleh berubah oleh request tidak sah');
+        assert.strictEqual(rows[0].last_sync, null, 'request tidak sah tidak boleh menulis heartbeat');
+    });
+
+    await check(report, 'Heartbeat last_sync tersimpan maksimal 35 detik setelah polling', async () => {
+        const paket = await paketByNama('1 Jam Reguler');
+        const open = await api(page, `API.sesi.bukaGuest("PC-05", ${paket.id}, "GuestHeartbeat", "Tunai")`);
+        assert.strictEqual(open.success, true);
+
+        const pc5 = await pcByKode('PC-05');
+        const poll = await clientPoll(page, { ip: pc5.ip_address, mac: pc5.mac_address });
+        assert.strictEqual(poll.http_status, 200);
+        assert.strictEqual(poll.status, SESI_AKTIF);
+        assert.strictEqual(poll.pc_kode, 'PC-05');
+
+        const rows = await dbWait(
+            'SELECT last_sync FROM sesi WHERE id = ?',
+            [open.sesi_id],
+            (r) => r.length === 1 && r[0].last_sync !== null,
+            'last_sync tersimpan setelah polling',
+            35000
+        );
+        assert.ok(rows[0].last_sync, 'last_sync tidak boleh null');
+    });
+
+    return finish(report);
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { runPCBillingLifecycleE2ETest };
-}
-return runPCBillingLifecycleE2ETest;
-})()
+module.exports = { runPCBillingLifecycleE2ETest };
