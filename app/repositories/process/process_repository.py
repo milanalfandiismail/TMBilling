@@ -8,7 +8,6 @@ Menggunakan In-Memory Store untuk menghindari I/O disk SQLite per detik.
 """
 
 from app.models import db, PCProcess
-from app.services.cache.telemetry_store import ProcessMemoryStore
 from app.models.base.base import now_local
 from app.utils.timezone_utils import format_display
 
@@ -41,11 +40,13 @@ class ProcessRepository:
             pc_id (int): ID dari PC yang bersangkutan.
             process_data_list (list): Daftar dictionary berisi 'Name' dan 'Title'.
         """
+        from app.services.cache.telemetry_store import ProcessMemoryStore
         ProcessMemoryStore.set(pc_id, process_data_list)
 
     @staticmethod
     def get_by_pc(pc_id):
         """Mengambil semua proses aktif untuk satu PC dari RAM (dengan fallback DB)."""
+        from app.services.cache.telemetry_store import ProcessMemoryStore
         cached = ProcessMemoryStore.get(pc_id)
         if cached:
             return [InMemProcess(p["name"], p["title"]) for p in cached]
