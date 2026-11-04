@@ -74,6 +74,12 @@ const suites = [
     browser: true,
     runner: require('./lib/_smoke_suite.js').runSmokeE2ETest,
   },
+  {
+    id: '_harness',
+    title: 'Harness: login, tab, API, DB, dan handshake client',
+    browser: true,
+    runner: require('./lib/_harness_suite.js').runHarnessE2ETest,
+  },
 ];
 
 function parseArgs(argv) {

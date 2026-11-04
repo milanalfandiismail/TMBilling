@@ -7,12 +7,13 @@ Skrip ini mengisi database sandbox terisolasi secara idempotent:
 - 4 Paket Billing (1 Jam, 2 Jam, 3 Jam, Paket Malam)
 - 5 Item Menu FnB
 - 3 Member terdaftar
+- Data tepi: grup tanpa PC, paket 1 menit, menu stok kosong, member kadaluarsa, 2 transaksi hari ini
 - Konfigurasi Settings dasar
 """
 
 from datetime import datetime, timedelta
 import json
-from app.models import db, User, Grup, PC, Paket, MenuItem, Member, Settings, HardwareMonitor
+from app.models import db, User, Grup, PC, Paket, MenuItem, Member, Settings, HardwareMonitor, Transaksi, now_local
 
 
 def seed_sandbox(app):
@@ -167,3 +168,45 @@ def seed_sandbox(app):
                 if not hw.hardware_baseline:
                     hw.hardware_baseline = specs_json
             db.session.commit()
+
+        # 9. Data tepi untuk suite E2E (idempotent, tidak mengasumsikan baris lain)
+        #    - grup tanpa PC: uji tampilan denah/grup kosong
+        #    - paket 1 menit: uji sesi super pendek tanpa menunggu lama
+        #    - menu stok 0: uji POS menolak penjualan stok habis
+        #    - member kadaluarsa: uji validasi masa aktif
+        #    - 2 transaksi hari ini: uji laporan & rekap kasir (total 10000 + 5000)
+        get_or_create_grup("vvip2", "#22c55e", "Area VVIP cadangan tanpa PC")
+
+        if not Paket.query.filter_by(nama="Uji 1 Menit").first():
+            db.session.add(
+                Paket(nama="Uji 1 Menit", durasi_menit=1, harga=1000, grup_id=g_reg.id, aktif=True)
+            )
+
+        if not MenuItem.query.filter_by(nama="Stok Kosong Uji").first():
+            db.session.add(MenuItem(nama="Stok Kosong Uji", harga=3000, stok=0, is_active=True))
+
+        if not Member.query.filter_by(username="member_expired").first():
+            member_expired = Member(
+                username="member_expired",
+                nama_lengkap="Member Kadaluarsa E2E",
+                email="expired@example.com",
+                grup_id=g_reg.id,
+                waktu_tersimpan=30,
+                kadaluarsa_pada=now_local() - timedelta(days=1),
+                aktif=True,
+            )
+            member_expired.set_password("pass123")
+            db.session.add(member_expired)
+
+        for no_nota, jumlah in (("E2E-SEED-001", 10000), ("E2E-SEED-002", 5000)):
+            if not Transaksi.query.filter_by(no_nota=no_nota).first():
+                db.session.add(
+                    Transaksi(
+                        jenis="beli_paket_guest",
+                        jumlah=jumlah,
+                        no_nota=no_nota,
+                        keterangan="Data seed E2E laporan hari ini",
+                        dibuat_pada=now_local(),
+                    )
+                )
+        db.session.commit()
