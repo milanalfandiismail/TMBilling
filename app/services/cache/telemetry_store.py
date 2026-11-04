@@ -15,6 +15,7 @@ class ProcessMemoryStore:
     _lock = threading.Lock()
     _store = {}  # pc_id -> list of {"name": str, "title": str}
     _timestamps = {}  # pc_id -> int (ms timestamp)
+    TTL_SECONDS = 300
 
     @classmethod
     def set(cls, pc_id: int, process_list: list):
@@ -27,9 +28,15 @@ class ProcessMemoryStore:
                     "name": p.get("Name", p.get("name", "Unknown")),
                     "title": p.get("Title", p.get("title", ""))
                 })
+        now_ms = int(time.time() * 1000)
+        cutoff = now_ms - (cls.TTL_SECONDS * 1000)
         with cls._lock:
             cls._store[pc_id] = cleaned
-            cls._timestamps[pc_id] = int(time.time() * 1000)
+            cls._timestamps[pc_id] = now_ms
+            stale = [pid for pid, ts in cls._timestamps.items() if ts < cutoff]
+            for pid in stale:
+                cls._store.pop(pid, None)
+                cls._timestamps.pop(pid, None)
 
     @classmethod
     def get(cls, pc_id: int) -> list:

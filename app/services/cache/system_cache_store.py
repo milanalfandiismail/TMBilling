@@ -76,18 +76,23 @@ class PCNetworkCacheStore:
     def resolve_pc(cls, ip: str = None, mac: str = None) -> dict:
         """Resolve PC dari RAM berdasarkan IP atau MAC address."""
         with cls._lock:
-            if not cls._initialized:
-                cls._rebuild_cache()
+            if cls._initialized:
+                return cls._lookup(ip, mac)
+        cls._rebuild_cache()
+        with cls._lock:
+            return cls._lookup(ip, mac)
 
-            if ip and ip in cls._by_ip:
-                return cls._by_ip[ip]
+    @classmethod
+    def _lookup(cls, ip: str = None, mac: str = None) -> dict:
+        if ip and ip in cls._by_ip:
+            return cls._by_ip[ip]
 
-            if mac:
-                norm_mac = mac.upper().replace("-", ":").strip()
-                if norm_mac in cls._by_mac:
-                    return cls._by_mac[norm_mac]
+        if mac:
+            norm_mac = mac.upper().replace("-", ":").strip()
+            if norm_mac in cls._by_mac:
+                return cls._by_mac[norm_mac]
 
-            return None
+        return None
 
     @classmethod
     def get_by_ip(cls, ip: str) -> dict:
@@ -113,25 +118,31 @@ class PCNetworkCacheStore:
 
     @classmethod
     def _rebuild_cache(cls):
+        """Bangun snapshot baru di luar lock, lalu tukar sekaligus di dalam lock."""
         from app.models import PC
         try:
             pcs = PC.query.all()
-            cls._by_ip.clear()
-            cls._by_mac.clear()
-            for pc in pcs:
-                entry = {
-                    "id": pc.id,
-                    "kode": pc.kode,
-                    "ip": pc.ip_address,
-                    "mac": pc.mac_address,
-                    "is_admin_mode": bool(pc.is_admin_mode),
-                    "pc_grup_id": pc.grup_id
-                }
-                if pc.ip_address:
-                    cls._by_ip[pc.ip_address] = entry
-                if pc.mac_address:
-                    norm_mac = pc.mac_address.upper().replace("-", ":").strip()
-                    cls._by_mac[norm_mac] = entry
-            cls._initialized = True
         except Exception:
-            pass
+            return
+
+        by_ip = {}
+        by_mac = {}
+        for pc in pcs:
+            entry = {
+                "id": pc.id,
+                "kode": pc.kode,
+                "ip": pc.ip_address,
+                "mac": pc.mac_address,
+                "is_admin_mode": bool(pc.is_admin_mode),
+                "pc_grup_id": pc.grup_id
+            }
+            if pc.ip_address:
+                by_ip[pc.ip_address] = entry
+            if pc.mac_address:
+                norm_mac = pc.mac_address.upper().replace("-", ":").strip()
+                by_mac[norm_mac] = entry
+
+        with cls._lock:
+            cls._by_ip = by_ip
+            cls._by_mac = by_mac
+            cls._initialized = True
