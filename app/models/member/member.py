@@ -120,8 +120,13 @@ class Member(db.Model):
         """Ambil nama grup (string) untuk keperluan JSON."""
         return self.grup.nama if self.grup else "reguler"
 
-    def to_dict(self):
+    def to_dict(self, sesi=None):
         """Mengkonversi data member ke format dictionary untuk JSON serialization.
+        
+        Args:
+            sesi (Sesi, optional): Sesi aktif yang sudah diketahui pemanggil.
+                Bila diberikan, backref ``sesi_list`` tidak dipindai (hindari
+                query tambahan pada jalur polling client).
         
         Returns:
             dict: Dictionary berisi data member dengan format yang rapi.
@@ -132,7 +137,8 @@ class Member(db.Model):
         # Coba ambil sisa waktu real-time jika member sedang bermain (Live Sync)
         try:
             # Mencari sesi 'aktif' terbaru untuk member ini dari backref
-            sesi_aktif = next((s for s in self.sesi_list if s.status == 'aktif'), None)
+            sesi_aktif = sesi if sesi is not None else next(
+                (s for s in self.sesi_list if s.status == 'aktif'), None)
             if sesi_aktif:
                 waktu_tampil = sesi_aktif.sisa_menit()
         except:

@@ -253,7 +253,7 @@ class ClientService:
                             status_text = "aktif"
 
                         is_member = bool(sesi and sesi.tipe == "member" and sesi.member)
-                        member_data = sesi.member.to_dict() if is_member else None
+                        member_data = sesi.member.to_dict(sesi=sesi) if is_member else None
 
                         res = {
                             "status": status_text,

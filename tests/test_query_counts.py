@@ -52,3 +52,33 @@ class TestHardwareListQueries(unittest.TestCase):
             _ = m.pc.kode, m.pc.grup.nama
         self.assertEqual(len(monitors), 5)
         self.assertLessEqual(queries, 4)
+
+    def test_client_status_query_count_constant_with_members(self):
+        from app.models import Member, Sesi
+        from app.services.cache.system_cache_store import SettingsCacheStore
+        from app.services.client.client_service import ClientService
+        # Cache settings hangat seperti server produksi; jalur polling tidak
+        # boleh menambah query member (sesi + grup) per PC.
+        SettingsCacheStore.set("timezone", "Asia/Makassar")
+        SettingsCacheStore.set("client_polling_interval_seconds", "5")
+        grup = Grup.query.first()
+        pcs = PC.query.all()
+        for i in range(3):
+            pcs[i].ip_address = f"10.10.0.{i + 1}"
+            pcs[i].mac_address = f"AA:BB:CC:DD:EE:0{i}"
+            m = Member(username=f"member{i}", password_hash="x", grup_id=grup.id,
+                       waktu_tersimpan=60, aktif=True)
+            db.session.add(m)
+            db.session.flush()
+            db.session.add(Sesi(tipe="member", member_id=m.id, pc_id=pcs[i].id,
+                                durasi_beli_menit=60, status="aktif",
+                                token_sesi=f"c{i}" * 20))
+        db.session.commit()
+        db.session.remove()
+        pcs = PC.query.all()
+        res, queries = count_queries(
+            lambda: ClientService.get_status(pcs[0].ip_address, pcs[0].mac_address, role="member")
+        )
+        self.assertLessEqual(queries, 4)
+        self.assertEqual(res["member"]["grup"], "reguler")
+        self.assertEqual(res["member"]["waktu_tersimpan"], 60)

@@ -10,6 +10,7 @@ dan query untuk monitoring real-time.
 from datetime import datetime
 from app.models import db, now_local
 from app.models import Sesi
+from app.models import Member
 from app.models import Transaksi
 from app.utils.logger import write_log
 from sqlalchemy import func, or_, select
@@ -30,8 +31,10 @@ class SesiRepository:
 
     @staticmethod
     def get_aktif_by_pc(pc_id):
-        """Mengambil sesi aktif pada PC tertentu."""
-        return Sesi.query.filter_by(pc_id=pc_id, status="aktif").first()
+        """Mengambil sesi aktif pada PC tertentu (member & grup sekaligus)."""
+        return (Sesi.query
+                .options(joinedload(Sesi.member).joinedload(Member.grup))
+                .filter_by(pc_id=pc_id, status="aktif").first())
 
     @staticmethod
     def get_aktif_by_id(sesi_id):
