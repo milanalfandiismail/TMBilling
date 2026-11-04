@@ -258,18 +258,6 @@ class ShiftService:
             "total_non_tunai": total_non_tunai
         }
 
-        # Update field di shift (disimpan untuk audit hanya jika shift masih aktif)
-        if shift.status == "AKTIF":
-            shift.total_billing = total_billing
-            shift.total_kantin = total_kantin
-            shift.total_qris = breakdown.get("QRIS", 0)
-            shift.total_refund = total_refund
-            shift.detail_metode_json = json.dumps(rincian_pembayaran)
-            try:
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
-
         total_seharusnya = shift.modal_awal + total_tunai_bersih
 
         return {
@@ -278,10 +266,10 @@ class ShiftService:
             "waktu_mulai": format_display(shift.waktu_mulai),
             "waktu_selesai": format_display(shift.waktu_selesai) if shift.waktu_selesai else None,
             "modal_awal": shift.modal_awal,
-            "total_billing": shift.total_billing,
+            "total_billing": total_billing,
             "total_refund": total_refund,
-            "total_kantin": shift.total_kantin,
-            "total_pendapatan": shift.total_billing + shift.total_kantin,
+            "total_kantin": total_kantin,
+            "total_pendapatan": total_billing + total_kantin,
             "total_seharusnya": total_seharusnya,
             "uang_fisik": shift.uang_fisik,
             "selisih": shift.selisih,
@@ -434,8 +422,9 @@ class ShiftService:
         shift.total_qris = summary["breakdown"].get("QRIS", 0)
         shift.total_refund = summary.get("total_refund", 0)
         shift.detail_metode_json = json.dumps(summary["rincian_pembayaran"])
-        shift.uang_fisik = summary["total_seharusnya"]
-        shift.selisih = 0
+        # Tidak ada hitung fisik pada force close: biarkan kosong, jangan pura-pura PAS.
+        shift.uang_fisik = None
+        shift.selisih = None
         db.session.commit()
 
         from app.utils.logger import write_log
@@ -580,16 +569,19 @@ class ShiftService:
             tunai_seharusnya = shift.modal_awal + (shift.total_billing or 0) + (shift.total_kantin or 0) - (shift.total_qris or 0)
 
         lines.append(row("Uang Seharusnya:", f"Rp {tunai_seharusnya:,.0f}"))
-        lines.append(row("Uang Fisik Laci:", f"Rp {shift.uang_fisik or 0:,.0f}"))
-        
-        selisih = shift.selisih or 0
-        if selisih == 0:
-            selisih_str = "Rp 0 (PAS)"
-        elif selisih > 0:
-            selisih_str = f"+Rp {selisih:,.0f} (LEBIH)"
+        if shift.uang_fisik is None:
+            lines.append(row("Uang Fisik Laci:", "BELUM DIHITUNG"))
+            lines.append(row("Selisih Uang   :", "PENUTUPAN PAKSA"))
         else:
-            selisih_str = f"-Rp {abs(selisih):,.0f} (KURANG)"
-        lines.append(row("Selisih Uang   :", selisih_str))
+            lines.append(row("Uang Fisik Laci:", f"Rp {shift.uang_fisik:,.0f}"))
+            selisih = shift.selisih or 0
+            if selisih == 0:
+                selisih_str = "Rp 0 (PAS)"
+            elif selisih > 0:
+                selisih_str = f"+Rp {selisih:,.0f} (LEBIH)"
+            else:
+                selisih_str = f"-Rp {abs(selisih):,.0f} (KURANG)"
+            lines.append(row("Selisih Uang   :", selisih_str))
 
         if shift.catatan:
             lines.append("-" * c_width)
