@@ -88,52 +88,10 @@
 
 ## 2. Arsitektur Sistem Terpadu (3-Layer SoC)
 
-```mermaid
-graph TB
-    subgraph "Layer 1: Frontend (Browser / Kasir Dashboard)"
-        UI[Kasir Dashboard Web UI<br/>ES6 Modular Vanilla JS]
-        SkeletonUI[Skeleton Loading Engine<br/>core/skeleton.js across 26 tabs]
-        VNC_UI[VNC Web Client<br/>Canvas RFB Protocol]
-        Explorer_UI[Web File Explorer]
-        Process_UI[Process Monitor Web]
-    end
-
-    subgraph "Layer 2: Backend (Server Billing Flask)"
-        API[Flask REST API Engine<br/>30 Blueprints / 40 Services]
-        Scheduler[APScheduler Background Daemon<br/>Triple-Layer Expiry Layer 1]
-        WS[WebSocket Proxy Engine<br/>Simple-WebSocket & VNC Bridge]
-        DB[(SQLite Database<br/>23 Models SQLAlchemy)]
-        Cloudflare[Cloudflare Tunnel Service<br/>Zero-Trust Ingress]
-    end
-
-    subgraph "Layer 3: WarnetAgent Client (PC Klien)"
-        subgraph "TMBillingTauri (Rust + HTML5/CSS)"
-            TauriCore[Rust Tauri v2 Core Engine]
-            Kiosk[Kiosk Lockscreen & Overlay UI]
-            WinHooks[Win32 API Low-Level Hooks]
-            VNCBridge[TightVNC 5900 Loopback + Clipboard Sync]
-            Audio[Audio Warning Intervals]
-            ClientPoll[Realtime Polling 1-3s<br/>Triple-Layer Expiry Layer 2]
-        end
-        subgraph "Security Watchdog & Telemetry"
-            MGCTM[MGCTM.exe Watchdog Service]
-            RegIntegrity[Dual-Hive SHA-256 Registry Keys]
-            TMMonitor[TMMonitor + HardwareHelper LHM]
-            Uninstaller[TMBilling_Uninstaller.exe]
-        end
-    end
-
-    UI -->|HTTP REST / JSON (Polling Layer 3)| API
-    UI -->|WebSocket| WS
-    VNC_UI -->|WebSocket / RFB| WS
-    WS -->|TCP 5900 Loopback| VNCBridge
-    API -->|SQLite ORM| DB
-    API <-->|HTTP / Heartbeat| TauriCore
-    ClientPoll -->|Status Polling| API
-    MGCTM -->|Supervise & Respawn| TauriCore
-    MGCTM -->|Check Hashes| RegIntegrity
-    TMMonitor -->|Live Temp & Specs| API
-```
+Sistem TMBilling dirancang dengan arsitektur pemisahan tanggung jawab 3 lapis (*3-Layer Separation of Concerns*):
+- **Layer 1: Frontend (Browser / Kasir Dashboard)**: Web UI berbasis ES6 Modular Vanilla JS, standardized skeleton loader (core/skeleton.js), VNC web client berbasis canvas RFB, Web File Explorer, dan Process Monitor.
+- **Layer 2: Backend (Server Billing Flask)**: REST API engine dengan 30 Blueprint / 40 Service, background daemon APScheduler, WebSocket proxy engine (Simple-WebSocket & VNC Bridge), database SQLite dengan 23 Model SQLAlchemy, serta integrasi zero-trust Cloudflare Ingress.
+- **Layer 3: WarnetAgent Client (PC Klien)**: Aplikasi klien Tauri v2 (Rust + HTML5/CSS) dengan low-level Win32 hooks dan TightVNC loopback port 5900, diawasi oleh Watchdog Service C++ (MGCTM.exe), validasi registry hash SHA-256, dan telemetri hardware LibreHardwareMonitor (TMMonitor.exe + HardwareHelper.exe).
 
 ### 2.1 Backend Server
 - **Framework**: Python 3.10+ dengan Flask, Flask-SQLAlchemy, Flask-Migrate, Flask-CORS, Flask-WTF.
