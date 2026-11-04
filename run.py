@@ -87,6 +87,15 @@ def start_scheduler(app):
         id="flush_uptime"
     )
 
+    # Task 6: Cleanup orphaned VNC client proxies (interval 120 detik)
+    scheduler.add_job(
+        func=run_cleanup_vnc_proxies,
+        args=[app],
+        trigger="interval",
+        seconds=120,
+        id="cleanup_vnc_proxies"
+    )
+
     import atexit
     atexit.register(lambda: run_flush_uptime(app))
 

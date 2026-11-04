@@ -273,7 +273,15 @@ class VNCClientProxyService:
         stale_pc_ids = []
         with cls._proxies_lock:
             for pc_id, info in cls._active_proxies.items():
-                if now - info["started_at"] > max_idle_seconds:
+                is_stale_time = (now - info.get("started_at", now)) > max_idle_seconds
+                is_pc_offline = False
+                try:
+                    from app.services.cache import OnlineStatusStore
+                    is_pc_offline = not OnlineStatusStore.is_online(pc_id, timeout_seconds=45)
+                except Exception:
+                    pass
+
+                if is_stale_time or is_pc_offline:
                     stale_pc_ids.append(pc_id)
                     
         count = 0

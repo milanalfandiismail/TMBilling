@@ -110,3 +110,16 @@ def run_flush_uptime(app):
             UptimeService.flush_uptime_to_db(app=app)
         except Exception as e:
             write_log("SCHEDULER_ERROR", f"Error flush uptime: {str(e)}", user="SYSTEM")
+
+def run_cleanup_vnc_proxies(app):
+    """Wrapper untuk cleanup proxy VNC dan token yang orphaned/stale."""
+    with app.app_context():
+        try:
+            from app.services.vnc.vnc_service import VNCClientProxyService
+            cleaned = VNCClientProxyService.cleanup_stale_proxies(max_idle_seconds=600)
+            if cleaned > 0:
+                from app.utils.logger import write_log
+                write_log("VNC_CLEANUP", f"Cleanup VNC proxy: {cleaned} proxy/token orphaned dibersihkan", user="SYSTEM")
+        except Exception as e:
+            from app.utils.logger import write_log
+            write_log("SCHEDULER_ERROR", f"Error cleanup VNC proxy: {str(e)}", user="SYSTEM")
