@@ -9,6 +9,7 @@ from app.models import PC, db, now_local
 from app.repositories import PCRepository
 from app.repositories import SesiRepository
 from app.repositories import GrupRepository
+from app.utils.helpers import natural_sort_key
 from app.utils.logger import write_log
 from app.utils.validators import validate_string_length, validate_integer_range, validate_ip_address, validate_mac_address
 
@@ -35,16 +36,7 @@ class PCService:
                 if grup_obj:
                     grup_id_parsed = grup_obj.id
         pcs = PCRepository.get_all(aktif_only, grup_id_parsed, search_query)
-        import re
-        
-        def natural_sort_key(pc):
-            g_id = pc.grup_id or 0
-            code = pc.kode or ""
-            # Pisahkan angka dari teks untuk perbandingan alami (human sorting)
-            split_parts = [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', code)]
-            return (g_id, split_parts)
-
-        pcs.sort(key=natural_sort_key)
+        pcs.sort(key=lambda pc: (pc.grup_id or 0, natural_sort_key(pc.kode)))
         return pcs
 
     @staticmethod

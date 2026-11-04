@@ -64,6 +64,14 @@ def format_duration(menit):
         return f"{jam} Jam {sisa}M"
 
 
+def natural_sort_key(value):
+    """Kunci urutan alami: TM-1, TM-2, TM-10."""
+    if not value:
+        return []
+    return [int(text) if text.isdigit() else text.lower()
+            for text in re.split(r'(\d+)', value)]
+
+
 def format_rupiah(nominal):
     """Memformat angka nominal ke format Rupiah Indonesia.
 

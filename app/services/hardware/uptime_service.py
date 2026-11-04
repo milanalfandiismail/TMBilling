@@ -10,6 +10,7 @@ berkala setiap 1 menit.
 
 from datetime import datetime, timedelta, date
 from app.models import db, PCUptimeLog, PC, Sesi
+from app.utils.helpers import natural_sort_key
 from app.utils.logger import write_log
 from app.utils.timezone_utils import now_utc, get_display_tz, display_in_tz
 
@@ -59,10 +60,6 @@ class UptimeService:
         try:
             # Pastikan akumulasi terbaru di RAM sudah ter-flush ke DB
             UptimeService.flush_uptime_to_db()
-
-            import re
-            def natural_sort_key(s):
-                return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s or '')]
 
             logs = PCUptimeLog.query.filter_by(tanggal=tanggal).all()
             # Urutkan berdasarkan grup_id dan kode PC secara natural
@@ -145,12 +142,7 @@ class UptimeService:
                     "utilisasi_persen": utilisasi
                 })
 
-            import re
-            def natural_sort_key(item):
-                s = item.get("pc_kode", "")
-                return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s or '')]
-
-            pcs_list.sort(key=lambda item: (item.get("pc_grup_id", 0), natural_sort_key(item)))
+            pcs_list.sort(key=lambda item: (item.get("pc_grup_id", 0), natural_sort_key(item.get("pc_kode", ""))))
 
             summary_online_menit = round(total_seconds_online / 60, 1)
             summary_billing_menit = round(total_seconds_billing / 60, 1)

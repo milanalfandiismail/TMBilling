@@ -7,20 +7,15 @@ dari C# Hardware Monitor Agent dan menampilkan data metrik
 hardware semua PC di dashboard kasir.
 """
 from flask import Blueprint, request, jsonify, session
-import re
 import time
 from app.services import HardwareService
+from app.utils.helpers import natural_sort_key
 from app.utils.logger import write_log
 from app.middleware.auth import login_required, admin_required, shift_required
 from app.routes.client.client_routes import api_key_required
 
 monitor_api_bp = Blueprint("monitor", __name__)
 monitor_kasir_bp = Blueprint("monitor_kasir", __name__)
-
-def natural_sort_key(s):
-    """Helper untuk natural alphanumeric sorting (misal: TM-1, TM-2, TM-10)."""
-    return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s or '')]
-
 
 def _build_hardware_list():
     """Helper untuk memuat dan menyusun metrik hardware semua PC."""

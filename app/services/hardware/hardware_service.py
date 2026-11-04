@@ -14,6 +14,7 @@ from datetime import datetime, timezone, timedelta
 from app.utils.timezone_utils import now_utc, display_in_tz, get_tz_short_name
 from app.models import db, HardwareMonitor
 from app.repositories import HardwareRepository, ProcessRepository, PCRepository
+from app.utils.helpers import natural_sort_key
 from app.utils.logger import write_log
 from app.services.cache.telemetry_store import (
     HardwareMetricsStore,
@@ -42,14 +43,7 @@ class HardwareService:
             list: List objek HardwareMonitor dengan relasi PC.
         """
         monitors = HardwareRepository.get_all_with_pc()
-        
-        def natural_sort_key(monitor):
-            if not monitor.pc or not monitor.pc.kode:
-                return []
-            return [int(text) if text.isdigit() else text.lower()
-                    for text in re.split(r'(\d+)', monitor.pc.kode)]
-            
-        return sorted(monitors, key=natural_sort_key)
+        return sorted(monitors, key=lambda m: natural_sort_key(m.pc.kode if m.pc else ""))
 
     @staticmethod
     def process_hardware_metric(client_ip, data):
