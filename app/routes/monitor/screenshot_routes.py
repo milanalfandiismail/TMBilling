@@ -7,12 +7,28 @@ dan client PC untuk mengunggah tangkapan layar.
 """
 
 import os
+import time
 from datetime import datetime, timezone
 from flask import request, jsonify, session, current_app
 from app.middleware.auth import login_required, admin_required, shift_required
 from app.routes.client.client_routes import api_key_required
 from app.utils.logger import write_log
 from app.utils.timezone_utils import format_display, display_in_tz, get_tz_short_name
+
+
+_STAT_CACHE = {}
+_STAT_TTL_SECONDS = 5
+
+
+def _screenshot_mtime(path):
+    """Mtime file screenshot dengan cache 5 detik (hindari 2 syscall per PC per detik)."""
+    now_ts = time.time()
+    cached = _STAT_CACHE.get(path)
+    if cached and now_ts - cached[0] < _STAT_TTL_SECONDS:
+        return cached[1]
+    mtime = os.path.getmtime(path) if os.path.exists(path) else None
+    _STAT_CACHE[path] = (now_ts, mtime)
+    return mtime
 
 
 def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
@@ -126,8 +142,8 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
 
             for pc in pcs_sorted:
                 screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{pc.kode}.png")
-                if os.path.exists(screenshot_path):
-                    mtime = os.path.getmtime(screenshot_path)
+                mtime = _screenshot_mtime(screenshot_path)
+                if mtime is not None:
                     dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
                     local_dt = display_in_tz(dt_utc)
                     full_time = format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
