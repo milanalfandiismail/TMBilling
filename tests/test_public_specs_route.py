@@ -197,7 +197,7 @@ def test_public_specs_compact_cards_markup(test_setup):
 
 
 def test_public_specs_modal_structure_and_controller(test_setup):
-    """Pastikan modal #spec-modal ada di HTML dengan backdrop solid bg-black/90 dan JS controller openSpecModal."""
+    """Pastikan modal #spec-modal ada di HTML dengan backdrop solid bg-black/90 dan JS controller openSpecModal fokus CPU/GPU/RAM."""
     app, client, _ = test_setup
 
     res = client.get("/spesifikasi")
@@ -213,9 +213,14 @@ def test_public_specs_modal_structure_and_controller(test_setup):
     assert 'id="modal-cpu-name"' in html
     assert 'id="modal-gpu-name"' in html
     assert 'id="modal-ram-total"' in html
-    assert 'id="modal-mobo-name"' in html
-    assert 'id="modal-nic-speed"' in html
-    assert 'id="modal-disks-container"' in html
+
+    # Pastikan elemen yang dibuang tidak ada di HTML
+    assert 'id="modal-mobo-name"' not in html
+    assert 'id="modal-nic-speed"' not in html
+    assert 'id="modal-disks-container"' not in html
+    assert 'id="modal-cpu-telemetry"' not in html
+    assert 'id="modal-gpu-telemetry"' not in html
+    assert 'id="modal-pc-nama"' not in html
 
     assert 'id="spec-modal-close"' in html
     assert 'function openSpecModal' in html

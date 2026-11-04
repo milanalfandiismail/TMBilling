@@ -100,7 +100,6 @@
                         <div class="border-b border-[#1f1f1f] pb-2 sm:pb-2.5 flex items-center justify-between gap-1">
                             <div class="min-w-0 pr-1">
                                 <h4 class="font-black text-neutral-100 text-xs sm:text-base uppercase tracking-wider truncate">{{ pc.kode }}</h4>
-                                <p class="text-[10px] sm:text-[11px] text-neutral-500 font-mono truncate capitalize">{{ (pc.nama or pc.kode)|lower|replace('unit', '')|trim }}</p>
                             </div>
                             {% if pc.aktif %}
                             <span class="px-1.5 sm:px-2 py-0.5 bg-emerald-950/60 border border-emerald-800/30 text-emerald-400 rounded text-[9px] sm:text-[10px] font-mono font-bold flex items-center gap-1 shrink-0">
@@ -184,7 +183,6 @@
                         <span id="modal-grup-badge" class="px-2.5 py-1 text-[11px] font-black rounded uppercase tracking-wider border"></span>
                         <div>
                             <h3 id="modal-pc-kode" class="text-lg md:text-xl font-black text-neutral-100 uppercase tracking-wide"></h3>
-                            <p id="modal-pc-nama" class="text-xs text-neutral-400 font-mono"></p>
                         </div>
                     </div>
                     <button id="spec-modal-close" onclick="closeSpecModal()" class="w-8 h-8 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-800 flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500/50" aria-label="Tutup Modal">
@@ -205,16 +203,13 @@
                         </div>
                     </div>
 
-                    <!-- Hardware Sections -->
+                    <!-- Hardware Sections: Trio Utama (CPU, GPU, RAM) -->
                     <!-- Processor (CPU) -->
                     <div class="pt-3 space-y-1.5">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold uppercase tracking-wider text-purple-400 font-mono flex items-center gap-1.5">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M3 9h2m-2 6h2m14-6h2m-2 6h2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
-                                Processor (CPU)
-                            </span>
-                            <span id="modal-cpu-telemetry" class="text-[11px] font-mono text-neutral-500"></span>
-                        </div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-purple-400 font-mono flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M3 9h2m-2 6h2m14-6h2m-2 6h2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                            Processor (CPU)
+                        </span>
                         <div class="bg-[#141414] border border-neutral-800/80 rounded-lg p-3">
                             <p id="modal-cpu-name" class="font-bold text-neutral-100 text-sm sm:text-base font-mono"></p>
                             <p id="modal-cpu-cores" class="text-xs text-neutral-400 font-mono mt-0.5"></p>
@@ -223,13 +218,10 @@
 
                     <!-- Graphics (GPU) -->
                     <div class="pt-3 space-y-1.5">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 font-mono flex items-center gap-1.5">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg>
-                                Kartu Grafis (GPU)
-                            </span>
-                            <span id="modal-gpu-telemetry" class="text-[11px] font-mono text-neutral-500"></span>
-                        </div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 font-mono flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg>
+                            Kartu Grafis (GPU)
+                        </span>
                         <div class="bg-[#141414] border border-neutral-800/80 rounded-lg p-3">
                             <p id="modal-gpu-name" class="font-bold text-neutral-100 text-sm sm:text-base font-mono"></p>
                         </div>
@@ -247,38 +239,6 @@
                                 <span id="modal-ram-total" class="font-bold text-neutral-100 font-mono text-sm"></span>
                             </div>
                             <div id="modal-ram-sticks-container" class="space-y-1"></div>
-                        </div>
-                    </div>
-
-                    <!-- Motherboard & Network -->
-                    <div class="pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div class="space-y-1.5">
-                            <span class="text-xs font-bold uppercase tracking-wider text-amber-400 font-mono flex items-center gap-1.5">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                Motherboard
-                            </span>
-                            <div class="bg-[#141414] border border-neutral-800/80 rounded-lg p-3">
-                                <p id="modal-mobo-name" class="font-bold text-neutral-100 text-xs sm:text-sm font-mono"></p>
-                            </div>
-                        </div>
-                        <div class="space-y-1.5">
-                            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400 font-mono flex items-center gap-1.5">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                                Kecepatan Jaringan
-                            </span>
-                            <div class="bg-[#141414] border border-neutral-800/80 rounded-lg p-3">
-                                <p id="modal-nic-speed" class="font-bold text-neutral-100 text-xs sm:text-sm font-mono"></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Storage / Disks -->
-                    <div class="pt-3 space-y-1.5">
-                        <span class="text-xs font-bold uppercase tracking-wider text-rose-400 font-mono flex items-center gap-1.5">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-                            Penyimpanan (Storage)
-                        </span>
-                        <div id="modal-disks-container" class="bg-[#141414] border border-neutral-800/80 rounded-lg p-3 space-y-1.5 text-xs font-mono text-neutral-300">
                         </div>
                     </div>
                 </div>
@@ -327,9 +287,8 @@
             const item = specsCatalog[kode];
             if (!item) return;
 
-            // Header info
+            // Header info (hanya kode PC tunggal)
             document.getElementById('modal-pc-kode').textContent = item.kode;
-            document.getElementById('modal-pc-nama').textContent = item.nama;
 
             const grupBadge = document.getElementById('modal-grup-badge');
             if (grupBadge && item.grup) {
@@ -374,23 +333,9 @@
                     cpuCoresEl.style.display = 'none';
                 }
             }
-            const cpuTelemEl = document.getElementById('modal-cpu-telemetry');
-            if (cpuTelemEl) {
-                const telemParts = [];
-                if (item.cpu && item.cpu.temp !== null && item.cpu.temp !== undefined) telemParts.push(`${item.cpu.temp}°C`);
-                if (item.cpu && item.cpu.usage !== null && item.cpu.usage !== undefined) telemParts.push(`${item.cpu.usage}% Load`);
-                cpuTelemEl.textContent = telemParts.join(' • ');
-            }
 
             // GPU
             document.getElementById('modal-gpu-name').textContent = item.gpu ? item.gpu.name : 'Belum Terkumpul';
-            const gpuTelemEl = document.getElementById('modal-gpu-telemetry');
-            if (gpuTelemEl) {
-                const gpuParts = [];
-                if (item.gpu && item.gpu.temp !== null && item.gpu.temp !== undefined) gpuParts.push(`${item.gpu.temp}°C`);
-                if (item.gpu && item.gpu.usage !== null && item.gpu.usage !== undefined) gpuParts.push(`${item.gpu.usage}% Load`);
-                gpuTelemEl.textContent = gpuParts.join(' • ');
-            }
 
             // RAM
             document.getElementById('modal-ram-total').textContent = item.ram ? item.ram.total : 'Belum Terkumpul';
@@ -404,26 +349,6 @@
                         div.innerHTML = `<span class="text-neutral-600">•</span> <span>${escapeHtml(stick)}</span>`;
                         ramSticksContainer.appendChild(div);
                     });
-                }
-            }
-
-            // Motherboard & NIC
-            document.getElementById('modal-mobo-name').textContent = item.motherboard || 'Belum Terkumpul';
-            document.getElementById('modal-nic-speed').textContent = item.nic_speed || 'Belum Terkumpul';
-
-            // Disks
-            const disksContainer = document.getElementById('modal-disks-container');
-            if (disksContainer) {
-                disksContainer.innerHTML = '';
-                if (item.disks && item.disks.length > 0) {
-                    item.disks.forEach(disk => {
-                        const div = document.createElement('div');
-                        div.className = 'flex items-center gap-2';
-                        div.innerHTML = `<span class="text-neutral-500">•</span> <span>${escapeHtml(disk)}</span>`;
-                        disksContainer.appendChild(div);
-                    });
-                } else {
-                    disksContainer.innerHTML = '<span class="text-neutral-500 italic">Data storage internal</span>';
                 }
             }
 
