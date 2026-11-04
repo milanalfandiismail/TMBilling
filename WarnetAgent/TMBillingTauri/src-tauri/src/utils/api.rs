@@ -460,13 +460,32 @@ impl ApiService {
         })
     }
 
+    /// Token emergency milik server (bukan hash password lokal di config.ini).
+    /// Diambil runtime dari endpoint client yang sudah dipakai MGCTM untuk uninstall_token.
+    async fn fetch_server_emergency_token(&self) -> Option<String> {
+        let base = self.server_url.trim_end_matches("/api/v1/public/client");
+        let url = format!("{}/api/v1/kasir/settings/uninstall-token/client", base);
+        let res = self.client.get(&url)
+            .header("X-Client-Key", &self.api_key)
+            .send()
+            .await
+            .ok()?;
+        if !res.status().is_success() {
+            return None;
+        }
+        let data: serde_json::Value = res.json().await.ok()?;
+        data.get("emergency_token")?.as_str().map(|s| s.to_string())
+    }
+
     pub async fn emergency_login(&self, ip: &str, mac: &str, username: &str) -> Result<StatusResponse, String> {
-        // Kirim ke server agar tercatat di DB & log (PC mana yang emergency login, siapa usernya)
+        // Kirim ke server agar tercatat di DB & log (PC mana yang emergency login, siapa usernya).
+        // Catatan: self.emergency_token adalah SHA256 password emergency lokal, BUKAN token server.
+        let server_token = self.fetch_server_emergency_token().await.unwrap_or_default();
         let body = serde_json::json!({
             "ip_address": ip,
             "mac_address": mac,
             "username": username,
-            "token": &self.emergency_token,
+            "token": server_token,
         });
 
         let url = format!("{}/emergency-login", self.server_url);
