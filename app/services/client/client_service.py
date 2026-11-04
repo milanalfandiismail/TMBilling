@@ -145,10 +145,9 @@ class ClientService:
                     write_log("STATUS_REJECTED", f"Polling ditolak: {ip_address} mismatch MAC. DB:{norm_db_mac} Client:{norm_client_mac}")
                     raise ValueError("Identitas PC tidak valid (MAC Mismatch)")
 
-            # Update Last Activity in RAM Store
+            # Update Last Activity in RAM Store (DB pc.last_activity bukan sumber kebenaran)
             from app.services.cache.memory_store import OnlineStatusStore
-            pc.last_activity = now_local()
-            OnlineStatusStore.mark_active(pc.id, dt=pc.last_activity)
+            OnlineStatusStore.mark_active(pc.id, dt=now_local())
 
             # B. Cek Sesi Aktif
             sesi = SesiRepository.get_aktif_by_pc(pc.id)
