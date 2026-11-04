@@ -16,6 +16,7 @@ const Dashboard = {
     _searchPage: 1,
     _searchPerPage: 8,
     _searchDebounceTimer: null,
+    _loading: false,
 
     grupStyles: {
         'vvip': { text: 'text-rose-400', border: 'border-rose-800', bg: 'bg-rose-500/10', dot: 'bg-rose-500' },
@@ -28,11 +29,13 @@ const Dashboard = {
     },
 
     async load(isSilent = false) {
+        if (this._loading) return;
+        this._loading = true;
         const container = document.getElementById('pc-area');
-        if (!this.lastData && !isSilent && container && !document.querySelector('.pc-card-item') && typeof Skeleton !== 'undefined') {
-            container.innerHTML = Skeleton.pcCards(12);
-        }
         try {
+            if (!this.lastData && !isSilent && container && !document.querySelector('.pc-card-item') && typeof Skeleton !== 'undefined') {
+                container.innerHTML = Skeleton.pcCards(12);
+            }
             const data = await API.dashboard.pcList();
             if (!data || !data.by_grup) throw new Error('Data format invalid - missing by_grup');
             const oldData = this.lastData;
@@ -47,6 +50,8 @@ const Dashboard = {
             if (container && !this.lastData) {
                 container.innerHTML = `<div class="text-center py-20 text-red-400 text-sm">Gagal memuat dashboard: ${err.message}<br><button onclick="Dashboard.load()" class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs lg:text-base font-semibold">Coba Lagi</button></div>`;
             }
+        } finally {
+            this._loading = false;
         }
     },
 

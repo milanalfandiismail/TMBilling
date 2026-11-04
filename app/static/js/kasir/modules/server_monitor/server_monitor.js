@@ -12,17 +12,22 @@ const ServerMonitor = {
         this.isPolling = true;
         this.checkLHMStatus();
         this.fetchMetrics();
-        this.interval = setInterval(() => this.fetchMetrics(), 5000);
+        this.interval = setInterval(() => this.refreshLive(), 5000);
+        this._onVisibility = () => this.refreshLive();
+        document.addEventListener('visibilitychange', this._onVisibility);
     },
 
     stop() {
         if (!this.isPolling) return;
         this.isPolling = false;
         if (this.interval) clearInterval(this.interval);
+        if (this._onVisibility) document.removeEventListener('visibilitychange', this._onVisibility);
+        this._onVisibility = null;
     },
 
     refreshLive() {
         if (typeof App !== 'undefined' && App.currentTab !== 'server_statistic') return;
+        if (document.hidden) return;
         return this.fetchMetrics();
     },
     
