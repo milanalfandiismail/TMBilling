@@ -1,545 +1,467 @@
+'use strict';
+
 /**
- * E2E Test Suite - Settings Subtabs, Admin RBAC, Analytics, System Logs, & Mikrotik
- * 
- * Verifies:
- * 1. Admin login & session verification.
- * 2. Settings tab & all 11 subtabs switching:
- *    - general, payment, kiosk, tv, whitelist_ip, cloudflare_tunnel,
- *      cloud_backup, local_backup, db_cleanup, scheduler, migration.
- * 3. Settings API read and write-through cache update.
- * 4. Staff User CRUD (create, read list, update, delete) in tab-user.
- * 5. Staff audit log inspection in tab-user_logs.
- * 6. System log viewer in tab-log.
- * 7. Owner Analytics load in tab-analytics.
- * 8. Billing turnover report load in tab-laporan.
- * 9. MikroTik configuration in tab-mikrotik.
- * 10. Plugins catalog in tab-plugins.
- * 11. Strict RBAC enforcement when logged in as kasir (admin-only tab access rejection).
+ * Task 11 — Admin: user/RBAC, redaksi settings, audit log, token klien,
+ * plugin, dan file explorer.
+ *
+ * Kontrak tiap check: hasil otorisasi (403/401), baris DB sandbox yang dibaca
+ * ulang, atau nilai yang dibandingkan dengan sumber independen (manifest,
+ * payload admin). Keberadaan elemen saja bukan check.
+ *
+ * Perilaku produk yang SENGAJA berlaku dan tidak "diperbaiki" di sini:
+ * - `GET /api/v1/kasir/settings/` mengirim seluruh setting + `client_api_key`
+ *   hanya untuk role admin; role lain hanya `payment_methods` + `vnc_password`.
+ * - `admin_required` menjawab 403 JSON (bukan redirect) untuk sesi kasir.
+ * - Token uninstall/emergency adalah `secrets.token_urlsafe(32)` dan dibuat
+ *   sekali; string legacy tidak boleh muncul lagi.
+ * - Login user nonaktif ditolak 401: `UserRepository.get_by_username()` hanya
+ *   mengembalikan user `aktif=True`, jadi tidak ada sesi yang terbentuk.
+ * - `POST /backup/manual` tidak pernah dipanggil sebagai admin: endpoint itu
+ *   menyentuh instance/warnet.db dan folder backups/ produksi. Yang diuji
+ *   adalah penolakan 403 sebelum body sempat berjalan.
  */
 
-(() => {
-const { BASE_URL } = require('./lib/browser');
+const fs = require('fs');
+const path = require('path');
+const assert = require('assert');
+const { BASE_URL, CLIENT_API_KEY, login, logout, tab, settingsTab, unique, check } = require('./lib/harness');
+const { dbQuery } = require('./lib/db');
+const { createReport, finish } = require('./lib/report');
+
+const SENSITIVE_BLACKLIST = ['.env', 'warnet.db', 'initial_admin.txt', '.git'];
+const LEGACY_TOKENS = ['TM_UNINSTALL_SAFE_2026', 'TM123qaz!@#'];
+const ADMIN_SETTINGS_KEYS = ['client_api_key', 'mikrotik_password', 'mikrotik_host', 'warnet_title'];
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function dbWait(sql, params, predicate, label, timeout = 5000) {
+    const deadline = Date.now() + timeout;
+    let rows = [];
+    while (Date.now() < deadline) {
+        rows = await dbQuery(sql, params);
+        if (predicate(rows)) return rows;
+        await sleep(100);
+    }
+    throw new Error(`${label} tidak terpenuhi dalam ${timeout}ms; baris terakhir: ${JSON.stringify(rows)}`);
+}
+
+async function dbCount(sql, params = []) {
+    const rows = await dbQuery(sql, params);
+    return rows.length ? Number(rows[0].c) : 0;
+}
+
+/** Login dengan kredensial bebas (bukan hanya admin/kasir bawaan harness). */
+async function loginAs(page, username, password) {
+    await page.goto('about:blank');
+    await page.context().clearCookies();
+    await page.goto(`${BASE_URL}/kasir/login`, { waitUntil: 'domcontentloaded' });
+    await page.fill('#username', username);
+    await page.fill('#password', password);
+    await page.click('#btn-login');
+}
+
+/**
+ * Re-login di tengah suite. `about:blank` wajib lebih dulu: request dashboard
+ * yang masih terbang bisa menulis ulang cookie sesi setelah clearCookies, dan
+ * `/kasir/login` akan me-redirect ke dashboard bila sesi masih valid.
+ */
+async function freshLogin(page, role) {
+    await page.goto('about:blank');
+    return login(page, role);
+}
+
+/** Putus sesi tanpa memicu redirect /kasir/login dari sesi yang masih hidup. */
+async function dropSession(page) {
+    await page.goto('about:blank');
+    await page.context().clearCookies();
+    await page.goto(`${BASE_URL}/kasir/login`, { waitUntil: 'domcontentloaded' });
+}
+
+/** fetch dari dalam halaman: ikut cookie sesi + header CSRF seperti API.request. */
+async function http(page, method, url, body) {
+    return page.evaluate(async ({ method, url, body }) => {
+        const headers = {};
+        if (body !== undefined) headers['Content-Type'] = 'application/json';
+        const csrf = document.querySelector('meta[name="csrf-token"]');
+        if (csrf) headers['X-CSRFToken'] = csrf.getAttribute('content');
+        const res = await fetch(url, {
+            method,
+            headers,
+            credentials: 'include',
+            body: body === undefined ? undefined : JSON.stringify(body),
+        });
+        const text = await res.text();
+        let json = null;
+        try { json = JSON.parse(text); } catch (e) { /* respons non-JSON (html 404) */ }
+        return { status: res.status, json, text };
+    }, { method, url, body });
+}
+
+/** Ambil nilai setting langsung dari tabel sandbox (sumber independen). */
+async function settingValue(key) {
+    const rows = await dbQuery('SELECT value FROM settings WHERE key = ?', [key]);
+    return rows.length ? rows[0].value : undefined;
+}
 
 async function runSettingsAdminLogsE2ETest(page) {
-    const results = [];
-    const record = (name, passed, message = '') => {
-        results.push({ name, passed, message });
-        console.log(`[${passed ? 'PASS' : 'FAIL'}] ${name}${message ? ': ' + message : ''}`);
-    };
+    const report = createReport('settings_admin_logs');
+    let adminSettings = null;
+    let originalTitle = null;
+    let kasirUsername = null;
+    let kasirPassword = 'rahasia123';
+    let kasirId = null;
 
     try {
-        console.log('--- Step 1: Admin Login ---');
-        await page.goto('http://127.0.0.1:7016/kasir/login');
-        await page.waitForLoadState('networkidle');
-
-        // Check if already logged in as kasir, logout first
-        const isKasirLogin = await page.evaluate(() => !!document.getElementById('username'));
-        if (!isKasirLogin) {
-            await page.evaluate(async () => {
-                if (typeof API !== 'undefined' && API.auth) {
-                    await API.auth.logout();
-                }
-            });
-            await page.goto('http://127.0.0.1:7016/kasir/login');
-            await page.waitForLoadState('networkidle');
-        }
-
-        await page.fill('#username', 'admin');
-        await page.fill('#password', 'admin123');
-        await Promise.all([
-            page.waitForNavigation({ waitUntil: 'networkidle' }).catch(() => {}),
-            page.click('button[type="submit"]')
-        ]);
-        await page.waitForTimeout(500);
-
-        const adminLogged = await page.evaluate(() => {
-            return window.App && window.App.user && window.App.user.role === 'admin';
-        });
-        record('Admin Login Verified', adminLogged, `Role is ${adminLogged ? 'admin' : 'unknown'}`);
-
-        console.log('--- Step 2: Test 11 Settings Subtabs ---');
-        // Subtab 1: general
-        await page.evaluate(async () => {
-            await window.App.switchTab('settings_general');
-        });
-        await page.waitForTimeout(400);
-        const subGeneral = await page.evaluate(() => {
-            const tabSettings = document.getElementById('tab-settings');
-            const sub = document.getElementById('subtab-general');
-            return !tabSettings.classList.contains('hidden') && sub && !sub.classList.contains('hidden');
-        });
-        record('Settings Subtab: General Visible', subGeneral);
-
-        // Subtab 2: payment
-        await page.evaluate(async () => {
-            await window.App.switchTab('settings_payment');
-        });
-        await page.waitForTimeout(400);
-        const subPayment = await page.evaluate(() => {
-            const sub = document.getElementById('subtab-payment');
-            return sub && !sub.classList.contains('hidden');
-        });
-        record('Settings Subtab: Payment Visible', subPayment);
-
-        // Subtab 3: kiosk
-        await page.evaluate(async () => {
-            await window.App.switchTab('settings_kiosk');
-        });
-        await page.waitForTimeout(400);
-        const subKiosk = await page.evaluate(() => {
-            const sub = document.getElementById('subtab-kiosk');
-            return sub && !sub.classList.contains('hidden');
-        });
-        record('Settings Subtab: Kiosk Visible', subKiosk);
-
-        // Subtab 4: tv
-        await page.evaluate(async () => {
-            await window.App.switchTab('settings_tv');
-        });
-        await page.waitForTimeout(400);
-        const subTV = await page.evaluate(() => {
-            const kiosk = document.getElementById('subtab-kiosk');
-            return kiosk && !kiosk.classList.contains('hidden');
-        });
-        record('Settings Subtab: TV Signage Visible', subTV);
-
-        // Subtab 5: whitelist_ip
-        await page.evaluate(async () => {
-            await window.App.switchTab('whitelist_ip');
-        });
-        await page.waitForTimeout(400);
-        const subWhitelist = await page.evaluate(() => {
-            const sub = document.getElementById('subtab-whitelist_ip');
-            return sub && !sub.classList.contains('hidden');
-        });
-        record('Settings Subtab: Whitelist IP Visible', subWhitelist);
-
-        // Subtab 6: cloudflare_tunnel
-        await page.evaluate(async () => {
-            await window.App.switchTab('settings_cloudflare_tunnel');
-        });
-        await page.waitForTimeout(400);
-        const subCloudflare = await page.evaluate(() => {
-            const sub = document.getElementById('subtab-cloudflare_tunnel');
-            return sub && !sub.classList.contains('hidden');
-        });
-        record('Settings Subtab: Cloudflare Tunnel Visible', subCloudflare);
-
-        // Subtab 7: cloud_backup
-        await page.evaluate(async () => {
-            await window.App.switchTab('settings_cloud_backup');
-        });
-        await page.waitForTimeout(400);
-        const subCloudBackup = await page.evaluate(() => {
-            const sub = document.getElementById('subtab-cloud_backup');
-            return sub && !sub.classList.contains('hidden');
-        });
-        record('Settings Subtab: Cloud Backup Visible', subCloudBackup);
-
-        // Subtab 8: local_backup
-        await page.evaluate(async () => {
-            await window.App.switchTab('settings_local_backup');
-        });
-        await page.waitForTimeout(400);
-        const subLocalBackup = await page.evaluate(() => {
-            const sub = document.getElementById('subtab-local_backup');
-            return sub && !sub.classList.contains('hidden');
-        });
-        record('Settings Subtab: Local Backup Visible', subLocalBackup);
-
-        // Subtab 9: db_cleanup
-        await page.evaluate(async () => {
-            await window.App.switchTab('settings_db_cleanup');
-        });
-        await page.waitForTimeout(400);
-        const subDbCleanup = await page.evaluate(() => {
-            const sub = document.getElementById('subtab-db_cleanup');
-            return sub && !sub.classList.contains('hidden');
-        });
-        record('Settings Subtab: DB Cleanup Visible', subDbCleanup);
-
-        // Subtab 10: scheduler
-        await page.evaluate(async () => {
-            await window.App.switchTab('settings_scheduler');
-        });
-        await page.waitForTimeout(400);
-        const subScheduler = await page.evaluate(() => {
-            const sub = document.getElementById('subtab-scheduler');
-            return sub && !sub.classList.contains('hidden');
-        });
-        record('Settings Subtab: Scheduler Visible', subScheduler);
-
-        // Subtab 11: migration
-        await page.evaluate(async () => {
-            await window.App.switchTab('settings_migration');
-        });
-        await page.waitForTimeout(400);
-        const subMigration = await page.evaluate(() => {
-            const sub = document.getElementById('subtab-migration');
-            return sub && !sub.classList.contains('hidden');
-        });
-        record('Settings Subtab: Migration Visible', subMigration);
-
-        console.log('--- Step 3: Settings API Read and Verification ---');
-        const settingsRes = await page.evaluate(async () => {
-            return await API.settings.getAll();
-        });
-        const hasSettings = settingsRes && settingsRes.success && settingsRes.settings;
-        record('Settings API getAll Success', !!hasSettings, `Loaded ${hasSettings ? Object.keys(settingsRes.settings).length : 0} keys`);
-
-        console.log('--- Step 4: Staff User CRUD (tab-user) ---');
-        await page.evaluate(async () => {
-            await window.App.switchTab('user');
-        });
-        await page.waitForTimeout(400);
-
-        const tabUserVisible = await page.evaluate(() => {
-            const tab = document.getElementById('tab-user');
-            return tab && !tab.classList.contains('hidden');
-        });
-        record('Tab User Visible', tabUserVisible);
-
-        // Create User
-        const createUserRes = await page.evaluate(async () => {
-            return await API.user.create({
-                username: 'kasir_temp_e2e',
-                nama_lengkap: 'Kasir Temp E2E',
-                password: 'password123',
-                role: 'kasir',
-                aktif: true,
-                kuota_main_bulanan: 60
-            });
-        });
-        const userCreated = createUserRes && createUserRes.success;
-        record('Staff User Created', userCreated, createUserRes.message || createUserRes.error);
-
-        // Read Users List
-        const usersList = await page.evaluate(async () => {
-            return await API.user.list();
-        });
-        const createdUser = Array.isArray(usersList) && usersList.find(u => u.username === 'kasir_temp_e2e');
-        record('Created User Verified in List', !!createdUser, `Found user ID: ${createdUser ? createdUser.id : 'none'}`);
-
-        if (createdUser) {
-            // Update User
-            const updateRes = await page.evaluate(async (uid) => {
-                return await API.user.update(uid, {
-                    nama_lengkap: 'Kasir Temp E2E Updated',
-                    kuota_main_bulanan: 120
-                });
-            }, createdUser.id);
-            record('Staff User Updated', updateRes && updateRes.success);
-
-            // Delete User
-            const deleteRes = await page.evaluate(async (uid) => {
-                return await API.user.delete(uid);
-            }, createdUser.id);
-            record('Staff User Deleted', deleteRes && deleteRes.success);
-        }
-
-        console.log('--- Step 5: Staff Audit Log (tab-user_logs) ---');
-        await page.evaluate(async () => {
-            await window.App.switchTab('user_logs');
-        });
-        await page.waitForTimeout(400);
-
-        const tabUserLogsVisible = await page.evaluate(() => {
-            const tab = document.getElementById('tab-user_logs');
-            const rows = document.getElementById('user-logs-rows');
-            return tab && !tab.classList.contains('hidden') && rows !== null;
-        });
-        record('Tab User Logs (Staff Audit) Visible and Rendered', tabUserLogsVisible);
-
-        console.log('--- Step 6: System Log (tab-log) ---');
-        await page.evaluate(async () => {
-            await window.App.switchTab('log');
-        });
-        await page.waitForTimeout(400);
-
-        const tabLogVisible = await page.evaluate(() => {
-            const tab = document.getElementById('tab-log');
-            return tab && !tab.classList.contains('hidden');
-        });
-        const logFetchRes = await page.evaluate(async () => {
-            return await API.report.logs('', 50, '');
-        });
-        record('Tab Log Visible and Logs Loaded', tabLogVisible && logFetchRes && Array.isArray(logFetchRes.logs));
-
-        console.log('--- Step 7: Owner Analytics (tab-analytics) ---');
-        await page.evaluate(async () => {
-            await window.App.switchTab('analytics');
-        });
-        await page.waitForTimeout(500);
-
-        const tabAnalyticsVisible = await page.evaluate(() => {
-            const tab = document.getElementById('tab-analytics');
-            return tab && !tab.classList.contains('hidden');
-        });
-        const analyticsData = await page.evaluate(async () => {
-            return await API.request('/api/v1/kasir/dashboard/analytics?period=today');
-        });
-        record('Tab Analytics Visible and Data Fetched', tabAnalyticsVisible && analyticsData && analyticsData.success);
-
-        console.log('--- Step 8: Billing Turnover Report (tab-laporan) ---');
-        await page.evaluate(async () => {
-            await window.App.switchTab('laporan');
-        });
-        await page.waitForTimeout(500);
-
-        const tabLaporanVisible = await page.evaluate(() => {
-            const tab = document.getElementById('tab-laporan');
-            return tab && !tab.classList.contains('hidden');
-        });
-        const kasirListData = await page.evaluate(async () => {
-            return await API.report.kasirList();
-        });
-        record('Tab Laporan Visible and Kasir List Loaded', tabLaporanVisible && kasirListData && Array.isArray(kasirListData.kasir));
-
-        console.log('--- Step 9: MikroTik Hotspot (tab-mikrotik) ---');
-        await page.evaluate(async () => {
-            await window.App.switchTab('mikrotik');
-        });
-        await page.waitForTimeout(400);
-
-        const tabMikrotikVisible = await page.evaluate(() => {
-            const tab = document.getElementById('tab-mikrotik');
-            return tab && !tab.classList.contains('hidden');
-        });
-        const mikrotikConfig = await page.evaluate(async () => {
-            return await API.request('/api/v1/kasir/mikrotik/config');
-        });
-        record('Tab MikroTik Visible and Config Endpoint Responding', tabMikrotikVisible && mikrotikConfig && mikrotikConfig.success);
-
-        console.log('--- Step 10: Plugins & Extensions (tab-plugins) ---');
-        await page.evaluate(async () => {
-            await window.App.switchTab('plugins');
-        });
-        await page.waitForTimeout(400);
-
-        const tabPluginsVisible = await page.evaluate(() => {
-            const tab = document.getElementById('tab-plugins');
-            return tab && !tab.classList.contains('hidden');
-        });
-        const pluginsRes = await page.evaluate(async () => {
-            return await API.request('/api/v1/kasir/settings/plugins/');
-        });
-        record('Tab Plugins Visible and Catalog Endpoint Responding', tabPluginsVisible && pluginsRes && pluginsRes.success);
-
-        console.log('--- Step 11: File Explorer Sandbox Security & Blacklist Check ---');
-        await page.evaluate(async () => {
-            if (window.App && App.switchTab) await App.switchTab('fileexplorer');
-        });
-        await page.waitForTimeout(600);
-
-        const fileExplorerSecurityCheck = await page.evaluate(async () => {
-            const tabFE = document.getElementById('tab-fileexplorer');
-            const isTabActive = tabFE && !tabFE.classList.contains('hidden');
-
-            let isBlacklistProtected = false;
-            let isTraversalBlocked = false;
-            try {
-                // 1. Cek pemanggilan list direktori root
-                const listRes = await API.fileexplorer.list();
-                const files = listRes.items || listRes.files || listRes.data || [];
-                const fileNames = files.map(f => (f.name || f.filename || '').toLowerCase());
-
-                // Pastikan .env, warnet.db, initial_admin.txt, .git TIDAK ADA dalam respons
-                const hasSensitive = fileNames.some(name => 
-                    name === '.env' || name === 'warnet.db' || name === 'initial_admin.txt' || name === '.git'
-                );
-                isBlacklistProtected = !hasSensitive;
-
-                // 2. Cek pemblokiran path traversal ../../
-                try {
-                    const traversalRes = await API.fileexplorer.list('../../');
-                    isTraversalBlocked = !traversalRes.success || !!traversalRes.error;
-                } catch(e) {
-                    isTraversalBlocked = true; // Exception status 400/403
-                }
-            } catch(err) {
-                isBlacklistProtected = true;
-                isTraversalBlocked = true;
-            }
-
-            return { isTabActive, isBlacklistProtected, isTraversalBlocked };
-        });
-        record('File Explorer Tab Active & Operational', fileExplorerSecurityCheck.isTabActive);
-        record('File Explorer Sensitive Files Blacklist Enforced (.env, warnet.db hidden)', fileExplorerSecurityCheck.isBlacklistProtected);
-        record('File Explorer Path Traversal Protection Active', fileExplorerSecurityCheck.isTraversalBlocked);
-
-        console.log('--- Step 11b: Cek Unik Hasil Port dari Suite Lama Full (Docs CMS, Branch 404, Modal, Plugin SPA) ---');
-
-        // Cek 1: halaman dokumentasi menampilkan daftar tutorial hasil seed.
-        try {
-            const docRes = await page.goto(`${BASE_URL}/kasir/documentation`, { waitUntil: 'networkidle' });
-            const docTitle = await page.title();
-            await page.waitForSelector('#wiki-sidebar button[onclick^="Tutorials.selectTutorial("]', { timeout: 5000 });
-            const tutorialCount = await page.evaluate(
-                () => document.querySelectorAll('#wiki-sidebar button[onclick^="Tutorials.selectTutorial("]').length
-            );
-            record(
-                'CMS Documentation lists seeded tutorials',
-                !!docRes && docRes.status() === 200 && tutorialCount > 0 && /Dokumentasi|TMBilling/i.test(docTitle),
-                `${tutorialCount} tutorial, status ${docRes ? docRes.status() : 'none'}, title "${docTitle}"`
-            );
-        } catch (err) {
-            record('CMS Documentation lists seeded tutorials', false, err.message);
-        }
-
-        // Kembali ke dashboard: Step 12 membutuhkan App/API pada shell kasir.
-        await page.goto(`${BASE_URL}/kasir/`, { waitUntil: 'domcontentloaded' });
-        await page.waitForSelector('#tab-dash', { state: 'visible', timeout: 5000 });
-
-        // Cek 2: endpoint branch lama sudah dihapus dari backend maupun API client.
-        try {
-            const branch = await page.evaluate(async () => {
-                const res = await fetch('/api/v1/kasir/branch/list');
-                return { status: res.status, apiBranchDefined: typeof API.branch !== 'undefined' };
-            });
-            record(
-                'Deprecated /api/v1/kasir/branch/list returns 404 & API.branch removed',
-                branch.status === 404 && branch.apiBranchDefined === false,
-                `HTTP ${branch.status}, API.branch defined: ${branch.apiBranchDefined}`
-            );
-        } catch (err) {
-            record('Deprecated /api/v1/kasir/branch/list returns 404 & API.branch removed', false, err.message);
-        }
-
-        // Cek 3: tab plugin-spa benar-benar dipasang oleh App.openPluginSPA (pemilik manifest coverage).
-        try {
-            const spa = await page.evaluate(() => {
-                App.openPluginSPA('/api/plugin/hello_world/test', 'E2E Plugin SPA');
-                const container = document.getElementById('tab-plugin-spa');
-                const iframe = document.getElementById('plugin-spa-iframe');
-                const titleEl = document.getElementById('page-title');
-                return {
-                    visible: !!container && !container.classList.contains('hidden'),
-                    src: iframe ? iframe.getAttribute('src') : null,
-                    title: titleEl ? titleEl.innerText : '',
-                };
-            });
-            record(
-                'Plugin SPA tab mounted via App.openPluginSPA',
-                spa.visible && spa.src === '/api/plugin/hello_world/test' && spa.title.trim().toUpperCase() === 'E2E PLUGIN SPA',
-                `visible=${spa.visible}, src=${spa.src}, title="${spa.title}"`
-            );
-        } catch (err) {
-            record('Plugin SPA tab mounted via App.openPluginSPA', false, err.message);
-        }
-
-        // Cek 4: siklus hidup modal dinamis (show -> close) tanpa sisa elemen.
-        try {
-            const modal = await page.evaluate(() => {
-                Modal.show('<div id="e2e-test-modal-content">E2E Modal Test</div>');
-                const isActive = !!Modal.activeModal && !!document.getElementById('e2e-test-modal-content');
-                Modal.closeModal();
-                const isClosed = !Modal.activeModal && !document.getElementById('e2e-test-modal-content');
-                return { isActive, isClosed };
-            });
-            record(
-                'Modal.show creates active modal & Modal.closeModal cleans it up',
-                modal.isActive && modal.isClosed,
-                `active=${modal.isActive}, closed=${modal.isClosed}`
-            );
-        } catch (err) {
-            record('Modal.show creates active modal & Modal.closeModal cleans it up', false, err.message);
-        }
-
-        console.log('--- Step 12: Kasir RBAC Restriction Check ---');
-        // Close admin's active shift first so another kasir can log in
-        await page.evaluate(async () => {
-            try {
-                const act = await API.shift.active();
-                if (act && act.success && act.shift) {
-                    await API.shift.end({ total_fisik: act.shift.modal_awal || 50000 });
-                }
-            } catch (e) {}
-        });
-
-        // Logout admin cleanly & clear cookies
-        await page.evaluate(async () => {
-            if (window.API && API.auth && API.auth.logout) {
-                try { await API.auth.logout(); } catch(e) {}
-            }
-        });
-        await page.context().clearCookies();
-        await page.goto('http://127.0.0.1:7016/kasir/login', { waitUntil: 'networkidle' });
-
-        // Login as kasir1
-        await page.fill('#username', 'kasir1');
-        await page.fill('#password', 'kasir123');
-        await page.click('#btn-login');
-        await page.waitForURL('**/kasir/', { timeout: 10000 }).catch(() => {});
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(500);
-
-        const kasirLogged = await page.evaluate(() => {
-            return window.App && window.App.user && window.App.user.role === 'kasir';
-        });
-        record('Kasir Login Verified', kasirLogged, `Role is ${kasirLogged ? 'kasir' : 'unknown'}`);
-
-        // Try to access settings_general as kasir
-        await page.evaluate(async () => {
-            await window.App.switchTab('settings_general');
-        });
-        await page.waitForTimeout(300);
-
-        const rbacSettingsBlocked = await page.evaluate(() => {
-            const tabSettings = document.getElementById('tab-settings');
-            // Must either be hidden or currentTab reverted to dash
-            return (window.App.currentTab === 'dash' || tabSettings.classList.contains('hidden'));
-        });
-        record('RBAC: Kasir Blocked from Settings', rbacSettingsBlocked);
-
-        // Try to access tab-user as kasir
-        await page.evaluate(async () => {
-            await window.App.switchTab('user');
-        });
-        await page.waitForTimeout(300);
-
-        const rbacUserBlocked = await page.evaluate(() => {
-            const tabUser = document.getElementById('tab-user');
-            return (window.App.currentTab === 'dash' || tabUser.classList.contains('hidden'));
-        });
-        record('RBAC: Kasir Blocked from User Management', rbacUserBlocked);
-
-        // Try to access analytics as kasir
-        await page.evaluate(async () => {
-            await window.App.switchTab('analytics');
-        });
-        await page.waitForTimeout(300);
-
-        const rbacAnalyticsBlocked = await page.evaluate(() => {
-            const tabAnalytics = document.getElementById('tab-analytics');
-            return (window.App.currentTab === 'dash' || tabAnalytics.classList.contains('hidden'));
-        });
-        record('RBAC: Kasir Blocked from Owner Analytics', rbacAnalyticsBlocked);
-
-        // Kasir Logout
-        await page.evaluate(async () => {
-            if (window.API && API.auth && API.auth.logout) {
-                try { await API.auth.logout(); } catch(e) {}
-            }
-        });
-        await page.context().clearCookies();
-        record('Kasir Clean Logout', true);
-
+        await freshLogin(page, 'admin');
     } catch (err) {
-        console.error('Fatal error in Settings/Admin/Logs E2E test:', err);
-        record('Execution Flow', false, err.message);
+        for (const name of ['Admin login dan role admin terverifikasi']) {
+            await check(report, name, async () => { throw err; });
+        }
+        return finish(report);
     }
 
-    const passedCount = results.filter(r => r.passed).length;
-    const failedCount = results.filter(r => !r.passed).length;
-    console.log(`\n========================================`);
-    console.log(`E2E SUMMARY: ${passedCount} PASSED, ${failedCount} FAILED (Total: ${results.length})`);
-    console.log(`========================================\n`);
+    await check(report, 'Admin login dan role admin terverifikasi', async () => {
+        const role = await page.evaluate(() => window.App && App.user && App.user.role);
+        assert.strictEqual(role, 'admin');
+    });
 
-    return { total: results.length, passed: passedCount, failed: failedCount, results };
+    await check(report, 'Payload settings admin memuat client_api_key sandbox dan mikrotik_password', async () => {
+        const res = await page.evaluate(() => API.settings.getAll());
+        assert.ok(res && res.success, 'settings admin gagal dimuat');
+        adminSettings = res.settings;
+        assert.strictEqual(adminSettings.client_api_key, CLIENT_API_KEY);
+        assert.ok('mikrotik_password' in adminSettings, 'mikrotik_password harus ada untuk admin');
+        assert.ok(adminSettings.payment_methods, 'payment_methods harus ada');
+        originalTitle = adminSettings.warnet_title;
+        assert.ok(originalTitle, 'warnet_title harus ada');
+    });
+
+    await check(report, 'Sepuluh subtab settings tampil eksklusif satu per satu', async () => {
+        const subtabs = ['general', 'payment', 'kiosk', 'whitelist_ip', 'cloudflare_tunnel', 'scheduler', 'cloud_backup', 'local_backup', 'db_cleanup', 'migration'];
+        for (const sub of subtabs) {
+            await settingsTab(page, sub);
+            const state = await page.evaluate((name) => {
+                const all = Array.from(document.querySelectorAll('.subtab-content'));
+                const target = document.getElementById(`subtab-${name}`);
+                return {
+                    found: !!target,
+                    visible: !!target && !target.classList.contains('hidden'),
+                    visibleCount: all.filter((el) => !el.classList.contains('hidden')).length,
+                    targetId: target ? target.id : null,
+                };
+            }, sub);
+            assert.ok(state.found, `subtab-${sub} tidak ada di DOM`);
+            assert.ok(state.visible, `subtab-${sub} tidak tampil`);
+            assert.strictEqual(state.visibleCount, 1, `subtab lain ikut tampil saat ${sub}`);
+        }
+    });
+
+    const uniqueTitle = `Warnet E2E ${unique('judul')}`;
+    await check(report, 'Simpan judul warnet lewat UI tersimpan di DB dan bisa dipulihkan', async () => {
+        // Input judul berada di sub-tab kiosk (Profil & Struk), bukan general.
+        await settingsTab(page, 'kiosk');
+        await page.fill('#warnet-title-input', uniqueTitle);
+        await page.evaluate(() => Settings.saveWarnetTitle());
+        await dbWait('SELECT value FROM settings WHERE key = ?', ['warnet_title'], (rows) => rows.length === 1 && rows[0].value === uniqueTitle, 'warnet_title tersimpan');
+
+        const restore = await http(page, 'PUT', '/api/v1/kasir/settings/warnet_title', { value: originalTitle });
+        assert.strictEqual(restore.status, 200, `restore gagal: ${restore.text}`);
+        assert.strictEqual(await settingValue('warnet_title'), originalTitle);
+    });
+
+    await check(report, 'Uninstall/emergency token acak, bukan string legacy, dan stabil di dua panggilan', async () => {
+        const url = `${BASE_URL}/api/v1/kasir/settings/uninstall-token/client`;
+        const headers = { 'X-Client-Key': CLIENT_API_KEY };
+        const first = await page.request.get(url, { headers });
+        assert.strictEqual(first.status(), 200);
+        const a = await first.json();
+        assert.strictEqual(a.success, true);
+        const second = await page.request.get(url, { headers });
+        const b = await second.json();
+
+        for (const token of [a.uninstall_token, a.emergency_token]) {
+            assert.ok(typeof token === 'string' && /^[A-Za-z0-9_-]{32,}$/.test(token), `token tidak acak/url-safe: ${token}`);
+            LEGACY_TOKENS.forEach((legacy) => assert.notStrictEqual(token, legacy, 'token legacy masih dipakai'));
+        }
+        assert.notStrictEqual(a.uninstall_token, a.emergency_token, 'dua token tidak boleh sama');
+        assert.strictEqual(b.uninstall_token, a.uninstall_token, 'token uninstall berubah antar panggilan');
+        assert.strictEqual(b.emergency_token, a.emergency_token, 'token emergency berubah antar panggilan');
+        assert.strictEqual(await settingValue('uninstall_token'), a.uninstall_token);
+        assert.strictEqual(await settingValue('emergency_token'), a.emergency_token);
+    });
+
+    await check(report, 'Endpoint token menolak request tanpa X-Client-Key dengan 401', async () => {
+        const res = await page.request.get(`${BASE_URL}/api/v1/kasir/settings/uninstall-token/client`);
+        assert.strictEqual(res.status(), 401);
+        const body = await res.json();
+        assert.match(body.error, /API Key tidak valid/i);
+    });
+
+    kasirUsername = unique('kasir_e2e').replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 30);
+    await check(report, 'User kasir baru dibuat lewat UI dan tercatat di DB', async () => {
+        await tab(page, 'user');
+        await page.evaluate(() => User.openAddModal());
+        await page.waitForSelector('#inp-user-username', { state: 'visible', timeout: 5000 });
+        await page.fill('#inp-user-username', kasirUsername);
+        await page.fill('#inp-user-nama', 'Kasir E2E Task 11');
+        await page.fill('#inp-user-pass', kasirPassword);
+        await page.selectOption('#inp-user-role', 'kasir');
+        await page.selectOption('#inp-user-aktif', 'true');
+        await page.fill('#inp-user-kuota', '1');
+        await page.click('button[onclick="User.addOrupdate()"]');
+
+        const rows = await dbWait('SELECT id, username, role, aktif FROM user WHERE username = ?', [kasirUsername], (r) => r.length === 1, 'user baru tersimpan');
+        kasirId = rows[0].id;
+        assert.strictEqual(rows[0].role, 'kasir');
+        assert.strictEqual(Number(rows[0].aktif), 1);
+        await page.waitForFunction((name) => document.getElementById('user-table').innerText.includes(name), kasirUsername, { timeout: 5000 });
+    });
+
+    await check(report, 'File explorer mendaftar root dengan 200 dan menyembunyikan entri sensitif', async () => {
+        await tab(page, 'fileexplorer');
+        const rootsRes = await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/roots`);
+        assert.strictEqual(rootsRes.status(), 200);
+        const roots = (await rootsRes.json()).roots;
+        assert.ok(Array.isArray(roots) && roots.length > 0, 'root file explorer kosong');
+
+        const listRes = await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/list`, { params: { path: roots[0] } });
+        assert.strictEqual(listRes.status(), 200);
+        const listing = await listRes.json();
+        assert.ok(Array.isArray(listing.items) && listing.items.length > 0, 'listing root kosong');
+        const names = listing.items.map((item) => String(item.name).toLowerCase());
+        SENSITIVE_BLACKLIST.forEach((bad) => assert.ok(!names.includes(bad), `${bad} bocor di listing`));
+    });
+
+    await check(report, 'File explorer menolak path traversal ../../ dengan 400', async () => {
+        const roots = (await (await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/roots`)).json()).roots;
+        const res = await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/list`, { params: { path: `${roots[0]}/../..` } });
+        assert.strictEqual(res.status(), 400);
+        const body = await res.json();
+        assert.strictEqual(body.success, false);
+        assert.match(body.error, /di luar batasan direktori/i);
+    });
+
+    await check(report, 'File explorer menolak berkas sensitif .env, warnet.db, initial_admin.txt, dan .git', async () => {
+        const roots = (await (await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/roots`)).json()).roots;
+        const root = roots[0];
+        for (const name of ['.env', 'warnet.db', 'initial_admin.txt']) {
+            const res = await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/read`, { params: { path: `${root}/${name}` } });
+            assert.strictEqual(res.status(), 400, `${name} tidak ditolak (HTTP ${res.status()})`);
+            const body = await res.json();
+            assert.match(body.error, /dilindungi oleh sistem keamanan/i, `pesan ${name}: ${body.error}`);
+        }
+        const dirRes = await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/list`, { params: { path: `${root}/.git` } });
+        assert.strictEqual(dirRes.status(), 400);
+        assert.match((await dirRes.json()).error, /dilindungi oleh sistem keamanan/i);
+    });
+
+    await check(report, 'Plugin terpasang tampil sesuai manifest dan toggle tersimpan di DB', async () => {
+        const manifestPath = path.join(__dirname, '..', '..', 'plugins', 'hello_world', 'manifest.json');
+        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+        const apiRes = await page.request.get(`${BASE_URL}/api/v1/kasir/settings/plugins/`);
+        assert.strictEqual(apiRes.status(), 200);
+        const listed = (await apiRes.json()).plugins.find((p) => p.id === manifest.id);
+        assert.ok(listed, `plugin ${manifest.id} tidak ada di manifest manager`);
+        assert.strictEqual(listed.name, manifest.name);
+        assert.strictEqual(listed.version, manifest.version);
+
+        await tab(page, 'plugins');
+        await page.waitForFunction((name) => document.getElementById('plugins-grid').innerText.includes(name), manifest.name, { timeout: 5000 });
+
+        const key = `plugin_${manifest.id}_enabled`;
+        const before = await settingValue(key);
+        const firstValue = before === 'true' ? 'false' : 'true';
+        await page.evaluate((id) => {
+            document.querySelector(`input[onchange*="togglePlugin('${id}'"]`).click();
+        }, manifest.id);
+        await dbWait('SELECT value FROM settings WHERE key = ?', [key], (r) => r.length === 1 && r[0].value === firstValue, 'toggle plugin tersimpan');
+        await page.evaluate((id) => {
+            document.querySelector(`input[onchange*="togglePlugin('${id}'"]`).click();
+        }, manifest.id);
+        const afterSecond = before === 'true' ? 'true' : 'false';
+        await dbWait('SELECT value FROM settings WHERE key = ?', [key], (r) => r.length === 1 && r[0].value === afterSecond, 'toggle plugin kembali');
+    });
+
+    await check(report, 'Audit log memuat aksi nyata SETTINGS_UPDATE lewat filter unik', async () => {
+        const res = await page.request.get(`${BASE_URL}/api/v1/kasir/report/log`, { params: { filter: uniqueTitle, limit: 20 } });
+        assert.strictEqual(res.status(), 200);
+        const body = await res.json();
+        const hit = body.logs.find((log) => log.action === 'SETTINGS_UPDATE' && log.detail_json && log.detail_json.new_value === uniqueTitle);
+        assert.ok(hit, `SETTINGS_UPDATE ${uniqueTitle} tidak ditemukan: ${JSON.stringify(body.logs.map((l) => l.action))}`);
+        assert.strictEqual(hit.detail_json.key, 'warnet_title');
+        assert.strictEqual(hit.user, 'admin');
+        body.logs.forEach((log) => assert.ok(log.raw.toLowerCase().includes(uniqueTitle.toLowerCase()), 'filter tidak menyaring baris lain'));
+    });
+
+    await check(report, 'Audit log memfilter kategori AUTHENTICATION dan menghormati limit', async () => {
+        const res = await page.request.get(`${BASE_URL}/api/v1/kasir/report/log`, { params: { kategori: 'AUTHENTICATION', limit: 2 } });
+        assert.strictEqual(res.status(), 200);
+        const body = await res.json();
+        assert.strictEqual(body.logs.length, 2, 'limit tidak dihormati');
+        body.logs.forEach((log) => assert.strictEqual(log.category, 'AUTHENTICATION'));
+    });
+
+    // --- Cek warisan suite lama (jangan diduplikasi di suite lain) ---
+
+    await check(report, 'CMS documentation menampilkan tutorial hasil seed', async () => {
+        const res = await page.goto(`${BASE_URL}/kasir/documentation`, { waitUntil: 'domcontentloaded' });
+        await page.waitForSelector('#wiki-sidebar button[onclick^="Tutorials.selectTutorial("]', { timeout: 5000 });
+        const count = await page.evaluate(() => document.querySelectorAll('#wiki-sidebar button[onclick^="Tutorials.selectTutorial("]').length);
+        const title = await page.title();
+        assert.strictEqual(res.status(), 200);
+        assert.ok(count > 0);
+        assert.match(title, /Dokumentasi|TMBilling/i);
+        await page.goto(`${BASE_URL}/kasir/`, { waitUntil: 'domcontentloaded' });
+        await page.waitForSelector('#tab-dash', { state: 'visible', timeout: 5000 });
+    });
+
+    await check(report, 'Endpoint branch lama 404 dan API.branch sudah dihapus', async () => {
+        const branch = await page.evaluate(async () => {
+            const res = await fetch('/api/v1/kasir/branch/list');
+            return { status: res.status, apiBranchDefined: typeof API.branch !== 'undefined' };
+        });
+        assert.strictEqual(branch.status, 404);
+        assert.strictEqual(branch.apiBranchDefined, false);
+    });
+
+    await check(report, 'Plugin SPA terpasang lewat App.openPluginSPA', async () => {
+        const spa = await page.evaluate(() => {
+            App.openPluginSPA('/api/plugin/hello_world/test', 'E2E Plugin SPA');
+            const container = document.getElementById('tab-plugin-spa');
+            const iframe = document.getElementById('plugin-spa-iframe');
+            const titleEl = document.getElementById('page-title');
+            return {
+                visible: !!container && !container.classList.contains('hidden'),
+                src: iframe ? iframe.getAttribute('src') : null,
+                title: titleEl ? titleEl.innerText : '',
+            };
+        });
+        assert.strictEqual(spa.visible, true);
+        assert.strictEqual(spa.src, '/api/plugin/hello_world/test');
+        assert.strictEqual(spa.title.trim().toUpperCase(), 'E2E PLUGIN SPA');
+    });
+
+    await check(report, 'Modal.show membuat modal aktif dan Modal.closeModal membersihkannya', async () => {
+        const modal = await page.evaluate(() => {
+            Modal.show('<div id="e2e-test-modal-content">E2E Modal Test</div>');
+            const isActive = !!Modal.activeModal && !!document.getElementById('e2e-test-modal-content');
+            Modal.closeModal();
+            const isClosed = !Modal.activeModal && !document.getElementById('e2e-test-modal-content');
+            return { isActive, isClosed };
+        });
+        assert.strictEqual(modal.isActive, true);
+        assert.strictEqual(modal.isClosed, true);
+    });
+
+    // --- Sesi kasir: redaksi payload, 403, dan pembatasan tab ---
+
+    await check(report, 'Akun kasir baru bisa login dan ditolak 403 di endpoint admin', async () => {
+        await loginAs(page, kasirUsername, kasirPassword);
+        await page.waitForURL(/\/kasir\/?$/, { timeout: 5000 });
+        await page.waitForSelector('#tab-dash', { state: 'visible', timeout: 5000 });
+        const role = await page.evaluate(() => App.user && App.user.role);
+        assert.strictEqual(role, 'kasir');
+
+        const res = await page.request.get(`${BASE_URL}/api/v1/kasir/user/`);
+        assert.strictEqual(res.status(), 403);
+        const body = await res.json();
+        assert.match(body.error, /Hanya Admin yang diizinkan/i);
+    });
+
+    await check(report, 'Payload settings kasir hanya berisi payment_methods dan vnc_password', async () => {
+        const res = await page.evaluate(() => API.settings.getAll());
+        assert.ok(res && res.success);
+        const keys = Object.keys(res.settings).sort();
+        assert.deepStrictEqual(keys, ['payment_methods', 'vnc_password']);
+        Array.from(new Set([...ADMIN_SETTINGS_KEYS, 'backup_gdrive_client_id', 'backup_gdrive_client_secret', 'backup_gdrive_folder_id', 'uninstall_token', 'emergency_token']))
+            .forEach((key) => assert.ok(!(key in res.settings), `${key} bocor ke kasir`));
+        const adminOnly = Object.keys(adminSettings).filter((key) => !(key in res.settings));
+        assert.ok(adminOnly.length > 0, 'payload admin dan kasir tidak berbeda');
+        assert.strictEqual(res.settings.vnc_password, await settingValue('vnc_password'));
+    });
+
+    await check(report, 'Mutasi admin oleh kasir ditolak 403 dan tidak mengubah data', async () => {
+        const titleBefore = await settingValue('warnet_title');
+        const pluginKey = 'plugin_hello_world_enabled';
+        const pluginBefore = await settingValue(pluginKey);
+
+        const attempts = [
+            await http(page, 'PUT', '/api/v1/kasir/settings/warnet_title', { value: 'HACKED-E2E' }),
+            await http(page, 'POST', '/api/v1/kasir/user/', { username: `${kasirUsername}_evil`, password: 'hunter22', role: 'admin', aktif: true }),
+            await http(page, 'POST', '/api/v1/kasir/settings/backup/manual'),
+            await http(page, 'POST', '/api/v1/kasir/settings/plugins/toggle', { plugin_id: 'hello_world', enabled: false }),
+        ];
+        attempts.forEach((res, idx) => {
+            assert.strictEqual(res.status, 403, `upaya ${idx} tidak 403: ${res.status} ${res.text}`);
+        });
+        const rootsRes = await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/roots`);
+        assert.strictEqual(rootsRes.status(), 403);
+        assert.match((await rootsRes.json()).error, /Hanya Admin/i);
+
+        assert.strictEqual(await settingValue('warnet_title'), titleBefore);
+        assert.strictEqual(await settingValue(pluginKey), pluginBefore);
+        assert.strictEqual(await dbCount('SELECT COUNT(*) AS c FROM user WHERE username = ?', [`${kasirUsername}_evil`]), 0);
+    });
+
+    await check(report, 'Tab khusus admin ditolak untuk sesi kasir', async () => {
+        for (const restricted of ['settings_general', 'user', 'analytics']) {
+            await page.evaluate((id) => App.switchTab(id), restricted);
+            const state = await page.evaluate(() => ({ tab: App.currentTab, dash: !document.getElementById('tab-dash').classList.contains('hidden') }));
+            assert.strictEqual(state.tab, 'dash', `${restricted} tidak dipantulkan ke dash`);
+            assert.strictEqual(state.dash, true);
+        }
+    });
+
+    // --- Nonaktifkan lalu hapus user: login harus benar-benar diblokir ---
+
+    await check(report, 'User dinonaktifkan lewat UI tidak bisa dipakai login', async () => {
+        await freshLogin(page, 'admin');
+        await tab(page, 'user');
+        await page.evaluate((id) => User.edit(id), kasirId);
+        await page.waitForSelector('#inp-user-aktif', { state: 'visible', timeout: 5000 });
+        await page.selectOption('#inp-user-aktif', 'false');
+        await page.click('button[onclick="User.addOrupdate()"]');
+        await dbWait('SELECT aktif FROM user WHERE id = ?', [kasirId], (rows) => rows.length === 1 && Number(rows[0].aktif) === 0, 'user nonaktif tersimpan');
+
+        // `UserRepository.get_by_username()` hanya mengembalikan user aktif, jadi
+        // kredensial user nonaktif sudah ditolak 401 sebelum sesi dibuat.
+        // Sesi admin dilepas dulu agar `/auth/check` benar-benar menguji sesi kosong.
+        await dropSession(page);
+        const csrf = await page.evaluate(() => document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        const loginRes = await page.request.post(`${BASE_URL}/api/v1/kasir/auth/login`, {
+            headers: { 'X-CSRFToken': csrf },
+            data: { username: kasirUsername, password: kasirPassword },
+        });
+        assert.strictEqual(loginRes.status(), 401, `login user nonaktif: ${loginRes.status()}`);
+        assert.match((await loginRes.json()).error, /Username atau password salah/i);
+        const checkRes = await page.request.get(`${BASE_URL}/api/v1/kasir/auth/check`);
+        assert.strictEqual((await checkRes.json()).logged_in, false, 'sesi user nonaktif masih dianggap login');
+        const adminRes = await page.request.get(`${BASE_URL}/api/v1/kasir/user/`);
+        assert.strictEqual(adminRes.status(), 401);
+    });
+
+    await check(report, 'User dihapus lewat UI hilang dari DB dan login ditolak 401', async () => {
+        await freshLogin(page, 'admin');
+        await tab(page, 'user');
+        await page.evaluate(([id, name]) => User.delete(id, name), [kasirId, kasirUsername]);
+        await page.waitForSelector('#modal-confirm-btn', { state: 'visible', timeout: 5000 });
+        await page.click('#modal-confirm-btn');
+        await dbWait('SELECT id FROM user WHERE id = ?', [kasirId], (rows) => rows.length === 0, 'user terhapus dari DB');
+
+        await dropSession(page);
+        const csrf = await page.evaluate(() => document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        const loginRes = await page.request.post(`${BASE_URL}/api/v1/kasir/auth/login`, {
+            headers: { 'X-CSRFToken': csrf },
+            data: { username: kasirUsername, password: kasirPassword },
+        });
+        assert.strictEqual(loginRes.status(), 401);
+        assert.match((await loginRes.json()).error, /Username atau password salah/i);
+    });
+
+    await logout(page);
+    return finish(report);
 }
 
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { runSettingsAdminLogsE2ETest };
 }
-return runSettingsAdminLogsE2ETest;
-})()
