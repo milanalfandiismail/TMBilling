@@ -59,8 +59,9 @@ class GameService:
         return str(kat_val)
 
     @staticmethod
-    def get_all(aktif_only=False, category=None, tipe=None, search_query=None):
-        return GameRepository.get_all(aktif_only=aktif_only, category=category, tipe=tipe, search_query=search_query)
+    def get_all(aktif_only=False, category=None, tipe=None, search_query=None, limit=None, offset=0):
+        return GameRepository.get_all(aktif_only=aktif_only, category=category, tipe=tipe, search_query=search_query,
+                                      limit=limit, offset=offset)
 
     @staticmethod
     def create(data, icon_file=None, operator=None):

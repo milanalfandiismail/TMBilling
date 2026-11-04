@@ -5,7 +5,7 @@ from app.models.game.game import Game
 
 class GameRepository:
     @staticmethod
-    def get_all(aktif_only=False, category=None, tipe=None, search_query=None):
+    def get_all(aktif_only=False, category=None, tipe=None, search_query=None, limit=None, offset=0):
         query = Game.query
         
         if aktif_only:
@@ -25,7 +25,13 @@ class GameRepository:
                 )
             )
             
-        return query.order_by(Game.nama).all()
+        query = query.order_by(Game.nama)
+        # Pagination hanya aktif bila nilainya valid, agar default tetap mengembalikan semua data.
+        if offset and offset > 0:
+            query = query.offset(offset)
+        if limit and limit > 0:
+            query = query.limit(limit)
+        return query.all()
 
     @staticmethod
     def get_by_id(game_id):
