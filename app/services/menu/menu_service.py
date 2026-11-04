@@ -392,8 +392,6 @@ class MenuService:
             base_kasir_username = kasir_username.split(" (")[0].strip() if " (" in kasir_username else kasir_username
             kasir = UserRepository.get_by_username(base_kasir_username)
             if not kasir:
-                kasir = UserRepository.get_first_admin()
-            if not kasir:
                 raise ValueError("Kasir tidak valid")
 
             real_operator = operator if (operator and operator != "system") else kasir_username

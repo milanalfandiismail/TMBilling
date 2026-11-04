@@ -14,14 +14,11 @@ class TransaksiService:
 
     @staticmethod
     def get_user_id(operator):
+        """ID user operator; None bila tidak dikenal (jangan menebak admin pertama)."""
         if operator and operator != "system":
             base_operator = operator.split(" (")[0].strip() if " (" in operator else operator
             user = UserRepository.get_by_username(base_operator)
-            if user:
-                return user.id
-            first_admin = UserRepository.get_first_admin()
-            if first_admin:
-                return first_admin.id
+            return user.id if user else None
         return None
     """Service untuk mengelola logika bisnis transaksi."""
 
