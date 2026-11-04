@@ -21,12 +21,11 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Heartbeat Klien**: `sesi.last_sync` kini disimpan tiap 30 detik (`ClientService.HEARTBEAT_PERSIST_SECONDS`) sehingga deteksi blackout berlaku untuk sesi guest; penulisan `pc.last_activity` per poll tanpa commit dihapus (poll turun dari 5 statement menjadi 3 SELECT tanpa UPDATE).
 - **Jalur Panas**: Eager load hardware/PC/grup pada tab monitor, cache stat file screenshot 5 detik, batch sesi portal member publik, katalog `/spesifikasi` bebas N+1, arsip menu satu query `GROUP BY`, prefetch sesi aktif pada daftar PC, dan pagination opsional katalog game publik.
 - **Infrastruktur**: `SettingsCacheStore.update_dict` ditambahkan (mencegah error 500 saat tabel settings kosong) dan warmup dijalankan di luar lock; `ProcessMemoryStore` diberi TTL 300 detik; rebuild `PCNetworkCacheStore` di luar lock; logger tanpa `print` per entri dan membaca ekor file saja; guard anti-tumpuk serta jeda polling saat tab dashboard disembunyikan.
-- Dashboard kasir tidak lagi menembak request laporan kedua tiap detik; omzet diambil dari
-  payload dashboard dan jumlah sesi aktif memakai `SesiRepository.count_aktif()`.
+- **Dashboard**: `Dashboard.updateStats()` tidak lagi memanggil `API.report.harian()` (blok mati karena elemen `stat-*` tidak ada di template); omzet dibaca dari payload dashboard dan jumlah sesi aktif memakai `SesiRepository.count_aktif()` (4,1 ms menjadi 0,2 ms pada 200 sesi).
 - Index `ix_transaksi_menu_tanggal` untuk filter tanggal FnB yang dipanggil tiap detik.
 - Status billing PC di-cache di `UptimeMemoryStore`; telemetri tidak lagi query sesi per tick.
 - Laporan uptime tidak menulis database di jalur GET dan memakai eager load PC/grup.
-- Daftar member eager load grup & sesi (satu query, bukan satu per member).
+- Daftar member eager load grup & sesi (dua query tetap, bukan satu per member).
 - `sync_waktu_member` tidak commit sendiri; ikut commit heartbeat 30 detik.
 - Settings yang tidak ada di-cache negatif (1 query untuk banyak pemanggilan).
 - Payload TV di-cache 5 detik.
