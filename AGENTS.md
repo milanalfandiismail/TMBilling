@@ -250,7 +250,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Public Specs & Hardware Catalog** | `templates/public/specs/index.html` (compact 2-column mobile card grid, debounced search & modal controller) | `app/__init__.py:public_specs()` (structured catalog JSON) | `PC`, `HardwareMonitor`, `Grup` |
 | **Manajemen Plugins & Ekstensi** | `modules/settings/plugins.js` | `routes/settings/plugin_routes.py`, `services/plugins/` | Plugin manifest |
 | **Frontend CPU & Zero-Thrashing** | `modules/dashboard/dashboard_compact.js`, `core/skeleton.js` | `templates/kasir/base.html`, `tailwind.config.js` | Strict dirty-checking, zero infinite keyframe loops |
-| **Responsive Tailwind Reflow** | `modules/dashboard/dashboard_compact.js`, `core/modal.js` | `templates/kasir/base.html`, `templates/kasir/components/navbar.html`, `sidebar.html` | Pure Tailwind Breakpoints (`sm`, `md`, `lg`, `xl`, `2xl`), `max-h-[90dvh]`, zero horizontal overflow across 31 tabs |
+| **Responsive Tailwind Reflow** | `modules/dashboard/dashboard_compact.js`, `core/modal.js` | `templates/kasir/base.html`, `templates/kasir/components/navbar.html`, `sidebar.html` | Pure Tailwind Breakpoints (`< sm`, `sm`, `md`, `lg`, `xl`, `2xl`), `max-h-[90dvh]`, zero horizontal overflow across all 40 views (31 kasir tabs, 1 SPA iframe, 8 public portals) |
 
 ---
 
@@ -280,7 +280,7 @@ build_and_deploy.bat
 # Eksekusi Comprehensive E2E Playwright Suite (29 Tab, Subtabs, 58+ Modals, Full CRUD)
 # via MCP Playwright tool browser_run_code_unsafe dengan tests/playwright_e2e_full_suite.js
 
-# Eksekusi Responsive Breakpoints Verification (174 Checks across 29 Tabs & 6 Tailwind Breakpoints)
+# Eksekusi Responsive Breakpoints Verification (240 Checks across 40 Views & 6 Tailwind Breakpoints)
 # via MCP Playwright tool browser_run_code_unsafe dengan tests/playwright_responsive_breakpoints.js
 
 # Menjalankan Master Runner E2E Sandbox Terisolasi (Zero Database Mutation Guarantee)
@@ -291,7 +291,7 @@ npm run test:e2e
 npm run test:e2e:sandbox
 # atau langsung via Python: .venv\Scripts\python.exe tests/e2e/e2e_sandbox_server.py --standalone 7016
 
-# Eksekusi Rangkaian 8 Modul Interaktif E2E User-Journey Playwright (125 Checks, 0 Failures)
+# Eksekusi Rangkaian E2E Lengkap Stage 1 & Stage 2 (382 Checks, 0 Failures, 100% Pass)
 # via MCP Playwright tool browser_run_code_unsafe dengan tests/e2e/run_all_e2e.js
 ```
 
