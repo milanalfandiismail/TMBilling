@@ -89,6 +89,14 @@ class MenuRepository:
         return TransaksiMenu.query.filter(TransaksiMenu.no_nota.like(f"{prefix}%")).count()
 
     @staticmethod
+    def get_last_nota_today(date_str):
+        """Ambil transaksi menu terakhir hari ini berdasarkan format nota TMM-YYYYMMDD-."""
+        prefix = f"TMM-{date_str}-"
+        return TransaksiMenu.query.filter(
+            TransaksiMenu.no_nota.like(f"{prefix}%")
+        ).order_by(TransaksiMenu.no_nota.desc()).first()
+
+    @staticmethod
     def _apply_kasir_filter(query, kasir_id):
         """Menerapkan filter kasir secara akurat (lokal vs remote operator)."""
         if not kasir_id or str(kasir_id).strip().lower() in ["", "semua", "none"]:

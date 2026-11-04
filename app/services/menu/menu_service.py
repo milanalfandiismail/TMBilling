@@ -360,15 +360,27 @@ class MenuService:
     def generate_nota_menu():
         """Generate nomor nota transaksi menu unik dengan format TMM-YYYYMMDD-NNN."""
         from app.utils.timezone_utils import display_in_tz, now_utc
+        from app.models import TransaksiMenu
         today_local = display_in_tz(now_utc())
         date_str = today_local.strftime('%Y%m%d')
         prefix = f"TMM-{date_str}-"
         
-        # Cari total transaksi hari ini untuk penomoran
-        # Menggunakan pencarian prefix agar kebal terhadap isu timezone
-        count_today = MenuRepository.count_transactions_by_prefix(prefix)
-        new_num = count_today + 1
-        return f"{prefix}{str(new_num).zfill(3)}"
+        last_tm = MenuRepository.get_last_nota_today(date_str)
+        if last_tm and last_tm.no_nota:
+            try:
+                last_num = int(last_tm.no_nota.split('-')[-1])
+                new_num = last_num + 1
+            except (ValueError, IndexError):
+                new_num = 1
+        else:
+            new_num = 1
+            
+        candidate = f"{prefix}{str(new_num).zfill(3)}"
+        while TransaksiMenu.query.filter_by(no_nota=candidate).first() is not None:
+            new_num += 1
+            candidate = f"{prefix}{str(new_num).zfill(3)}"
+            
+        return candidate
 
     @staticmethod
     def checkout_menu_order(cart_items, pc_kode, kasir_username, operator="system", tunai=0, kembalian=0, metode_pembayaran="Tunai"):
@@ -386,14 +398,8 @@ class MenuService:
 
             real_operator = operator if (operator and operator != "system") else kasir_username
 
-            from app.utils.timezone_utils import display_in_tz, now_utc
-            today_local = display_in_tz(now_utc())
-            date_str = today_local.strftime('%Y%m%d')
-            prefix = f"TMM-{date_str}-"
-            count_today = MenuRepository.count_transactions_by_prefix(prefix)
-            
             # Buat satu nomor nota untuk seluruh item dalam keranjang
-            no_nota = f"{prefix}{str(count_today + 1).zfill(3)}"
+            no_nota = MenuService.generate_nota_menu()
 
             # Hitung total belanja dan validasi item
             parsed_items = []

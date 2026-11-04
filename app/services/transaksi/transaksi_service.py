@@ -50,4 +50,9 @@ class TransaksiService:
         else:
             new_num = 1
             
-        return f"{prefix}{str(new_num).zfill(3)}"
+        from app.models import Transaksi
+        candidate = f"{prefix}{str(new_num).zfill(3)}"
+        while Transaksi.query.filter_by(no_nota=candidate).first() is not None:
+            new_num += 1
+            candidate = f"{prefix}{str(new_num).zfill(3)}"
+        return candidate
