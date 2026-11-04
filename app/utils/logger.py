@@ -259,8 +259,6 @@ def write_log(aksi, detail, user="kasir", detail_json=None, category=None):
                 f.write(log_line)
     except Exception as e:
         print(f"[LOG_ERROR] Gagal menulis ke log: {e}")
-    
-    print(f"[LOG] {now} [{user}] {aksi} - {detail}")
 
 
 def read_logs(limit=500, filter_text=None):
@@ -276,13 +274,16 @@ def read_logs(limit=500, filter_text=None):
     """
     if not os.path.exists(LOG_FILE):
         return []
-    
-    logs = []
+
+    # shortcut: filter hanya memindai maksimal 5x limit baris terakhir, upgrade bila butuh pencarian seluruh riwayat
+    from collections import deque
+    tail = deque(maxlen=max(limit * 5, limit))
     with open(LOG_FILE, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-    
-    # Balik urutan (yang terbaru di atas)
-    for line in reversed(lines):
+        for line in f:
+            tail.append(line)
+
+    logs = []
+    for line in reversed(tail):
         line_str = line.strip()
         if not line_str:
             continue
@@ -291,7 +292,7 @@ def read_logs(limit=500, filter_text=None):
         logs.append(line_str)
         if len(logs) >= limit:
             break
-    
+
     return logs
 
 
