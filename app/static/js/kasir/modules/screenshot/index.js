@@ -72,6 +72,11 @@ const Screenshot = {
     stopPolling() { },
 
     async load(isSilent = false) {
+        // Screenshot baru muncul tiap beberapa detik; lewati tick silent yang terlalu rapat.
+        const nowTs = Date.now();
+        if (isSilent && this._lastFetchTs && nowTs - this._lastFetchTs < 2000) return;
+        this._lastFetchTs = nowTs;
+
         if (this._isFetching) return;
         this._isFetching = true;
 
@@ -281,7 +286,7 @@ const Screenshot = {
                 }
             }
             Toast.show(`Perintah screenshot dikirim ke ${successCount} PC (${groupName})`, "success");
-            setTimeout(() => this.load(true), 3000);
+            setTimeout(() => this.load(), 3000);
         } catch (error) {
             console.error("Error trigger group screenshot:", error);
             Toast.show("Terjadi kesalahan saat memicu screenshot", "error");
@@ -299,7 +304,7 @@ const Screenshot = {
             });
             if (data && data.success) {
                 Toast.show(`Perintah screenshot dikirim`, "success");
-                setTimeout(() => this.load(true), 3000);
+                setTimeout(() => this.load(), 3000);
             } else {
                 Toast.show(data?.error || "Gagal mengirim perintah", "error");
             }

@@ -43,6 +43,11 @@ const Monitor = {
     },
 
     async load(isSilent = false) {
+        // Data hardware berubah tiap 2-5 detik; poll 1 detik membuang request.
+        const nowTs = Date.now();
+        if (isSilent && this._lastFetchTs && nowTs - this._lastFetchTs < 2000) return;
+        this._lastFetchTs = nowTs;
+
         const container = document.getElementById('monitor-table');
         if (container && !isSilent && (!this._lastData || this._lastData.length === 0) && typeof Skeleton !== 'undefined') {
             container.innerHTML = Skeleton.monitorRows(8);
