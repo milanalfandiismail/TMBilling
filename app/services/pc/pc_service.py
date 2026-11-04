@@ -5,7 +5,9 @@
 Modul ini menangani CRUD PC, bulk creation, dan status summary.
 """
 
-from app.models import PC, db, now_local
+from sqlalchemy.orm import joinedload
+
+from app.models import PC, Sesi, db, now_local
 from app.repositories import PCRepository
 from app.repositories import SesiRepository
 from app.repositories import GrupRepository
@@ -77,14 +79,37 @@ class PCService:
         }
 
     @staticmethod
-    def group_by_grup(pcs):
+    def get_sesi_map():
+        """Peta pc_id -> sesi aktif dalam satu query (hindari N+1 pada daftar PC)."""
+        active_sessions = (
+            Sesi.query.options(
+                joinedload(Sesi.member),
+                joinedload(Sesi.user),
+                joinedload(Sesi.paket),
+                joinedload(Sesi.pc).joinedload(PC.grup),
+            )
+            .filter_by(status="aktif")
+            .order_by(Sesi.id.desc())
+            .all()
+        )
+        sesi_map = {}
+        for s in active_sessions:
+            if s.pc_id not in sesi_map:
+                sesi_map[s.pc_id] = s
+        return sesi_map
+
+    @staticmethod
+    def group_by_grup(pcs, sesi_map=None):
         """Kelompokkan list PC ke dalam dictionary berdasarkan nama grup."""
         result = {}
         for pc in pcs:
             g = pc.grup.nama if pc.grup else "reguler"
             if g not in result:
                 result[g] = []
-            result[g].append(pc.to_dict())
+            if sesi_map is not None:
+                result[g].append(pc.to_dict(sesi=sesi_map.get(pc.id), screenshot_info={}))
+            else:
+                result[g].append(pc.to_dict())
         return result
 
 

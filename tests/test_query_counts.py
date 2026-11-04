@@ -3,7 +3,7 @@ import unittest
 from sqlalchemy import event
 
 from app import create_app
-from app.models import db, Grup, PC, HardwareMonitor, Member, Sesi
+from app.models import db, Grup, PC, HardwareMonitor, Member, Sesi, User
 
 
 def count_queries(fn):
@@ -176,3 +176,52 @@ class TestArchivedMenuQueries(unittest.TestCase):
         menus, queries = count_queries(MenuService.get_archived_menu)
         self.assertLessEqual(queries, 4)
         self.assertEqual([m["transaksi_count"] for m in menus], [i for i in range(6)])
+
+
+class TestPCListQueries(unittest.TestCase):
+    def setUp(self):
+        self.app = create_app({
+            "TESTING": True, "WTF_CSRF_ENABLED": False,
+            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            "SECRET_KEY": "test-query-count",
+        })
+        self.ctx = self.app.app_context()
+        self.ctx.push()
+        db.create_all()
+        grup = Grup(nama="reguler")
+        db.session.add(grup)
+        db.session.flush()
+        for i in range(12):
+            pc = PC(kode=f"TM-{i+1}", nama=f"TM-{i+1}", grup_id=grup.id, aktif=True)
+            db.session.add(pc)
+            db.session.flush()
+            if i < 3:
+                m = Member(username=f"pemain{i}", password_hash="x", grup_id=grup.id,
+                           waktu_tersimpan=60, aktif=True)
+                db.session.add(m)
+                db.session.flush()
+                db.session.add(Sesi(tipe="member", member_id=m.id, pc_id=pc.id,
+                                    durasi_beli_menit=60, status="aktif",
+                                    token_sesi=f"q{i}" * 20))
+        db.session.commit()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.ctx.pop()
+
+    def test_pc_list_query_count_constant(self):
+        admin = User.query.filter_by(username="admin").first()
+        client = self.app.test_client()
+        with client.session_transaction() as sess:
+            sess["kasir_id"] = admin.id
+            sess["kasir_username"] = admin.username
+            sess["kasir_role"] = "admin"
+        res, queries = count_queries(lambda: client.get("/api/v1/kasir/pc/"))
+        self.assertEqual(res.status_code, 200)
+        payload = res.get_json()
+        self.assertEqual(len(payload["pc_list"]), 12)
+        self.assertEqual(payload["pc_list"][0]["status"], "terpakai")
+        self.assertEqual(payload["grouped"]["reguler"][0]["sesi_id"],
+                         payload["pc_list"][0]["sesi_id"])
+        self.assertLessEqual(queries, 10)
