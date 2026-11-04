@@ -39,9 +39,10 @@ class SettingsCacheStore:
         with cls._lock:
             if cls._cache is None:
                 cls._cache = {}
-                cls._complete = False
             cls._cache.update({str(k): str(v) for k, v in (data or {}).items()})
             cls._missing.clear()
+            # Caller mengirim SELURUH tabel settings, jadi snapshot cache sudah lengkap.
+            cls._complete = True
 
     @classmethod
     def invalidate(cls):

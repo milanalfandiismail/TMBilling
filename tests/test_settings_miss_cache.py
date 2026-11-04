@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from sqlalchemy import event
 
@@ -54,3 +55,28 @@ class TestSettingsMissCache(unittest.TestCase):
         db.session.commit()
         SettingsService.set("baru", "y")
         self.assertEqual(SettingsService.get("baru", "x"), "y")
+
+    def test_get_all_then_missing_key_issues_no_query(self):
+        from app.services.cache.system_cache_store import SettingsCacheStore
+        from app.services.settings.settings_service import SettingsService
+        SettingsCacheStore.invalidate()
+        SettingsService.get_all()
+        result, queries = count_queries(
+            lambda: SettingsService.get("tidak_ada_key", "cadangan"))
+        self.assertEqual(result, "cadangan")
+        self.assertEqual(queries, 0)
+
+    def test_get_all_marks_snapshot_complete_after_cache_load_failed(self):
+        """update_dict() menerima SELURUH tabel -> snapshot jadi lengkap, cache negatif tak dikalahkan."""
+        from app.services.cache.system_cache_store import SettingsCacheStore
+        from app.services.settings.settings_service import SettingsService
+        db.session.add(Settings(key="ada_key", value="1"))
+        db.session.commit()
+        SettingsCacheStore.invalidate()
+        # Load cache dari DB gagal -> service fallback ke repository & update_dict(seluruh tabel)
+        with patch.object(SettingsCacheStore, "_load_from_db", return_value=None):
+            SettingsService.get_all()
+        result, queries = count_queries(
+            lambda: SettingsService.get("tidak_ada_key", "cadangan"))
+        self.assertEqual(result, "cadangan")
+        self.assertEqual(queries, 0)

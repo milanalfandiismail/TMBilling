@@ -122,7 +122,8 @@ class HardwareService:
             TelemetryHistoryStore.push_metric(pc.id, cpu_usage, ram_pct, max_len=3)
 
             # 7. Akumulasi Heartbeat Uptime di RAM (status billing sudah di-cache client)
-            # shortcut: flag billing bisa stale jika sesi berakhir tanpa heartbeat client (force-close via dashboard); dihapus saat flush/prune
+            # shortcut: flag billing ditulis ulang tiap status poll client (client_service.py:158, bool(sesi)), jadi sesi
+            # force-close/expired bersih di poll berikutnya (maks 1 interval polling) -> stale True hanya over-count billing singkat.
             UptimeMemoryStore.record_heartbeat(pc.id, UptimeMemoryStore.is_billing(pc.id))
 
             # 8. Security Audit: Always-On Hardware Checker dengan Grace Period 60 Detik
