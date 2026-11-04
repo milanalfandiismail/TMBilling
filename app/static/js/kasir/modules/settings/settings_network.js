@@ -371,7 +371,7 @@ const SettingsNetwork = {
                     );
 
                     if (!this._cfPoller) {
-                        this._cfPoller = setInterval(() => this.loadCloudflareTunnelStatus(), 300);
+                        this._cfPoller = setInterval(() => this.loadCloudflareTunnelStatus(), 1000);
                     }
                     return;
                 } else {
