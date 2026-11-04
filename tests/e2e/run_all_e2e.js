@@ -11,6 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const { createReport, record, finish, normalize } = require('./lib/report');
+const { launchBrowser, BrowserUnavailableError } = require('./lib/browser');
 
 const suites = [
   {
@@ -67,6 +68,12 @@ const suites = [
     browser: false,
     runner: require('./lib/_selftest_suite.js').runRunnerSelfTest,
   },
+  {
+    id: '_smoke',
+    title: 'Smoke: Chromium sungguhan bisa login ke dashboard',
+    browser: true,
+    runner: require('./lib/_smoke_suite.js').runSmokeE2ETest,
+  },
 ];
 
 function parseArgs(argv) {
@@ -122,62 +129,74 @@ async function main(argv) {
     return 2;
   }
 
-  // Driver Chromium baru ada pada Task 2 (lib/browser.js). Selama belum ada,
-  // suite yang butuh `page` harus berhenti dengan kode 2 — jangan pernah lolos diam-diam.
-  const needBrowser = selected.filter((s) => s.browser);
-  if (needBrowser.length) {
-    console.error('BROWSER_NOT_AVAILABLE: driver Chromium (tests/e2e/lib/browser.js) belum ada.');
-    console.error(`Suite yang tidak bisa dijalankan: ${needBrowser.map((s) => s.id).join(', ')}`);
-    return 2;
-  }
-
-  const reports = [];
-  for (const suite of selected) {
-    const started = Date.now();
-    console.log(`\n▶ ${suite.id} — ${suite.title}`);
-    let raw;
+  // Browser hanya dinyalakan bila ada suite yang membutuhkannya, supaya suite
+  // tanpa DOM (mis. _selftest) tetap bisa jalan di mesin tanpa Chromium.
+  let session = null;
+  if (selected.some((s) => s.browser)) {
     try {
-      raw = await suite.runner();
+      session = await launchBrowser();
     } catch (err) {
-      const failedReport = createReport(suite.id);
-      record(failedReport, 'suite exception', false, err && err.message ? err.message : String(err));
-      raw = finish(failedReport);
+      if (err instanceof BrowserUnavailableError) {
+        console.error(`BROWSER_NOT_AVAILABLE: ${err.message}`);
+        if (err.detail) console.error(`Detail: ${err.detail}`);
+        console.error(`Suite yang tidak bisa dijalankan: ${selected.filter((s) => s.browser).map((s) => s.id).join(', ')}`);
+        return 2;
+      }
+      throw err;
     }
-    const report = normalize(raw, suite.id);
-    for (const check of report.checks) {
-      const line = `  ${check.passed ? '[PASS]' : '[FAIL]'} ${check.name}${check.detail ? ` — ${check.detail}` : ''}`;
-      if (check.passed) console.log(line);
-      else console.error(line);
-    }
-    const durationMs = Date.now() - started;
-    console.log(`  ${report.passed}/${report.total} check lulus dalam ${(durationMs / 1000).toFixed(2)}s`);
-    reports.push({ ...report, durationMs });
   }
 
-  const total = reports.reduce((n, r) => n + r.total, 0);
-  const passed = reports.reduce((n, r) => n + r.passed, 0);
-  const failed = reports.reduce((n, r) => n + r.failed, 0);
+  try {
+    const reports = [];
+    for (const suite of selected) {
+      const started = Date.now();
+      console.log(`\n▶ ${suite.id} — ${suite.title}`);
+      let raw;
+      try {
+        raw = await suite.runner(session ? session.page : undefined);
+      } catch (err) {
+        const failedReport = createReport(suite.id);
+        record(failedReport, 'suite exception', false, err && err.message ? err.message : String(err));
+        raw = finish(failedReport);
+      }
+      const report = normalize(raw, suite.id);
+      for (const check of report.checks) {
+        const line = `  ${check.passed ? '[PASS]' : '[FAIL]'} ${check.name}${check.detail ? ` — ${check.detail}` : ''}`;
+        if (check.passed) console.log(line);
+        else console.error(line);
+      }
+      const durationMs = Date.now() - started;
+      console.log(`  ${report.passed}/${report.total} check lulus dalam ${(durationMs / 1000).toFixed(2)}s`);
+      reports.push({ ...report, durationMs });
+    }
 
-  console.log('\n=======================================================');
-  console.log(`Suite: ${selected.map((s) => s.id).join(', ')}`);
-  console.log(`Total check: ${total} (${passed} lulus, ${failed} gagal)`);
-  console.log('=======================================================');
+    const total = reports.reduce((n, r) => n + r.total, 0);
+    const passed = reports.reduce((n, r) => n + r.passed, 0);
+    const failed = reports.reduce((n, r) => n + r.failed, 0);
 
-  if (opts.json) {
-    const outPath = path.resolve(opts.json);
-    fs.mkdirSync(path.dirname(outPath), { recursive: true });
-    fs.writeFileSync(
-      outPath,
-      JSON.stringify(
-        { suite: selected.map((s) => s.id).join(','), suites: reports, total, passed, failed, endTime: new Date().toISOString() },
-        null,
-        2
-      )
-    );
-    console.log(`Laporan ditulis: ${outPath}`);
+    console.log('\n=======================================================');
+    console.log(`Suite: ${selected.map((s) => s.id).join(', ')}`);
+    console.log(`Total check: ${total} (${passed} lulus, ${failed} gagal)`);
+    console.log('=======================================================');
+
+    if (opts.json) {
+      const outPath = path.resolve(opts.json);
+      fs.mkdirSync(path.dirname(outPath), { recursive: true });
+      fs.writeFileSync(
+        outPath,
+        JSON.stringify(
+          { suite: selected.map((s) => s.id).join(','), suites: reports, total, passed, failed, endTime: new Date().toISOString() },
+          null,
+          2
+        )
+      );
+      console.log(`Laporan ditulis: ${outPath}`);
+    }
+
+    return failed > 0 ? 1 : 0;
+  } finally {
+    if (session) await session.close();
   }
-
-  return failed > 0 ? 1 : 0;
 }
 
 if (require.main === module) {
