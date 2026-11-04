@@ -172,19 +172,6 @@ def get_shift_receipt(shift_id):
         return jsonify({"error": str(e)}), 500
 
 
-@shift_api_bp.route("/<int:shift_id>/summary", methods=["GET"])
-@login_required
-def get_single_shift_summary(shift_id):
-    """Ambil ringkasan detail shift tertentu."""
-    try:
-        summary = ShiftService.get_shift_summary(shift_id)
-        return jsonify({"success": True, "summary": summary}), 200
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 404
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
 @shift_api_bp.route("/history", methods=["GET"])
 @login_required
 def get_shift_history():
