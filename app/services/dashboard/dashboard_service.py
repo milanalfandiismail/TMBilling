@@ -10,7 +10,7 @@ from app.services.sesi.sesi_service import SesiService
 from app.services.pc.pc_service import PCService
 from app.repositories import TransaksiRepository, MenuRepository
 from app.utils.logger import write_log
-from app.models import now_local, Sesi, db
+from app.models import now_local, Sesi, PC, db
 import time
 
 _last_cleanup_ts = 0.0
@@ -55,8 +55,19 @@ class DashboardService:
         grup_meta = {}
         now = now_local()
 
-        # Batch fetch sesi aktif dalam 1 query tunggal (eliminasi N+1)
-        active_sessions = Sesi.query.filter_by(status='aktif').order_by(db.text('id DESC')).all()
+        from sqlalchemy.orm import joinedload
+        # Batch fetch sesi aktif dalam 1 query tunggal dengan joinedload (eliminasi N+1)
+        active_sessions = (
+            Sesi.query.options(
+                joinedload(Sesi.member),
+                joinedload(Sesi.user),
+                joinedload(Sesi.paket),
+                joinedload(Sesi.pc).joinedload(PC.grup),
+            )
+            .filter_by(status='aktif')
+            .order_by(Sesi.id.desc())
+            .all()
+        )
         sesi_map = {}
         for s in active_sessions:
             if s.pc_id not in sesi_map:

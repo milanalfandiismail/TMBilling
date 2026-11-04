@@ -13,6 +13,7 @@ from app.models import Sesi
 from app.models import Transaksi
 from app.utils.logger import write_log
 from sqlalchemy import func, or_, select
+from sqlalchemy.orm import joinedload
 
 
 class SesiRepository:
@@ -50,7 +51,11 @@ class SesiRepository:
     @staticmethod
     def get_all_aktif():
         """Mengambil semua sesi yang sedang aktif."""
-        return Sesi.query.filter_by(status="aktif").all()
+        return Sesi.query.options(
+            joinedload(Sesi.member),
+            joinedload(Sesi.user),
+            joinedload(Sesi.paket)
+        ).filter_by(status="aktif").all()
     
     @staticmethod
     def get_all_aktif_by_member(member_id):
