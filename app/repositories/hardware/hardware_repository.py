@@ -19,8 +19,14 @@ class HardwareRepository:
 
     @staticmethod
     def get_all_with_pc():
-        """Mengambil semua data hardware monitor beserta relasi PC."""
-        return HardwareMonitor.query.join(HardwareMonitor.pc).all()
+        """Mengambil semua data hardware monitor beserta relasi PC dan grup (eager load)."""
+        from sqlalchemy.orm import joinedload
+        from app.models import PC
+        return (
+            HardwareMonitor.query
+            .options(joinedload(HardwareMonitor.pc).joinedload(PC.grup))
+            .all()
+        )
 
     @staticmethod
     def save(hardware):
