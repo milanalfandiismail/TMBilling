@@ -221,16 +221,18 @@ class SesiService:
 
     @staticmethod
     def sync_waktu_member(sesi):
-        """Sinkronisasi saldo waktu di database Member atau kuota Kasir dengan sisa waktu sesi."""
+        """Sinkronisasi saldo waktu Member/Kasir dengan sisa waktu sesi.
+
+        Tidak melakukan commit: nilai ikut tersimpan oleh commit heartbeat
+        client (tiap 30 detik) atau commit pemanggil berikutnya.
+        """
         sisa = sesi.sisa_menit()
         if sesi.tipe == "member" and sesi.member:
             if sesi.member.waktu_tersimpan != sisa:
                 sesi.member.waktu_tersimpan = sisa
-                db.session.commit()
         elif sesi.tipe == "kasir" and sesi.user:
             if sesi.user.sisa_kuota_menit != sisa:
                 sesi.user.sisa_kuota_menit = sisa
-                db.session.commit()
         return sisa
 
 
