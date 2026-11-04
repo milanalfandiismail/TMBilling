@@ -9,6 +9,7 @@ riwayat login PC, dan transaksi billing mereka.
 
 from functools import wraps
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
+from app.models import now_local
 from app.repositories import MemberRepository, PCRepository, SesiRepository, TransaksiRepository
 from app.services.member.member_service import MemberService
 
@@ -70,6 +71,9 @@ def login_action():
 
         if not member.check_password(password):
             return jsonify({"error": "Password yang Anda masukkan salah"}), 401
+
+        if member.kadaluarsa_pada and now_local() > member.kadaluarsa_pada:
+            return jsonify({"error": "Masa aktif member sudah kadaluarsa"}), 403
 
         session["member_id"] = member.id
         session["member_username"] = member.username
