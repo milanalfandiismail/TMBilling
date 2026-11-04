@@ -121,9 +121,9 @@ class HardwareService:
             ram_pct = HardwareService.calculate_ram_pct(total_ram, process_list)
             TelemetryHistoryStore.push_metric(pc.id, cpu_usage, ram_pct, max_len=3)
 
-            # 7. Akumulasi Heartbeat Uptime di RAM (Tanpa write DB setiap detik)
-            is_billing = bool(pc.sesi_aktif)
-            UptimeMemoryStore.record_heartbeat(pc.id, is_billing)
+            # 7. Akumulasi Heartbeat Uptime di RAM (status billing sudah di-cache client)
+            # shortcut: flag billing bisa stale jika sesi berakhir tanpa heartbeat client (force-close via dashboard); dihapus saat flush/prune
+            UptimeMemoryStore.record_heartbeat(pc.id, UptimeMemoryStore.is_billing(pc.id))
 
             # 8. Security Audit: Always-On Hardware Checker dengan Grace Period 60 Detik
             needs_commit = False

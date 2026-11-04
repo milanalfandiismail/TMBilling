@@ -150,11 +150,12 @@ class ClientService:
                     raise ValueError("Identitas PC tidak valid (MAC Mismatch)")
 
             # Update Last Activity in RAM Store (DB pc.last_activity bukan sumber kebenaran)
-            from app.services.cache.memory_store import OnlineStatusStore
+            from app.services.cache.memory_store import OnlineStatusStore, UptimeMemoryStore
             OnlineStatusStore.mark_active(pc.id, dt=now_local())
 
             # B. Cek Sesi Aktif
             sesi = SesiRepository.get_aktif_by_pc(pc.id)
+            UptimeMemoryStore.set_billing(pc.id, bool(sesi))
             
             # 🔥 STATUS ADMIN & SYSTEM AUTHORITY
             # Jika klien ngaku admin/emergency/system tapi di DB sudah dimatikan (oleh kasir),

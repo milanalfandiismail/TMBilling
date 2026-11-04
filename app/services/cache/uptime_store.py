@@ -20,6 +20,7 @@ class UptimeMemoryStore:
     _lock = threading.Lock()
     _accumulator = {}  # (pc_id, date) -> {"online_delta": int, "billing_delta": int, "last_seen": datetime, "first_seen": datetime}
     _last_seen_ts = {}  # pc_id -> float (time.time())
+    _billing = {}  # pc_id -> bool (status billing terakhir yang dilaporkan client)
 
     @classmethod
     def record_heartbeat(cls, pc_id: int, is_billing: bool = False):
@@ -53,6 +54,16 @@ class UptimeMemoryStore:
                         entry["billing_delta"] += add_sec
 
     @classmethod
+    def set_billing(cls, pc_id: int, is_billing: bool):
+        with cls._lock:
+            cls._billing[pc_id] = bool(is_billing)
+
+    @classmethod
+    def is_billing(cls, pc_id: int) -> bool:
+        with cls._lock:
+            return cls._billing.get(pc_id, False)
+
+    @classmethod
     def flush_to_database(cls, app=None):
         """Batch update akumulasi uptime dan billing dari RAM ke SQLite (pc_uptime_log)."""
         from app.models import db, PCUptimeLog
@@ -76,6 +87,11 @@ class UptimeMemoryStore:
             ]
             for k in prune_keys:
                 cls._accumulator.pop(k, None)
+
+            # Bersihkan flag billing untuk PC yang sudah tidak terlihat
+            stale = [pid for pid in cls._billing if pid not in cls._last_seen_ts]
+            for pid in stale:
+                cls._billing.pop(pid, None)
 
         if not to_flush:
             return
@@ -131,6 +147,7 @@ class UptimeMemoryStore:
     def remove(cls, pc_id: int):
         with cls._lock:
             cls._last_seen_ts.pop(pc_id, None)
+            cls._billing.pop(pc_id, None)
             keys_to_remove = [k for k in cls._accumulator.keys() if k[0] == pc_id]
             for k in keys_to_remove:
                 cls._accumulator.pop(k, None)
@@ -140,3 +157,4 @@ class UptimeMemoryStore:
         with cls._lock:
             cls._accumulator.clear()
             cls._last_seen_ts.clear()
+            cls._billing.clear()
