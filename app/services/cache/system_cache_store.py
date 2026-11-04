@@ -16,24 +16,26 @@ class SettingsCacheStore:
 
     @classmethod
     def get(cls, key: str, default=None):
-        with cls._lock:
-            if cls._cache is None:
-                cls._warmup()
-            return cls._cache.get(key, default)
+        data = cls._snapshot()
+        return data.get(key, default)
 
     @classmethod
     def get_all(cls) -> dict:
-        with cls._lock:
-            if cls._cache is None:
-                cls._warmup()
-            return dict(cls._cache)
+        return dict(cls._snapshot())
 
     @classmethod
     def set(cls, key: str, value: str):
         with cls._lock:
             if cls._cache is None:
-                cls._warmup()
+                cls._cache = {}
             cls._cache[key] = str(value)
+
+    @classmethod
+    def update_dict(cls, data: dict):
+        with cls._lock:
+            if cls._cache is None:
+                cls._cache = {}
+            cls._cache.update({str(k): str(v) for k, v in (data or {}).items()})
 
     @classmethod
     def invalidate(cls):
@@ -41,15 +43,26 @@ class SettingsCacheStore:
             cls._cache = None
 
     @classmethod
-    def _warmup(cls):
+    def _snapshot(cls):
+        with cls._lock:
+            if cls._cache is not None:
+                return dict(cls._cache)
+        data = cls._load_from_db()
+        with cls._lock:
+            if cls._cache is None:
+                cls._cache = data
+            return dict(cls._cache)
+
+    @classmethod
+    def _load_from_db(cls) -> dict:
         from app.models import Settings
-        cls._cache = {}
+        data = {}
         try:
-            items = Settings.query.all()
-            for item in items:
-                cls._cache[item.key] = item.value
+            for item in Settings.query.all():
+                data[item.key] = item.value
         except Exception:
             pass
+        return data
 
 
 class PCNetworkCacheStore:
