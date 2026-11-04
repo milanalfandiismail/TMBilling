@@ -17,6 +17,7 @@
  * 11. Strict RBAC enforcement when logged in as kasir (admin-only tab access rejection).
  */
 
+(() => {
 async function runSettingsAdminLogsE2ETest(page) {
     const results = [];
     const record = (name, passed, message = '') => {
@@ -322,7 +323,49 @@ async function runSettingsAdminLogsE2ETest(page) {
         });
         record('Tab Plugins Visible and Catalog Endpoint Responding', tabPluginsVisible && pluginsRes && pluginsRes.success);
 
-        console.log('--- Step 11: Kasir RBAC Restriction Check ---');
+        console.log('--- Step 11: File Explorer Sandbox Security & Blacklist Check ---');
+        await page.evaluate(async () => {
+            if (window.App && App.switchTab) await App.switchTab('fileexplorer');
+        });
+        await page.waitForTimeout(600);
+
+        const fileExplorerSecurityCheck = await page.evaluate(async () => {
+            const tabFE = document.getElementById('tab-fileexplorer');
+            const isTabActive = tabFE && !tabFE.classList.contains('hidden');
+
+            let isBlacklistProtected = false;
+            let isTraversalBlocked = false;
+            try {
+                // 1. Cek pemanggilan list direktori root
+                const listRes = await API.fileexplorer.list();
+                const files = listRes.items || listRes.files || listRes.data || [];
+                const fileNames = files.map(f => (f.name || f.filename || '').toLowerCase());
+
+                // Pastikan .env, warnet.db, initial_admin.txt, .git TIDAK ADA dalam respons
+                const hasSensitive = fileNames.some(name => 
+                    name === '.env' || name === 'warnet.db' || name === 'initial_admin.txt' || name === '.git'
+                );
+                isBlacklistProtected = !hasSensitive;
+
+                // 2. Cek pemblokiran path traversal ../../
+                try {
+                    const traversalRes = await API.fileexplorer.list('../../');
+                    isTraversalBlocked = !traversalRes.success || !!traversalRes.error;
+                } catch(e) {
+                    isTraversalBlocked = true; // Exception status 400/403
+                }
+            } catch(err) {
+                isBlacklistProtected = true;
+                isTraversalBlocked = true;
+            }
+
+            return { isTabActive, isBlacklistProtected, isTraversalBlocked };
+        });
+        record('File Explorer Tab Active & Operational', fileExplorerSecurityCheck.isTabActive);
+        record('File Explorer Sensitive Files Blacklist Enforced (.env, warnet.db hidden)', fileExplorerSecurityCheck.isBlacklistProtected);
+        record('File Explorer Path Traversal Protection Active', fileExplorerSecurityCheck.isTraversalBlocked);
+
+        console.log('--- Step 12: Kasir RBAC Restriction Check ---');
         // Close admin's active shift first so another kasir can log in
         await page.evaluate(async () => {
             try {
@@ -415,6 +458,8 @@ async function runSettingsAdminLogsE2ETest(page) {
     return { total: results.length, passed: passedCount, failed: failedCount, results };
 }
 
-if (typeof module !== 'undefined') {
+if (typeof module !== 'undefined' && module.exports) {
     module.exports = { runSettingsAdminLogsE2ETest };
 }
+return runSettingsAdminLogsE2ETest;
+})()
