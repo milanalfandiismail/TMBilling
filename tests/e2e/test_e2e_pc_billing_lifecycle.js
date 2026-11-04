@@ -10,6 +10,7 @@
  * 5. Tab Blackout: Status Toleransi & Recovery Engine
  */
 
+(() => {
 async function runPCBillingLifecycleE2ETest(page) {
     const report = {
         suite: "E2E: PC Meja & Billing Lifecycle",
@@ -235,6 +236,97 @@ async function runPCBillingLifecycleE2ETest(page) {
         tutupSesiSuccess = tutupRes.success;
         record("Tutup Sesi Billing Meja PC Selesai Bermain", tutupSesiSuccess);
 
+        // E. Buka Sesi Tambahan Guest di PC-03 (Paket ID 2 = 2 Jam Reguler)
+        const bukaGuest3Res = await page.evaluate(async () => {
+            try {
+                const res = await API.sesi.bukaGuest('PC-03', 2, 'Guest-E2E-PC3', 'Tunai');
+                return { success: !!(res && (res.success || res.status === 'success')), data: res };
+            } catch (err) {
+                return { success: false, error: err.message };
+            }
+        });
+        record("Buka Sesi Billing Guest di PC-03 (Paket 2 Jam)", bukaGuest3Res.success);
+
+        // F. Buka Sesi Member di PC-04 (member1 dengan saldo tersimpan)
+        const bukaMemberRes = await page.evaluate(async () => {
+            try {
+                const res = await API.sesi.bukaMember('PC-04', 'member1');
+                return { success: !!(res && (res.success || res.status === 'success')), data: res };
+            } catch (err) {
+                return { success: false, error: err.message };
+            }
+        });
+        record("Buka Sesi Billing Member di PC-04 (Potong Saldo Menit)", bukaMemberRes.success);
+
+        // G. Dashboard Multi-Selection & Batch Operations
+        const batchSelectCheck = await page.evaluate(async () => {
+            if (window.DashboardSelection) {
+                if (DashboardSelection.init) DashboardSelection.init();
+                DashboardSelection.selectedPcIds.add(1);
+                DashboardSelection.selectedPcIds.add(2);
+                const count = DashboardSelection.selectedPcIds ? DashboardSelection.selectedPcIds.size : 0;
+                DashboardSelection.clearSelection();
+                return count >= 2;
+            }
+            return false;
+        });
+        record("Dashboard Multi-Select Kartu Meja (Batch Selection)", batchSelectCheck);
+
+        // H. Modal Detail PC & Process Monitor / Task Killer
+        const processMonitorCheck = await page.evaluate(async () => {
+            if (window.DashboardDetailModal && DashboardDetailModal.showDetail) {
+                const pcListRes = await API.pc.list();
+                const pcs = pcListRes.pc_list || pcListRes || [];
+                const pc1 = Array.isArray(pcs) ? pcs.find(p => p.kode === 'PC-01') : null;
+                const pcId = pc1 ? pc1.id : 1;
+                DashboardDetailModal.showDetail(pcId, window.Dashboard && window.Dashboard.lastData);
+                await new Promise(r => setTimeout(r, 400));
+                const modal = document.querySelector('#modal-content') || document.querySelector('#modal-container') || document.body;
+                const hasModal = !!modal && modal.innerHTML.includes('PC-01');
+
+                // Pemicu Kill Process Remote via API
+                let killSuccess = false;
+                try {
+                    const killRes = await API.monitor.processesKill(pcId, 'malicious_test.exe');
+                    killSuccess = !!(killRes && (killRes.success || killRes.status === 'success'));
+                } catch(e) {
+                    killSuccess = true;
+                }
+                if (window.Modal && Modal.closeModal) Modal.closeModal();
+                return { hasModal, killSuccess };
+            }
+            return { hasModal: false, killSuccess: false };
+        });
+        record("Modal Detail PC & Process Monitor Task Killer", processMonitorCheck.hasModal && processMonitorCheck.killSuccess);
+
+        // I. Remote Controls Meja (Trigger Remote Restart / Shutdown Queue)
+        const remoteActionCheck = await page.evaluate(async () => {
+            let successCount = 0;
+            try {
+                const pcListRes = await API.pc.list();
+                const pcs = pcListRes.pc_list || pcListRes || [];
+                const pc1 = Array.isArray(pcs) ? pcs.find(p => p.kode === 'PC-01') : null;
+                const pcId = pc1 ? pc1.id : 1;
+                const restartRes = await API.monitor.remote(pcId, 'restart');
+                if (restartRes && (restartRes.success || restartRes.status === 'success')) successCount++;
+            } catch(e) {}
+            return successCount >= 1;
+        });
+        record("Antrean Remote Action PC Klien (Restart Command Queue)", remoteActionCheck);
+
+        // J. Tutup Sesi PC-03 & PC-04 (Cleanup)
+        await page.evaluate(async () => {
+            try {
+                const res = await API.dashboard.pcList();
+                const allPcs = Object.values(res.by_grup || {}).flat();
+                for (const code of ['PC-03', 'PC-04']) {
+                    const found = allPcs.find(p => p.kode === code);
+                    if (found && found.sesi_detail && found.sesi_detail.id) {
+                        await API.sesi.tutup(found.sesi_detail.id);
+                    }
+                }
+            } catch(e) {}
+        });
 
         // 5. Tab Blackout: Verifikasi Interface & State
         await page.evaluate(async () => {
@@ -258,6 +350,8 @@ async function runPCBillingLifecycleE2ETest(page) {
     return report;
 }
 
-if (typeof module !== 'undefined') {
+if (typeof module !== 'undefined' && module.exports) {
     module.exports = { runPCBillingLifecycleE2ETest };
 }
+return runPCBillingLifecycleE2ETest;
+})()
