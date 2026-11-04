@@ -8,6 +8,7 @@ termasuk autentikasi, manajemen saldo waktu, dan refund otomatis.
 
 from app.models import db
 from app.models import Member
+from sqlalchemy.orm import joinedload, selectinload
 
 
 class MemberRepository:
@@ -26,7 +27,10 @@ class MemberRepository:
     @staticmethod
     def get_paginated(search_query=None, page=1, per_page=5, grup_id=None, sort_by="grup_id", order="asc"):
         """Mengambil member dengan filter pencarian, pengurutan, dan pagination."""
-        query = Member.query
+        query = Member.query.options(
+            joinedload(Member.grup),
+            selectinload(Member.sesi_list),
+        )
         if search_query:
             query = query.filter(
                 (Member.username.ilike(f"%{search_query}%")) |
