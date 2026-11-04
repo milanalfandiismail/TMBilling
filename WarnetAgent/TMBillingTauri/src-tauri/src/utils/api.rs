@@ -466,6 +466,7 @@ impl ApiService {
             "ip_address": ip,
             "mac_address": mac,
             "username": username,
+            "token": &self.emergency_token,
         });
 
         let url = format!("{}/emergency-login", self.server_url);
