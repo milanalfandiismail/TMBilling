@@ -412,15 +412,19 @@ class SesiService:
     @staticmethod
     def cleanup_inactive_admin_sessions():
         """Reset status is_admin_mode di DB jika PC sudah tidak aktif (Heartbeat mati)."""
+        from app.services.cache.client_state_store import OnlineStatusStore
         now = now_local()
         # Cari semua PC yang sedang dalam mode admin
         admin_pcs = PCRepository.get_all_admin_mode()
         
         count = 0
         for pc in admin_pcs:
-            # Jika last_activity sudah lewat 30 detik (sebelumnya 10), matikan mode adminnya
-            # Dikasih buffer lebih lama biar nggak gampang force-lock kalau ada lag.
-            if not pc.last_activity or (now - pc.last_activity).total_seconds() > 30:
+            # Utamakan cek heartbeat di RAM store (OnlineStatusStore) untuk menghindari false-alarm
+            is_active = OnlineStatusStore.is_online(pc.id, timeout_seconds=30)
+            if not is_active and pc.last_activity and (now - pc.last_activity).total_seconds() <= 30:
+                is_active = True
+                
+            if not is_active:
                 pc.is_admin_mode = False
                 count += 1
                 
