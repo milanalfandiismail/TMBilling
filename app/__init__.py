@@ -24,17 +24,24 @@ from app.models import db
 from app.config import Config
 
 class TMBillingCSRFProtect(CSRFProtect):
-    """Custom CSRFProtect yang membebaskan request server-to-server (Bearer API Key).
+    """Custom CSRFProtect yang memvalidasi header Bearer token (API Key).
     
-    Request API yang membawa header 'Authorization: Bearer ...' digunakan
-    untuk komunikasi multi-cabang antar server TMBilling dan diverifikasi
-    penuh oleh validasi API Key di middleware auth, sehingga tidak memerlukan
-    CSRF token browser session.
+    Hanya request dengan Bearer token yang valid dan cocok dengan API Key terdaftar
+    yang dibebaskan dari verifikasi CSRF cookie. Token palsu/acak akan tetap
+    menjalani verifikasi CSRF standar.
     """
     def protect(self):
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
-            return
+            token = auth_header[7:].strip()
+            if token:
+                try:
+                    from app.services.settings.settings_service import SettingsService
+                    client_api_key = SettingsService.get("client_api_key") or os.environ.get("CLIENT_API_KEY", "")
+                    if client_api_key and token == client_api_key:
+                        return
+                except Exception:
+                    pass
         super().protect()
 
 
@@ -454,9 +461,14 @@ def create_app(config_override=None):
     if config_override:
         app.config.update(config_override)
 
-    # Konfigurasi CORS yang lebih ketat
-    allowed_origins = os.environ.get('ALLOWED_ORIGINS', '*').split(',')
-    CORS(app, resources={r"/*": {"origins": allowed_origins}}, supports_credentials=True)
+    # Konfigurasi CORS yang lebih ketat (anti wildcard credential leak)
+    raw_origins = os.environ.get('ALLOWED_ORIGINS')
+    if raw_origins and raw_origins.strip() != '*':
+        allowed_origins = [o.strip() for o in raw_origins.split(',') if o.strip()]
+        CORS(app, resources={r"/*": {"origins": allowed_origins}}, supports_credentials=True)
+    else:
+        allowed_origins = [r"^http://localhost(:\d+)?$", r"^http://127\.0\.0\.1(:\d+)?$"]
+        CORS(app, resources={r"/*": {"origins": allowed_origins}}, supports_credentials=True)
 
     db.init_app(app)
 
