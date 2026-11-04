@@ -63,6 +63,12 @@ const suites = [
     runner: require('./test_e2e_public_portals_cms.js').runPublicPortalsCMSE2ETest,
   },
   {
+    id: 'coverage',
+    title: 'Matriks cakupan tab, sub-tab settings, dan portal publik',
+    browser: true,
+    runner: require('./test_e2e_coverage_matrix.js').runCoverageMatrixE2ETest,
+  },
+  {
     id: '_selftest',
     title: 'Self-test: membuktikan runner meneruskan kegagalan',
     browser: false,

@@ -18,6 +18,8 @@
  */
 
 (() => {
+const { BASE_URL } = require('./lib/browser');
+
 async function runSettingsAdminLogsE2ETest(page) {
     const results = [];
     const record = (name, passed, message = '') => {
@@ -364,6 +366,84 @@ async function runSettingsAdminLogsE2ETest(page) {
         record('File Explorer Tab Active & Operational', fileExplorerSecurityCheck.isTabActive);
         record('File Explorer Sensitive Files Blacklist Enforced (.env, warnet.db hidden)', fileExplorerSecurityCheck.isBlacklistProtected);
         record('File Explorer Path Traversal Protection Active', fileExplorerSecurityCheck.isTraversalBlocked);
+
+        console.log('--- Step 11b: Cek Unik Hasil Port dari Suite Lama Full (Docs CMS, Branch 404, Modal, Plugin SPA) ---');
+
+        // Cek 1: halaman dokumentasi menampilkan daftar tutorial hasil seed.
+        try {
+            const docRes = await page.goto(`${BASE_URL}/kasir/documentation`, { waitUntil: 'networkidle' });
+            const docTitle = await page.title();
+            await page.waitForSelector('#wiki-sidebar button[onclick^="Tutorials.selectTutorial("]', { timeout: 5000 });
+            const tutorialCount = await page.evaluate(
+                () => document.querySelectorAll('#wiki-sidebar button[onclick^="Tutorials.selectTutorial("]').length
+            );
+            record(
+                'CMS Documentation lists seeded tutorials',
+                !!docRes && docRes.status() === 200 && tutorialCount > 0 && /Dokumentasi|TMBilling/i.test(docTitle),
+                `${tutorialCount} tutorial, status ${docRes ? docRes.status() : 'none'}, title "${docTitle}"`
+            );
+        } catch (err) {
+            record('CMS Documentation lists seeded tutorials', false, err.message);
+        }
+
+        // Kembali ke dashboard: Step 12 membutuhkan App/API pada shell kasir.
+        await page.goto(`${BASE_URL}/kasir/`, { waitUntil: 'domcontentloaded' });
+        await page.waitForSelector('#tab-dash', { state: 'visible', timeout: 5000 });
+
+        // Cek 2: endpoint branch lama sudah dihapus dari backend maupun API client.
+        try {
+            const branch = await page.evaluate(async () => {
+                const res = await fetch('/api/v1/kasir/branch/list');
+                return { status: res.status, apiBranchDefined: typeof API.branch !== 'undefined' };
+            });
+            record(
+                'Deprecated /api/v1/kasir/branch/list returns 404 & API.branch removed',
+                branch.status === 404 && branch.apiBranchDefined === false,
+                `HTTP ${branch.status}, API.branch defined: ${branch.apiBranchDefined}`
+            );
+        } catch (err) {
+            record('Deprecated /api/v1/kasir/branch/list returns 404 & API.branch removed', false, err.message);
+        }
+
+        // Cek 3: tab plugin-spa benar-benar dipasang oleh App.openPluginSPA (pemilik manifest coverage).
+        try {
+            const spa = await page.evaluate(() => {
+                App.openPluginSPA('/api/plugin/hello_world/test', 'E2E Plugin SPA');
+                const container = document.getElementById('tab-plugin-spa');
+                const iframe = document.getElementById('plugin-spa-iframe');
+                const titleEl = document.getElementById('page-title');
+                return {
+                    visible: !!container && !container.classList.contains('hidden'),
+                    src: iframe ? iframe.getAttribute('src') : null,
+                    title: titleEl ? titleEl.innerText : '',
+                };
+            });
+            record(
+                'Plugin SPA tab mounted via App.openPluginSPA',
+                spa.visible && spa.src === '/api/plugin/hello_world/test' && spa.title.trim().toUpperCase() === 'E2E PLUGIN SPA',
+                `visible=${spa.visible}, src=${spa.src}, title="${spa.title}"`
+            );
+        } catch (err) {
+            record('Plugin SPA tab mounted via App.openPluginSPA', false, err.message);
+        }
+
+        // Cek 4: siklus hidup modal dinamis (show -> close) tanpa sisa elemen.
+        try {
+            const modal = await page.evaluate(() => {
+                Modal.show('<div id="e2e-test-modal-content">E2E Modal Test</div>');
+                const isActive = !!Modal.activeModal && !!document.getElementById('e2e-test-modal-content');
+                Modal.closeModal();
+                const isClosed = !Modal.activeModal && !document.getElementById('e2e-test-modal-content');
+                return { isActive, isClosed };
+            });
+            record(
+                'Modal.show creates active modal & Modal.closeModal cleans it up',
+                modal.isActive && modal.isClosed,
+                `active=${modal.isActive}, closed=${modal.isClosed}`
+            );
+        } catch (err) {
+            record('Modal.show creates active modal & Modal.closeModal cleans it up', false, err.message);
+        }
 
         console.log('--- Step 12: Kasir RBAC Restriction Check ---');
         // Close admin's active shift first so another kasir can log in

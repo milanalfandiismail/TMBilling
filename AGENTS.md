@@ -277,9 +277,6 @@ python run.py
 # Kompilasi ulang seluruh biner deploy klien & server
 build_and_deploy.bat
 
-# Eksekusi Comprehensive E2E Playwright Suite (29 Tab, Subtabs, 58+ Modals, Full CRUD)
-# via MCP Playwright tool browser_run_code_unsafe dengan tests/playwright_e2e_full_suite.js
-
 # Eksekusi Responsive Breakpoints Verification (240 Checks across 40 Views & 6 Tailwind Breakpoints)
 # via MCP Playwright tool browser_run_code_unsafe dengan tests/playwright_responsive_breakpoints.js
 
