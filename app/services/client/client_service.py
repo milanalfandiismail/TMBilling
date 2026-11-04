@@ -266,6 +266,10 @@ class ClientService:
 
 
         except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
             write_log("CLIENT_STATUS_CRASH", f"Error fatal polling {ip_address}: {e}")
             return {"status": "error", "message": "Server error"}
 
@@ -439,6 +443,10 @@ class ClientService:
 
             return {"success": True, "message": "Sesi ditutup"}
         except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
             write_log("CLIENT_TUTUP_ERROR", f"Error tutup {ip_address}: {e}")
             return {"success": False, "message": "Gagal menutup sesi"}
 

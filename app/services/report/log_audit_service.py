@@ -143,6 +143,10 @@ class LogAuditService:
             )
             return True
         except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
             write_log("ERROR", f"Gagal hapus seluruh riwayat: {str(e)}", user=operator, detail_json={"error": str(e)})
             return False
 
@@ -170,6 +174,10 @@ class LogAuditService:
                 return True
             return False
         except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
             write_log("ERROR", f"Gagal hapus struk {t_id}: {str(e)}", user=operator, detail_json={"error": str(e)})
             return False
 
@@ -188,6 +196,10 @@ class LogAuditService:
             )
             return True
         except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
             write_log("ERROR", f"Gagal hapus riwayat tanggal {tanggal}: {str(e)}", user=operator, detail_json={"error": str(e), "tanggal_target": tanggal})
             return False
 
