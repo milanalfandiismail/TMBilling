@@ -480,20 +480,23 @@ impl ApiService {
     pub async fn emergency_login(&self, ip: &str, mac: &str, username: &str) -> Result<StatusResponse, String> {
         // Kirim ke server agar tercatat di DB & log (PC mana yang emergency login, siapa usernya).
         // Catatan: self.emergency_token adalah SHA256 password emergency lokal, BUKAN token server.
+        // Server tak terjangkau = tidak ada yang perlu dicatat, jadi lewati POST (hindari timeout dobel).
         let server_token = self.fetch_server_emergency_token().await.unwrap_or_default();
-        let body = serde_json::json!({
-            "ip_address": ip,
-            "mac_address": mac,
-            "username": username,
-            "token": server_token,
-        });
+        if !server_token.is_empty() {
+            let body = serde_json::json!({
+                "ip_address": ip,
+                "mac_address": mac,
+                "username": username,
+                "token": server_token,
+            });
 
-        let url = format!("{}/emergency-login", self.server_url);
-        let _ = self.client.post(&url)
-            .header("X-Client-Key", &self.api_key)
-            .json(&body)
-            .send()
-            .await;
+            let url = format!("{}/emergency-login", self.server_url);
+            let _ = self.client.post(&url)
+                .header("X-Client-Key", &self.api_key)
+                .json(&body)
+                .send()
+                .await;
+        }
 
         // TETAP SUKSES walau server unreachable (emergency mode = offline-first)
         Ok(StatusResponse {
