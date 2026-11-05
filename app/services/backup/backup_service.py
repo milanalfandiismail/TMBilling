@@ -135,6 +135,10 @@ class BackupService:
         if not os.path.exists(self.db_path):
             raise RuntimeError(f"Database tidak ditemukan: {self.db_path}")
 
+        from app.services.health.health_service import HealthService
+        if not HealthService.has_free_space(self.backup_dir):
+            raise RuntimeError("Ruang disk backup tidak cukup (< 512 MB)")
+
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         backup_filename = f"warnet_backup_{timestamp}.zip"
         dest_path = os.path.join(self.backup_dir, backup_filename)

@@ -2,7 +2,7 @@
 
 /**
  * Task 11 — Admin: user/RBAC, redaksi settings, audit log, token klien,
- * plugin, dan file explorer.
+ * plugin, dan penghapusan file explorer.
  *
  * Kontrak tiap check: hasil otorisasi (403/401), baris DB sandbox yang dibaca
  * ulang, atau nilai yang dibandingkan dengan sumber independen (manifest,
@@ -28,7 +28,6 @@ const { BASE_URL, CLIENT_API_KEY, login, logout, tab, settingsTab, unique, check
 const { dbQuery } = require('./lib/db');
 const { createReport, finish } = require('./lib/report');
 
-const SENSITIVE_BLACKLIST = ['.env', 'warnet.db', 'initial_admin.txt', '.git'];
 const LEGACY_TOKENS = ['TM_UNINSTALL_SAFE_2026', 'TM123qaz!@#'];
 const ADMIN_SETTINGS_KEYS = ['client_api_key', 'mikrotik_password', 'mikrotik_host', 'warnet_title'];
 
@@ -217,42 +216,17 @@ async function runSettingsAdminLogsE2ETest(page) {
         await page.waitForFunction((name) => document.getElementById('user-table').innerText.includes(name), kasirUsername, { timeout: 5000 });
     });
 
-    await check(report, 'File explorer mendaftar root dengan 200 dan menyembunyikan entri sensitif', async () => {
-        await tab(page, 'fileexplorer');
-        const rootsRes = await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/roots`);
-        assert.strictEqual(rootsRes.status(), 200);
-        const roots = (await rootsRes.json()).roots;
-        assert.ok(Array.isArray(roots) && roots.length > 0, 'root file explorer kosong');
-
-        const listRes = await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/list`, { params: { path: roots[0] } });
-        assert.strictEqual(listRes.status(), 200);
-        const listing = await listRes.json();
-        assert.ok(Array.isArray(listing.items) && listing.items.length > 0, 'listing root kosong');
-        const names = listing.items.map((item) => String(item.name).toLowerCase());
-        SENSITIVE_BLACKLIST.forEach((bad) => assert.ok(!names.includes(bad), `${bad} bocor di listing`));
-    });
-
-    await check(report, 'File explorer menolak path traversal ../../ dengan 400', async () => {
-        const roots = (await (await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/roots`)).json()).roots;
-        const res = await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/list`, { params: { path: `${roots[0]}/../..` } });
-        assert.strictEqual(res.status(), 400);
-        const body = await res.json();
-        assert.strictEqual(body.success, false);
-        assert.match(body.error, /di luar batasan direktori/i);
-    });
-
-    await check(report, 'File explorer menolak berkas sensitif .env, warnet.db, initial_admin.txt, dan .git', async () => {
-        const roots = (await (await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/roots`)).json()).roots;
-        const root = roots[0];
-        for (const name of ['.env', 'warnet.db', 'initial_admin.txt']) {
-            const res = await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/read`, { params: { path: `${root}/${name}` } });
-            assert.strictEqual(res.status(), 400, `${name} tidak ditolak (HTTP ${res.status()})`);
-            const body = await res.json();
-            assert.match(body.error, /dilindungi oleh sistem keamanan/i, `pesan ${name}: ${body.error}`);
-        }
-        const dirRes = await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/list`, { params: { path: `${root}/.git` } });
-        assert.strictEqual(dirRes.status(), 400);
-        assert.match((await dirRes.json()).error, /dilindungi oleh sistem keamanan/i);
+    await check(report, 'File explorer dihapus: endpoint 404, tombol, container, dan modul tidak ada', async () => {
+        const res = await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/roots`);
+        assert.strictEqual(res.status(), 404);
+        const state = await page.evaluate(() => ({
+            button: !!document.getElementById('sidebar-fileexplorer-btn'),
+            tab: !!document.getElementById('tab-fileexplorer'),
+            module: typeof FileExplorer,
+        }));
+        assert.strictEqual(state.button, false);
+        assert.strictEqual(state.tab, false);
+        assert.strictEqual(state.module, 'undefined');
     });
 
     await check(report, 'Plugin terpasang tampil sesuai manifest dan toggle tersimpan di DB', async () => {
@@ -394,9 +368,8 @@ async function runSettingsAdminLogsE2ETest(page) {
         attempts.forEach((res, idx) => {
             assert.strictEqual(res.status, 403, `upaya ${idx} tidak 403: ${res.status} ${res.text}`);
         });
-        const rootsRes = await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/roots`);
-        assert.strictEqual(rootsRes.status(), 403);
-        assert.match((await rootsRes.json()).error, /Hanya Admin/i);
+        const goneRes = await page.request.get(`${BASE_URL}/api/v1/kasir/fileexplorer/roots`);
+        assert.strictEqual(goneRes.status(), 404);
 
         assert.strictEqual(await settingValue('warnet_title'), titleBefore);
         assert.strictEqual(await settingValue(pluginKey), pluginBefore);

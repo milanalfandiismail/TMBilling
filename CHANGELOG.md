@@ -17,6 +17,8 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Stok Kantin Atomik**: Pengurangan stok memakai satu `UPDATE ... WHERE stok >= jumlah` untuk mencegah oversell saat checkout bersamaan.
 - **Backup Konsisten & Restore Tanpa Restart**: backup kini memakai SQLite Online Backup API + `PRAGMA integrity_check` (data di `-wal` ikut tersalin dan arsip rusak ditolak sebelum tersimpan), path database diturunkan dari engine aktif (bukan hardcode `instance/warnet.db`), dan admin dapat restore langsung dari daftar backup (`POST /api/v1/kasir/backup/restore/<filename>` wajib `{"confirm": true}`; backup pengaman dibuat otomatis sebelum restore).
 - **Bersih-Bersih**: Menghapus CLI `--release` pada `run.py` (rusak: `UnboundLocalError`, ekstraksi ZIP tanpa proteksi path traversal, tidak pernah menyalin payload) dan route ringkasan shift duplikat yang tidak terjangkau.
+- **Health Check & Guard Sumber Daya**: `GET /api/health` publik melaporkan `db`/`disk`/`backup` secara kasar (tanpa angka/path, tetap HTTP 200 saat `degraded`); backup menolak berjalan saat sisa disk < 512 MB; screenshot otomatis dilewati dengan alasan di log; status eksekusi terakhir tiap job scheduler tampil di tab Settings (khusus admin).
+- **Hapus Fitur File Explorer**: Modul, route, service, template, menu sidebar, API frontend, dan test terkait dihapus seluruhnya (tidak ada migrasi database; tidak ada tabel/model khusus).
 
 ### Performa & Optimasi
 - **Heartbeat Klien**: `sesi.last_sync` kini disimpan tiap 30 detik (`ClientService.HEARTBEAT_PERSIST_SECONDS`) sehingga deteksi blackout berlaku untuk sesi guest; penulisan `pc.last_activity` per poll tanpa commit dihapus (poll turun dari 5 statement menjadi 3 SELECT tanpa UPDATE).

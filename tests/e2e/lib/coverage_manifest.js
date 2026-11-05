@@ -6,12 +6,12 @@
  * berkas ini akan menggagalkan suite `coverage`.
  *
  * Sumber id (dienumerasi dari template nyata, bukan tebakan):
- *   - `app/templates/kasir/tabs/*.html`                        -> 29 container tab
+ *   - `app/templates/kasir/tabs/*.html`                        -> 28 container tab
  *   - `app/templates/kasir/server_monitor/server_statistic.html` -> tab-server_statistic
  *   - `app/templates/kasir/settings/plugins.html`               -> tab-plugins
  *   - `app/templates/kasir/index.html`                          -> tab-plugin-spa
  *   - `app/templates/kasir/tabs/settings.html` + `settings/migration.html` -> 10 `#subtab-*`
- *   - `app/templates/kasir/components/sidebar*.html`            -> 41 nilai `data-tab`
+ *   - `app/templates/kasir/components/sidebar*.html`            -> 40 nilai `data-tab`
  */
 
 /**
@@ -61,7 +61,6 @@ const tabs = {
   mikrotik: 'settings_admin_logs',
   plugins: 'settings_admin_logs',
   server_statistic: 'settings_admin_logs',
-  fileexplorer: 'settings_admin_logs',
   'plugin-spa': 'settings_admin_logs',
 
   catatan: 'auth_shift_notes',

@@ -156,8 +156,24 @@ const SettingsScheduler = {
         this._highlightPills('scheduler-screenshot-pills', sVal, sUnit);
     },
 
-    async saveSchedulerConfig() {
-        const backupValue = document.getElementById('scheduler-backup-value')?.value;
+    async loadSchedulerStatus() {
+        const el = document.getElementById('scheduler-last-runs');
+        if (!el) return;
+        try {
+            const res = await API.request('/api/v1/kasir/settings/scheduler/status');
+            const runs = res.last_runs || {};
+            const fmt = (id) => {
+                const r = runs[id];
+                if (!r) return 'belum';
+                return `${String(r.at).replace('T', ' ')} ${r.ok ? 'OK' : 'GAGAL'}`;
+            };
+            el.textContent = `Backup: ${fmt('database_backup')} · Cleanup: ${fmt('cleanup_logs')} · Screenshot: ${fmt('auto_screenshots')}`;
+        } catch (_) {
+            el.textContent = 'tidak tersedia';
+        }
+    },
+
+    async saveSchedulerConfig() {        const backupValue = document.getElementById('scheduler-backup-value')?.value;
         const backupUnit = document.getElementById('scheduler-backup-unit')?.value;
         const cleanupValue = document.getElementById('scheduler-cleanup-value')?.value;
         const cleanupUnit = document.getElementById('scheduler-cleanup-unit')?.value;

@@ -29,6 +29,7 @@ Services:
 
 from app.services.settings.settings_service import SettingsService
 from app.services.backup.backup_service import BackupService
+from app.services.health.health_service import HealthService
 from app.services.hardware.hardware_service import HardwareService
 from app.services.hardware.uptime_service import UptimeService
 from app.services.menu.menu_service import MenuService
@@ -76,6 +77,7 @@ __all__ = [
     "AuthService",
     "BlackoutService", 
     "BackupService",
+    "HealthService",
     "ClientService",
     "DashboardService",
     "GrupService",

@@ -986,6 +986,12 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Status eksekusi terakhir (in-memory, hilang saat restart) -->
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded px-2.5 sm:px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span class="text-[9px] sm:text-[10px] text-neutral-500 uppercase font-bold tracking-wider shrink-0">Eksekusi Terakhir</span>
+                <span id="scheduler-last-runs" class="text-[10px] sm:text-[11px] font-mono text-neutral-400">Memuat...</span>
+            </div>
         </div>
         <!-- ==================== SUB-TAB: MIGRASI & UPDATE ==================== -->
         {% include "kasir/settings/migration.html" %}

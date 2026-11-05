@@ -315,6 +315,15 @@ def update_scheduler_config():
         return jsonify({"error": str(e)}), 500
 
 
+@settings_api_bp.route("/scheduler/status", methods=["GET"])
+@login_required
+@admin_required
+def scheduler_status():
+    """Status eksekusi terakhir tiap job scheduler (in-memory)."""
+    from app.utils.scheduler_tasks import get_last_runs
+    return jsonify({"last_runs": get_last_runs()}), 200
+
+
 @settings_api_bp.route("/scheduler/restart", methods=["POST"])
 @login_required
 @admin_required

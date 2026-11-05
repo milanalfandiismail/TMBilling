@@ -16,6 +16,17 @@ UNIT_MULTIPLIER = {
     "minggu": 604800,
 }
 
+_LAST_RUN = {}
+
+
+def record_run(job_id, ok=True):
+    """Catat eksekusi terakhir per job di memori proses."""
+    _LAST_RUN[job_id] = {"at": datetime.now().isoformat(timespec="seconds"), "ok": bool(ok)}
+
+
+def get_last_runs():
+    return dict(_LAST_RUN)
+
 
 def run_cleanup_expired(app):
     """Wrapper untuk cleanup_expired yang dijalankan oleh scheduler.
@@ -25,8 +36,13 @@ def run_cleanup_expired(app):
     background thread.
     """
     with app.app_context():
-        SesiService.cleanup_expired()
-        SesiService.cleanup_inactive_admin_sessions()
+        try:
+            SesiService.cleanup_expired()
+            SesiService.cleanup_inactive_admin_sessions()
+        except Exception:
+            record_run("cleanup_expired", False)
+            raise
+        record_run("cleanup_expired", True)
 
 
 def run_database_backup(app):
@@ -48,8 +64,13 @@ def run_database_backup(app):
                 backup_manager.cleanup_old_backups(max_keep=5)
             else:
                 write_log("BACKUP_ERROR", f"File {db_path} tidak ditemukan!", user="SYSTEM")
+                record_run("database_backup", False)
+                return
         except Exception as e:
             write_log("BACKUP_ERROR", f"Error backup: {str(e)}", user="SYSTEM")
+            record_run("database_backup", False)
+            return
+        record_run("database_backup", True)
 
 
 def run_cleanup_logs(app):
@@ -83,13 +104,23 @@ def run_cleanup_logs(app):
                 write_log("SCHEDULER", f"Cleanup log: {removed} baris lama dihapus (>{value} {unit})", user="SYSTEM")
         except Exception as e:
             write_log("SCHEDULER_ERROR", f"Error cleanup log: {str(e)}", user="SYSTEM")
+            record_run("cleanup_logs", False)
+            return
+        record_run("cleanup_logs", True)
 
 
 def run_auto_screenshots(app):
     """Wrapper untuk auto-screenshot yang dijalankan oleh scheduler."""
     with app.app_context():
         from app.services import SettingsService, ClientService
+        from app.services.health.health_service import HealthService
         from app.repositories import SesiRepository
+
+        screenshot_dir = os.path.join(app.root_path, "static", "uploads", "screenshots")
+        if not HealthService.has_free_space(screenshot_dir):
+            write_log("SCHEDULER", "Screenshot otomatis dilewati: ruang disk < 512 MB", user="SYSTEM")
+            record_run("auto_screenshots", True)
+            return
         
         try:
             enabled = SettingsService.get("screenshot_auto_enabled", "0")
@@ -102,6 +133,9 @@ def run_auto_screenshots(app):
                         count += 1
         except Exception as e:
             write_log("SCHEDULER_ERROR", f"Error auto-screenshot: {str(e)}", user="SYSTEM")
+            record_run("auto_screenshots", False)
+            return
+        record_run("auto_screenshots", True)
 
 
 def run_flush_uptime(app):
@@ -112,6 +146,9 @@ def run_flush_uptime(app):
             UptimeService.flush_uptime_to_db(app=app)
         except Exception as e:
             write_log("SCHEDULER_ERROR", f"Error flush uptime: {str(e)}", user="SYSTEM")
+            record_run("flush_uptime", False)
+            return
+        record_run("flush_uptime", True)
 
 def run_cleanup_vnc_proxies(app):
     """Wrapper untuk cleanup proxy VNC dan token yang orphaned/stale."""
@@ -125,3 +162,6 @@ def run_cleanup_vnc_proxies(app):
         except Exception as e:
             from app.utils.logger import write_log
             write_log("SCHEDULER_ERROR", f"Error cleanup VNC proxy: {str(e)}", user="SYSTEM")
+            record_run("cleanup_vnc_proxies", False)
+            return
+        record_run("cleanup_vnc_proxies", True)

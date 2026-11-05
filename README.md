@@ -46,7 +46,7 @@
 - 🍔 **POS Kantin & Log Mutasi Stok Inventaris**: Kasir penjualan makanan/minuman dengan stok unlimited/limited, audit log mutasi stok (`MenuStockLog`), restock barang, multi-payment (Tunai/QRIS/Transfer), dan cetak struk thermal 58mm/80mm.
 - ☁️ **Cloudflare Tunnel Auto-Service**: Akses dashboard kasir & owner dari internet secara instan tanpa perlu port-forwarding router.
 - 📋 **Dynamic Tutorials CMS**: Modul SOP dan panduan operator warnet bawaan berbasis custom CKEditor 5 WYSIWYG.
-- 📂 **Web File Explorer & Process Monitor**: Jelajahi file disk PC klien serta pantau / matikan proses aplikasi yang not-responding dari jarak jauh.
+- 📂 **Process Monitor**: Pantau dan matikan proses aplikasi yang not-responding dari jarak jauh.
 - 📱 **Responsive Dual-Layout**: Antarmuka adaptif untuk layar 1024px, 1920px Full HD, serta layar sentuh tablet/smartphone.
 
 ---

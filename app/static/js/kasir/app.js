@@ -240,7 +240,7 @@ const App = {
             'settings', 'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv', 
             'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup', 
             'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'whitelist_ip',
-            'mikrotik', 'analytics', 'plugins', 'plugin-spa', 'fileexplorer'
+            'mikrotik', 'analytics', 'plugins', 'plugin-spa'
         ];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');
@@ -327,8 +327,7 @@ const App = {
             tutorials: 'Dokumentasi & Tutorial',
             analytics: 'Analytics Owner',
             plugins: 'Plugins & Ekstensi',
-            mikrotik: 'MikroTik Hotspot',
-            fileexplorer: 'File Explorer'
+            mikrotik: 'MikroTik Hotspot'
         };
 
         const titleEl = document.getElementById('page-title');
@@ -402,7 +401,6 @@ const App = {
             case 'plugins': if (typeof PluginsModule !== 'undefined') PluginsModule.init(); break;
             case 'mikrotik': if (typeof MikrotikModule !== 'undefined') MikrotikModule.init(); break;
             case 'tutorials': if (typeof Tutorials !== 'undefined') await Tutorials.load(); break;
-            case 'fileexplorer': if (typeof FileExplorer !== 'undefined') await FileExplorer.load(); break;
             case 'remote_server': if (typeof VNCClient !== 'undefined') await VNCClient.load(); break;
 
         }
@@ -479,7 +477,6 @@ window.Settings = typeof Settings !== 'undefined' ? Settings : undefined;
 window.PluginsModule = typeof PluginsModule !== 'undefined' ? PluginsModule : undefined;
 window.MikrotikModule = typeof MikrotikModule !== 'undefined' ? MikrotikModule : undefined;
 window.Tutorials = typeof Tutorials !== 'undefined' ? Tutorials : undefined;
-window.FileExplorer = typeof FileExplorer !== 'undefined' ? FileExplorer : undefined;
 window.VNCClient = typeof VNCClient !== 'undefined' ? VNCClient : undefined;
 window.VNCSession = typeof VNCSession !== 'undefined' ? VNCSession : undefined;
 window.Catatan = typeof Catatan !== 'undefined' ? Catatan : undefined;

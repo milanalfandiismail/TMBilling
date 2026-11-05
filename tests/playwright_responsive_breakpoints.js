@@ -32,7 +32,7 @@
         'laporan_maintenance', 'remote_server',
         'tournament', 'game_management',
         'settings', 'user', 'user_logs', 'log', 'laporan', 'analytics',
-        'mikrotik', 'plugins', 'server_statistic', 'fileexplorer', 'plugin-spa',
+        'mikrotik', 'plugins', 'server_statistic', 'plugin-spa',
         'catatan', 'shift_history'
     ];
     const FALLBACK_PORTALS = ['/', '/tv', '/tv/static', '/livepc', '/member/login', '/games', '/paket', '/spesifikasi'];

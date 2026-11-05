@@ -160,6 +160,7 @@ const Settings = {
                     sEnabled.addEventListener('change', toggleDisabled);
                 }
                 this._updateSchedulerPreview();
+                this.loadSchedulerStatus();
 
                 // Bind live preview update
                 ['scheduler-backup-value', 'scheduler-backup-unit', 'scheduler-cleanup-value', 'scheduler-cleanup-unit', 'scheduler-screenshot-enabled', 'scheduler-screenshot-value', 'scheduler-screenshot-unit'].forEach(id => {
