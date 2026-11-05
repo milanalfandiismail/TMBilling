@@ -67,6 +67,58 @@ def test_parse_version_semver():
     assert _parse_version("1.6.4") < _parse_version("1.6.5-rc1")
 
 
+def test_backup_database_includes_wal(tmp_path, monkeypatch):
+    """Backup pra-update harus menyertakan data yang masih di `-wal`."""
+    import sqlite3
+    from install_scripts import extract_update
+
+    db_file = tmp_path / "warnet.db"
+    conn = sqlite3.connect(db_file)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("CREATE TABLE t (v TEXT)")
+    conn.execute("INSERT INTO t VALUES ('wal-data')")
+    conn.commit()
+
+    monkeypatch.setattr(extract_update, "db_path", str(db_file))
+    monkeypatch.setattr(extract_update, "backups_dir", str(tmp_path / "backups"))
+    assert extract_update.backup_database() is True
+    conn.close()
+
+    backup = next((tmp_path / "backups").glob("warnet_backup_before_update_*.db"))
+    out = sqlite3.connect(backup)
+    try:
+        assert out.execute("SELECT v FROM t").fetchone()[0] == "wal-data"
+    finally:
+        out.close()
+
+
+def test_extract_invalid_package_keeps_zip(tmp_path, monkeypatch):
+    """ZIP tidak valid tidak boleh menghapus paket, agar bisa diperiksa/diulang."""
+    from install_scripts import extract_update
+
+    zip_path = tmp_path / "temp_update.zip"
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        zf.writestr("random.txt", "bukan rilis TMBilling")
+
+    monkeypatch.setattr(extract_update, "temp_zip", str(zip_path))
+    monkeypatch.setattr(extract_update, "instance_dir", str(tmp_path))
+    monkeypatch.setattr(extract_update, "db_path", str(tmp_path / "tidak_ada.db"))
+    monkeypatch.setattr(extract_update, "backups_dir", str(tmp_path / "backups"))
+
+    assert extract_update.main() == 1
+    assert zip_path.exists()
+
+
+def test_launch_updater_blocks_python_310(app_context):
+    """Dashboard harus menolak memicu updater di Python < 3.11 dengan pesan jelas."""
+    from app.routes.settings import migration_routes
+
+    with app_context.app_context(), \
+         patch("app.routes.settings.migration_routes.sys.version_info", (3, 10, 0)):
+        with pytest.raises(RuntimeError, match="3.11"):
+            migration_routes._launch_updater()
+
+
 def test_is_safe_path_security():
     """Uji keamanan path traversal pada ekstraksi berkas update."""
     base = r"C:\TMBilling"

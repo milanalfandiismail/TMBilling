@@ -28,12 +28,12 @@
   },
   "homepage": "https://github.com/milanalfandiismail/TMBilling#readme",
   "devDependencies": {
-    "@tauri-apps/cli": "^2.11.4",
+    "@tailwindcss/cli": "^4.3.4",
     "playwright": "^1.64.1",
-    "tailwindcss": "^3.4.19"
+    "tailwindcss": "^4.3.4"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^6.4.0",
+    "@fortawesome/fontawesome-free": "^7.3.1",
     "qrcodejs": "^1.0.0",
     "@novnc/novnc": "^1.4.0"
   }

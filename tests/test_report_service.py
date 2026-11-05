@@ -66,6 +66,24 @@ def test_export_billing_pdf_with_paket_column():
         assert len(pdf_bytes) > 0
         assert pdf_bytes.startswith(b"%PDF")
 
+def test_export_audit_pdf_smoke():
+    from app import create_app
+    from app.services.report.pdf_export_service import PdfExportService
+    app = create_app()
+    with app.app_context():
+        logs = [{
+            "timestamp": "2026-11-05 12:00:00",
+            "user": "admin",
+            "kategori": "AUTH",
+            "aksi": "LOGIN",
+            "detail": "Login berhasil",
+            "ip_address": "127.0.0.1",
+            "browser_agent": "pytest",
+        }]
+        pdf_bytes, filename = PdfExportService.export_audit_pdf(logs, "smoke")
+        assert filename.startswith("Audit_Log")
+        assert pdf_bytes.startswith(b"%PDF")
+
 def test_laporan_billing_includes_breakdown_metode():
     from app import create_app
     from app.services.report.report_service import ReportService

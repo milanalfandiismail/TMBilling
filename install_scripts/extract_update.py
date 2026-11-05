@@ -2,7 +2,6 @@
 """Skrip ekstraksi update aman & backup database sebelum migrasi."""
 import os
 import sys
-import shutil
 import zipfile
 from datetime import datetime
 
@@ -19,24 +18,50 @@ def is_safe_path(base, path):
     target_abs = os.path.abspath(os.path.join(base, path))
     return os.path.commonpath([base_abs]) == os.path.commonpath([base_abs, target_abs])
 
+def backup_database():
+    """Cadangkan DB lewat SQLite Backup API agar isi `-wal` ikut tersalin.
+
+    Return False bila backup gagal, supaya pembaruan dibatalkan sebelum
+    berkas aplikasi ditimpa.
+    """
+    if not os.path.exists(db_path):
+        return True
+    import sqlite3
+    os.makedirs(backups_dir, exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_file = os.path.join(backups_dir, f"warnet_backup_before_update_{ts}.db")
+    try:
+        src = sqlite3.connect(db_path)
+        dst = sqlite3.connect(backup_file)
+        try:
+            src.backup(dst)
+        finally:
+            src.close()
+            dst.close()
+        with sqlite3.connect(backup_file) as check:
+            if check.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                raise RuntimeError("integrity_check gagal")
+        print(f"[UPDATER] Database dicadangkan ke: {backup_file}")
+        return True
+    except Exception as e:
+        print(f"[UPDATER ERROR] Gagal backup database: {e}")
+        if os.path.exists(backup_file):
+            os.remove(backup_file)
+        return False
+
 def main():
     if not os.path.exists(temp_zip):
         print("[UPDATER] temp_update.zip tidak ditemukan. Selesai.")
         return 0
 
-    # 1. Backup database warnet.db
-    if os.path.exists(db_path):
-        os.makedirs(backups_dir, exist_ok=True)
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_file = os.path.join(backups_dir, f"warnet_backup_before_update_{ts}.db")
-        try:
-            shutil.copy2(db_path, backup_file)
-            print(f"[UPDATER] Database dicadangkan ke: {backup_file}")
-        except Exception as e:
-            print(f"[UPDATER ERROR] Gagal backup database: {e}")
+    # 1. Backup database warnet.db — batalkan bila gagal, jangan timpa kode tanpa cadangan
+    if not backup_database():
+        print("[UPDATER ERROR] Pembaruan dibatalkan karena backup database gagal.")
+        return 2
 
     # 2. Ekstraksi berkas rilis
     print(f"[UPDATER] Mengekstrak pembaruan ke {root_dir}...")
+    success = False
     try:
         with zipfile.ZipFile(temp_zip, "r") as zf:
             all_files = zf.namelist()
@@ -59,22 +84,17 @@ def main():
                 zf.extract(member, root_dir)
 
         print("[UPDATER] Ekstraksi selesai.")
+        success = True
     except Exception as e:
         print(f"[UPDATER ERROR] Ekstraksi gagal: {e}")
         return 1
     finally:
-        if os.path.exists(temp_zip):
+        # Simpan ZIP bila gagal agar bisa diperiksa/diulang; hapus hanya setelah sukses
+        if success and os.path.exists(temp_zip):
             try:
                 os.remove(temp_zip)
             except Exception:
                 pass
-
-    # 3. Jalankan migrasi skema
-    try:
-        from install_scripts.run_migration import run as run_migration
-        run_migration()
-    except Exception as mig_err:
-        print(f"[UPDATER WARNING] Migrasi: {mig_err}")
 
     return 0
 

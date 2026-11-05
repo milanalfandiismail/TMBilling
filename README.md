@@ -8,14 +8,14 @@
 <p align="center">
   <strong>Sistem Manajemen Billing Warnet & Game Center Modern (Enterprise Grade)</strong>
   <br />
-  Backend Flask · Frontend Modular Vanilla JS · WarnetAgent Tauri v2 & Rust · TightVNC Remote Control
+  Backend Flask · Frontend Modular Vanilla JS · WarnetAgent Tauri 1.5 & Rust · TightVNC Remote Control
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/Version-v1.6.5--rc1-blue.svg?style=flat-square" />
-  <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python" />
-  <img alt="Flask" src="https://img.shields.io/badge/Flask-3.0-000000?style=flat-square&logo=flask" />
-  <img alt="Tauri" src="https://img.shields.io/badge/Tauri-v2.0-FFC131?style=flat-square&logo=tauri" />
+  <img alt="Version" src="https://img.shields.io/badge/Version-v1.6.5--rc2-blue.svg?style=flat-square" />
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python" />
+  <img alt="Flask" src="https://img.shields.io/badge/Flask-3.1-000000?style=flat-square&logo=flask" />
+  <img alt="Tauri" src="https://img.shields.io/badge/Tauri-v1.5-FFC131?style=flat-square&logo=tauri" />
   <img alt="Rust" src="https://img.shields.io/badge/Rust-1.75%2B-DEA584?style=flat-square&logo=rust" />
   <img alt="Database" src="https://img.shields.io/badge/Database-SQLite-003B57?style=flat-square&logo=sqlite" />
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" />
@@ -28,7 +28,7 @@
 **TMBilling** adalah solusi manajemen operasional terpadu untuk warnet, cybercafe, dan arena esports modern. Dirancang dengan arsitektur **3-Layer Separation of Concerns (SoC)** yang tangguh, sistem ini mengintegrasikan server billing kasir, kasir kantin/FnB terpadu, kendali jarak jauh (remote control TightVNC berbasis web), monitoring hardware baseline anti-maling, dan pertahanan klien 5-lapis (*5-Layer Anti-Tamper Security*).
 
 > 📚 **Dokumentasi Lengkap (Single Source of Truth):**  
-> Untuk panduan arsitektur mendalam, spesifikasi fitur lengkap, katalog 232 endpoint API, dan skema database, buka **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)**.
+> Untuk panduan arsitektur mendalam, spesifikasi fitur lengkap, katalog 34 blueprint & 238 route API, dan skema database, buka **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)**.
 
 ---
 
@@ -44,7 +44,6 @@
 - 🔒 **Kunci Meja AFK / Istirahat Sementara (Screen Lock)**: Fitur penguncian layar PC klien saat ditinggal istirahat dengan tampilan hitam polos minimalis, countdown billing real-time, autentikasi password member / PIN guest, remote control kasir, dan master unlock.
 - 💼 **Shift Kasir & Hitung Buta (*Blind Cash Reconciliation*)**: Sistem serah terima shift anti-manipulasi kasir dengan input modal awal dinamis, *blind count* uang fisik laci, auto-audit selisih (surplus/defisit), cetak struk handover thermal 58mm, dan fitur *Admin Force Close*.
 - 🍔 **POS Kantin & Log Mutasi Stok Inventaris**: Kasir penjualan makanan/minuman dengan stok unlimited/limited, audit log mutasi stok (`MenuStockLog`), restock barang, multi-payment (Tunai/QRIS/Transfer), dan cetak struk thermal 58mm/80mm.
-- ☁️ **Cloudflare Tunnel Auto-Service**: Akses dashboard kasir & owner dari internet secara instan tanpa perlu port-forwarding router.
 - 📋 **Dynamic Tutorials CMS**: Modul SOP dan panduan operator warnet bawaan berbasis custom CKEditor 5 WYSIWYG.
 - 📂 **Process Monitor**: Pantau dan matikan proses aplikasi yang not-responding dari jarak jauh.
 - 📱 **Responsive Dual-Layout**: Antarmuka adaptif untuk layar 1024px, 1920px Full HD, serta layar sentuh tablet/smartphone.
@@ -57,15 +56,15 @@
 c:\Project GIT\TMBilling
 ├── app/                        # Backend Server Flask & Frontend Kasir Web
 │   ├── config.py               # Single Source of Version Truth (v1.6.5-rc2)
-│   ├── models/                 # 26 Database Model SQLAlchemy
-│   ├── routes/                 # 30 Blueprint REST & WebSocket (250 Endpoints)
-│   ├── services/               # 35+ Service Layer Logika Bisnis
+│   ├── models/                 # 24 Model Database SQLAlchemy
+│   ├── routes/                 # 34 Blueprint REST + VNC Bridge (238 Route)
+│   ├── services/               # 36 Service Class Logika Bisnis (31 Sub-Domain)
 │   └── static/js/kasir/        # Modular Vanilla ES6 Frontend JS
 ├── docs/                       # Master Dokumentasi
 │   ├── DOCUMENTATION.md        # Master Technical Manual & Single Source of Truth
 │   └── superpowers/            # Arsip Rencana Kerja & Spesifikasi
 ├── tools/ckeditor-builder/     # Custom CKEditor 5 Build untuk CMS
-├── WarnetAgent/                # Source Code Klien Warnet (Rust / Tauri v2)
+├── WarnetAgent/                # Source Code Klien Warnet (Rust / Tauri 1.5)
 │   ├── TMBillingTauri/         # Klien Utama (Lockscreen, Overlay, Win32 Hooks)
 │   ├── TMBilling_Monitor/      # Modul Hardware Monitor & Process Helper
 │   ├── MGCTM/                  # Watchdog Service Supervisor
@@ -85,9 +84,9 @@ c:\Project GIT\TMBilling
 ## 🚀 Panduan Instalasi & Pengoperasian Cepat
 
 ### Prasyarat Sistem:
-- **Server Billing**: Windows 10/11 / Windows Server, Python 3.10+, Koneksi Internet (untuk dependensi awal).
+- **Server Billing**: Windows 10/11 / Windows Server, Python 3.11+, browser dashboard Chrome/Edge 111+ (CSS Tailwind 4 memakai OKLCH & `@property`), Koneksi Internet (untuk dependensi awal).
 - **PC Klien Warnet**: Windows 10/11 64-bit, Microsoft Edge WebView2 Runtime.
-- **Pengembang (Opsional)**: Node.js 18+, Rust & Cargo 1.75+, .NET Framework 4.5+ SDK.
+- **Pengembang (Opsional)**: Node.js 20+ (Tailwind CLI 4), Rust & Cargo 1.75+, .NET Framework 4.5+ SDK.
 
 ---
 
@@ -126,16 +125,39 @@ c:\Project GIT\TMBilling
      ```
      Atau cukup *drag-and-drop* file ZIP rilis ke file `update.bat`.
    - **Update Manual (Bagi yang memperbarui dari versi terdahulu)**:
-     1. Hentikan server dengan menjalankan:
+     1. Pastikan Python **3.11+** (wajib untuk SQLAlchemy 2.1):
+        ```cmd
+        .venv\Scripts\python.exe -c "import sys; print(sys.version)"
+        ```
+     2. Hentikan server, lalu pastikan port `7015` benar-benar lepas:
         ```cmd
         stop.bat
+        netstat -ano | findstr :7015
         ```
-     2. Unduh paket rilis server terbaru (`TMBilling_Server_v<versi>.zip`) dari **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)**.
-     3. Ekstrak dan timpa (*replace/overwrite*) seluruh berkas ke dalam folder instalasi TMBilling Anda *(Data aman: berkas konfigurasi `.env` dan database `instance/warnet.db` tidak ada di dalam file ZIP dan tidak akan tertimpa)*.
-     4. Nyalakan kembali server:
+        Tidak boleh ada baris `LISTENING`.
+     3. Cadangkan database sebelum menimpa berkas:
+        ```cmd
+        .venv\Scripts\python.exe -c "import sqlite3,os; os.makedirs('backups',exist_ok=True); s=sqlite3.connect(r'instance\warnet.db'); d=sqlite3.connect(r'backups\manual_pre_update.db'); s.backup(d); s.close(); d.close()"
+        copy .env .env.bak
+        ```
+     4. Unduh paket rilis server terbaru (`TMBilling_Server_v<versi>.zip`) dari **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)**, lalu ekstrak dan timpa ke folder instalasi:
+        ```powershell
+        Expand-Archive -Path TMBilling_Server_v<versi>.zip -DestinationPath . -Force
+        ```
+        *Data aman: `.env`, `instance/`, dan `backups/` tidak ada di dalam ZIP dan tidak akan tertimpa. Jangan hapus `plugins/` bila Anda memakai plugin kustom.*
+     5. Pasang dependensi (wajib bila `requirements.txt` berubah):
+        ```cmd
+        .venv\Scripts\pip.exe install -r requirements.txt
+        ```
+     6. Jalankan migrasi skema (wajib bila rilis membawa perubahan skema; aman diulang):
+        ```cmd
+        .venv\Scripts\python.exe install_scripts\run_migration.py
+        ```
+     7. Nyalakan kembali server dan verifikasi:
         ```cmd
         start.bat
         ```
+        Buka `http://localhost:7015/api/health` dan pastikan `status` bernilai `ok` (atau `degraded` hanya bila disk/backup bermasalah), lalu uji login dan satu transaksi.
 
 ---
 
@@ -184,7 +206,7 @@ c:\Project GIT\TMBilling
    developer_install.bat
    ```
 
-3. **Kompilasi & Build Seluruh Komponen Klien (Rust / Tauri v2)**:
+3. **Kompilasi & Build Seluruh Komponen Klien (Rust / Tauri 1.5)**:
    ```cmd
    build_and_deploy.bat
    ```
@@ -199,7 +221,7 @@ c:\Project GIT\TMBilling
    ```powershell
    npm run test:e2e
    ```
-   > 10 suite Chromium (326 check) pada sandbox terisolasi port 7016. Database produksi `instance/warnet.db` tidak pernah ditulis — dijaga guard sha256 dan jumlah baris.
+   > 11 suite Chromium (327 check) pada sandbox terisolasi port 7016. Database produksi `instance/warnet.db` tidak pernah ditulis — dijaga guard sha256 dan jumlah baris.
 
 6. **Memeriksa Kompilasi Klien Rust**:
    ```powershell
@@ -213,8 +235,8 @@ c:\Project GIT\TMBilling
 
 | Dokumen | Deskripsi |
 | :--- | :--- |
-| **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog lengkap 28 fitur, katalog 250 endpoint REST API, skema 25 database models, panduan backend/frontend/Rust, dan spesifikasi protokol WebSocket. |
-| **[CHANGELOG.md](file:///c:/Project%20GIT/TMBilling/CHANGELOG.md)** | **Catatan Rilis** — Riwayat log perubahan dan rilis dari `v1.0.0` hingga `v1.6.4`. |
+| **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog lengkap 31 domain fitur, 34 blueprint & 238 route REST API, skema 24 model database, panduan backend/frontend/Rust, dan spesifikasi VNC bridge (WebSocket via Websockify). |
+| **[CHANGELOG.md](file:///c:/Project%20GIT/TMBilling/CHANGELOG.md)** | **Catatan Rilis** — Riwayat log perubahan dan rilis dari `v1.0.0` hingga `v1.6.5-rc2`. |
 
 ---
 

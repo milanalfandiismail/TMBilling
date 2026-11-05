@@ -33,13 +33,13 @@ function copyDirSafe(src, dest) {
 
 console.log('=== [TMBilling] Menyinkronkan Aset Vendor Lokal ===');
 
-// 1. FontAwesome Free (v6.4.0)
+// 1. FontAwesome Free (v7)
 const faSrc = path.join(NODE_MODULES, '@fortawesome', 'fontawesome-free');
 const faDest = path.join(VENDOR_DIR, 'fontawesome');
 if (fs.existsSync(faSrc)) {
     copyFileSafe(path.join(faSrc, 'css', 'all.min.css'), path.join(faDest, 'css', 'all.min.css'));
     copyDirSafe(path.join(faSrc, 'webfonts'), path.join(faDest, 'webfonts'));
-    console.log('✓ FontAwesome 6 disalin ke app/static/vendor/fontawesome/');
+    console.log('✓ FontAwesome 7 disalin ke app/static/vendor/fontawesome/');
 } else {
     console.warn('[WARN] @fortawesome/fontawesome-free belum terpasang di node_modules');
 }

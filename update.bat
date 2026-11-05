@@ -13,6 +13,11 @@ if exist "%~1" (
     echo [INFO] Menyiapkan paket pembaruan dari: "%~1"
     if not exist "instance" mkdir "instance"
     copy /y "%~1" "instance\temp_update.zip" >nul
+    if errorlevel 1 (
+        echo [ERROR] Gagal menyalin paket pembaruan ke instance\temp_update.zip
+        echo         Pembaruan dibatalkan. Server tidak diubah.
+        exit /b 1
+    )
     goto :run_updater
 ) else (
     echo [ERROR] File paket rilis "%~1" tidak ditemukan!

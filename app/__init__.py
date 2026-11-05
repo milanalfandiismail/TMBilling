@@ -30,7 +30,7 @@ class TMBillingCSRFProtect(CSRFProtect):
     yang dibebaskan dari verifikasi CSRF cookie. Token palsu/acak akan tetap
     menjalani verifikasi CSRF standar.
     """
-    def protect(self):
+    def protect(self, apply_exemptions=False):
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
             token = auth_header[7:].strip()
@@ -42,7 +42,7 @@ class TMBillingCSRFProtect(CSRFProtect):
                         return
                 except Exception:
                     pass
-        super().protect()
+        super().protect(apply_exemptions=apply_exemptions)
 
 
 csrf = TMBillingCSRFProtect()

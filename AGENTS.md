@@ -1,7 +1,7 @@
 # TMBilling: A Map for Agents & Dynamic Context Guide
 
 Sistem Manajemen Billing Warnet & Game Center Modern (Enterprise-Grade).
-Arsitektur **3-Layer Separation of Concerns (SoC)**: Backend Flask Python, Frontend Modular ES6 Vanilla JS, Client WarnetAgent Rust & Tauri v2, dan TightVNC Remote Control.
+Arsitektur **3-Layer Separation of Concerns (SoC)**: Backend Flask Python, Frontend Modular ES6 Vanilla JS, Client WarnetAgent Rust & Tauri 1.5, dan TightVNC Remote Control.
 Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md).
 
 > 📌 **Catatan Portabilitas**: Dokumen ini dirancang agar sepenuhnya **PORTABLE** untuk semua AI Coding Agent (Claude Code, Cursor, Copilot, ChatGPT, Windsurf, Antigravity, dsb) tanpa ketergantungan pada tool MCP tertentu.
@@ -24,8 +24,8 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `install.bat` | Skrip instalasi server produksi untuk pengguna akhir. |
 | `update.bat` | Runner batch Windows mandiri di root direktori untuk pembaruan manual aplikasi via CLI atau drag-and-drop berkas ZIP rilis. |
 | `start.bat` & `stop.bat` | Skrip otomasi start/stop background service server pada Windows. |
-| `package.json` | Konfigurasi npm, devDependencies (TailwindCSS 3.4, Tauri CLI), dan skrip build vendor/CSS. |
-| `requirements.txt` | Daftar pustaka Python backend (Flask 3.1.3, SQLAlchemy 2.0, APScheduler, Waitress, dll). |
+| `package.json` | Konfigurasi npm, devDependencies (TailwindCSS 4.3 via `@tailwindcss/cli`, Playwright, FontAwesome 7), dan skrip build vendor/CSS. |
+| `requirements.txt` | Daftar pustaka Python backend (Flask 3.1.3, SQLAlchemy 2.1, APScheduler, Waitress, dll; wajib Python 3.11+). |
 | `tailwind.config.js` | Konfigurasi framework CSS Tailwind untuk dashboard kasir dan client kiosk UI. |
 | `CHANGELOG.md` | Riwayat log perubahan dan rilis versi aplikasi (*Keep a Changelog standard*). |
 | `README.md` | Ringkasan proyek publik, sorotan fitur, dan panduan instalasi cepat. |
@@ -38,8 +38,8 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 
 | Berkas Skrip | Tanggung Jawab & Cakupan |
 |---|---|
-| `install_scripts/updater.bat` | Runner batch Windows mandiri (detached) yang mematikan server Python, mengekstrak berkas pembaruan, menjalankan migrasi database, dan menyalakan kembali server bersih tanpa kendala file-locking Windows. |
-| `install_scripts/extract_update.py` | Ekstraksi aman paket update ZIP (anti path-traversal, auto-backup SQLite ke `backups/`, proteksi berkas `.env` dan `instance/warnet.db`). |
+| `install_scripts/updater.bat` | Runner batch Windows mandiri (detached) untuk **semua** jalur update (sidebar Migrasi & Update, GitHub 1-klik, `update.bat`): preflight Python 3.11+, menghentikan server lewat proses background, proses `run.py`, **dan** pemilik port 7015, membatalkan tanpa mengubah berkas bila port masih hidup, backup+ekstraksi (gagal → server dinyalakan ulang), lalu `pip install` **sebelum** migrasi dan start ulang. |
+| `install_scripts/extract_update.py` | Ekstraksi aman paket update ZIP (anti path-traversal, auto-backup SQLite via Online Backup API sehingga isi `-wal` ikut tersalin, batal bila backup gagal, paket dipertahankan saat gagal, proteksi berkas `.env` dan `instance/warnet.db`). Migrasi dipindah ke `run_migration.py` setelah dependensi baru terpasang. |
 | `install_scripts/run_migration.py` | Runner CLI one-shot untuk eksekusi migrasi skema database Alembic (`flask_migrate.upgrade`) dan safety-net sync kolom/tabel baru pada fresh process. |
 | `install_scripts/gen_env.py` | Generator otomatis berkas konfigurasi `.env` dengan `SECRET_KEY` acak saat instalasi awal. |
 | `install_scripts/init_db.py` | Inisialisasi awal skema database SQLite dan akun admin default saat instalasi awal. |
@@ -71,9 +71,9 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `models/tournament/` | `Tournament`, `TournamentTeam`, `TournamentMatch` (bracket eSports eliminasi). |
 | `models/transaksi/` | `Transaksi` (pembayaran billing meja kasir: Tunai, QRIS, Transfer). |
 | `models/tutorial/` | `SystemTutorial` (artikel panduan operasional & CMS internal kasir). |
-| `models/user/` | `User` (akun kasir & admin) & `AuditLog` (catatan jejak audit aktivitas kasir). |
+| `models/user/` | `User` (akun kasir & admin); audit trail disimpan sebagai file JSON di `logs/warnet.log`, bukan tabel database. |
 
-#### C. Route Blueprints HTTP REST & WebSocket (`app/routes/` — 27 Sub-Domain)
+#### C. Route Blueprints HTTP REST & VNC Bridge (`app/routes/` — 26 Sub-Domain)
 | Subfolder Rute | Tanggung Jawab Endpoint |
 |---|---|
 | `routes/auth/` | Autentikasi kasir & admin (`/kasir/auth/`) serta autentikasi member client PC dengan validasi API key (`/public/auth/`). |
@@ -101,7 +101,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `routes/tournament/` | Manajemen turnamen game, pendaftaran tim eSports, dan generator bagan bracket. |
 | `routes/tutorial/` | CMS panduan sistem, artikel tutorial, dan upload media rich-text editor. |
 | `routes/user/` | RBAC manajemen user kasir/admin dan penelusuran audit log lengkap. |
-| `routes/vnc/` | WebSocket proxy relay streaming RFB TightVNC port 5900 dan bi-directional clipboard. |
+| `routes/vnc/` | Kontrol HTTP start/stop/status proxy VNC; relay WebSocket RFB TightVNC port 5900 dan clipboard dua arah ditangani Websockify (port 8081). |
 
 #### D. Business Logic Services (`app/services/` — 31 Sub-Domain)
 Seluruh aturan bisnis murni berada di layer service:
@@ -135,7 +135,7 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/transaksi/`: Pencatatan buku besar transaksi pembayaran.
 - `services/tutorial/`: Manajemen konten artikel tutorial CMS.
 - `services/user/`: Validasi RBAC hak akses pengguna.
-- `services/vnc/`: Broker koneksi TCP TightVNC ke WebSocket klien browser.
+- `services/vnc/`: Broker koneksi TCP TightVNC dan pengelola proses Websockify untuk klien browser.
 
 #### E. Data Access Layer Repositories (`app/repositories/` — 14 Sub-Domain)
 Pemisahan query ORM mentah dari service:
@@ -146,7 +146,7 @@ Pemisahan query ORM mentah dari service:
 - `middleware/ip_whitelist_middleware.py`: Filter akses IP subnet warnet.
 - `utils/constants.py`: Konstanta global durasi, status sesi, dan kode error.
 - `utils/helpers.py`: Response formatter JSON terstandar (`success_response`, `error_response`) dan `natural_sort_key` bersama untuk pengurutan kode PC.
-- `utils/logger.py`: Centralized audit logger ke file dan database; tanpa `print` per entri, dan `read_logs` hanya membaca ekor file.
+- `utils/logger.py`: Centralized audit logger ke file JSON `logs/warnet.log` (rotasi gzip); tanpa `print` per entri, dan `read_logs` hanya membaca ekor file. Tidak ada penulisan audit ke SQLite.
 - `utils/mikrotik_api.py`: Klien API RouterOS MikroTik berbasis socket.
 - `utils/pdf_helper.py`: Generator laporan PDF struk kasir & rekap keuangan (ReportLab).
 - `utils/scheduler_tasks.py`: Daemon tugas berkala APScheduler (auto-flush, auto-backup, expired cleanup).
@@ -188,10 +188,10 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 ### 5. Frontend Dashboard Kasir (`app/static/` & `app/templates/`)
 
 #### A. Modular ES6 JavaScript (`app/static/js/kasir/`)
-- `app.js`: Entry point inisialisasi aplikasi kasir, event delegation, dan routing 28 tab.
+- `app.js`: Entry point inisialisasi aplikasi kasir, event delegation, dan routing 30 tab.
 - `core/api.js`: Klien HTTP REST terpusat dengan penanganan CSRF otomatis dan error reporting.
 - `core/modal.js`: Pengendali modal dialog modular.
-- `core/skeleton.js`: Skeleton loader statis (tanpa animasi) untuk 28 tab tampilan.
+- `core/skeleton.js`: Skeleton loader statis (tanpa animasi) untuk 30 tab tampilan.
 - `core/toast.js`: Sistem notifikasi toast floating modern.
 - `core/utils.js`: Formatter mata uang Rupiah, kalkulator waktu, dan escape HTML sanitizer.
 - `components/modal-buka.js`: Modal alur pembukaan sesi baru meja PC (Prepaid/Postpaid/Member).
@@ -238,14 +238,14 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Owner Analytics & Tren** | `modules/owner.js` | `routes/report/`, `services/owner/` | `Transaksi`, `Sesi` |
 | **Member, Saldo, & Refill** | `modules/member/` | `routes/member/member_routes.py`, `services/member/` | `Member` |
 | **Paket Billing Jam-Jaman** | `modules/paket/` | `routes/paket/paket_routes.py`, `services/paket/` | `Paket` |
-| **Staff Kasir/Admin & RBAC** | `modules/user/` | `routes/user/user_routes.py`, `services/user/` | `User`, `AuditLog` |
+| **Staff Kasir/Admin & RBAC** | `modules/user/` | `routes/user/user_routes.py`, `services/user/` | `User` |
 | **Screenshot Monitor PC** | `modules/screenshot.js` | `routes/monitor/screenshot_routes.py`, `services/cache/telemetry_store.py` (stat file di-cache 5 detik) | In-memory store |
 | **Unit PC & Meja Klien** | `modules/pc.js`, `modules/pc/` | `routes/pc/pc_routes.py`, `services/pc/` (prefetch sesi aktif sekali query) | `PC`, `Grup` |
 | **Log Mutasi Stok FnB** | `modules/menu/stock_log.js` | `routes/menu/menu_routes.py`, `services/menu/` | `MenuItem`, in-memory store |
 | **Laporan Penjualan FnB** | `modules/laporan_menu.js` | `routes/menu/menu_routes.py`, `services/menu/` | `TransaksiMenu`, `MenuItem` |
 | **Sticky Notes Antar Shift** | `modules/catatan.js` | `routes/notes/note_routes.py`, `services/notes/` | Scratchpad disk store |
-| **Audit Log Terpusat** | `modules/log.js` | `routes/user/user_routes.py`, `services/user/`, `utils/logger.py` (atomic thread-safe file rotation & write-through SQLite) | `AuditLog` |
-| **Cetak Ulang Struk Kasir** | `modules/struk.js` | `routes/transaksi/`, `services/transaksi/` | `Transaksi` |
+| **Audit Log Terpusat** | `modules/log.js` | `routes/user/user_routes.py`, `services/user/`, `utils/logger.py` (file JSON `logs/warnet.log`, rotasi gzip; tanpa tabel DB) | — (file-based) |
+| **Cetak Ulang Struk Kasir** | `modules/struk.js` | `routes/report/report_routes.py` (`get_struk`, `get_struk_menu`), `services/transaksi/` | `Transaksi` |
 | **Server Health & LHM Telemetry** | `modules/server_monitor/server_monitor.js` | `routes/server_monitor/`, `services/server_monitor/` | Host sensors, LHM Engine |
 | **Public Specs & Hardware Catalog** | `templates/public/specs/index.html` (compact 2-column mobile card grid, debounced search & modal controller fokus trio CPU, GPU, RAM) | `app/__init__.py:public_specs()` (minimalist structured catalog JSON tanpa telemetri berlebih, eager load PC/hardware/paket) | `PC`, `HardwareMonitor`, `Grup` |
 | **Manajemen Plugins & Ekstensi** | `modules/settings/plugins.js` | `routes/settings/plugin_routes.py`, `services/plugins/` | Plugin manifest |
@@ -340,9 +340,9 @@ Runner Chromium sungguhan (Playwright) dengan sandbox terisolasi; setiap suite d
 - **Setelah Mengedit**: Lakukan validasi sintaks dan jalankan automated test terkait untuk menjamin tidak ada regresi.
 
 ### 4. Konteks Khusus TMBilling
-- **Backend**: Flask 3.1.3 + Python 3.10+ (ORM SQLAlchemy 2.0).
+- **Backend**: Flask 3.1.3 + Python 3.11+ (ORM SQLAlchemy 2.1).
 - **Frontend**: Vanilla ES6 JavaScript Modular (tanpa Webpack/Vite bundler runtime pada dashboard kasir).
-- **Client**: Rust Tauri v2 + C# / C++ watchdog daemons.
+- **Client**: Rust Tauri 1.5 + C# / C++ watchdog daemons.
 - **Database**: SQLite (`warnet.db` produksi / `test_warnet.db` unit test).
 - **Single Source of Version**: `app/config.py` (`Config.VERSION`).
 - **Cache Transient**: Seluruh data yang sering di-polling klien WAJIB melalui in-memory store di `app/services/cache/` untuk melindungi disk SQLite.
@@ -352,7 +352,7 @@ Untuk menjaga agar penggunaan CPU browser (Brave, Chrome, Edge) tetap sangat ren
 - **Zero Infinite Keyframe Loops**: DILARANG menambahkan CSS keyframes looping tak berhingga seperti `pulse-*-bg`, `animate-ping`, `animate-pulse`, `animate-modal-in`, `animate-in`, `fade-in`, atau `zoom-in`. Status darurat meja (Terputus, API Key Salah, LAN Drop, Hardware Swapped) WAJIB menggunakan badge visual solid berkontras tinggi dan teks tegas (`[ ⚠️ TERPUTUS ]`, `[ 🔑 KEY TIDAK COCOK ]`, `[ ⚠️ LAN 100M ]`) tanpa animasi berkedip.
 - **Zero Compositing Blur Filter**: DILARANG menggunakan CSS filter `backdrop-blur-*` dan `hover:brightness-*` pada modal overlay atau kartu meja. Modal overlay WAJIB menggunakan solid dark semi-transparan (`bg-black/90` atau `bg-black/95`) untuk mencegah GPU/CPU convolution composite pass berulang.
 - **Strict Dirty-Checking pada Polling**: Setiap fungsi update berulang (seperti `syncLiveCards` setiap 1 detik) WAJIB membandingkan nilai sebelum menyentuh DOM (`textContent`, `className`, `innerHTML`, `style`). Mutasi DOM hanya boleh dieksekusi bila terdapat perbedaan nilai riil.
-- **Static Skeletons**: Seluruh placeholder loading skeleton di 28 tab dan `skeleton.js` menggunakan balok statis netral (`bg-[#202020]` atau `bg-neutral-800`) tanpa animasi denyut `animate-pulse`.
+- **Static Skeletons**: Seluruh placeholder loading skeleton di 30 tab dan `skeleton.js` menggunakan balok statis netral (`bg-[#202020]` atau `bg-neutral-800`) tanpa animasi denyut `animate-pulse`.
 
 ### 6. Komunikasi
 - Respon selalu menggunakan **Bahasa Indonesia** kecuali jika diminta lain oleh pengguna.

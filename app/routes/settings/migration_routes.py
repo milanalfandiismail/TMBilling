@@ -137,6 +137,10 @@ def _safe_remove_temp(path: str):
 
 def _launch_updater():
     """Menjalankan updater.bat secara detached dari proses Flask."""
+    if sys.version_info < (3, 11):
+        raise RuntimeError(
+            "Pembaruan membutuhkan Python 3.11 atau lebih baru. Server tidak diubah."
+        )
     root_dir = os.path.abspath(os.path.join(current_app.root_path, ".."))
     updater_bat = os.path.join(root_dir, "install_scripts", "updater.bat")
     if not os.path.exists(updater_bat):

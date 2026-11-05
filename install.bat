@@ -11,9 +11,18 @@ echo.
 python --version >nul 2>&1
 if errorlevel 1 goto :no_python
 python --version
+python -c "import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)" >nul 2>&1
+if errorlevel 1 goto :old_python
 echo [OK] Python ditemukan.
 echo.
 goto :check_venv
+
+:old_python
+echo [ERROR] Versi Python terlalu lama. TMBilling membutuhkan Python 3.11 atau lebih baru.
+echo         Unduh versi terbaru di: https://www.python.org/downloads/
+echo ==========================================================
+pause
+exit /b 1
 
 :no_python
 echo [ERROR] Python tidak terdeteksi di sistem!

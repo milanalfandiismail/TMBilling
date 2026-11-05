@@ -15,12 +15,12 @@
 
 1. [Ikhtisar Sistem & Filosofi Desain](#1-ikhtisar-sistem--filosofi-desain)
 2. [Arsitektur Sistem Terpadu (3-Layer SoC)](#2-arsitektur-sistem-terpadu-3-layer-soc)
-   - [2.1 Backend Server (Flask + SQLite ORM + WebSocket Server)](#21-backend-server)
+   - [2.1 Backend Server (Flask + SQLite ORM + REST API)](#21-backend-server)
    - [2.2 Frontend Dashboard (Modular ES6 Vanilla JS + Responsive UI)](#22-frontend-dashboard)
-   - [2.3 WarnetAgent Klien (Tauri v2 + Rust Core + Kiosk Shell)](#23-warnetagent-klien)
+   - [2.3 WarnetAgent Klien (Tauri 1.5 + Rust Core + Kiosk Shell)](#23-warnetagent-klien)
    - [2.4 WebSocket VNC Proxy Relay & Remote Bridge](#24-websocket-vnc-proxy-relay--remote-bridge)
 3. [Struktur Direktori & Pemetaan Kode Repositori](#3-struktur-direktori--pemetaan-kode-repositori)
-4. [Katalog & Spesifikasi Mendalam Seluruh Fitur (32 Domain Fitur)](#4-katalog--spesifikasi-mendalam-seluruh-fitur-32-domain-fitur)
+4. [Katalog & Spesifikasi Mendalam Seluruh Fitur (31 Domain Fitur)](#4-katalog--spesifikasi-mendalam-seluruh-fitur-31-domain-fitur)
    - [4.1 Multi-PC Selection & Batch Actions Engine (`remoteBatch`)](#41-multi-pc-selection--batch-actions-engine)
    - [4.2 TightVNC Remote Control System & Bi-directional Clipboard Sync](#42-tightvnc-remote-control-system--bi-directional-clipboard-sync)
    - [4.3 Blackout Auto-Recovery System (Toleransi Mati Lampu & Uptime Tracker)](#43-blackout-auto-recovery-system-toleransi-mati-lampu--uptime-tracker)
@@ -53,22 +53,22 @@
    - [4.30 In-Place Reactive Rerender & Zero Page Reload Engine](#430-in-place-reactive-rerender--zero-page-reload-engine)
    - [4.31 Zero-Config Security & Credential Bootstrap Architecture](#431-zero-config-security--credential-bootstrap-architecture)
 5. [Panduan Teknis Backend (Flask & Python)](#5-panduan-teknis-backend-flask--python)
-   - [5.1 Daftar Blueprint & Routing (31 Blueprint)](#51-daftar-blueprint--routing)
-   - [5.2 Service Layer & Pola Arsitektur (41 Service Classes)](#52-service-layer--pola-arsitektur)
-   - [5.3 Skema Database & 25 Model SQLAlchemy](#53-skema-database--25-model-sqlalchemy)
+   - [5.1 Daftar Blueprint & Routing (34 Blueprint)](#51-daftar-blueprint--routing)
+   - [5.2 Service Layer & Pola Arsitektur (36 Service Classes)](#52-service-layer--pola-arsitektur)
+   - [5.3 Skema Database & 24 Model SQLAlchemy](#53-skema-database--24-model-sqlalchemy)
 6. [Panduan Teknis Frontend (Modular Vanilla JS & CSS)](#6-panduan-teknis-frontend-modular-vanilla-js--css)
    - [6.1 Arsitektur Core JS (`core/`)](#61-arsitektur-core-js)
    - [6.2 Modul-Modul Fitur Kasir (`modules/`)](#62-modul-modul-fitur-kasir)
-7. [Panduan Teknis WarnetAgent (Tauri v2 Rust Core)](#7-panduan-teknis-warnetagent-tauri-v2-rust-core)
+7. [Panduan Teknis WarnetAgent (Tauri 1.5 Rust Core)](#7-panduan-teknis-warnetagent-tauri-15-rust-core)
    - [7.1 TMBillingTauri (Client Lock & Overlay)](#71-tmbillingtauri)
    - [7.2 MGCTM Watchdog Daemon](#72-mgctm-watchdog-daemon)
    - [7.3 mtm (Auxiliary Watchdog & Resilience Guard)](#73-mtm-auxiliary-watchdog--resilience-guard)
    - [7.4 TMMonitor & HardwareHelper / TMLHMService](#74-tmmonitor--hardwarehelper--tmlhmservice)
    - [7.5 TMBilling_Uninstaller](#75-tmbilling_uninstaller)
    - [7.6 Deploy Scripts & Configuration](#76-deploy-scripts--configuration)
-8. [Spesifikasi Protokol API & WebSocket](#8-spesifikasi-protokol-api--websocket)
+8. [Spesifikasi Protokol API & VNC Bridge](#8-spesifikasi-protokol-api--vnc-bridge)
 9. [Panduan Operasional Kasir & Troubleshooting](#9-panduan-operasional-kasir--troubleshooting)
-10. [Panduan Kontribusi, Testing & SOP Dual-Engine (81 Test Files / 264 Specs)](#10-panduan-kontribusi-testing--sop-dual-engine)
+10. [Panduan Kontribusi, Testing & SOP Dual-Engine (119 Test Files / 386 Specs)](#10-panduan-kontribusi-testing--sop-dual-engine)
 
 ---
 
@@ -78,7 +78,7 @@
 
 ### Filosofi Desain Utama:
 1. **Resilience First (Zero Session Loss)**: Sesi billing pelanggan tidak boleh hilang akibat mati lampu (*blackout*), PC hang/crash, atau server restart. Sistem mampu melanjutkan sisa waktu secara otomatis.
-2. **Ironclad Anti-Tamper**: Klien warnet diproteksi berlapis (Tauri v2 Rust + Win32 API hooks + Dual-Hive Registry SHA-256 Hashes + Watchdog Daemon terpisah) agar tidak bisa di-bypass oleh software cheat, Task Manager, ataupun penggantian file binary.
+2. **Ironclad Anti-Tamper**: Klien warnet diproteksi berlapis (Tauri 1.5 Rust + Win32 API hooks + Dual-Hive Registry SHA-256 Hashes + Watchdog Daemon terpisah) agar tidak bisa di-bypass oleh software cheat, Task Manager, ataupun penggantian file binary.
 3. **Triple-Layer Session Protection**: Penutupan dan pemotongan sesi billing kadaluwarsa dilindungi secara berlapis: Layer 1 (Background Scheduler 60s), Layer 2 (Client Polling 1-3s), dan Layer 3 (Kasir Dashboard Polling 1, 2, 3, 5s).
 4. **Remote Operation & Cloud Access**: Owner atau operator dapat mengawasi, mengontrol, dan memantau billing secara aman melalui Cloudflare Tunnel & TightVNC Remote tanpa memerlukan IP publik statis.
 5. **Clean SoC & Zero-Slop Architecture**: Backend Flask terstruktur dengan *Clean Architecture* (Routes -> Services -> Repositories -> Models), Frontend menggunakan Vanilla JS modular tanpa framework berat, dan Klien Kiosk menggunakan Rust + Webview2 yang sangat hemat memori.
@@ -89,23 +89,23 @@
 
 Sistem TMBilling dirancang dengan arsitektur pemisahan tanggung jawab 3 lapis (*3-Layer Separation of Concerns*):
 - **Layer 1: Frontend (Browser / Kasir Dashboard)**: Web UI berbasis ES6 Modular Vanilla JS, standardized skeleton loader (core/skeleton.js), VNC web client berbasis canvas RFB, dan Process Monitor.
-- **Layer 2: Backend (Server Billing Flask)**: REST API engine dengan 30 Blueprint / 40 Service, background daemon APScheduler, WebSocket proxy engine (Simple-WebSocket & VNC Bridge), database SQLite dengan 23 Model SQLAlchemy, serta integrasi zero-trust Cloudflare Ingress.
-- **Layer 3: WarnetAgent Client (PC Klien)**: Aplikasi klien Tauri v2 (Rust + HTML5/CSS) dengan low-level Win32 hooks dan TightVNC loopback port 5900, diawasi oleh Watchdog Service C++ (MGCTM.exe), validasi registry hash SHA-256, dan telemetri hardware LibreHardwareMonitor (TMMonitor.exe + HardwareHelper.exe).
+- **Layer 2: Backend (Server Billing Flask)**: REST API engine dengan 34 Blueprint / 36 Service, background daemon APScheduler, VNC bridge via proses Websockify (port 8081), database SQLite dengan 24 Model SQLAlchemy, serta integrasi zero-trust Cloudflare Ingress.
+- **Layer 3: WarnetAgent Client (PC Klien)**: Aplikasi klien Tauri 1.5 (Rust + HTML5/CSS) dengan low-level Win32 hooks dan TightVNC loopback port 5900, diawasi oleh Watchdog Service C++ (MGCTM.exe), validasi registry hash SHA-256, dan telemetri hardware LibreHardwareMonitor (TMMonitor.exe + HardwareHelper.exe).
 
 ### 2.1 Backend Server
-- **Framework**: Python 3.10+ dengan Flask, Flask-SQLAlchemy, Flask-Migrate, Flask-CORS, Flask-WTF.
-- **Asynchronous & WebSocket**: Menggunakan `simple-websocket` untuk real-time telemetry, live screenshot streaming, dan TightVNC RFB binary frame multiplexing.
-- **Service Layer**: Pemisahan logika bisnis dari endpoint HTTP menggunakan 41 service class independen dan 15 repository layer.
+- **Framework**: Python 3.11+ dengan Flask, Flask-SQLAlchemy, Flask-Migrate, Flask-CORS, Flask-WTF.
+- **Telemetry & VNC**: Telemetri dan screenshot memakai HTTP polling; kanal WebSocket hanya dipakai VNC melalui proses Websockify (`ws://<host>:8081/?token=...`, atau `wss://<host>/ws/vnc?token=...` di balik HTTPS).
+- **Service Layer**: Pemisahan logika bisnis dari endpoint HTTP menggunakan 36 service class independen dan 15 repository class.
 - **Background Scheduler**: APScheduler menjalankan routine maintenance, toleransi blackout, dan pembersihan sesi kadaluwarsa setiap 60 detik.
 
 ### 2.2 Frontend Dashboard
 - **Teknologi**: Modular ES6 JavaScript (tanpa Node.js bundler runtime), TailwindCSS styling, Font Awesome icon set.
-- **Arsitektur**: Core API layer (`app/static/js/kasir/core/api.js`), Event Bus, Theme Variables, `core/skeleton.js` standardized loader, dan 32+ modul fitur terisolasi.
+- **Arsitektur**: Core API layer (`app/static/js/kasir/core/api.js`), Event Bus, Theme Variables, `core/skeleton.js` standardized loader, dan 27 modul fitur terisolasi.
 - **Responsivitas**: Dual layout adaptif (1024px compact mode s/d 1920px full widescreen) serta dukungan gesture sentuh untuk tablet/smartphone kasir.
 - **Zero Page Reload**: In-place reactive rerender (`_hasStructureChanged`) memperbarui denah meja, kartu PC, dan status hardware tanpa refresh browser.
 
 ### 2.3 WarnetAgent Klien
-- **Teknologi**: Rust + Tauri v2 (berbasis Microsoft Webview2).
+- **Teknologi**: Rust + Tauri 1.5 (berbasis Microsoft Webview2).
 - **Kiosk Shell**: Mengunci tampilan Windows (Disable `WinKey`, `Ctrl+Alt+Del`, `Alt+Tab`, `Alt+F4`, `Ctrl+Shift+Esc`), menutup akses taskbar dan desktop sebelum sesi dibuka.
 - **Overlay State**: Menampilkan floating bar widget (sisa waktu, tarif, billing FnB, QRIS payment, tombol ganti password, report tiket).
 
@@ -120,8 +120,8 @@ Sistem TMBilling dirancang dengan arsitektur pemisahan tanggung jawab 3 lapis (*
 ```text
 c:\Project GIT\TMBilling
 ├── app/                                # Backend Server Flask & Frontend Kasir
-│   ├── config.py                       # Single Source of Version Truth (VERSION = "1.6.5")
-│   ├── models/                         # 25 Database Model SQLAlchemy
+│   ├── config.py                       # Single Source of Version Truth (VERSION = "1.6.5-rc2")
+│   ├── models/                         # 24 Model Database SQLAlchemy
 │   │   ├── game/                       # Game & GameKategori
 │   │   ├── grup/                       # Grup Ruangan / Tarif (Reguler/VIP)
 │   │   ├── hardware/                   # HardwareMonitor & PCProcess
@@ -138,13 +138,14 @@ c:\Project GIT\TMBilling
 │   │   ├── transaksi/                  # Transaksi pembayaran billing
 │   │   ├── tutorial/                   # SystemTutorial (CMS Articles)
 │   │   └── user/                       # User & Role RBAC
-│   ├── routes/                         # 31 Blueprint HTTP / WebSocket
+│   ├── routes/                         # 34 Blueprint HTTP REST + VNC Bridge
 │   │   ├── auth/                       # Login/Logout kasir & admin
 │   │   ├── backup/                     # Database local & cloud backup
 │   │   ├── blackout/                   # Toleransi & recovery mati lampu
 │   │   ├── client/                     # Handshake & telemetry client agent
 │   │   ├── dashboard/                  # Dashboard summary & stats
 │   │   ├── game/                       # Game launcher & icon cropper
+│   │   ├── grup/                       # Grup ruangan & tarif per menit
 │   │   ├── hardware/                   # Uptime logs & baseline discrepancy
 │   │   ├── maintenance/                # Ticket reporting & tracking
 │   │   ├── member/                     # Member management & deposit
@@ -163,8 +164,8 @@ c:\Project GIT\TMBilling
 │   │   ├── tournament/                 # Turnamen & bracket engine
 │   │   ├── tutorial/                   # CMS Tutorials & editor uploads
 │   │   ├── user/                       # RBAC user & audit logs
-│   │   └── vnc/                        # TightVNC WebSocket proxy stream
-│   ├── services/                       # 41 Service Layer Business Logic
+│   │   └── vnc/                        # Kontrol HTTP proxy VNC (WebSocket via Websockify)
+│   ├── services/                       # 36 Service Layer Business Logic
 │   ├── repositories/                   # 15 Data Access Layer & DB Query Helpers
 │   ├── utils/                          # 8 Utility Helpers (Formatters, Security, Response)
 │   ├── static/                         # Static Assets
@@ -173,10 +174,10 @@ c:\Project GIT\TMBilling
 │   │   │   ├── app.js                  # Main Application Entrypoint
 │   │   │   ├── core/                   # api.js, modal.js, toast.js, utils.js, skeleton.js
 │   │   │   ├── components/             # Modal buka sesi, tambah durasi, dll.
-│   │   │   └── modules/                # 28+ modul JS fitur terisolasi
+│   │   │   └── modules/                # 27 modul fitur + dashboard
 │   │   └── sounds/                     # Audio warning bells (15m, 10m, 5m, 1m)
 │   └── templates/                      # Jinja2 HTML Templates
-│       ├── kasir/                      # Dashboard Kasir & Modals (26 Tab Views)
+│       ├── kasir/                      # Dashboard Kasir & Modals (30 Tab Views)
 │       ├── member/                     # Member Portal Kiosk
 │       └── tv/                         # Public Billboard & Scoreboard
 ├── docs/                               # Master Dokumentasi Teknis
@@ -194,7 +195,7 @@ c:\Project GIT\TMBilling
 │   ├── TMBilling_Monitor/              # Hardware Telemetry & Sensor Daemon
 │   ├── TMBilling_Uninstaller/          # Secure Uninstaller (Registry & Service Clean)
 │   └── Deploy/                         # Deployment & Firewall Helper Scripts
-├── tests/                              # Suite Pengujian Unit & Integrasi (81 Files, 264 Specs)
+├── tests/                              # 119 File Pytest / 386 Specs + 11 Suite E2E
 ├── build_and_deploy.bat                # Skrip Build Otomatis Klien & Server
 ├── developer_install.bat               # Skrip Inisialisasi Dev Environment Cepat
 ├── CHANGELOG.md                        # Riwayat Rilis Lengkap (Keep a Changelog)
@@ -203,7 +204,7 @@ c:\Project GIT\TMBilling
 
 ---
 
-## 4. Katalog & Spesifikasi Mendalam Seluruh Fitur (32 Domain Fitur)
+## 4. Katalog & Spesifikasi Mendalam Seluruh Fitur (31 Domain Fitur)
 
 ### 4.1 Multi-PC Selection & Batch Actions Engine (`remoteBatch`)
 - **Deskripsi**: Operator kasir dapat memilih banyak PC sekaligus untuk melakukan aksi massal hanya dengan beberapa klik.
@@ -222,8 +223,8 @@ c:\Project GIT\TMBilling
 ### 4.2 TightVNC Remote Control System & Bi-directional Clipboard Sync
 - **Deskripsi**: Kasir dapat melihat layar dan mengontrol keyboard/mouse PC klien secara *real-time* langsung dari browser tanpa perlu menginstall VNC viewer eksternal.
 - **Arsitektur Loopback 5900**: TightVNC Server di klien mendengarkan pada port `127.0.0.1:5900`.
-- **WebSocket RFB Proxy**: Backend Flask meneruskan binary frame RFB ke canvas HTML5 di dashboard (`vnc_client.js`).
-- **Bi-directional Clipboard Sync**: Teks yang disalin di browser kasir otomatis terkirim ke clipboard Windows PC klien, dan sebaliknya teks yang disalin di PC klien disinkronkan ke browser kasir via channel WebSocket.
+- **WebSocket RFB Proxy**: Proses Websockify (port `8081`) meneruskan binary frame RFB dari TightVNC ke canvas HTML5 di dashboard (`vnc_client.js`); route Flask hanya mengatur start/stop/status proxy.
+- **Bi-directional Clipboard Sync**: Teks yang disalin di browser kasir otomatis terkirim ke clipboard Windows PC klien, dan sebaliknya teks yang disalin di PC klien disinkronkan ke browser kasir melalui kanal WebSocket Websockify.
 - **Auto-Firewall & Fail-Fast Multiplexing**: Skrip `allow_firewall.bat` memastikan port TightVNC diizinkan oleh Windows Firewall, dan mekanisme multiplexing token mencegah tabrakan sesi VNC antar kasir.
 - **Auto-Generated Random VNC Password**: Sistem secara otomatis meng-generate password acak 8 karakter saat pertama kali dijalankan jika belum dikonfigurasi di tabel settings (`SettingsService.get_or_create_vnc_password`), menggantikan ketergantungan pada password default statis demi keamanan jaringan LAN.
 
@@ -257,10 +258,10 @@ c:\Project GIT\TMBilling
   - **GPU PNP Device ID** & Nama Grafis
   - **RAM Serials** (Daftar nomor seri keping memori)
   - **Disk Serials** (Daftar nomor seri SSD/HDD)
-- **Deteksi Pencurian / Pergantian Komponen**: Setiap kali PC klien booting, agen mengirimkan spesifikasi hardware saat ini (*current specs*). Sistem secara otomatis membandingkannya dengan baseline tersimpan via `HardwareService.process_hardware_metric`. Jika terdapat perbedaan (GPU PNP ID berbeda, RAM serial hilang/berkurang, Disk diganti, Motherboard ditukar), dashboard kasir seketika memunculkan alert diskrepansi visual berkedip merah dengan deskripsi komponen yang berubah.
+- **Deteksi Pencurian / Pergantian Komponen**: Setiap kali PC klien booting, agen mengirimkan spesifikasi hardware saat ini (*current specs*). Sistem secara otomatis membandingkannya dengan baseline tersimpan via `HardwareService.process_hardware_metric`. Jika terdapat perbedaan (GPU PNP ID berbeda, RAM serial hilang/berkurang, Disk diganti, Motherboard ditukar), dashboard kasir seketika memunculkan alert diskrepansi visual merah solid dengan deskripsi komponen yang berubah.
 - **Visualisasi Audit di Tab Hardware Checker & Modal Detail PC**:
   - **🔒 Baseline Resmi (Terkunci)** — spesifikasi yang terdaftar saat tombol *Update Baseline* terakhir ditekan, disertai badge `TERDAFTAR`.
-  - **🔍 Terdeteksi Saat Ini (Live Telemetry)** — spesifikasi yang dikirim agen saat terakhir booting, disertai badge `LIVE SPECS`. RAM dan Disk serial ditampilkan dalam *pill tag* berwarna: ungu normal (🏷️), merah berkedip (🚨 Tukar!) jika tidak ada di baseline.
+  - **🔍 Terdeteksi Saat Ini (Live Telemetry)** — spesifikasi yang dikirim agen saat terakhir booting, disertai badge `LIVE SPECS`. RAM dan Disk serial ditampilkan dalam *pill tag* berwarna: ungu normal (🏷️), merah solid (🚨 Tukar!) jika tidak ada di baseline.
 
 #### B. Referensi CCTV Cerdas dengan Rentang Waktu (Smart CCTV Time Window)
 - **Deskripsi**: Setiap deteksi perubahan hardware internal selalu menghasilkan **rentang waktu estimasi** untuk memandu operator dalam mengecek rekaman CCTV, bukan hanya satu titik waktu.
@@ -273,7 +274,7 @@ c:\Project GIT\TMBilling
 #### C. Indikator Kecepatan NIC (Network Interface Card)
 - NIC speed terdeteksi dari agent dan ditampilkan di baris bawah kartu hardware:
   - **≥ 1 Gbps / ≥ 1000 Mbps** → tampil hijau emerald (`text-emerald-400 font-bold`).
-  - **< 1 Gbps** (misal 100 Mbps, 10 Mbps) → tampil merah berkedip (`text-red-400 font-bold animate-pulse`) sebagai sinyal peringatan koneksi lambat.
+  - **< 1 Gbps** (misal 100 Mbps, 10 Mbps) → tampil merah solid (`text-red-400 font-bold`) tanpa animasi berkedip sebagai sinyal peringatan koneksi lambat.
 
 #### D. Alur Operasional: Update Baseline
 1. Owner/Admin mengklik tombol **🔄 Update Baseline** pada PC yang bersangkutan.
@@ -320,12 +321,12 @@ c:\Project GIT\TMBilling
   - Kemudahan akses bagi Owner untuk melihat laporan keuangan dan analitik dari mana saja melalui smartphone.
 
 ### 4.11 Centralized Versioning System (`config.py` Truth)
-- **Deskripsi**: Standarisasi nomor versi aplikasi terpusat pada file [app/config.py](file:///c:/Project%20GIT/TMBilling/app/config.py) (`VERSION = "1.6.5"`).
+- **Deskripsi**: Standarisasi nomor versi aplikasi terpusat pada file [app/config.py](file:///c:/Project%20GIT/TMBilling/app/config.py) (`VERSION = "1.6.5-rc2"`).
 - **Penyebaran Otomatis**: Variabel versi ini otomatis diinjeksikan ke template Jinja2 (footer UI kasir), endpoint REST `/api/version`, dan response handshake klien agent.
 
 ### 4.12 RBAC Kasir & Centralized Audit Log System
 - **Deskripsi**: Role-Based Access Control dengan 3 tingkatan pengguna: `Super Admin`, `Admin`, dan `Kasir`.
-- **Audit Logs**: Seluruh aktivitas krusial (buka sesi, tambah waktu, hapus member, edit harga paket, diskon, refund, pembukaan laci kas) dicatat dalam tabel audit log berformat terstandarisasi.
+- **Audit Logs**: Seluruh aktivitas krusial (buka sesi, tambah waktu, hapus member, edit harga paket, diskon, refund, pembukaan laci kas) dicatat sebagai JSON line di `logs/warnet.log` melalui `app/utils/logger.py` (rotasi gzip; tanpa tabel database).
 - **Pembersihan Log dengan Otorisasi Supervisor**: Riwayat audit log tidak dapat dihapus sembarangan dan membutuhkan verifikasi password level Administrator/Super Admin.
 
 ### 4.13 Floor Plan & Dynamic Visual Room Layout (v1.6.3 Engine)
@@ -456,13 +457,13 @@ c:\Project GIT\TMBilling
   $$\text{Sisa Menit} = \text{durasi\_beli\_menit} - \text{round}\left(\frac{\text{now}() - \text{mulai\_pada}}{60}\right)$$
 
 ### 4.29 Standardized Skeleton Loader Engine v1.6.3 di Seluruh Tab Kasir
-- **Deskripsi**: Standarisasi transisi pemuatan data menggunakan placeholder skeleton bernuansa gelap dan animasi shimmer modern di seluruh 26 tab antarmuka kasir.
+- **Deskripsi**: Standarisasi transisi pemuatan data menggunakan placeholder skeleton statis bernuansa gelap (tanpa animasi) di seluruh 30 tab view antarmuka kasir.
 - **Engine Terpusat**: [`app/static/js/kasir/core/skeleton.js`](file:///c:/Project%20GIT/TMBilling/app/static/js/kasir/core/skeleton.js).
 - **Metode Pembantu**:
   - `Skeleton.renderTableSkeleton(tbody, cols, rows)`: Skeleton baris tabel tabular.
   - `Skeleton.renderCardSkeleton(container, count)`: Skeleton kartu grid.
   - `Skeleton.renderDetailSkeleton(container)`: Skeleton formulir/modal detail.
-- **Cakupan 26 Tab**: Dashboard PC, POS Kantin, Manajemen Member, Paket Billing, Hardware Checker, Process Monitor, Shift Kasir, Log Mutasi Stok, Audit Log, Blackout Recovery, Tournament, Mikrotik, Tutorial CMS, Backup, dll.
+- **Cakupan 30 Tab View**: Dashboard PC, POS Kantin, Manajemen Member, Paket Billing, Hardware Checker, Process Monitor, Shift Kasir, Log Mutasi Stok, Audit Log, Blackout Recovery, Tournament, Mikrotik, Tutorial CMS, Backup, dll.
 - **Zero-Slop UI**: Mengeliminasi seluruh spinner berputar usang (`fa-spin`, `animate-spin`) demi pengalaman pengguna yang mulus dan elegan.
 
 ### 4.30 In-Place Reactive Rerender & Zero Page Reload Engine
@@ -517,18 +518,18 @@ Backend TMBilling terbagi ke dalam **34 Blueprint** modular di `app/routes/`:
 - `tournament_routes.py`: Manajemen turnamen eSports dan bagan pertandingan.
 - `tutorial_routes.py`: CMS artikel panduan dan upload gambar editor.
 - `user_routes.py`: Manajemen pengguna sistem dan audit log.
-- `vnc_routes.py`: WebSocket proxy stream TightVNC RFB.
+- `vnc_routes.py`: Kontrol HTTP start/stop/status proxy VNC; kanal WebSocket RFB ditangani Websockify.
 
 ### 5.2 Service Layer & Pola Arsitektur
-Logika bisnis diisolasi secara ketat dalam 40 class di `app/services/`. Blueprint routes hanya bertugas memvalidasi request HTTP dan mengembalikan response JSON, sedangkan eksekusi aturan bisnis dilakukan oleh service:
+Logika bisnis diisolasi secara ketat dalam 36 class di `app/services/`. Blueprint routes hanya bertugas memvalidasi request HTTP dan mengembalikan response JSON, sedangkan eksekusi aturan bisnis dilakukan oleh service:
 - `blackout_service.py`: Logika toleransi pemadaman listrik dan pemulihan sesi.
 - `vnc_service.py`: Menangani komunikasi low-level dengan klien.
 - `sesi_service.py`: Menangani perhitungan tarif per detik, sisa waktu, pembersihan kadaluwarsa, dan promo paket.
 - `hardware_service.py`: Menangani kalkulasi baseline mismatch, pemisahan Mobo Model vs Mobo Serial, dan jendela waktu CCTV.
 - `dashboard_service.py`: Agregator status real-time PC, server metrics, dan billing quick summary.
 
-### 5.3 Skema Database & 23 Model SQLAlchemy
-TMBilling menggunakan 23 model ORM terdefinisi di `app/models/`:
+### 5.3 Skema Database & 24 Model SQLAlchemy
+TMBilling menggunakan 24 model ORM terdefinisi di `app/models/`:
 1. `User`: Akun pengguna dashboard kasir/admin (`id`, `username`, `password_hash`, `role`, `status`).
 2. `PC`: Data unit PC klien (`id`, `nama_pc`, `ip_address`, `mac_address`, `grup_id`, `pos_x`, `pos_y`, `status_pc`).
 3. `Sesi`: Sesi penggunaan PC (`id`, `tipe`, `member_id`, `user_id`, `pc_id`, `paket_id`, `nama_guest`, `token_sesi`, `mulai_pada`, `selesai_pada`, `durasi_beli_menit`, `total_bayar`, `status`, `is_admin`, `waktu_mulai_sesi`, `waktu_tersimpan_awal`, `last_sync`, `menit_pause_total`, `sisa_menit_saat_mati`, `is_blackout_suspect`, `is_blackout_resolved`, `waktu_resolved`, `is_afk`, `afk_pin`, `afk_sejak`, `sesi_asal_id`).
@@ -564,7 +565,7 @@ TMBilling menggunakan 23 model ORM terdefinisi di `app/models/`:
 ### 6.1 Arsitektur Core JS (`core/`)
 Frontend dashboard kasir dibangun tanpa dependensi framework runtime (Vanilla JS murni berstandar ES6 Modules) yang terletak di `app/static/js/kasir/`:
 - `core/api.js`: Lapisan komunikasi HTTP terpadu. Berisi objek `API` dengan namespace lengkap (`API.auth`, `API.sesi`, `API.monitor`, `API.menu`, dll.). Seluruh pemanggilan fetch API memiliki penanganan error dan parsing JSON standar.
-- `core/skeleton.js`: Standardized shimmer skeleton loading generator (`renderTableSkeleton`, `renderCardSkeleton`, `renderDetailSkeleton`) yang diintegrasikan di seluruh 26 tab kasir.
+- `core/skeleton.js`: Standardized static skeleton loading generator (`renderTableSkeleton`, `renderCardSkeleton`, `renderDetailSkeleton`) yang diintegrasikan di seluruh 30 tab view (31 container termasuk plugin-spa).
 - `core/modal.js`: Library lifecycle manajemen modal dialog (animasi slide/fade, trapping fokus keyboard, tombol `Escape` to close, backdrop dismiss).
 - `core/toast.js`: Sistem notifikasi toast non-blocking (Success, Error, Warning, Info) dengan auto-dismissal.
 - `core/utils.js`: Format mata uang Rupiah (`formatRupiah`), kalkulator durasi waktu jam-menit-detik, dan debounce helper.
@@ -584,12 +585,12 @@ Terletak di `app/static/js/kasir/modules/`:
 
 ---
 
-## 7. Panduan Teknis WarnetAgent (Tauri v2 Rust Core)
+## 7. Panduan Teknis WarnetAgent (Tauri 1.5 Rust Core)
 
 Klien warnet berlokasi di direktori `WarnetAgent/` dan terdiri dari 5 binary utama berbasis Rust serta script pendukung:
 
 ### 7.1 TMBillingTauri
-- **Teknologi**: Rust + Tauri v2 (`WarnetAgent/TMBillingTauri/src-tauri/`).
+- **Teknologi**: Rust + Tauri 1.5 (`WarnetAgent/TMBillingTauri/src-tauri/`).
 - **UI Frontend**: HTML5/CSS murni di `WarnetAgent/TMBillingTauri/src/` (Kiosk Lockscreen, Overlay Bar, Admin Unlock Dialog).
 - **Commands IPC**:
   - `lock_pc`: Mengunci layar dan mengaktifkan proteksi antarmuka.
@@ -636,7 +637,7 @@ Berlokasi di direktori `WarnetAgent/Deploy/`:
 
 ---
 
-## 8. Spesifikasi Protokol API & WebSocket
+## 8. Spesifikasi Protokol API & VNC Bridge
 
 ### 8.1 Standar Format JSON REST API
 Seluruh response REST API mengikuti struktur JSON standar:
@@ -655,9 +656,11 @@ Jika terjadi kegagalan:
 }
 ```
 
-### 8.2 Katalog Lengkap Seluruh Endpoint REST API (250 Endpoints Terdaftar)
+### 8.2 Katalog Endpoint REST API (34 Blueprint)
 
-Total Blueprint Terdaftar: **30 Blueprint** | Total Endpoint Terdaftar: **232 Endpoints**
+Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/routes/`: **238 Route** (katalog per blueprint di bawah merinci endpoint utama; route dinamis/registrasi manual tidak selalu punya baris sendiri).
+
+> Endpoint kesehatan `GET /api/health` terdaftar sebagai blueprint `health_api` (`app/routes/public/health_routes.py`), dan didaftarkan di `app/__init__.py:135`.
 
 #### 🔹 Blueprint: auth (3 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
@@ -674,12 +677,13 @@ Total Blueprint Terdaftar: **30 Blueprint** | Total Endpoint Terdaftar: **232 En
 | POST | /api/v1/kasir/auth/login | auth_kasir.login |
 | POST | /api/v1/kasir/auth/logout | auth_kasir.logout |
 
-#### 🔹 Blueprint: backup (5 Endpoint)
+#### 🔹 Blueprint: backup (6 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
 | :--- | :--- | :--- |
 | DELETE | /api/v1/kasir/backup/delete/<filename> | backup.delete_backup |
 | GET | /api/v1/kasir/backup/download/<filename> | backup.download_backup |
 | GET | /api/v1/kasir/backup/list | backup.list_backups |
+| POST | /api/v1/kasir/backup/restore/<filename> | backup.restore_backup |
 | POST | /api/v1/kasir/backup/test-connection | backup.test_connection |
 | POST | /api/v1/kasir/backup/trigger | backup.trigger_backup |
 
@@ -1014,19 +1018,25 @@ Total Blueprint Terdaftar: **30 Blueprint** | Total Endpoint Terdaftar: **232 En
 | GET | /api/v1/kasir/user/<int:user_id> | user.get_user |
 | PUT | /api/v1/kasir/user/<int:user_id> | user.update_user |
 
-#### 🔹 Blueprint: vnc (2 Endpoint)
+#### 🔹 Blueprint: vnc (5 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
 | :--- | :--- | :--- |
+| GET | /api/v1/kasir/vnc/client/<int:pc_id>/status | vnc.status_vnc_client_route |
+| POST | /api/v1/kasir/vnc/client/<int:pc_id>/start | vnc.start_vnc_client_route |
+| POST | /api/v1/kasir/vnc/client/<int:pc_id>/stop | vnc.stop_vnc_client_route |
 | POST | /api/v1/kasir/vnc/start | vnc.start_vnc_proxy |
 | GET | /api/v1/kasir/vnc/status | vnc.get_vnc_status |
 
-### 8.3 Protokol WebSocket
-- **VNC Proxy Stream**: `ws://<server_ip>:<port>/ws/vnc/<pc_id>`
+### 8.3 Protokol VNC Bridge (WebSocket)
+- **VNC Proxy Stream (Websockify)**:
+  - HTTP lokal: `ws://<host>:8081/?token=<token>`
+  - HTTPS (di balik reverse proxy): `wss://<host>/ws/vnc?token=<token>`
+  - URL dibentuk oleh `resolveWebSocketUrl()` di `vnc_client.js`; tidak memakai path `<pc_id>`.
   - Meneruskan data binary byte array frame RFB (Remote FrameBuffer).
   - Meneruskan event keyboard & mouse kasir ke PC klien.
   - Bi-directional clipboard text synchronization.
-- **Telemetry & Live Monitor Stream**: `ws://<server_ip>:<port>/ws/telemetry`
-  - Broadcast status PC, sisa durasi sesi, dan heartbeat PC klien ke seluruh dashboard kasir secara real-time.
+- **Telemetry & Live Monitor Stream**: HTTP polling (bukan WebSocket)
+  - Dashboard memakai polling HTTP ke endpoint dashboard/client; tidak ada WebSocket telemetry.
 
 ---
 
@@ -1051,19 +1061,74 @@ Total Blueprint Terdaftar: **30 Blueprint** | Total Endpoint Terdaftar: **232 En
 - **Layar Remote VNC Blank / Hitam**:
   - *Penanganan*: Pastikan file `allow_firewall.bat` sudah dijalankan di PC klien dan service TightVNC berjalan pada port 5900.
 
+### 9.3 Update Server: Otomatis, `update.bat`, dan Manual Total
+
+Semua jalur update server bermuara ke `install_scripts/updater.bat`, sehingga pengamanannya sama:
+
+| Metode | Perintah / Lokasi | Penanganan |
+|---|---|---|
+| GitHub 1-Klik | Dashboard > Pengaturan > Migrasi & Update | `updater.bat`, otomatis |
+| Upload ZIP | Dashboard > Pengaturan > Migrasi & Update | `updater.bat`, otomatis |
+| `update.bat` | `update.bat TMBilling_Server_v<versi>.zip` atau drag-and-drop ZIP | `updater.bat`, semi-manual |
+| Manual total | Langkah 1–8 di bawah | Dikerjakan sendiri |
+
+`updater.bat` melakukan: preflight Python 3.11+, menghentikan proses server (background `pythonw`, proses `run.py`, dan pemilik port 7015), membatalkan tanpa mengubah berkas bila port masih hidup, backup database via SQLite Online Backup API, ekstraksi ZIP, `pip install` **sebelum** migrasi, migrasi, lalu start ulang. Bila backup/ekstraksi gagal, server dinyalakan kembali dan ZIP dipertahankan di `instance/temp_update.zip`.
+
+**Prosedur manual total (tanpa `update.bat`):**
+
+1. Pastikan Python 3.11+:
+   ```cmd
+   .venv\Scripts\python.exe -c "import sys; print(sys.version)"
+   ```
+2. Hentikan server dan verifikasi port:
+   ```cmd
+   stop.bat
+   netstat -ano | findstr :7015
+   ```
+   Tidak boleh ada `LISTENING`. Jika masih ada, hentikan PID tersebut lewat Task Manager.
+3. Cadangkan database dan konfigurasi:
+   ```cmd
+   .venv\Scripts\python.exe -c "import sqlite3,os; os.makedirs('backups',exist_ok=True); s=sqlite3.connect(r'instance\warnet.db'); d=sqlite3.connect(r'backups\manual_pre_update.db'); s.backup(d); s.close(); d.close()"
+   copy .env .env.bak
+   ```
+4. Ekstrak ZIP rilis dan timpa berkas aplikasi:
+   ```powershell
+   Expand-Archive -Path TMBilling_Server_v<versi>.zip -DestinationPath . -Force
+   ```
+   Jangan menyentuh `.env`, `instance/`, `backups/`, dan `plugins/` kustom.
+5. Pasang dependensi:
+   ```cmd
+   .venv\Scripts\pip.exe install -r requirements.txt
+   ```
+   Bila langkah ini gagal, jangan lanjut start; perbaiki atau balikkan kode ke versi lama.
+6. Jalankan migrasi:
+   ```cmd
+   .venv\Scripts\python.exe install_scripts\run_migration.py
+   ```
+   Output normal berakhir dengan `[MIGRATION] Safety sync skema berhasil.`
+7. Nyalakan server:
+   ```cmd
+   start.bat
+   ```
+8. Verifikasi `http://localhost:7015/api/health`, login dashboard, dan uji satu sesi billing + satu transaksi POS.
+
+**Kapan `run_migration.py` wajib?** Wajib bila rilis mengubah skema (cek `CHANGELOG.md` atau `migrations/versions/`). Untuk rilis kode/CSS saja tidak wajib, tetapi migrasi bersifat idempoten sehingga aman dijalankan setiap update. Jangan menjalankan migrasi saat server masih hidup.
+
+**Rollback bila update gagal:** `stop.bat` → salin `backups/manual_pre_update.db` (atau `warnet_backup_before_update_*.db`) menjadi `instance/warnet.db` → ekstrak ulang ZIP versi lama → `start.bat`. Update tidak zero-downtime: client terputus beberapa detik, tetapi sesi tersimpan di database dan pulih lewat heartbeat/blackout.
+
 ---
 
 ## 10. Panduan Kontribusi, Testing & SOP Dual-Engine
 
 ### 10.1 Standar Testing Backend (Pytest)
-Repositori TMBilling dilengkapi **121 file pengujian unit dan integrasi** dengan **372 test specs** aktif:
+Repositori TMBilling dilengkapi **119 file pengujian unit dan integrasi** dengan **386 test specs** aktif:
 ```powershell
 python -m pytest tests/ -q
 ```
-Seluruh pengujian harus berstatus **PASSED (372 passed, 0 failed)** sebelum melakukan commit atau push.
+Seluruh pengujian harus berstatus **PASSED (386 passed, 0 failed)** sebelum melakukan commit atau push.
 
 ### 10.1.1 Pengujian End-to-End Browser (Playwright)
-`tests/e2e/` menjalankan **10 suite Chromium sungguhan** (326 check) terhadap sandbox terisolasi:
+`tests/e2e/` menjalankan **11 suite Chromium sungguhan** (327 check) terhadap sandbox terisolasi:
 
 ```powershell
 npm run test:e2e                                            # semua suite
@@ -1074,7 +1139,7 @@ npm run test:e2e:sandbox                                    # server sandbox int
 
 - Setiap suite mendapat database baru (`instance/warnet_e2e_sandbox.db`) dan server baru; `instance/warnet.db` dijaga sha256 + jumlah baris dan kegagalan guard membuat exit code 1.
 - Direktori catatan diisolasi lewat `TM_NOTES_DIR`, jadi test tidak menyentuh catatan produksi.
-- Cakupan: 32 tab container, 10 sub-tab settings, 8 portal publik, siklus billing, POS kantin, member/paket/grup, shift & rekonsiliasi kas, telemetri hardware & anti-maling, turnamen, RBAC/redaksi setting, blackout & emergency login, invarian zero-thrash dan reflow responsif.
+- Cakupan: 31 tab container, 10 sub-tab settings, 8 portal publik, siklus billing, POS kantin, member/paket/grup, shift & rekonsiliasi kas, telemetri hardware & anti-maling, turnamen, RBAC/redaksi setting, blackout & emergency login, invarian zero-thrash dan reflow responsif.
 - Check harus membuktikan transisi state, baris database, aritmetika uang, atau kontrak error — bukan sekadar "elemen ada".
 
 
@@ -1083,7 +1148,7 @@ Seluruh aktivitas rekayasa perangkat lunak wajib mematuhi protokol **Dual-Engine
 1. **Engine 1 - Planning & Brainstorming (Plugin `superpowers`)**:
    - `brainstorming`: Menganalisis kebutuhan pengguna dan merancang arsitektur sebelum coding.
    - `writing-plans`: Menyusun rencana kerja bertahap yang modular dan terverifikasi.
-   - `systematic-debugging`: Investigasi akar masalah secara mendalam sebelum perbaikan; verifikasi regresi (372 test specs) dan jangan commit/push otomatis setelah bugfix.
+   - `systematic-debugging`: Investigasi akar masalah secara mendalam sebelum perbaikan; verifikasi regresi (386 test specs) dan jangan commit/push otomatis setelah bugfix.
    - `test-driven-development`: Memastikan spesifikasi pengujian ada untuk setiap perubahan fitur krusial.
    - `git-discipline`: Dilarang keras melakukan `git commit` maupun `git push` secara sepihak/otomatis (baik saat fitur baru maupun setelah debugging/bugfix) sebelum ada perintah eksplisit dari USER. Selalu laporkan hasil pekerjaan dan tunggu aba-aba USER.
 2. **Engine 2 - Execution & Verification (MCP `codebase-memory`)**:
