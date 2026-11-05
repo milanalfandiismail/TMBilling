@@ -650,6 +650,10 @@ const SettingsGeneral = {
                                     <i class="fa-solid fa-download text-[11px] xl:text-xs"></i>
                                     <span class="hidden md:inline">Unduh</span>
                                 </button>
+                                <button onclick="Settings.restoreBackup('${b.filename}')" class="p-1.5 md:px-2.5 md:py-1 xl:px-3 xl:py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-neutral-200 text-xs xl:text-xs 2xl:text-sm font-bold rounded transition-colors active:scale-95 inline-flex items-center gap-1.5" title="Restore Database dari Berkas Ini">
+                                    <i class="fa-solid fa-rotate-left text-[11px] xl:text-xs"></i>
+                                    <span class="hidden md:inline">Restore</span>
+                                </button>
                                 <button onclick="Settings.deleteBackup('${b.filename}')" class="p-1.5 md:px-2.5 md:py-1 xl:px-3 xl:py-1.5 bg-red-950/40 hover:bg-red-900/40 border border-red-900/50 text-red-400 text-xs xl:text-xs 2xl:text-sm font-bold rounded transition-colors active:scale-95 inline-flex items-center gap-1.5" title="Hapus Berkas Backup">
                                     <i class="fa-solid fa-trash-can text-[11px] xl:text-xs"></i>
                                     <span class="hidden md:inline">Hapus</span>
@@ -665,6 +669,25 @@ const SettingsGeneral = {
 
     downloadBackup(filename) {
         window.location.href = `/api/v1/kasir/backup/download/${filename}`;
+    },
+
+    async restoreBackup(filename) {
+        if (!confirm(`Restore database dari "${filename}"?\n\nData saat ini akan diganti dengan isi berkas backup. Backup pengaman dibuat otomatis sebelum proses restore.`)) {
+            return;
+        }
+        try {
+            const res = await API.request(`/api/v1/kasir/backup/restore/${filename}`, {
+                method: 'POST',
+                body: JSON.stringify({ confirm: true })
+            });
+            if (res.success) {
+                Toast.success(`Database direstore. Backup pengaman: ${res.safety_backup}`);
+                this.loadBackupFiles();
+                setTimeout(() => window.location.reload(), 2000);
+            }
+        } catch (err) {
+            Toast.error('Gagal restore database: ' + err.message);
+        }
     },
 
     async deleteBackup(filename) {

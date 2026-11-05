@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from flask import request, jsonify, session, current_app, send_file
 from app.services import SettingsService, BackupService
+from app.services.backup.backup_service import default_backup_dir
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.utils.logger import write_log
 from app.routes.settings.settings_routes import settings_api_bp
@@ -15,11 +16,10 @@ def trigger_manual_backup():
     """Trigger backup database secara manual dari UI."""
     try:
         # 1. Tentukan path (disesuaikan dengan folder instance Flask)
-        db_path = os.path.join(current_app.instance_path, 'warnet.db')
-        backup_dir = os.path.abspath(os.path.join(current_app.instance_path, '..', 'backups'))
-        
-        # 2. Eksekusi Backup (Gunakan logic dari class yang sudah kita buat)
-        backup_manager = BackupService(db_path=db_path, backup_dir=backup_dir)
+        backup_dir = default_backup_dir()
+
+        # 2. Eksekusi Backup (path DB diturunkan dari engine SQLAlchemy aktif)
+        backup_manager = BackupService(backup_dir=backup_dir)
         backup_manager.create_backup()
         backup_manager.cleanup_old_backups(max_keep=5)
         

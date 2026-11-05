@@ -15,6 +15,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Atribusi Transaksi**: Operator tak dikenal tidak lagi dibebankan ke admin pertama; checkout kantin menolak kasir yang tidak valid.
 - **Ringkasan Shift Read-Only**: `GET /summary` tidak lagi menulis ke database; force close menyimpan `uang_fisik`/`selisih` kosong (frontend menampilkan `-` / `(Penutupan Paksa)`) alih-alih menganggap PAS, dan struk handover mencetak `BELUM DIHITUNG`.
 - **Stok Kantin Atomik**: Pengurangan stok memakai satu `UPDATE ... WHERE stok >= jumlah` untuk mencegah oversell saat checkout bersamaan.
+- **Backup Konsisten & Restore Tanpa Restart**: backup kini memakai SQLite Online Backup API + `PRAGMA integrity_check` (data di `-wal` ikut tersalin dan arsip rusak ditolak sebelum tersimpan), path database diturunkan dari engine aktif (bukan hardcode `instance/warnet.db`), dan admin dapat restore langsung dari daftar backup (`POST /api/v1/kasir/backup/restore/<filename>` wajib `{"confirm": true}`; backup pengaman dibuat otomatis sebelum restore).
 - **Bersih-Bersih**: Menghapus CLI `--release` pada `run.py` (rusak: `UnboundLocalError`, ekstraksi ZIP tanpa proteksi path traversal, tidak pernah menyalin payload) dan route ringkasan shift duplikat yang tidak terjangkau.
 
 ### Performa & Optimasi
@@ -36,6 +37,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Suite Chromium Nyata**: `npm run test:e2e` kini menjalankan 10 suite Playwright (326 check) terhadap sandbox terisolasi, dengan guard sha256 + jumlah baris `instance/warnet.db`, reseed database per suite, dan exit code yang benar-benar gagal saat ada check merah. Runner lama yang mencetak total hardcoded `382 PASSED` tanpa menjalankan test dihapus.
 - **Cakupan**: 32 tab container kasir, 10 sub-tab settings, 8 portal publik, plus alur billing, POS kantin, member/paket/grup, shift & rekonsiliasi kas, telemetri hardware & anti-maling, turnamen, RBAC/redaksi setting, blackout & emergency login, serta invarian zero-thrash dan reflow responsif (240 sel).
 - **Isolasi**: direktori catatan sandbox dipisah lewat `TM_NOTES_DIR`; proses Waitress sandbox dibungkus Windows Job Object sehingga port 7016 tidak tertinggal.
+- **Suite Backup & Restore**: suite `backup_restore` (8 check) memicu backup nyata, memutasi data, lalu restore tanpa restart di sandbox; folder `backups/` produksi diverifikasi tidak berubah dan guard sha256 database produksi tetap lulus.
 - **Bug Produk Ditemukan & Diperbaiki**: member dengan `kadaluarsa_pada` lampau kini ditolak saat login portal (`403 Masa aktif member sudah kadaluarsa`); dua kelas `animate-in` sisa di modal dashboard dan overlay screenshot dihapus sesuai aturan zero-thrash.
 
 ---

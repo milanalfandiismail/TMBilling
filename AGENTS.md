@@ -77,7 +77,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | Subfolder Rute | Tanggung Jawab Endpoint |
 |---|---|
 | `routes/auth/` | Autentikasi kasir & admin (`/kasir/auth/`) serta autentikasi member client PC dengan validasi API key (`/public/auth/`). |
-| `routes/backup/` | Manajemen backup database lokal SQLite dan integrasi cloud backup. |
+| `routes/backup/` | Manajemen backup database lokal SQLite, integrasi cloud backup, dan restore database aktif dari arsip (`POST /restore/<filename>`, admin-only, wajib `{"confirm": true}`). |
 | `routes/blackout/` | Endpoint penanganan toleransi pemulihan sesi pasca mati lampu. |
 | `routes/client/` | Handshake client agent PC, detak jantung (heartbeat), penerimaan status sesi, dan emergency login yang mewajibkan `emergency_token` server. |
 | `routes/dashboard/` | Data agregat statistik dashboard kasir, total pendapatan hari ini, dan summary PC. |
@@ -107,7 +107,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 #### D. Business Logic Services (`app/services/` — 31 Sub-Domain)
 Seluruh aturan bisnis murni berada di layer service:
 - `services/auth/`: Validasi kredensial, hashing password, dan manajemen token.
-- `services/backup/`: Backup otomatis rotasi harian dan restore snapshot SQLite.
+- `services/backup/`: Backup otomatis rotasi harian dan restore snapshot SQLite; snapshot memakai SQLite Online Backup API + `PRAGMA integrity_check` (aman untuk mode WAL), path DB diturunkan dari engine aktif via `default_db_path()`, direktori backup dari `default_backup_dir()` (env `BACKUP_DIR` untuk test/sandbox), dan `restore_backup()` membuat backup pengaman lalu menulis ke DB aktif tanpa restart (lock bersama dengan proses backup).
 - `services/blackout/`: Logika pemulihan sesi berdasarkan threshold blackout terkonfigurasi; deteksi memakai `sesi.last_sync` yang kini tersimpan untuk sesi guest lewat heartbeat 30 detik.
 - `services/cache/`: Subsystem in-memory cache berkecepatan tinggi (rincian di Bagian 3); `ProcessMemoryStore` ber-TTL 300 detik dan `PCNetworkCacheStore` di-rebuild di luar lock; `UptimeMemoryStore` menyimpan flag billing per PC di RAM (dibaca jalur telemetri, bukan query sesi).
 - `services/client/`: Manajemen handshake, antrean perintah cepat client PC, dan heartbeat `sesi.last_sync` throttled 30 detik (`ClientService.HEARTBEAT_PERSIST_SECONDS`); menulis flag billing ke `UptimeMemoryStore` setiap polling status.
@@ -229,6 +229,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **CMS Artikel & Tutorial** | `modules/tutorials.js` | `routes/tutorial/`, `services/tutorial/` | `SystemTutorial` |
 | **MikroTik Bandwidth QoS** | `modules/mikrotik.js` | `routes/mikrotik/`, `services/mikrotik/` | `MikroTikConfig` |
 | **Turnamen eSports & Bracket** | `modules/tournament.js` | `routes/tournament/`, `services/tournament/` | `Tournament`, `TournamentMatch` |
+| **Backup & Restore Database** | `modules/settings/settings_general.js` (`restoreBackup`) | `routes/backup/backup_routes.py`, `services/backup/backup_service.py` (snapshot Online Backup API + integrity check; restore via tombol Restore di daftar backup, wajib konfirmasi; `default_backup_dir()` menghormati env `BACKUP_DIR` untuk sandbox/test) | `Settings` (provider cloud) |
 | **Auto-Update & Migrasi Skema** | `modules/settings/migration.js` | `routes/settings/migration_routes.py` (anti-SSRF whitelist & active session count), `install_scripts/updater.bat` | Alembic skema, SQLite backups |
 | **Client Security & API Key Guard** | `modules/dashboard/dashboard_compact.js` | `routes/auth/auth_routes.py`, `routes/client/client_routes.py`, `app/__init__.py:TMBillingCSRFProtect` (Bearer client API key validation & constant-time comparison, emergency login wajib `emergency_token` via `hmac.compare_digest`) | `PC`, `ApiKeyMismatchStore` |
 | **Receipt / Nota Anti-Collision Generator** | `modules/struk.js` | `services/transaksi/transaksi_service.py`, `services/menu/menu_service.py` (atomic microsecond timestamping + sequential fallback collision-free numbering) | `Transaksi`, `TransaksiMenu` |
@@ -306,7 +307,8 @@ Runner Chromium sungguhan (Playwright) dengan sandbox terisolasi; setiap suite d
 | `tests/e2e/lib/db.js` | `dbQuery/dbExec` via `.venv` sqlite3 (hanya DB sandbox). |
 | `tests/e2e/lib/report.js` | Kontrak laporan `{total,passed,failed,checks[]}`. |
 | `tests/e2e/lib/coverage_manifest.js` | 32 tab container + 10 sub-tab settings + 8 portal, pemilik suite per tab. |
-| `tests/e2e/test_e2e_*.js` | 10 suite: `pc_billing`, `fnb_pos`, `member_paket`, `auth_shift_notes`, `hardware_maintenance_remote`, `tournament_game`, `settings_admin_logs`, `public_portals_cms`, `coverage`, `perf_invariants`. |
+| `tests/e2e/test_e2e_backup_restore.js` | Suite `backup_restore`: backup → mutasi → restore di sandbox, validasi admin/konfirmasi/404/403, dan guard folder `backups/` produksi tidak berubah. |
+| `tests/e2e/test_e2e_*.js` | 11 suite: `pc_billing`, `fnb_pos`, `member_paket`, `auth_shift_notes`, `hardware_maintenance_remote`, `tournament_game`, `settings_admin_logs`, `backup_restore`, `public_portals_cms`, `coverage`, `perf_invariants`. |
 
 ---
 

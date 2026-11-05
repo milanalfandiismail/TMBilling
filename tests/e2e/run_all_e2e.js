@@ -57,6 +57,12 @@ const suites = [
     runner: require('./test_e2e_settings_admin_logs.js').runSettingsAdminLogsE2ETest,
   },
   {
+    id: 'backup_restore',
+    title: 'Backup konsisten, restore tanpa restart, dan isolasi direktori',
+    browser: true,
+    runner: require('./test_e2e_backup_restore.js').runBackupRestoreE2ETest,
+  },
+  {
     id: 'public_portals_cms',
     title: 'Delapan portal publik dan CMS dokumentasi',
     browser: true,

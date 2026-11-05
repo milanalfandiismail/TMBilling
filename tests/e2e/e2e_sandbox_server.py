@@ -36,6 +36,8 @@ SANDBOX_LOG_PATH = os.path.join(INSTANCE_DIR, "e2e_sandbox_server.log")
 # Catatan & bootstrap admin sandbox dipisah agar tidak menyentuh berkas produksi.
 SANDBOX_NOTES_DIR = os.path.join(INSTANCE_DIR, "e2e", "notes")
 SANDBOX_PROJECT_ROOT = os.path.join(INSTANCE_DIR, "e2e", "root")
+# Backup sandbox dipisah agar suite tidak menulis/memangkas isi backups/ produksi.
+SANDBOX_BACKUP_DIR = os.path.join(INSTANCE_DIR, "e2e", "backups")
 
 # Kredensial tetap supaya suite tidak bergantung pada isi .env mesin pengembang.
 SANDBOX_CLIENT_API_KEY = "e2e-client-key"
@@ -157,6 +159,7 @@ def _sandbox_env():
     env["SECRET_KEY"] = SANDBOX_SECRET_KEY
     env["TM_NOTES_DIR"] = SANDBOX_NOTES_DIR
     env["PROJECT_ROOT"] = SANDBOX_PROJECT_ROOT
+    env["BACKUP_DIR"] = SANDBOX_BACKUP_DIR
     return env
 
 
@@ -174,8 +177,9 @@ def prepare_sandbox_database():
     os.environ["SECRET_KEY"] = SANDBOX_SECRET_KEY
     os.environ["TM_NOTES_DIR"] = SANDBOX_NOTES_DIR
     os.environ["PROJECT_ROOT"] = SANDBOX_PROJECT_ROOT
+    os.environ["BACKUP_DIR"] = SANDBOX_BACKUP_DIR
 
-    for sandbox_only in (SANDBOX_NOTES_DIR, SANDBOX_PROJECT_ROOT):
+    for sandbox_only in (SANDBOX_NOTES_DIR, SANDBOX_PROJECT_ROOT, SANDBOX_BACKUP_DIR):
         if os.path.isdir(sandbox_only):
             shutil.rmtree(sandbox_only, ignore_errors=True)
         os.makedirs(sandbox_only, exist_ok=True)

@@ -36,11 +36,12 @@ def run_database_backup(app):
     ke BackupService secara terpusat dengan batasan maksimal 5 file backup terbaru.
     """
     with app.app_context():
-        db_path = os.path.join(app.instance_path, 'warnet.db') 
-        backup_dir = os.path.abspath(os.path.join(app.instance_path, '..', 'backups'))
-        
+        from app.services import BackupService
+        from app.services.backup.backup_service import default_db_path, default_backup_dir
+        db_path = default_db_path(app)
+        backup_dir = default_backup_dir(app)
+
         try:
-            from app.services import BackupService
             backup_manager = BackupService(db_path=db_path, backup_dir=backup_dir)
             if os.path.exists(db_path):
                 backup_manager.create_backup()
