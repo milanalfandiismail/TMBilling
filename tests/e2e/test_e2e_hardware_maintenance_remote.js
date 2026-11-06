@@ -134,6 +134,43 @@ async function runHardwareMaintenanceRemoteE2ETest(page) {
         assert.ok(!/Ditukar/i.test(text), 'tab hardware_checker tidak boleh menandai PC-01 ditukar');
     });
 
+    await check(report, 'hardware_checker: tabel fit tanpa scroll horizontal di lg, xl, 2xl', async () => {
+        await tab(page, 'hardware_checker');
+        await waitFor(page, () => {
+            const el = document.getElementById('hardware-checker-container');
+            return el && !el.querySelector('.hw-skeleton-row') && el.innerText.includes('PC-01') ? el.innerText : null;
+        }, { label: 'tabel hardware checker selesai dimuat' });
+
+        const original = page.viewportSize();
+        const failures = [];
+        try {
+            for (const width of [1024, 1280, 1536, 1920]) {
+                await page.setViewportSize({ width, height: 1080 });
+                const size = await page.evaluate(() => {
+                    const wrap = document.querySelector('#hardware-checker-container .hardware-checker-table');
+                    if (!wrap) return null;
+                    const table = wrap.querySelector('table');
+                    const headerOverflow = Array.from(table.querySelectorAll('thead th'))
+                        .filter((th) => getComputedStyle(th).display !== 'none')
+                        .filter((th) => th.scrollWidth > th.clientWidth + 1)
+                        .map((th) => `${th.innerText.trim()}: ${th.scrollWidth} > ${th.clientWidth}`);
+                    return { client: wrap.clientWidth, scroll: wrap.scrollWidth, headerOverflow };
+                });
+                assert.ok(size, `viewport ${width}: tabel hardware checker tidak ditemukan`);
+                if (size.scroll > size.client + 1) {
+                    failures.push(`${width}px: ${size.scroll} > ${size.client}`);
+                }
+                if (size.headerOverflow.length) {
+                    failures.push(`${width}px header: ${size.headerOverflow.join('; ')}`);
+                }
+            }
+        } finally {
+            if (original) await page.setViewportSize(original);
+        }
+
+        assert.deepStrictEqual(failures, [], `tabel masih discroll horizontal: ${failures.join(' | ')}`);
+    });
+
     await check(report, 'anti-maling: PNP GPU ditukar pada PC-02 tercatat di DB dan badge Ditukar', async () => {
         const first = await hardwarePost(page, {
             ip: ip2, mac: mac2, data: { ...HARDWARE_PC2, HardwareSerials: SERIALS_PC2 },

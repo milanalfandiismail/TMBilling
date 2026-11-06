@@ -278,7 +278,7 @@ python run.py
 build_and_deploy.bat
 
 # Menjalankan Master Runner E2E Sandbox Terisolasi (Zero Database Mutation Guarantee)
-# 11 suite Chromium sungguhan (Playwright): 327 check, guard sha256 instance/warnet.db
+# 11 suite Chromium sungguhan (Playwright): 335 check, guard sha256 instance/warnet.db
 npm run test:e2e
 # atau langsung via Python: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py
 

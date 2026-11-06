@@ -1128,7 +1128,7 @@ python -m pytest tests/ -q
 Seluruh pengujian harus berstatus **PASSED (386 passed, 0 failed)** sebelum melakukan commit atau push.
 
 ### 10.1.1 Pengujian End-to-End Browser (Playwright)
-`tests/e2e/` menjalankan **11 suite Chromium sungguhan** (327 check) terhadap sandbox terisolasi:
+`tests/e2e/` menjalankan **11 suite Chromium sungguhan** (335 check) terhadap sandbox terisolasi:
 
 ```powershell
 npm run test:e2e                                            # semua suite

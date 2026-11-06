@@ -221,7 +221,7 @@ c:\Project GIT\TMBilling
    ```powershell
    npm run test:e2e
    ```
-   > 11 suite Chromium (327 check) pada sandbox terisolasi port 7016. Database produksi `instance/warnet.db` tidak pernah ditulis — dijaga guard sha256 dan jumlah baris.
+   > 11 suite Chromium (335 check) pada sandbox terisolasi port 7016. Database produksi `instance/warnet.db` tidak pernah ditulis — dijaga guard sha256 dan jumlah baris.
 
 6. **Memeriksa Kompilasi Klien Rust**:
    ```powershell

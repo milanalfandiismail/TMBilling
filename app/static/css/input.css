@@ -365,6 +365,36 @@
     }
 }
 
+/* =========================================================================
+   Hardware Checker Table Fit (Desktop)
+   ========================================================================= */
+/* Kolom yang disembunyikan tidak dihitung; total kolom terlihat = 100%. */
+@media (min-width: 1024px) {
+    #hardware-checker-container table {
+        table-layout: fixed;
+    }
+    #hardware-checker-container th,
+    #hardware-checker-container td {
+        min-width: 0;
+    }
+    #hardware-checker-container th:nth-child(1) { width: 18%; }
+    #hardware-checker-container th:nth-child(3) { width: 28%; }
+    #hardware-checker-container th:nth-child(7) { width: 11%; }
+    #hardware-checker-container th:nth-child(10) { width: 22%; }
+    #hardware-checker-container th:nth-child(11) { width: 21%; }
+}
+@media (min-width: 1536px) {
+    #hardware-checker-container th:nth-child(1) { width: 9%; }
+    #hardware-checker-container th:nth-child(2) { width: 9%; }
+    #hardware-checker-container th:nth-child(4) { width: 12%; }
+    #hardware-checker-container th:nth-child(5) { width: 13%; }
+    #hardware-checker-container th:nth-child(6) { width: 12%; }
+    #hardware-checker-container th:nth-child(8) { width: 8%; }
+    #hardware-checker-container th:nth-child(9) { width: 8%; }
+    #hardware-checker-container th:nth-child(10) { width: 13%; white-space: normal; }
+    #hardware-checker-container th:nth-child(11) { width: 16%; }
+}
+
 
 /* =========================================================================
    Settings Kiosk CKEditor Internal Scroll Height Constraint (Responsive)

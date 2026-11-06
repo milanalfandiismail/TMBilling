@@ -28,6 +28,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Whitelist IP**: tabel daftar IP memakai `table-fixed` + `colgroup` pada `lg`/`xl`/`2xl` agar pas lebar tanpa scroll horizontal; perilaku mobile tetap.
 - Enam check E2E baru di suite `settings_admin_logs` mencakup nesting/centering, batas 8 paket, panel analitik, scrollbar, badge log, dan fit tabel whitelist.
 - **Shell Tab Terpusat**: semua tab kasir non-dashboard memakai `max-width: 80rem` + `margin-inline: auto` pada semua breakpoint; dashboard tetap full-width dan MikroTik tetap `max-w-5xl`. Satu check E2E baru di suite `coverage` memverifikasi pusat konten pada 1024/1280/1536/1920 px.
+- **Hardware Checker Fit**: tabel hardware checker memakai `table-layout: fixed` pada `lg`/`xl`/`2xl` dengan lebar kolom per breakpoint, sehingga tidak ada scroll horizontal; layout lebar `2xl` tetap menampilkan seluruh kolom dan header panjang boleh wrap. Satu check E2E baru memverifikasi 1024/1280/1536/1920 px.
 
 ### Performa & Optimasi
 - **Heartbeat Klien**: `sesi.last_sync` kini disimpan tiap 30 detik (`ClientService.HEARTBEAT_PERSIST_SECONDS`) sehingga deteksi blackout berlaku untuk sesi guest; penulisan `pc.last_activity` per poll tanpa commit dihapus (poll turun dari 5 statement menjadi 3 SELECT tanpa UPDATE).
@@ -51,7 +52,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Paritas Visual**: probe computed-style pada dashboard, POS, settings, dan landing menunjukkan warna setara (OKLCH), border `gray-200` tetap, cursor tombol tetap pointer; perbedaan yang diterima: `shadow-sm` kini setara `shadow` v3 dan `outline-none` menjadi `none/3px` (keduanya tidak terlihat berubah).
 
 ### Pengujian E2E
-- **Suite Chromium Nyata**: `npm run test:e2e` kini menjalankan 11 suite Playwright (327 check) terhadap sandbox terisolasi, dengan guard sha256 + jumlah baris `instance/warnet.db`, reseed database per suite, dan exit code yang benar-benar gagal saat ada check merah. Runner lama yang mencetak total hardcoded `382 PASSED` tanpa menjalankan test dihapus.
+- **Suite Chromium Nyata**: `npm run test:e2e` kini menjalankan 11 suite Playwright (335 check) terhadap sandbox terisolasi, dengan guard sha256 + jumlah baris `instance/warnet.db`, reseed database per suite, dan exit code yang benar-benar gagal saat ada check merah. Perintah npm memakai `.venv\Scripts\python.exe` agar tidak bergantung pada Python global. Runner lama yang mencetak total hardcoded `382 PASSED` tanpa menjalankan test dihapus.
 - **Cakupan**: 31 tab container kasir, 10 sub-tab settings, 8 portal publik, plus alur billing, POS kantin, member/paket/grup, shift & rekonsiliasi kas, telemetri hardware & anti-maling, turnamen, RBAC/redaksi setting, blackout & emergency login, serta invarian zero-thrash dan reflow responsif (234 sel).
 - **Isolasi**: direktori catatan sandbox dipisah lewat `TM_NOTES_DIR`; proses Waitress sandbox dibungkus Windows Job Object sehingga port 7016 tidak tertinggal.
 - **Suite Backup & Restore**: suite `backup_restore` (8 check) memicu backup nyata, memutasi data, lalu restore tanpa restart di sandbox; folder `backups/` produksi diverifikasi tidak berubah dan guard sha256 database produksi tetap lulus.
