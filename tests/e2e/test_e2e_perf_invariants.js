@@ -300,6 +300,23 @@ async function runPerfInvariantsE2ETest(page) {
     if (resumedCount < 1) throw new Error('polling tidak pulih setelah tab kembali terlihat');
   });
 
+  // ------------------- E2. daftar grup tidak di-fetch ulang tiap 2 detik
+  await check(report, 'tab screenshot meng-cache daftar grup', async () => {
+    await tab(page, 'screenshot');
+    const counts = await page.evaluate(() => new Promise((resolve) => {
+      const start = window.__e2eFetchLog.length;
+      setTimeout(() => {
+        const entries = window.__e2eFetchLog.slice(start);
+        resolve({
+          grup: entries.filter((e) => e.url.includes('/api/v1/kasir/grup/')).length,
+          shots: entries.filter((e) => e.url.includes('/monitor/screenshot/all')).length,
+        });
+      }, 5000);
+    }));
+    if (counts.shots < 1) throw new Error('tidak ada polling screenshot');
+    if (counts.grup > 1) throw new Error(`daftar grup diminta ${counts.grup} kali dalam 5 detik`);
+  });
+
   // -------------------------------------------- F. guard overlap & badai tab
   await check(report, 'Dashboard._loading mencegah dua request dashboard tumpang tindih', async () => {
     await tab(page, 'dash');

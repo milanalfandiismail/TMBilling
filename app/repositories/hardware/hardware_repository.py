@@ -18,6 +18,15 @@ class HardwareRepository:
         return HardwareMonitor.query.filter_by(pc_id=pc_id).first()
 
     @staticmethod
+    def get_by_pc_id_eager(pc_id):
+        """Satu baris hardware dengan relasi PC + grup untuk modal detail."""
+        from sqlalchemy.orm import joinedload
+        from app.models import PC
+        return HardwareMonitor.query.options(
+            joinedload(HardwareMonitor.pc).joinedload(PC.grup)
+        ).filter_by(pc_id=pc_id).first()
+
+    @staticmethod
     def get_all_with_pc():
         """Mengambil semua data hardware monitor beserta relasi PC dan grup (eager load)."""
         from sqlalchemy.orm import joinedload

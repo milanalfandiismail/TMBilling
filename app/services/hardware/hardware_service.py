@@ -46,6 +46,10 @@ class HardwareService:
         return sorted(monitors, key=lambda m: natural_sort_key(m.pc.kode if m.pc else ""))
 
     @staticmethod
+    def get_one_with_pc(pc_id):
+        return HardwareRepository.get_by_pc_id_eager(pc_id)
+
+    @staticmethod
     def process_hardware_metric(client_ip, data):
         """Memproses data metrics dan menyimpannya di In-Memory Store & Database.
         
@@ -60,7 +64,7 @@ class HardwareService:
             data (dict): Dictionary JSON payload dari client.
             
         Returns:
-            PC: Object PC jika berhasil disimpan.
+            dict: {"id": int, "kode": str} identitas PC yang menerima metrik.
             
         Raises:
             ValueError: Jika PC tidak ditemukan berdasarkan IP/MAC.
@@ -71,14 +75,17 @@ class HardwareService:
             ip_address = data.get("IpAddress", data.get("ip_address"))
 
             pc = None
+            pc_id = None
+            pc_kode = None
 
-            # 2. Cari PC dengan prioritas: RAM Cache -> MAC -> IP dikirim -> IP koneksi HTTP
+            # 2. Resolve identitas PC dari cache RAM dulu; ORM hanya di-load saat cache miss.
             from app.services.cache.memory_store import PCNetworkCacheStore
             cached = PCNetworkCacheStore.resolve_pc(ip=ip_address or client_ip, mac=mac_address)
             if cached:
-                pc = PCRepository.get_by_id(cached["id"])
+                pc_id = cached["id"]
+                pc_kode = cached["kode"]
 
-            if not pc:
+            if pc_id is None:
                 if mac_address:
                     pc = PCRepository.find_by_mac(mac_address)
                 if not pc and ip_address:
@@ -86,20 +93,22 @@ class HardwareService:
                 if not pc:
                     pc = PCRepository.get_by_ip(client_ip)
                 if pc:
+                    pc_id = pc.id
+                    pc_kode = pc.kode
                     PCNetworkCacheStore.invalidate()
 
             # Jika tidak terdaftar sama sekali di database kasir, lemparkan error terhormat!
-            if not pc:
+            if pc_id is None:
                 raise ValueError(f"PC dengan MAC '{mac_address}' atau IP '{ip_address}' belum terdaftar di database kasir.")
 
             # 3. Update In-Memory Online Status & Anti-Theft Boot Tracker
-            was_offline = not OnlineStatusStore.is_online(pc.id, timeout_seconds=15)
+            was_offline = not OnlineStatusStore.is_online(pc_id, timeout_seconds=15)
             if was_offline:
-                AntiTheftGraceTracker.record_boot(pc.id)
+                AntiTheftGraceTracker.record_boot(pc_id)
             else:
-                AntiTheftGraceTracker.record_boot_if_needed(pc.id)
-            OnlineStatusStore.mark_active(pc.id)
-            in_grace = AntiTheftGraceTracker.is_in_grace_period(pc.id, grace_seconds=60)
+                AntiTheftGraceTracker.record_boot_if_needed(pc_id)
+            OnlineStatusStore.mark_active(pc_id)
+            in_grace = AntiTheftGraceTracker.is_in_grace_period(pc_id, grace_seconds=60)
 
             # 4. Parse nilai metrik hardware
             cpu_usage = round(float(data.get("CpuUsage", data.get("cpuUsage", data.get("cpu_usage", 0.0)))), 1)
@@ -115,22 +124,22 @@ class HardwareService:
             # 5. Sync Process List ke In-Memory RAM Store (Zero Disk I/O)
             process_list = data.get("ProcessList", data.get("processList", data.get("process_list")))
             if process_list is not None and isinstance(process_list, list):
-                ProcessRepository.sync_processes(pc.id, process_list)
+                ProcessRepository.sync_processes(pc_id, process_list)
 
             # 6. Update Histori Telemetry In-Memory
             ram_pct = HardwareService.calculate_ram_pct(total_ram, process_list)
-            TelemetryHistoryStore.push_metric(pc.id, cpu_usage, ram_pct, max_len=3)
+            TelemetryHistoryStore.push_metric(pc_id, cpu_usage, ram_pct, max_len=3)
 
             # 7. Akumulasi Heartbeat Uptime di RAM (status billing sudah di-cache client)
             # shortcut: flag billing ditulis ulang tiap status poll client (client_service.py:158, bool(sesi)), jadi sesi
             # force-close/expired bersih di poll berikutnya (maks 1 interval polling) -> stale True hanya over-count billing singkat.
-            UptimeMemoryStore.record_heartbeat(pc.id, UptimeMemoryStore.is_billing(pc.id))
+            UptimeMemoryStore.record_heartbeat(pc_id, UptimeMemoryStore.is_billing(pc_id))
 
             # 8. Security Audit: Always-On Hardware Checker dengan Grace Period 60 Detik
             needs_commit = False
-            hardware = HardwareRepository.get_by_pc_id(pc.id)
+            hardware = HardwareRepository.get_by_pc_id(pc_id)
             if not hardware:
-                hardware = HardwareMonitor(pc_id=pc.id)
+                hardware = HardwareMonitor(pc_id=pc_id)
                 needs_commit = True
 
             # Update cache object model (jangan timpa data valid dengan Unknown)
@@ -286,7 +295,7 @@ class HardwareService:
                                 try:
                                     from app.models import PCUptimeLog
                                     prev_log = PCUptimeLog.query.filter(
-                                        PCUptimeLog.pc_id == pc.id,
+                                        PCUptimeLog.pc_id == pc_id,
                                         PCUptimeLog.last_seen < curr_now.replace(tzinfo=None) - timedelta(minutes=2)
                                     ).order_by(PCUptimeLog.last_seen.desc()).first()
                                     last_shutdown = prev_log.last_seen if (prev_log and prev_log.last_seen) else (curr_now - timedelta(hours=8))
@@ -294,7 +303,7 @@ class HardwareService:
                                 except Exception:
                                     hardware.hardware_cctv_window = HardwareService.format_cctv_internal_window(curr_now - timedelta(hours=8), curr_now)
 
-                                write_log("HARDWARE_ALERT", f"PC {pc.kode} terdeteksi mismatch: {hardware.hardware_mismatch_desc} ({hardware.hardware_cctv_window})")
+                                write_log("HARDWARE_ALERT", f"PC {pc_kode} terdeteksi mismatch: {hardware.hardware_mismatch_desc} ({hardware.hardware_cctv_window})")
                                 needs_commit = True
                         else:
                             # Jika kondisi hardware kembali normal, clear status mismatch
@@ -307,7 +316,7 @@ class HardwareService:
                                 needs_commit = True
 
             # 9. Simpan snapshot terbaru ke HardwareMetricsStore (In-Memory RAM)
-            HardwareMetricsStore.set(pc.id, {
+            HardwareMetricsStore.set(pc_id, {
                 "cpu_usage": cpu_usage,
                 "cpu_temp": cpu_temp,
                 "gpu_temp": gpu_temp,
@@ -326,7 +335,7 @@ class HardwareService:
                 db.session.add(hardware)
                 db.session.commit()
 
-            return pc
+            return {"id": pc_id, "kode": pc_kode}
 
         except Exception as e:
             db.session.rollback()

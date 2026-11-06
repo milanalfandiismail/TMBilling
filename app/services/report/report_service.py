@@ -88,7 +88,7 @@ class ReportService:
                 "total_member": total_member,
                 "pendapatan_guest": ReportService.get_pendapatan_kategori(tanggal, 'guest', kasir_id, metode_pembayaran),
                 "pendapatan_member": ReportService.get_pendapatan_kategori(tanggal, 'member', kasir_id, metode_pembayaran),
-                "sesi_aktif": len(SesiRepository.get_all_aktif()),
+                "sesi_aktif": SesiRepository.count_aktif(),
                 "breakdown_metode": breakdown_metode,
                 "history_struk": ReportService._format_history_struk(history_struk)
             }

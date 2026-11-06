@@ -324,10 +324,10 @@ window.DashboardModalHardware = {
                 } catch (_) {}
             }
 
-            const res = await API.monitor.all();
+            const res = await API.monitor.hardware(pcId);
 
-            if (res && res.success && Array.isArray(res.data)) {
-                const hwData = res.data.find(item => item.pc_id === pcId);
+            if (res && res.success && res.data) {
+                const hwData = res.data;
                 const newFingerprint = JSON.stringify(hwData || {});
 
                 if (isSilent && this._lastHwFingerprint === newFingerprint && this._lastHwPcId === pcId) {

@@ -210,6 +210,7 @@ const API = {
         remoteBatch: (pcIds, action) => API.request('/api/v1/kasir/monitor/remote/batch', { method: 'POST', body: JSON.stringify({ pc_ids: pcIds, action }) }),
         triggerScreenshot: pcId => API.request(`/api/v1/kasir/monitor/screenshot/${pcId}`, { method: 'POST' }),
         all: () => API.request('/api/v1/kasir/monitor/all'),
+        hardware: (pcId) => API.request(`/api/v1/kasir/monitor/hardware/${pcId}`),
         delete: (id) => API.request(`/api/v1/kasir/monitor/${id}`, { method: 'DELETE' }),
         processesKill: (pcId, processName) => API.request(`/api/v1/kasir/monitor/processes/${pcId}/kill`, {
             method: 'POST',

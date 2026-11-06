@@ -54,3 +54,35 @@ class TestDashboardBulkPerf(unittest.TestCase):
         assert pc_res["status"] == "terpakai"
         assert pc_res["sesi_detail"] is not None
         assert pc_res["sesi_detail"]["nama_guest"] == "Budi"
+
+
+class TestDashboardOmzetCache(unittest.TestCase):
+    def setUp(self):
+        self.app = create_app({
+            "TESTING": True, "WTF_CSRF_ENABLED": False,
+            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            "SECRET_KEY": "test-omzet-cache",
+        })
+        self.ctx = self.app.app_context()
+        self.ctx.push()
+        db.create_all()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.ctx.pop()
+
+    def test_omzet_aggregates_cached_within_ttl(self):
+        from datetime import date
+        from unittest.mock import patch
+        from app.services.dashboard.dashboard_service import DashboardService
+
+        DashboardService.clear_omzet_cache()
+        with patch("app.services.dashboard.dashboard_service.TransaksiRepository.get_total_pendapatan_hari_ini", return_value=1000) as billing, \
+             patch("app.services.dashboard.dashboard_service.MenuRepository.get_total_pemasukan_by_date", return_value=500) as menu:
+            first = DashboardService._get_omzet(date.today())
+            second = DashboardService._get_omzet(date.today())
+        self.assertEqual(first, (1000, 500))
+        self.assertEqual(second, (1000, 500))
+        self.assertEqual(billing.call_count, 1)
+        self.assertEqual(menu.call_count, 1)

@@ -7,6 +7,7 @@ Modul ini mengelola kueri database langsung ke tabel menu_item dan transaksi_men
 
 from app.models import MenuItem, TransaksiMenu, MenuStockLog
 from app.models import db
+from sqlalchemy.orm import joinedload
 
 class MenuRepository:
     """Repository class untuk mengelola data MenuItem dan TransaksiMenu."""
@@ -176,7 +177,7 @@ class MenuRepository:
     @staticmethod
     def get_transactions_by_date(date_obj=None, kasir_id=None, metode_pembayaran=None):
         """Mendapatkan daftar transaksi F&B pada tanggal tertentu (atau semua tanggal jika None), opsional difilter kasir."""
-        query = TransaksiMenu.query
+        query = TransaksiMenu.query.options(joinedload(TransaksiMenu.menu))
         if date_obj and str(date_obj).strip().lower() not in ("all", "semua", "none", ""):
             from app.utils.timezone_utils import get_local_date_range_utc
             start_utc, end_utc = get_local_date_range_utc(date_obj)
@@ -198,7 +199,7 @@ class MenuRepository:
     @staticmethod
     def get_transactions_by_date_paginated(date_obj=None, page=1, per_page=12, kasir_id=None, metode_pembayaran=None):
         """Mendapatkan daftar transaksi F&B dengan pagination pada tanggal tertentu (atau semua tanggal jika None)."""
-        query = TransaksiMenu.query
+        query = TransaksiMenu.query.options(joinedload(TransaksiMenu.menu))
         if date_obj and str(date_obj).strip().lower() not in ("all", "semua", "none", ""):
             from app.utils.timezone_utils import get_local_date_range_utc
             start_utc, end_utc = get_local_date_range_utc(date_obj)

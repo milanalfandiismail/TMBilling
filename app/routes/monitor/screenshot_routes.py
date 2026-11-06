@@ -133,7 +133,7 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
         try:
             from app.repositories import PCRepository
 
-            pcs = PCRepository.get_all()
+            pcs = PCRepository.get_all_light()
             pcs_sorted = sorted(pcs, key=lambda pc: (pc.grup_id or 0, natural_sort_key(pc.kode)))
             result = []
 

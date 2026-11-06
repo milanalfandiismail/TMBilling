@@ -11,7 +11,9 @@ from app.models import Transaksi
 from app.models import Sesi
 from app.models import Member
 from app.models import PC
+from app.models import Paket, User
 from sqlalchemy import func, or_
+from sqlalchemy.orm import joinedload
 
 
 class TransaksiRepository:
@@ -131,7 +133,12 @@ class TransaksiRepository:
     @staticmethod
     def get_history_nota_paginated(tanggal=None, page=1, per_page=10, kasir_id=None, metode_pembayaran=None, q=None):
         """Ambil histori nota dengan pagination dan pencarian query."""
-        query = Transaksi.query.filter(Transaksi.no_nota != None)
+        query = Transaksi.query.options(
+            joinedload(Transaksi.member),
+            joinedload(Transaksi.paket),
+            joinedload(Transaksi.user),
+            joinedload(Transaksi.sesi).joinedload(Sesi.pc),
+        ).filter(Transaksi.no_nota != None)
         if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
             from app.utils.timezone_utils import get_local_date_range_utc
             start_utc, end_utc = get_local_date_range_utc(tanggal)

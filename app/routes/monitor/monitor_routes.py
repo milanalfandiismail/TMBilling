@@ -17,24 +17,27 @@ from app.routes.client.client_routes import api_key_required
 monitor_api_bp = Blueprint("monitor", __name__)
 monitor_kasir_bp = Blueprint("monitor_kasir", __name__)
 
+def _hardware_to_dict(m):
+    """Susun satu baris hardware (DB + overlay telemetry RAM + health)."""
+    from app.services.cache.memory_store import HardwareMetricsStore
+    m_dict = m.to_dict()
+    cached = HardwareMetricsStore.get(m.pc_id)
+    if cached:
+        for k in ["cpu_usage", "cpu_temp", "gpu_temp", "total_ram", "nic_speed", "motherboard", "cpu_name", "gpu_name", "active_window"]:
+            if k in cached:
+                m_dict[k] = cached[k]
+    m_dict["pc_kode"] = m.pc.kode if m.pc else "Unknown"
+    m_dict["pc_nama"] = m.pc.nama if m.pc else "Unknown"
+    m_dict["pc_grup_id"] = m.pc.grup_id if m.pc else 0
+    m_dict["pc_grup_nama"] = m.pc.grup.nama if (m.pc and m.pc.grup) else "Unknown"
+    m_dict["health"] = HardwareService.check_pc_warning(m.pc_id, m_dict)
+    return m_dict
+
+
 def _build_hardware_list():
     """Helper untuk memuat dan menyusun metrik hardware semua PC."""
     monitors = HardwareService.get_all_with_pc()
-    result = []
-    from app.services.cache.memory_store import HardwareMetricsStore
-    for m in monitors:
-        m_dict = m.to_dict()
-        cached = HardwareMetricsStore.get(m.pc_id)
-        if cached:
-            for k in ["cpu_usage", "cpu_temp", "gpu_temp", "total_ram", "nic_speed", "motherboard", "cpu_name", "gpu_name", "active_window"]:
-                if k in cached:
-                    m_dict[k] = cached[k]
-        m_dict["pc_kode"] = m.pc.kode if m.pc else "Unknown"
-        m_dict["pc_nama"] = m.pc.nama if m.pc else "Unknown"
-        m_dict["pc_grup_id"] = m.pc.grup_id if m.pc else 0
-        m_dict["pc_grup_nama"] = m.pc.grup.nama if (m.pc and m.pc.grup) else "Unknown"
-        m_dict["health"] = HardwareService.check_pc_warning(m.pc_id, m_dict)
-        result.append(m_dict)
+    result = [_hardware_to_dict(m) for m in monitors]
 
     result.sort(key=lambda item: (item.get("pc_grup_id") or 0, natural_sort_key(item.get("pc_kode", ""))))
     return result
@@ -70,7 +73,7 @@ def receive_hardware_data():
 
         return jsonify({
             "success": True, 
-            "message": f"Metrics for {pc.kode} saved",
+            "message": f"Metrics for {pc['kode']} saved",
             "polling_interval": polling_interval
         }), 200
 
@@ -157,6 +160,16 @@ def get_all_hardware_kasir():
         return jsonify({"success": True, "data": _build_hardware_list()}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@monitor_kasir_bp.route("/hardware/<int:pc_id>", methods=["GET"])
+@login_required
+def get_hardware_by_pc(pc_id):
+    """Data hardware satu PC untuk modal detail (hindari polling /all)."""
+    monitor = HardwareService.get_one_with_pc(pc_id)
+    if not monitor:
+        return jsonify({"error": "Hardware tidak ditemukan"}), 404
+    return jsonify({"success": True, "data": _hardware_to_dict(monitor)}), 200
 
 
 @monitor_kasir_bp.route("/<int:hardware_id>", methods=["DELETE"])

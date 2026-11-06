@@ -99,3 +99,23 @@ def test_public_monitor_processes_fallback_ts(admin_client):
     assert data["last_updated_ts"] > 0
 
 
+
+
+def test_single_pc_hardware_returns_one_row(admin_client):
+    from app.models import db, HardwareMonitor
+    client, pc_id = admin_client
+    db.session.add(HardwareMonitor(pc_id=pc_id, cpu_name="i7", gpu_name="RTX"))
+    db.session.commit()
+
+    res = client.get(f"/api/v1/kasir/monitor/hardware/{pc_id}")
+    assert res.status_code == 200
+    data = res.get_json()["data"]
+    assert data["pc_kode"] == "PC-02"
+    assert data["cpu_name"] == "i7"
+    assert "hardware_baseline" in data
+
+
+def test_single_pc_hardware_404_when_missing(admin_client):
+    client, _ = admin_client
+    res = client.get("/api/v1/kasir/monitor/hardware/999999")
+    assert res.status_code == 404

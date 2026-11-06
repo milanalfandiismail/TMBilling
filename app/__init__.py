@@ -493,6 +493,14 @@ def create_app(config_override=None):
                 response.headers.setlist("Set-Cookie", filtered)
         return response
 
+    @app.after_request
+    def _cache_versioned_static_assets(response):
+        # Hanya folder aset ber-versi & QRIS (screenshot menimpa nama file yang sama).
+        if request.path.startswith(("/static/js/", "/static/css/", "/static/vendor/",
+                                    "/static/uploads/qris/")):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
     os.makedirs("logs", exist_ok=True)
 
     _register_blueprints(app)

@@ -6,15 +6,37 @@ Modul ini mengagregasi data PC, sesi, dan status online
 untuk ditampilkan di dashboard utama kasir.
 """
 
+import time
+
 from app.services.sesi.sesi_service import SesiService
 from app.services.pc.pc_service import PCService
 from app.repositories import TransaksiRepository, MenuRepository
 from app.utils.logger import write_log
 from app.models import now_local, Sesi, PC, db
 
+_OMZET_TTL_SECONDS = 5
+_omzet_cache = {"key": None, "value": None, "ts": 0.0}
+
 
 class DashboardService:
     """Service untuk business logic dashboard."""
+
+    @staticmethod
+    def clear_omzet_cache():
+        _omzet_cache.update(key=None, value=None, ts=0.0)
+
+    @staticmethod
+    def _get_omzet(hari_ini):
+        key = hari_ini.isoformat()
+        now_ts = time.monotonic()
+        if _omzet_cache["key"] == key and now_ts - _omzet_cache["ts"] < _OMZET_TTL_SECONDS:
+            return _omzet_cache["value"]
+        value = (
+            int(TransaksiRepository.get_total_pendapatan_hari_ini(hari_ini) or 0),
+            int(MenuRepository.get_total_pemasukan_by_date(hari_ini) or 0),
+        )
+        _omzet_cache.update(key=key, value=value, ts=now_ts)
+        return value
 
     # =========================================================================
     # 1. AUDIT & MONITORING (ACCESS)
@@ -138,9 +160,8 @@ class DashboardService:
         
         # F. Omzet Hari Ini untuk Header Dashboard
         hari_ini = now.date()
-        total_billing = TransaksiRepository.get_total_pendapatan_hari_ini(hari_ini)
-        total_menu = MenuRepository.get_total_pemasukan_by_date(hari_ini)
-        omzet_hari_ini = int(total_billing or 0) + int(total_menu or 0)
+        total_billing, total_menu = DashboardService._get_omzet(hari_ini)
+        omzet_hari_ini = total_billing + total_menu
 
         return {
             "pc_list": pc_list, 

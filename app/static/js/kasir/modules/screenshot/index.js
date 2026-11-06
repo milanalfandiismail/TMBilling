@@ -7,6 +7,7 @@ const Screenshot = {
     searchTimeout: null,
     _isFetching: false,
     _lastFingerprint: null,
+    _groupsCache: null,
 
     resetState() {
         this.cachedData = [];
@@ -86,9 +87,10 @@ const Screenshot = {
         }
 
         try {
+            const needGroups = !this._groupsCache || this._groupsCache.length === 0;
             const [data, grupResponse] = await Promise.all([
                 API.request('/api/v1/kasir/monitor/screenshot/all'),
-                API.grup ? API.grup.list() : Promise.resolve({ grup: [] })
+                needGroups && API.grup ? API.grup.list() : Promise.resolve(null)
             ]);
 
             if (data && data.success && Array.isArray(data.data)) {
@@ -96,7 +98,7 @@ const Screenshot = {
                 const oldData = this.cachedData || [];
 
                 // 1. Ekstrak & urutkan grup dari endpoint API grup atau fallback dari data PC
-                const rawGroups = (grupResponse && (grupResponse.grup || grupResponse.grup_list)) || [];
+                const rawGroups = grupResponse ? ((grupResponse.grup || grupResponse.grup_list) || []) : this._groupsCache;
                 let groups = [...rawGroups].sort((a, b) => Number(a.id) - Number(b.id));
 
                 if (groups.length === 0) {
@@ -111,6 +113,8 @@ const Screenshot = {
                     groups = [...fallbackMap.values()].sort((a, b) => a.id - b.id);
                 }
                 this.groups = groups;
+                // shortcut: daftar grup di-cache sampai reload, grup baru muncul setelah refresh halaman
+                if (groups.length > 0) this._groupsCache = groups;
 
                 // 2. Set grup aktif default jika belum ada atau grup yang aktif terhapus
                 if (!this.currentGrupId || !groups.some(g => Number(g.id) === Number(this.currentGrupId))) {

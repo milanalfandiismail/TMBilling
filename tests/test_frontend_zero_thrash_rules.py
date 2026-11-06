@@ -59,3 +59,11 @@ def test_skeleton_kasir_tanpa_kelas_animate():
     skeleton = ROOT / "app" / "static" / "js" / "kasir" / "core" / "skeleton.js"
     text = skeleton.read_text(encoding="utf-8")
     assert "animate-" not in text, "skeleton dashboard harus statis (tanpa kelas animate-*)"
+
+
+def test_base_html_external_scripts_use_defer():
+    import re
+    text = (ROOT / "app" / "templates" / "kasir" / "base.html").read_text(encoding="utf-8")
+    tags = [t for t in re.findall(r"<script\b[^>]*>", text) if "src=" in t]
+    missing = [t for t in tags if re.search(r"\bdefer\b", t) is None]
+    assert missing == []
