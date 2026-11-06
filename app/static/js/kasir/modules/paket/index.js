@@ -12,9 +12,8 @@ const Paket = {
 
     getAdaptivePerPage() {
         const width = window.innerWidth;
-        if (width >= 1536) return 11; // 2xl
-        if (width >= 1280) return 8;  // xl
-        if (width >= 768)  return 7;  // md, lg
+        if (width >= 1024) return 8; // lg, xl, 2xl
+        if (width >= 768)  return 7;  // md
         return 5;                     // < md
     },
 
