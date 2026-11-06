@@ -45,14 +45,12 @@ const OwnerAnalytics = {
             document.getElementById('kpi-total-billing').textContent = 'Rp' + totalB.toLocaleString('id-ID');
             document.getElementById('kpi-tabel-billing').innerHTML = gridTable(['Tanggal', 'Pendapatan'],
                 pd.labels.map((l,i) => [l, 'Rp' + pd.billing[i].toLocaleString('id-ID')]));
-            setScroll('kpi-tabel-billing', pd.labels.length, 10);
 
             // 2. Pendapatan Kantin
             const totalK = pd.kantin.reduce((a,b)=>a+b,0);
             document.getElementById('kpi-total-kantin').textContent = 'Rp' + totalK.toLocaleString('id-ID');
             document.getElementById('kpi-tabel-kantin').innerHTML = gridTable(['Tanggal', 'Pendapatan'],
                 pd.labels.map((l,i) => [l, 'Rp' + pd.kantin[i].toLocaleString('id-ID')]));
-            setScroll('kpi-tabel-kantin', pd.labels.length, 10);
 
             // 3. Paket Terlaris
             const tp = d.top_paket;
@@ -62,7 +60,6 @@ const OwnerAnalytics = {
                     <span class="text-white font-semibold">${tp.data[i]}x</span>
                 </div>`
             ).join('') || '<div class="text-neutral-500 py-2">Belum ada data</div>';
-            setScroll('kpi-paket', tp.labels.length, 10);
 
             // 5. Per Kasir
             const pk = d.pendapatan_per_kasir;
@@ -72,7 +69,6 @@ const OwnerAnalytics = {
                     <span class="text-white font-semibold">Rp${pk.data[i].toLocaleString('id-ID')}</span>
                 </div>`
             ).join('') || '<div class="text-neutral-500 py-2">Belum ada data</div>';
-            setScroll('kpi-kasir', pk.labels.length, 10);
 
             // 6. Member
             const mb = d.member_trend;
@@ -122,17 +118,6 @@ const OwnerAnalytics = {
         }
     }
 };
-
-// Helper: scroll kalo data > 10 item
-function setScroll(id, count, thresh) {
-    const el = document.getElementById(id);
-    if (count > thresh) {
-        el.style.maxHeight = '360px';
-        el.style.overflowY = 'auto';
-        el.style.scrollbarWidth = 'thin';
-        el.style.scrollbarColor = '#333 transparent';
-    }
-}
 
 // Helper: render tabel 2 kolom dengan border grid
 function gridTable(headers, rows) {
