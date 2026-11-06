@@ -143,6 +143,7 @@ export const Overlay = {
             toolsPanel.classList.remove('hidden');
         } else if (tab === 'qris') {
             qrisPanel.classList.remove('hidden');
+            document.dispatchEvent(new CustomEvent('tm:refresh-config'));
         }
 
         const tabs = [
@@ -162,33 +163,42 @@ export const Overlay = {
     },
 
     /**
+     * Terapkan konfigurasi dari loop pusat di main.js (tanpa fetch sendiri).
+     */
+    applyConfig(config) {
+        if (!config) return;
+        AppState.setWarnetConfig(config);
+        this.renderQris();
+        const modal = document.getElementById('modal-menu-paket');
+        if (modal && !modal.classList.contains('hidden')) {
+            this.renderPaketList();
+            this.renderMenuList();
+        }
+    },
+
+    /**
      * Render QRIS image from configuration
      */
-    async renderQris() {
+    renderQris() {
         const qrisImg = document.getElementById('overlay-qris-img');
         const modalQrisImg = document.getElementById('overlay-qris-modal-img');
         const fallbackEl = document.getElementById('overlay-qris-fallback');
         if (!qrisImg) return;
 
-        let qrisUrl = AppState.warnetConfig?.qris_url || AppState.warnetConfig?.qrisUrl;
-
-        // If not yet available in AppState, fetch from API
-        if (!qrisUrl) {
-            try {
-                const config = await Api.getWarnetConfig();
-                if (config) {
-                    AppState.setWarnetConfig(config);
-                    qrisUrl = config.qris_url;
-                }
-            } catch (err) {
-                console.warn("Gagal memuat konfigurasi QRIS overlay:", err);
-            }
-        }
+        const qrisUrl = AppState.warnetConfig?.qris_url || AppState.warnetConfig?.qrisUrl;
 
         if (qrisUrl) {
-            qrisImg.src = qrisUrl;
+            if (qrisImg.getAttribute('src') !== qrisUrl) {
+                qrisImg.onerror = () => {
+                    qrisImg.classList.add('hidden');
+                    if (fallbackEl) fallbackEl.classList.remove('hidden');
+                };
+                qrisImg.src = qrisUrl;
+            }
             qrisImg.classList.remove('hidden');
-            if (modalQrisImg) modalQrisImg.src = qrisUrl;
+            if (modalQrisImg && modalQrisImg.getAttribute('src') !== qrisUrl) {
+                modalQrisImg.src = qrisUrl;
+            }
             if (fallbackEl) fallbackEl.classList.add('hidden');
         } else {
             qrisImg.classList.add('hidden');
@@ -426,23 +436,10 @@ export const Overlay = {
         modal.classList.remove('hidden');
         const fullscreenPromise = Api.setOverlayModalFullscreen(true);
 
-        // 2. Render list instan dari cache memori jika sudah siap
-        if (AppState.allPackages?.length || AppState.allMenus?.length) {
-            this.renderPaketList();
-            this.renderMenuList();
-        } else {
-            try {
-                const config = await Api.getWarnetConfig();
-                if (config) {
-                    AppState.allPackages = config.paket || [];
-                    AppState.allMenus = config.menu || [];
-                    this.renderPaketList();
-                    this.renderMenuList();
-                }
-            } catch (err) {
-                console.warn("Gagal memuat paket/menu warnet:", err);
-            }
-        }
+        // 2. Render instan dari cache memori; refresh config di latar belakang
+        this.renderPaketList();
+        this.renderMenuList();
+        document.dispatchEvent(new CustomEvent('tm:refresh-config'));
 
         this.switchMenuPaketTab('paket');
         await fullscreenPromise;

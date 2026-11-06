@@ -219,7 +219,11 @@ def get_warnet_config():
         
         title = SettingsService.get("warnet_title", "TMBilling")
         announcement = SettingsService.get("warnet_announcement", "")
-        qris_url = SettingsService.get("qris_image_url", "/static/uploads/qris/default_qris.png")
+        qris_path = SettingsService.get("qris_image_url", "/static/uploads/qris/default_qris.png")
+        if not qris_path.startswith('/'):
+            qris_path = f"/{qris_path.lstrip('/')}"
+        base = (SettingsService.get("app_public_url", "") or request.host_url).rstrip('/')
+        qris_url = f"{base}{qris_path}"
         
         paket = PaketService.get_all(aktif_only=True)
         
@@ -234,6 +238,7 @@ def get_warnet_config():
             "title": title,
             "announcement": announcement,
             "qris_url": qris_url,
+            "qris_path": qris_path,
             "paket": [p.to_dict() for p in paket],
             "menu": menu_list
         }), 200

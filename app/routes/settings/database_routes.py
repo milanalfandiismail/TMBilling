@@ -1,5 +1,6 @@
 """Routes untuk backup, maintenance database, QRIS, dan token uninstall client.
 """
+import io
 import os
 from datetime import datetime
 from flask import request, jsonify, session, current_app, send_file
@@ -55,6 +56,40 @@ def download_db():
         return str(e), 500
 
 
+QRIS_MAX_SIDE = 800
+
+
+def _qris_upload_dir():
+    """Direktori gambar QRIS (env QRIS_UPLOAD_DIR untuk test/sandbox)."""
+    override = os.environ.get("QRIS_UPLOAD_DIR")
+    if override:
+        return override
+    return os.path.join(current_app.root_path, 'static', 'uploads', 'qris')
+
+
+def _normalize_qris(file):
+    """Kembalikan (ext, bytes) gambar QRIS yang sudah divalidasi & dikecilkan."""
+    from PIL import Image
+    try:
+        img = Image.open(file.stream)
+        img.load()
+    except Exception:
+        raise ValueError("File bukan gambar yang valid")
+
+    fmt = (img.format or "").upper()
+    if max(img.size) > QRIS_MAX_SIDE:
+        img.thumbnail((QRIS_MAX_SIDE, QRIS_MAX_SIDE), Image.Resampling.LANCZOS)
+
+    buf = io.BytesIO()
+    if fmt == "JPEG":
+        img.convert("RGB").save(buf, "JPEG", quality=90, optimize=True)
+        return ".jpg", buf.getvalue()
+    if img.mode not in ("RGB", "RGBA"):
+        img = img.convert("RGBA" if "A" in img.getbands() else "RGB")
+    img.save(buf, "PNG", optimize=True)
+    return ".png", buf.getvalue()
+
+
 @settings_api_bp.route("/qris", methods=["POST"])
 @login_required
 @admin_required
@@ -73,20 +108,21 @@ def upload_qris():
             return jsonify({"error": "Ekstensi file tidak diizinkan (Gunakan: png, jpg, jpeg, gif, webp)"}), 400
             
         # Buat direktori upload jika belum ada
-        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'qris')
+        upload_folder = _qris_upload_dir()
         if not os.path.exists(upload_folder):
             os.makedirs(upload_folder, exist_ok=True)
-            
-        from werkzeug.utils import secure_filename
-        filename = secure_filename(file.filename)
-        base, ext = os.path.splitext(filename)
-        
+
+        try:
+            ext, data = _normalize_qris(file)
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+
         # Tambahkan timestamp unik di nama file untuk mencegah caching browser/client
         import time
         unique_filename = f"qris_{int(time.time())}{ext}"
-        
-        file_path = os.path.join(upload_folder, unique_filename)
-        file.save(file_path)
+
+        with open(os.path.join(upload_folder, unique_filename), "wb") as fh:
+            fh.write(data)
         
         # Simpan path url ke settings database
         qris_url = f"/static/uploads/qris/{unique_filename}"

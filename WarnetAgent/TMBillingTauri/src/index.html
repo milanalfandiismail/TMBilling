@@ -170,6 +170,10 @@
                     <div id="kiosk-qris-panel" class="hidden flex-1 min-h-0 flex flex-col items-center justify-center space-y-3 sm:space-y-4 py-2">
                         <div class="w-56 sm:w-64 md:w-72 lg:w-[340px] xl:w-[400px] 2xl:w-[460px] aspect-square max-h-[46vh] sm:max-h-[50vh] lg:max-h-[58vh] xl:max-h-[62vh] rounded-2xl bg-white p-3 sm:p-4 lg:p-5 shadow-2xl flex items-center justify-center border border-white/20">
                             <img id="kiosk-qris-img" src="" alt="QRIS Code" class="w-full h-full object-contain filter contrast-125" style="image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;">
+                            <div id="kiosk-qris-fallback" class="hidden text-center">
+                                <div class="text-4xl font-black text-neutral-400 font-mono">?</div>
+                                <div class="text-[9px] text-neutral-500 uppercase tracking-widest mt-2 font-bold">QRIS belum tersedia</div>
+                            </div>
                         </div>
                         <div class="text-center px-2">
                             <p class="text-xs sm:text-sm font-semibold text-[#f5f5f7]">Scan QRIS untuk Bayar / Top-up</p>

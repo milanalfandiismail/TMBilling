@@ -6,6 +6,7 @@ use winreg::enums::*;
 use winreg::RegKey;
 use base64::Engine;
 use sha2::{Sha256, Digest};
+use super::qris_memory;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StatusResponse {
@@ -77,6 +78,19 @@ pub struct WarnetConfig {
     pub paket: Vec<serde_json::Value>,
     #[serde(default)]
     pub menu: Vec<serde_json::Value>,
+    #[serde(default)]
+    pub qris_path: Option<String>,
+}
+
+/// URL gambar QRIS: path relatif dari server selalu menang,
+/// karena host/skema mengikuti server_url milik client sendiri.
+fn resolve_qris_source(base_url: &str, qris_path: Option<&str>, qris_url: Option<&str>) -> Option<String> {
+    let rel = qris_path.or(qris_url)?;
+    if rel.starts_with('/') {
+        Some(format!("{}{}", base_url, rel))
+    } else {
+        Some(rel.to_string())
+    }
 }
 
 fn deobfuscate(hex_input: &str) -> String {
@@ -589,45 +603,83 @@ impl ApiService {
         let mut config: WarnetConfig = serde_json::from_str(&body_text)
             .map_err(|_| format!("Gagal urai data warnet dari server."))?;
 
-        // Fetch QRIS image bytes & base64 encode → bypass mixed-content blocking
-        if let Some(ref path) = config.qris_url.clone() {
-            let img_url = if path.starts_with('/') {
-                format!("{}{}", base_url, path)
+        // QRIS: pakai data URI di memori bila URL sama, unduh hanya saat URL berubah.
+        if let Some(img_url) = resolve_qris_source(
+            &base_url,
+            config.qris_path.as_deref(),
+            config.qris_url.as_deref(),
+        ) {
+            if let Some(data) = qris_memory::last_for(&img_url) {
+                config.qris_url = Some(data);
             } else {
-                path.clone()
-            };
-
-            match self.client.get(&img_url)
-                .timeout(std::time::Duration::from_secs(5))
-                .send()
-                .await
-            {
-                Ok(resp) if resp.status().is_success() => {
-                    let bytes = resp.bytes().await.unwrap_or_default();
-                    if !bytes.is_empty() {
-                        // detect mime from extension
-                        let mime = if img_url.ends_with(".png") {
-                            "image/png"
-                        } else if img_url.ends_with(".jpg") || img_url.ends_with(".jpeg") {
-                            "image/jpeg"
-                        } else if img_url.ends_with(".gif") {
-                            "image/gif"
-                        } else if img_url.ends_with(".webp") {
-                            "image/webp"
+                match self.client.get(&img_url)
+                    .timeout(std::time::Duration::from_secs(10))
+                    .send()
+                    .await
+                {
+                    Ok(resp) if resp.status().is_success() => {
+                        let bytes = resp.bytes().await.unwrap_or_default();
+                        if bytes.is_empty() {
+                            config.qris_url = None;
                         } else {
-                            "image/png"
-                        };
-                        let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-                        config.qris_url = Some(format!("data:{};base64,{}", mime, b64));
+                            let lower = img_url.to_lowercase();
+                            let mime = if lower.ends_with(".png") {
+                                "image/png"
+                            } else if lower.ends_with(".jpg") || lower.ends_with(".jpeg") {
+                                "image/jpeg"
+                            } else if lower.ends_with(".gif") {
+                                "image/gif"
+                            } else if lower.ends_with(".webp") {
+                                "image/webp"
+                            } else {
+                                "image/png"
+                            };
+                            let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+                            let data_uri = format!("data:{};base64,{}", mime, b64);
+                            qris_memory::remember(&img_url, &data_uri);
+                            config.qris_url = Some(data_uri);
+                        }
                     }
-                }
-                _ => {
-                    // fallback: keep original URL (may show broken img, but graceful)
-                    eprintln!("Failed to fetch QRIS image from: {}", img_url);
+                    _ => {
+                        // Jangan tampilkan QRIS lama untuk URL baru (risiko salah bayar).
+                        eprintln!("Failed to fetch QRIS image from: {}", img_url);
+                        config.qris_url = None;
+                    }
                 }
             }
         }
 
         Ok(config)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::resolve_qris_source;
+
+    #[test]
+    fn qris_path_beats_absolute_url() {
+        assert_eq!(
+            resolve_qris_source(
+                "http://192.168.1.2:7015",
+                Some("/static/uploads/qris/a.png"),
+                Some("https://salah.example.com/a.png"),
+            )
+            .as_deref(),
+            Some("http://192.168.1.2:7015/static/uploads/qris/a.png"),
+        );
+    }
+
+    #[test]
+    fn falls_back_to_qris_url_when_path_missing() {
+        assert_eq!(
+            resolve_qris_source("http://srv", None, Some("/static/uploads/qris/a.png")).as_deref(),
+            Some("http://srv/static/uploads/qris/a.png"),
+        );
+        assert_eq!(
+            resolve_qris_source("http://srv", None, Some("https://cdn.example.com/a.png")).as_deref(),
+            Some("https://cdn.example.com/a.png"),
+        );
+        assert_eq!(resolve_qris_source("http://srv", None, None), None);
     }
 }
