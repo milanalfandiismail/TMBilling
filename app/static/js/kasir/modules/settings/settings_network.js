@@ -89,7 +89,7 @@ const SettingsNetwork = {
             </div>
 
             <!-- Kolom Kanan: Tambah IP & Daftar IP -->
-            <div class="space-y-2.5 sm:space-y-3 xl:space-y-4">
+            <div class="space-y-2.5 sm:space-y-3 xl:space-y-4 min-w-0">
                 <!-- Tambah IP Card -->
                 <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
                     <h3 class="font-bold text-neutral-200 text-xs lg:text-sm xl:text-base 2xl:text-lg uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
@@ -120,8 +120,14 @@ const SettingsNetwork = {
                         </span>
                     </div>
                     <div class="border border-[#1c1c1c] rounded bg-[#050505] overflow-hidden">
-                        <div class="overflow-x-auto scrollbar-thin">
-                            <table class="w-full text-left text-xs xl:text-sm 2xl:text-base border-collapse table-auto sm:table-fixed min-w-[310px] sm:min-w-0">
+                        <div id="wl-table-wrap" class="overflow-x-auto scrollbar-thin lg:overflow-visible">
+                            <table class="w-full text-left text-xs xl:text-sm 2xl:text-base border-collapse table-auto sm:table-fixed lg:table-fixed lg:min-w-0 min-w-[310px] sm:min-w-0">
+                                <colgroup>
+                                    <col class="lg:w-[28%]">
+                                    <col class="lg:w-[34%]">
+                                    <col class="lg:w-[24%]">
+                                    <col class="lg:w-[14%]">
+                                </colgroup>
                                 <thead class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 uppercase font-bold bg-[#0c0c0c] sticky top-0 z-10 border-b border-[#1c1c1c]">
                                     <tr>
                                         <th class="py-2.5 px-2.5 sm:px-3 w-auto min-w-[105px]">IP Address</th>

@@ -431,6 +431,113 @@ async function runSettingsAdminLogsE2ETest(page) {
         assert.match((await loginRes.json()).error, /Username atau password salah/i);
     });
 
+    await check(report, 'Tab berat berada di dalam scroll utama dan konten desktop terpusat', async () => {
+        await freshLogin(page, 'admin');
+        const originalViewport = page.viewportSize();
+        await page.setViewportSize({ width: 1920, height: 1080 });
+        const inside = await page.evaluate(() => ['tab-mikrotik', 'tab-settings', 'tab-plugins', 'tab-analytics']
+            .every((id) => {
+                const el = document.getElementById(id);
+                return !!el && !!el.closest('#main-scroll');
+            }));
+        assert.strictEqual(inside, true, 'tab berat masih dirender di luar #main-scroll');
+
+        const boxes = [];
+        await tab(page, 'settings_general');
+        boxes.push(['settings', await page.evaluate(() => {
+            const el = document.querySelector('#tab-settings > div');
+            const s = document.getElementById('main-scroll').getBoundingClientRect();
+            const r = el.getBoundingClientRect();
+            return { width: r.width, left: r.left - s.left, right: s.right - r.right };
+        }), 1280]);
+        await tab(page, 'mikrotik');
+        boxes.push(['mikrotik', await page.evaluate(() => {
+            const r = document.getElementById('tab-mikrotik').getBoundingClientRect();
+            const s = document.getElementById('main-scroll').getBoundingClientRect();
+            return { width: r.width, left: r.left - s.left, right: s.right - r.right };
+        }), 1024]);
+        await tab(page, 'plugins');
+        boxes.push(['plugins', await page.evaluate(() => {
+            const r = document.getElementById('tab-plugins').getBoundingClientRect();
+            const s = document.getElementById('main-scroll').getBoundingClientRect();
+            return { width: r.width, left: r.left - s.left, right: s.right - r.right };
+        }), 1280]);
+        await tab(page, 'analytics');
+        boxes.push(['analytics', await page.evaluate(() => {
+            const r = document.getElementById('tab-analytics').getBoundingClientRect();
+            const s = document.getElementById('main-scroll').getBoundingClientRect();
+            return { width: r.width, left: r.left - s.left, right: s.right - r.right };
+        }), 1280]);
+
+        for (const [name, box, limit] of boxes) {
+            assert.ok(box.width <= limit + 2, `${name} melebihi lebar ${limit}px: ${box.width}`);
+            assert.ok(Math.abs(box.left - box.right) <= 12, `${name} tidak terpusat: ${box.left}/${box.right}`);
+        }
+        await page.setViewportSize(originalViewport || { width: 1280, height: 720 });
+    });
+
+    await check(report, 'Paket membatasi 8 baris pada lg, xl, dan 2xl', async () => {
+        const originalViewport = page.viewportSize();
+        const expected = [[1023, 7], [1024, 8], [1280, 8], [1536, 8]];
+        for (const [width, rows] of expected) {
+            await page.setViewportSize({ width, height: 900 });
+            const actual = await page.evaluate(() => Paket.getAdaptivePerPage());
+            assert.strictEqual(actual, rows, `viewport ${width}px menghasilkan ${actual} baris`);
+        }
+        await page.setViewportSize(originalViewport || { width: 1280, height: 720 });
+    });
+
+    await check(report, 'Panel analitik owner tidak memakai scroll internal', async () => {
+        const source = fs.readFileSync(path.join(__dirname, '..', '..', 'app', 'static', 'js', 'kasir', 'modules', 'owner', 'analytics.js'), 'utf8');
+        assert.ok(!source.includes('setScroll('), 'helper setScroll masih ada');
+        await tab(page, 'analytics');
+        const unbounded = await page.evaluate(() => ['kpi-tabel-billing', 'kpi-tabel-kantin', 'kpi-paket', 'kpi-kasir']
+            .every((id) => {
+                const el = document.getElementById(id);
+                return el && !el.style.maxHeight && !el.style.overflowY;
+            }));
+        assert.strictEqual(unbounded, true, 'panel analitik masih dibatasi scroll');
+    });
+
+    await check(report, 'Scrollbar global mengikuti tema gelap', async () => {
+        const css = fs.readFileSync(path.join(__dirname, '..', '..', 'app', 'static', 'css', 'tailwind.css'), 'utf8');
+        assert.match(css, /::-webkit-scrollbar-thumb\{background:#333/, 'thumb scrollbar tidak gelap');
+        assert.match(css, /color-scheme:dark/, 'color-scheme gelap tidak ada');
+    });
+
+    await check(report, 'Badge kategori log memakai latar netral bertema', async () => {
+        await tab(page, 'log');
+        await page.waitForSelector('#log-rows .log-category-badge', { timeout: 5000 });
+        const color = await page.evaluate(() => getComputedStyle(document.querySelector('#log-rows .log-category-badge')).backgroundColor);
+        assert.strictEqual(color, 'rgb(23, 23, 23)', `warna badge ${color}`);
+    });
+
+    await check(report, 'Tabel whitelist IP pas lebar pada lg, xl, dan 2xl', async () => {
+        await tab(page, 'whitelist_ip');
+        await page.evaluate(async (label) => {
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            try {
+                await fetch('/api/v1/kasir/settings/ip-whitelist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': meta.content },
+                    body: JSON.stringify({ ip: '10.123.45.67', label }),
+                });
+            } catch (e) { /* entry mungkin sudah ada */ }
+            await Settings._wlRefreshList();
+        }, 'Label panjang untuk menguji kesesuaian lebar tabel whitelist');
+
+        const originalViewport = page.viewportSize();
+        for (const width of [1024, 1280, 1536]) {
+            await page.setViewportSize({ width, height: 900 });
+            const box = await page.evaluate(() => {
+                const el = document.getElementById('wl-table-wrap');
+                return { scroll: el.scrollWidth, client: el.clientWidth };
+            });
+            assert.ok(box.scroll <= box.client + 1, `viewport ${width}px overflow ${box.scroll}/${box.client}`);
+        }
+        await page.setViewportSize(originalViewport || { width: 1280, height: 720 });
+    });
+
     await logout(page);
     return finish(report);
 }

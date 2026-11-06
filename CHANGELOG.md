@@ -20,6 +20,14 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Health Check & Guard Sumber Daya**: `GET /api/health` publik melaporkan `db`/`disk`/`backup` secara kasar (tanpa angka/path, tetap HTTP 200 saat `degraded`); backup menolak berjalan saat sisa disk < 512 MB; screenshot otomatis dilewati dengan alasan di log; status eksekusi terakhir tiap job scheduler tampil di tab Settings (khusus admin).
 - **Hapus Fitur File Explorer**: Modul, route, service, template, menu sidebar, API frontend, dan test terkait dihapus seluruhnya (tidak ada migrasi database; tidak ada tabel/model khusus).
 
+### UI & Tata Letak
+- **Tab Berat Masuk Area Scroll**: `mikrotik`, `settings`, `plugins`, dan `analytics` tidak lagi dirender di bawah halaman akibat `</div>` prematur di `index.html`; kontennya kini berada di dalam `#main-scroll` dan dibatasi `max-w-7xl`/`max-w-5xl` serta dipusatkan.
+- **Paket Billing**: daftar paket dibatasi 8 baris per halaman pada breakpoint `lg`, `xl`, dan `2xl`; breakpoint lebih kecil tetap 7/5 baris.
+- **Analitik Owner**: panel KPI tidak lagi memakai `max-height`/scroll internal (`setScroll` dihapus), sehingga kartu memanjang natural.
+- **Scrollbar & Log**: scrollbar global mengikuti tema gelap (`color-scheme: dark`, thumb `#333`); badge kategori Log Sistem memakai latar netral dengan aksen teks, bukan latar warna pekat.
+- **Whitelist IP**: tabel daftar IP memakai `table-fixed` + `colgroup` pada `lg`/`xl`/`2xl` agar pas lebar tanpa scroll horizontal; perilaku mobile tetap.
+- Enam check E2E baru di suite `settings_admin_logs` mencakup nesting/centering, batas 8 paket, panel analitik, scrollbar, badge log, dan fit tabel whitelist.
+
 ### Performa & Optimasi
 - **Heartbeat Klien**: `sesi.last_sync` kini disimpan tiap 30 detik (`ClientService.HEARTBEAT_PERSIST_SECONDS`) sehingga deteksi blackout berlaku untuk sesi guest; penulisan `pc.last_activity` per poll tanpa commit dihapus (poll turun dari 5 statement menjadi 3 SELECT tanpa UPDATE).
 - **Jalur Panas**: Eager load hardware/PC/grup pada tab monitor, cache stat file screenshot 5 detik, batch sesi portal member publik, katalog `/spesifikasi` bebas N+1, arsip menu satu query `GROUP BY`, prefetch sesi aktif pada daftar PC, dan pagination opsional katalog game publik.

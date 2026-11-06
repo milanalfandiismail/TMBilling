@@ -119,8 +119,14 @@
         </h3>
 
         <!-- Table -->
-        <div class="overflow-x-auto scrollbar-thin border border-[#1c1c1c] rounded bg-[#050505]">
-            <table class="w-full text-left text-xs xl:text-sm 2xl:text-base border-collapse table-auto sm:table-fixed min-w-[310px] sm:min-w-0">
+        <div id="ip-table-wrap" class="overflow-x-auto scrollbar-thin border border-[#1c1c1c] rounded bg-[#050505] lg:overflow-visible">
+            <table class="w-full text-left text-xs xl:text-sm 2xl:text-base border-collapse table-auto sm:table-fixed lg:table-fixed lg:min-w-0 min-w-[310px] sm:min-w-0">
+                <colgroup>
+                    <col class="lg:w-[28%]">
+                    <col class="lg:w-[34%]">
+                    <col class="lg:w-[24%]">
+                    <col class="lg:w-[14%]">
+                </colgroup>
                 <thead class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 uppercase font-bold border-b border-[#1c1c1c] bg-[#0c0c0c]">
                     <tr>
                         <th class="py-2.5 px-2.5 sm:px-3 w-auto min-w-[105px]">IP Address</th>
