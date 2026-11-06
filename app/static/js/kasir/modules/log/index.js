@@ -465,16 +465,11 @@ const Log = {
             const cat = (log.category || '').toUpperCase();
             const act = (log.action || '').toUpperCase();
 
-            // Badge Category Color
-            let catBadge = 'bg-neutral-900 text-neutral-300 border-neutral-700';
-            if (cat === 'AUTHENTICATION' || cat === 'USER_ACCOUNT') catBadge = 'bg-teal-950/70 text-teal-400 border-teal-800/50';
-            else if (cat === 'AUTHORIZATION_SECURITY') catBadge = 'bg-indigo-950/70 text-indigo-400 border-indigo-800/50';
-            else if (cat === 'PAYMENT_BILLING' || cat === 'TRANSACTION') catBadge = 'bg-emerald-950/70 text-emerald-400 border-emerald-800/50';
-            else if (cat === 'SESI_BILLING' || cat === 'DATA_CATALOG') catBadge = 'bg-lime-950/70 text-lime-400 border-lime-800/50';
-            else if (cat === 'CONFIGURATION' || cat === 'SYSTEM') catBadge = 'bg-sky-950/70 text-sky-400 border-sky-800/50';
-            else if (cat === 'MONITOR_REMOTE' || cat === 'API_INTEGRATION') catBadge = 'bg-cyan-950/70 text-cyan-400 border-cyan-800/50';
-            else if (cat === 'BACKGROUND_JOB' || cat === 'MAINTENANCE') catBadge = 'bg-purple-950/70 text-purple-400 border-purple-800/50';
-            else if (cat === 'ERROR_FAILURE' || act.includes('ERROR') || act.includes('GAGAL')) catBadge = 'bg-red-950/70 text-red-400 border-red-800/50';
+            // Badge kategori: dasar netral, aksen hanya pada teks
+            let catBadge = 'bg-[#171717] text-neutral-300 border-[#262626]';
+            if (cat === 'AUTHENTICATION' || cat === 'USER_ACCOUNT' || cat === 'AUTHORIZATION_SECURITY') catBadge = 'bg-[#171717] text-sky-400 border-[#262626]';
+            else if (cat === 'PAYMENT_BILLING' || cat === 'TRANSACTION' || cat === 'SESI_BILLING' || cat === 'DATA_CATALOG') catBadge = 'bg-[#171717] text-emerald-400 border-[#262626]';
+            else if (cat === 'ERROR_FAILURE' || act.includes('ERROR') || act.includes('GAGAL')) catBadge = 'bg-[#171717] text-red-400 border-[#262626]';
 
             // Split timestamp into time and date parts for clean multi-line display
             let datePart = '-';
@@ -535,7 +530,7 @@ const Log = {
                     </td>
                     <!-- 4. Kategori -->
                     <td class="px-2 py-1.5 overflow-hidden text-center">
-                        <span class="px-2 py-0.5 rounded text-[9px] sm:text-[10px] lg:text-[9px] xl:text-xs font-semibold border truncate inline-block max-w-full ${catBadge}" title="${Utils.escapeHtml(log.category || 'SYSTEM')}">
+                        <span class="log-category-badge px-2 py-0.5 rounded text-[9px] sm:text-[10px] lg:text-[9px] xl:text-xs font-semibold border truncate inline-block max-w-full ${catBadge}" title="${Utils.escapeHtml(log.category || 'SYSTEM')}">
                             ${Utils.escapeHtml(log.category || 'SYSTEM')}
                         </span>
                     </td>
