@@ -93,6 +93,49 @@ async function runCoverageMatrixE2ETest(page) {
     });
   }
 
+  // --- Semua tab non-dashboard terpusat -----------------------------------
+  await check(report, 'tab non-dashboard terpusat di semua breakpoint desktop', async () => {
+    const failures = [];
+    try {
+      for (const width of [1024, 1280, 1536, 1920]) {
+        await page.setViewportSize({ width, height: 1080 });
+        for (const id of manifestIds) {
+          await tab(page, id);
+          const containerId = mainTabOf(id);
+          const box = await page.evaluate((tabId) => {
+            const el = document.getElementById(`tab-${tabId}`);
+            const main = document.getElementById('main-scroll');
+            const cs = getComputedStyle(main);
+            const mainRect = main.getBoundingClientRect();
+            const rect = el.getBoundingClientRect();
+            const padL = parseFloat(cs.paddingLeft) || 0;
+            const padR = parseFloat(cs.paddingRight) || 0;
+            return {
+              left: rect.left,
+              width: rect.width,
+              innerLeft: mainRect.left + main.clientLeft + padL,
+              innerWidth: main.clientWidth - padL - padR,
+            };
+          }, containerId);
+          if (containerId === 'dash') {
+            if (Math.abs(box.width - box.innerWidth) > 2) {
+              failures.push(`dash@${width}: ${box.width}px != ${box.innerWidth}px`);
+            }
+            continue;
+          }
+          if (box.width > 1281) failures.push(`${id}@${width}: lebar ${box.width}px`);
+          const expected = box.innerLeft + (box.innerWidth - box.width) / 2;
+          if (Math.abs(box.left - expected) > 2) {
+            failures.push(`${id}@${width}: left ${box.left}px != ${expected}px`);
+          }
+        }
+      }
+    } finally {
+      await page.setViewportSize({ width: 1280, height: 720 });
+    }
+    if (failures.length) throw new Error(failures.slice(0, 6).join(' | '));
+  });
+
   // --- 10 sub-tab settings --------------------------------------------------
   const domSubtabs = await page.evaluate(() =>
     Array.from(document.querySelectorAll('[id^="subtab-"]')).map((el) => el.id.replace(/^subtab-/, ''))

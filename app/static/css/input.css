@@ -205,6 +205,13 @@
 }
 
 @layer components {
+    /* Semua tab non-dashboard memakai lebar konten yang sama dan terpusat. */
+    #main-scroll > .tab-content:not(#tab-dash) {
+        width: 100%;
+        max-width: 80rem;
+        margin-inline: auto;
+    }
+
     /* CKEditor 5 & Rich Content Styling */
     .ck-content ol, .prose ol {
         list-style-type: decimal !important;
