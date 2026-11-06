@@ -28,7 +28,7 @@
 **TMBilling** adalah solusi manajemen operasional terpadu untuk warnet, cybercafe, dan arena esports modern. Dirancang dengan arsitektur **3-Layer Separation of Concerns (SoC)** yang tangguh, sistem ini mengintegrasikan server billing kasir, kasir kantin/FnB terpadu, kendali jarak jauh (remote control TightVNC berbasis web), monitoring hardware baseline anti-maling, dan pertahanan klien 5-lapis (*5-Layer Anti-Tamper Security*).
 
 > 📚 **Dokumentasi Lengkap (Single Source of Truth):**  
-> Untuk panduan arsitektur mendalam, spesifikasi fitur lengkap, katalog 34 blueprint & 238 route API, dan skema database, buka **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)**.
+> Untuk panduan arsitektur mendalam, spesifikasi fitur lengkap, katalog 34 blueprint & 239 route API, dan skema database, buka **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)**.
 
 ---
 
@@ -57,7 +57,7 @@ c:\Project GIT\TMBilling
 ├── app/                        # Backend Server Flask & Frontend Kasir Web
 │   ├── config.py               # Single Source of Version Truth (v1.6.5-rc2)
 │   ├── models/                 # 24 Model Database SQLAlchemy
-│   ├── routes/                 # 34 Blueprint REST + VNC Bridge (238 Route)
+│   ├── routes/                 # 34 Blueprint REST + VNC Bridge (239 Route)
 │   ├── services/               # 36 Service Class Logika Bisnis (31 Sub-Domain)
 │   └── static/js/kasir/        # Modular Vanilla ES6 Frontend JS
 ├── docs/                       # Master Dokumentasi
@@ -235,7 +235,7 @@ c:\Project GIT\TMBilling
 
 | Dokumen | Deskripsi |
 | :--- | :--- |
-| **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog lengkap 31 domain fitur, 34 blueprint & 238 route REST API, skema 24 model database, panduan backend/frontend/Rust, dan spesifikasi VNC bridge (WebSocket via Websockify). |
+| **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog lengkap 31 domain fitur, 34 blueprint & 239 route REST API, skema 24 model database, panduan backend/frontend/Rust, dan spesifikasi VNC bridge (WebSocket via Websockify). |
 | **[CHANGELOG.md](file:///c:/Project%20GIT/TMBilling/CHANGELOG.md)** | **Catatan Rilis** — Riwayat log perubahan dan rilis dari `v1.0.0` hingga `v1.6.5-rc2`. |
 
 ---

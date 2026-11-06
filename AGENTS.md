@@ -79,7 +79,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `routes/auth/` | Autentikasi kasir & admin (`/kasir/auth/`) serta autentikasi member client PC dengan validasi API key (`/public/auth/`). |
 | `routes/backup/` | Manajemen backup database lokal SQLite, integrasi cloud backup, dan restore database aktif dari arsip (`POST /restore/<filename>`, admin-only, wajib `{"confirm": true}`). |
 | `routes/blackout/` | Endpoint penanganan toleransi pemulihan sesi pasca mati lampu. |
-| `routes/client/` | Handshake client agent PC, detak jantung (heartbeat), penerimaan status sesi, dan emergency login yang mewajibkan `emergency_token` server. |
+| `routes/client/` | Handshake client agent PC, detak jantung (heartbeat), penerimaan status sesi, dan emergency login yang mewajibkan `emergency_token` server. `GET /api/v1/public/client/warnet` mengirim `qris_path` relatif (dipakai client) dan `qris_url` absolut (dari setting `app_public_url`, fallback `request.host_url`). |
 | `routes/dashboard/` | Data agregat statistik dashboard kasir, total pendapatan hari ini, dan summary PC. |
 | `routes/game/` | CRUD katalog game klien, uploader cover game, dan crop ikon otomatis. |
 | `routes/grup/` | Manajemen grup ruangan dan penetapan tarif bertingkat. |
@@ -88,7 +88,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `routes/member/` | Registrasi member, top-up saldo, reset password, dan riwayat transaksi member. |
 | `routes/menu/` | Kasir FnB kantin, manajemen inventaris stok, kategori menu, dan cetak struk thermal. |
 | `routes/mikrotik/` | Sinkronisasi queue bandwidth MikroTik dan monitoring traffic internet. |
-| `routes/monitor/` | Telemetry hardware & proses PC (`monitor_routes.py`), aksi remote AFK/shutdown/restart (`remote_action_routes.py`), manajemen screenshot PC (`screenshot_routes.py`), dan proxy VNC client (`vnc_client_routes.py`). |
+| `routes/monitor/` | Telemetry hardware & proses PC (`monitor_routes.py`), endpoint ringan `GET /api/v1/kasir/monitor/hardware/<int:pc_id>` untuk modal detail satu PC, aksi remote AFK/shutdown/restart (`remote_action_routes.py`), manajemen screenshot PC (`screenshot_routes.py`), dan proxy VNC client (`vnc_client_routes.py`). |
 | `routes/notes/` | Scratchpad / sticky notes serah terima pesan antar shift kasir. |
 | `routes/paket/` | CRUD paket billing jam-jaman dan promosi khusus warnet. |
 | `routes/pc/` | CRUD registrasi meja PC, pengaturan denah koordinat meja, dan status koneksi. |
@@ -111,10 +111,10 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/cache/`: Subsystem in-memory cache berkecepatan tinggi (rincian di Bagian 3); `ProcessMemoryStore` ber-TTL 300 detik dan `PCNetworkCacheStore` di-rebuild di luar lock; `UptimeMemoryStore` menyimpan flag billing per PC di RAM (dibaca jalur telemetri, bukan query sesi).
 - `services/client/`: Manajemen handshake, antrean perintah cepat client PC, dan heartbeat `sesi.last_sync` throttled 30 detik (`ClientService.HEARTBEAT_PERSIST_SECONDS`); menulis flag billing ke `UptimeMemoryStore` setiap polling status.
 - `services/cloudflare_tunnel/`: Integrasi zero-trust Cloudflare Ingress daemon.
-- `services/dashboard/`: Kalkulasi metrik visual denah meja dan kartu status PC.
+- `services/dashboard/`: Kalkulasi metrik visual denah meja dan kartu status PC; cache omzet hari ini 5 detik (`_get_omzet`, `clear_omzet_cache`) agar polling dashboard tidak mengulang agregasi.
 - `services/game/`: Manajemen file aset executable game dan integrasi launcher.
 - `services/grup/`: Logika validasi tarif grup meja.
-- `services/hardware/`: Evaluasi diskrepansi hardware baseline (anti pencurian komponen); laporan uptime memakai eager load PC/grup dan tidak menulis di jalur GET (flush hanya dari scheduler 60 detik).
+- `services/hardware/`: Evaluasi diskrepansi hardware baseline (anti pencurian komponen); laporan uptime memakai eager load PC/grup dan tidak menulis di jalur GET (flush hanya dari scheduler 60 detik); telemetry me-resolve identitas PC dari `PCNetworkCacheStore` tanpa SELECT ulang tabel `pc`, dan `get_one_with_pc()` melayani modal detail satu PC.
 - `services/health/`: Guard sumber daya (`MIN_FREE_BYTES = 512 MB`) dan payload `GET /api/health` publik (`db`/`disk`/`backup`, tanpa angka/path; status `degraded` tetap HTTP 200).
 - `services/ip_whitelist/`: Proteksi akses kasir hanya dari subnet IP yang terdaftar.
 - `services/maintenance/`: Alur status tiket perbaikan PC.
@@ -126,10 +126,10 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/pc/`: Manajemen status ketersediaan meja PC dan uptime tracking.
 - `services/plugins/`: Ekstensi modul dinamis tambahan.
 - `services/public/`: Format data tampilan TV billboard publik; payload TV di-cache 5 detik.
-- `services/report/`: Kompilasi laporan keuangan harian/bulanan kasir.
+- `services/report/`: Kompilasi laporan keuangan harian/bulanan kasir; relasi struk/menu di-eager load dan hitung sesi aktif memakai `SesiRepository.count_aktif()`.
 - `services/server_monitor/`: Sensor telemetri performa mesin server utama.
 - `services/sesi/`: Engine kalkulasi tarif per menit, sisa waktu billing, dan refund saldo.
-- `services/settings/`: Cache write-through pengaturan aplikasi, auto-generator random `vnc_password`, serta auto-generator random token emergency & uninstall (`secrets.token_urlsafe`, hanya mengisi bila kosong sehingga token lama di database tetap berlaku); cache miss negatif untuk setting yang tidak ada.
+- `services/settings/`: Cache write-through pengaturan aplikasi, auto-generator random `vnc_password`, serta auto-generator random token emergency & uninstall (`secrets.token_urlsafe`, hanya mengisi bila kosong sehingga token lama di database tetap berlaku); cache miss negatif untuk setting yang tidak ada. Upload QRIS (`routes/settings/database_routes.py`) divalidasi Pillow, diperkecil maks 800 px, dan deskripsinya disimpan dengan nama bertimestamp.
 - `services/shift/`: Verifikasi selisih uang kas fisik kasir (blind reconciliation).
 - `services/tournament/`: Engine pairing babak dan alur skor turnamen eSports.
 - `services/transaksi/`: Pencatatan buku besar transaksi pembayaran.
@@ -176,7 +176,7 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 
 | Direktori / Biner | Tanggung Jawab & Cakupan |
 |---|---|
-| `TMBillingTauri/` | Source code klien utama: UI HTML/CSS kiosk lockscreen (`src/kiosk/`) & floating overlay bar (`src/overlay/`), Rust backend (`src-tauri/`) dengan Win32 low-level hooks penonaktifan tombol sistem Windows. |
+| `TMBillingTauri/` | Source code klien utama: UI HTML/CSS kiosk lockscreen (`src/kiosk/`) & floating overlay bar (`src/overlay/`), Rust backend (`src-tauri/`) dengan Win32 low-level hooks penonaktifan tombol sistem Windows. `src/main.js` memegang satu-satunya loop konfigurasi warnet (60 dtk sehat / 5 dtk gagal, event `tm:refresh-config`), QRIS diunduh ke data URI hanya saat `qris_path` berubah dan disimpan di RAM (`src-tauri/src/utils/qris_memory.rs`, tanpa cache disk). |
 | `MGCTM/` | Watchdog daemon C++ yang bertugas mengawasi proses `TMBilling.exe` dan memulihkan aplikasi secara otomatis jika dihentikan paksa. |
 | `mtm/` | Auxiliary watchdog & resilience guard pelindung integritas service klien. |
 | `TMBilling_Monitor/` | Daemon telemetri Rust (`src/main.rs`) & helper C# `HardwareHelper.exe` berbasis kernel driver LibreHardwareMonitor dengan sinkronisasi startup cold boot (pengumpul metrik CPU/GPU load & temp, RAM, active window, native Win32 NIC speed). |
@@ -221,7 +221,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Process Monitor & Task Killer** | `modules/dashboard/dashboard_process_monitor.js` | `routes/monitor/monitor_routes.py`, `services/cache/telemetry_store.py` | `PCProcess`, in-memory store |
 | **VNC Remote Control & Clipboard** | `modules/remote.js`, `core/vnc_client.js` | `routes/vnc/vnc_routes.py`, `services/vnc/`, `services/settings/` (random VNC password & 5m periodic orphaned proxy reaper) | `PC`, `Settings` |
 | **POS Kantin & Billing FnB** | `modules/menu.js`, `modules/struk.js` | `routes/menu/menu_routes.py`, `services/menu/` (anti-skip monotonic receipt generator, local timezone boundaries, stok atomik & arsip satu query `GROUP BY`) | `MenuItem`, `TransaksiMenu` |
-| **Hardware Baseline Anti-Maling** | `modules/hardware_checker.js` | `routes/monitor/monitor_routes.py`, `routes/hardware/`, `services/hardware/` | `HardwareMonitor` |
+| **Hardware Baseline Anti-Maling** | `modules/hardware_checker.js` | `routes/monitor/monitor_routes.py` (`GET /api/v1/kasir/monitor/hardware/<pc_id>` untuk modal detail), `routes/hardware/`, `services/hardware/` | `HardwareMonitor` |
 | **Shift Kasir (Blind Cash)** | `modules/shift.js` | `routes/shift/shift_routes.py`, `services/shift/` | `ShiftRecord`, `Transaksi` |
 | **Health & Resource Guard** | `modules/settings/settings_scheduler.js` (`loadSchedulerStatus`) | `routes/public/health_routes.py` (`GET /api/health` publik, payload kasar), `routes/settings/general_routes.py` (`GET /api/v1/kasir/settings/scheduler/status` admin), `services/health/` (`MIN_FREE_BYTES` 512 MB), `utils/scheduler_tasks.py` (`record_run`), guard disk di `services/backup/` & `run_auto_screenshots` | `Settings` |
 | **Floor Plan / Visual Denah Meja** | `modules/dashboard/map_view.js` | `routes/pc/pc_routes.py`, `services/pc/` | `PC`, `Grup` |
@@ -239,7 +239,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Member, Saldo, & Refill** | `modules/member/` | `routes/member/member_routes.py`, `services/member/` | `Member` |
 | **Paket Billing Jam-Jaman** | `modules/paket/` | `routes/paket/paket_routes.py`, `services/paket/` | `Paket` |
 | **Staff Kasir/Admin & RBAC** | `modules/user/` | `routes/user/user_routes.py`, `services/user/` | `User` |
-| **Screenshot Monitor PC** | `modules/screenshot.js` | `routes/monitor/screenshot_routes.py`, `services/cache/telemetry_store.py` (stat file di-cache 5 detik) | In-memory store |
+| **Screenshot Monitor PC** | `modules/screenshot/index.js` (cache daftar grup `_groupsCache`) | `routes/monitor/screenshot_routes.py` (`PCRepository.get_all_light()` tanpa hardware), `services/cache/telemetry_store.py` (stat file di-cache 5 detik) | In-memory store |
 | **Unit PC & Meja Klien** | `modules/pc.js`, `modules/pc/` | `routes/pc/pc_routes.py`, `services/pc/` (prefetch sesi aktif sekali query) | `PC`, `Grup` |
 | **Log Mutasi Stok FnB** | `modules/menu/stock_log.js` | `routes/menu/menu_routes.py`, `services/menu/` | `MenuItem`, in-memory store |
 | **Laporan Penjualan FnB** | `modules/laporan_menu.js` | `routes/menu/menu_routes.py`, `services/menu/` | `TransaksiMenu`, `MenuItem` |
@@ -249,7 +249,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Server Health & LHM Telemetry** | `modules/server_monitor/server_monitor.js` | `routes/server_monitor/`, `services/server_monitor/` | Host sensors, LHM Engine |
 | **Public Specs & Hardware Catalog** | `templates/public/specs/index.html` (compact 2-column mobile card grid, debounced search & modal controller fokus trio CPU, GPU, RAM) | `app/__init__.py:public_specs()` (minimalist structured catalog JSON tanpa telemetri berlebih, eager load PC/hardware/paket) | `PC`, `HardwareMonitor`, `Grup` |
 | **Manajemen Plugins & Ekstensi** | `modules/settings/plugins.js` | `routes/settings/plugin_routes.py`, `services/plugins/` | Plugin manifest |
-| **Frontend CPU & Zero-Thrashing** | `modules/dashboard/dashboard_compact.js`, `core/skeleton.js` | `templates/kasir/base.html`, `tailwind.config.js` | Strict dirty-checking, zero infinite keyframe loops, guard anti-tumpuk & jeda polling saat tab hidden; throttle 2 detik untuk tab monitor & screenshot |
+| **Frontend CPU & Zero-Thrashing** | `modules/dashboard/dashboard_compact.js`, `core/skeleton.js` | `templates/kasir/base.html` (semua script eksternal `defer`), `app/__init__.py` (cache 1 tahun immutable untuk `/static/js|css|vendor`), `tailwind.config.js` | Strict dirty-checking, zero infinite keyframe loops, guard anti-tumpuk & jeda polling saat tab hidden; throttle 2 detik untuk tab monitor & screenshot |
 | **Responsive Tailwind Reflow** | `modules/dashboard/dashboard_compact.js`, `core/modal.js` | `templates/kasir/base.html`, `templates/kasir/components/navbar.html`, `sidebar.html` | Pure Tailwind Breakpoints (`< sm`, `sm`, `md`, `lg`, `xl`, `2xl`), `max-h-[90dvh]`, zero horizontal overflow across all 39 views (30 kasir tabs, 1 SPA iframe, 8 public portals); semua tab kasir non-dashboard memakai lebar maksimum `80rem` dan terpusat, dashboard tetap full-width |
 
 ---

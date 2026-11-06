@@ -260,6 +260,7 @@ c:\Project GIT\TMBilling
   - **Disk Serials** (Daftar nomor seri SSD/HDD)
 - **Deteksi Pencurian / Pergantian Komponen**: Setiap kali PC klien booting, agen mengirimkan spesifikasi hardware saat ini (*current specs*). Sistem secara otomatis membandingkannya dengan baseline tersimpan via `HardwareService.process_hardware_metric`. Jika terdapat perbedaan (GPU PNP ID berbeda, RAM serial hilang/berkurang, Disk diganti, Motherboard ditukar), dashboard kasir seketika memunculkan alert diskrepansi visual merah solid dengan deskripsi komponen yang berubah.
 - **Visualisasi Audit di Tab Hardware Checker & Modal Detail PC**:
+  - Modal detail PC mengambil data satu PC via `GET /api/v1/kasir/monitor/hardware/<int:pc_id>` (bukan lagi memuat seluruh daftar `/monitor/all`).
   - **🔒 Baseline Resmi (Terkunci)** — spesifikasi yang terdaftar saat tombol *Update Baseline* terakhir ditekan, disertai badge `TERDAFTAR`.
   - **🔍 Terdeteksi Saat Ini (Live Telemetry)** — spesifikasi yang dikirim agen saat terakhir booting, disertai badge `LIVE SPECS`. RAM dan Disk serial ditampilkan dalam *pill tag* berwarna: ungu normal (🏷️), merah solid (🚨 Tukar!) jika tidak ada di baseline.
 
@@ -300,6 +301,8 @@ c:\Project GIT\TMBilling
   - Opsi *Unlimited Stock* untuk item yang tidak memerlukan pengurangan inventaris otomatis.
   - **Multi-Metode Pembayaran**: Tunai (Cash), QRIS Dinamis/Statis, dan Transfer Bank.
   - **Charge to PC**: Tagihan makanan/minuman bisa langsung dibebankan ke sesi PC pelanggan dan dibayar saat sesi selesai.
+  - **Gambar QRIS Statis**: Upload di Pengaturan divalidasi Pillow, diperkecil maks 800 px (PNG optimize / JPEG q90) dan disimpan dengan nama bertimestamp agar cache client otomatis berganti. Server mengirim `qris_path` relatif ke client (client membentuk URL dari `server_url` sendiri) serta `qris_url` absolut dari setting `app_public_url`; `/static/uploads/qris/` di-cache immutable 1 tahun.
+  - **Refresh Konfigurasi Client**: Kiosk Tauri memuat konfigurasi sekali saja melalui `src/main.js` (loop 60 detik saat sehat, 5 detik saat gagal, refresh saat tab QRIS dibuka). Gambar QRIS diunduh ke data URI hanya bila URL berubah dan disimpan di RAM; bila unduhan gagal, client menampilkan "QRIS belum tersedia" (tidak menampilkan QRIS lama) agar tidak salah bayar.
   - **Cetak Struk Thermal**: Format struk 58mm / 80mm ESC/POS dengan logo warnet, rincian pesanan, total rupiah, dan footer terima kasih.
   - **Log Mutasi Stok Menu (`MenuStockLog`) & Restock Audit**:
     - Riwayat mutasi inventaris secara real-time: pencatatan otomatis setiap penambahan stok (*Restock*), penjualan pesanan kantin, ataupun penyesuaian/koreksi audit fisik.
@@ -658,7 +661,7 @@ Jika terjadi kegagalan:
 
 ### 8.2 Katalog Endpoint REST API (34 Blueprint)
 
-Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/routes/`: **238 Route** (katalog per blueprint di bawah merinci endpoint utama; route dinamis/registrasi manual tidak selalu punya baris sendiri).
+Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/routes/`: **239 Route** (katalog per blueprint di bawah merinci endpoint utama; route dinamis/registrasi manual tidak selalu punya baris sendiri).
 
 > Endpoint kesehatan `GET /api/health` terdaftar sebagai blueprint `health_api` (`app/routes/public/health_routes.py`), dan didaftarkan di `app/__init__.py:135`.
 
@@ -713,6 +716,7 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | POST | /api/v1/public/client/vnc_ready | client.vnc_ready |
 | POST | /api/v1/public/client/vnc_stopped | client.vnc_stopped |
 | GET | /api/v1/public/client/warnet | client.get_warnet_config |
+> Respons memuat `qris_path` (relatif, selalu diawali `/`) dan `qris_url` (absolut) selain `title`, `announcement`, `paket`, dan `menu`.
 
 #### 🔹 Blueprint: dashboard (3 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
@@ -837,11 +841,12 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | POST | /api/v1/public/monitor/processes/<int:pc_id>/kill | monitor.kill_pc_process |
 | POST | /api/v1/public/monitor/screenshot/upload | monitor.upload_screenshot |
 
-#### 🔹 Blueprint: monitor_kasir (13 Endpoint)
+#### 🔹 Blueprint: monitor_kasir (14 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
 | :--- | :--- | :--- |
 | DELETE | /api/v1/kasir/monitor/<int:hardware_id> | monitor_kasir.delete_hardware_data_kasir |
 | GET | /api/v1/kasir/monitor/all | monitor_kasir.get_all_hardware_kasir |
+| GET | /api/v1/kasir/monitor/hardware/<int:pc_id> | monitor_kasir.get_hardware_by_pc |
 | GET | /api/v1/kasir/monitor/processes/<int:pc_id> | monitor_kasir.get_pc_processes_kasir |
 | POST | /api/v1/kasir/monitor/processes/<int:pc_id>/kill | monitor_kasir.kill_pc_process_kasir |
 | POST | /api/v1/kasir/monitor/register/<int:pc_id> | monitor_kasir.register_pc_hardware |
