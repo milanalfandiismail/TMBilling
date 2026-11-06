@@ -27,6 +27,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Scrollbar & Log**: scrollbar global mengikuti tema gelap (`color-scheme: dark`, thumb `#333`); badge kategori Log Sistem memakai latar netral dengan aksen teks, bukan latar warna pekat.
 - **Whitelist IP**: tabel daftar IP memakai `table-fixed` + `colgroup` pada `lg`/`xl`/`2xl` agar pas lebar tanpa scroll horizontal; perilaku mobile tetap.
 - Enam check E2E baru di suite `settings_admin_logs` mencakup nesting/centering, batas 8 paket, panel analitik, scrollbar, badge log, dan fit tabel whitelist.
+- **Shell Tab Terpusat**: semua tab kasir non-dashboard memakai `max-width: 80rem` + `margin-inline: auto` pada semua breakpoint; dashboard tetap full-width dan MikroTik tetap `max-w-5xl`. Satu check E2E baru di suite `coverage` memverifikasi pusat konten pada 1024/1280/1536/1920 px.
 
 ### Performa & Optimasi
 - **Heartbeat Klien**: `sesi.last_sync` kini disimpan tiap 30 detik (`ClientService.HEARTBEAT_PERSIST_SECONDS`) sehingga deteksi blackout berlaku untuk sesi guest; penulisan `pc.last_activity` per poll tanpa commit dihapus (poll turun dari 5 statement menjadi 3 SELECT tanpa UPDATE).

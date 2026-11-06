@@ -250,7 +250,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Public Specs & Hardware Catalog** | `templates/public/specs/index.html` (compact 2-column mobile card grid, debounced search & modal controller fokus trio CPU, GPU, RAM) | `app/__init__.py:public_specs()` (minimalist structured catalog JSON tanpa telemetri berlebih, eager load PC/hardware/paket) | `PC`, `HardwareMonitor`, `Grup` |
 | **Manajemen Plugins & Ekstensi** | `modules/settings/plugins.js` | `routes/settings/plugin_routes.py`, `services/plugins/` | Plugin manifest |
 | **Frontend CPU & Zero-Thrashing** | `modules/dashboard/dashboard_compact.js`, `core/skeleton.js` | `templates/kasir/base.html`, `tailwind.config.js` | Strict dirty-checking, zero infinite keyframe loops, guard anti-tumpuk & jeda polling saat tab hidden; throttle 2 detik untuk tab monitor & screenshot |
-| **Responsive Tailwind Reflow** | `modules/dashboard/dashboard_compact.js`, `core/modal.js` | `templates/kasir/base.html`, `templates/kasir/components/navbar.html`, `sidebar.html` | Pure Tailwind Breakpoints (`< sm`, `sm`, `md`, `lg`, `xl`, `2xl`), `max-h-[90dvh]`, zero horizontal overflow across all 39 views (30 kasir tabs, 1 SPA iframe, 8 public portals) |
+| **Responsive Tailwind Reflow** | `modules/dashboard/dashboard_compact.js`, `core/modal.js` | `templates/kasir/base.html`, `templates/kasir/components/navbar.html`, `sidebar.html` | Pure Tailwind Breakpoints (`< sm`, `sm`, `md`, `lg`, `xl`, `2xl`), `max-h-[90dvh]`, zero horizontal overflow across all 39 views (30 kasir tabs, 1 SPA iframe, 8 public portals); semua tab kasir non-dashboard memakai lebar maksimum `80rem` dan terpusat, dashboard tetap full-width |
 
 ---
 
