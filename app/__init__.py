@@ -190,76 +190,7 @@ def _register_public_routes(app):
     @app.route("/spesifikasi")
     def public_specs():
         """Render halaman grid spesifikasi hardware PC dinamis terkelompok per grup."""
-        import json
-        import re
-        from app.models import Grup, PC
-        from sqlalchemy.orm import joinedload, selectinload
-        groups = (
-            Grup.query
-            .options(
-                selectinload(Grup.pc_list).joinedload(PC.hardware),
-                selectinload(Grup.paket_list),
-            )
-            .all()
-        )
-        
-        def extract_number(pc):
-            match = re.search(r"\d+", pc.kode)
-            return int(match.group()) if match else 0
-            
-        # Ambil grup yang memiliki PC terdaftar dan urutkan secara natural (TM-1, TM-2, ..., TM-10)
-        groups_with_pcs = []
-        specs_catalog = {}
-
-        for g in groups:
-            if len(g.pc_list) > 0:
-                g.sorted_pc_list = sorted(g.pc_list, key=extract_number)
-                groups_with_pcs.append(g)
-
-                # Estimasi tarif per jam dari paket termurah jika tersedia
-                hourly_rate = None
-                if getattr(g, "paket_list", None):
-                    for p in g.paket_list:
-                        if p.aktif and p.durasi_menit > 0:
-                            rate = (p.harga / p.durasi_menit) * 60
-                            if hourly_rate is None or rate < hourly_rate:
-                                hourly_rate = int(round(rate))
-
-                for pc in g.sorted_pc_list:
-                    hw = pc.hardware
-                    baseline = {}
-                    if hw and hw.hardware_baseline:
-                        try:
-                            baseline = json.loads(hw.hardware_baseline) if isinstance(hw.hardware_baseline, str) else hw.hardware_baseline
-                        except Exception:
-                            baseline = {}
-
-                    specs_catalog[pc.kode] = {
-                        "kode": pc.kode,
-                        "grup": {
-                            "nama": g.nama,
-                            "warna": g.warna or "#3b82f6",
-                            "hourly_rate": hourly_rate,
-                        },
-                        "online": bool(pc.aktif),
-                        "cpu": {
-                            "name": hw.cpu_name if (hw and hw.cpu_name) else "Belum Terkumpul",
-                            "cores": baseline.get("cpu", {}).get("cores", None) if isinstance(baseline.get("cpu"), dict) else None,
-                        },
-                        "gpu": {
-                            "name": hw.gpu_name if (hw and hw.gpu_name) else "Belum Terkumpul",
-                        },
-                        "ram": {
-                            "total": hw.total_ram if (hw and hw.total_ram) else "Belum Terkumpul",
-                            "sticks": baseline.get("ram_sticks", []) if isinstance(baseline.get("ram_sticks"), list) else [],
-                        },
-                    }
-
-        return render_template(
-            "public/specs/index.html",
-            groups=groups_with_pcs,
-            specs_catalog_json=json.dumps(specs_catalog),
-        )
+        return _render_public_specs_page()
 
     @app.route("/games")
     def public_games():
@@ -381,6 +312,89 @@ def _init_app_context(app):
                         app.logger.warning(f"Gagal mencatat initial_admin.txt: {io_err}")
         except Exception as e:
             app.logger.error(f"Gagal membuat admin default saat bootstrap: {e}")
+
+def _render_public_specs_page():
+    """Render halaman /spesifikasi dengan cache 5 detik."""
+    import json
+    import re
+    import time
+    from app.models import Grup, PC
+    from sqlalchemy.orm import joinedload, selectinload
+
+    cache = current_app.config.setdefault("_SPECS_CACHE", {"body": None, "expires": 0.0})
+    now = time.monotonic()
+    if cache["body"] is not None and now < cache["expires"]:
+        return cache["body"]
+
+    groups = (
+        Grup.query
+        .options(
+            selectinload(Grup.pc_list).joinedload(PC.hardware),
+            selectinload(Grup.paket_list),
+        )
+        .all()
+    )
+
+    def extract_number(pc):
+        match = re.search(r"\d+", pc.kode)
+        return int(match.group()) if match else 0
+
+    # Ambil grup yang memiliki PC terdaftar dan urutkan secara natural (TM-1, TM-2, ..., TM-10)
+    groups_with_pcs = []
+    specs_catalog = {}
+
+    for g in groups:
+        if len(g.pc_list) > 0:
+            g.sorted_pc_list = sorted(g.pc_list, key=extract_number)
+            groups_with_pcs.append(g)
+
+            # Estimasi tarif per jam dari paket termurah jika tersedia
+            hourly_rate = None
+            if getattr(g, "paket_list", None):
+                for p in g.paket_list:
+                    if p.aktif and p.durasi_menit > 0:
+                        rate = (p.harga / p.durasi_menit) * 60
+                        if hourly_rate is None or rate < hourly_rate:
+                            hourly_rate = int(round(rate))
+
+            for pc in g.sorted_pc_list:
+                hw = pc.hardware
+                baseline = {}
+                if hw and hw.hardware_baseline:
+                    try:
+                        baseline = json.loads(hw.hardware_baseline) if isinstance(hw.hardware_baseline, str) else hw.hardware_baseline
+                    except Exception:
+                        baseline = {}
+
+                specs_catalog[pc.kode] = {
+                    "kode": pc.kode,
+                    "grup": {
+                        "nama": g.nama,
+                        "warna": g.warna or "#3b82f6",
+                        "hourly_rate": hourly_rate,
+                    },
+                    "online": bool(pc.aktif),
+                    "cpu": {
+                        "name": hw.cpu_name if (hw and hw.cpu_name) else "Belum Terkumpul",
+                        "cores": baseline.get("cpu", {}).get("cores", None) if isinstance(baseline.get("cpu"), dict) else None,
+                    },
+                    "gpu": {
+                        "name": hw.gpu_name if (hw and hw.gpu_name) else "Belum Terkumpul",
+                    },
+                    "ram": {
+                        "total": hw.total_ram if (hw and hw.total_ram) else "Belum Terkumpul",
+                        "sticks": baseline.get("ram_sticks", []) if isinstance(baseline.get("ram_sticks"), list) else [],
+                    },
+                }
+
+    body = render_template(
+        "public/specs/index.html",
+        groups=groups_with_pcs,
+        specs_catalog_json=json.dumps(specs_catalog),
+    )
+    cache["body"] = body
+    cache["expires"] = now + 5.0
+    return body
 
 def create_app(config_override=None):
     """Membuat dan mengkonfigurasi instance aplikasi Flask.
