@@ -9,6 +9,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 ## [Unreleased]
 
 ### Remediasi Audit Keamanan & Integritas Finansial (2026-11-07)
+- **Refund & Masa Aktif Member**: refund member memanggil `cek_kadaluarsa()` lebih dulu (menolak saldo yang sudah hangus), tanggal kadaluarsa hasil refund di-clamp ke waktu sekarang (tidak lagi menjadi `None`/abadi), dan klaim refund atomik `TransaksiRepository.claim_refund()` mencegah nota refund ganda saat request bersamaan.
 - **Token Darurat Tidak Lagi Bocor ke Client**: `GET /api/v1/kasir/settings/uninstall-token/client` hanya mengembalikan `uninstall_token`; `emergency_token` server tidak pernah dikirim lagi. Emergency login diterima bila token server valid **atau** IP asal request sama dengan `ip_address` PC terdaftar (`hmac.compare_digest`).
 - **Kredensial Darurat Fail-Closed**: Semua fallback `TMBilling` / `TM123qaz!@#` dihapus dari Tauri, MGCTM, mtm, TMonitor, dan Uninstaller serta `config.ini` dikosongkan. Jalur darurat offline hanya aktif bila operator mengisinya; `install.bat` membangkitkan password acak 24 karakter dan mencetaknya ke konsol bila prompt dikosongkan.
 - **Refund Paket Nominal Penuh**: Refund guest dan member mengembalikan nilai penuh transaksi (`-jumlah`) sambil memotong durasi/menit yang tersisa (guest dibatasi `min(durasi, sisa_menit)`, member `max(0, saldo - durasi)`); durasi 0 ditolak.
