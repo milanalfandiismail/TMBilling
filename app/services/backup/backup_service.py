@@ -13,6 +13,7 @@ import tempfile
 import threading
 from datetime import datetime
 from app.utils.logger import write_log
+from app.services.write_lock import WRITE_LOCK
 
 # Backup terjadwal dan restore tidak boleh berjalan bersamaan.
 _BACKUP_LOCK = threading.RLock()
@@ -249,7 +250,7 @@ class BackupService:
             if not _integrity_ok(extracted):
                 raise ValueError("Arsip backup rusak (integrity_check gagal)")
 
-            with _BACKUP_LOCK:
+            with _BACKUP_LOCK, WRITE_LOCK:
                 safety_backup = self.create_backup()
 
                 src = sqlite3.connect(extracted)

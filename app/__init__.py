@@ -12,7 +12,7 @@ Exports:
     create_app: Factory function untuk membuat instance Flask app.
 """
 
-from flask import Flask, current_app, redirect, render_template, request, g
+from flask import Flask, current_app, redirect, render_template, request, g, jsonify
 from flask_cors import CORS
 import os
 import hmac
@@ -475,6 +475,12 @@ def create_app(config_override=None):
     # IP Whitelist middleware
     from app.middleware import check_ip_whitelist
     app.before_request(check_ip_whitelist)
+
+    @app.before_request
+    def _block_during_restore():
+        from app.services import maintenance_mode
+        if maintenance_mode.is_active() and request.path.startswith("/api/") and request.path != "/api/health":
+            return jsonify({"error": "Server sedang memulihkan database. Coba lagi sebentar."}), 503
 
     csrf.init_app(app)
     migrate.init_app(app, db, render_as_batch=True)

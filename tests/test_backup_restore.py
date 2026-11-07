@@ -180,6 +180,16 @@ def _admin_session(client, admin_id):
         sess["kasir_role"] = "admin"
 
 
+def test_api_menolak_selama_maintenance(backup_env):
+    app, *_ = backup_env
+    from app.services import maintenance_mode
+    c = app.test_client()
+    with maintenance_mode.restoring():
+        assert c.get("/api/v1/kasir/settings/").status_code == 503
+        assert c.get("/api/health").status_code == 200
+    assert maintenance_mode.is_active() is False
+
+
 def test_restore_endpoint_happy_path(backup_env, monkeypatch):
     app, _db_file, backup_dir, admin_id, _k = backup_env
     monkeypatch.setenv("BACKUP_DIR", str(backup_dir))

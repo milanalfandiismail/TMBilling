@@ -195,7 +195,9 @@ def restore_backup(filename):
             return jsonify({"success": False, "error": "File tidak ditemukan"}), 404
 
         backup_manager = BackupService(backup_dir=backup_dir)
-        result = backup_manager.restore_backup(file_path)
+        from app.services import maintenance_mode
+        with maintenance_mode.restoring():
+            result = backup_manager.restore_backup(file_path)
 
         write_log(
             "DATABASE_RESTORE",
