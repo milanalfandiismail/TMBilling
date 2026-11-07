@@ -7,7 +7,6 @@ dari C# Hardware Monitor Agent dan menampilkan data metrik
 hardware semua PC di dashboard kasir.
 """
 from flask import Blueprint, request, jsonify, session
-import time
 from app.services import HardwareService
 from app.utils.helpers import natural_sort_key
 from app.utils.logger import write_log
@@ -43,15 +42,6 @@ def _build_hardware_list():
     return result
 
 
-@monitor_api_bp.route("/all", methods=["GET"])
-@login_required
-def get_all_hardware():
-    """Endpoint untuk mengambil semua data hardware monitor beserta data PC."""
-    try:
-        return jsonify({"success": True, "data": _build_hardware_list()}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 @monitor_api_bp.route("/", methods=["POST"], strict_slashes=False)
 @api_key_required
 def receive_hardware_data():
@@ -82,23 +72,6 @@ def receive_hardware_data():
     except Exception as e:
         write_log("MONITOR", f"Error saving telemetry: {str(e)}")
         return jsonify({"error": str(e)}), 500
-
-@monitor_api_bp.route("/processes/<int:pc_id>", methods=["GET"])
-@login_required
-def get_pc_processes(pc_id):
-    """Endpoint untuk mengambil daftar proses yang sedang berjalan di PC tertentu."""
-    try:
-        processes = HardwareService.get_processes_by_pc(pc_id)
-        from app.services.cache.telemetry_store import ProcessMemoryStore
-        last_updated_ts = ProcessMemoryStore.get_last_updated(pc_id) or int(time.time() * 1000)
-        return jsonify({
-            "success": True, 
-            "data": processes,
-            "count": len(processes),
-            "last_updated_ts": last_updated_ts
-        })
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
 
 def _handle_kill_pc_process(pc_id):
     """Helper untuk mengirim perintah kill process ke client PC."""
@@ -132,24 +105,6 @@ def _handle_delete_hardware(hardware_id):
         return jsonify({"success": False, "error": str(val_e)}), 404
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-
-
-@monitor_api_bp.route("/processes/<int:pc_id>/kill", methods=["POST"])
-@login_required
-@admin_required
-@shift_required
-def kill_pc_process(pc_id):
-    """Trigger request taskkill process ke client PC berdasarkan PC ID."""
-    return _handle_kill_pc_process(pc_id)
-
-
-@monitor_api_bp.route("/<int:hardware_id>", methods=["DELETE"])
-@login_required
-@admin_required
-@shift_required
-def delete_hardware_data(hardware_id):
-    """Endpoint untuk menghapus data hardware monitor tertentu secara manual dari dashboard."""
-    return _handle_delete_hardware(hardware_id)
 
 
 @monitor_kasir_bp.route("/all", methods=["GET"])

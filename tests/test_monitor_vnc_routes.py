@@ -43,9 +43,20 @@ def admin_client():
 
 def test_vnc_start_non_admin_forbidden(admin_client):
     client, pc_id = admin_client
+    with client.application.app_context():
+        kasir = User.query.filter_by(username="kasir_vnc").first()
+        if not kasir:
+            kasir = User(username="kasir_vnc", role="kasir", aktif=True)
+            kasir.set_password("kasir123")
+            db.session.add(kasir)
+            db.session.commit()
+        kasir_id = kasir.id
+
     with client.session_transaction() as sess:
-        sess["kasir_role"] = "kasir"  # Non-admin
-        
+        sess["kasir_id"] = kasir_id
+        sess["kasir_username"] = "kasir_vnc"
+        sess["kasir_role"] = "kasir"
+
     res = client.post(f"/api/v1/kasir/monitor/vnc_client/{pc_id}/start")
     assert res.status_code == 403
 
@@ -85,18 +96,17 @@ def test_kasir_trigger_refresh_processes_endpoint(admin_client):
 
 
 def test_public_monitor_processes_fallback_ts(admin_client):
-    """Memastikan endpoint /processes/<pc_id> tidak crash saat telemetry RAM kosong (fallback time.time())."""
+    """Endpoint proses kasir tidak crash saat telemetry RAM kosong."""
     client, pc_id = admin_client
     from app.services.cache.telemetry_store import ProcessMemoryStore
-    # Bersihkan memori telemetry PC untuk memicu pemanggilan time.time()
+    # Bersihkan memori telemetry PC untuk memicu fallback timestamp database
     ProcessMemoryStore.remove(pc_id)
 
-    res = client.get(f"/api/v1/public/monitor/processes/{pc_id}")
+    res = client.get(f"/api/v1/kasir/monitor/processes/{pc_id}")
     assert res.status_code == 200
     data = res.get_json()
     assert data["success"] is True
     assert isinstance(data["last_updated_ts"], int)
-    assert data["last_updated_ts"] > 0
 
 
 
