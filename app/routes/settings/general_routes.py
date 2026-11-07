@@ -191,6 +191,7 @@ def update_client_api_key():
         
         # 1. Update active Flask config so it takes effect instantly without server restart
         current_app.config["CLIENT_API_KEY"] = value
+        SettingsService.set("client_api_key", value)
         
         # 2. Update .env file programmatically to persist across restarts
         # current_app.root_path = folder app/, satu level naik ke root project

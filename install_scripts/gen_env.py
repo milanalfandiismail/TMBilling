@@ -18,5 +18,9 @@ content = content.replace(
     'DEBUG_MODE=True',
     'DEBUG_MODE=False'
 )
+content = content.replace(
+    'CLIENT_API_KEY=TM2026QWERTY-api-key',
+    'CLIENT_API_KEY=' + secrets.token_urlsafe(32)
+)
 open(env_file, 'w', encoding='utf-8').write(content)
 print('[OK] File .env berhasil dibuat dengan SECRET_KEY acak.')

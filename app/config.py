@@ -109,6 +109,11 @@ class Config:
 
     # Tambahan untuk kebutuhan aplikasi
     CLIENT_API_KEY = os.environ.get('CLIENT_API_KEY')
+    if CLIENT_API_KEY == 'TM2026QWERTY-api-key':
+        import logging
+        logging.getLogger(__name__).warning(
+            "CLIENT_API_KEY masih nilai default; jalankan install_scripts/gen_env.py atau ubah lewat Settings."
+        )
     DEBUG_MODE = os.environ.get('DEBUG_MODE', 'False').lower() == 'true'
     BLACKOUT_THRESHOLD_MINUTES = int(os.environ.get('BLACKOUT_THRESHOLD_MINUTES', 60))
     WAITRESS_THREADS = int(os.environ.get('WAITRESS_THREADS', 8))
