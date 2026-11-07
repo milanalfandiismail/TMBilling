@@ -6,6 +6,7 @@ Modul ini mengelola CRUD katalog makanan/minuman dan proses checkout transaksi F
 """
 
 from datetime import datetime
+import secrets
 from app.models import db
 from app.models import MenuItem, TransaksiMenu, MenuStockLog
 from app.repositories import MenuRepository
@@ -367,13 +368,8 @@ class MenuService:
         prefix = f"TMM-{date_str}-"
         
         new_num = MenuRepository.get_max_nota_seq(date_str) + 1
-            
-        candidate = f"{prefix}{str(new_num).zfill(3)}"
-        while TransaksiMenu.query.filter_by(no_nota=candidate).first() is not None:
-            new_num += 1
-            candidate = f"{prefix}{str(new_num).zfill(3)}"
-            
-        return candidate
+
+        return f"{prefix}{str(new_num).zfill(3)}-{secrets.token_hex(3)}"
 
     @staticmethod
     def checkout_menu_order(cart_items, pc_kode, kasir_username, operator="system", tunai=0, kembalian=0, metode_pembayaran="Tunai"):

@@ -62,3 +62,10 @@ def test_generate_nota_menu_uses_display_in_tz():
 
         nota = MenuService.generate_nota_menu()
         assert nota.startswith(f"TMM-{expected_date_str}-")
+
+
+def test_generate_nota_menu_unik_saat_seq_sama(monkeypatch):
+    monkeypatch.setattr(MenuRepository, "get_max_nota_seq", staticmethod(lambda _: 1))
+    nota = {MenuService.generate_nota_menu() for _ in range(20)}
+    assert len(nota) == 20
+
