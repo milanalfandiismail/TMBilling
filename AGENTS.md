@@ -49,8 +49,8 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 ### 2. Backend Server (`app/`)
 
 #### A. Konfigurasi & Inisialisasi
-- `app/config.py`: **Single Source of Version Truth** (`VERSION = "1.6.5-rc2"`), dynamic random `SECRET_KEY` generator with write-through `.env` persistence, konfigurasi database SQLite, session lifetime, dan environment loader.
-- `app/__init__.py`: Application Factory (`create_app(config_override=None)`), inisialisasi CORS, custom `TMBillingCSRFProtect`, Flask-Migrate, bootstrap superadmin acak unik (`initial_admin.txt` di root direktori), dan pendaftaran 34 blueprint.
+- `app/config.py`: **Single Source of Version Truth** (`VERSION = "1.6.5-rc2"`), dynamic random `SECRET_KEY` generator with write-through `.env` persistence, konfigurasi database SQLite, session lifetime, batas upload `MAX_CONTENT_LENGTH = 64 MB`, dan environment loader.
+- `app/__init__.py`: Application Factory (`create_app(config_override=None)`), inisialisasi CORS, custom `TMBillingCSRFProtect` (Bearer client key dibandingkan dengan `hmac.compare_digest`), Flask-Migrate, bootstrap superadmin acak unik (`initial_admin.txt` di root direktori), dan pendaftaran 34 blueprint.
 
 #### B. Model ORM SQLAlchemy (`app/models/` — 17 Sub-Domain)
 | Subfolder Model | Model SQLAlchemy & Entitas Data |
@@ -78,7 +78,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 |---|---|
 | `routes/auth/` | Autentikasi kasir & admin (`/kasir/auth/`) serta autentikasi member client PC dengan validasi API key (`/public/auth/`). |
 | `routes/backup/` | Manajemen backup database lokal SQLite, integrasi cloud backup, dan restore database aktif dari arsip (`POST /restore/<filename>`, admin-only, wajib `{"confirm": true}`). |
-| `routes/blackout/` | Endpoint penanganan toleransi pemulihan sesi pasca mati lampu. |
+| `routes/blackout/` | Endpoint penanganan toleransi pemulihan sesi pasca mati lampu; hapus audit `/clear` khusus admin. |
 | `routes/client/` | Handshake client agent PC, detak jantung (heartbeat), penerimaan status sesi, dan emergency login yang diotorisasi token server **atau** IP asal PC terdaftar (`request.remote_addr == pc.ip_address`). `GET /api/v1/public/client/warnet` mengirim `qris_path` relatif (dipakai client), `qris_url` absolut (dari setting `app_public_url`, fallback `request.host_url`), dan announcement yang sudah disanitasi `sanitize_html`. |
 | `routes/dashboard/` | Data agregat statistik dashboard kasir, total pendapatan hari ini, dan summary PC. |
 | `routes/game/` | CRUD katalog game klien, uploader cover game, dan crop ikon otomatis. |
@@ -94,7 +94,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `routes/pc/` | CRUD registrasi meja PC, pengaturan denah koordinat meja, dan status koneksi. |
 | `routes/public/` | Billboard TV publik, leaderboard score eSports, landing page info tarif, dan health check publik `GET /api/health`. |
 | `routes/report/` | Laporan pendapatan berkala, ekspor PDF/Excel kasir, dan rekonsiliasi keuangan. |
-| `routes/server_monitor/` | Status kesehatan internal server billing (CPU, RAM, Disk, CPU Temp Server). |
+| `routes/server_monitor/` | Status kesehatan internal server billing (CPU, RAM, Disk, CPU Temp Server); start/stop LHM khusus admin. |
 | `routes/sesi/` | Siklus hidup sesi (buka sesi, tambah waktu, pindah PC, tutup sesi paksa, stop sementara). |
 | `routes/settings/` | Konfigurasi IP whitelist, token API, integrasi Cloudflare Tunnel, vacuum SQLite, dan manajemen pembaruan sistem (GitHub 1-Klik / manual upload via runner mandiri). `GET /api/v1/kasir/settings/` meredaksi kredensial untuk role kasir (hanya `payment_methods` & `vnc_password`). Unduhan database (`/download-db`) memakai snapshot SQLite Online Backup API + `PRAGMA integrity_check` (aman WAL, file sementara dihapus via `after_this_request`). Endpoint `/uninstall-token/client` hanya mengembalikan `uninstall_token` (token darurat server tidak lagi dibagikan ke client). |
 | `routes/shift/` | Buka shift, tutup shift kasir dengan hitung buta (*blind cash reconciliation*). |
@@ -105,9 +105,9 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 
 #### D. Business Logic Services (`app/services/` — 31 Sub-Domain)
 Seluruh aturan bisnis murni berada di layer service:
-- `services/auth/`: Validasi kredensial, hashing password, dan manajemen token; login wajib token sesi saat logout, serta `login_throttle.py` membatasi 5 kegagalan per (IP, username) dalam 5 menit (HTTP 429).
+- `services/auth/`: Validasi kredensial, hashing password, dan manajemen token; login wajib token sesi saat logout, `login_throttle.py` membatasi 5 kegagalan per (IP, username) dalam 5 menit (HTTP 429) dan dipakai pada login kasir, `admin-check`, `client/admin-login`, serta portal member; setiap login sukses memanggil `session.clear()` agar sesi lama tidak menempel.
 - `services/backup/`: Backup otomatis rotasi harian dan restore snapshot SQLite; snapshot memakai SQLite Online Backup API + `PRAGMA integrity_check` (aman untuk mode WAL), path DB diturunkan dari engine aktif via `default_db_path()`, direktori backup dari `default_backup_dir()` (env `BACKUP_DIR` untuk test/sandbox), dan `restore_backup()` membuat backup pengaman lalu menulis ke DB aktif tanpa restart (lock bersama dengan proses backup). Semua panggilan `urlopen` provider cloud memakai `timeout=30` agar job backup tidak menggantung.
-- `services/blackout/`: Logika pemulihan sesi berdasarkan threshold blackout terkonfigurasi; deteksi memakai `sesi.last_sync` yang kini tersimpan untuk sesi guest lewat heartbeat 30 detik, dan sisa waktu member yang disimpan memakai snapshot audit (`sisa_audit`), bukan jam berjalan.
+- `services/blackout/`: Logika pemulihan sesi berdasarkan threshold blackout terkonfigurasi; deteksi memakai `sesi.last_sync` yang kini tersimpan untuk sesi guest lewat heartbeat 30 detik, `sesi.selesai_pada` diset ke waktu referensi (bukan jam sekarang) agar waktu terpakai tidak membengkak selama outage, sesi guest yang di-resolve mengisi `selesai_pada`, dan `resolve_member` menolak member yang masih punya sesi aktif serta menghormati `cek_kadaluarsa()` (saldo hangus tidak dihidupkan).
 - `services/cache/`: Subsystem in-memory cache berkecepatan tinggi (rincian di Bagian 3); `ProcessMemoryStore` ber-TTL 300 detik dan `PCNetworkCacheStore` di-rebuild di luar lock; `UptimeMemoryStore` menyimpan flag billing per PC di RAM (dibaca jalur telemetri, bukan query sesi).
 - `services/client/`: Manajemen handshake, antrean perintah cepat client PC, dan heartbeat `sesi.last_sync` throttled 30 detik (`ClientService.HEARTBEAT_PERSIST_SECONDS`); menulis flag billing ke `UptimeMemoryStore` setiap polling status.
 - `services/cloudflare_tunnel/`: Integrasi zero-trust Cloudflare Ingress daemon (log cloudflared ditulis ke `logs/` di samping biner).
@@ -118,18 +118,18 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/health/`: Guard sumber daya (`MIN_FREE_BYTES = 512 MB`) dan payload `GET /api/health` publik (`db`/`disk`/`backup`, tanpa angka/path; status `degraded` tetap HTTP 200).
 - `services/ip_whitelist/`: Proteksi akses kasir hanya dari subnet IP yang terdaftar.
 - `services/maintenance/`: Alur status tiket perbaikan PC.
-- `services/member/`: Transaksi saldo, potongan diskon tarif member, dan proteksi saldo minus; refund paket memotong saldo menit lalu mengembalikan nilai penuh transaksi (`-jumlah`); refund memanggil `cek_kadaluarsa()` lebih dulu dan meng-clamp tanggal kadaluarsa yang terlewati ke waktu sekarang; klaim refund atomik lewat `TransaksiRepository.claim_refund()`; daftar member eager load grup & sesi.
+- `services/member/`: Transaksi saldo, potongan diskon tarif member, dan proteksi saldo minus; refund paket memotong saldo menit lalu mengembalikan nilai penuh transaksi (`-jumlah`); refund memanggil `cek_kadaluarsa()` lebih dulu dan meng-clamp tanggal kadaluarsa yang terlewati ke waktu sekarang; klaim refund atomik lewat `TransaksiRepository.claim_refund()`; penulisan saldo diserialisasi `WRITE_LOCK`; daftar member eager load grup & sesi.
 - `services/menu/`: Pengurangan stok bahan makanan/minuman otomatis saat transaksi POS terjadi.
 - `services/notes/`: Sinkronisasi catatan serah terima kasir.
-- `services/owner/`: Agregasi statistik finansial khusus peran owner/pemilik warnet.
+- `services/owner/`: Agregasi statistik finansial khusus peran owner/pemilik warnet; `get_top_paket` mengelompokkan per `Transaksi.paket_id` dan memberi label "Paket dihapus" untuk paket yang sudah tidak ada.
 - `services/paket/`: Validasi durasi dan jam berlaku paket (contoh: paket malam).
 - `services/pc/`: Manajemen status ketersediaan meja PC dan uptime tracking.
 - `services/plugins/`: Ekstensi modul dinamis tambahan.
 - `services/public/`: Format data tampilan TV billboard publik; payload TV di-cache 5 detik.
-- `services/report/`: Kompilasi laporan keuangan harian/bulanan kasir; relasi struk/menu di-eager load dan hitung sesi aktif memakai `SesiRepository.count_aktif()`.
+- `services/report/`: Kompilasi laporan keuangan harian/bulanan kasir; relasi struk/menu di-eager load dan hitung sesi aktif memakai `SesiRepository.count_aktif()`. Hapus riwayat transaksi juga menghapus `TransaksiMenu` pada rentang yang sama, dan nota pembelian paket tidak boleh dihapus (`ValueError` → 400; gunakan Refund agar saldo ikut kembali).
 - `services/server_monitor/`: Sensor telemetri performa mesin server utama.
-- `services/sesi/`: Engine kalkulasi tarif per menit, sisa waktu billing, dan refund saldo; refund paket guest memotong durasi beli sesuai sisa waktu lalu mengembalikan nilai penuh transaksi; refund guest dan member memakai klaim atomik `TransaksiRepository.claim_refund()` sehingga satu transaksi hanya menghasilkan satu nota refund; commit sesi menangkap `IntegrityError` (unique index `uq_aktif_sesi_pc`) menjadi `ValueError("PC sedang dipakai")`.
-- `services/settings/`: Cache write-through pengaturan aplikasi, auto-generator random `vnc_password`, serta auto-generator random token emergency & uninstall (`secrets.token_urlsafe`, hanya mengisi bila kosong sehingga token lama di database tetap berlaku); cache miss negatif untuk setting yang tidak ada. Upload QRIS (`routes/settings/database_routes.py`) divalidasi Pillow, diperkecil maks 800 px, dan deskripsinya disimpan dengan nama bertimestamp.
+- `services/sesi/`: Engine kalkulasi tarif per menit, sisa waktu billing, dan refund saldo; refund paket guest memotong durasi beli sesuai sisa waktu lalu mengembalikan nilai penuh transaksi; refund guest dan member memakai klaim atomik `TransaksiRepository.claim_refund()` sehingga satu transaksi hanya menghasilkan satu nota refund; commit sesi menangkap `IntegrityError` (unique index `uq_aktif_sesi_pc`) menjadi `ValueError("PC sedang dipakai")`; seluruh jalur tulis tambah-waktu/pindah sesi diserialisasi `WRITE_LOCK` (`app/services/write_lock.py`).
+- `services/settings/`: Cache write-through pengaturan aplikasi, auto-generator random `vnc_password`, serta auto-generator random token emergency & uninstall (`secrets.token_urlsafe`, hanya mengisi bila kosong sehingga token lama di database tetap berlaku); cache miss negatif untuk setting yang tidak ada. Upload QRIS (`routes/settings/database_routes.py`) divalidasi Pillow, diperkecil maks 800 px, dan deskripsinya disimpan dengan nama bertimestamp. Arsip pra-purge database (`db_maintenance_service.py`) memakai `default_backup_dir()` + snapshot Online Backup API + `PRAGMA integrity_check`, bukan `copy2` berkas WAL.
 - `services/shift/`: Verifikasi selisih uang kas fisik kasir (blind reconciliation); ringkasan shift mencakup transaksi semua kasir pada rentang waktu shift (tanpa filter `user_id`) dan tidak meng-clamp nilai negatif.
 - `services/tournament/`: Engine pairing babak dan alur skor turnamen eSports.
 - `services/transaksi/`: Pencatatan buku besar transaksi pembayaran.
@@ -143,7 +143,7 @@ Pemisahan query ORM mentah dari service:
 
 #### F. Middleware & Utilities (`app/middleware/` & `app/utils/`)
 - `middleware/auth.py`: Decorator `@login_required`, `@admin_required`, `@shift_required`.
-- `middleware/ip_whitelist_middleware.py`: Filter akses IP subnet warnet.
+- `middleware/ip_whitelist_middleware.py`: Filter akses IP subnet warnet (token URL dibandingkan dengan `hmac.compare_digest`).
 - `utils/constants.py`: Konstanta global durasi, status sesi, dan kode error.
 - `utils/helpers.py`: Response formatter JSON terstandar (`success_response`, `error_response`) dan `natural_sort_key` bersama untuk pengurutan kode PC; `SafeHTMLParser`/`sanitize_html` memakai allowlist protokol (`http://`, `https://`, `mailto:`, `/`, `#`, `data:image/`) setelah normalisasi karakter kontrol.
 - `utils/logger.py`: Centralized audit logger ke file JSON `logs/warnet.log` (rotasi gzip); tanpa `print` per entri, dan `read_logs` hanya membaca ekor file. Tidak ada penulisan audit ke SQLite.

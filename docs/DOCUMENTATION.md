@@ -232,7 +232,7 @@ c:\Project GIT\TMBilling
 ### 4.3 Blackout Auto-Recovery System (Toleransi Mati Lampu & Uptime Tracker)
 - **Deskripsi**: Proteksi otomatis terhadap pemadaman listrik (*blackout*) mendadak di warnet.
 - **Pencatatan Uptime & Offline Tracker**: Menggunakan tabel `PCUptimeLog` yang merekam *heartbeat* klien setiap beberapa detik.
-- **Toleransi Blackout**: Jika listrik padam mendadak, server mendeteksi status offline seluruh PC secara serentak. Saat listrik menyala kembali dan PC booting, sistem secara cerdas **tidak memotong durasi pelanggan** selama masa mati lampu, melainkan memulihkan sisa waktu dan paket sesi secara otomatis (*Auto Session Resume*). Sisa waktu yang dikembalikan ke member memakai snapshot audit `sisa_audit` (bukan jam berjalan), sehingga tidak ada kelebihan waktu.
+- **Toleransi Blackout**: Jika listrik padam mendadak, server mendeteksi status offline seluruh PC secara serentak. Saat listrik menyala kembali dan PC booting, sistem secara cerdas **tidak memotong durasi pelanggan** selama masa mati lampu, melainkan memulihkan sisa waktu dan paket sesi secara otomatis (*Auto Session Resume*). Sisa waktu yang dikembalikan ke member memakai snapshot audit `sisa_audit` (bukan jam berjalan), sehingga tidak ada kelebihan waktu. `sesi.selesai_pada` diisi waktu referensi (`last_sync`/`mulai_pada`), bukan jam deteksi, agar waktu terpakai tidak membengkak sepanjang outage; sesi guest yang dipulihkan juga mengisi `selesai_pada`. Pemulihan member ditolak bila member masih punya sesi aktif lain dan saldo yang sudah kadaluarsa tidak dihidupkan.
 - **Hard Delete Uptime Log**: Admin dapat membersihkan riwayat log uptime lama dengan konfirmasi aman.
 
 ### 4.4 5-Layer WarnetAgent Anti-Tamper Security & Registry Hash Verification
@@ -294,6 +294,7 @@ c:\Project GIT\TMBilling
 - **Deskripsi**: Layar pengawasan visual yang menampilkan *thumbnail live screenshot* dari seluruh PC klien yang aktif.
 - **Natural Sorting**: Daftar PC terurut secara natural (`PC-01`, `PC-02`, ..., `PC-09`, `PC-10`, `PC-11`, bukan urutan ASCII yang melompat).
 - **Live Zoom**: Klik thumbnail untuk memperbesar screenshot secara instan tanpa lag.
+- **Nama Berkas Aman**: `_screenshot_filename()` membuang pemisah path sebelum `secure_filename`, sehingga kode PC seperti `PC/01` tetap menjadi `PC01.png` dan tidak bisa menulis di luar folder screenshot.
 
 ### 4.8 POS Kantin & Billing FnB Multi-Payment (Cash/QRIS/Bank + Struk Thermal)
 - **Deskripsi**: Modul kasir kantin / FnB lengkap yang terintegrasi langsung dengan billing PC.
@@ -332,7 +333,9 @@ c:\Project GIT\TMBilling
 - **Deskripsi**: Role-Based Access Control dengan 3 tingkatan pengguna: `Super Admin`, `Admin`, dan `Kasir`.
 - **Audit Logs**: Seluruh aktivitas krusial (buka sesi, tambah waktu, hapus member, edit harga paket, diskon, refund, pembukaan laci kas) dicatat sebagai JSON line di `logs/warnet.log` melalui `app/utils/logger.py` (rotasi gzip; tanpa tabel database).
 - **Pembersihan Log dengan Otorisasi Supervisor**: Riwayat audit log tidak dapat dihapus sembarangan dan membutuhkan verifikasi password level Administrator/Super Admin.
-- **Anti Brute-Force Login**: `services/auth/login_throttle.py` membatasi 5 kegagalan per kombinasi (IP, username) dalam 5 menit dan membalas HTTP 429; logout wajib menyertakan token sesi yang cocok.
+- **Anti Brute-Force Login**: `services/auth/login_throttle.py` membatasi 5 kegagalan per kombinasi (IP, username) dalam 5 menit dan membalas HTTP 429; berlaku pada login kasir, `admin-check`, `client/admin-login`, dan portal member. Logout wajib menyertakan token sesi yang cocok, dan setiap login sukses memanggil `session.clear()` agar sesi lama tidak menempel.
+- **Batas Unggah & Nama Berkas**: `MAX_CONTENT_LENGTH = 64 MB` mencegah unggahan raksasa; nama file screenshot dibersihkan dengan `secure_filename` setelah membuang pemisah path sehingga kode PC tidak bisa keluar dari folder upload.
+- **Hapus Audit Blackout & Kontrol LHM Khusus Admin**: `/api/v1/kasir/blackout/clear` dan start/stop TMLHMService memakai `@admin_required`.
 - **Sanitasi HTML Pengumuman**: Teks pengumuman kiosk (hasil CKEditor) disanitasi `SafeHTMLParser` saat ditulis maupun dibaca, memakai allowlist protokol (`http://`, `https://`, `mailto:`, `/`, `#`, `data:image/`).
 
 ### 4.13 Floor Plan & Dynamic Visual Room Layout (v1.6.3 Engine)
@@ -351,6 +354,7 @@ c:\Project GIT\TMBilling
   - *Cloud Backup Rotation*: Sinkronisasi backup ke penyimpanan cloud eksternal dengan retensi rotasi otomatis; seluruh panggilan HTTP provider memakai `timeout=30` agar job tidak menggantung.
   - *Unduhan Database Aman WAL*: `GET /api/v1/kasir/settings/backup/download` memakai snapshot SQLite Online Backup API + `PRAGMA integrity_check` ke file sementara (isi `-wal` ikut tersalin), lalu dihapus via `after_this_request`. Tidak lagi men-stream file `warnet.db` hidup.
   - *SQLite VACUUM & Optimize*: Mengompresi dan merapikan indeks database langsung dari tombol di pengaturan.
+  - *Arsip Pra-Purge Konsisten*: sebelum menghapus riwayat, `DBMaintenanceService` menyimpan snapshot Online Backup API + `PRAGMA integrity_check` ke `default_backup_dir()/archive` (bukan `copy2` berkas WAL yang bisa kehilangan isi `-wal`).
   - *Database Restore Modal*: Antarmuka pemulihan database dengan proteksi konfirmasi ganda.
 
 ### 4.15 Manajemen Member, Paket & Billing Rates
@@ -362,6 +366,8 @@ c:\Project GIT\TMBilling
   - Reset State Sesi: Proteksi pembersihan data sesi sementara saat PC selesai digunakan.
   - Refund Paket Nominal Penuh: Refund guest & member mengembalikan nilai penuh transaksi (`-jumlah`) sambil memotong menit tersisa (guest dibatasi sisa waktu, member `max(0, saldo - durasi)`).
   - Satu Sesi Aktif per PC: Unique index parsial `uq_aktif_sesi_pc` (`pc_id` WHERE `status='aktif'`) menolak sesi ganda pada satu meja; pelanggaran dipetakan menjadi `ValueError("PC sedang dipakai")`.
+  - Serialisasi Tulis Saldo: `app/services/write_lock.py` (`WRITE_LOCK`) membungkus `tambah_waktu`/`refund_paket` member dan `tambah_waktu_sesi` agar dua request bersamaan tidak saling menimpa saldo (read-modify-write) pada satu proses server.
+  - Hapus Nota Paket Ditolak: nota `beli_paket`/`beli_paket_member` tidak bisa dihapus dari riwayat; API membalas 400 dengan arahan memakai Refund agar saldo member ikut kembali. Penghapusan riwayat transaksi juga membersihkan `TransaksiMenu` pada rentang tanggal yang sama.
 
 ### 4.16 Shift Kasir & Serah Terima Shift (Hitung Buta / Blind Cash Reconciliation)
 - **Deskripsi**: Sistem manajemen jam kerja dan serah terima shift kasir anti-manipulasi berbasis *Blind Count (Hitung Buta)*, rekonsiliasi laci fisik, dan struk handover thermal.
@@ -401,6 +407,7 @@ c:\Project GIT\TMBilling
   - Grafik tren pendapatan harian, mingguan, dan bulanan.
   - Analisis jam sibuk (*Peak Hours Occupancy Heatmap*) untuk optimasi promosi.
   - Perbandingan rasio keuntungan antara pendapatan sewa PC vs penjualan F&B kantin.
+  - Paket Terlaris: `get_top_paket` mengelompokkan transaksi per `paket_id` sehingga paket yang sudah dihapus tetap terhitung dan diberi label "Paket dihapus".
 
 ### 4.21 Emergency Mode & Offline Fallback (SHA-256 Auth)
 - **Deskripsi**: Mekanisme penanganan darurat ketika jaringan lokal warnet terputus total dari server billing.

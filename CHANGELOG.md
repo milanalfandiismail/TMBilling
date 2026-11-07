@@ -23,6 +23,20 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Ringkasan Shift Lintas Kasir**: Filter `user_id`/`kasir_id` dihapus dan clamp `max(0, ...)` dihilangkan sehingga selisih negatif (refund berlebih) terlihat; blackout menyimpan `sisa_audit`, bukan jam berjalan.
 - **Job Cloud & Tunnel**: 11 panggilan `urlopen` provider backup memakai `timeout=30`; direktori log `cloudflared` diperbaiki (sebelumnya `TUNNEL_DIR` tidak terdefinisi).
 
+### Pengerasan Putaran 2 (2026-11-07)
+- **Serialisasi Tulis Billing**: modul baru `app/services/write_lock.py` (`WRITE_LOCK`) membungkus `SesiService.tambah_waktu_sesi`, `MemberService.tambah_waktu`, dan `MemberService.refund_paket` sehingga dua request bersamaan tidak saling menimpa durasi/saldo (read-modify-write) pada satu proses Waitress.
+- **Validasi Batch Dua Fase**: `POST /api/v1/kasir/sesi/tambah-waktu-batch` memvalidasi seluruh paket lebih dulu; bila salah satu paket tidak ada, sesi tidak tertagih sebagian.
+- **Index & Migrasi Baru**: model `Sesi` memakai `uq_aktif_sesi_pc` (partial unique index), migrasi `d3e4f5a6b7c8` menambah `ix_transaksi_member_id`, `ix_transaksi_user_id`, dan `ix_sesi_mulai_pada`.
+- **Integritas Blackout**: `sesi.selesai_pada` pada deteksi memakai waktu referensi (`last_sync`/`mulai_pada`), sesi guest yang dipulihkan mengisi `selesai_pada`, dan `resolve_member` menolak member yang masih punya sesi aktif serta tidak menghidupkan saldo yang sudah kadaluarsa.
+- **Hapus Riwayat Menyeluruh**: `LogAuditService.clear_all_transactions`/`clear_transactions_by_date` kini juga menghapus `TransaksiMenu`; nota pembelian paket ditolak dihapus (400) dan harus lewat Refund.
+- **Arsip Pra-Purge Aman**: `DBMaintenanceService` memakai `default_backup_dir()` + snapshot Online Backup API + `PRAGMA integrity_check` (bukan `copy2` berkas WAL).
+- **Throttle Login Diperluas**: `admin-check`, `client/admin-login`, dan `/member/login` memakai `login_throttle`; pesan gagal portal member diseragamkan, dan setiap login sukses memanggil `session.clear()`.
+- **Batas Unggah & Nama Screenshot**: `MAX_CONTENT_LENGTH = 64 MB`; `_screenshot_filename()` membuang pemisah path sebelum `secure_filename` (`PC/01` → `PC01.png`).
+- **Endpoint Khusus Admin**: hapus audit blackout `/clear` dan start/stop TMLHMService memakai `@admin_required`.
+- **Higiene Resource**: unduhan `cloudflared` memakai `timeout=30`; `PCService.delete` memanggil `cleanup_pc_cache()` agar cache RAM PC terhapus ikut bersih.
+- **Analitik Paket Terhapus**: `OwnerAnalyticsService.get_top_paket` mengelompokkan per `paket_id` dan memberi label "Paket dihapus" alih-alih membuang transaksi paket yang sudah dihapus.
+- **Token Klien**: `GET /api/v1/kasir/settings/` tidak lagi mengembalikan default `TM2026QWERTY-api-key`; `/uninstall-token/client` menolak (403) request dari IP yang bukan PC terdaftar; `install.bat` membangkitkan API key acak bila prompt dikosongkan.
+
 ### Keamanan & Perbaikan Bug
 - **Redaksi Setting Sensitif**: `GET /api/v1/kasir/settings/` kini hanya mengembalikan `payment_methods` dan `vnc_password` untuk role kasir; kredensial lain (`client_api_key`, `mikrotik_password`, token, kredensial backup) khusus role admin.
 - **Emergency Login Berbasis Token atau IP**: Endpoint emergency login menolak request tanpa `emergency_token` server yang sah **kecuali** berasal dari IP PC terdaftar; bypass loopback dihapus. Client Tauri tidak lagi mengirim token server (diperbarui oleh remediasi 2026-11-07).
