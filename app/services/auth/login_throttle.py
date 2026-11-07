@@ -40,3 +40,24 @@ def record_failure(key):
 def clear(key):
     with _lock:
         _failures.pop(key, None)
+
+
+MAX_FAILURES_PER_IP = 20
+
+
+def _ip_key(ip):
+    return ("__ip__", ip)
+
+
+def check(ip, username):
+    return is_blocked((ip, username)) or is_blocked(_ip_key(ip))
+
+
+def fail(ip, username):
+    record_failure((ip, username))
+    record_failure(_ip_key(ip))
+
+
+def ok(ip, username):
+    clear((ip, username))
+    clear(_ip_key(ip))

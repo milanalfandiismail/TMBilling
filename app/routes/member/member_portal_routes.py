@@ -62,27 +62,26 @@ def login_action():
         return jsonify({"error": "Username dan password wajib diisi"}), 400
 
     from app.services.auth import login_throttle
-    throttle_key = ("member", request.remote_addr, username)
-    if login_throttle.is_blocked(throttle_key):
+    if login_throttle.check(request.remote_addr, username):
         return jsonify({"error": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}), 429
 
     try:
         member = MemberRepository.get_by_username(username)
         if not member:
-            login_throttle.record_failure(throttle_key)
+            login_throttle.fail(request.remote_addr, username)
             return jsonify({"error": "Username atau password salah"}), 401
 
         if not member.aktif:
             return jsonify({"error": "Akun member Anda dinonaktifkan oleh kasir"}), 403
 
         if not member.check_password(password):
-            login_throttle.record_failure(throttle_key)
+            login_throttle.fail(request.remote_addr, username)
             return jsonify({"error": "Username atau password salah"}), 401
 
         if member.kadaluarsa_pada and now_local() > member.kadaluarsa_pada:
             return jsonify({"error": "Masa aktif member sudah kadaluarsa"}), 403
 
-        login_throttle.clear(throttle_key)
+        login_throttle.ok(request.remote_addr, username)
         session.clear()
         session["member_id"] = member.id
         session["member_username"] = member.username

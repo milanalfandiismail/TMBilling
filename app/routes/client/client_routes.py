@@ -133,8 +133,7 @@ def admin_login():
     data = request.get_json() or {}
     from app.services.auth import login_throttle
     username = data.get("username", "").strip()
-    throttle_key = ("client-admin", request.remote_addr, username)
-    if login_throttle.is_blocked(throttle_key):
+    if login_throttle.check(request.remote_addr, username):
         return jsonify({"success": False, "error": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}), 429
     try:
         result = ClientService.admin_login(
@@ -143,10 +142,10 @@ def admin_login():
             username=username,
             password=data.get("password", "")
         )
-        login_throttle.clear(throttle_key)
+        login_throttle.ok(request.remote_addr, username)
         return jsonify(result), 200
     except ValueError as e:
-        login_throttle.record_failure(throttle_key)
+        login_throttle.fail(request.remote_addr, username)
         return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
