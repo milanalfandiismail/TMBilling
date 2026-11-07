@@ -80,6 +80,21 @@ class MenuRepository:
         TransaksiMenu.query.filter_by(menu_id=menu_id).delete()
 
     @staticmethod
+    def delete_all_transaksi():
+        """Hapus seluruh riwayat transaksi F&B (maintenance)."""
+        return TransaksiMenu.query.delete()
+
+    @staticmethod
+    def delete_transaksi_by_date(tanggal):
+        """Hapus riwayat transaksi F&B pada tanggal lokal tertentu (maintenance)."""
+        from app.utils.timezone_utils import get_local_date_range_utc
+        start_utc, end_utc = get_local_date_range_utc(tanggal)
+        return TransaksiMenu.query.filter(
+            TransaksiMenu.tanggal >= start_utc,
+            TransaksiMenu.tanggal < end_utc
+        ).delete(synchronize_session=False)
+
+    @staticmethod
     def save(obj):
         """Menyimpan data MenuItem atau TransaksiMenu (Tanpa Commit)."""
         db.session.add(obj)

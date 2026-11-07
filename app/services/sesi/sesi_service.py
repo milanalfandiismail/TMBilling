@@ -18,6 +18,7 @@ from app.repositories import (
     TransaksiRepository
 )
 from app.services.transaksi.transaksi_service import TransaksiService
+from app.services.write_lock import WRITE_LOCK
 from app.utils.logger import write_log
 from app.utils.validators import (
     validate_string_length,
@@ -168,6 +169,12 @@ class SesiService:
     @staticmethod
     def tambah_waktu_sesi(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
         """Tambah durasi pada sesi berjalan (Guest/Member) + Suntik Nota TM."""
+        with WRITE_LOCK:
+            return SesiService._tambah_waktu_sesi_locked(sesi_id, paket, operator, qty, metode_pembayaran)
+
+    @staticmethod
+    def _tambah_waktu_sesi_locked(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
+        if not paket: raise ValueError("Paket tidak ditemukan")
         qty = validate_integer_range(qty, 1, 100, field_name="Kuantitas paket")
         metode_pembayaran = validate_payment_method(metode_pembayaran)
 

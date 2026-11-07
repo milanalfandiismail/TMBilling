@@ -148,18 +148,24 @@ def tambah_waktu_batch():
 
         for sesi_id in sesi_ids:
             try:
+                rencana = []
                 if selections:
                     for sel in selections:
                         p_id = sel.get("paket_id")
                         q = int(sel.get("qty", 1))
                         if q <= 0: raise ValueError("Kuantitas minimal 1")
                         p = PaketService.get_by_id(p_id)
-                        SesiService.tambah_waktu_sesi(sesi_id, p, operator=kasir, qty=q, metode_pembayaran=metode_pembayaran)
+                        if not p: raise ValueError("Paket tidak ditemukan")
+                        rencana.append((p, q))
                 elif paket_id:
                     p = PaketService.get_by_id(paket_id)
-                    SesiService.tambah_waktu_sesi(sesi_id, p, operator=kasir, qty=qty, metode_pembayaran=metode_pembayaran)
+                    if not p: raise ValueError("Paket tidak ditemukan")
+                    rencana.append((p, qty))
                 else:
                     raise ValueError("Paket belum dipilih")
+
+                for p, q in rencana:
+                    SesiService.tambah_waktu_sesi(sesi_id, p, operator=kasir, qty=q, metode_pembayaran=metode_pembayaran)
                 success_list.append(sesi_id)
             except Exception as e:
                 errors.append({"sesi_id": sesi_id, "error": str(e)})

@@ -145,20 +145,19 @@ class OwnerAnalyticsService:
 
     @staticmethod
     def get_top_paket(start, end):
-        r = db.session.query(Paket.nama, func.count(Transaksi.id).label('total')
-        ).join(Transaksi, Transaksi.paket_id == Paket.id
-        ).filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end, Transaksi.is_refunded == False
-        ).group_by(Paket.id, Paket.nama).order_by(func.count(Transaksi.id).desc()).limit(5).all()
-        if r:
-            ids = [p.id for p in Paket.query.filter(Paket.nama.in_([x.nama for x in r])).all()]
-            other = db.session.query(func.count(Transaksi.id)).filter(
-                Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end,
-                Transaksi.is_refunded == False, ~Transaksi.paket_id.in_(ids)
-            ).scalar() or 0
-        else:
-            other = 0
-        labels = [x.nama for x in r] + (['Lainnya'] if other > 0 else [])
-        data = [x.total for x in r] + ([other] if other > 0 else [])
+        rows = db.session.query(
+            Transaksi.paket_id, func.count(Transaksi.id)
+        ).filter(
+            Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end,
+            Transaksi.is_refunded == False
+        ).group_by(Transaksi.paket_id).order_by(func.count(Transaksi.id).desc()).all()
+
+        ids = [pid for pid, _ in rows if pid]
+        nama_map = {p.id: p.nama for p in Paket.query.filter(Paket.id.in_(ids)).all()} if ids else {}
+        top = rows[:5]
+        other = sum(count for _, count in rows[5:])
+        labels = [nama_map.get(pid, "Paket dihapus") for pid, _ in top] + (["Lainnya"] if other else [])
+        data = [count for _, count in top] + ([other] if other else [])
         colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280'][:len(labels)]
         return {'labels': labels, 'data': data, 'colors': colors}
 

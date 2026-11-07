@@ -10,7 +10,7 @@ import re
 import json
 from datetime import datetime
 from app.models import db
-from app.repositories import TransaksiRepository, SesiRepository
+from app.repositories import TransaksiRepository, SesiRepository, MenuRepository
 from app.utils.logger import read_logs, write_log, clear_logs
 
 
@@ -133,13 +133,14 @@ class LogAuditService:
         """Menghapus seluruh riwayat transaksi & sesi (Maintenance)."""
         try:
             count_t = TransaksiRepository.delete_all()
+            count_m = MenuRepository.delete_all_transaksi()
             count_s = SesiRepository.delete_history()
             db.session.commit()
             write_log(
                 "CLEAR_ALL_HISTORY",
-                f"Seluruh riwayat dikosongkan ({count_t} transaksi, {count_s} sesi)",
+                f"Seluruh riwayat dikosongkan ({count_t} transaksi, {count_m} kantin, {count_s} sesi)",
                 user=operator,
-                detail_json={"transaksi_dihapus": count_t, "sesi_dihapus": count_s, "action": "clear_all"}
+                detail_json={"transaksi_dihapus": count_t, "menu_dihapus": count_m, "sesi_dihapus": count_s, "action": "clear_all"}
             )
             return True
         except Exception as e:
@@ -153,8 +154,10 @@ class LogAuditService:
     @staticmethod
     def delete_transaction(t_id, operator="system"):
         """Menghapus satu transaksi (Audit)."""
+        t = TransaksiRepository.get_by_id(t_id)
+        if t and t.jenis in ("beli_paket", "beli_paket_member"):
+            raise ValueError("Nota paket tidak bisa dihapus. Gunakan Refund agar saldo member ikut kembali.")
         try:
-            t = TransaksiRepository.get_by_id(t_id)
             if not t:
                 return False
 
@@ -186,13 +189,14 @@ class LogAuditService:
         """Menghapus riwayat transaksi & sesi pada tanggal tertentu (Audit)."""
         try:
             count_t = TransaksiRepository.delete_by_date(tanggal)
+            count_m = MenuRepository.delete_transaksi_by_date(tanggal)
             count_s = SesiRepository.delete_history_by_date(tanggal)
             db.session.commit()
             write_log(
                 "CLEAR_TANGGAL",
-                f"Riwayat tanggal {tanggal} dihapus ({count_t} transaksi, {count_s} sesi)",
+                f"Riwayat tanggal {tanggal} dihapus ({count_t} transaksi, {count_m} kantin, {count_s} sesi)",
                 user=operator,
-                detail_json={"tanggal_target": tanggal, "transaksi_dihapus": count_t, "sesi_dihapus": count_s}
+                detail_json={"tanggal_target": tanggal, "transaksi_dihapus": count_t, "menu_dihapus": count_m, "sesi_dihapus": count_s}
             )
             return True
         except Exception as e:

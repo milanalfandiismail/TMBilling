@@ -81,7 +81,7 @@ const Paket = {
                 q: this.searchQuery,
                 grup: this.currentGrupId,
                 groups: groups.map(g => ({ id: g.id, nama: g.nama })),
-                items: list.map(p => ({ id: p.id, nama: p.nama, harga: p.harga, durasi: p.durasi_menit, grup_id: p.grup_id, aktif: p.is_active }))
+                items: list.map(p => ({ id: p.id, nama: p.nama, harga: p.harga, durasi: p.durasi_menit, grup_id: p.grup_id, aktif: p.aktif }))
             });
 
             if (isSilent && this._lastFingerprint === newFingerprint) {

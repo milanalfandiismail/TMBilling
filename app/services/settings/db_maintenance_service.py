@@ -8,10 +8,10 @@ untuk mengembalikan kapasitas disk secara fisik ke sistem operasi.
 """
 
 import os
-import shutil
 from datetime import timedelta, datetime
 from sqlalchemy import text
 from app.models import db, now_local
+from app.services.backup.backup_service import default_backup_dir, _snapshot_db, _integrity_ok
 
 
 class DBMaintenanceService:
@@ -58,7 +58,7 @@ class DBMaintenanceService:
             except Exception:
                 history_counts[key] = 0
 
-        archive_dir = os.path.join(os.getcwd(), "backups", "archive")
+        archive_dir = os.path.join(default_backup_dir(), "archive")
         last_archive = None
         if os.path.exists(archive_dir):
             files = [
@@ -108,7 +108,7 @@ class DBMaintenanceService:
         retention_months = validate_choice(retention_months, [1, 3, 6, 12], field_name="Masa Retensi")
 
         # 1. Lokasi folder archive cadangan khusus
-        archive_dir = os.path.join(os.getcwd(), "backups", "archive")
+        archive_dir = os.path.join(default_backup_dir(), "archive")
         os.makedirs(archive_dir, exist_ok=True)
 
         # Snapshot file cadangan sebelum pembersihan
@@ -130,9 +130,11 @@ class DBMaintenanceService:
 
         initial_size = os.path.getsize(db_path) if os.path.exists(db_path) else 0
 
-        # Copy file SQLite ke folder backups/archive/
+        # Snapshot SQLite (Online Backup API) agar isi WAL ikut tersalin
         if os.path.exists(db_path):
-            shutil.copy2(db_path, backup_path)
+            _snapshot_db(db_path, backup_path)
+            if not _integrity_ok(backup_path):
+                raise RuntimeError("Snapshot database pra-purge gagal diverifikasi")
 
         # 2. Hitung tanggal cutoff
         cutoff_date = now_local() - timedelta(days=retention_months * 30)

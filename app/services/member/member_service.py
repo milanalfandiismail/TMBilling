@@ -16,6 +16,7 @@ from app.repositories import SesiRepository
 from app.repositories import GrupRepository
 from app.repositories import TransaksiRepository
 from app.services.transaksi.transaksi_service import TransaksiService
+from app.services.write_lock import WRITE_LOCK
 from app.utils.logger import write_log
 from app.models import db, now_local
 from app.models.mikrotik.mikrotik import MikroTikConfig
@@ -262,6 +263,11 @@ class MemberService:
     @staticmethod
     def tambah_waktu(member_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
         """Tambah waktu member & suntik Nota Transaksi (TM)."""
+        with WRITE_LOCK:
+            return MemberService._tambah_waktu_locked(member_id, paket, operator, qty, metode_pembayaran)
+
+    @staticmethod
+    def _tambah_waktu_locked(member_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
         qty = validate_integer_range(qty, 1, 100, field_name="Kuantitas paket")
         metode_pembayaran = validate_payment_method(metode_pembayaran)
 
@@ -313,6 +319,11 @@ class MemberService:
     @staticmethod
     def refund_paket(member_id, transaksi_id, operator="system"):
         """Batalkan pembelian paket & potong saldo waktu member."""
+        with WRITE_LOCK:
+            return MemberService._refund_paket_locked(member_id, transaksi_id, operator)
+
+    @staticmethod
+    def _refund_paket_locked(member_id, transaksi_id, operator="system"):
         member = MemberRepository.get_by_id(member_id)
 
         transaksi = TransaksiRepository.get_by_id(transaksi_id)

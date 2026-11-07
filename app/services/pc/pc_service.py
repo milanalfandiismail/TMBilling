@@ -271,6 +271,11 @@ class PCService:
 
             # 5. Cleanup In-Memory states (Non-fatal)
             try:
+                from app.services.cache import cleanup_pc_cache
+                cleanup_pc_cache(pc_id)
+            except Exception:
+                pass
+            try:
                 from app.services.hardware.hardware_service import TELEMETRY_HISTORY
                 TELEMETRY_HISTORY.pop(pc_id, None)
             except Exception:

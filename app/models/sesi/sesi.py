@@ -48,6 +48,12 @@ class Sesi(db.Model):
     """
     
     __tablename__ = "sesi"
+    __table_args__ = (
+        db.Index(
+            "uq_aktif_sesi_pc", "pc_id", unique=True,
+            sqlite_where=db.text("status = 'aktif' AND pc_id IS NOT NULL"),
+        ),
+    )
     
     id = db.Column(db.Integer, primary_key=True)
     tipe = db.Column(db.String(10), nullable=False)

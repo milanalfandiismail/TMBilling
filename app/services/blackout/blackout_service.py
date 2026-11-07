@@ -56,7 +56,7 @@ class BlackoutService:
             sesi.is_blackout_resolved = False
             sesi.sisa_menit_saat_mati = max(0, sisa_audit)
             sesi.status = "selesai"
-            sesi.selesai_pada = now_local()
+            sesi.selesai_pada = waktu_referensi
             
             db.session.commit()
 
@@ -91,7 +91,10 @@ class BlackoutService:
             raise ValueError("Sesi tidak valid untuk di-resolve")
 
         member = sesi.member
-        saldo_kembali = sesi.sisa_menit_saat_mati or 0
+        if SesiRepository.get_aktif_by_member(member.id):
+            raise ValueError("Member masih punya sesi aktif; selesaikan sesi itu dulu")
+        expired = member.cek_kadaluarsa()
+        saldo_kembali = 0 if expired else (sesi.sisa_menit_saat_mati or 0)
 
         # Overwrite saldo member sesuai SOP (menimpa, bukan menambah)
         member.waktu_tersimpan = saldo_kembali
@@ -136,6 +139,7 @@ class BlackoutService:
 
         sisa = sesi.sisa_menit_saat_mati or 0
         sesi.status = "selesai"
+        sesi.selesai_pada = now_local()
         sesi.is_blackout_resolved = True
         sesi.waktu_resolved = now_local()
 
@@ -166,6 +170,7 @@ class BlackoutService:
 
         sisa = sesi.sisa_menit_saat_mati or 0
         sesi.status = "selesai"
+        sesi.selesai_pada = now_local()
         sesi.is_blackout_resolved = True
         sesi.waktu_resolved = now_local()
 
