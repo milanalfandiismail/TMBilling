@@ -8,8 +8,7 @@
  * Sumber id (dienumerasi dari template nyata, bukan tebakan):
  *   - `app/templates/kasir/tabs/*.html`                        -> 28 container tab
  *   - `app/templates/kasir/server_monitor/server_statistic.html` -> tab-server_statistic
- *   - `app/templates/kasir/settings/plugins.html`               -> tab-plugins
- *   - `app/templates/kasir/index.html`                          -> tab-plugin-spa
+ *   - `app/templates/kasir/index.html`                          -> tab containers
  *   - `app/templates/kasir/tabs/settings.html` + `settings/migration.html` -> 10 `#subtab-*`
  *   - `app/templates/kasir/components/sidebar*.html`            -> 40 nilai `data-tab`
  */
@@ -23,9 +22,7 @@
  * (animasi infinite, backdrop-filter, dirty-check, reflow 6 breakpoint) tetapi
  * tidak mengambil alih kepemilikan fungsional — pemilik tetap suite domain.
  *
- * Catatan: `plugin-spa` tidak tercantum di peta suite spec §7. Tab ini dibuka
- * dari tombol plugin di sidebar (`App.openPluginSPA`) sehingga dibina oleh
- * `settings_admin_logs`, yang juga memverifikasi container + iframe-nya.
+ * Catatan: peta ini hanya memuat tab yang masih dirender di dashboard kasir.
  */
 const tabs = {
   dash: 'pc_billing',
@@ -59,9 +56,7 @@ const tabs = {
   laporan: 'settings_admin_logs',
   analytics: 'settings_admin_logs',
   mikrotik: 'settings_admin_logs',
-  plugins: 'settings_admin_logs',
   server_statistic: 'settings_admin_logs',
-  'plugin-spa': 'settings_admin_logs',
 
   catatan: 'auth_shift_notes',
   shift_history: 'auth_shift_notes',

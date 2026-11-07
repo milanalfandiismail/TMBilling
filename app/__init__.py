@@ -79,7 +79,6 @@ def _register_blueprints(app):
         game_kasir_api_bp,
         game_public_api_bp,
         server_monitor_bp,
-        plugin_api_bp,
         vnc_api_bp,
         maintenance_api_bp,
         uptime_api_bp,
@@ -116,7 +115,6 @@ def _register_blueprints(app):
     app.register_blueprint(mikrotik_api_bp, url_prefix="/api/v1/kasir/mikrotik")
     app.register_blueprint(shift_api_bp, url_prefix="/api/v1/kasir/shift")
     app.register_blueprint(backup_api_bp, url_prefix="/api/v1/kasir/backup")
-    app.register_blueprint(plugin_api_bp, url_prefix="/api/v1/kasir/settings/plugins")
     app.register_blueprint(monitor_kasir_bp, url_prefix="/api/v1/kasir/monitor")
     app.register_blueprint(game_kasir_api_bp, url_prefix="/api/v1/kasir/game")
     app.register_blueprint(vnc_api_bp, url_prefix="/api/v1/kasir/vnc")
@@ -218,13 +216,7 @@ def _register_context_processors(app):
             title = SettingsService.get("warnet_title", "TMBilling")
         except Exception:
             title = "TMBilling"
-            
-        try:
-            from app.services.plugins.plugin_manager import PluginManager
-            plugin_menus = PluginManager.get_instance().get_active_menus()
-        except Exception:
-            plugin_menus = []
-            
+
         from app.utils.timezone_utils import format_display
         from app.config import Config
         raw_version = current_app.config.get("VERSION", Config.VERSION)
@@ -232,7 +224,6 @@ def _register_context_processors(app):
         v_cache = "".join(c for c in str(raw_version) if c.isdigit()) or Config.get_cache_version()
         return dict(
             warnet_title=title,
-            plugin_menus=plugin_menus,
             version=version_tag,
             app_version=raw_version,
             v_cache=v_cache,
@@ -240,22 +231,10 @@ def _register_context_processors(app):
         )
 
 def _init_app_context(app):
-    """Inisialisasi yang membutuhkan app context (database, plugin, admin)."""
+    """Inisialisasi yang membutuhkan app context (database dan admin)."""
     with app.app_context():
         db.create_all()
-        
-        # Load Plugins and their models/blueprints
-        try:
-            from app.services.plugins.plugin_manager import PluginManager
-            pm = PluginManager.get_instance()
-            pm.init_app(app)
-            # Second pass to create tables for plugin models
-            db.create_all()
-            # Register plugin blueprints
-            pm.register_blueprints()
-        except Exception as e:
-            app.logger.error(f"Gagal memuat PluginManager: {e}")
-        
+
         # Seed IP whitelist defaults (idempotent)
         try:
             from app.services import IpWhitelistService

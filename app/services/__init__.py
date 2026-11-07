@@ -24,7 +24,6 @@ Services:
     SettingsService: Konfigurasi sistem key-value (auto-shutdown, dll).
     TransaksiService: Penomoran nota dan pencatatan transaksi.
     UserService: CRUD akun staff kasir/admin.
-    PluginManager: Manajemen siklus hidup plugins eksternal.
 """
 
 from app.services.settings.settings_service import SettingsService
@@ -53,8 +52,6 @@ from app.services.tournament.tournament_service import TournamentService
 from app.services.sesi.sesi_service import SesiService
 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
 from app.services.owner.analytics_service import OwnerAnalyticsService
-from app.services.plugins.plugin_manager import PluginManager
-from app.services.plugins.base_plugin import BasePlugin
 from app.services.server_monitor.server_monitor_service import ServerMonitorService
 from app.services.maintenance.maintenance_service import MaintenanceService
 from app.services.cloudflare_tunnel.cloudflare_tunnel_service import CloudflareTunnelService
@@ -88,8 +85,6 @@ __all__ = [
     "OwnerAnalyticsService",
     "PaketService",
     "PCService",
-    "PluginManager",
-    "BasePlugin",
     "ReportService",
     "LogAuditService",
     "PdfExportService",

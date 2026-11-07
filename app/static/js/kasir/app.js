@@ -141,9 +141,6 @@ const App = {
                 case 'analytics':
                     if (typeof OwnerAnalytics !== 'undefined' && typeof OwnerAnalytics.refreshLive === 'function') OwnerAnalytics.refreshLive();
                     break;
-                case 'plugins':
-                    if (typeof PluginsModule !== 'undefined' && typeof PluginsModule.refreshLive === 'function') PluginsModule.refreshLive();
-                    break;
                 case 'mikrotik':
                     if (typeof MikrotikModule !== 'undefined' && typeof MikrotikModule.refreshLive === 'function') MikrotikModule.refreshLive();
                     break;
@@ -240,7 +237,7 @@ const App = {
             'settings', 'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv', 
             'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup', 
             'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'whitelist_ip',
-            'mikrotik', 'analytics', 'plugins', 'plugin-spa'
+            'mikrotik', 'analytics'
         ];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');
@@ -398,7 +395,6 @@ const App = {
             case 'tournament': if (typeof Tournament !== 'undefined') await Tournament.load(); break;
             case 'catatan': if (typeof Catatan !== 'undefined') await Catatan.loadNotes(); break;
             case 'analytics': if (typeof OwnerAnalytics !== 'undefined') await OwnerAnalytics.load(); break;
-            case 'plugins': if (typeof PluginsModule !== 'undefined') PluginsModule.init(); break;
             case 'mikrotik': if (typeof MikrotikModule !== 'undefined') MikrotikModule.init(); break;
             case 'tutorials': if (typeof Tutorials !== 'undefined') await Tutorials.load(); break;
             case 'remote_server': if (typeof VNCClient !== 'undefined') await VNCClient.load(); break;
@@ -408,18 +404,6 @@ const App = {
  
     showTab(tab) { this.switchTab(tab); },
 
-    openPluginSPA(url, title) {
-        this.switchTab('plugin-spa');
-        const iframe = document.getElementById('plugin-spa-iframe');
-        if (iframe) {
-            iframe.src = url;
-        } else {
-            console.error('[TMBilling Plugin] Element #plugin-spa-iframe not found!');
-        }
-        const titleEl = document.getElementById('page-title');
-        if (titleEl) titleEl.innerText = title;
-    },
- 
     async logout() {
         Modal.confirm('Yakin ingin logout?', async () => {
             try {
@@ -474,7 +458,6 @@ window.UptimeTracker = typeof UptimeTracker !== 'undefined' ? UptimeTracker : un
 window.Shift = typeof Shift !== 'undefined' ? Shift : undefined;
 window.Struk = typeof Struk !== 'undefined' ? Struk : undefined;
 window.Settings = typeof Settings !== 'undefined' ? Settings : undefined;
-window.PluginsModule = typeof PluginsModule !== 'undefined' ? PluginsModule : undefined;
 window.MikrotikModule = typeof MikrotikModule !== 'undefined' ? MikrotikModule : undefined;
 window.Tutorials = typeof Tutorials !== 'undefined' ? Tutorials : undefined;
 window.VNCClient = typeof VNCClient !== 'undefined' ? VNCClient : undefined;

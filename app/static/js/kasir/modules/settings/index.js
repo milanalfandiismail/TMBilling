@@ -181,9 +181,6 @@ const Settings = {
         if (typeof App !== 'undefined' && App.currentTab !== 'settings') return;
         const isAppModalOpen = document.getElementById('app-modal') && !document.getElementById('app-modal').classList.contains('hidden');
         if (isAppModalOpen) return;
-        if (this.currentSubTab === 'plugins' && typeof PluginsModule !== 'undefined' && typeof PluginsModule.refreshLive === 'function') {
-            return PluginsModule.refreshLive();
-        }
         if (this.currentSubTab === 'branches' && typeof BranchManager !== 'undefined' && typeof BranchManager.refreshLive === 'function') {
             return BranchManager.refreshLive();
         }

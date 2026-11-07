@@ -226,33 +226,6 @@ async function runSettingsAdminLogsE2ETest(page) {
         assert.strictEqual(state.module, 'undefined');
     });
 
-    await check(report, 'Plugin terpasang tampil sesuai manifest dan toggle tersimpan di DB', async () => {
-        const manifestPath = path.join(__dirname, '..', '..', 'plugins', 'hello_world', 'manifest.json');
-        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-        const apiRes = await page.request.get(`${BASE_URL}/api/v1/kasir/settings/plugins/`);
-        assert.strictEqual(apiRes.status(), 200);
-        const listed = (await apiRes.json()).plugins.find((p) => p.id === manifest.id);
-        assert.ok(listed, `plugin ${manifest.id} tidak ada di manifest manager`);
-        assert.strictEqual(listed.name, manifest.name);
-        assert.strictEqual(listed.version, manifest.version);
-
-        await tab(page, 'plugins');
-        await page.waitForFunction((name) => document.getElementById('plugins-grid').innerText.includes(name), manifest.name, { timeout: 5000 });
-
-        const key = `plugin_${manifest.id}_enabled`;
-        const before = await settingValue(key);
-        const firstValue = before === 'true' ? 'false' : 'true';
-        await page.evaluate((id) => {
-            document.querySelector(`input[onchange*="togglePlugin('${id}'"]`).click();
-        }, manifest.id);
-        await dbWait('SELECT value FROM settings WHERE key = ?', [key], (r) => r.length === 1 && r[0].value === firstValue, 'toggle plugin tersimpan');
-        await page.evaluate((id) => {
-            document.querySelector(`input[onchange*="togglePlugin('${id}'"]`).click();
-        }, manifest.id);
-        const afterSecond = before === 'true' ? 'true' : 'false';
-        await dbWait('SELECT value FROM settings WHERE key = ?', [key], (r) => r.length === 1 && r[0].value === afterSecond, 'toggle plugin kembali');
-    });
-
     await check(report, 'Audit log memuat aksi nyata SETTINGS_UPDATE lewat filter unik', async () => {
         const res = await page.request.get(`${BASE_URL}/api/v1/kasir/report/log`, { params: { filter: uniqueTitle, limit: 20 } });
         assert.strictEqual(res.status(), 200);
@@ -293,23 +266,6 @@ async function runSettingsAdminLogsE2ETest(page) {
         });
         assert.strictEqual(branch.status, 404);
         assert.strictEqual(branch.apiBranchDefined, false);
-    });
-
-    await check(report, 'Plugin SPA terpasang lewat App.openPluginSPA', async () => {
-        const spa = await page.evaluate(() => {
-            App.openPluginSPA('/api/plugin/hello_world/test', 'E2E Plugin SPA');
-            const container = document.getElementById('tab-plugin-spa');
-            const iframe = document.getElementById('plugin-spa-iframe');
-            const titleEl = document.getElementById('page-title');
-            return {
-                visible: !!container && !container.classList.contains('hidden'),
-                src: iframe ? iframe.getAttribute('src') : null,
-                title: titleEl ? titleEl.innerText : '',
-            };
-        });
-        assert.strictEqual(spa.visible, true);
-        assert.strictEqual(spa.src, '/api/plugin/hello_world/test');
-        assert.strictEqual(spa.title.trim().toUpperCase(), 'E2E PLUGIN SPA');
     });
 
     await check(report, 'Modal.show membuat modal aktif dan Modal.closeModal membersihkannya', async () => {
@@ -353,14 +309,11 @@ async function runSettingsAdminLogsE2ETest(page) {
 
     await check(report, 'Mutasi admin oleh kasir ditolak 403 dan tidak mengubah data', async () => {
         const titleBefore = await settingValue('warnet_title');
-        const pluginKey = 'plugin_hello_world_enabled';
-        const pluginBefore = await settingValue(pluginKey);
 
         const attempts = [
             await http(page, 'PUT', '/api/v1/kasir/settings/warnet_title', { value: 'HACKED-E2E' }),
             await http(page, 'POST', '/api/v1/kasir/user/', { username: `${kasirUsername}_evil`, password: 'hunter22', role: 'admin', aktif: true }),
             await http(page, 'POST', '/api/v1/kasir/settings/backup/manual'),
-            await http(page, 'POST', '/api/v1/kasir/settings/plugins/toggle', { plugin_id: 'hello_world', enabled: false }),
         ];
         attempts.forEach((res, idx) => {
             assert.strictEqual(res.status, 403, `upaya ${idx} tidak 403: ${res.status} ${res.text}`);
@@ -369,7 +322,6 @@ async function runSettingsAdminLogsE2ETest(page) {
         assert.strictEqual(goneRes.status(), 404);
 
         assert.strictEqual(await settingValue('warnet_title'), titleBefore);
-        assert.strictEqual(await settingValue(pluginKey), pluginBefore);
         assert.strictEqual(await dbCount('SELECT COUNT(*) AS c FROM user WHERE username = ?', [`${kasirUsername}_evil`]), 0);
     });
 
@@ -432,7 +384,7 @@ async function runSettingsAdminLogsE2ETest(page) {
         await freshLogin(page, 'admin');
         const originalViewport = page.viewportSize();
         await page.setViewportSize({ width: 1920, height: 1080 });
-        const inside = await page.evaluate(() => ['tab-mikrotik', 'tab-settings', 'tab-plugins', 'tab-analytics']
+        const inside = await page.evaluate(() => ['tab-mikrotik', 'tab-settings', 'tab-analytics']
             .every((id) => {
                 const el = document.getElementById(id);
                 return !!el && !!el.closest('#main-scroll');
@@ -453,12 +405,6 @@ async function runSettingsAdminLogsE2ETest(page) {
             const s = document.getElementById('main-scroll').getBoundingClientRect();
             return { width: r.width, left: r.left - s.left, right: s.right - r.right };
         }), 1024]);
-        await tab(page, 'plugins');
-        boxes.push(['plugins', await page.evaluate(() => {
-            const r = document.getElementById('tab-plugins').getBoundingClientRect();
-            const s = document.getElementById('main-scroll').getBoundingClientRect();
-            return { width: r.width, left: r.left - s.left, right: s.right - r.right };
-        }), 1280]);
         await tab(page, 'analytics');
         boxes.push(['analytics', await page.evaluate(() => {
             const r = document.getElementById('tab-analytics').getBoundingClientRect();

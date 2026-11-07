@@ -1,5 +1,4 @@
 import io
-import json
 import pytest
 from app import create_app
 
@@ -27,49 +26,6 @@ def create_zip_in_memory(files_dict):
             zf.writestr(fname, content)
     zip_buffer.seek(0)
     return zip_buffer
-
-
-def test_plugin_upload_rejects_zip_slip_traversal(test_client):
-    app, client = test_client
-
-    manifest_content = json.dumps({"id": "valid_plugin", "name": "Valid Plugin", "version": "1.0"})
-    malicious_files = {
-        "manifest.json": manifest_content,
-        "../../evil.txt": "evil payload",
-        "nested/../../../evil2.txt": "evil payload 2",
-    }
-    zip_buf = create_zip_in_memory(malicious_files)
-
-    response = client.post(
-        "/api/v1/kasir/settings/plugins/upload",
-        data={"file": (zip_buf, "plugin.zip")},
-        content_type="multipart/form-data",
-    )
-
-    assert response.status_code in [400, 500]
-    data = response.get_json()
-    assert data["success"] is False
-
-
-def test_plugin_upload_rejects_malicious_plugin_id(test_client):
-    app, client = test_client
-
-    manifest_content = json.dumps({"id": "../evil_plugin", "name": "Evil", "version": "1.0"})
-    files = {
-        "manifest.json": manifest_content,
-        "index.js": "console.log('hi');",
-    }
-    zip_buf = create_zip_in_memory(files)
-
-    response = client.post(
-        "/api/v1/kasir/settings/plugins/upload",
-        data={"file": (zip_buf, "plugin.zip")},
-        content_type="multipart/form-data",
-    )
-
-    assert response.status_code in [400, 500]
-    data = response.get_json()
-    assert data["success"] is False
 
 
 def test_migration_upload_rejects_zip_slip_traversal(test_client):
