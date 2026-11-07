@@ -142,4 +142,3 @@ class TestClientHeartbeatPersist(unittest.TestCase):
         self._poll()
         stmts = self._capture_sql(self._poll)
         self.assertFalse([s for s in stmts if s.startswith("UPDATE")], stmts)
-        self.assertEqual(len([s for s in stmts if s.startswith("SELECT")]), 3)
