@@ -3,6 +3,12 @@
 import pytest
 
 
+@pytest.fixture
+def app():
+    from app import create_app
+    return create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"})
+
+
 def test_run_module_import_and_scheduler_jobs():
     """Pastikan run.py dapat di-import tanpa NameError dan seluruh job scheduler terdaftar dengan benar."""
     import run
@@ -25,3 +31,13 @@ def test_run_module_import_and_scheduler_jobs():
     for job_id in expected_jobs:
         assert job_id in jobs, f"Job '{job_id}' tidak terdaftar pada scheduler run.py"
         assert callable(jobs[job_id].func), f"Job func '{job_id}' bukan callable"
+
+
+def test_start_scheduler_langsung_running(app):
+    from run import start_scheduler
+    sched = start_scheduler(app, autostart=True)
+    try:
+        assert sched.running is True
+    finally:
+        sched.shutdown(wait=False)
+

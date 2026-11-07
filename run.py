@@ -43,7 +43,7 @@ def get_scheduler_interval(settings_key, settings_unit_key, default_value, defau
         return default_value * UNIT_MULTIPLIER[default_unit]
 
 
-def start_scheduler(app):
+def start_scheduler(app, autostart=True):
     """Buat dan start scheduler dengan interval dari DB."""
     scheduler = BackgroundScheduler()
 
@@ -107,17 +107,24 @@ def start_scheduler(app):
     import atexit
     atexit.register(lambda: run_flush_uptime(app))
 
+    if autostart and not scheduler.running:
+        scheduler.start()
+
     return scheduler
 
 
-scheduler = start_scheduler(app)
+_scheduler_autostart = (
+    os.environ.get("TM_DISABLE_SCHEDULER") != "1"
+    and (not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true")
+)
+scheduler = start_scheduler(app, autostart=_scheduler_autostart)
 
 if __name__ == "__main__":
-    # Cegah double execution saat Flask debug mode (reloader) aktif
-    if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        scheduler.start()
-        version = app.config.get("VERSION", "1.5.0")
+    version = app.config.get("VERSION", "1.5.0")
+    if scheduler.running:
         print(f"[v{version}] Background Tasks Started (Cleanup & Backup)")
+    else:
+        print(f"[v{version}] Background Tasks tidak aktif (debug reloader parent)")
     
     # Port & Host configuration (bisa via env PORT/HOST atau CLI flag --port / -p)
     import sys

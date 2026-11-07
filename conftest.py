@@ -42,6 +42,7 @@ tempfile.NamedTemporaryFile = _patched_named_tempfile
 # 2. Pastikan testing environment dan database terisolasi dari warnet.db produksi
 os.environ["FLASK_ENV"] = "testing"
 os.environ["DATABASE_URL"] = "sqlite:///test_warnet.db"
+os.environ["TM_DISABLE_SCHEDULER"] = "1"
 
 # 3. Isolasi file audit logger ke dalam folder sementara testing
 _temp_log_dir = os.path.join(_pytest_temp, "logs")
