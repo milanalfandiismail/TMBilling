@@ -8,7 +8,6 @@ echo    TMBilling Server - Menghentikan Server...
 echo ==========================================================
 
 :: Hentikan proses background start.bat, proses run.py apa pun, dan pemilik port 7015
-taskkill /f /im pythonw.exe >nul 2>&1
 powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { ($_.Name -eq 'python.exe' -or $_.Name -eq 'pythonw.exe') -and $_.CommandLine -like '*run.py*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" >nul 2>&1
 powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 7015 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }" >nul 2>&1
 
