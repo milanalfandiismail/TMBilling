@@ -98,6 +98,11 @@ class SesiService:
     @staticmethod
     def buka_member(pc_kode, username, operator="system"):
         """Buka sesi baru untuk member berdasarkan saldo tersimpan."""
+        with WRITE_LOCK:
+            return SesiService._buka_member_locked(pc_kode, username, operator)
+
+    @staticmethod
+    def _buka_member_locked(pc_kode, username, operator="system"):
         pc = PCRepository.get_by_kode(pc_kode)
         if not pc or SesiRepository.get_aktif_by_pc(pc.id):
             raise ValueError("PC tidak tersedia")
@@ -259,6 +264,11 @@ class SesiService:
     @staticmethod
     def tutup_sesi(sesi_id, operator="system"):
         """Tutup sesi bermain dengan proteksi Atomic Transaction (Commit/Rollback)."""
+        with WRITE_LOCK:
+            return SesiService._tutup_sesi_locked(sesi_id, operator)
+
+    @staticmethod
+    def _tutup_sesi_locked(sesi_id, operator="system"):
         sesi = SesiRepository.get_aktif_by_id(sesi_id)
         if not sesi: raise ValueError("Sesi tidak ditemukan")
 
@@ -313,6 +323,11 @@ class SesiService:
     @staticmethod
     def pindah_pc(sesi_id, pc_kode_baru, operator="system"):
         """Pindahkan sesi aktif ke PC lain dalam grup yang sama."""
+        with WRITE_LOCK:
+            return SesiService._pindah_pc_locked(sesi_id, pc_kode_baru, operator)
+
+    @staticmethod
+    def _pindah_pc_locked(sesi_id, pc_kode_baru, operator="system"):
         sesi = SesiRepository.get_aktif_by_id(sesi_id)
         pc_baru = PCRepository.get_by_kode(pc_kode_baru)
         
@@ -345,6 +360,7 @@ class SesiService:
             s.is_afk = False
             s.afk_pin = None
             s.afk_sejak = None
+        db.session.flush()
 
         # Buat sesi baru di unit tujuan
         sesi_baru = Sesi(
@@ -385,6 +401,11 @@ class SesiService:
     @staticmethod
     def cleanup_expired():
         """Auto-cleanup: Tutup sesi yang waktunya habis (Tanpa proteksi blackout otomatis)."""
+        with WRITE_LOCK:
+            return SesiService._cleanup_expired_locked()
+
+    @staticmethod
+    def _cleanup_expired_locked():
         sesi_aktif = SesiRepository.get_all_aktif()
         count = 0
         now = now_local()
@@ -524,6 +545,11 @@ class SesiService:
     @staticmethod
     def refund_paket_guest(sesi_id, transaksi_id, operator="system"):
         """Batalkan pembelian paket & potong durasi beli guest."""
+        with WRITE_LOCK:
+            return SesiService._refund_paket_guest_locked(sesi_id, transaksi_id, operator)
+
+    @staticmethod
+    def _refund_paket_guest_locked(sesi_id, transaksi_id, operator="system"):
         sesi = SesiRepository.get_aktif_by_id(sesi_id)
         if not sesi or sesi.tipe != "guest":
             raise ValueError("Sesi tidak aktif atau bukan tipe guest")

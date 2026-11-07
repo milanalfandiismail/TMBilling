@@ -53,6 +53,10 @@ class Sesi(db.Model):
             "uq_aktif_sesi_pc", "pc_id", unique=True,
             sqlite_where=db.text("status = 'aktif' AND pc_id IS NOT NULL"),
         ),
+        db.Index(
+            "uq_aktif_sesi_member", "member_id", unique=True,
+            sqlite_where=db.text("status = 'aktif' AND member_id IS NOT NULL"),
+        ),
     )
     
     id = db.Column(db.Integer, primary_key=True)
