@@ -570,6 +570,11 @@ $RECYCLE.BIN/
 /deploy/
 /skills
 
+# Binari hasil build (regenerasi via build_and_deploy.bat / rilis ZIP)
+/WarnetAgent/Deploy/*.exe
+/WarnetAgent/TMBilling_Monitor/HardwareHelper.exe
+/app/services/server_monitor/TMLHMService.exe
+
 # Agent tracks & Walkthroughs
 walkthrough.md
 CODEBASE_CONTEXT.md
