@@ -21,7 +21,7 @@ from app.utils.logger import write_log
 from app.models import db, now_local
 from app.models.mikrotik.mikrotik import MikroTikConfig
 from app.utils.mikrotik_api import MikroTikAPIClient
-import threading
+from concurrent.futures import ThreadPoolExecutor
 from app.utils.validators import (
     validate_username,
     validate_password,
@@ -32,6 +32,8 @@ from app.utils.validators import (
     validate_choice,
     validate_payment_method
 )
+
+_MIKROTIK_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="mikrotik")
 
 class MemberService:
     """Service untuk business logic member/pelanggan warnet.
@@ -82,7 +84,7 @@ class MemberService:
                 if client:
                     client.close()
 
-        threading.Thread(target=task, daemon=True).start()
+        _MIKROTIK_EXECUTOR.submit(task)
 
     @staticmethod
     def get_all():
