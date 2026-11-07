@@ -141,7 +141,9 @@ class MemberService:
         if MemberRepository.find_by_username(username):
             raise ValueError("Username sudah ada")
 
-        password = validate_password(data.get("password", "123456"), min_len=4, max_len=16)
+        if not data.get("password"):
+            raise ValueError("Password wajib diisi")
+        password = validate_password(data["password"], min_len=4, max_len=16)
         nama_lengkap = validate_string_length(data.get("nama_lengkap", ""), min_len=0, max_len=100, field_name="Nama lengkap", required=False)
         no_hp = validate_phone_number(data.get("no_hp"))
         email = validate_email_format(data.get("email"))

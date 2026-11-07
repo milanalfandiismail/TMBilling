@@ -36,6 +36,11 @@ def test_create_member_valid(app_context):
     assert member.no_hp == "081234567890"
 
 
+def test_create_member_tanpa_password_ditolak(app_context):
+    with pytest.raises(ValueError, match="Password wajib diisi"):
+        MemberService.create({"username": "tanpa_pass", "grup": "reguler"})
+
+
 def test_create_member_invalid_username_length(app_context):
     with pytest.raises(ValueError, match="Username minimal 3 karakter"):
         MemberService.create({"username": "ab", "password": "1234"})
