@@ -124,7 +124,7 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/owner/`: Agregasi statistik finansial khusus peran owner/pemilik warnet; `get_top_paket` mengelompokkan per `Transaksi.paket_id` dan memberi label "Paket dihapus" untuk paket yang sudah tidak ada.
 - `services/paket/`: Validasi durasi dan jam berlaku paket (contoh: paket malam).
 - `services/pc/`: Manajemen status ketersediaan meja PC dan uptime tracking.
-- `services/plugins/`: Ekstensi modul dinamis tambahan.
+- `services/plugins/`: (dihapus) subsistem ekstensi dinamis tidak lagi tersedia.
 - `services/public/`: Format data tampilan TV billboard publik; payload TV di-cache 5 detik.
 - `services/report/`: Kompilasi laporan keuangan harian/bulanan kasir; relasi struk/menu di-eager load dan hitung sesi aktif memakai `SesiRepository.count_aktif()`. Hapus riwayat transaksi juga menghapus `TransaksiMenu` pada rentang yang sama, dan nota pembelian paket tidak boleh dihapus (`ValueError` → 400; gunakan Refund agar saldo ikut kembali).
 - `services/server_monitor/`: Sensor telemetri performa mesin server utama.
@@ -202,11 +202,11 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 
 #### B. Template Jinja2 HTML (`app/templates/`)
 - `templates/kasir/base.html`: Shell induk HTML dashboard kasir, deklarasi CSS/JS dan meta CSRF.
-- `templates/kasir/index.html`: Kontainer view 30 tab modular kasir & 1 container iframe plugin-spa.
+- `templates/kasir/index.html`: Kontainer view 30 tab modular kasir.
 - `templates/kasir/login.html`: Halaman login kasir dan administrator.
 - `templates/kasir/documentation.html`: Portal internal dokumentasi interaktif & CMS tutorial sistem (`/kasir/documentation`).
 - `templates/kasir/components/`: Partisi navbar (`navbar.html`), sidebar (`sidebar.html`, `sidebar_admin.html`, `sidebar_kasir.html`), dan modal induk (`modals.html`).
-- `templates/kasir/tabs/`: 28 Tampilan tab independen lengkap (`dashboard.html`, `pc.html`, `grup.html`, `paket.html`, `menu.html`, `menu_stock_log.html`, `laporan_menu.html`, `member.html`, `monitor.html`, `hardware_checker.html`, `uptime.html`, `screenshot.html`, `maintenance.html`, `laporan_maintenance.html`, `shift_history.html`, `catatan.html`, `tournament.html`, `game.html`, `remote_server.html`, `user.html`, `user_logs.html`, `log.html`, `laporan.html`, `struk.html`, `blackout.html`, `mikrotik.html`, `analytics.html`, `settings.html`) ditambah tab `server_statistic.html` (di `server_monitor/`) dan `plugins.html` (di `settings/`).
+- `templates/kasir/tabs/`: 28 Tampilan tab independen lengkap (`dashboard.html`, `pc.html`, `grup.html`, `paket.html`, `menu.html`, `menu_stock_log.html`, `laporan_menu.html`, `member.html`, `monitor.html`, `hardware_checker.html`, `uptime.html`, `screenshot.html`, `maintenance.html`, `laporan_maintenance.html`, `shift_history.html`, `catatan.html`, `tournament.html`, `game.html`, `remote_server.html`, `user.html`, `user_logs.html`, `log.html`, `laporan.html`, `struk.html`, `blackout.html`, `mikrotik.html`, `analytics.html`, `settings.html`) ditambah tab `server_statistic.html` (di `server_monitor/`).
 - `templates/public/`: 8 Halaman portal publik (`landing/` info billing, `tv/` & `tv/static` billboard display, `livepc/` live scoreboard, `member/` kiosk login & dashboard, `game/` katalog game, `paket/` daftar tarif, `specs/` spesifikasi PC modern minimalis berbasis compact 2-column mobile grid, debounced search toolbar & modal hardware ringkas fokus trio utama CPU, GPU, RAM serta penyesuaian kode PC client Tauri tanpa telemetri berlebih).
 
 ---
@@ -248,9 +248,8 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Cetak Ulang Struk Kasir** | `modules/struk.js` | `routes/report/report_routes.py` (`get_struk`, `get_struk_menu`), `services/transaksi/` | `Transaksi` |
 | **Server Health & LHM Telemetry** | `modules/server_monitor/server_monitor.js` | `routes/server_monitor/`, `services/server_monitor/` | Host sensors, LHM Engine |
 | **Public Specs & Hardware Catalog** | `templates/public/specs/index.html` (compact 2-column mobile card grid, debounced search & modal controller fokus trio CPU, GPU, RAM) | `app/__init__.py:public_specs()` (minimalist structured catalog JSON tanpa telemetri berlebih, eager load PC/hardware/paket) | `PC`, `HardwareMonitor`, `Grup` |
-| **Manajemen Plugins & Ekstensi** | `modules/settings/plugins.js` | `routes/settings/plugin_routes.py`, `services/plugins/` | Plugin manifest |
 | **Frontend CPU & Zero-Thrashing** | `modules/dashboard/dashboard_compact.js`, `core/skeleton.js` | `templates/kasir/base.html` (semua script eksternal `defer`), `app/__init__.py` (cache 1 tahun immutable untuk `/static/js|css|vendor`), `tailwind.config.js` | Strict dirty-checking, zero infinite keyframe loops, guard anti-tumpuk & jeda polling saat tab hidden; throttle 2 detik untuk tab monitor & screenshot |
-| **Responsive Tailwind Reflow** | `modules/dashboard/dashboard_compact.js`, `core/modal.js` | `templates/kasir/base.html`, `templates/kasir/components/navbar.html`, `sidebar.html` | Pure Tailwind Breakpoints (`< sm`, `sm`, `md`, `lg`, `xl`, `2xl`), `max-h-[90dvh]`, zero horizontal overflow across all 39 views (30 kasir tabs, 1 SPA iframe, 8 public portals); semua tab kasir non-dashboard memakai lebar maksimum `80rem` dan terpusat, dashboard tetap full-width |
+| **Responsive Tailwind Reflow** | `modules/dashboard/dashboard_compact.js`, `core/modal.js` | `templates/kasir/base.html`, `templates/kasir/components/navbar.html`, `sidebar.html` | Pure Tailwind Breakpoints (`< sm`, `sm`, `md`, `lg`, `xl`, `2xl`), `max-h-[90dvh]`, zero horizontal overflow across all 38 views (30 kasir tabs, 8 public portals); semua tab kasir non-dashboard memakai lebar maksimum `80rem` dan terpusat, dashboard tetap full-width |
 
 ---
 

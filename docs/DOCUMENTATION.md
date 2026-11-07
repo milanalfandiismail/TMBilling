@@ -530,7 +530,7 @@ Backend TMBilling terbagi ke dalam **34 Blueprint** modular di `app/routes/`:
 - `report_routes.py`: Generator laporan keuangan harian, laporan billing, kantin, dan shift kasir.
 - `server_monitor_routes.py`: Monitoring performa CPU, RAM, and storage server billing serta service LHM.
 - `sesi_routes.py`: Siklus hidup sesi billing (buka sesi, tambah waktu, pindah PC, stop sesi).
-- `settings_routes.py`, `migration_routes.py`, `plugin_routes.py`: Konfigurasi global, IP Whitelist, dan Cloudflare.
+- `settings_routes.py`, `migration_routes.py`: Konfigurasi global, IP Whitelist, dan Cloudflare.
 - `shift_routes.py`: Manajemen shift kasir, kas awal, dan rekonsiliasi kas akhir.
 - `tournament_routes.py`: Manajemen turnamen eSports dan bagan pertandingan.
 - `tutorial_routes.py`: CMS artikel panduan dan upload gambar editor.
@@ -582,7 +582,7 @@ TMBilling menggunakan 24 model ORM terdefinisi di `app/models/`:
 ### 6.1 Arsitektur Core JS (`core/`)
 Frontend dashboard kasir dibangun tanpa dependensi framework runtime (Vanilla JS murni berstandar ES6 Modules) yang terletak di `app/static/js/kasir/`:
 - `core/api.js`: Lapisan komunikasi HTTP terpadu. Berisi objek `API` dengan namespace lengkap (`API.auth`, `API.sesi`, `API.monitor`, `API.menu`, dll.). Seluruh pemanggilan fetch API memiliki penanganan error dan parsing JSON standar.
-- `core/skeleton.js`: Standardized static skeleton loading generator (`renderTableSkeleton`, `renderCardSkeleton`, `renderDetailSkeleton`) yang diintegrasikan di seluruh 30 tab view (31 container termasuk plugin-spa).
+- `core/skeleton.js`: Standardized static skeleton loading generator (`renderTableSkeleton`, `renderCardSkeleton`, `renderDetailSkeleton`) yang diintegrasikan di seluruh 30 tab view.
 - `core/modal.js`: Library lifecycle manajemen modal dialog (animasi slide/fade, trapping fokus keyboard, tombol `Escape` to close, backdrop dismiss).
 - `core/toast.js`: Sistem notifikasi toast non-blocking (Success, Error, Warning, Info) dengan auto-dismissal.
 - `core/utils.js`: Format mata uang Rupiah (`formatRupiah`), kalkulator durasi waktu jam-menit-detik, dan debounce helper.
@@ -905,14 +905,6 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | POST | /api/v1/kasir/pc/reset-admin/<int:pc_id> | pc.reset_admin |
 | POST | /api/v1/kasir/pc/wol | pc.wol_pc |
 
-#### 🔹 Blueprint: plugins (4 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/settings/plugins/ | plugins.get_plugins |
-| GET | /api/v1/kasir/settings/plugins/page | plugins.plugins_page |
-| POST | /api/v1/kasir/settings/plugins/toggle | plugins.toggle_plugin |
-| POST | /api/v1/kasir/settings/plugins/upload | plugins.upload_plugin |
-
 #### 🔹 Blueprint: report (18 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
 | :--- | :--- | :--- |
@@ -1116,7 +1108,7 @@ Semua jalur update server bermuara ke `install_scripts/updater.bat`, sehingga pe
    ```powershell
    Expand-Archive -Path TMBilling_Server_v<versi>.zip -DestinationPath . -Force
    ```
-   Jangan menyentuh `.env`, `instance/`, `backups/`, dan `plugins/` kustom.
+   Jangan menyentuh `.env`, `instance/`, dan `backups/` kustom.
 5. Pasang dependensi:
    ```cmd
    .venv\Scripts\pip.exe install -r requirements.txt
