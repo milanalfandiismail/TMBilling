@@ -50,7 +50,7 @@ class CloudflareTunnelService:
             }
 
             req = urllib.request.Request(cls.DOWNLOAD_URL, headers={'User-Agent': 'Mozilla/5.0'})
-            res = urllib.request.urlopen(req)
+            res = urllib.request.urlopen(req, timeout=30)
             total = int(res.headers.get('Content-Length', 0))
             cls._download_status["total_bytes"] = total
 

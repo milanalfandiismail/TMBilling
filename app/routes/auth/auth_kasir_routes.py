@@ -65,6 +65,7 @@ def login():
         login_throttle.clear(throttle_key)
 
         # Inisialisasi Session Flask
+        session.clear()
         session.permanent = True
         session["kasir_id"] = result["user"]["id"]
         session["kasir_username"] = result["user"]["username"]
@@ -135,11 +136,21 @@ def admin_check():
     data = request.get_json() or {}
     username = data.get("username", "").strip()
     password = data.get("password", "")
-    
+
+    from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+    from app.services.auth import login_throttle
+
+    client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
+    throttle_key = ("admin-check", client_ip, username)
+    if login_throttle.is_blocked(throttle_key):
+        return jsonify({"error": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}), 429
+
     try:
         result = AuthKasirService.validate_admin(username, password)
+        login_throttle.clear(throttle_key)
         return jsonify(result), 200
     except ValueError as e:
+        login_throttle.record_failure(throttle_key)
         status_code = 401
         if "Akses ditolak" in str(e):
             status_code = 403

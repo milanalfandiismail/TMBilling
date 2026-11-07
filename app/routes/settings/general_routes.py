@@ -27,7 +27,7 @@ def get_all_settings():
     try:
         data = SettingsService.get_all()
         if session.get("kasir_role") == "admin":
-            data["client_api_key"] = current_app.config.get("CLIENT_API_KEY", "TM2026QWERTY-api-key")
+            data["client_api_key"] = current_app.config.get("CLIENT_API_KEY", "")
         else:
             # shortcut: key baru yang perlu dibaca kasir harus ditambahkan ke whitelist ini
             data = {k: v for k, v in data.items() if k in CASHIER_SAFE_SETTINGS}

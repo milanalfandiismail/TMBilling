@@ -177,6 +177,9 @@ def get_uninstall_token_for_client():
     @api_key_required
     def execute_request():
         try:
+            from app.repositories.pc.pc_repository import PCRepository
+            if not PCRepository.find_by_ip(request.remote_addr or ""):
+                return jsonify({"error": "Perangkat tidak terdaftar"}), 403
             # Token darurat server tidak boleh bocor ke endpoint client; hanya token uninstall
             uninstall_token = SettingsService.get_or_create_uninstall_token()
             return jsonify({

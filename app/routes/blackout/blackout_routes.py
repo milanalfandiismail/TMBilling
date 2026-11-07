@@ -7,7 +7,7 @@ dan resolusi sesi yang terkena gangguan listrik.
 """
 
 from flask import Blueprint, jsonify, request, session
-from app.middleware.auth import login_required, shift_required
+from app.middleware.auth import login_required, shift_required, admin_required
 from app.services import BlackoutService
 
 blackout_api_bp = Blueprint("blackout", __name__)
@@ -161,6 +161,7 @@ def force_all_and_detect():
 
 @blackout_api_bp.route("/clear", methods=["POST"])
 @login_required
+@admin_required
 @shift_required
 def clear_audit():
     """Hapus history audit blackout yang sudah diselesaikan (Resolved)."""

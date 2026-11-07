@@ -32,6 +32,8 @@ def is_blocked(key):
 def record_failure(key):
     now = time.monotonic()
     with _lock:
+        for k in [k for k, v in _failures.items() if not v or now - v[-1] >= WINDOW_SECONDS]:
+            _failures.pop(k, None)
         _failures.setdefault(key, []).append(now)
 
 

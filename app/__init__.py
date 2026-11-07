@@ -15,6 +15,7 @@ Exports:
 from flask import Flask, current_app, redirect, render_template, request, g
 from flask_cors import CORS
 import os
+import hmac
 import secrets
 import string
 
@@ -38,7 +39,7 @@ class TMBillingCSRFProtect(CSRFProtect):
                 try:
                     from app.services.settings.settings_service import SettingsService
                     client_api_key = SettingsService.get("client_api_key") or os.environ.get("CLIENT_API_KEY", "")
-                    if client_api_key and token == client_api_key:
+                    if client_api_key and hmac.compare_digest(token, client_api_key):
                         return
                 except Exception:
                     pass

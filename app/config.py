@@ -93,6 +93,7 @@ class Config:
     SESSION_PERMANENT = True
     PERMANENT_SESSION_LIFETIME = 86400  # 24 jam
     WTF_CSRF_TIME_LIMIT = None          # CSRF mengikuti umur session agar tidak kedaluwarsa sendiri
+    MAX_CONTENT_LENGTH = 64 * 1024 * 1024  # 64 MB; update ZIP klien masih masuk
     VERSION = "1.6.5-rc2"
     VERSION_NAME = "Autonomous Offline Studio"
 

@@ -5,6 +5,7 @@ Flow: path filter → token check → auth exemption → enabled check → IP ch
 """
 
 from flask import request, session as flask_session, redirect, jsonify
+import hmac
 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
 from app.utils.logger import write_log
 
@@ -30,7 +31,7 @@ def check_ip_whitelist():
     if IpWhitelistService.is_enabled():
         url_token = request.args.get('token', '')
         current_token = IpWhitelistService.get_token()
-        if url_token and url_token == current_token:
+        if url_token and current_token and hmac.compare_digest(url_token, current_token):
             flask_session['ip_wh_authenticated'] = True
             flask_session['ip_wh_token_version'] = IpWhitelistService.get_token_version()
             clean_url = request.base_url  # URL without ?token=...

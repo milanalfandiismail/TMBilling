@@ -14,6 +14,13 @@ from app.middleware.auth import login_required, admin_required, shift_required
 from app.routes.client.client_routes import api_key_required
 from app.utils.logger import write_log
 from app.utils.timezone_utils import format_display, display_in_tz, get_tz_short_name
+from werkzeug.utils import secure_filename
+
+
+def _screenshot_filename(kode):
+    """Nama file screenshot yang aman dipakai sebagai path."""
+    flat = str(kode).replace("/", "").replace("\\", "")
+    return f"{secure_filename(flat) or 'pc'}.png"
 
 
 _STAT_CACHE = {}
@@ -75,7 +82,7 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
             if not os.path.exists(upload_folder):
                 os.makedirs(upload_folder, exist_ok=True)
 
-            file_path = os.path.join(upload_folder, f"{pc.kode}.png")
+            file_path = os.path.join(upload_folder, _screenshot_filename(pc.kode))
             with open(file_path, "wb") as f:
                 f.write(image_data)
 
@@ -96,7 +103,7 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
             if not pc:
                 return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
 
-            screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{pc.kode}.png")
+            screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', _screenshot_filename(pc.kode))
             if os.path.exists(screenshot_path):
                 mtime = os.path.getmtime(screenshot_path)
                 dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
@@ -110,7 +117,7 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
                     display_time = f"{local_dt.strftime('%d/%m %H:%M')} {tz_label}"
                 return jsonify({
                     "success": True,
-                    "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
+                    "screenshot_url": f"/static/uploads/screenshots/{_screenshot_filename(pc.kode)}",
                     "screenshot_time": full_time,
                     "screenshot_time_display": display_time,
                     "mtime": mtime
@@ -141,7 +148,7 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
             now_local_dt = display_in_tz(datetime.now(timezone.utc))
 
             for pc in pcs_sorted:
-                screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{pc.kode}.png")
+                screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', _screenshot_filename(pc.kode))
                 mtime = _screenshot_mtime(screenshot_path)
                 if mtime is not None:
                     dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
@@ -156,7 +163,7 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
                         "pc_kode": pc.kode,
                         "pc_grup_id": pc.grup_id or 0,
                         "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",
-                        "screenshot_url": f"/static/uploads/screenshots/{pc.kode}.png",
+                        "screenshot_url": f"/static/uploads/screenshots/{_screenshot_filename(pc.kode)}",
                         "screenshot_time": full_time,
                         "screenshot_time_display": display_time,
                         "mtime": mtime

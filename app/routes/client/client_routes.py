@@ -131,15 +131,22 @@ def selesai():
 def admin_login():
     """Login admin langsung di PC client (Bypass Lock Screen)."""
     data = request.get_json() or {}
+    from app.services.auth import login_throttle
+    username = data.get("username", "").strip()
+    throttle_key = ("client-admin", request.remote_addr, username)
+    if login_throttle.is_blocked(throttle_key):
+        return jsonify({"success": False, "error": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}), 429
     try:
         result = ClientService.admin_login(
             ip_address=data.get("ip_address"),
             mac_address=data.get("mac_address", "").upper().strip(),
-            username=data.get("username", "").strip(),
+            username=username,
             password=data.get("password", "")
         )
+        login_throttle.clear(throttle_key)
         return jsonify(result), 200
     except ValueError as e:
+        login_throttle.record_failure(throttle_key)
         return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
