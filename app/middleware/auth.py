@@ -29,7 +29,10 @@ def login_required(f):
         if not user or not user.aktif:
             clear_kasir_session()
             return jsonify({"error": "Sesi tidak valid, silakan login kembali"}), 401
-            
+
+        g.kasir_user = user
+        if session.get("kasir_role") != user.role:
+            session["kasir_role"] = user.role
         session.permanent = True
         return f(*args, **kwargs)
     return decorated_function
@@ -39,7 +42,11 @@ def admin_required(f):
     """Decorator khusus Admin."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get("kasir_role") != "admin":
+        user = getattr(g, "kasir_user", None)
+        if user is None:
+            from app.repositories import UserRepository
+            user = UserRepository.get_by_id(session.get("kasir_id"))
+        if not user or not user.aktif or user.role != "admin":
             return jsonify({"error": "Akses Ditolak. Hanya Admin yang diizinkan."}), 403
         return f(*args, **kwargs)
     return decorated_function
