@@ -49,6 +49,10 @@ async function login(page, role = 'admin') {
   const creds = CREDENTIALS[role];
   if (!creds) throw new Error(`role tidak dikenal: ${role} (pakai 'admin' atau 'kasir')`);
 
+  // `about:blank` lebih dulu: request polling halaman sebelumnya yang masih
+  // terbang bisa menulis ulang cookie sesi setelah clearCookies, sehingga
+  // /kasir/login me-redirect ke dashboard dan form login tidak pernah muncul.
+  await page.goto('about:blank');
   await page.context().clearCookies();
   await page.goto(`${BASE_URL}/kasir/login`, { waitUntil: 'domcontentloaded' });
   await page.fill('#username', creds.username);

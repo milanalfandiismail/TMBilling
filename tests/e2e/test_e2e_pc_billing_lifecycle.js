@@ -753,6 +753,27 @@ async function runPCBillingLifecycleE2ETest(page) {
         );
     });
 
+    await check(report, 'Emergency login tanpa token diterima bila IP request sama dengan IP PC', async () => {
+        const pc5 = await pcByKode('PC-05');
+        const ipAwal = pc5.ip_address;
+
+        try {
+            await dbExec('UPDATE pc SET ip_address = ? WHERE id = ?', ['127.0.0.1', pc5.id]);
+            const res = await emergencyLogin(page, { ip: '127.0.0.1', mac: pc5.mac_address, username: unique('EmergencyIp') });
+            assert.strictEqual(res.http_status, 200, `harus 200 dari IP yang sama, dapat ${res.http_status}: ${JSON.stringify(res)}`);
+            assert.strictEqual(res.success, true);
+
+            const pc = (await dbQuery('SELECT is_admin_mode FROM pc WHERE id = ?', [pc5.id]))[0];
+            assert.strictEqual(Number(pc.is_admin_mode), 1, 'admin mode harus aktif');
+        } finally {
+            await dbExec(
+                "DELETE FROM sesi WHERE pc_id = ? AND tipe = 'admin' AND nama_guest = 'SYSTEM' AND status = ?",
+                [pc5.id, SESI_AKTIF]
+            );
+            await dbExec('UPDATE pc SET is_admin_mode = 0, ip_address = ? WHERE id = ?', [ipAwal, pc5.id]);
+        }
+    });
+
     await check(report, 'Force-all menutup semua sesi aktif tanpa membuat transaksi baru', async () => {
         const aktifBefore = (await dbQuery('SELECT id FROM sesi WHERE status = ? ORDER BY id', [SESI_AKTIF])).map((r) => Number(r.id));
         assert.ok(aktifBefore.length >= 1, 'harus ada sesi aktif untuk ditutup');

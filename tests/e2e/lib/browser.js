@@ -11,7 +11,9 @@
 const fs = require('fs');
 
 const BASE_URL = process.env.E2E_BASE_URL || 'http://127.0.0.1:7016';
-const MISSING_BROWSER_MESSAGE = 'Playwright Chromium belum terpasang. Jalankan: npx playwright install chromium';
+const BROWSER_PATH = process.env.E2E_BROWSER_PATH
+  || 'C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe';
+const MISSING_BROWSER_MESSAGE = `Biner browser tidak ada. Pasang Brave di ${BROWSER_PATH}, set E2E_BROWSER_PATH, atau jalankan: npx playwright install chromium`;
 
 class BrowserUnavailableError extends Error {
   constructor(detail = null) {
@@ -33,15 +35,18 @@ function loadChromium() {
 async function launchBrowser({ headless } = {}) {
   const chromium = loadChromium();
 
-  // executablePath() tetap mengembalikan path walau binernya belum diunduh.
-  const executable = chromium.executablePath();
+  // Brave adalah Chromium, jadi protocol Playwright tetap cocok.
+  const bundled = chromium.executablePath();
+  const executable = fs.existsSync(BROWSER_PATH) ? BROWSER_PATH : bundled;
   if (!fs.existsSync(executable)) {
-    throw new BrowserUnavailableError(`Biner Chromium tidak ada di ${executable}`);
+    throw new BrowserUnavailableError(`Biner browser tidak ada di ${executable}`);
   }
+  console.log(`[e2e] browser: ${executable}`);
 
   let browser;
   try {
     browser = await chromium.launch({
+      executablePath: executable,
       headless: headless === undefined ? !process.env.E2E_HEADED : headless,
     });
   } catch (err) {
@@ -72,4 +77,4 @@ async function launchBrowser({ headless } = {}) {
   };
 }
 
-module.exports = { BASE_URL, MISSING_BROWSER_MESSAGE, BrowserUnavailableError, launchBrowser };
+module.exports = { BASE_URL, BROWSER_PATH, MISSING_BROWSER_MESSAGE, BrowserUnavailableError, launchBrowser };

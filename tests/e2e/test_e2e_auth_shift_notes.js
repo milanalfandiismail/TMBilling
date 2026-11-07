@@ -21,7 +21,7 @@
 
 const assert = require('assert');
 const { BASE_URL, login, tab, api, waitFor, unique, check } = require('./lib/harness');
-const { dbQuery } = require('./lib/db');
+const { dbQuery, dbExec } = require('./lib/db');
 const { createReport, finish } = require('./lib/report');
 
 const TZ_OFFSET_HOURS = 7;
@@ -252,17 +252,20 @@ async function runAuthShiftNotesE2ETest(page) {
 
         // `datetime()` menormalkan presisi mikrodetik; perbandingan string mentah
         // gagal saat batas atas tanpa pecahan detik dibandingkan ke nilai berpecahan.
+        // Ringkasan shift sengaja menghitung semua transaksi pada jendela shift,
+        // bukan hanya milik kasir pemilik shift, jadi query pembanding juga
+        // tidak memfilter user/kasir.
         const billing = await dbOne(
             `SELECT COALESCE(SUM(jumlah), 0) AS gross FROM transaksi
              WHERE datetime(dibuat_pada) >= datetime(?) AND datetime(dibuat_pada) <= datetime(?)
-               AND user_id = ? AND jumlah > 0
+               AND jumlah > 0
                AND jenis NOT IN ${JENIS_DIKECUALIKAN}`,
-            [shift.waktu_mulai, akhir, state.kasirId]
+            [shift.waktu_mulai, akhir]
         );
         const kantin = await dbOne(
             `SELECT COALESCE(SUM(total_harga), 0) AS total FROM transaksi_menu
-             WHERE datetime(tanggal) >= datetime(?) AND datetime(tanggal) <= datetime(?) AND kasir_id = ?`,
-            [shift.waktu_mulai, akhir, state.kasirId]
+             WHERE datetime(tanggal) >= datetime(?) AND datetime(tanggal) <= datetime(?)`,
+            [shift.waktu_mulai, akhir]
         );
 
         const summary = await page.evaluate(() => API.shift.summary());
@@ -282,6 +285,51 @@ async function runAuthShiftNotesE2ETest(page) {
             Number(shift.modal_awal) + Number(billing.gross) + Number(kantin.total),
             'uang seharusnya = modal awal + tunai bersih'
         );
+    });
+
+    await check(report, 'Ringkasan shift menghitung transaksi kasir lain pada jendela yang sama', async () => {
+        const kasirRow = await dbOne('SELECT id FROM user WHERE username = ?', ['admin']);
+        assert.ok(kasirRow && Number(kasirRow.id) !== Number(state.kasirId), 'prasyarat: admin harus berbeda dari operator suite');
+
+        // Waktu disalin dari transaksi yang sudah terbukti berada di jendela shift
+        // agar baris uji tidak pernah jatuh di luar rentang karena presisi jam.
+        const tpl = await dbOne(
+            `SELECT dibuat_pada FROM transaksi WHERE jenis = 'beli_paket_guest' AND jumlah > 0 ORDER BY id DESC LIMIT 1`
+        );
+        assert.ok(tpl, 'prasyarat: transaksi billing dalam jendela shift belum ada');
+
+        const inserted = await dbExec(
+            `INSERT INTO transaksi (no_nota, jenis, jumlah, metode_pembayaran, user_id, dibuat_pada)
+             VALUES (?, 'beli_paket_guest', 1000, 'Tunai', ?, ?)`,
+            [`E2E-CROSS-${Date.now()}`, kasirRow.id, tpl.dibuat_pada]
+        );
+        state.crossCashierTrxId = inserted.lastInsertRowid;
+
+        const totalSampai = async (harapan) => {
+            const deadline = Date.now() + 5000;
+            let nilai = null;
+            do {
+                const summary = await page.evaluate(() => API.shift.summary());
+                assert.strictEqual(summary.success, true, JSON.stringify(summary));
+                nilai = Number(summary.summary.total_billing);
+                if (nilai === harapan) break;
+                await sleep(100);
+            } while (Date.now() < deadline);
+            return nilai;
+        };
+
+        try {
+            assert.strictEqual(
+                await totalSampai(state.totalBilling + 1000),
+                state.totalBilling + 1000,
+                'transaksi kasir lain dalam jendela shift harus ikut dihitung'
+            );
+        } finally {
+            await dbExec('DELETE FROM transaksi WHERE id = ?', [state.crossCashierTrxId]);
+            state.crossCashierTrxId = null;
+        }
+
+        assert.strictEqual(await totalSampai(state.totalBilling), state.totalBilling, 'total harus kembali setelah baris uji dihapus');
     });
 
     await check(report, CHECK_NAMES[6], async () => {
@@ -522,6 +570,29 @@ async function runAuthShiftNotesE2ETest(page) {
             `${BASE_URL}/api/v1/kasir/report/export/billing.xlsx?tanggal=${state.today}`
         );
         assert.notStrictEqual(xlsx.status(), 200, 'tidak boleh ada export Excel yang tidak diimplementasikan');
+    });
+
+    await check(report, 'Login dibatasi 429 setelah 5 kegagalan untuk (IP, username) yang sama', async () => {
+        const csrf = await page.evaluate(() => document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        const kirim = () => page.request.post(`${BASE_URL}/api/v1/kasir/auth/login`, {
+            headers: { 'X-CSRFToken': csrf },
+            data: { username: 'throttle_probe_e2e', password: 'salah-terus' },
+        });
+
+        for (let i = 0; i < 5; i += 1) {
+            const res = await kirim();
+            assert.strictEqual(res.status(), 401, `percobaan ke-${i + 1} harus 401, dapat ${res.status()}`);
+        }
+        const diblokir = await kirim();
+        assert.strictEqual(diblokir.status(), 429, `percobaan ke-6 harus 429, dapat ${diblokir.status()}`);
+        assert.match((await diblokir.json()).error, /Terlalu banyak percobaan login/i);
+
+        // Kunci bersifat per-username: akun nyata tidak boleh ikut terblokir.
+        const admin = await page.request.post(`${BASE_URL}/api/v1/kasir/auth/login`, {
+            headers: { 'X-CSRFToken': csrf },
+            data: { username: 'admin', password: 'admin123' },
+        });
+        assert.strictEqual(admin.status(), 200, 'admin tidak boleh terblokir oleh username fiktif');
     });
 
     // Pembersihan catatan uji: instance/notes dipakai bersama, bukan bagian sandbox.

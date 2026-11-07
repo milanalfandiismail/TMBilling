@@ -168,7 +168,7 @@ async function runSettingsAdminLogsE2ETest(page) {
         assert.strictEqual(await settingValue('warnet_title'), originalTitle);
     });
 
-    await check(report, 'Uninstall/emergency token acak, bukan string legacy, dan stabil di dua panggilan', async () => {
+    await check(report, 'Token uninstall acak, stabil di dua panggilan, dan tidak membocorkan emergency token', async () => {
         const url = `${BASE_URL}/api/v1/kasir/settings/uninstall-token/client`;
         const headers = { 'X-Client-Key': CLIENT_API_KEY };
         const first = await page.request.get(url, { headers });
@@ -178,15 +178,12 @@ async function runSettingsAdminLogsE2ETest(page) {
         const second = await page.request.get(url, { headers });
         const b = await second.json();
 
-        for (const token of [a.uninstall_token, a.emergency_token]) {
-            assert.ok(typeof token === 'string' && /^[A-Za-z0-9_-]{32,}$/.test(token), `token tidak acak/url-safe: ${token}`);
-            LEGACY_TOKENS.forEach((legacy) => assert.notStrictEqual(token, legacy, 'token legacy masih dipakai'));
-        }
-        assert.notStrictEqual(a.uninstall_token, a.emergency_token, 'dua token tidak boleh sama');
+        assert.ok(typeof a.uninstall_token === 'string' && /^[A-Za-z0-9_-]{32,}$/.test(a.uninstall_token), `token tidak acak/url-safe: ${a.uninstall_token}`);
+        LEGACY_TOKENS.forEach((legacy) => assert.notStrictEqual(a.uninstall_token, legacy, 'token legacy masih dipakai'));
+        // Remediasi audit: endpoint klien hanya boleh mengirim token uninstall.
+        assert.ok(!('emergency_token' in a), 'respons tidak boleh membocorkan emergency_token');
         assert.strictEqual(b.uninstall_token, a.uninstall_token, 'token uninstall berubah antar panggilan');
-        assert.strictEqual(b.emergency_token, a.emergency_token, 'token emergency berubah antar panggilan');
         assert.strictEqual(await settingValue('uninstall_token'), a.uninstall_token);
-        assert.strictEqual(await settingValue('emergency_token'), a.emergency_token);
     });
 
     await check(report, 'Endpoint token menolak request tanpa X-Client-Key dengan 401', async () => {
@@ -536,6 +533,45 @@ async function runSettingsAdminLogsE2ETest(page) {
             assert.ok(box.scroll <= box.client + 1, `viewport ${width}px overflow ${box.scroll}/${box.client}`);
         }
         await page.setViewportSize(originalViewport || { width: 1280, height: 720 });
+    });
+
+    await check(report, 'Pengumuman kiosk disanitasi: script/onclick/javascript: hilang, teks sah bertahan', async () => {
+        await freshLogin(page, 'admin');
+        const csrf = await page.evaluate(() => document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        const [awal] = await dbQuery("SELECT value FROM settings WHERE key = 'warnet_announcement'");
+        const payload = '<p>Promo <strong>Malam</strong></p><script>alert(1)</script><a href="javascript:alert(1)" onclick="alert(2)">klik</a>';
+        try {
+            const simpan = await page.request.put(`${BASE_URL}/api/v1/kasir/settings/warnet_announcement`, {
+                headers: { 'X-CSRFToken': csrf },
+                data: { value: payload },
+            });
+            assert.strictEqual(simpan.status(), 200, `simpan pengumuman: ${simpan.status()}`);
+
+            const konfig = await page.request.get(`${BASE_URL}/api/v1/public/client/warnet`, {
+                headers: { 'X-Client-Key': CLIENT_API_KEY },
+            });
+            assert.strictEqual(konfig.status(), 200);
+            const html = String((await konfig.json()).announcement || '');
+            assert.ok(html.includes('Promo') && html.includes('<strong>Malam</strong>'), `markup sah harus bertahan: ${html}`);
+            assert.ok(!/<\s*script/i.test(html), `script harus hilang: ${html}`);
+            assert.ok(!/onclick/i.test(html), `handler onclick harus hilang: ${html}`);
+            assert.ok(!/javascript:/i.test(html), `protokol javascript: harus hilang: ${html}`);
+        } finally {
+            await page.request.put(`${BASE_URL}/api/v1/kasir/settings/warnet_announcement`, {
+                headers: { 'X-CSRFToken': csrf },
+                data: { value: awal ? awal.value : '' },
+            });
+        }
+    });
+
+    await check(report, 'Unduhan database mengirim file SQLite utuh, bukan file WAL hidup', async () => {
+        const res = await page.request.get(`${BASE_URL}/api/v1/kasir/settings/backup/download`);
+        assert.strictEqual(res.status(), 200, `unduh DB: ${res.status()}`);
+        const body = await res.body();
+        assert.ok(body.length > 4096, `ukuran file terlalu kecil: ${body.length}`);
+        assert.strictEqual(body.slice(0, 16).toString('latin1'), 'SQLite format 3\u0000', 'header file bukan SQLite');
+        const disposition = res.headers()['content-disposition'] || '';
+        assert.match(disposition, /attachment/i, `header unduhan tidak sesuai: ${disposition}`);
     });
 
     await logout(page);
