@@ -9,9 +9,16 @@ pembersihan log, serta penghapusan riwayat audit.
 import re
 import json
 from datetime import datetime
-from app.models import db
+from app.models import db, now_local
 from app.repositories import TransaksiRepository, SesiRepository, MenuRepository
 from app.utils.logger import read_logs, write_log, clear_logs
+
+
+LOCKED_TRANSAKSI_JENIS = frozenset({
+    "beli_paket_guest", "beli_paket_member",
+    "tambah_waktu_sesi", "tambah_waktu_guest",
+    "refund_paket", "blackout_refund",
+})
 
 
 class LogAuditService:
@@ -131,6 +138,8 @@ class LogAuditService:
     @staticmethod
     def clear_all_transactions(operator="system"):
         """Menghapus seluruh riwayat transaksi & sesi (Maintenance)."""
+        if SesiRepository.get_all_aktif():
+            raise ValueError("Tutup semua sesi aktif sebelum menghapus riwayat")
         try:
             count_t = TransaksiRepository.delete_all()
             count_m = MenuRepository.delete_all_transaksi()
@@ -155,7 +164,7 @@ class LogAuditService:
     def delete_transaction(t_id, operator="system"):
         """Menghapus satu transaksi (Audit)."""
         t = TransaksiRepository.get_by_id(t_id)
-        if t and t.jenis in ("beli_paket", "beli_paket_member"):
+        if t and t.jenis in LOCKED_TRANSAKSI_JENIS:
             raise ValueError("Nota paket tidak bisa dihapus. Gunakan Refund agar saldo member ikut kembali.")
         try:
             if not t:
@@ -187,6 +196,8 @@ class LogAuditService:
     @staticmethod
     def clear_transactions_by_date(tanggal, operator="system"):
         """Menghapus riwayat transaksi & sesi pada tanggal tertentu (Audit)."""
+        if tanggal == now_local().strftime("%Y-%m-%d") and SesiRepository.get_all_aktif():
+            raise ValueError("Tutup semua sesi aktif sebelum menghapus riwayat hari ini")
         try:
             count_t = TransaksiRepository.delete_by_date(tanggal)
             count_m = MenuRepository.delete_transaksi_by_date(tanggal)
