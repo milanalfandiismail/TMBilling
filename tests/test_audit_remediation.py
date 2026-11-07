@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app import create_app
 from app.models import db, User, Grup, PC, Paket, Member, Sesi, Transaksi, now_local
+from app.utils.timezone_utils import display_in_tz, now_utc
 from app.services.auth import login_throttle
 from app.services.member.member_service import MemberService
 from app.services.sesi.sesi_service import SesiService
@@ -112,7 +113,7 @@ def test_shift_summary_does_not_clamp_negative_net(ctx):
 
 
 def test_nota_sequence_uses_highest_existing_number(ctx):
-    hari_ini = now_local().strftime("%Y%m%d")
+    hari_ini = display_in_tz(now_utc()).strftime("%Y%m%d")
     for nomor in (2, 5):  # sengaja bolong, bukan berurutan
         db.session.add(Transaksi(
             jenis="beli_paket_guest", jumlah=1000,

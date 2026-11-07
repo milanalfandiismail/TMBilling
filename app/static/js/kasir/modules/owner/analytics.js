@@ -14,8 +14,9 @@ const OwnerAnalytics = {
         if (!s.value || !e.value) {
             const t = new Date(), w = new Date(t);
             w.setDate(t.getDate() - 6);
-            s.value = w.toISOString().slice(0, 10);
-            e.value = t.toISOString().slice(0, 10);
+            const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            s.value = fmtDate(w);
+            e.value = fmtDate(t);
         }
 
         const loadingEl = document.getElementById('analytics-loading');

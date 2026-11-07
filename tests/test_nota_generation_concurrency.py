@@ -90,8 +90,8 @@ def test_menu_nota_generation_anti_skip_on_multi_item_order():
             nota2 = res2[0]["no_nota"]
 
             # Nomor nota kedua harus persis n+1 dari nomor nota pertama (TIDAK BOLEH loncat karena 2 item di order 1)
-            num1 = int(nota1.split('-')[-1])
-            num2 = int(nota2.split('-')[-1])
+            num1 = int(nota1.split('-')[2])
+            num2 = int(nota2.split('-')[2])
             assert num2 == num1 + 1, f"Nomor nota meloncat! order1={nota1}, order2={nota2}"
 
         finally:
