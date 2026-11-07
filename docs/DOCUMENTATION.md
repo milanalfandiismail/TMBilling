@@ -360,7 +360,7 @@ c:\Project GIT\TMBilling
   - Paket Promosi: Paket Personal, Paket 2 Jam, Paket 5 Jam, Paket Malam (Begadang).
   - Custom Group Rates: Tarif berbeda untuk tipe ruangan Reguler, VIP, Sofa, atau VVIP Simulator.
   - Reset State Sesi: Proteksi pembersihan data sesi sementara saat PC selesai digunakan.
-  - Refund Paket Proporsional: Refund guest & member dihitung dari menit yang benar-benar ditarik (`-round(jumlah * menit_dipotong / durasi)`), bukan harga penuh paket.
+  - Refund Paket Nominal Penuh: Refund guest & member mengembalikan nilai penuh transaksi (`-jumlah`) sambil memotong menit tersisa (guest dibatasi sisa waktu, member `max(0, saldo - durasi)`).
   - Satu Sesi Aktif per PC: Unique index parsial `uq_aktif_sesi_pc` (`pc_id` WHERE `status='aktif'`) menolak sesi ganda pada satu meja; pelanggaran dipetakan menjadi `ValueError("PC sedang dipakai")`.
 
 ### 4.16 Shift Kasir & Serah Terima Shift (Hitung Buta / Blind Cash Reconciliation)

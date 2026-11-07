@@ -542,8 +542,8 @@ class SesiService:
         # Potong durasi beli guest
         sesi.durasi_beli_menit -= durasi_dikurangi
         
-        # Refund proporsional: hanya menit yang benar-benar ditarik kembali yang diuangkan
-        refund_jumlah = -round(transaksi.jumlah * durasi_dikurangi / durasi)
+        # Refund penuh nilai transaksi (nominal bulat, mudah direkonsiliasi kasir)
+        refund_jumlah = -(transaksi.jumlah)
         sesi.total_bayar = max(0, sesi.total_bayar + refund_jumlah)
         
         transaksi.is_refunded = True

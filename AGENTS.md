@@ -118,7 +118,7 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/health/`: Guard sumber daya (`MIN_FREE_BYTES = 512 MB`) dan payload `GET /api/health` publik (`db`/`disk`/`backup`, tanpa angka/path; status `degraded` tetap HTTP 200).
 - `services/ip_whitelist/`: Proteksi akses kasir hanya dari subnet IP yang terdaftar.
 - `services/maintenance/`: Alur status tiket perbaikan PC.
-- `services/member/`: Transaksi saldo, potongan diskon tarif member, dan proteksi saldo minus; refund paket proporsional (`-round(jumlah * menit_dipotong / durasi)`); daftar member eager load grup & sesi.
+- `services/member/`: Transaksi saldo, potongan diskon tarif member, dan proteksi saldo minus; refund paket memotong saldo menit lalu mengembalikan nilai penuh transaksi (`-jumlah`); daftar member eager load grup & sesi.
 - `services/menu/`: Pengurangan stok bahan makanan/minuman otomatis saat transaksi POS terjadi.
 - `services/notes/`: Sinkronisasi catatan serah terima kasir.
 - `services/owner/`: Agregasi statistik finansial khusus peran owner/pemilik warnet.
@@ -128,7 +128,7 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/public/`: Format data tampilan TV billboard publik; payload TV di-cache 5 detik.
 - `services/report/`: Kompilasi laporan keuangan harian/bulanan kasir; relasi struk/menu di-eager load dan hitung sesi aktif memakai `SesiRepository.count_aktif()`.
 - `services/server_monitor/`: Sensor telemetri performa mesin server utama.
-- `services/sesi/`: Engine kalkulasi tarif per menit, sisa waktu billing, dan refund saldo; refund paket guest proporsional terhadap menit yang benar-benar ditarik; commit sesi menangkap `IntegrityError` (unique index `uq_aktif_sesi_pc`) menjadi `ValueError("PC sedang dipakai")`.
+- `services/sesi/`: Engine kalkulasi tarif per menit, sisa waktu billing, dan refund saldo; refund paket guest memotong durasi beli sesuai sisa waktu lalu mengembalikan nilai penuh transaksi; commit sesi menangkap `IntegrityError` (unique index `uq_aktif_sesi_pc`) menjadi `ValueError("PC sedang dipakai")`.
 - `services/settings/`: Cache write-through pengaturan aplikasi, auto-generator random `vnc_password`, serta auto-generator random token emergency & uninstall (`secrets.token_urlsafe`, hanya mengisi bila kosong sehingga token lama di database tetap berlaku); cache miss negatif untuk setting yang tidak ada. Upload QRIS (`routes/settings/database_routes.py`) divalidasi Pillow, diperkecil maks 800 px, dan deskripsinya disimpan dengan nama bertimestamp.
 - `services/shift/`: Verifikasi selisih uang kas fisik kasir (blind reconciliation); ringkasan shift mencakup transaksi semua kasir pada rentang waktu shift (tanpa filter `user_id`) dan tidak meng-clamp nilai negatif.
 - `services/tournament/`: Engine pairing babak dan alur skor turnamen eSports.

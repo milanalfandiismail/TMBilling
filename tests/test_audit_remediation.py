@@ -1,5 +1,5 @@
 # tests/test_audit_remediation.py
-"""Regresi remediasi audit: refund proporsional, ringkasan shift, nota, XSS, throttle, index sesi."""
+"""Regresi remediasi audit: refund penuh, ringkasan shift, nota, XSS, throttle, index sesi."""
 import uuid
 from datetime import timedelta
 
@@ -56,7 +56,7 @@ def ctx():
         db.drop_all()
 
 
-def test_refund_guest_only_charges_remaining_minutes(ctx):
+def test_refund_guest_refunds_full_transaction_amount(ctx):
     sesi = SesiService.buka_guest(ctx["pc"].kode, ctx["paket"].id, nama_guest="G1")
     transaksi = Transaksi.query.filter_by(sesi_id=sesi.id, jenis="beli_paket_guest").first()
 
@@ -67,10 +67,11 @@ def test_refund_guest_only_charges_remaining_minutes(ctx):
     refund = Transaksi.query.filter_by(sesi_id=sesi.id, jenis="refund_paket").first()
 
     assert hasil["durasi_dikurangi"] == 15
-    assert refund.jumlah == -3000  # 12000 * 15/60
+    assert refund.jumlah == -12000  # refund penuh harga paket
+    assert refund.menit == -15
 
 
-def test_refund_member_only_charges_remaining_minutes(ctx):
+def test_refund_member_refunds_full_transaction_amount(ctx):
     member = ctx["member"]
     transaksi = Transaksi(
         member_id=member.id, paket_id=ctx["paket"].id, jenis="beli_paket_member",
@@ -83,8 +84,8 @@ def test_refund_member_only_charges_remaining_minutes(ctx):
     MemberService.refund_paket(member.id, transaksi.id)
     refund = Transaksi.query.filter_by(member_id=member.id, jenis="refund_paket").first()
 
-    assert refund.menit == -10  # hanya saldo yang ada
-    assert refund.jumlah == -2000  # 12000 * 10/60
+    assert refund.menit == -60
+    assert refund.jumlah == -12000  # refund penuh harga paket
     assert Member.query.get(member.id).waktu_tersimpan == 0
 
 

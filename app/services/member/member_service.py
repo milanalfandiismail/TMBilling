@@ -329,10 +329,9 @@ class MemberService:
         kadaluarsa_hari = transaksi.paket.kadaluarsa_hari if transaksi.paket else 0
         
         sebelum = member.waktu_tersimpan
-        # Refund proporsional: yang ditarik hanya menit yang masih ada di saldo
-        menit_dipotong = min(durasi, sebelum)
-        waktu_baru = sebelum - menit_dipotong
-        refund_jumlah = -round(transaksi.jumlah * menit_dipotong / durasi)
+        # Refund penuh nilai transaksi; saldo menit dipotong sebanyak durasi paket
+        waktu_baru = max(0, sebelum - durasi)
+        refund_jumlah = -(transaksi.jumlah)
 
         member.waktu_tersimpan = waktu_baru
         transaksi.is_refunded = True
@@ -358,7 +357,7 @@ class MemberService:
             paket_id=transaksi.paket_id,
             jenis="refund_paket",
             jumlah=refund_jumlah,
-            menit=-(menit_dipotong),
+            menit=-(durasi),
             keterangan=f"Refund paket '{transaksi.paket.nama if transaksi.paket else '?'}'",
             no_nota=TransaksiService.generate_nota(),
             user_id=TransaksiService.get_user_id(operator),
