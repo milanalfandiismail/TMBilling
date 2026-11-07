@@ -1,7 +1,7 @@
 # tests/test_paket_menu_validation.py
 import pytest
 from app import create_app
-from app.models import db, Grup, Paket, MenuItem, User
+from app.models import db, Grup, Paket, MenuItem, TransaksiMenu, User
 from app.services.paket.paket_service import PaketService
 from app.services.menu.menu_service import MenuService
 
@@ -107,3 +107,33 @@ def test_checkout_menu_order_validation(app_context):
             tunai=5000,  # Kurang!
             metode_pembayaran="Tunai"
         )
+
+    # Tunai tanpa uang tunai tidak boleh tercatat lunas
+    with pytest.raises(ValueError, match="Uang tunai .* kurang dari total tagihan"):
+        MenuService.checkout_menu_order(
+            cart_items=[{"menu_id": m.id, "jumlah": 1}],
+            pc_kode="PC01",
+            kasir_username="admin",
+            tunai=0,
+            metode_pembayaran="Tunai"
+        )
+    assert TransaksiMenu.query.count() == 0
+
+    # Tunai pas dan QRIS tanpa tunai tetap boleh
+    tunai_pas = MenuService.checkout_menu_order(
+        cart_items=[{"menu_id": m.id, "jumlah": 1}],
+        pc_kode="PC01",
+        kasir_username="admin",
+        tunai=6000,
+        metode_pembayaran="Tunai"
+    )
+    assert tunai_pas[0]["kembalian"] == 0
+
+    qris = MenuService.checkout_menu_order(
+        cart_items=[{"menu_id": m.id, "jumlah": 1}],
+        pc_kode="PC01",
+        kasir_username="admin",
+        tunai=0,
+        metode_pembayaran="QRIS"
+    )
+    assert qris[0]["metode_pembayaran"] == "QRIS"

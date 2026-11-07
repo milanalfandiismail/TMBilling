@@ -419,7 +419,7 @@ class MenuService:
             # Validasi Pembayaran Tunai
             tunai_val = validate_integer_range(tunai or 0, min_val=0, max_val=1_000_000_000, field_name="Uang tunai")
             kembalian_val = 0
-            if metode_pembayaran == "Tunai" and tunai_val > 0:
+            if metode_pembayaran == "Tunai":
                 if tunai_val < total_tagihan:
                     raise ValueError(f"Uang tunai (Rp {tunai_val:,}) kurang dari total tagihan (Rp {total_tagihan:,})".replace(",", "."))
                 kembalian_val = tunai_val - total_tagihan
