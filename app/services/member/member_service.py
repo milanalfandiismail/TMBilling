@@ -127,8 +127,9 @@ class MemberService:
     def get_by_id(member_id):
         """Mengambil satu member berdasarkan ID (404 jika tidak ditemukan)."""
         member = MemberRepository.get_by_id(member_id)
-        if member and member.cek_kadaluarsa():
-            db.session.commit()
+        if member:
+            member.cek_kadaluarsa()
+        # shortcut: expiry dipersist saat write berikutnya; scheduler boleh memanggil commit terpisah.
         return member
 
     @staticmethod
