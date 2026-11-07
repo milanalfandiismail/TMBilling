@@ -382,62 +382,6 @@ def _init_app_context(app):
         except Exception as e:
             app.logger.error(f"Gagal membuat admin default saat bootstrap: {e}")
 
-        # Self-healing bootstrap & schema auto-migration (Non-destructive)
-        try:
-            from sqlalchemy import inspect, text
-            inspector = inspect(db.engine)
-            # Auto-migration v1.6.5-rc2: Subsystem multi-branch dihapus (tabel cabang & cabang_inbound di-drop via migration)
-
-            # Auto-migration v1.6.2: User kuota benefit columns
-            if inspector.has_table('user'):
-                user_cols = [c['name'] for c in inspector.get_columns('user')]
-                with db.engine.connect() as conn:
-                    if 'kuota_main_bulanan' not in user_cols:
-                        conn.execute(text("ALTER TABLE user ADD COLUMN kuota_main_bulanan INTEGER DEFAULT 0"))
-                    if 'sisa_kuota_menit' not in user_cols:
-                        conn.execute(text("ALTER TABLE user ADD COLUMN sisa_kuota_menit INTEGER DEFAULT 0"))
-                    if 'terakhir_reset_kuota' not in user_cols:
-                        conn.execute(text("ALTER TABLE user ADD COLUMN terakhir_reset_kuota VARCHAR(7)"))
-                    conn.commit()
-
-            # Auto-migration v1.6.2: Sesi user_id, kolom AFK, dan sesi_asal_id
-            if inspector.has_table('sesi'):
-                sesi_cols = [c['name'] for c in inspector.get_columns('sesi')]
-                with db.engine.connect() as conn:
-                    if 'user_id' not in sesi_cols:
-                        conn.execute(text("ALTER TABLE sesi ADD COLUMN user_id INTEGER REFERENCES user(id)"))
-                    if 'is_afk' not in sesi_cols:
-                        conn.execute(text("ALTER TABLE sesi ADD COLUMN is_afk BOOLEAN DEFAULT 0"))
-                    if 'afk_pin' not in sesi_cols:
-                        conn.execute(text("ALTER TABLE sesi ADD COLUMN afk_pin VARCHAR(100)"))
-                    if 'afk_sejak' not in sesi_cols:
-                        conn.execute(text("ALTER TABLE sesi ADD COLUMN afk_sejak DATETIME"))
-                    if 'sesi_asal_id' not in sesi_cols:
-                        conn.execute(text("ALTER TABLE sesi ADD COLUMN sesi_asal_id INTEGER REFERENCES sesi(id)"))
-                    conn.commit()
-
-            # Auto-migration v1.6.2: ShiftRecord catatan, total_qris, total_refund columns
-            if inspector.has_table('shift_record'):
-                shift_cols = [c['name'] for c in inspector.get_columns('shift_record')]
-                with db.engine.connect() as conn:
-                    if 'catatan' not in shift_cols:
-                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN catatan VARCHAR(255)"))
-                    if 'total_qris' not in shift_cols:
-                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN total_qris INTEGER DEFAULT 0"))
-                    if 'total_refund' not in shift_cols:
-                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN total_refund INTEGER DEFAULT 0"))
-                    if 'detail_metode_json' not in shift_cols:
-                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN detail_metode_json TEXT"))
-                    conn.commit()
-
-            # Auto-migration v1.6.2: Tabel menu_stock_log
-            if not inspector.has_table('menu_stock_log'):
-                from app.models.menu.menu import MenuStockLog
-                MenuStockLog.__table__.create(db.engine)
-                app.logger.info("[OK] [TMBilling] Tabel 'menu_stock_log' berhasil dibuat secara otomatis.")
-        except Exception as e:
-            app.logger.warning(f"Pengecekan bootstrap skema database: {e}")
-
 def create_app(config_override=None):
     """Membuat dan mengkonfigurasi instance aplikasi Flask.
     
