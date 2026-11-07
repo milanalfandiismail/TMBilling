@@ -319,6 +319,9 @@ class MemberService:
         if not transaksi or transaksi.member_id != member.id or transaksi.is_refunded:
             raise ValueError("Transaksi tidak valid atau sudah direfund")
 
+        # Saldo yang sudah lewat masa aktif tidak boleh direfund
+        member.cek_kadaluarsa()
+
         durasi = transaksi.menit or (transaksi.paket.durasi_menit if transaksi.paket else 0)
         if durasi <= 0:
             raise ValueError("Durasi paket tidak valid untuk refund")
@@ -334,7 +337,9 @@ class MemberService:
         refund_jumlah = -(transaksi.jumlah)
 
         member.waktu_tersimpan = waktu_baru
-        transaksi.is_refunded = True
+        if not TransaksiRepository.claim_refund(transaksi.id):
+            db.session.rollback()
+            raise ValueError("Transaksi tidak valid atau sudah direfund")
 
         # Sync dengan sesi aktif jika ada agar sisa waktu di PC langsung berkurang
         sesi = SesiRepository.get_aktif_by_member(member.id)
@@ -349,7 +354,7 @@ class MemberService:
         kadaluarsa_hari_total = kadaluarsa_hari * qty
         if kadaluarsa_hari_total > 0 and member.kadaluarsa_pada:
             kadaluarsa_baru = member.kadaluarsa_pada - timedelta(days=kadaluarsa_hari_total)
-            member.kadaluarsa_pada = kadaluarsa_baru if kadaluarsa_baru > now_local() else None
+            member.kadaluarsa_pada = max(kadaluarsa_baru, now_local())
 
         # INJECT NOTA REFUND TM
         transaksi_refund = Transaksi(

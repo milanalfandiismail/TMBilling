@@ -29,6 +29,14 @@ class TransaksiRepository:
         return Transaksi.query.get(transaksi_id)
 
     @staticmethod
+    def claim_refund(transaksi_id):
+        """Tandai transaksi sudah direfund secara atomik; True bila request ini yang menang."""
+        rows = Transaksi.query.filter_by(id=transaksi_id, is_refunded=False).update(
+            {"is_refunded": True}, synchronize_session=False
+        )
+        return rows == 1
+
+    @staticmethod
     def get_by_no_nota(no_nota):
         """Ambil transaksi berdasarkan nomor nota."""
         return Transaksi.query.filter_by(no_nota=no_nota).first()

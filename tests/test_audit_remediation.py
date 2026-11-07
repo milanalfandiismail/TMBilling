@@ -164,3 +164,101 @@ def test_unique_index_blocks_second_active_session_per_pc(ctx):
     with pytest.raises(IntegrityError):
         db.session.commit()
     db.session.rollback()
+
+
+def test_refund_member_rejects_expired_wallet(ctx):
+    member = Member(
+        username=f"exp_{uuid.uuid4().hex[:8]}", nama_lengkap="Member Expired",
+        grup_id=ctx["member"].grup_id, password_hash="x", waktu_tersimpan=100,
+        aktif=True, kadaluarsa_pada=now_local() - timedelta(days=1),
+    )
+    db.session.add(member)
+    db.session.commit()
+    transaksi = Transaksi(
+        member_id=member.id, paket_id=ctx["paket"].id, jenis="beli_paket_member",
+        jumlah=12000, menit=60, no_nota=f"TM-E-{uuid.uuid4().hex[:8]}",
+        metode_pembayaran="Tunai",
+    )
+    db.session.add(transaksi)
+    db.session.commit()
+
+    with pytest.raises(ValueError, match="Saldo waktu member sudah habis"):
+        MemberService.refund_paket(member.id, transaksi.id)
+
+    assert Transaksi.query.filter_by(member_id=member.id, jenis="refund_paket").count() == 0
+
+
+def test_refund_member_clamps_expired_date_instead_of_none(ctx):
+    suffix = uuid.uuid4().hex[:8]
+    paket = Paket(nama=f"PaketExp-{suffix}", durasi_menit=60, harga=12000,
+                  grup_id=ctx["member"].grup_id, aktif=True, kadaluarsa_hari=30)
+    db.session.add(paket)
+    db.session.commit()
+    member = Member(
+        username=f"clamp_{suffix}", nama_lengkap="Member Clamp",
+        grup_id=ctx["member"].grup_id, password_hash="x", waktu_tersimpan=120,
+        aktif=True, kadaluarsa_pada=now_local() + timedelta(days=10),
+    )
+    db.session.add(member)
+    db.session.commit()
+    transaksi = Transaksi(
+        member_id=member.id, paket_id=paket.id, jenis="beli_paket_member",
+        jumlah=12000, menit=60, no_nota=f"TM-C-{suffix}",
+        metode_pembayaran="Tunai",
+    )
+    db.session.add(transaksi)
+    db.session.commit()
+
+    MemberService.refund_paket(member.id, transaksi.id)
+
+    member = Member.query.get(member.id)
+    assert member.kadaluarsa_pada is not None
+    assert member.kadaluarsa_pada <= now_local() + timedelta(seconds=1)
+    assert member.cek_kadaluarsa() is True
+    assert member.waktu_tersimpan == 0
+
+
+def test_claim_refund_allows_only_first_claim(ctx):
+    from app.repositories.transaksi.transaksi_repository import TransaksiRepository
+    transaksi = Transaksi(
+        jenis="beli_paket_member", jumlah=12000, menit=60,
+        no_nota=f"TM-K-{uuid.uuid4().hex[:8]}",
+    )
+    db.session.add(transaksi)
+    db.session.commit()
+
+    assert TransaksiRepository.claim_refund(transaksi.id) is True
+    assert TransaksiRepository.claim_refund(transaksi.id) is False
+
+
+def test_refund_guest_rejects_transaction_already_claimed(ctx):
+    sesi = SesiService.buka_guest(ctx["pc"].kode, ctx["paket"].id, nama_guest="Stale")
+    transaksi = Transaksi.query.filter_by(sesi_id=sesi.id, jenis="beli_paket_guest").first()
+    # Simulasi request lain menang lebih dulu: DB berubah, objek ORM tetap basi
+    Transaksi.query.filter_by(id=transaksi.id).update(
+        {"is_refunded": True}, synchronize_session=False
+    )
+
+    with pytest.raises(ValueError, match="sudah direfund"):
+        SesiService.refund_paket_guest(sesi.id, transaksi.id)
+
+    assert Transaksi.query.filter_by(sesi_id=sesi.id, jenis="refund_paket").count() == 0
+
+
+def test_refund_member_rejects_transaction_already_claimed(ctx):
+    member = ctx["member"]
+    transaksi = Transaksi(
+        member_id=member.id, paket_id=ctx["paket"].id, jenis="beli_paket_member",
+        jumlah=12000, menit=60, no_nota=f"TM-M-{uuid.uuid4().hex[:8]}",
+        metode_pembayaran="Tunai",
+    )
+    db.session.add(transaksi)
+    db.session.commit()
+    Transaksi.query.filter_by(id=transaksi.id).update(
+        {"is_refunded": True}, synchronize_session=False
+    )
+
+    with pytest.raises(ValueError, match="sudah direfund"):
+        MemberService.refund_paket(member.id, transaksi.id)
+
+    assert Transaksi.query.filter_by(member_id=member.id, jenis="refund_paket").count() == 0

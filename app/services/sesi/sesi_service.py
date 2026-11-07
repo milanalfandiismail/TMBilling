@@ -546,7 +546,9 @@ class SesiService:
         refund_jumlah = -(transaksi.jumlah)
         sesi.total_bayar = max(0, sesi.total_bayar + refund_jumlah)
         
-        transaksi.is_refunded = True
+        if not TransaksiRepository.claim_refund(transaksi.id):
+            db.session.rollback()
+            raise ValueError("Transaksi tidak valid atau sudah direfund")
 
         # INJECT NOTA REFUND TM
         transaksi_refund = Transaksi(
