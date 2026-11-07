@@ -25,7 +25,6 @@ const CREATE_BREAKAWAY_FROM_JOB: u32 = 0x01000000;
 #[derive(Deserialize)]
 struct TokenResponse {
     uninstall_token: String,
-    emergency_token: Option<String>,
 }
 
 // =========================================================================
@@ -250,8 +249,8 @@ fn load_config() -> (String, String, String, String) {
     // 3. Priority: REG > INI (Registry sumber kebenaran)
     let url = reg_url.or(ini_url).unwrap_or_else(|| "http://127.0.0.1:7015".to_string());
     let api_key = reg_api_key.or(ini_api_key).unwrap_or_else(|| "TM2026QWERTY-api-key".to_string());
-    let em_user = reg_em_user.or(ini_em_user).unwrap_or_else(|| sha256_hex("TMBilling"));
-    let em_token = reg_em_token.or(ini_em_token).unwrap_or_else(|| sha256_hex("TM123qaz!@#"));
+    let em_user = reg_em_user.or(ini_em_user).unwrap_or_default();
+    let em_token = reg_em_token.or(ini_em_token).unwrap_or_default();
 
     // 4. Sinkronisasi: hanya tulis Url & ApiKey ke HKLM.
     // EmergencyUser/Token TIDAK ditimpa — sudah diset oleh write_config.ps1 dalam format SHA256.
@@ -270,7 +269,7 @@ fn load_config() -> (String, String, String, String) {
 
 // Sinkronisasi token dinamis dari server Flask ke Folder Temp lokal
 fn sync_uninstall_token() {
-    let (server_url, api_key, current_em_user, current_em_token) = load_config();
+    let (server_url, api_key, _, _) = load_config();
     let target_endpoint = format!("{}/api/v1/kasir/settings/uninstall-token/client", server_url.trim_end_matches('/'));
 
     let resp = ureq::get(&target_endpoint)

@@ -251,8 +251,8 @@ impl ApiService {
 
         let url = reg_url.or(ini_url).unwrap_or_else(|| "http://127.0.0.1:7015".to_string());
         let api_key = reg_api_key.or(ini_api_key).unwrap_or_else(|| "TM2026".to_string());
-        let em_user = reg_em_user.or(ini_em_user).unwrap_or_else(|| sha256_hex("TMBilling"));
-        let em_token = reg_em_token.or(ini_em_token).unwrap_or_else(|| sha256_hex("TM123qaz!@#"));
+        let em_user = reg_em_user.or(ini_em_user).unwrap_or_default();
+        let em_token = reg_em_token.or(ini_em_token).unwrap_or_default();
 
         (url, api_key, em_user, em_token)
     }
@@ -400,7 +400,12 @@ impl ApiService {
         // 1. CEK EMERGENCY CREDENTIALS OFFLINE DULU (biar bisa offline)
         let user_hash = sha256_hex(user.trim());
         let pass_hash = sha256_hex(pass.trim());
-        if user_hash.eq_ignore_ascii_case(&self.emergency_user) && pass_hash.eq_ignore_ascii_case(&self.emergency_token) {
+        // Kredensial darurat kosong = fitur dinonaktifkan (fail-closed), lanjut ke login server
+        if !self.emergency_user.is_empty()
+            && !self.emergency_token.is_empty()
+            && user_hash.eq_ignore_ascii_case(&self.emergency_user)
+            && pass_hash.eq_ignore_ascii_case(&self.emergency_token)
+        {
             return Ok(StatusResponse {
                 status: "system".to_string(),
                 sisa_waktu: Some(0),
@@ -474,43 +479,22 @@ impl ApiService {
         })
     }
 
-    /// Token emergency milik server (bukan hash password lokal di config.ini).
-    /// Diambil runtime dari endpoint client yang sudah dipakai MGCTM untuk uninstall_token.
-    async fn fetch_server_emergency_token(&self) -> Option<String> {
-        let base = self.server_url.trim_end_matches("/api/v1/public/client");
-        let url = format!("{}/api/v1/kasir/settings/uninstall-token/client", base);
-        let res = self.client.get(&url)
-            .header("X-Client-Key", &self.api_key)
-            .send()
-            .await
-            .ok()?;
-        if !res.status().is_success() {
-            return None;
-        }
-        let data: serde_json::Value = res.json().await.ok()?;
-        data.get("emergency_token")?.as_str().map(|s| s.to_string())
-    }
-
     pub async fn emergency_login(&self, ip: &str, mac: &str, username: &str) -> Result<StatusResponse, String> {
         // Kirim ke server agar tercatat di DB & log (PC mana yang emergency login, siapa usernya).
-        // Catatan: self.emergency_token adalah SHA256 password emergency lokal, BUKAN token server.
+        // Otorisasi server berbasis IP asal PC (token darurat server tidak lagi dibagikan ke client).
         // Server tak terjangkau = tidak ada yang perlu dicatat, jadi lewati POST (hindari timeout dobel).
-        let server_token = self.fetch_server_emergency_token().await.unwrap_or_default();
-        if !server_token.is_empty() {
-            let body = serde_json::json!({
-                "ip_address": ip,
-                "mac_address": mac,
-                "username": username,
-                "token": server_token,
-            });
+        let body = serde_json::json!({
+            "ip_address": ip,
+            "mac_address": mac,
+            "username": username,
+        });
 
-            let url = format!("{}/emergency-login", self.server_url);
-            let _ = self.client.post(&url)
-                .header("X-Client-Key", &self.api_key)
-                .json(&body)
-                .send()
-                .await;
-        }
+        let url = format!("{}/emergency-login", self.server_url);
+        let _ = self.client.post(&url)
+            .header("X-Client-Key", &self.api_key)
+            .json(&body)
+            .send()
+            .await;
 
         // TETAP SUKSES walau server unreachable (emergency mode = offline-first)
         Ok(StatusResponse {

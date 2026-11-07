@@ -302,16 +302,24 @@ class ClientService:
     # Emergency login selalu diterima server, dan mengaktifkan is_admin_mode.
 
     @staticmethod
-    def emergency_login(ip_address, mac_address, username="SYSTEM", token=None):
-        """Login emergency dari PC client; wajib menyertakan token server."""
-        expected = SettingsService.get_or_create_emergency_token()
-        if not token or not hmac.compare_digest(str(token), str(expected)):
-            write_log("SECURITY_ALERT", f"Emergency login ditolak: token tidak valid (IP {ip_address})")
-            raise PermissionError("Token emergency login tidak valid")
+    def emergency_login(ip_address, mac_address, username="SYSTEM", token=None, request_ip=None):
+        """Login emergency dari PC client.
 
+        Diizinkan bila token server valid ATAU request datang dari IP PC itu sendiri
+        (IP LAN tidak bisa dipalsukan dari PC lain), sehingga admin PC tetap bisa
+        unlock walau token server tidak tersedia di client.
+        """
         pc = PCRepository.get_by_ip(ip_address)
         if not pc:
             raise ValueError("IP PC tidak terdaftar")
+
+        token_ok = bool(token) and hmac.compare_digest(
+            str(token), str(SettingsService.get_or_create_emergency_token())
+        )
+        ip_ok = bool(request_ip) and str(request_ip) == str(pc.ip_address)
+        if not token_ok and not ip_ok:
+            write_log("SECURITY_ALERT", f"Emergency login ditolak: token tidak valid (IP {ip_address})")
+            raise PermissionError("Token emergency login tidak valid")
 
         # Auto-fill MAC jika kosong
         if not pc.mac_address:

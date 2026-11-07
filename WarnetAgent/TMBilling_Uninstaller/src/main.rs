@@ -197,8 +197,8 @@ fn load_emergency_token_offline() -> String {
         }
     }
 
-    // Default fallback jika benar-benar kosong
-    final_em_token.unwrap_or_else(|| sha256_hex("TM123qaz!@#"))
+    // Tanpa fallback default: token kosong = mode darurat dinonaktifkan (fail-closed)
+    final_em_token.unwrap_or_default()
 }
 
 // Mengambil token uninstall aktif langsung dari Flask API secara real-time

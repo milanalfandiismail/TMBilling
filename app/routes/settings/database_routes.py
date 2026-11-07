@@ -39,21 +39,48 @@ def trigger_manual_backup():
 @login_required
 @admin_required
 def download_db():
-    """Mengirim file warnet.db ke browser untuk di-download."""
+    """Snapshot WAL-safe database aktif (Online Backup API) lalu kirim ke browser."""
+    import sqlite3
+    import tempfile
+    from flask import after_this_request
+
+    db_path = os.path.join(current_app.instance_path, 'warnet.db')
+    fd, snapshot_path = tempfile.mkstemp(suffix='.db', dir=current_app.instance_path)
+    os.close(fd)
     try:
-        db_path = os.path.join(current_app.instance_path, 'warnet.db')
-        
+        src = sqlite3.connect(db_path)
+        dst = sqlite3.connect(snapshot_path)
+        try:
+            src.backup(dst)
+            check = dst.execute("PRAGMA integrity_check").fetchone()
+        finally:
+            dst.close()
+            src.close()
+
+        if not check or check[0] != "ok":
+            raise RuntimeError("Snapshot database tidak lolos integrity_check")
+
         operator = session.get("kasir_username", "admin")
         write_log("DATABASE_DOWNLOAD", "User mendownload backup database ke lokal", user=operator)
-        
+
+        @after_this_request
+        def _remove_snapshot(response):
+            try:
+                os.remove(snapshot_path)
+            except OSError:
+                pass
+            return response
+
         return send_file(
-            db_path,
+            snapshot_path,
             as_attachment=True,
             download_name=f"warnet_manual_backup_{datetime.now().strftime('%Y%m%d')}.db",
             mimetype='application/x-sqlite3'
         )
     except Exception as e:
-        return str(e), 500
+        if os.path.exists(snapshot_path):
+            os.remove(snapshot_path)
+        return jsonify({"error": str(e)}), 500
 
 
 QRIS_MAX_SIDE = 800
@@ -150,12 +177,11 @@ def get_uninstall_token_for_client():
     @api_key_required
     def execute_request():
         try:
+            # Token darurat server tidak boleh bocor ke endpoint client; hanya token uninstall
             uninstall_token = SettingsService.get_or_create_uninstall_token()
-            emergency_token = SettingsService.get_or_create_emergency_token()
             return jsonify({
                 "success": True, 
-                "uninstall_token": uninstall_token,
-                "emergency_token": emergency_token
+                "uninstall_token": uninstall_token
             }), 200
         except Exception as e:
             return jsonify({"error": str(e)}), 500

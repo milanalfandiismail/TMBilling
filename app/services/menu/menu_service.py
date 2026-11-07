@@ -366,15 +366,7 @@ class MenuService:
         date_str = today_local.strftime('%Y%m%d')
         prefix = f"TMM-{date_str}-"
         
-        last_tm = MenuRepository.get_last_nota_today(date_str)
-        if last_tm and last_tm.no_nota:
-            try:
-                last_num = int(last_tm.no_nota.split('-')[-1])
-                new_num = last_num + 1
-            except (ValueError, IndexError):
-                new_num = 1
-        else:
-            new_num = 1
+        new_num = MenuRepository.get_max_nota_seq(date_str) + 1
             
         candidate = f"{prefix}{str(new_num).zfill(3)}"
         while TransaksiMenu.query.filter_by(no_nota=candidate).first() is not None:

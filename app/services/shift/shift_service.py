@@ -115,7 +115,6 @@ class ShiftService:
         ).filter(
             Transaksi.dibuat_pada >= shift.waktu_mulai,
             Transaksi.dibuat_pada <= waktu_akhir,
-            Transaksi.user_id == shift.kasir_id,
             Transaksi.jumlah > 0,
             Transaksi.jenis.notin_(["tutup_sesi", "pindah_pc", "refund_paket"]),
         ).scalar() or 0
@@ -127,7 +126,6 @@ class ShiftService:
         ).filter(
             Transaksi.dibuat_pada >= shift.waktu_mulai,
             Transaksi.dibuat_pada <= waktu_akhir,
-            Transaksi.user_id == shift.kasir_id,
             Transaksi.jenis == "refund_paket",
         ).group_by(Transaksi.metode_pembayaran).all()
 
@@ -141,7 +139,7 @@ class ShiftService:
             refund_map[m] = refund_map.get(m, 0) + val
             total_refund += val
 
-        total_billing = max(0, total_billing_gross - total_refund)
+        total_billing = total_billing_gross - total_refund
 
         # Hitung kantin dalam rentang shift
         total_kantin = db.session.query(
@@ -149,7 +147,6 @@ class ShiftService:
         ).filter(
             TransaksiMenu.tanggal >= shift.waktu_mulai,
             TransaksiMenu.tanggal <= waktu_akhir,
-            TransaksiMenu.kasir_id == shift.kasir_id,
         ).scalar() or 0
 
         # Ambil konfigurasi metode pembayaran
@@ -168,7 +165,6 @@ class ShiftService:
         ).filter(
             Transaksi.dibuat_pada >= shift.waktu_mulai,
             Transaksi.dibuat_pada <= waktu_akhir,
-            Transaksi.user_id == shift.kasir_id,
             Transaksi.jumlah > 0,
             Transaksi.jenis.notin_(["tutup_sesi", "pindah_pc", "refund_paket"]),
         ).group_by(Transaksi.metode_pembayaran).all()
@@ -179,7 +175,6 @@ class ShiftService:
         ).filter(
             TransaksiMenu.tanggal >= shift.waktu_mulai,
             TransaksiMenu.tanggal <= waktu_akhir,
-            TransaksiMenu.kasir_id == shift.kasir_id,
         ).group_by(TransaksiMenu.metode_pembayaran).all()
 
         billing_map = {}
@@ -199,7 +194,7 @@ class ShiftService:
         # Kurangi billing_map dengan refund_map per metode masing-masing
         refund_tunai = refund_map.get("Tunai", 0)
         billing_tunai_gross = billing_map.get("Tunai", 0)
-        billing_tunai_net = max(0, billing_tunai_gross - refund_tunai)
+        billing_tunai_net = billing_tunai_gross - refund_tunai
         kantin_tunai = kantin_map.get("Tunai", 0)
         total_tunai_bersih = billing_tunai_net + kantin_tunai
 
@@ -234,7 +229,7 @@ class ShiftService:
         for m in ordered_non_tunai_keys:
             b_gross = billing_map.get(m, 0)
             r_val = refund_map.get(m, 0)
-            b_net = max(0, b_gross - r_val)
+            b_net = b_gross - r_val
             k_val = kantin_map.get(m, 0)
             t_val = b_net + k_val
             non_tunai_list.append({

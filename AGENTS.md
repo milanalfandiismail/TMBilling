@@ -39,7 +39,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | Berkas Skrip | Tanggung Jawab & Cakupan |
 |---|---|
 | `install_scripts/updater.bat` | Runner batch Windows mandiri (detached) untuk **semua** jalur update (sidebar Migrasi & Update, GitHub 1-klik, `update.bat`): preflight Python 3.11+, menghentikan server lewat proses background, proses `run.py`, **dan** pemilik port 7015, membatalkan tanpa mengubah berkas bila port masih hidup, backup+ekstraksi (gagal → server dinyalakan ulang), lalu `pip install` **sebelum** migrasi dan start ulang. |
-| `install_scripts/extract_update.py` | Ekstraksi aman paket update ZIP (anti path-traversal, auto-backup SQLite via Online Backup API sehingga isi `-wal` ikut tersalin, batal bila backup gagal, paket dipertahankan saat gagal, proteksi berkas `.env` dan `instance/warnet.db`). Migrasi dipindah ke `run_migration.py` setelah dependensi baru terpasang. |
+| `install_scripts/extract_update.py` | Ekstraksi aman paket update ZIP (anti path-traversal, auto-backup SQLite via Online Backup API sehingga isi `-wal` ikut tersalin, batal bila backup gagal, paket dipertahankan saat gagal, proteksi berkas `.env` dan `instance/warnet.db`). Ekstraksi dilakukan ke `instance/staging_update` lalu ditukar per entri top-level dengan `os.replace` + rollback `instance/rollback_<ts>`, sehingga kode live tidak pernah setengah terpasang. Migrasi dipindah ke `run_migration.py` setelah dependensi baru terpasang. |
 | `install_scripts/run_migration.py` | Runner CLI one-shot untuk eksekusi migrasi skema database Alembic (`flask_migrate.upgrade`) dan safety-net sync kolom/tabel baru pada fresh process. |
 | `install_scripts/gen_env.py` | Generator otomatis berkas konfigurasi `.env` dengan `SECRET_KEY` acak saat instalasi awal. |
 | `install_scripts/init_db.py` | Inisialisasi awal skema database SQLite dan akun admin default saat instalasi awal. |
@@ -79,7 +79,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `routes/auth/` | Autentikasi kasir & admin (`/kasir/auth/`) serta autentikasi member client PC dengan validasi API key (`/public/auth/`). |
 | `routes/backup/` | Manajemen backup database lokal SQLite, integrasi cloud backup, dan restore database aktif dari arsip (`POST /restore/<filename>`, admin-only, wajib `{"confirm": true}`). |
 | `routes/blackout/` | Endpoint penanganan toleransi pemulihan sesi pasca mati lampu. |
-| `routes/client/` | Handshake client agent PC, detak jantung (heartbeat), penerimaan status sesi, dan emergency login yang mewajibkan `emergency_token` server. `GET /api/v1/public/client/warnet` mengirim `qris_path` relatif (dipakai client) dan `qris_url` absolut (dari setting `app_public_url`, fallback `request.host_url`). |
+| `routes/client/` | Handshake client agent PC, detak jantung (heartbeat), penerimaan status sesi, dan emergency login yang diotorisasi token server **atau** IP asal PC terdaftar (`request.remote_addr == pc.ip_address`). `GET /api/v1/public/client/warnet` mengirim `qris_path` relatif (dipakai client), `qris_url` absolut (dari setting `app_public_url`, fallback `request.host_url`), dan announcement yang sudah disanitasi `sanitize_html`. |
 | `routes/dashboard/` | Data agregat statistik dashboard kasir, total pendapatan hari ini, dan summary PC. |
 | `routes/game/` | CRUD katalog game klien, uploader cover game, dan crop ikon otomatis. |
 | `routes/grup/` | Manajemen grup ruangan dan penetapan tarif bertingkat. |
@@ -96,7 +96,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `routes/report/` | Laporan pendapatan berkala, ekspor PDF/Excel kasir, dan rekonsiliasi keuangan. |
 | `routes/server_monitor/` | Status kesehatan internal server billing (CPU, RAM, Disk, CPU Temp Server). |
 | `routes/sesi/` | Siklus hidup sesi (buka sesi, tambah waktu, pindah PC, tutup sesi paksa, stop sementara). |
-| `routes/settings/` | Konfigurasi IP whitelist, token API, integrasi Cloudflare Tunnel, vacuum SQLite, dan manajemen pembaruan sistem (GitHub 1-Klik / manual upload via runner mandiri). `GET /api/v1/kasir/settings/` meredaksi kredensial untuk role kasir (hanya `payment_methods` & `vnc_password`). |
+| `routes/settings/` | Konfigurasi IP whitelist, token API, integrasi Cloudflare Tunnel, vacuum SQLite, dan manajemen pembaruan sistem (GitHub 1-Klik / manual upload via runner mandiri). `GET /api/v1/kasir/settings/` meredaksi kredensial untuk role kasir (hanya `payment_methods` & `vnc_password`). Unduhan database (`/download-db`) memakai snapshot SQLite Online Backup API + `PRAGMA integrity_check` (aman WAL, file sementara dihapus via `after_this_request`). Endpoint `/uninstall-token/client` hanya mengembalikan `uninstall_token` (token darurat server tidak lagi dibagikan ke client). |
 | `routes/shift/` | Buka shift, tutup shift kasir dengan hitung buta (*blind cash reconciliation*). |
 | `routes/tournament/` | Manajemen turnamen game, pendaftaran tim eSports, dan generator bagan bracket. |
 | `routes/tutorial/` | CMS panduan sistem, artikel tutorial, dan upload media rich-text editor. |
@@ -105,12 +105,12 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 
 #### D. Business Logic Services (`app/services/` — 31 Sub-Domain)
 Seluruh aturan bisnis murni berada di layer service:
-- `services/auth/`: Validasi kredensial, hashing password, dan manajemen token.
-- `services/backup/`: Backup otomatis rotasi harian dan restore snapshot SQLite; snapshot memakai SQLite Online Backup API + `PRAGMA integrity_check` (aman untuk mode WAL), path DB diturunkan dari engine aktif via `default_db_path()`, direktori backup dari `default_backup_dir()` (env `BACKUP_DIR` untuk test/sandbox), dan `restore_backup()` membuat backup pengaman lalu menulis ke DB aktif tanpa restart (lock bersama dengan proses backup).
-- `services/blackout/`: Logika pemulihan sesi berdasarkan threshold blackout terkonfigurasi; deteksi memakai `sesi.last_sync` yang kini tersimpan untuk sesi guest lewat heartbeat 30 detik.
+- `services/auth/`: Validasi kredensial, hashing password, dan manajemen token; login wajib token sesi saat logout, serta `login_throttle.py` membatasi 5 kegagalan per (IP, username) dalam 5 menit (HTTP 429).
+- `services/backup/`: Backup otomatis rotasi harian dan restore snapshot SQLite; snapshot memakai SQLite Online Backup API + `PRAGMA integrity_check` (aman untuk mode WAL), path DB diturunkan dari engine aktif via `default_db_path()`, direktori backup dari `default_backup_dir()` (env `BACKUP_DIR` untuk test/sandbox), dan `restore_backup()` membuat backup pengaman lalu menulis ke DB aktif tanpa restart (lock bersama dengan proses backup). Semua panggilan `urlopen` provider cloud memakai `timeout=30` agar job backup tidak menggantung.
+- `services/blackout/`: Logika pemulihan sesi berdasarkan threshold blackout terkonfigurasi; deteksi memakai `sesi.last_sync` yang kini tersimpan untuk sesi guest lewat heartbeat 30 detik, dan sisa waktu member yang disimpan memakai snapshot audit (`sisa_audit`), bukan jam berjalan.
 - `services/cache/`: Subsystem in-memory cache berkecepatan tinggi (rincian di Bagian 3); `ProcessMemoryStore` ber-TTL 300 detik dan `PCNetworkCacheStore` di-rebuild di luar lock; `UptimeMemoryStore` menyimpan flag billing per PC di RAM (dibaca jalur telemetri, bukan query sesi).
 - `services/client/`: Manajemen handshake, antrean perintah cepat client PC, dan heartbeat `sesi.last_sync` throttled 30 detik (`ClientService.HEARTBEAT_PERSIST_SECONDS`); menulis flag billing ke `UptimeMemoryStore` setiap polling status.
-- `services/cloudflare_tunnel/`: Integrasi zero-trust Cloudflare Ingress daemon.
+- `services/cloudflare_tunnel/`: Integrasi zero-trust Cloudflare Ingress daemon (log cloudflared ditulis ke `logs/` di samping biner).
 - `services/dashboard/`: Kalkulasi metrik visual denah meja dan kartu status PC; cache omzet hari ini 5 detik (`_get_omzet`, `clear_omzet_cache`) agar polling dashboard tidak mengulang agregasi.
 - `services/game/`: Manajemen file aset executable game dan integrasi launcher.
 - `services/grup/`: Logika validasi tarif grup meja.
@@ -118,7 +118,7 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/health/`: Guard sumber daya (`MIN_FREE_BYTES = 512 MB`) dan payload `GET /api/health` publik (`db`/`disk`/`backup`, tanpa angka/path; status `degraded` tetap HTTP 200).
 - `services/ip_whitelist/`: Proteksi akses kasir hanya dari subnet IP yang terdaftar.
 - `services/maintenance/`: Alur status tiket perbaikan PC.
-- `services/member/`: Transaksi saldo, potongan diskon tarif member, dan proteksi saldo minus; daftar member eager load grup & sesi.
+- `services/member/`: Transaksi saldo, potongan diskon tarif member, dan proteksi saldo minus; refund paket proporsional (`-round(jumlah * menit_dipotong / durasi)`); daftar member eager load grup & sesi.
 - `services/menu/`: Pengurangan stok bahan makanan/minuman otomatis saat transaksi POS terjadi.
 - `services/notes/`: Sinkronisasi catatan serah terima kasir.
 - `services/owner/`: Agregasi statistik finansial khusus peran owner/pemilik warnet.
@@ -128,14 +128,14 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/public/`: Format data tampilan TV billboard publik; payload TV di-cache 5 detik.
 - `services/report/`: Kompilasi laporan keuangan harian/bulanan kasir; relasi struk/menu di-eager load dan hitung sesi aktif memakai `SesiRepository.count_aktif()`.
 - `services/server_monitor/`: Sensor telemetri performa mesin server utama.
-- `services/sesi/`: Engine kalkulasi tarif per menit, sisa waktu billing, dan refund saldo.
+- `services/sesi/`: Engine kalkulasi tarif per menit, sisa waktu billing, dan refund saldo; refund paket guest proporsional terhadap menit yang benar-benar ditarik; commit sesi menangkap `IntegrityError` (unique index `uq_aktif_sesi_pc`) menjadi `ValueError("PC sedang dipakai")`.
 - `services/settings/`: Cache write-through pengaturan aplikasi, auto-generator random `vnc_password`, serta auto-generator random token emergency & uninstall (`secrets.token_urlsafe`, hanya mengisi bila kosong sehingga token lama di database tetap berlaku); cache miss negatif untuk setting yang tidak ada. Upload QRIS (`routes/settings/database_routes.py`) divalidasi Pillow, diperkecil maks 800 px, dan deskripsinya disimpan dengan nama bertimestamp.
-- `services/shift/`: Verifikasi selisih uang kas fisik kasir (blind reconciliation).
+- `services/shift/`: Verifikasi selisih uang kas fisik kasir (blind reconciliation); ringkasan shift mencakup transaksi semua kasir pada rentang waktu shift (tanpa filter `user_id`) dan tidak meng-clamp nilai negatif.
 - `services/tournament/`: Engine pairing babak dan alur skor turnamen eSports.
 - `services/transaksi/`: Pencatatan buku besar transaksi pembayaran.
 - `services/tutorial/`: Manajemen konten artikel tutorial CMS.
 - `services/user/`: Validasi RBAC hak akses pengguna.
-- `services/vnc/`: Broker koneksi TCP TightVNC dan pengelola proses Websockify untuk klien browser.
+- `services/vnc/`: Broker koneksi TCP TightVNC dan pengelola proses Websockify untuk klien browser; token proxy acak (`secrets.token_urlsafe(24)`), polling status non-blocking (`poll_vnc_result`, start membalas 202), dan reaper hanya mematikan proxy milik PC offline.
 
 #### E. Data Access Layer Repositories (`app/repositories/` — 14 Sub-Domain)
 Pemisahan query ORM mentah dari service:
@@ -145,7 +145,7 @@ Pemisahan query ORM mentah dari service:
 - `middleware/auth.py`: Decorator `@login_required`, `@admin_required`, `@shift_required`.
 - `middleware/ip_whitelist_middleware.py`: Filter akses IP subnet warnet.
 - `utils/constants.py`: Konstanta global durasi, status sesi, dan kode error.
-- `utils/helpers.py`: Response formatter JSON terstandar (`success_response`, `error_response`) dan `natural_sort_key` bersama untuk pengurutan kode PC.
+- `utils/helpers.py`: Response formatter JSON terstandar (`success_response`, `error_response`) dan `natural_sort_key` bersama untuk pengurutan kode PC; `SafeHTMLParser`/`sanitize_html` memakai allowlist protokol (`http://`, `https://`, `mailto:`, `/`, `#`, `data:image/`) setelah normalisasi karakter kontrol.
 - `utils/logger.py`: Centralized audit logger ke file JSON `logs/warnet.log` (rotasi gzip); tanpa `print` per entri, dan `read_logs` hanya membaca ekor file. Tidak ada penulisan audit ke SQLite.
 - `utils/mikrotik_api.py`: Klien API RouterOS MikroTik berbasis socket.
 - `utils/pdf_helper.py`: Generator laporan PDF struk kasir & rekap keuangan (ReportLab).
@@ -176,12 +176,12 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 
 | Direktori / Biner | Tanggung Jawab & Cakupan |
 |---|---|
-| `TMBillingTauri/` | Source code klien utama: UI HTML/CSS kiosk lockscreen (`src/kiosk/`) & floating overlay bar (`src/overlay/`), Rust backend (`src-tauri/`) dengan Win32 low-level hooks penonaktifan tombol sistem Windows. `src/main.js` memegang satu-satunya loop konfigurasi warnet (60 dtk sehat / 5 dtk gagal, event `tm:refresh-config`), QRIS diunduh ke data URI hanya saat `qris_path` berubah dan disimpan di RAM (`src-tauri/src/utils/qris_memory.rs`, tanpa cache disk). |
+| `TMBillingTauri/` | Source code klien utama: UI HTML/CSS kiosk lockscreen (`src/kiosk/`) & floating overlay bar (`src/overlay/`), Rust backend (`src-tauri/`) dengan Win32 low-level hooks penonaktifan tombol sistem Windows. `src/main.js` memegang satu-satunya loop konfigurasi warnet (60 dtk sehat / 5 dtk gagal, event `tm:refresh-config`), QRIS diunduh ke data URI hanya saat `qris_path` berubah dan disimpan di RAM (`src-tauri/src/utils/qris_memory.rs`, tanpa cache disk). Kredensial darurat dibaca dari registry/`config.ini`; bila kosong fitur darurat offline nonaktif (fail-closed, tanpa fallback default). |
 | `MGCTM/` | Watchdog daemon C++ yang bertugas mengawasi proses `TMBilling.exe` dan memulihkan aplikasi secara otomatis jika dihentikan paksa. |
 | `mtm/` | Auxiliary watchdog & resilience guard pelindung integritas service klien. |
 | `TMBilling_Monitor/` | Daemon telemetri Rust (`src/main.rs`) & helper C# `HardwareHelper.exe` berbasis kernel driver LibreHardwareMonitor dengan sinkronisasi startup cold boot (pengumpul metrik CPU/GPU load & temp, RAM, active window, native Win32 NIC speed). |
 | `TMBilling_Uninstaller/` | Program uninstaller aman yang membersihkan hash registry, Win32 service, dan konfigurasi klien. |
-| `Deploy/` | Skrip automasi firewall Windows (`allow_firewall.bat`), skrip sync registry, installer & uninstaller biner lengkap (`install.bat` / `uninstall.bat` untuk fresh install & clean update), dan TightVNC server loopback port 5900. |
+| `Deploy/` | Skrip automasi firewall Windows (`allow_firewall.bat`), skrip sync registry, installer & uninstaller biner lengkap (`install.bat` / `uninstall.bat` untuk fresh install & clean update), dan TightVNC server loopback port 5900. `install.bat` membangkitkan password admin darurat acak (dicetak ke konsol) bila operator mengosongkannya. |
 
 ---
 
@@ -219,7 +219,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 |---|---|---|---|
 | **Blackout Recovery** | `modules/blackout.js` | `routes/blackout/`, `services/blackout/` (deteksi via `sesi.last_sync` yang di-heartbeat tiap 30 detik) | `Sesi`, `PCUptimeLog` |
 | **Process Monitor & Task Killer** | `modules/dashboard/dashboard_process_monitor.js` | `routes/monitor/monitor_routes.py`, `services/cache/telemetry_store.py` | `PCProcess`, in-memory store |
-| **VNC Remote Control & Clipboard** | `modules/remote.js`, `core/vnc_client.js` | `routes/vnc/vnc_routes.py`, `services/vnc/`, `services/settings/` (random VNC password & 5m periodic orphaned proxy reaper) | `PC`, `Settings` |
+| **VNC Remote Control & Clipboard** | `modules/remote.js`, `core/vnc_client.js` | `routes/vnc/vnc_routes.py` (semua route `@login_required` + `@admin_required`, start non-blocking 202), `services/vnc/` (`poll_vnc_result`, token acak, reaper hanya PC offline) | `PC`, `Settings` |
 | **POS Kantin & Billing FnB** | `modules/menu.js`, `modules/struk.js` | `routes/menu/menu_routes.py`, `services/menu/` (anti-skip monotonic receipt generator, local timezone boundaries, stok atomik & arsip satu query `GROUP BY`) | `MenuItem`, `TransaksiMenu` |
 | **Hardware Baseline Anti-Maling** | `modules/hardware_checker.js` | `routes/monitor/monitor_routes.py` (`GET /api/v1/kasir/monitor/hardware/<pc_id>` untuk modal detail), `routes/hardware/`, `services/hardware/` | `HardwareMonitor` |
 | **Shift Kasir (Blind Cash)** | `modules/shift.js` | `routes/shift/shift_routes.py`, `services/shift/` | `ShiftRecord`, `Transaksi` |
@@ -230,7 +230,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Turnamen eSports & Bracket** | `modules/tournament.js` | `routes/tournament/`, `services/tournament/` | `Tournament`, `TournamentMatch` |
 | **Backup & Restore Database** | `modules/settings/settings_general.js` (`restoreBackup`) | `routes/backup/backup_routes.py`, `services/backup/backup_service.py` (snapshot Online Backup API + integrity check; restore via tombol Restore di daftar backup, wajib konfirmasi; `default_backup_dir()` menghormati env `BACKUP_DIR` untuk sandbox/test) | `Settings` (provider cloud) |
 | **Auto-Update & Migrasi Skema** | `modules/settings/migration.js` | `routes/settings/migration_routes.py` (anti-SSRF whitelist & active session count), `install_scripts/updater.bat` | Alembic skema, SQLite backups |
-| **Client Security & API Key Guard** | `modules/dashboard/dashboard_compact.js` | `routes/auth/auth_routes.py`, `routes/client/client_routes.py`, `app/__init__.py:TMBillingCSRFProtect` (Bearer client API key validation & constant-time comparison, emergency login wajib `emergency_token` via `hmac.compare_digest`) | `PC`, `ApiKeyMismatchStore` |
+| **Client Security & API Key Guard** | `modules/dashboard/dashboard_compact.js` | `routes/auth/auth_routes.py`, `routes/client/client_routes.py`, `app/__init__.py:TMBillingCSRFProtect` (Bearer client API key validation & constant-time comparison, emergency login diotorisasi token server **atau** IP asal PC terdaftar via `hmac.compare_digest`) | `PC`, `ApiKeyMismatchStore` |
 | **Receipt / Nota Anti-Collision Generator** | `modules/struk.js` | `services/transaksi/transaksi_service.py`, `services/menu/menu_service.py` (atomic microsecond timestamping + sequential fallback collision-free numbering) | `Transaksi`, `TransaksiMenu` |
 | **Katalog Game & Crop Cover** | `modules/game/` | `routes/game/game_routes.py`, `services/game/` (katalog publik mendukung `limit`/`offset` opsional) | `Game`, `GameKategori` |
 | **Tiket Servis & Perawatan PC** | `modules/maintenance/`, `modules/laporan_maintenance/` | `routes/maintenance/maintenance_routes.py`, `services/maintenance/` | `MaintenanceTicket` |

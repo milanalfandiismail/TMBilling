@@ -148,14 +148,15 @@ def admin_login():
 @client_api_bp.route("/emergency-login", methods=["POST"])
 @api_key_required
 def emergency_login():
-    """Login emergency dari PC client; wajib menyertakan token server yang sah."""
+    """Login emergency dari PC client; token server atau IP PC asal yang sah."""
     data = request.get_json() or {}
     try:
         result = ClientService.emergency_login(
             ip_address=data.get("ip_address"),
             mac_address=data.get("mac_address", "").upper().strip(),
             username=data.get("username", "SYSTEM").strip(),
-            token=data.get("token")
+            token=data.get("token"),
+            request_ip=request.remote_addr
         )
         return jsonify(result), 200
     except PermissionError as e:
@@ -219,6 +220,9 @@ def get_warnet_config():
         
         title = SettingsService.get("warnet_title", "TMBilling")
         announcement = SettingsService.get("warnet_announcement", "")
+        if announcement:
+            from app.utils.helpers import sanitize_html
+            announcement = sanitize_html(announcement)
         qris_path = SettingsService.get("qris_image_url", "/static/uploads/qris/default_qris.png")
         if not qris_path.startswith('/'):
             qris_path = f"/{qris_path.lstrip('/')}"

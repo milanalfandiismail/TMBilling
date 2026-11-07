@@ -26,19 +26,26 @@ def login():
     username = data.get("username", "").strip()
     password = data.get("password", "")
 
+    from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+    from app.services.auth import login_throttle
+
+    client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
+    throttle_key = (client_ip, username)
+    if login_throttle.is_blocked(throttle_key):
+        return jsonify({"error": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}), 429
+
     # Validasi kredensial dulu (tanpa log) untuk dapatkan role
     pre_user = AuthKasirService.validate_credentials_only(username, password)
     if not pre_user:
+        login_throttle.record_failure(throttle_key)
         return jsonify({"error": "Username atau password salah"}), 401
 
     # Non-admin harus login dari IP whitelisted (kecuali bypass token)
     if pre_user.role != "admin":
         try:
-            from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
             auth_flag = session.get("ip_wh_authenticated")
             token_ver = session.get("ip_wh_token_version")
             if IpWhitelistService.is_enabled() and not IpWhitelistService.is_session_token_valid(auth_flag, token_ver):
-                client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
                 if not IpWhitelistService.is_ip_whitelisted(client_ip):
                     write_log("LOGIN_GAGAL",
                               f"Username:{username} - IP {client_ip} tidak di whitelist",
@@ -55,19 +62,7 @@ def login():
 
     try:
         result = AuthKasirService.login(username, password)
-
-        role = result["user"]["role"]
-
-        # Admin login dari IP baru → auto-add ke whitelist
-        if role == "admin":
-            try:
-                from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
-                client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
-
-                if IpWhitelistService.is_enabled() and not IpWhitelistService.is_ip_whitelisted(client_ip):
-                    IpWhitelistService.add(client_ip, 'Auto (login)')
-            except Exception:
-                pass
+        login_throttle.clear(throttle_key)
 
         # Inisialisasi Session Flask
         session.permanent = True

@@ -115,12 +115,15 @@ class MenuRepository:
         return TransaksiMenu.query.filter(TransaksiMenu.no_nota.like(f"{prefix}%")).count()
 
     @staticmethod
-    def get_last_nota_today(date_str):
-        """Ambil transaksi menu terakhir hari ini berdasarkan format nota TMM-YYYYMMDD-."""
+    def get_max_nota_seq(date_str):
+        """Ambil nomor urut nota menu tertinggi hari ini (TMM-YYYYMMDD-NNN) dalam satu query."""
         prefix = f"TMM-{date_str}-"
-        return TransaksiMenu.query.filter(
-            TransaksiMenu.no_nota.like(f"{prefix}%")
-        ).order_by(TransaksiMenu.no_nota.desc()).first()
+        upper = prefix[:-1] + chr(ord(prefix[-1]) + 1)
+        seq = db.func.cast(db.func.substr(TransaksiMenu.no_nota, len(prefix) + 1), db.Integer)
+        return db.session.query(db.func.max(seq)).filter(
+            TransaksiMenu.no_nota >= prefix,
+            TransaksiMenu.no_nota < upper,
+        ).scalar() or 0
 
     @staticmethod
     def _apply_kasir_filter(query, kasir_id):

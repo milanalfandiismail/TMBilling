@@ -2,12 +2,13 @@
 from flask import Blueprint, jsonify, session
 from app.services import VNCService
 from app.services.settings.settings_service import SettingsService
-from app.middleware.auth import admin_required
+from app.middleware.auth import admin_required, login_required
 from app.utils.logger import write_log
 
 vnc_api_bp = Blueprint("vnc", __name__)
 
 @vnc_api_bp.route("/status", methods=["GET"])
+@login_required
 @admin_required
 def get_vnc_status():
     """Mengecek status VNC Server dan Websockify daemon."""
@@ -24,6 +25,7 @@ def get_vnc_status():
     })
 
 @vnc_api_bp.route("/start", methods=["POST"])
+@login_required
 @admin_required
 def start_vnc_proxy():
     """Menyalakan proxy Websockify jika VNC Server sudah aktif."""
@@ -84,33 +86,18 @@ def handle_start_vnc_client(pc_id):
         # Reset ready flag
         VNCClientProxyService.reset_vnc_status(pc.id)
         
-        # Queue command ke PC
+        # Queue command ke PC; jangan blokir request menunggu agent (bisa 25 detik)
         cmd_payload = {"type": "vnc_start", "vnc_password": vnc_password}
         ClientService.queue_fast_command(pc.id, cmd_payload)
         write_log("VNC_COMMAND_QUEUED", f"Perintah VNC START masuk antrean untuk PC {pc.kode}", detail_json={"pc_id": pc.id})
-        
-        # Tunggu ready flag dari agent
-        success, error_msg = VNCClientProxyService.wait_vnc_ready(pc.id, timeout=25.0)
-        if not success:
-            write_log("VNC_WAIT_TIMEOUT", f"Gagal mengaktifkan VNC untuk PC {pc.kode} (ID {pc.id}): {error_msg}")
-            return jsonify({"success": False, "error": f"PC {pc.kode} gagal mengaktifkan VNC: {error_msg}"}), 408
-            
-        # Jalankan proxy server
-        success, msg, port, token = VNCClientProxyService.start_proxy(pc.id, pc.ip_address)
-        if not success:
-            return jsonify({"success": False, "error": f"Gagal mengaktifkan proxy server: {msg}"}), 500
-            
-        operator = session.get("kasir_username", "admin")
-        write_log("VNC_CLIENT_START", f"Proxy VNC client PC {pc.kode} dimulai pada port {port}", user=operator, detail_json={"pc_kode": pc.kode, "port": port, "token": token})
-        
+
         return jsonify({
             "success": True,
-            "message": "Remote control berhasil disiapkan",
-            "port": port,
-            "token": token,
+            "pending": True,
+            "message": "Perintah VNC dikirim, menunggu respon PC",
             "vnc_password": vnc_password,
             "pc_kode": pc.kode
-        }), 200
+        }), 202
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -138,39 +125,59 @@ def handle_stop_vnc_client(pc_id):
 
 
 def handle_status_vnc_client(pc_id):
-    """Mendapatkan status proxy VNC aktif untuk PC client."""
+    """Status proxy VNC; bila agent baru siap, proxy dinyalakan di sini (non-blocking)."""
     try:
         from app.services.vnc.vnc_service import VNCClientProxyService
+        from app.repositories import PCRepository
+
         proxy = VNCClientProxyService.get_proxy(pc_id)
+        if not proxy:
+            state, error_msg = VNCClientProxyService.poll_vnc_result(pc_id)
+            if state == "error":
+                return jsonify({"success": False, "error": error_msg}), 408
+            if state == "ready":
+                pc = PCRepository.get_by_id(pc_id)
+                if not pc:
+                    return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+                success, msg, port, token = VNCClientProxyService.start_proxy(pc.id, pc.ip_address)
+                if not success:
+                    return jsonify({"success": False, "error": f"Gagal mengaktifkan proxy server: {msg}"}), 500
+                operator = session.get("kasir_username", "admin")
+                write_log("VNC_CLIENT_START", f"Proxy VNC client PC {pc.kode} dimulai pada port {port}", user=operator, detail_json={"pc_kode": pc.kode, "port": port, "token": token})
+                proxy = VNCClientProxyService.get_proxy(pc_id)
+
         if proxy:
             return jsonify({
                 "success": True,
                 "active": True,
                 "port": proxy["port"],
+                "token": proxy.get("token"),
                 "client_ip": proxy["client_ip"]
             }), 200
-        else:
-            return jsonify({
-                "success": True,
-                "active": False
-            }), 200
+        return jsonify({
+            "success": True,
+            "active": False
+        }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
 
 @vnc_api_bp.route("/client/<int:pc_id>/start", methods=["POST"])
+@login_required
 @admin_required
 def start_vnc_client_route(pc_id):
     return handle_start_vnc_client(pc_id)
 
 
 @vnc_api_bp.route("/client/<int:pc_id>/stop", methods=["POST"])
+@login_required
 @admin_required
 def stop_vnc_client_route(pc_id):
     return handle_stop_vnc_client(pc_id)
 
 
 @vnc_api_bp.route("/client/<int:pc_id>/status", methods=["GET"])
+@login_required
 @admin_required
 def status_vnc_client_route(pc_id):
     return handle_status_vnc_client(pc_id)

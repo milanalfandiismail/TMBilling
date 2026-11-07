@@ -8,18 +8,18 @@ def test_port_allocation_within_range():
 
 def test_readiness_flag_signaling():
     pc_id = 9991
-    success, err = VNCClientProxyService.wait_vnc_ready(pc_id, timeout=0.1)
-    assert success is False
-    assert err is not None
+    state, err = VNCClientProxyService.poll_vnc_result(pc_id)
+    assert state == "none"
+    assert err is None
     
     VNCClientProxyService.set_vnc_ready(pc_id, True)
-    success, err = VNCClientProxyService.wait_vnc_ready(pc_id, timeout=0.5)
-    assert success is True
+    state, err = VNCClientProxyService.poll_vnc_result(pc_id)
+    assert state == "ready"
     assert err is None
     
     VNCClientProxyService.set_vnc_ready(pc_id, False, "Gagal koneksi")
-    success, err = VNCClientProxyService.wait_vnc_ready(pc_id, timeout=0.1)
-    assert success is False
+    state, err = VNCClientProxyService.poll_vnc_result(pc_id)
+    assert state == "error"
     assert err == "Gagal koneksi"
 
 def test_proxy_lifecycle_tracking():

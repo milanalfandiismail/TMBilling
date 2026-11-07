@@ -100,6 +100,7 @@ def run():
                     if "sesi_asal_id" not in sesi_cols:
                         conn.execute(text("ALTER TABLE sesi ADD COLUMN sesi_asal_id INTEGER REFERENCES sesi(id)"))
                     conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_aktif_sesi_member ON sesi (member_id) WHERE status = 'aktif' AND member_id IS NOT NULL"))
+                    conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_aktif_sesi_pc ON sesi (pc_id) WHERE status = 'aktif' AND pc_id IS NOT NULL"))
                     conn.commit()
 
             if inspector.has_table("shift_record"):

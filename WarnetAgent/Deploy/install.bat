@@ -145,8 +145,15 @@ if "%INPUT_API_KEY%"=="" set INPUT_API_KEY=%DEFAULT_API_KEY%
 set /p INPUT_ADMIN_USER="Masukkan Username Admin Darurat [Default: TMBilling]: "
 if "%INPUT_ADMIN_USER%"=="" set INPUT_ADMIN_USER=TMBilling
 
-set /p INPUT_ADMIN_PASS="Masukkan Password Admin Darurat [Default: TM123qaz!@#]: "
-if "%INPUT_ADMIN_PASS%"=="" set INPUT_ADMIN_PASS=TM123qaz!@#
+set INPUT_ADMIN_PASS=
+set /p INPUT_ADMIN_PASS="Masukkan Password Admin Darurat [kosong = dibuat acak]: "
+if "%INPUT_ADMIN_PASS%"=="" set INPUT_ADMIN_PASS=TM%RANDOM%%RANDOM%%RANDOM%%RANDOM%
+if "%INPUT_ADMIN_PASS%"=="" goto :pass_ready
+echo.
+echo    [!] Password Admin Darurat (SIMPAN, dipakai saat server mati):
+echo        %INPUT_ADMIN_PASS%
+echo.
+:pass_ready
 
 echo.
 echo    Menulis konfigurasi server dan mengamankan kredensial...

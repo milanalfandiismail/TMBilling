@@ -297,12 +297,15 @@ class TransaksiRepository:
         return query.scalar() or 0
 
     @staticmethod
-    def get_last_nota_today(date_str):
-        """Ambil transaksi terakhir hari ini berdasarkan format nota TM-YYYYMMDD-."""
+    def get_max_nota_seq(date_str):
+        """Ambil nomor urut nota tertinggi hari ini (TM-YYYYMMDD-NNN) dalam satu query."""
         prefix = f"TM-{date_str}-"
-        return Transaksi.query.filter(
-            Transaksi.no_nota.like(f"{prefix}%")
-        ).order_by(Transaksi.no_nota.desc()).first()
+        upper = prefix[:-1] + chr(ord(prefix[-1]) + 1)
+        seq = db.func.cast(db.func.substr(Transaksi.no_nota, len(prefix) + 1), db.Integer)
+        return db.session.query(db.func.max(seq)).filter(
+            Transaksi.no_nota >= prefix,
+            Transaksi.no_nota < upper,
+        ).scalar() or 0
 
     # get_income_by_type dipindah ke ReportService (Logic Mapping)
 

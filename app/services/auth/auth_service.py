@@ -159,7 +159,7 @@ class AuthService:
         if not sesi:
             raise ValueError("Tidak ada sesi aktif")
             
-        if token_sesi and sesi.token_sesi != token_sesi:
+        if not token_sesi or sesi.token_sesi != token_sesi:
             raise ValueError("Token salah")
 
         # Sinkronisasi sisa saldo / kuota

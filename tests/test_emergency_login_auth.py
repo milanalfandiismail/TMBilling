@@ -57,13 +57,34 @@ def test_emergency_login_rejects_missing_token(app_client):
             "username": "ATTACKER",
         },
         headers={"X-Client-Key": "test-client-key"},
-        environ_base={"REMOTE_ADDR": "192.168.1.95"},
+        environ_base={"REMOTE_ADDR": "192.168.1.99"},
     )
 
     assert response.status_code == 403
     data = response.get_json()
     assert data["success"] is False
     assert "token" in data["error"].lower()
+
+
+def test_emergency_login_allows_same_ip_without_token(app_client):
+    """Client asli dari IP PC terdaftar boleh emergency login tanpa token server."""
+    app, client = app_client
+    with app.app_context():
+        SettingsService.get_or_create_emergency_token()
+
+    response = client.post(
+        "/api/v1/public/client/emergency-login",
+        json={
+            "ip_address": "192.168.1.95",
+            "mac_address": "AA:BB:CC:DD:EE:95",
+            "username": "SYSTEM",
+        },
+        headers={"X-Client-Key": "test-client-key"},
+        environ_base={"REMOTE_ADDR": "192.168.1.95"},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["success"] is True
 
 
 def test_emergency_login_succeeds_with_valid_token(app_client):

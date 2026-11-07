@@ -173,7 +173,7 @@ class CloudflareTunnelService:
     def _do_start_process(cls, token):
         try:
             cmd = [cls.BIN_PATH, "tunnel", "--no-autoupdate", "run", "--token", token]
-            log_dir = os.path.join(cls.TUNNEL_DIR, "..", "logs")
+            log_dir = os.path.join(os.path.dirname(cls.BIN_PATH), "logs")
             os.makedirs(log_dir, exist_ok=True)
             log_file_path = os.path.join(log_dir, "cloudflared.log")
             if os.path.exists(log_file_path) and os.path.getsize(log_file_path) > 5 * 1024 * 1024:

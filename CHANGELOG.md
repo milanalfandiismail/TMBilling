@@ -8,9 +8,23 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+### Remediasi Audit Keamanan & Integritas Finansial (2026-11-07)
+- **Token Darurat Tidak Lagi Bocor ke Client**: `GET /api/v1/kasir/settings/uninstall-token/client` hanya mengembalikan `uninstall_token`; `emergency_token` server tidak pernah dikirim lagi. Emergency login diterima bila token server valid **atau** IP asal request sama dengan `ip_address` PC terdaftar (`hmac.compare_digest`).
+- **Kredensial Darurat Fail-Closed**: Semua fallback `TMBilling` / `TM123qaz!@#` dihapus dari Tauri, MGCTM, mtm, TMonitor, dan Uninstaller serta `config.ini` dikosongkan. Jalur darurat offline hanya aktif bila operator mengisinya; `install.bat` membangkitkan password acak 24 karakter dan mencetaknya ke konsol bila prompt dikosongkan.
+- **Refund Paket Proporsional**: Refund guest dan member dihitung dari menit yang benar-benar ditarik (`-round(jumlah * menit_dipotong / durasi)`), bukan harga penuh paket; durasi 0 ditolak.
+- **Satu Sesi Aktif per PC**: Migrasi `uq_aktif_sesi_pc` (unique index parsial `pc_id` WHERE `status='aktif'`) mencegah dua sesi guest pada satu meja; `IntegrityError` dipetakan menjadi `ValueError("PC sedang dipakai")`.
+- **Nomor Nota Anti-Loop**: Generator nota memakai `MAX(CAST(substr(no_nota, ...) AS INTEGER))` (`get_max_nota_seq`) sehingga tidak lagi menjalankan loop query saat nota terakhir terhapus.
+- **Unduhan Database Aman WAL**: `/settings/backup/download` memakai snapshot SQLite Online Backup API + `PRAGMA integrity_check` ke file sementara yang dihapus via `after_this_request`.
+- **Update Server Atomik**: `extract_update.py` mengekstrak ke `instance/staging_update` lalu menukar berkas per entri top-level dengan `os.replace`; kegagalan memicu rollback dari `instance/rollback_<timestamp>`.
+- **XSS Pengumuman Kiosk**: `SafeHTMLParser` memakai allowlist protokol (`http://`, `https://`, `mailto:`, `/`, `#`, `data:image/`) setelah normalisasi karakter kontrol; sanitasi dijalankan saat simpan dan saat `get_warnet_config`.
+- **Login Throttle & Logout Ber-token**: `services/auth/login_throttle.py` membatasi 5 kegagalan per (IP, username) dalam 5 menit (HTTP 429) dan auto-whitelist IP admin dihapus; logout menolak request tanpa token sesi.
+- **VNC Non-Blocking & Terproteksi**: Semua route VNC wajib login + admin, start membalas 202 dengan polling `poll_vnc_result`, token proxy acak `secrets.token_urlsafe(24)`, reaper hanya mematikan proxy PC offline.
+- **Ringkasan Shift Lintas Kasir**: Filter `user_id`/`kasir_id` dihapus dan clamp `max(0, ...)` dihilangkan sehingga selisih negatif (refund berlebih) terlihat; blackout menyimpan `sisa_audit`, bukan jam berjalan.
+- **Job Cloud & Tunnel**: 11 panggilan `urlopen` provider backup memakai `timeout=30`; direktori log `cloudflared` diperbaiki (sebelumnya `TUNNEL_DIR` tidak terdefinisi).
+
 ### Keamanan & Perbaikan Bug
 - **Redaksi Setting Sensitif**: `GET /api/v1/kasir/settings/` kini hanya mengembalikan `payment_methods` dan `vnc_password` untuk role kasir; kredensial lain (`client_api_key`, `mikrotik_password`, token, kredensial backup) khusus role admin.
-- **Emergency Login Wajib Token**: Endpoint emergency login menolak request tanpa `emergency_token` server yang sah; bypass pemeriksaan IP loopback (yang tidak bermakna di balik Cloudflare Tunnel) dihapus. Client Tauri mengirim `emergency_token` pada body request.
+- **Emergency Login Berbasis Token atau IP**: Endpoint emergency login menolak request tanpa `emergency_token` server yang sah **kecuali** berasal dari IP PC terdaftar; bypass loopback dihapus. Client Tauri tidak lagi mengirim token server (diperbarui oleh remediasi 2026-11-07).
 - **Token Klien Tanpa Default Hardcoded**: Token emergency & uninstall kini dibuat acak (`secrets.token_urlsafe(32)`) dan disimpan di database. Nilai lama di database tetap dipakai apa adanya.
 - **Atribusi Transaksi**: Operator tak dikenal tidak lagi dibebankan ke admin pertama; checkout kantin menolak kasir yang tidak valid.
 - **Ringkasan Shift Read-Only**: `GET /summary` tidak lagi menulis ke database; force close menyimpan `uang_fisik`/`selisih` kosong (frontend menampilkan `-` / `(Penutupan Paksa)`) alih-alih menganggap PAS, dan struk handover mencetak `BELUM DIHITUNG`.

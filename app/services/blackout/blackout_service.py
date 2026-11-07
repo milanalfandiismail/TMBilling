@@ -48,8 +48,8 @@ class BlackoutService:
             sisa_audit = sesi.hitung_sisa_pada(waktu_referensi)
             
             # 3. Proses DB secara atomik (3-Layer Arch)
-            if sesi.tipe == "member" and sesi.member and sisa_dashboard is not None:
-                sesi.member.waktu_tersimpan = max(0, sisa_dashboard)
+            if sesi.tipe == "member" and sesi.member:
+                sesi.member.waktu_tersimpan = max(0, sisa_audit)
                 db.session.add(sesi.member)
             
             sesi.is_blackout_suspect = True

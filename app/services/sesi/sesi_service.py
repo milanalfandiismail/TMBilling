@@ -71,7 +71,11 @@ class SesiService:
         db.session.flush() # Ambil ID sesi untuk transaksi
         transaksi.sesi_id = sesi.id
         db.session.add(transaksi)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            raise ValueError("PC sedang dipakai")
 
         detail_guest = {
             "nominal_pembayaran": paket.harga,
@@ -147,7 +151,11 @@ class SesiService:
             waktu_mulai_sesi=now_local()
         )
         db.session.add(sesi_baru)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            raise ValueError("PC sedang dipakai")
         return sesi_baru
 
 
@@ -519,7 +527,9 @@ class SesiService:
             raise ValueError("Transaksi tidak valid atau sudah direfund")
 
         durasi = transaksi.menit or (transaksi.paket.durasi_menit if transaksi.paket else 0)
-        
+        if durasi <= 0:
+            raise ValueError("Durasi paket tidak valid untuk refund")
+
         # Validasi apakah durasi beli guest mencukupi untuk dikurangi
         sisa_menit = sesi.sisa_menit()
         if sisa_menit <= 0:
@@ -532,8 +542,8 @@ class SesiService:
         # Potong durasi beli guest
         sesi.durasi_beli_menit -= durasi_dikurangi
         
-        # Potong juga total bayar
-        refund_jumlah = -(transaksi.jumlah)
+        # Refund proporsional: hanya menit yang benar-benar ditarik kembali yang diuangkan
+        refund_jumlah = -round(transaksi.jumlah * durasi_dikurangi / durasi)
         sesi.total_bayar = max(0, sesi.total_bayar + refund_jumlah)
         
         transaksi.is_refunded = True

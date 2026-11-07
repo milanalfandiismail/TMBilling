@@ -161,9 +161,8 @@ class VNCClientProxyService:
     _active_proxies = {}  # pc_id -> {port, client_ip, token, started_at}
     _proxies_lock = threading.Lock()
     
-    _vnc_events = {}
-    _vnc_events_lock = threading.Lock()
     _vnc_status = {}  # pc_id -> {"ready": bool, "error": str}
+    _vnc_status_lock = threading.Lock()
     
     @classmethod
     def allocate_port(cls):
@@ -177,7 +176,8 @@ class VNCClientProxyService:
             return False, f"Gagal mengaktifkan daemon websockify terpusat: {msg}", None, None
             
         try:
-            token = f"client_{pc_id}"
+            import secrets
+            token = secrets.token_urlsafe(24)
             # Daftarkan token target client_ip:5900
             VNCService.set_token(token, client_ip, 5900)
             
@@ -229,51 +229,34 @@ class VNCClientProxyService:
 
     @classmethod
     def reset_vnc_status(cls, pc_id):
-        with cls._vnc_events_lock:
+        with cls._vnc_status_lock:
             cls._vnc_status.pop(pc_id, None)
-            if pc_id in cls._vnc_events:
-                cls._vnc_events[pc_id].clear()
-            else:
-                cls._vnc_events[pc_id] = threading.Event()
 
     @classmethod
     def set_vnc_ready(cls, pc_id, ready=True, error_msg=None):
-        with cls._vnc_events_lock:
+        with cls._vnc_status_lock:
             cls._vnc_status[pc_id] = {"ready": ready, "error": error_msg}
-            if pc_id not in cls._vnc_events:
-                cls._vnc_events[pc_id] = threading.Event()
-            cls._vnc_events[pc_id].set()
 
     @classmethod
-    def wait_vnc_ready(cls, pc_id, timeout=25.0):
-        event = None
-        with cls._vnc_events_lock:
-            if pc_id not in cls._vnc_events:
-                cls._vnc_events[pc_id] = threading.Event()
-            event = cls._vnc_events[pc_id]
-            
-        success = event.wait(timeout)
-        
-        status = None
-        with cls._vnc_events_lock:
-            cls._vnc_events.pop(pc_id, None)
+    def poll_vnc_result(cls, pc_id):
+        """Ambil hasil non-blocking dari agent.
+
+        Returns:
+            tuple: ("none"|"ready"|"error", pesan_error)
+        """
+        with cls._vnc_status_lock:
             status = cls._vnc_status.pop(pc_id, None)
-            
-        if not success:
-            return False, "PC client tidak merespon dalam batas waktu."
-            
-        if status and not status["ready"]:
-            return False, status.get("error") or "Gagal mengaktifkan VNC di client."
-            
-        return True, None
+        if not status:
+            return "none", None
+        if not status.get("ready"):
+            return "error", status.get("error") or "Gagal mengaktifkan VNC di client."
+        return "ready", None
 
     @classmethod
     def cleanup_stale_proxies(cls, max_idle_seconds=600):
-        now = time.time()
         stale_pc_ids = []
         with cls._proxies_lock:
             for pc_id, info in cls._active_proxies.items():
-                is_stale_time = (now - info.get("started_at", now)) > max_idle_seconds
                 is_pc_offline = False
                 try:
                     from app.services.cache import OnlineStatusStore
@@ -281,7 +264,7 @@ class VNCClientProxyService:
                 except Exception:
                     pass
 
-                if is_stale_time or is_pc_offline:
+                if is_pc_offline:
                     stale_pc_ids.append(pc_id)
                     
         count = 0

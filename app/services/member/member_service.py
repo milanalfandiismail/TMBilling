@@ -320,6 +320,8 @@ class MemberService:
             raise ValueError("Transaksi tidak valid atau sudah direfund")
 
         durasi = transaksi.menit or (transaksi.paket.durasi_menit if transaksi.paket else 0)
+        if durasi <= 0:
+            raise ValueError("Durasi paket tidak valid untuk refund")
         
         if member.waktu_tersimpan <= 0:
             raise ValueError("Saldo waktu member sudah habis. Paket tidak dapat direfund.")
@@ -327,7 +329,10 @@ class MemberService:
         kadaluarsa_hari = transaksi.paket.kadaluarsa_hari if transaksi.paket else 0
         
         sebelum = member.waktu_tersimpan
-        waktu_baru = max(0, sebelum - durasi)
+        # Refund proporsional: yang ditarik hanya menit yang masih ada di saldo
+        menit_dipotong = min(durasi, sebelum)
+        waktu_baru = sebelum - menit_dipotong
+        refund_jumlah = -round(transaksi.jumlah * menit_dipotong / durasi)
 
         member.waktu_tersimpan = waktu_baru
         transaksi.is_refunded = True
@@ -352,8 +357,8 @@ class MemberService:
             member_id=member.id,
             paket_id=transaksi.paket_id,
             jenis="refund_paket",
-            jumlah=-(transaksi.jumlah),
-            menit=-(durasi),
+            jumlah=refund_jumlah,
+            menit=-(menit_dipotong),
             keterangan=f"Refund paket '{transaksi.paket.nama if transaksi.paket else '?'}'",
             no_nota=TransaksiService.generate_nota(),
             user_id=TransaksiService.get_user_id(operator),

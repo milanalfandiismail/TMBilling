@@ -48,8 +48,8 @@ def test_vnc_ready_endpoint(client_app):
     headers = {"X-Client-Key": "TM2026QWERTY-api-key"}
     res = client.post("/api/v1/public/client/vnc_ready", json={"ip_address": "192.168.1.101", "ready": True}, headers=headers)
     assert res.status_code == 200
-    success, err = VNCClientProxyService.wait_vnc_ready(pc_id, timeout=0.5)
-    assert success is True
+    state, err = VNCClientProxyService.poll_vnc_result(pc_id)
+    assert state == "ready"
     assert err is None
 
 def test_vnc_ready_and_stopped_mac_fallback(client_app):
@@ -65,8 +65,8 @@ def test_vnc_ready_and_stopped_mac_fallback(client_app):
     }, headers=headers)
     assert res_ready.status_code == 200
     assert res_ready.get_json()["success"] is True
-    success, err = VNCClientProxyService.wait_vnc_ready(pc_id, timeout=0.5)
-    assert success is True
+    state, err = VNCClientProxyService.poll_vnc_result(pc_id)
+    assert state == "ready"
     assert err is None
 
     # Test vnc_stopped via MAC
@@ -76,6 +76,6 @@ def test_vnc_ready_and_stopped_mac_fallback(client_app):
     }, headers=headers)
     assert res_stop.status_code == 200
     assert res_stop.get_json()["success"] is True
-    success, err = VNCClientProxyService.wait_vnc_ready(pc_id, timeout=0.5)
-    assert success is False
-    assert err is not None
+    state, err = VNCClientProxyService.poll_vnc_result(pc_id)
+    assert state == "none"  # vnc_stopped hanya membersihkan status, bukan error
+    assert err is None

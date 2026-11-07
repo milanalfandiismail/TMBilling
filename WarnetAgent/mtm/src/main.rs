@@ -176,8 +176,8 @@ fn load_config() -> (String, String, String, String) {
         reg_api_key.or(ini_api_key).unwrap_or_else(|| "TM2026QWERTY-api-key".to_string())
     };
 
-    let em_user = reg_em_user.or(ini_em_user).unwrap_or_else(|| sha256_hex("TMBilling"));
-    let em_token = reg_em_token.or(ini_em_token).unwrap_or_else(|| sha256_hex("TM123qaz!@#"));
+    let em_user = reg_em_user.or(ini_em_user).unwrap_or_default();
+    let em_token = reg_em_token.or(ini_em_token).unwrap_or_default();
 
     (url, api_key, em_user, em_token)
 }

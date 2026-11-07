@@ -225,13 +225,14 @@ c:\Project GIT\TMBilling
 - **Arsitektur Loopback 5900**: TightVNC Server di klien mendengarkan pada port `127.0.0.1:5900`.
 - **WebSocket RFB Proxy**: Proses Websockify (port `8081`) meneruskan binary frame RFB dari TightVNC ke canvas HTML5 di dashboard (`vnc_client.js`); route Flask hanya mengatur start/stop/status proxy.
 - **Bi-directional Clipboard Sync**: Teks yang disalin di browser kasir otomatis terkirim ke clipboard Windows PC klien, dan sebaliknya teks yang disalin di PC klien disinkronkan ke browser kasir melalui kanal WebSocket Websockify.
-- **Auto-Firewall & Fail-Fast Multiplexing**: Skrip `allow_firewall.bat` memastikan port TightVNC diizinkan oleh Windows Firewall, dan mekanisme multiplexing token mencegah tabrakan sesi VNC antar kasir.
+- **Auto-Firewall & Fail-Fast Multiplexing**: Skrip `allow_firewall.bat` memastikan port TightVNC diizinkan oleh Windows Firewall, dan mekanisme multiplexing token mencegah tabrakan sesi VNC antar kasir. Token proxy kini acak per sesi (`secrets.token_urlsafe(24)`), bukan pola `client_<id>` yang bisa ditebak.
 - **Auto-Generated Random VNC Password**: Sistem secara otomatis meng-generate password acak 8 karakter saat pertama kali dijalankan jika belum dikonfigurasi di tabel settings (`SettingsService.get_or_create_vnc_password`), menggantikan ketergantungan pada password default statis demi keamanan jaringan LAN.
+- **Otorisasi & Non-Blocking Start**: Seluruh route VNC wajib `@login_required` + `@admin_required`. Permintaan start tidak lagi menahan worker 25 detik: server membalas `202 {pending: true}` dan route status mem-poll hasil (`poll_vnc_result`) lalu memulai proxy saat TightVNC siap. Reaper hanya mematikan proxy milik PC yang benar-benar offline.
 
 ### 4.3 Blackout Auto-Recovery System (Toleransi Mati Lampu & Uptime Tracker)
 - **Deskripsi**: Proteksi otomatis terhadap pemadaman listrik (*blackout*) mendadak di warnet.
 - **Pencatatan Uptime & Offline Tracker**: Menggunakan tabel `PCUptimeLog` yang merekam *heartbeat* klien setiap beberapa detik.
-- **Toleransi Blackout**: Jika listrik padam mendadak, server mendeteksi status offline seluruh PC secara serentak. Saat listrik menyala kembali dan PC booting, sistem secara cerdas **tidak memotong durasi pelanggan** selama masa mati lampu, melainkan memulihkan sisa waktu dan paket sesi secara otomatis (*Auto Session Resume*).
+- **Toleransi Blackout**: Jika listrik padam mendadak, server mendeteksi status offline seluruh PC secara serentak. Saat listrik menyala kembali dan PC booting, sistem secara cerdas **tidak memotong durasi pelanggan** selama masa mati lampu, melainkan memulihkan sisa waktu dan paket sesi secara otomatis (*Auto Session Resume*). Sisa waktu yang dikembalikan ke member memakai snapshot audit `sisa_audit` (bukan jam berjalan), sehingga tidak ada kelebihan waktu.
 - **Hard Delete Uptime Log**: Admin dapat membersihkan riwayat log uptime lama dengan konfirmasi aman.
 
 ### 4.4 5-Layer WarnetAgent Anti-Tamper Security & Registry Hash Verification
@@ -246,7 +247,7 @@ c:\Project GIT\TMBilling
     - `Hash_Uninstaller` (Hash binary uninstaller)
   - Sebelum eksekusi, hash file fisik diverifikasi terhadap registry. Jika terjadi perbedaan (file dimodifikasi/di-patch), klien menolak berjalan dan mengunci PC.
 - **Lapis 4 - Watchdog Daemon (`MGCTM.exe` & `mtm.exe`)**: Process independen berhak Administrator yang terus memantau `TMBilling.exe`. Jika `TMBilling.exe` dimatikan paksa, watchdog seketika me-respawn klien dan mengunci sistem.
-- **Lapis 5 - Emergency Credentials SHA-256**: Autentikasi darurat offline berbasis hash SHA-256 yang aman untuk membuka kunci PC oleh teknisi saat jaringan server terputus.
+- **Lapis 5 - Emergency Credentials SHA-256**: Autentikasi darurat offline berbasis hash SHA-256 yang aman untuk membuka kunci PC oleh teknisi saat jaringan server terputus. Kredensial **tanpa fallback default** (fail-closed): bila registry/`config.ini` kosong, jalur darurat offline nonaktif, dan `install.bat` membangkitkan password acak 24 karakter yang dicetak ke konsol saat operator mengosongkan prompt.
 
 ### 4.5 Hardware Checker, Security Audit & CCTV Smart Reference
 
@@ -320,7 +321,7 @@ c:\Project GIT\TMBilling
 - **Deskripsi**: Integrasi Cloudflare Tunnel bawaan untuk menghubungkan server billing lokal ke domain internet secara aman tanpa perlu port forwarding atau IP publik statis.
 - **Fitur**:
   - Penyimpanan token Cloudflare yang persisten di database `Settings`.
-  - Instalasi otomatis service background `cloudflared.exe`.
+  - Instalasi otomatis service background `cloudflared.exe`; log proses ditulis ke `logs/` di samping biner cloudflared.
   - Kemudahan akses bagi Owner untuk melihat laporan keuangan dan analitik dari mana saja melalui smartphone.
 
 ### 4.11 Centralized Versioning System (`config.py` Truth)
@@ -331,6 +332,8 @@ c:\Project GIT\TMBilling
 - **Deskripsi**: Role-Based Access Control dengan 3 tingkatan pengguna: `Super Admin`, `Admin`, dan `Kasir`.
 - **Audit Logs**: Seluruh aktivitas krusial (buka sesi, tambah waktu, hapus member, edit harga paket, diskon, refund, pembukaan laci kas) dicatat sebagai JSON line di `logs/warnet.log` melalui `app/utils/logger.py` (rotasi gzip; tanpa tabel database).
 - **Pembersihan Log dengan Otorisasi Supervisor**: Riwayat audit log tidak dapat dihapus sembarangan dan membutuhkan verifikasi password level Administrator/Super Admin.
+- **Anti Brute-Force Login**: `services/auth/login_throttle.py` membatasi 5 kegagalan per kombinasi (IP, username) dalam 5 menit dan membalas HTTP 429; logout wajib menyertakan token sesi yang cocok.
+- **Sanitasi HTML Pengumuman**: Teks pengumuman kiosk (hasil CKEditor) disanitasi `SafeHTMLParser` saat ditulis maupun dibaca, memakai allowlist protokol (`http://`, `https://`, `mailto:`, `/`, `#`, `data:image/`).
 
 ### 4.13 Floor Plan & Dynamic Visual Room Layout (v1.6.3 Engine)
 - **Deskripsi**: Denah visual warnet interaktif 2 dimensi di dashboard kasir (`map_view.js`).
@@ -345,7 +348,8 @@ c:\Project GIT\TMBilling
 - **Deskripsi**: Fasilitas pemeliharaan database SQLite internal agar tetap kencang dan aman dari korupsi data.
 - **Fitur**:
   - *Auto Backup Lokal*: Backup terjadwal berkala ke folder arsip lokal.
-  - *Cloud Backup Rotation*: Sinkronisasi backup ke penyimpanan cloud eksternal dengan retensi rotasi otomatis.
+  - *Cloud Backup Rotation*: Sinkronisasi backup ke penyimpanan cloud eksternal dengan retensi rotasi otomatis; seluruh panggilan HTTP provider memakai `timeout=30` agar job tidak menggantung.
+  - *Unduhan Database Aman WAL*: `GET /api/v1/kasir/settings/backup/download` memakai snapshot SQLite Online Backup API + `PRAGMA integrity_check` ke file sementara (isi `-wal` ikut tersalin), lalu dihapus via `after_this_request`. Tidak lagi men-stream file `warnet.db` hidup.
   - *SQLite VACUUM & Optimize*: Mengompresi dan merapikan indeks database langsung dari tombol di pengaturan.
   - *Database Restore Modal*: Antarmuka pemulihan database dengan proteksi konfirmasi ganda.
 
@@ -356,6 +360,8 @@ c:\Project GIT\TMBilling
   - Paket Promosi: Paket Personal, Paket 2 Jam, Paket 5 Jam, Paket Malam (Begadang).
   - Custom Group Rates: Tarif berbeda untuk tipe ruangan Reguler, VIP, Sofa, atau VVIP Simulator.
   - Reset State Sesi: Proteksi pembersihan data sesi sementara saat PC selesai digunakan.
+  - Refund Paket Proporsional: Refund guest & member dihitung dari menit yang benar-benar ditarik (`-round(jumlah * menit_dipotong / durasi)`), bukan harga penuh paket.
+  - Satu Sesi Aktif per PC: Unique index parsial `uq_aktif_sesi_pc` (`pc_id` WHERE `status='aktif'`) menolak sesi ganda pada satu meja; pelanggaran dipetakan menjadi `ValueError("PC sedang dipakai")`.
 
 ### 4.16 Shift Kasir & Serah Terima Shift (Hitung Buta / Blind Cash Reconciliation)
 - **Deskripsi**: Sistem manajemen jam kerja dan serah terima shift kasir anti-manipulasi berbasis *Blind Count (Hitung Buta)*, rekonsiliasi laci fisik, dan struk handover thermal.
@@ -364,6 +370,7 @@ c:\Project GIT\TMBilling
   - **Hitung Buta (Blind Reconciliation)**: Saat menekan tombol **Akhiri Shift**, sistem **menyembunyikan total pendapatan sistem**. Kasir wajib menghitung seluruh uang fisik nyata di laci dan mengetikkan nominalnya secara jujur.
   - **Kalkulasi Selisih Otomatis**: Sistem membandingkan `Uang Fisik Aktual` vs `Modal Awal + Transaksi Tunai Bersih`. Status selisih (`PAS / Rp 0`, `SURPLUS (+)`, atau `DEFISIT (-)`) langsung terkunci permanen di database.
   - **Pemisahan Tunai vs Non-Tunai**: Transaksi QRIS dan transfer otomatis dipisahkan dari perhitungan kas fisik laci kasir.
+  - **Ringkasan Lintas Kasir**: Rekap shift menghitung seluruh transaksi pada rentang waktu shift (bukan hanya `user_id` kasir pemilik shift) dan tidak meng-clamp nilai negatif, sehingga selisih refund berlebih tetap terlihat.
   - **Admin Force Close Shift**: Administrator dapat menutup paksa shift kasir aktif dalam situasi darurat dengan pencatatan audit log.
   - **Struk Thermal Handover 58mm / 80mm**: Pencetakan bukti serah terima shift fisik lengkap dengan rincian penerimaan tunai, non-tunai, modal awal, rekonsiliasi laci, dan selisih keuangan untuk ditandatangani kedua kasir.
   - **Tab Riwayat Serah Terima Shift**: Menampilkan rekapitulasi seluruh shift sebelumnya dengan filter tanggal otomatis, badge status, modal detail, dan tata letak responsif (*fit-to-table* pada breakpoint LG/XL).
@@ -970,6 +977,8 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | PUT | /api/v1/kasir/settings/timezone | settings.update_timezone |
 | GET | /api/v1/kasir/settings/uninstall-token/client | settings.get_uninstall_token_for_client |
 
+> Catatan keamanan: `/uninstall-token/client` hanya memerlukan `X-Client-Key` dan kini **hanya** mengembalikan `uninstall_token` (token darurat server tidak lagi dibagikan ke client). Login darurat `POST /api/v1/public/client/emergency-login` diterima bila token server valid **atau** IP asal sama dengan `ip_address` PC terdaftar.
+
 #### 🔹 Blueprint: shift (5 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
 | :--- | :--- | :--- |
@@ -1077,7 +1086,7 @@ Semua jalur update server bermuara ke `install_scripts/updater.bat`, sehingga pe
 | `update.bat` | `update.bat TMBilling_Server_v<versi>.zip` atau drag-and-drop ZIP | `updater.bat`, semi-manual |
 | Manual total | Langkah 1–8 di bawah | Dikerjakan sendiri |
 
-`updater.bat` melakukan: preflight Python 3.11+, menghentikan proses server (background `pythonw`, proses `run.py`, dan pemilik port 7015), membatalkan tanpa mengubah berkas bila port masih hidup, backup database via SQLite Online Backup API, ekstraksi ZIP, `pip install` **sebelum** migrasi, migrasi, lalu start ulang. Bila backup/ekstraksi gagal, server dinyalakan kembali dan ZIP dipertahankan di `instance/temp_update.zip`.
+`updater.bat` melakukan: preflight Python 3.11+, menghentikan proses server (background `pythonw`, proses `run.py`, dan pemilik port 7015), membatalkan tanpa mengubah berkas bila port masih hidup, backup database via SQLite Online Backup API, ekstraksi ZIP ke `instance/staging_update`, penukaran berkas per entri top-level dengan `os.replace` (cadangan `instance/rollback_<timestamp>`), `pip install` **sebelum** migrasi, migrasi, lalu start ulang. Bila backup/ekstraksi/penukaran gagal, server dinyalakan kembali, berkas live di-rollback, dan ZIP dipertahankan di `instance/temp_update.zip`.
 
 **Prosedur manual total (tanpa `update.bat`):**
 
