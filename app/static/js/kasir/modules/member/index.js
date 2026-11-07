@@ -530,8 +530,9 @@ const Member = {
             try {
                 const res = await API.member.refundPaket(memberId, transaksiId);
                 Toast.success(res.message || 'Refund berhasil');
-                Modal.closeModal();
                 this.load();
+                // Kembali ke detail member setelah modal konfirmasi ditutup (closeModal berjalan setelah onConfirm selesai)
+                setTimeout(() => this.showDetail(memberId), 0);
             } catch (err) {
                 Toast.error(err.message || 'Gagal refund');
             }
