@@ -8,8 +8,9 @@ update last activity.
 """
 
 import hmac
+from datetime import timedelta
 
-from app.models import db, now_local
+from app.models import db, now_local, Sesi
 from app.repositories import PCRepository
 from app.repositories import SesiRepository
 from app.services.sesi.sesi_service import SesiService
@@ -203,14 +204,31 @@ class ClientService:
                     # C. Sesi Ada -> tandai heartbeat & hitung sisa waktu
                     try:
                         now = now_local()
-                        with WRITE_LOCK:
-                            fresh = SesiRepository.get_by_id(sesi.id)
-                            last_persisted = fresh.last_sync if fresh else None
-                            if (fresh and fresh.status == "aktif" and (last_persisted is None
-                                    or (now - last_persisted).total_seconds()
-                                    >= ClientService.HEARTBEAT_PERSIST_SECONDS)):
-                                fresh.last_sync = now
-                                db.session.commit()
+                        due = (sesi.last_sync is None
+                               or (now - sesi.last_sync).total_seconds()
+                               >= ClientService.HEARTBEAT_PERSIST_SECONDS)
+                        if due:
+                            # Update bersyarat: heartbeat tidak menimpa sesi yang
+                            # sudah ditutup blackout dan tidak menambah SELECT.
+                            with WRITE_LOCK:
+                                session = db.session()
+                                session.expire_on_commit = False
+                                try:
+                                    session.query(Sesi).filter(
+                                        Sesi.id == sesi.id,
+                                        Sesi.status == "aktif",
+                                        db.or_(
+                                            Sesi.last_sync.is_(None),
+                                            Sesi.last_sync <= now - timedelta(
+                                                seconds=ClientService.HEARTBEAT_PERSIST_SECONDS),
+                                        ),
+                                    ).update({"last_sync": now}, synchronize_session=False)
+                                    session.commit()
+                                except Exception:
+                                    session.rollback()
+                                    raise
+                                finally:
+                                    session.expire_on_commit = True
                     except Exception as beat_err:
                         db.session.rollback()
                         write_log("CLIENT_HEARTBEAT_ERROR",
