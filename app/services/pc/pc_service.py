@@ -477,7 +477,7 @@ class PCService:
                 ))
             added.append(kode)
 
-        if pc_to_save:
+        if added:
             db.session.add_all(pc_to_save)
             try:
                 db.session.commit()
