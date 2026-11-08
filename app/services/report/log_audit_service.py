@@ -33,6 +33,7 @@ class LogAuditService:
 
         parsed_logs = []
         for line in raw_logs:
+            data = None
             if line.startswith("{") and line.endswith("}"):
                 try:
                     data = json.loads(line)
@@ -56,7 +57,7 @@ class LogAuditService:
                     ip_address, browser_agent, detail_json = "-", "-", None
 
             from app.utils.logger import ACTION_TO_CATEGORY_MAP
-            if 'data' in locals() and isinstance(data, dict) and 'category' in data:
+            if isinstance(data, dict) and 'category' in data:
                 category = data['category']
             else:
                 category = ACTION_TO_CATEGORY_MAP.get(action.upper(), "SYSTEM")

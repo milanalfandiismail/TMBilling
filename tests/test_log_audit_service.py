@@ -9,6 +9,23 @@ def app_context():
     with app.app_context():
         yield app
 
+def test_kategori_tidak_bocor_dari_baris_json_sebelumnya(monkeypatch):
+    import json
+    from app.services.report import log_audit_service
+
+    baris = [
+        json.dumps({"timestamp": "2026-11-08 10:00:00", "user": "a",
+                    "action": "LOGIN", "detail": "x", "category": "AUTH"}),
+        "[2026-11-08 10:01:00] [b] [OTHER] - y",
+    ]
+    monkeypatch.setattr(log_audit_service, "read_logs", lambda *a, **k: baris)
+
+    hasil = log_audit_service.LogAuditService.get_system_logs(kategori="AUTH")
+
+    assert len(hasil["logs"]) == 1
+    assert hasil["logs"][0]["detail"] == "x"
+
+
 def test_clear_system_logs_records_audit_event(app_context):
     write_log("DUMMY_EVENT", "Dummy detail", user="tester")
     
