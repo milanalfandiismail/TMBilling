@@ -61,6 +61,29 @@ def api_key_required(f):
     return decorated
 
 
+def _peer_ip():
+    from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+    return IpWhitelistService.extract_client_ip(
+        headers=request.headers, remote_addr=request.remote_addr)
+
+
+@client_api_bp.errorhandler(ValueError)
+def _handle_value_error(err):
+    return jsonify({"success": False, "error": str(err)}), 400
+
+
+def _client_ip(data):
+    peer = _peer_ip()
+    claimed = (data.get("ip_address") or "").strip()
+    if claimed in ("Unknown", "unknown"):
+        claimed = ""
+    if peer in ("127.0.0.1", "::1", "localhost"):
+        return claimed or peer
+    if claimed and claimed != peer:
+        raise ValueError("IP client tidak cocok dengan koneksi")
+    return peer
+
+
 # =========================================================================
 # 2. IDENTIFICATION & HEARTBEAT (POLLING)
 # =========================================================================
@@ -75,7 +98,7 @@ def identify():
 
     try:
         result = ClientService.identify(
-            ip_address=data.get("ip_address"),
+            ip_address=_client_ip(data),
             mac_address=data.get("mac_address", "").upper().strip(),
             role=role
         )
@@ -94,7 +117,7 @@ def status():
 
     try:
         result = ClientService.get_status(
-            ip_address=data.get("ip_address"),
+            ip_address=_client_ip(data),
             mac_address=data.get("mac_address", "").upper().strip(),
             role=role
         )
@@ -117,7 +140,7 @@ def selesai():
     data = request.get_json() or {}
     try:
         result = ClientService.tutup_sesi(
-            ip_address=data.get("ip_address"),
+            ip_address=_client_ip(data),
             mac_address=data.get("mac_address", "").upper().strip()
         )
         return jsonify(result), 200
@@ -133,19 +156,20 @@ def admin_login():
     data = request.get_json() or {}
     from app.services.auth import login_throttle
     username = data.get("username", "").strip()
-    if login_throttle.check(request.remote_addr, username):
+    peer = _peer_ip()
+    if login_throttle.check(peer, username):
         return jsonify({"success": False, "error": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}), 429
     try:
         result = ClientService.admin_login(
-            ip_address=data.get("ip_address"),
+            ip_address=_client_ip(data),
             mac_address=data.get("mac_address", "").upper().strip(),
             username=username,
             password=data.get("password", "")
         )
-        login_throttle.ok(request.remote_addr, username)
+        login_throttle.ok(peer, username)
         return jsonify(result), 200
     except ValueError as e:
-        login_throttle.fail(request.remote_addr, username)
+        login_throttle.fail(peer, username)
         return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -158,11 +182,11 @@ def emergency_login():
     data = request.get_json() or {}
     try:
         result = ClientService.emergency_login(
-            ip_address=data.get("ip_address"),
+            ip_address=_client_ip(data),
             mac_address=data.get("mac_address", "").upper().strip(),
             username=data.get("username", "SYSTEM").strip(),
             token=data.get("token"),
-            request_ip=request.remote_addr
+            request_ip=_peer_ip()
         )
         return jsonify(result), 200
     except PermissionError as e:
@@ -185,7 +209,7 @@ def afk_lock():
     data = request.get_json() or {}
     try:
         result = ClientService.afk_lock(
-            ip_address=data.get("ip_address"),
+            ip_address=_client_ip(data),
             mac_address=data.get("mac_address", "").upper().strip(),
             pin=data.get("pin")
         )
@@ -203,7 +227,7 @@ def afk_unlock():
     data = request.get_json() or {}
     try:
         result = ClientService.afk_unlock(
-            ip_address=data.get("ip_address"),
+            ip_address=_client_ip(data),
             mac_address=data.get("mac_address", "").upper().strip(),
             credential=data.get("credential")
         )
@@ -260,11 +284,7 @@ def _resolve_client_pc(data):
     """Helper untuk meresolve PC dari request payload atau remote header (Cache-Accelerated)."""
     from app.repositories import PCRepository
     from app.services.cache.memory_store import PCNetworkCacheStore
-    raw_ip = data.get("ip_address")
-    if raw_ip in ["Unknown", "unknown", "", None]:
-        raw_ip = None
-        
-    ip_address = raw_ip or request.headers.get("X-IP-Address") or request.remote_addr
+    ip_address = _client_ip(data)
     mac_address = data.get("mac_address", "").upper().strip()
     
     cached = PCNetworkCacheStore.resolve_pc(ip=ip_address, mac=mac_address)
@@ -327,10 +347,7 @@ def vnc_stopped():
 def fast_poll():
     """Endpoint bagi background monitor agent untuk mengecek perintah cepat masuk (VNC, Refresh, Kill, dll)."""
     data = request.get_json() or {}
-    raw_ip = data.get("ip_address")
-    if raw_ip in ["Unknown", "unknown", "", None]:
-        raw_ip = None
-    ip_address = raw_ip or request.headers.get("X-IP-Address") or request.remote_addr
+    ip_address = _client_ip(data)
     mac_address = data.get("mac_address", "").upper().strip()
 
     from app.services.cache.memory_store import PCNetworkCacheStore

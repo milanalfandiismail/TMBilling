@@ -31,3 +31,23 @@ def test_uninstall_token_menolak_ip_tidak_terdaftar():
                      headers={"X-Client-Key": "kunci-uji"},
                      environ_overrides={"REMOTE_ADDR": "10.9.9.9"})
     assert res.status_code == 403
+
+
+def test_body_ip_tidak_boleh_mengaku_pc_lain():
+    from app import create_app
+    app = create_app({
+        "TESTING": True,
+        "WTF_CSRF_ENABLED": False,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "CLIENT_API_KEY": "kunci-uji",
+    })
+    client = app.test_client()
+    res = client.post(
+        "/api/v1/public/client/status",
+        json={"ip_address": "192.168.1.11", "mac_address": ""},
+        headers={"X-Client-Key": "kunci-uji"},
+        environ_overrides={"REMOTE_ADDR": "192.168.1.12"},
+    )
+
+    assert res.status_code == 400
+    assert "tidak cocok" in res.get_json()["error"]

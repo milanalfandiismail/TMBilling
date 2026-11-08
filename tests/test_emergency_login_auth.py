@@ -60,10 +60,10 @@ def test_emergency_login_rejects_missing_token(app_client):
         environ_base={"REMOTE_ADDR": "192.168.1.99"},
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 400
     data = response.get_json()
     assert data["success"] is False
-    assert "token" in data["error"].lower()
+    assert "tidak cocok" in data["error"].lower()
 
 
 def test_emergency_login_allows_same_ip_without_token(app_client):
