@@ -217,7 +217,7 @@ class ClientService:
                         sisa = SesiService.sync_waktu_member(sesi)
                     except Exception as inner_e:
                         write_log("CLIENT_STATUS_ERROR", f"Error sync PC {pc.kode}: {inner_e}")
-                        sisa = 0
+                        raise
 
                     # D. Jika Waktu Habis -> Selesaikan Sesi
                     if sisa <= 0:
