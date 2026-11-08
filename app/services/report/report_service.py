@@ -8,9 +8,8 @@ dipisahkan ke PdfExportService dan LogAuditService.
 """
 
 from datetime import datetime
-from app.models import now_local
 from app.repositories import TransaksiRepository, SesiRepository, SettingsRepository, MenuRepository, UserRepository
-from app.utils.timezone_utils import format_display
+from app.utils.timezone_utils import format_display, get_today_local_date
 from app.services.report.log_audit_service import LogAuditService
 from app.services.report.pdf_export_service import PdfExportService
 
@@ -25,7 +24,7 @@ class ReportService:
     @staticmethod
     def get_laporan_harian():
         """Ringkasan cepat pendapatan dan sesi hari ini (Dashboard Overview)."""
-        hari_ini = now_local().date()
+        hari_ini = get_today_local_date()
         total_billing = TransaksiRepository.get_total_pendapatan_hari_ini(hari_ini)
         total_menu = MenuRepository.get_total_pemasukan_by_date(hari_ini)
         total = int(total_billing or 0) + int(total_menu or 0)
