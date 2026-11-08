@@ -236,6 +236,8 @@ class MemberService:
             raise ValueError("Member tidak ditemukan")
         if SesiRepository.get_aktif_by_member(member.id):
             raise ValueError("Member sedang bermain, tidak bisa dihapus")
+        if SesiRepository.has_history_for_member(member.id) or TransaksiRepository.has_history_for_member(member.id):
+            raise ValueError("Member punya riwayat sesi/transaksi. Nonaktifkan saja, jangan hapus.")
         
         # Ambil data sebelum objek dihapus dari database
         username = member.username

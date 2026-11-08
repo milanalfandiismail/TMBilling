@@ -71,6 +71,11 @@ class SesiRepository:
         return Sesi.query.filter_by(member_id=member_id, status="aktif").all()
     
     @staticmethod
+    def has_history_for_member(member_id):
+        """True bila member pernah punya sesi (aktif maupun selesai)."""
+        return Sesi.query.filter_by(member_id=member_id).first() is not None
+
+    @staticmethod
     def get_history_by_member(member_id, limit=10):
         """Mengambil riwayat sesi bermain member terurut dari yang terbaru."""
         return Sesi.query.filter_by(member_id=member_id).order_by(Sesi.mulai_pada.desc()).limit(limit).all()

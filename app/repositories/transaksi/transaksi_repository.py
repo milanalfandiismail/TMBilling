@@ -51,6 +51,11 @@ class TransaksiRepository:
         ).order_by(Transaksi.dibuat_pada.desc()).all()
 
     @staticmethod
+    def has_history_for_member(member_id):
+        """True bila member sudah punya transaksi tercatat."""
+        return Transaksi.query.filter_by(member_id=member_id).first() is not None
+
+    @staticmethod
     def get_paginated_by_member(member_id, page=1, per_page=10):
         """Ambil riwayat transaksi member terpaginasi."""
         return Transaksi.query.filter_by(member_id=member_id).order_by(
