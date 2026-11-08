@@ -135,21 +135,22 @@ def tambah_waktu():
         metode_pembayaran = data.get("metode_pembayaran", "Tunai")
         
         selections = data.get("selections")
+        items = []
         if selections:
             for sel in selections:
                 paket_id = sel.get("paket_id")
                 qty = int(sel.get("qty", 1))
                 if qty <= 0:
                     raise ValueError("Kuantitas harus minimal 1")
-                paket = PaketService.get_by_id(paket_id)
-                MemberService.tambah_waktu(member_id, paket, operator=kasir, qty=qty, metode_pembayaran=metode_pembayaran)
+                items.append((PaketService.get_by_id(paket_id), qty))
         else:
             paket_id = data.get("paket_id")
             qty = int(data.get("qty", 1))
             if qty <= 0:
                 raise ValueError("Kuantitas harus minimal 1")
-            paket = PaketService.get_by_id(paket_id)
-            MemberService.tambah_waktu(member_id, paket, operator=kasir, qty=qty, metode_pembayaran=metode_pembayaran)
+            items.append((PaketService.get_by_id(paket_id), qty))
+
+        MemberService.tambah_waktu_batch(member_id, items, operator=kasir, metode_pembayaran=metode_pembayaran)
             
         return jsonify({"success": True, "message": "Waktu berhasil ditambah"}), 200
     except ValueError as e:

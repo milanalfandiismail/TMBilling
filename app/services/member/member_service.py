@@ -274,10 +274,40 @@ class MemberService:
     def tambah_waktu(member_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
         """Tambah waktu member & suntik Nota Transaksi (TM)."""
         with WRITE_LOCK:
-            return MemberService._tambah_waktu_locked(member_id, paket, operator, qty, metode_pembayaran)
+            member, _transaksi, details = MemberService._tambah_waktu_locked(
+                member_id, paket, operator, qty, metode_pembayaran, commit=True
+            )
+            MemberService._write_topup_logs(member, details, operator)
+            return member
 
     @staticmethod
-    def _tambah_waktu_locked(member_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
+    def tambah_waktu_batch(member_id, selections, operator="system", metode_pembayaran="Tunai"):
+        """Tambah beberapa paket sekaligus; satu commit, rollback penuh bila satu item gagal."""
+        with WRITE_LOCK:
+            members = []
+            logs = []
+            try:
+                for paket, qty in selections:
+                    member, _transaksi, details = MemberService._tambah_waktu_locked(
+                        member_id, paket, operator, qty, metode_pembayaran, commit=False
+                    )
+                    members.append(member)
+                    logs.append(details)
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                raise
+            for member, details in zip(members, logs):
+                MemberService._write_topup_logs(member, details, operator)
+            return members[-1] if members else MemberRepository.get_by_id(member_id)
+
+    @staticmethod
+    def _write_topup_logs(member, topup_details, operator):
+        write_log("TAMBAH_WAKTU", f"Member:{member.username} | +{topup_details['durasi_menit']}m", user=operator, detail_json=topup_details)
+        write_log("TRANSAKSI", f"Nota:{topup_details['no_nota']} | Member:{member.username} | +{topup_details['durasi_menit']}m | Rp {topup_details['total_harga']}", user=operator, detail_json=topup_details)
+
+    @staticmethod
+    def _tambah_waktu_locked(member_id, paket, operator="system", qty=1, metode_pembayaran="Tunai", commit=True):
         qty = validate_integer_range(qty, 1, 100, field_name="Kuantitas paket")
         metode_pembayaran = validate_payment_method(metode_pembayaran)
 
@@ -309,7 +339,10 @@ class MemberService:
             operator=operator
         )
         db.session.add(transaksi)
-        db.session.commit()
+        if commit:
+            db.session.commit()
+        else:
+            db.session.flush()
         
         topup_details = {
             "username": member.username,
@@ -321,9 +354,7 @@ class MemberService:
             "no_nota": transaksi.no_nota,
             "metode_pembayaran": metode_pembayaran
         }
-        write_log("TAMBAH_WAKTU", f"Member:{member.username} | +{paket.durasi_menit * qty}m", user=operator, detail_json=topup_details)
-        write_log("TRANSAKSI", f"Nota:{transaksi.no_nota} | Member:{member.username} | +{paket.durasi_menit * qty}m | Rp {paket.harga * qty}", user=operator, detail_json=topup_details)
-        return member
+        return member, transaksi, topup_details
 
 
     # =========================================================================
