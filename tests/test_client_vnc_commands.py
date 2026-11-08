@@ -12,10 +12,17 @@ def client_app():
     app.config["CLIENT_API_KEY"] = "TM2026QWERTY-api-key"
     with app.app_context():
         db.create_all()
-        grup = Grup(nama="VIP")
-        db.session.add(grup)
-        db.session.commit()
-        pc = PC(kode="PC-01", ip_address="192.168.1.101", mac_address="AA:BB:CC:DD:EE:01", grup_id=grup.id)
+        grup = Grup.query.filter(db.func.lower(Grup.nama) == "vip").first()
+        if not grup:
+            grup = Grup(nama="VIP")
+            db.session.add(grup)
+            db.session.commit()
+        pc = PC.query.filter_by(kode="PC-01").first()
+        if not pc:
+            pc = PC(kode="PC-01")
+        pc.ip_address = "192.168.1.101"
+        pc.mac_address = "AA:BB:CC:DD:EE:01"
+        pc.grup_id = grup.id
         db.session.add(pc)
         db.session.commit()
         yield app.test_client(), pc.id

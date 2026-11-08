@@ -72,6 +72,29 @@ def guard_test_database():
     yield
 
 
+@pytest.fixture(scope="module", autouse=True)
+def reset_database_per_module():
+    """Database worker dipakai bersama antar file; bersihkan sisa modul sebelumnya."""
+    import sqlite3
+    db_path = os.path.join(_root_dir, "instance", f"test_warnet_{_worker}.db")
+    leftover = False
+    if os.path.exists(db_path):
+        conn = sqlite3.connect(db_path)
+        leftover = conn.execute(
+            "SELECT count(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+        ).fetchone()[0] > 0
+        conn.close()
+    if leftover:
+        from app import create_app, db
+        app = create_app()
+        with app.app_context():
+            db.drop_all()
+            db.create_all()
+            db.session.remove()
+        reset_all_cache()
+    yield
+
+
 @pytest.fixture(autouse=True)
 def reset_in_memory_stores():
     """Reset seluruh state in-memory sebelum dan sesudah setiap test agar terisolasi sempurna."""
