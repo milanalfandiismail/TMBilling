@@ -69,6 +69,28 @@ def test_shift_lifecycle_with_catatan_and_qris(app_ctx):
     assert saved.catatan == "Kurang 5rb karena salah kembalian"
     assert saved.total_qris == 75000
 
+def test_end_shift_gagal_ringkasan_tidak_commit_setengah(app_ctx, monkeypatch):
+    kasir = User(username="kasir_gagal", nama_lengkap="Gagal", role="kasir")
+    kasir.set_password("gagal123")
+    db.session.add(kasir)
+    db.session.commit()
+
+    shift = ShiftService.start_shift("kasir_gagal", modal_awal=50000, operator="admin")
+
+    def gagal(_shift_id):
+        raise RuntimeError("ringkasan gagal")
+
+    monkeypatch.setattr(ShiftService, "get_shift_summary", staticmethod(gagal))
+
+    with pytest.raises(RuntimeError):
+        ShiftService.end_shift(shift.id, uang_fisik=50000, catatan="x")
+
+    db.session.rollback()
+    saved = db.session.get(ShiftRecord, shift.id)
+    assert saved.status == "AKTIF"
+    assert saved.waktu_selesai is None
+
+
 def test_closed_shift_summary_time_bounded(app_ctx):
     kasir = User(username="kasir_siti", nama_lengkap="Siti Aminah", role="kasir")
     kasir.set_password("siti123")

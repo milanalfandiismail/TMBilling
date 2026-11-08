@@ -305,9 +305,8 @@ class ShiftService:
         if shift.status != "AKTIF":
             raise ValueError("Shift sudah ditutup sebelumnya")
 
-        # Set waktu selesai sekarang
+        # Set waktu selesai sekarang; commit sekali di akhir agar gagal ringkasan tidak setengah tersimpan
         shift.waktu_selesai = now_local()
-        db.session.commit()
 
         # Hitung pendapatan dan selisih
         summary = ShiftService.get_shift_summary(shift_id)
