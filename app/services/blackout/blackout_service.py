@@ -239,7 +239,11 @@ class BlackoutService:
     def force_all_and_detect(operator="kasir"):
         """Tombol Panik: Deteksi blackout + Tutup semua yang aktif."""
         count_deteksi = BlackoutService.deteksi()
-        count_tutup = SesiRepository.force_close_all_sesi(now_local())
+        now = now_local()
+        count_tutup = SesiRepository.force_close_all_sesi(now)
+        for pc in PCRepository.get_all_admin_mode():
+            pc.is_admin_mode = False
+            pc.last_activity = now
         db.session.commit()
         write_log("FORCE_CLOSE_ALL", f"Tutup:{count_tutup} | Deteksi:{count_deteksi}", user=operator)
         return {"tutup": count_tutup, "deteksi": count_deteksi}
