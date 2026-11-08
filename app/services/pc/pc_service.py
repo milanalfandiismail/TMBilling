@@ -5,6 +5,7 @@
 Modul ini menangani CRUD PC, bulk creation, dan status summary.
 """
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 
 from app.models import PC, Sesi, db, now_local
@@ -490,7 +491,11 @@ class PCService:
 
         if pc_to_save:
             db.session.add_all(pc_to_save)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                raise ValueError("Kode atau IP PC sudah dipakai")
             
             detail_batch = {
                 "jumlah_ditambahkan": len(added),
