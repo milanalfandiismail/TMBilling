@@ -8,6 +8,7 @@ from app.repositories.transaksi.transaksi_repository import TransaksiRepository
 from app.services.cache.system_cache_store import PCNetworkCacheStore
 from app.services.dashboard.dashboard_service import DashboardService
 from app.services.menu.menu_service import MenuService
+from app.services.owner.analytics_service import OwnerAnalyticsService
 from app.services.report.report_service import ReportService
 from app.services.settings.settings_service import SettingsService
 from app.utils import helpers, timezone_utils
@@ -39,3 +40,4 @@ def test_helper_tanpa_pemanggil_sudah_dihapus():
     assert not hasattr(PCNetworkCacheStore, "get_by_mac")
     assert not hasattr(helpers, "format_rupiah")
     assert not hasattr(timezone_utils, "ensure_utc")
+    assert not hasattr(OwnerAnalyticsService, "_daily_labels")

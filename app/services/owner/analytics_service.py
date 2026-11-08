@@ -40,14 +40,6 @@ class OwnerAnalyticsService:
         return start_utc, end_utc
 
     @staticmethod
-    def _daily_labels(start, end):
-        labels, total_days = [], (end - start).days + 1
-        for i in range(total_days):
-            d = (start + timedelta(days=i)).date()
-            labels.append(d.strftime('%d/%m/%Y'))
-        return labels
-
-    @staticmethod
     def _normalize_range(start, end):
         """Normalisasi datetime offset-aware menjadi naive UTC untuk query SQLite."""
         if start and getattr(start, "tzinfo", None) is not None:
