@@ -300,9 +300,9 @@ npm run test:e2e:sandbox
 # atau langsung via Python: .venv\Scripts\python.exe tests/e2e/e2e_sandbox_server.py --standalone 7016
 ```
 
-> **Aturan eksekusi lokal:** setiap tugas agent (pencarian kata/kalimat, PowerShell, test, build, audit) WAJIB memakai seluruh core CPU bila alatnya mendukung — misalnya `rg --threads 0`, `npm run test:e2e` (default `--jobs 0`), `npm run build`, atau beberapa perintah independen lewat `ForEach-Object -Parallel`/job latar. Jangan menjalankan serial kecuali sedang men-debug kegagalan.
+> **Aturan eksekusi lokal:** setiap tugas agent di shell (pencarian, baca/tulis massal, PowerShell, test, build, audit) WAJIB memakai seluruh core CPU bila alatnya mendukung. Contoh: `rg --threads 0` atau `git grep --threads 16`, `npm run test:unit` (`pytest -n auto`), `npm run test:e2e` (`--jobs 0`), `npm run build`, `robocopy /MT:16`, `7z -mmt=16`, `cargo -j 16`, serta beberapa perintah independen yang dijalankan bersamaan. PowerShell 5.1 tidak punya `ForEach-Object -Parallel`; untuk bulk operation gunakan `scripts/allcore_search.py` (pencarian) atau helper Python `ProcessPoolExecutor`. Jangan menjalankan serial kecuali sedang men-debug kegagalan atau pekerjaannya memang tidak bisa diparalelkan.
 >
-> **Batas aman:** paralelkan hanya pekerjaan baca/uji yang independen. Operasi tulis ke database, commit, migrasi, backup/restore, dan perubahan file yang sama tetap serial agar tidak race atau korup. `pytest` belum aman diparalelkan (`-n auto`/xdist) karena semua worker berbagi `instance/test_warnet.db`; paralelisasi pytest baru boleh dipakai setelah setiap worker punya database sendiri. Untuk sekarang jalankan `pytest` sebagai satu proses, tetapi jalankan pemeriksaan lain yang independen secara bersamaan.
+> **Batas aman:** paralelkan hanya pekerjaan yang independen per target (per file, per suite, per command). Operasi yang berbagi state tetap serial: tulis database, migrasi, backup/restore, `git add/commit` (index dan HEAD), dua proses yang menulis file/output sama, dan perintah tunggal yang selesai dalam hitungan milidetik (overhead spawn lebih mahal daripada kerjanya). `pytest` paralel sudah aman lewat `npm run test:unit`: `conftest.py` memberi setiap worker DB, temp, backup, dan notes sendiri.
 
 ### 7.1 Peta Suite E2E (`tests/e2e/`)
 
