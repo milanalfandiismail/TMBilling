@@ -1,9 +1,9 @@
 """Sandbox Server Manager untuk Pengujian End-to-End (E2E).
 
 Modul ini bertanggung jawab untuk:
-1. Mempersiapkan database SQLite sementara `instance/warnet_e2e_sandbox.db`.
+1. Mempersiapkan database SQLite sementara per suite (`instance/e2e/<suite>/warnet.db`).
 2. Mengisi data awal via `seed_sandbox()`.
-3. Menjalankan server Flask terisolasi pada port khusus (default: 7016) via `waitress`.
+3. Menjalankan server Flask terisolasi pada port khusus via `waitress`.
 4. Mematikan server dan menghapus database sementara secara bersih tanpa mencemari `instance/warnet.db`.
 
 Catatan desain:
@@ -16,6 +16,7 @@ Catatan desain:
 
 import ctypes
 import os
+import re
 import socket
 import shutil
 import sys
@@ -24,6 +25,7 @@ import subprocess
 import urllib.request
 import urllib.error
 from ctypes import wintypes
+from dataclasses import dataclass
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if PROJECT_ROOT not in sys.path:
@@ -38,6 +40,38 @@ SANDBOX_NOTES_DIR = os.path.join(INSTANCE_DIR, "e2e", "notes")
 SANDBOX_PROJECT_ROOT = os.path.join(INSTANCE_DIR, "e2e", "root")
 # Backup sandbox dipisah agar suite tidak menulis/memangkas isi backups/ produksi.
 SANDBOX_BACKUP_DIR = os.path.join(INSTANCE_DIR, "e2e", "backups")
+
+
+@dataclass(frozen=True)
+class SandboxPaths:
+    db_path: str
+    notes_dir: str
+    project_root: str
+    backup_dir: str
+    log_path: str
+
+
+DEFAULT_PATHS = SandboxPaths(
+    db_path=SANDBOX_DB_PATH,
+    notes_dir=SANDBOX_NOTES_DIR,
+    project_root=SANDBOX_PROJECT_ROOT,
+    backup_dir=SANDBOX_BACKUP_DIR,
+    log_path=SANDBOX_LOG_PATH,
+)
+
+
+def sandbox_paths(suite_id):
+    if not re.fullmatch(r"[a-z0-9_]+", suite_id or ""):
+        raise ValueError("suite_id hanya boleh huruf kecil, angka, dan garis bawah")
+    root = os.path.join(INSTANCE_DIR, "e2e", suite_id)
+    return SandboxPaths(
+        db_path=os.path.join(root, "warnet.db"),
+        notes_dir=os.path.join(root, "notes"),
+        project_root=os.path.join(root, "root"),
+        backup_dir=os.path.join(root, "backups"),
+        log_path=os.path.join(root, "server.log"),
+    )
+
 
 # Kredensial tetap supaya suite tidak bergantung pada isi .env mesin pengembang.
 SANDBOX_CLIENT_API_KEY = "e2e-client-key"
@@ -141,52 +175,51 @@ def _port_in_use(port):
         return sock.connect_ex(("127.0.0.1", port)) == 0
 
 
-def _read_server_log():
+def _read_server_log(paths=DEFAULT_PATHS):
     try:
-        with open(SANDBOX_LOG_PATH, "r", encoding="utf-8", errors="replace") as fh:
+        with open(paths.log_path, "r", encoding="utf-8", errors="replace") as fh:
             return fh.read()[-2000:].strip()
     except OSError:
         return ""
 
 
-def _sandbox_env():
+def _sandbox_env(paths=DEFAULT_PATHS):
     env = os.environ.copy()
     env["PYTHONPATH"] = PROJECT_ROOT
-    env["DATABASE_URL"] = "sqlite:///{}".format(SANDBOX_DB_PATH.replace(os.sep, "/"))
+    env["DATABASE_URL"] = "sqlite:///{}".format(paths.db_path.replace(os.sep, "/"))
     env["FLASK_ENV"] = "testing"
     env["TESTING"] = "1"
     env["CLIENT_API_KEY"] = SANDBOX_CLIENT_API_KEY
     env["SECRET_KEY"] = SANDBOX_SECRET_KEY
-    env["TM_NOTES_DIR"] = SANDBOX_NOTES_DIR
-    env["PROJECT_ROOT"] = SANDBOX_PROJECT_ROOT
-    env["BACKUP_DIR"] = SANDBOX_BACKUP_DIR
+    env["TM_NOTES_DIR"] = paths.notes_dir
+    env["PROJECT_ROOT"] = paths.project_root
+    env["BACKUP_DIR"] = paths.backup_dir
     return env
 
 
-def prepare_sandbox_database():
+def prepare_sandbox_database(paths=DEFAULT_PATHS):
     """Hapus database lama jika ada dan buat database fresh dengan data seeder."""
     os.makedirs(INSTANCE_DIR, exist_ok=True)
-    os.makedirs(SANDBOX_NOTES_DIR, exist_ok=True)
-    os.makedirs(SANDBOX_PROJECT_ROOT, exist_ok=True)
+    os.makedirs(os.path.dirname(paths.db_path), exist_ok=True)
 
-    env = _sandbox_env()
+    env = _sandbox_env(paths)
     os.environ["DATABASE_URL"] = env["DATABASE_URL"]
     os.environ["FLASK_ENV"] = "testing"
     os.environ["TESTING"] = "1"
     os.environ["CLIENT_API_KEY"] = SANDBOX_CLIENT_API_KEY
     os.environ["SECRET_KEY"] = SANDBOX_SECRET_KEY
-    os.environ["TM_NOTES_DIR"] = SANDBOX_NOTES_DIR
-    os.environ["PROJECT_ROOT"] = SANDBOX_PROJECT_ROOT
-    os.environ["BACKUP_DIR"] = SANDBOX_BACKUP_DIR
+    os.environ["TM_NOTES_DIR"] = paths.notes_dir
+    os.environ["PROJECT_ROOT"] = paths.project_root
+    os.environ["BACKUP_DIR"] = paths.backup_dir
 
-    for sandbox_only in (SANDBOX_NOTES_DIR, SANDBOX_PROJECT_ROOT, SANDBOX_BACKUP_DIR):
+    for sandbox_only in (paths.notes_dir, paths.project_root, paths.backup_dir):
         if os.path.isdir(sandbox_only):
             shutil.rmtree(sandbox_only, ignore_errors=True)
         os.makedirs(sandbox_only, exist_ok=True)
 
-    if os.path.exists(SANDBOX_DB_PATH):
+    for suffix in ("", "-wal", "-shm"):
         try:
-            os.remove(SANDBOX_DB_PATH)
+            os.remove(paths.db_path + suffix)
         except OSError:
             pass
 
@@ -198,17 +231,17 @@ def prepare_sandbox_database():
     seed_sandbox(app)
     with app.app_context():
         db.engine.dispose()
-    print(f"[E2E SANDBOX] Database sandbox berhasil disiapkan: {SANDBOX_DB_PATH}")
+    print(f"[E2E SANDBOX] Database sandbox berhasil disiapkan: {paths.db_path}")
 
 
-def start_sandbox_server(port=7016, timeout_sec=20):
+def start_sandbox_server(port=7016, paths=DEFAULT_PATHS, timeout_sec=20):
     """Mempersiapkan database dan menjalankan server Flask di subprocess."""
     if _port_in_use(port):
         raise RuntimeError(
             f"[E2E SANDBOX] Port {port} sudah dipakai proses lain; hentikan dulu sebelum memulai sandbox."
         )
 
-    prepare_sandbox_database()
+    prepare_sandbox_database(paths)
 
     cmd = [
         sys.executable,
@@ -222,11 +255,11 @@ def start_sandbox_server(port=7016, timeout_sec=20):
 
     # Log ke berkas, bukan PIPE: PIPE yang tidak dibaca bisa memblokir server
     # ketika suite panjang menghasilkan banyak output.
-    with open(SANDBOX_LOG_PATH, "w", encoding="utf-8") as log:
+    with open(paths.log_path, "w", encoding="utf-8") as log:
         proc = subprocess.Popen(
             cmd,
             cwd=PROJECT_ROOT,
-            env=_sandbox_env(),
+            env=_sandbox_env(paths),
             stdout=log,
             stderr=subprocess.STDOUT,
         )
@@ -242,7 +275,9 @@ def start_sandbox_server(port=7016, timeout_sec=20):
     while time.time() - start_time < timeout_sec:
         if proc.poll() is not None:
             raise RuntimeError(
-                "[E2E SANDBOX] Server gagal startup (exit {}): {}".format(proc.returncode, _read_server_log())
+                "[E2E SANDBOX] Server gagal startup (exit {}): {}".format(
+                    proc.returncode, _read_server_log(paths)
+                )
             )
         try:
             req = urllib.request.Request(url)
@@ -254,18 +289,18 @@ def start_sandbox_server(port=7016, timeout_sec=20):
             time.sleep(0.5)
 
     if not server_ready:
-        stop_sandbox_server(proc, SANDBOX_DB_PATH)
+        stop_sandbox_server(proc, paths)
         raise TimeoutError(
             f"[E2E SANDBOX] Server tidak responsif dalam {timeout_sec} detik pada port {port}. "
-            f"Log terakhir: {_read_server_log()}"
+            f"Log terakhir: {_read_server_log(paths)}"
         )
 
     print(f"[E2E SANDBOX] Server aktif pada http://127.0.0.1:{port} (PID: {proc.pid})")
-    return proc, SANDBOX_DB_PATH
+    return proc, paths.db_path
 
 
-def stop_sandbox_server(proc, db_path=SANDBOX_DB_PATH):
-    """Menghentikan subprocess server dan menghapus file database sementara."""
+def stop_sandbox_server(proc, paths=DEFAULT_PATHS):
+    """Menghentikan subprocess server dan membersihkan database sementara."""
     if proc:
         print(f"[E2E SANDBOX] Menghentikan server PID {proc.pid}...")
         proc.terminate()
@@ -277,24 +312,29 @@ def stop_sandbox_server(proc, db_path=SANDBOX_DB_PATH):
 
     time.sleep(0.5)
 
-    # Bersihkan file database sementara
-    if db_path and os.path.exists(db_path):
+    for suffix in ("", "-wal", "-shm"):
+        db_file = paths.db_path + suffix
+        if not os.path.exists(db_file):
+            continue
         for _ in range(5):
             try:
-                os.remove(db_path)
-                print(f"[E2E SANDBOX] Database sementara {db_path} berhasil dihapus.")
+                os.remove(db_file)
+                print(f"[E2E SANDBOX] Berkas sementara {db_file} berhasil dihapus.")
                 break
             except OSError:
                 time.sleep(0.5)
+
+    for sandbox_only in (paths.notes_dir, paths.project_root, paths.backup_dir):
+        shutil.rmtree(sandbox_only, ignore_errors=True)
 
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--standalone":
         port = int(sys.argv[2]) if len(sys.argv) > 2 else 7016
-        proc, db_p = start_sandbox_server(port)
+        proc, db_p = start_sandbox_server(port, DEFAULT_PATHS)
         try:
             print("Tekan Ctrl+C untuk menghentikan server sandbox...")
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            stop_sandbox_server(proc, db_p)
+            stop_sandbox_server(proc, DEFAULT_PATHS)
