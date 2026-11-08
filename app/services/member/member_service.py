@@ -277,6 +277,9 @@ class MemberService:
         metode_pembayaran = validate_payment_method(metode_pembayaran)
 
         member = MemberRepository.get_by_id(member_id)
+        if not member:
+            raise ValueError("Member tidak ditemukan")
+        member.cek_kadaluarsa()
         if SesiRepository.get_aktif_by_member(member.id):
             raise ValueError("Member sedang bermain. Gunakan tombol '+Waktu' di dashboard PC.")
         

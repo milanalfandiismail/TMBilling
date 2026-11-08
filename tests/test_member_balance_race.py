@@ -1,7 +1,8 @@
 import threading, time
+from datetime import timedelta
 import pytest
 from app import create_app
-from app.models import db, Grup, Member, Paket
+from app.models import db, Grup, Member, Paket, now_local
 from app.services.member.member_service import MemberService
 from app.repositories.member.member_repository import MemberRepository
 
@@ -44,3 +45,17 @@ def test_dua_topup_paralel_tidak_hilang(ctx, monkeypatch):
     with ctx["app"].app_context():
         member = db.session.get(Member, ctx["member_id"])
         assert member.waktu_tersimpan == 120
+
+
+def test_topup_member_kedaluwarsa_tidak_menghidupkan_sisa(ctx):
+    with ctx["app"].app_context():
+        member = db.session.get(Member, ctx["member_id"])
+        member.waktu_tersimpan = 120
+        member.kadaluarsa_pada = now_local() - timedelta(days=1)
+        db.session.commit()
+        paket = db.session.get(Paket, ctx["paket_id"])
+
+        MemberService.tambah_waktu(ctx["member_id"], paket, operator="kasir", qty=1)
+
+        db.session.remove()
+        assert db.session.get(Member, ctx["member_id"]).waktu_tersimpan == 60
