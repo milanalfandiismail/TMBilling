@@ -29,6 +29,35 @@ class FakeClient:
             FakeClient.active -= 1
 
 
+def test_update_commit_dulu_baru_sync(tmp_path, monkeypatch):
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": f"sqlite:///{tmp_path / 'order.db'}",
+    })
+    with app.app_context():
+        grup = Grup(nama="reguler")
+        db.session.add(grup)
+        db.session.commit()
+        member = Member(username="m2", grup_id=grup.id, aktif=True)
+        member.set_password("lama")
+        db.session.add(member)
+        db.session.commit()
+
+        urutan = []
+        monkeypatch.setattr(db.session, "commit", lambda: urutan.append("commit"))
+        monkeypatch.setattr(
+            member_service.MemberService,
+            "_sync_mikrotik",
+            staticmethod(lambda *a, **k: urutan.append("sync")),
+        )
+
+        member_service.MemberService.update(
+            member.id, {"password": "baru"}, operator="admin"
+        )
+
+        assert urutan == ["commit", "sync"]
+
+
 def test_sinkronisasi_mikrotik_berjalan_satu_per_satu(tmp_path, monkeypatch):
     app = create_app(
         {

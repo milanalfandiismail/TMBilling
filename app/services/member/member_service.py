@@ -205,14 +205,17 @@ class MemberService:
         if "no_hp" in data:
             member.no_hp = validate_phone_number(data.get("no_hp"))
         
+        password = None
         # Update password jika disediakan
         if "password" in data and data["password"]:
             password = validate_password(data["password"], min_len=4, max_len=16)
             member.set_password(password)
-            # Sinkronisasi ke MikroTik hanya jika password berubah
-            MemberService._sync_mikrotik("update", member, password)
-        
+
         db.session.commit()
+
+        # Sinkronisasi ke MikroTik hanya jika password berubah, setelah data tersimpan
+        if password:
+            MemberService._sync_mikrotik("update", member, password)
         
         detail_member = {
             "username": member.username,
