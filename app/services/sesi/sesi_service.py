@@ -74,9 +74,11 @@ class SesiService:
         db.session.add(transaksi)
         try:
             db.session.commit()
-        except IntegrityError:
+        except IntegrityError as e:
             db.session.rollback()
-            raise ValueError("PC sedang dipakai")
+            if "sesi.pc_id" in str(getattr(e, "orig", e)):
+                raise ValueError("PC sedang dipakai")
+            raise
 
         detail_guest = {
             "nominal_pembayaran": paket.harga,
