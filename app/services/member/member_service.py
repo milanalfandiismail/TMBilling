@@ -232,6 +232,8 @@ class MemberService:
     def delete(member_id, operator="system"):
         """Hapus member secara permanen (Hanya jika tidak sedang main)."""
         member = MemberRepository.get_by_id(member_id)
+        if not member:
+            raise ValueError("Member tidak ditemukan")
         if SesiRepository.get_aktif_by_member(member.id):
             raise ValueError("Member sedang bermain, tidak bisa dihapus")
         
@@ -336,6 +338,8 @@ class MemberService:
     @staticmethod
     def _refund_paket_locked(member_id, transaksi_id, operator="system"):
         member = MemberRepository.get_by_id(member_id)
+        if not member:
+            raise ValueError("Member tidak ditemukan")
 
         transaksi = TransaksiRepository.get_by_id(transaksi_id)
         if not transaksi or transaksi.member_id != member.id or transaksi.is_refunded:

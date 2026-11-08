@@ -91,8 +91,8 @@ class MemberRepository:
 
     @staticmethod
     def get_by_id(member_id):
-        """Mengambil member berdasarkan ID (404 jika tidak ditemukan)."""
-        return Member.query.get_or_404(member_id)
+        """Mengambil member berdasarkan ID, None jika tidak ditemukan."""
+        return db.session.get(Member, member_id)
 
     @staticmethod
     def get_by_username(username):
