@@ -22,11 +22,15 @@ def _prune(key, now):
     return attempts
 
 
-def is_blocked(key):
-    """True bila percobaan gagal untuk key ini sudah mencapai batas dalam window."""
+def _is_blocked(key, limit):
     now = time.monotonic()
     with _lock:
-        return len(_prune(key, now)) >= MAX_FAILURES
+        return len(_prune(key, now)) >= limit
+
+
+def is_blocked(key):
+    """True bila percobaan gagal untuk key ini sudah mencapai batas dalam window."""
+    return _is_blocked(key, MAX_FAILURES)
 
 
 def record_failure(key):
@@ -50,7 +54,7 @@ def _ip_key(ip):
 
 
 def check(ip, username):
-    return is_blocked((ip, username)) or is_blocked(_ip_key(ip))
+    return is_blocked((ip, username)) or _is_blocked(_ip_key(ip), MAX_FAILURES_PER_IP)
 
 
 def fail(ip, username):
