@@ -290,7 +290,14 @@ class TournamentService:
         teams_input = data.get("teams", [])
         default_bo = validate_integer_range(data.get("bo_format", 1), min_val=1, max_val=9, field_name="Format BO")
 
-        if not isinstance(teams_input, list) or len(teams_input) < 2:
+        team_names = []
+        if isinstance(teams_input, list):
+            for t_name in teams_input:
+                clean_team_name = validate_string_length(str(t_name), min_len=1, max_len=50, field_name="Nama Tim", required=False)
+                if clean_team_name:
+                    team_names.append(clean_team_name)
+
+        if len(team_names) < 2:
             raise ValueError("Minimal harus mendaftarkan 2 tim")
 
         existing = TournamentRepository.get_by_nama(nama)
@@ -303,12 +310,10 @@ class TournamentService:
             TournamentRepository.flush()
 
             db_teams = []
-            for t_name in teams_input:
-                clean_team_name = validate_string_length(str(t_name), min_len=1, max_len=50, field_name="Nama Tim", required=False)
-                if clean_team_name:
-                    tm = TurnamenTim(turnamen_id=t.id, nama_tim=clean_team_name)
-                    TournamentRepository.save(tm)
-                    db_teams.append(tm)
+            for clean_team_name in team_names:
+                tm = TurnamenTim(turnamen_id=t.id, nama_tim=clean_team_name)
+                TournamentRepository.save(tm)
+                db_teams.append(tm)
             TournamentRepository.flush()
 
             if tipe_jalur == "playoff":
