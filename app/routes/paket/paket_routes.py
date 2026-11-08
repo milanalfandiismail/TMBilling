@@ -7,6 +7,7 @@ dalam sistem billing.
 """
 
 from flask import Blueprint, request, jsonify, session
+from werkzeug.exceptions import NotFound
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.services import PaketService
 
@@ -93,6 +94,8 @@ def edit_paket(paket_id):
         }), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    except NotFound:
+        return jsonify({"error": "Paket tidak ditemukan"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -111,5 +114,7 @@ def hapus_paket(paket_id):
         }), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    except NotFound:
+        return jsonify({"error": "Paket tidak ditemukan"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
