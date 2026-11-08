@@ -10,11 +10,14 @@ import shutil
 # 1. Pastikan TEMP dan TMP selalu diarahkan ke drive lokal C: repositori
 # Menghindari kegagalan 'No space left on device' pada RAM disk (misal drive X: yang penuh)
 _root_dir = os.path.dirname(os.path.abspath(__file__))
-_pytest_temp = os.path.join(_root_dir, ".pytest_temp")
+_worker = os.environ.get("PYTEST_XDIST_WORKER", "serial")
+_pytest_temp = os.path.join(_root_dir, ".pytest_temp", _worker)
 os.makedirs(_pytest_temp, exist_ok=True)
 
 os.environ["TEMP"] = _pytest_temp
 os.environ["TMP"] = _pytest_temp
+os.environ["BACKUP_DIR"] = os.path.join(_pytest_temp, "backups")
+os.environ["TM_NOTES_DIR"] = os.path.join(_pytest_temp, "notes")
 tempfile.tempdir = _pytest_temp
 
 # Monkeypatch tempfile factories agar jika dir=None otomatis menggunakan _pytest_temp
@@ -41,7 +44,7 @@ tempfile.NamedTemporaryFile = _patched_named_tempfile
 
 # 2. Pastikan testing environment dan database terisolasi dari warnet.db produksi
 os.environ["FLASK_ENV"] = "testing"
-os.environ["DATABASE_URL"] = "sqlite:///test_warnet.db"
+os.environ["DATABASE_URL"] = f"sqlite:///test_warnet_{_worker}.db"
 os.environ["TM_DISABLE_SCHEDULER"] = "1"
 
 # 3. Isolasi file audit logger ke dalam folder sementara testing
@@ -64,7 +67,7 @@ def guard_test_database():
     """Safety guard: pastikan test suite tidak pernah terhubung ke database asli (warnet.db)."""
     from app.config import Config
     uri = str(Config.SQLALCHEMY_DATABASE_URI).replace("\\", "/")
-    if "warnet.db" in uri and "test_warnet.db" not in uri:
+    if "warnet.db" in uri and "test_warnet" not in uri:
         raise RuntimeError(f"CRITICAL SAFETY GUARD: Pytest terdeteksi mencoba menyentuh database produksi '{uri}'!")
     yield
 
