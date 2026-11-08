@@ -88,20 +88,96 @@ def prod_db_snapshot():
     return {"sha256": _sha256(PROD_DB_PATH), "tables": counts}
 
 
-def snapshot_diff(before, after):
-    """Daftar perubahan antara dua snapshot; kosong berarti database tidak tersentuh."""
-    if before is None and after is None:
-        return []
-    if (before is None) != (after is None):
-        return ["instance/warnet.db muncul atau hilang selama pengujian"]
+GUARD_LABELS = {
+    "db": "instance/warnet.db",
+    "backups": "backups/",
+    "notes": "instance/notes/",
+    "env": ".env",
+    "initial_admin": "initial_admin.txt",
+}
+
+
+def tree_snapshot(path):
+    """Snapshot read-only berkas tunggal atau isi direktori (sha256 + ukuran)."""
+    if not os.path.exists(path):
+        return None
+    if os.path.isfile(path):
+        return {"sha256": _sha256(path), "size": os.path.getsize(path)}
+    entries = {}
+    for root, dirs, files in os.walk(path):
+        dirs.sort()
+        for name in sorted(files):
+            full = os.path.join(root, name)
+            rel = os.path.relpath(full, path).replace(os.sep, "/")
+            entries[rel] = {"sha256": _sha256(full), "size": os.path.getsize(full)}
+    return entries
+
+
+def prod_snapshot():
+    return {
+        "db": prod_db_snapshot(),
+        "backups": tree_snapshot(os.path.join(PROJECT_ROOT, "backups")),
+        "notes": tree_snapshot(os.path.join(INSTANCE_DIR, "notes")),
+        "env": tree_snapshot(os.path.join(PROJECT_ROOT, ".env")),
+        "initial_admin": tree_snapshot(os.path.join(PROJECT_ROOT, "initial_admin.txt")),
+    }
+
+
+def _diff_db(label, before, after):
     diffs = []
     if before["sha256"] != after["sha256"]:
-        diffs.append("sha256 berubah ({} -> {})".format(before["sha256"][:12], after["sha256"][:12]))
+        diffs.append("{}: sha256 berubah ({} -> {})".format(label, before["sha256"][:12], after["sha256"][:12]))
     for table in sorted(set(before["tables"]) | set(after["tables"])):
         old = before["tables"].get(table)
         new = after["tables"].get(table)
         if old != new:
-            diffs.append("tabel {}: {} -> {} baris".format(table, old, new))
+            diffs.append("{} tabel {}: {} -> {} baris".format(label, table, old, new))
+    return diffs
+
+
+def _diff_tree(label, before, after):
+    if isinstance(before, dict) and isinstance(after, dict) \
+            and isinstance(before.get("sha256"), str) and isinstance(after.get("sha256"), str):
+        if before["sha256"] != after["sha256"]:
+            return ["{}: sha256 berubah ({} -> {})".format(label, before["sha256"][:12], after["sha256"][:12])]
+        return []
+    diffs = []
+    for name in sorted(set(before) | set(after)):
+        old = before.get(name)
+        new = after.get(name)
+        if old is None:
+            diffs.append("{}/{}: baru selama pengujian".format(label, name))
+        elif new is None:
+            diffs.append("{}/{}: hilang selama pengujian".format(label, name))
+        elif old["sha256"] != new["sha256"]:
+            diffs.append("{}/{}: sha256 berubah ({} -> {})".format(
+                label, name, old["sha256"][:12], new["sha256"][:12]))
+    return diffs
+
+
+def snapshot_diff(before, after):
+    """Daftar perubahan antara dua snapshot; kosong berarti berkas produksi tidak tersentuh."""
+    if before is None and after is None:
+        return []
+    if before is None or after is None:
+        return ["snapshot produksi tidak lengkap"]
+    diffs = []
+    for key in sorted(set(before) | set(after)):
+        label = GUARD_LABELS.get(key, key)
+        old = before.get(key)
+        new = after.get(key)
+        if old is None and new is None:
+            continue
+        if old is None:
+            diffs.append("{}: muncul selama pengujian".format(label))
+            continue
+        if new is None:
+            diffs.append("{}: hilang selama pengujian".format(label))
+            continue
+        if key == "db":
+            diffs.extend(_diff_db(label, old, new))
+        else:
+            diffs.extend(_diff_tree(label, old, new))
     return diffs
 
 
@@ -244,11 +320,14 @@ def main(argv=None):
 
     before = None
     if not args.no_guard:
-        before = prod_db_snapshot()
-        if before:
-            print("Guard database produksi: sha256 {} ({} tabel)".format(before["sha256"][:12], len(before["tables"])))
+        before = prod_snapshot()
+        db_before = before["db"]
+        if db_before:
+            print("Guard database produksi: sha256 {} ({} tabel)".format(
+                db_before["sha256"][:12], len(db_before["tables"])))
         else:
             print("Guard database produksi: instance/warnet.db tidak ada, pemeriksaan dilewati.")
+        print("Guard berkas produksi: backups/, instance/notes/, .env, initial_admin.txt")
 
     total = passed = failed = 0
     exit_code = 0
@@ -315,13 +394,13 @@ def main(argv=None):
     print("=" * 65)
 
     if not args.no_guard:
-        diffs = snapshot_diff(before, prod_db_snapshot())
+        diffs = snapshot_diff(before, prod_snapshot())
         if diffs:
-            print("GAGAL GUARD: instance/warnet.db berubah selama pengujian:")
+            print("GAGAL GUARD: berkas produksi berubah selama pengujian:")
             for diff in diffs:
                 print("  - {}".format(diff))
             return 1
-        print("Guard database produksi: instance/warnet.db tidak berubah.")
+        print("Guard produksi: instance/warnet.db, backups/, instance/notes/, .env, initial_admin.txt tidak berubah.")
 
     if args.self_test:
         # Self-test dianggap berhasil bila kegagalan check benar-benar terlihat.
