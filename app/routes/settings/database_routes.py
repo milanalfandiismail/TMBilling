@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from flask import request, jsonify, session, current_app, send_file
 from app.services import SettingsService, BackupService
-from app.services.backup.backup_service import default_backup_dir
+from app.services.backup.backup_service import default_backup_dir, default_db_path
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.utils.logger import write_log
 from app.routes.settings.settings_routes import settings_api_bp
@@ -44,8 +44,8 @@ def download_db():
     import tempfile
     from flask import after_this_request
 
-    db_path = os.path.join(current_app.instance_path, 'warnet.db')
-    fd, snapshot_path = tempfile.mkstemp(suffix='.db', dir=current_app.instance_path)
+    db_path = default_db_path()
+    fd, snapshot_path = tempfile.mkstemp(suffix='.db', dir=os.path.dirname(db_path))
     os.close(fd)
     try:
         src = sqlite3.connect(db_path)
