@@ -2,7 +2,7 @@
 
 """Service untuk manajemen PC/unit komputer.
 
-Modul ini menangani CRUD PC, bulk creation, dan status summary.
+Modul ini menangani CRUD PC dan bulk creation.
 """
 
 from sqlalchemy.exc import IntegrityError
@@ -66,18 +66,6 @@ class PCService:
     def get_by_kode(kode):
         """Mengambil detail profil PC berdasarkan kode PC."""
         return PCRepository.get_by_kode(kode)
-
-    @staticmethod
-    def get_status_summary():
-        """Ringkasan cepat status PC (Total, Terpakai, Kosong) untuk dashboard."""
-        all_pc = PCRepository.get_all(aktif_only=True)
-        total = len(all_pc)
-        terpakai = sum(1 for pc in all_pc if pc.sesi_aktif)
-        return {
-            "total": total, 
-            "terpakai": terpakai, 
-            "kosong": total - terpakai
-        }
 
     @staticmethod
     def get_sesi_map():
