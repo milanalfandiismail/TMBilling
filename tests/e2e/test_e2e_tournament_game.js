@@ -16,7 +16,7 @@
  *   final, genap mengisi `tim2_id`.
  * - Reader dokumentasi menyuntikkan `tutorial.content` sebagai HTML mentah
  *   (tidak ada markdown renderer), jadi marker diuji sebagai elemen HTML.
- * - Sandbox mengisolasi catatan ke `instance/e2e/notes` (TM_NOTES_DIR) dan
+ * - Sandbox mengisolasi catatan ke direktori yang diberikan TM_NOTES_DIR dan
  *   mengosongkannya tiap run; suite hanya menghapus berkas yang ia buat.
  */
 
@@ -28,7 +28,9 @@ const { BASE_URL, login, tab, waitFor, unique, check } = require('./lib/harness'
 const { dbQuery, PROJECT_ROOT } = require('./lib/db');
 const { createReport, finish } = require('./lib/report');
 
-const NOTES_DIR = path.join(PROJECT_ROOT, 'instance', 'e2e', 'notes');
+const NOTES_DIR = path.resolve(
+    process.env.TM_NOTES_DIR || path.join(PROJECT_ROOT, 'instance', 'e2e', 'notes')
+);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function dbWait(sql, params, predicate, label, timeout = 5000) {

@@ -12,7 +12,9 @@ const { BASE_URL, login, logout, settingsTab, unique, check } = require('./lib/h
 const { dbQuery, dbExec, PROJECT_ROOT } = require('./lib/db');
 const { createReport, finish } = require('./lib/report');
 
-const SANDBOX_BACKUP_DIR = path.join(PROJECT_ROOT, 'instance', 'e2e', 'backups');
+const SANDBOX_BACKUP_DIR = path.resolve(
+    process.env.BACKUP_DIR || path.join(PROJECT_ROOT, 'instance', 'e2e', 'backups')
+);
 const PRODUCTION_BACKUP_DIR = path.join(PROJECT_ROOT, 'backups');
 
 /** fetch dari dalam halaman: ikut cookie sesi + header CSRF seperti API.request. */

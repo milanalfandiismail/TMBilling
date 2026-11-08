@@ -9,7 +9,10 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..', '..');
-const SANDBOX_DB_PATH = path.join(PROJECT_ROOT, 'instance', 'warnet_e2e_sandbox.db');
+const PROD_DB_PATH = path.join(PROJECT_ROOT, 'instance', 'warnet.db');
+const SANDBOX_DB_PATH = path.resolve(
+  process.env.E2E_SANDBOX_DB || path.join(PROJECT_ROOT, 'instance', 'warnet_e2e_sandbox.db')
+);
 
 // Dieksekusi sebagai satu proses Python pendek: baca JSON dari stdin, tulis JSON ke stdout.
 const PY_SCRIPT = [
@@ -41,6 +44,9 @@ function pythonExe() {
 
 function run(dbPath, sql, params, isExec) {
   const resolved = path.resolve(dbPath);
+  if (resolved === path.resolve(PROD_DB_PATH)) {
+    throw new Error(`db.js menolak database produksi: ${resolved}`);
+  }
   if (resolved !== path.resolve(SANDBOX_DB_PATH)) {
     throw new Error(`db.js hanya boleh menyentuh sandbox (${SANDBOX_DB_PATH}), diminta ${resolved}`);
   }
@@ -75,4 +81,4 @@ async function dbExec(sql, params = []) {
   return run(SANDBOX_DB_PATH, sql, params, true);
 }
 
-module.exports = { dbQuery, dbExec, SANDBOX_DB_PATH, PROJECT_ROOT };
+module.exports = { dbQuery, dbExec, SANDBOX_DB_PATH, PROD_DB_PATH, PROJECT_ROOT };
