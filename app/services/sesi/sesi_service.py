@@ -69,10 +69,10 @@ class SesiService:
         
         # Simpan secara atomik di Service Layer
         db.session.add(sesi)
-        db.session.flush() # Ambil ID sesi untuk transaksi
-        transaksi.sesi_id = sesi.id
-        db.session.add(transaksi)
         try:
+            db.session.flush() # Ambil ID sesi untuk transaksi
+            transaksi.sesi_id = sesi.id
+            db.session.add(transaksi)
             db.session.commit()
         except IntegrityError as e:
             db.session.rollback()
