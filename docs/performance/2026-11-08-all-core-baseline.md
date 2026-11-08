@@ -12,3 +12,7 @@
 ## Decision
 
 Bili proxy CPU share is below 10% of one core, so no image/JSON worker pool is added in this plan. Task 2 only sets the libuv threadpool. Revisit worker threads when profiling shows a CPU-bound path above 10%.
+
+## bili rollback
+
+npm install -g billion-context@0.1.212
