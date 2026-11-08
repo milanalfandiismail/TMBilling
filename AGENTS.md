@@ -291,9 +291,9 @@ npm run test:e2e:sandbox
 # atau langsung via Python: .venv\Scripts\python.exe tests/e2e/e2e_sandbox_server.py --standalone 7016
 ```
 
-> **Aturan eksekusi lokal:** setiap pekerjaan lokal (PowerShell, test, build, audit) WAJIB memakai seluruh core CPU bila alatnya mendukung — misalnya `npm run test:e2e` (default `--jobs 0`), `npm run build`, atau beberapa perintah independen lewat `ForEach-Object -Parallel`/job latar. Jangan menjalankan serial kecuali sedang men-debug kegagalan.
+> **Aturan eksekusi lokal:** setiap tugas agent (pencarian kata/kalimat, PowerShell, test, build, audit) WAJIB memakai seluruh core CPU bila alatnya mendukung — misalnya `rg --threads 0`, `npm run test:e2e` (default `--jobs 0`), `npm run build`, atau beberapa perintah independen lewat `ForEach-Object -Parallel`/job latar. Jangan menjalankan serial kecuali sedang men-debug kegagalan.
 >
-> **Pengecualian:** `pytest` belum aman diparalelkan (`-n auto`/xdist) karena semua worker berbagi `instance/test_warnet.db`; paralelisasi pytest baru boleh dipakai setelah setiap worker punya database sendiri. Untuk sekarang jalankan `pytest` sebagai satu proses, tetapi jalankan pemeriksaan lain yang independen secara bersamaan.
+> **Batas aman:** paralelkan hanya pekerjaan baca/uji yang independen. Operasi tulis ke database, commit, migrasi, backup/restore, dan perubahan file yang sama tetap serial agar tidak race atau korup. `pytest` belum aman diparalelkan (`-n auto`/xdist) karena semua worker berbagi `instance/test_warnet.db`; paralelisasi pytest baru boleh dipakai setelah setiap worker punya database sendiri. Untuk sekarang jalankan `pytest` sebagai satu proses, tetapi jalankan pemeriksaan lain yang independen secara bersamaan.
 
 ### 7.1 Peta Suite E2E (`tests/e2e/`)
 
