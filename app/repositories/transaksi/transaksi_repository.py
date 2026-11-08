@@ -42,19 +42,6 @@ class TransaksiRepository:
         return Transaksi.query.filter_by(no_nota=no_nota).first()
 
     @staticmethod
-    def get_by_sesi_id(sesi_id):
-        """Ambil transaksi berdasarkan ID sesi (terutama untuk fallback format lama)."""
-        return Transaksi.query.filter_by(sesi_id=sesi_id).order_by(Transaksi.dibuat_pada.asc()).first()
-
-    @staticmethod
-    def get_last_paket_member(member_id):
-        """Ambil pembelian paket terakhir member."""
-        return Transaksi.query.filter_by(
-            member_id=member_id,
-            jenis="beli_paket_member"
-        ).order_by(Transaksi.dibuat_pada.desc()).first()
-
-    @staticmethod
     def get_riwayat_paket_member(member_id):
         """Ambil riwayat paket member yang belum direfund."""
         return Transaksi.query.filter(
@@ -134,11 +121,6 @@ class TransaksiRepository:
         return query.order_by(Transaksi.dibuat_pada.desc()).all()
 
     @staticmethod
-    def get_history_nota_by_date(tanggal=None, kasir_id=None):
-        """Alias untuk get_all_by_tanggal_with_nota"""
-        return TransaksiRepository.get_all_by_tanggal_with_nota(tanggal, kasir_id)
-
-    @staticmethod
     def get_history_nota_paginated(tanggal=None, page=1, per_page=10, kasir_id=None, metode_pembayaran=None, q=None):
         """Ambil histori nota dengan pagination dan pencarian query."""
         query = Transaksi.query.options(
@@ -193,11 +175,6 @@ class TransaksiRepository:
         db.session.add(transaksi)
 
     # Update dipindah ke Service (Explicit commit)
-
-    @staticmethod
-    def update_refund_status(transaksi):
-        """Menandai transaksi sebagai sudah direfund (Tanpa Commit)."""
-        transaksi.is_refunded = True
 
 
     # =========================================================================

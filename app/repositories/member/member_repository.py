@@ -112,26 +112,6 @@ class MemberRepository:
 
 
     # =========================================================================
-    # 3. MANAJEMEN SALDO WAKTU (BALANCE MANAGEMENT)
-    # =========================================================================
-    # Fokus: Logika khusus untuk menambah atau mengubah sisa waktu bermain.
-
-    @staticmethod
-    def tambah_saldo_menit(member_id, tambahan_menit):
-        """Menambahkan saldo waktu ke akun member (Refund/Recovery)."""
-        member = Member.query.get(member_id)
-        if member:
-            member.waktu_tersimpan += tambahan_menit
-            return True
-        return False
-
-    @staticmethod
-    def update_waktu(member, waktu_baru):
-        """Update total waktu tersimpan member (Tanpa Commit)."""
-        member.waktu_tersimpan = waktu_baru
-
-
-    # =========================================================================
     # 4. OPERASI PENYIMPANAN & PENGHAPUSAN (WRITE)
     # =========================================================================
     # Fokus: Sinkronisasi objek member ke database.

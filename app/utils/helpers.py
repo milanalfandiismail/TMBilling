@@ -72,21 +72,6 @@ def natural_sort_key(value):
             for text in re.split(r'(\d+)', value)]
 
 
-def format_rupiah(nominal):
-    """Memformat angka nominal ke format Rupiah Indonesia.
-
-    Args:
-        nominal (int): Nominal dalam satuan Rupiah.
-
-    Returns:
-        str: String dengan format 'Rp10.000' (standar EYD/PUEBI tanpa spasi).
-    """
-    if nominal is None:
-        nominal = 0
-    formatted = f"{int(nominal):,}".replace(",", ".")
-    return f"Rp{formatted}"
-
-
 from html.parser import HTMLParser
 
 

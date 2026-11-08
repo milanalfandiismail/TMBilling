@@ -13,7 +13,7 @@ from app.models import Sesi
 from app.models import Member
 from app.models import Transaksi
 from app.utils.logger import write_log
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 
 
@@ -71,11 +71,6 @@ class SesiRepository:
         return Sesi.query.filter_by(member_id=member_id, status="aktif").all()
     
     @staticmethod
-    def get_active_admin_sessions():
-        """Ambil semua sesi admin yang aktif."""
-        return Sesi.query.filter_by(tipe="admin", status="aktif").all()
-
-    @staticmethod
     def get_history_by_member(member_id, limit=10):
         """Mengambil riwayat sesi bermain member terurut dari yang terbaru."""
         return Sesi.query.filter_by(member_id=member_id).order_by(Sesi.mulai_pada.desc()).limit(limit).all()
@@ -102,25 +97,12 @@ class SesiRepository:
         db.session.flush()
 
 
-    @staticmethod
-    def update_last_sync(sesi):
-        """Memperbarui timestamp sinkronisasi terakhir sesi (Tanpa Commit)."""
-        sesi.last_sync = now_local()
-
-
 
 
 
     # =========================================================================
     # 3. KONTROL SESI (LIFECYCLE)
     # =========================================================================
-
-    @staticmethod
-    def create_new_session(sesi_baru):
-        """Menambahkan sesi baru ke session (Tanpa Commit)."""
-        db.session.add(sesi_baru)
-        return sesi_baru
-
 
     @staticmethod
     def close_session(sesi):
@@ -147,19 +129,6 @@ class SesiRepository:
     # =========================================================================
     # 4. LAPORAN & STATISTIK (REPORTING)
     # =========================================================================
-
-    @staticmethod
-    def get_by_tanggal(tanggal=None):
-        """Mengambil semua sesi pada tanggal tertentu atau semua sesi jika tanggal None."""
-        query = Sesi.query
-        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
-            from app.utils.timezone_utils import get_local_date_range_utc
-            start_utc, end_utc = get_local_date_range_utc(tanggal)
-            query = query.filter(
-                Sesi.mulai_pada >= start_utc,
-                Sesi.mulai_pada < end_utc
-            )
-        return query.order_by(Sesi.mulai_pada.desc()).all()
 
     @staticmethod
     def count_by_date(tanggal=None):
@@ -284,27 +253,6 @@ class SesiRepository:
     # =========================================================================
     # 5. BLACKOUT & AUDIT LOG
     # =========================================================================
-
-    @staticmethod
-    def get_all_suspects():
-        """Mengambil semua sesi yang dicurigai terdampak blackout."""
-        return Sesi.query.filter_by(is_blackout_suspect=True).all()
-
-    @staticmethod
-    def get_by_audit_status(is_resolved):
-        """Mengambil sesi blackout berdasarkan status resolusi."""
-        return Sesi.query.filter_by(
-            is_blackout_suspect=True,
-            is_blackout_resolved=is_resolved
-        ).all()
-
-    @staticmethod
-    def get_aktif_tanpa_sync(sejak):
-        """Mengambil sesi aktif yang belum pernah mengirim sync atau sync terakhir sebelum batas waktu."""
-        return Sesi.query.filter(
-            Sesi.status == "aktif",
-            or_(Sesi.last_sync == None, Sesi.last_sync < sejak)
-        ).all()
 
     @staticmethod
     def get_aktif_belum_suspect_lama_sync(batas_waktu):

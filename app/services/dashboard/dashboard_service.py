@@ -11,7 +11,6 @@ import time
 from app.services.sesi.sesi_service import SesiService
 from app.services.pc.pc_service import PCService
 from app.repositories import TransaksiRepository, MenuRepository
-from app.utils.logger import write_log
 from app.models import now_local, Sesi, PC, db
 
 _OMZET_TTL_SECONDS = 5
@@ -37,18 +36,6 @@ class DashboardService:
         )
         _omzet_cache.update(key=key, value=value, ts=now_ts)
         return value
-
-    # =========================================================================
-    # 1. AUDIT & MONITORING (ACCESS)
-    # =========================================================================
-    # Fokus: Mencatat aktivitas kasir saat membuka dashboard.
-
-    @staticmethod
-    def get_dashboard_data(username):
-        """Catat log akses dashboard oleh kasir."""
-        write_log("ACCESS_DASHBOARD", f"Kasir {username} mengakses dashboard", user=username)
-        return {"success": True}
-
 
     # =========================================================================
     # 2. DATA AGGREGATION (REAL-TIME STATUS)

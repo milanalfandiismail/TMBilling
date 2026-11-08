@@ -82,26 +82,6 @@ def get_display_tz(tz_name=None):
         return ZoneInfo(DEFAULT_TZ)
 
 
-def ensure_utc(dt):
-    """Memastikan datetime dalam format UTC naive.
-    
-    Jika dt aware (ada tzinfo), konversi ke UTC lalu strip.
-    Jika dt naive, asumsikan sudah UTC (setelah migrasi berjalan).
-    Data existing (WIB) harus di-migrasi dulu lewat script terpisah.
-    
-    Args:
-        dt (datetime): Datetime yang akan di-ensure.
-    
-    Returns:
-        datetime: Naive datetime dalam UTC.
-    """
-    if dt is None:
-        return None
-    if dt.tzinfo is not None:
-        return dt.astimezone(UTC).replace(tzinfo=None)
-    return dt  # sudah UTC naive (data baru atau sudah di-migrasi)
-
-
 def display_in_tz(dt, tz_name=None):
     """Konversi UTC (naive) datetime ke timezone display.
     

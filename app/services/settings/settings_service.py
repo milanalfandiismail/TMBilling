@@ -112,25 +112,6 @@ class SettingsService:
         return val
 
     @staticmethod
-    def get_auto_shutdown_timer():
-        """
-        Mengambil durasi auto-shutdown dalam detik.
-        Jika belum diset, akan otomatis membuat nilai default 180 detik.
-        """
-        val = SettingsService.get("auto_shutdown_timer_seconds")
-        
-        if val is None:
-            # Inisialisasi default jika key belum ada di database
-            SettingsService.set("auto_shutdown_timer_seconds", "180")
-            return 180
-            
-        try:
-            return int(val)
-        except (ValueError, TypeError):
-            # Fallback jika data di database bukan angka valid
-            return 180
-
-    @staticmethod
     def set(key, value):
         """Menyimpan atau memperbarui nilai pengaturan (Write-Through DB & RAM)."""
         SettingsRepository.set(key, value)

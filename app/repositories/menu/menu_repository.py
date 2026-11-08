@@ -43,11 +43,6 @@ class MenuRepository:
         return MenuItem.query.filter_by(is_active=False).order_by(MenuItem.nama.asc()).all()
 
     @staticmethod
-    def count_archived():
-        """Menghitung jumlah menu yang diarsipkan."""
-        return MenuItem.query.filter_by(is_active=False).count()
-
-    @staticmethod
     def decrement_stok_if_available(menu_id, jumlah):
         """Kurangi stok atomik. False bila stok terbatas dan tidak cukup. Stok < 0 = unlimited."""
         menu = MenuItem.query.filter_by(id=menu_id).first()
@@ -213,28 +208,6 @@ class MenuRepository:
             else:
                 query = query.filter(TransaksiMenu.metode_pembayaran == metode_pembayaran)
         return query.order_by(TransaksiMenu.tanggal.desc()).all()
-
-    @staticmethod
-    def get_transactions_by_date_paginated(date_obj=None, page=1, per_page=12, kasir_id=None, metode_pembayaran=None):
-        """Mendapatkan daftar transaksi F&B dengan pagination pada tanggal tertentu (atau semua tanggal jika None)."""
-        query = TransaksiMenu.query.options(joinedload(TransaksiMenu.menu))
-        if date_obj and str(date_obj).strip().lower() not in ("all", "semua", "none", ""):
-            from app.utils.timezone_utils import get_local_date_range_utc
-            start_utc, end_utc = get_local_date_range_utc(date_obj)
-            query = query.filter(
-                TransaksiMenu.tanggal >= start_utc,
-                TransaksiMenu.tanggal < end_utc
-            )
-        query = MenuRepository._apply_kasir_filter(query, kasir_id)
-        if metode_pembayaran:
-            if metode_pembayaran == "Tunai":
-                query = query.filter(
-                    (TransaksiMenu.metode_pembayaran.in_(["Tunai", "Cash"])) | 
-                    (TransaksiMenu.metode_pembayaran == None)
-                )
-            else:
-                query = query.filter(TransaksiMenu.metode_pembayaran == metode_pembayaran)
-        return query.order_by(TransaksiMenu.tanggal.desc()).paginate(page=page, per_page=per_page, error_out=False)
 
     @staticmethod
     def get_by_no_nota(no_nota):

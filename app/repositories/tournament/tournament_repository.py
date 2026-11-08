@@ -46,11 +46,6 @@ class TournamentRepository:
         ).all()
 
     @staticmethod
-    def get_matches_by_stage_and_round(stage_id, round_number):
-        """Ambil match pada stage dan round tertentu."""
-        return TurnamenMatch.query.filter_by(tahap_id=stage_id, round_number=round_number).all()
-
-    @staticmethod
     def get_incomplete_matches_in_round(stage_id, round_number):
         """Ambil match yang belum ada pemenangnya pada round tertentu."""
         return TurnamenMatch.query.filter_by(

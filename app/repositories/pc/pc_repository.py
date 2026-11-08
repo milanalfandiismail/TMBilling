@@ -128,11 +128,6 @@ class PCRepository:
         db.session.add(pc)
 
     @staticmethod
-    def save_batch(pc_list):
-        """Bulk insert/update (Tanpa Commit)."""
-        db.session.add_all(pc_list)
-
-    @staticmethod
     def delete(pc):
         """Menghapus unit PC (Tanpa Commit)."""
         db.session.delete(pc)

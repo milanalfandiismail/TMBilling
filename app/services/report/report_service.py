@@ -346,12 +346,6 @@ class ReportService:
         return TransaksiRepository.get_total_pendapatan_by_tanggal(tanggal, jenis, kasir_id, metode_pembayaran)
 
     @staticmethod
-    def get_total_menit_harian(tanggal):
-        """Menghitung total menit terpakai."""
-        sesi_list = SesiRepository.get_selesai_by_tanggal(tanggal)
-        return sum(s.menit_terpakai() for s in sesi_list)
-
-    @staticmethod
     def _format_history_struk(transaksi_list):
         """Format data transaksi menjadi baris tabel struk."""
         formatted = []

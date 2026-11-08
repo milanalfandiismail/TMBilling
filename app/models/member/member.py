@@ -85,24 +85,6 @@ class Member(db.Model):
             else:
                 self.kadaluarsa_pada = now_local() + timedelta(days=kadaluarsa_hari)
 
-    
-    def kurangi_waktu(self, menit=1):
-        """Mengurangi waktu tersimpan.
-        
-        Method ini biasanya dipanggil oleh client C# setiap menit
-        selama session aktif.
-        
-        Args:
-            menit (int, optional): Jumlah menit yang akan dikurangi. Defaults to 1.
-            
-        Returns:
-            tuple: (bool, int) - (Status berhasil/tidak, Sisa waktu tersimpan).
-        """
-        if self.waktu_tersimpan >= menit:
-            self.waktu_tersimpan -= menit
-            return True, self.waktu_tersimpan
-        return False, 0
-    
     def cek_kadaluarsa(self):
         """Memeriksa dan membersihkan waktu yang sudah kadaluarsa.
         

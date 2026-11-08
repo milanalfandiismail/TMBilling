@@ -23,11 +23,6 @@ class MenuService:
         return MenuRepository.get_all()
 
     @staticmethod
-    def get_menu_by_id(menu_id):
-        """Mengambil menu berdasarkan ID."""
-        return MenuRepository.get_by_id(menu_id)
-
-    @staticmethod
     def create_menu(data, operator="system"):
         """Membuat menu baru, atau me-restore menu arsip dengan nama yang sama.
 
