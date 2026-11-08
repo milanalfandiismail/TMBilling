@@ -98,6 +98,11 @@ class ShiftService:
         ).first()
 
     @staticmethod
+    def get_shift(shift_id):
+        """Ambil shift berdasarkan ID tanpa commit (untuk otorisasi baca)."""
+        return db.session.get(ShiftRecord, shift_id)
+
+    @staticmethod
     def get_shift_summary(shift_id):
         """Hitung ringkasan pendapatan shift tanpa menyembunyikan angka.
 

@@ -167,6 +167,10 @@ def force_close_shift():
 def get_shift_receipt(shift_id):
     """Generate struk teks serah terima shift untuk printer thermal 58mm/80mm."""
     try:
+        if session.get("kasir_role") != "admin":
+            shift = ShiftService.get_shift(shift_id)
+            if not shift or shift.kasir_id != session.get("kasir_id"):
+                return jsonify({"error": "Akses ditolak"}), 403
         receipt_text = ShiftService.generate_shift_receipt_text(shift_id)
         return jsonify({"success": True, "receipt_text": receipt_text}), 200
     except ValueError as e:
