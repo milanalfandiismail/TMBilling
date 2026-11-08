@@ -9,15 +9,16 @@ if root_dir not in sys.path:
 
 from app import create_app, db
 
-def run():
+def run() -> bool:
     print("[MIGRATION] Menjalankan migrasi skema database...")
     app = create_app()
     with app.app_context():
         migrations_dir = os.path.join(root_dir, "migrations")
         if not os.path.exists(migrations_dir):
             print("[MIGRATION] Folder migrations tidak ditemukan.")
-            return
+            return False
 
+        ok = True
         try:
             from flask_migrate import upgrade, stamp
             from sqlalchemy import inspect, text
@@ -36,8 +37,9 @@ def run():
 
             upgrade(directory=migrations_dir)
             print("[MIGRATION] Alembic upgrade berhasil.")
-        except Exception as e:
+        except (Exception, SystemExit) as e:
             print(f"[MIGRATION ERROR] Alembic upgrade gagal: {e}")
+            ok = False
 
         # Safety Net: sinkronisasi tabel & kolom baru
         try:
@@ -123,8 +125,11 @@ def run():
             from flask_migrate import stamp
             stamp(directory=migrations_dir, revision="head")
             print("[MIGRATION] Safety sync skema berhasil.")
-        except Exception as sync_err:
+        except (Exception, SystemExit) as sync_err:
             print(f"[MIGRATION WARNING] Safety sync skema: {sync_err}")
+            ok = False
+
+        return ok
 
 if __name__ == "__main__":
-    run()
+    sys.exit(0 if run() else 1)
