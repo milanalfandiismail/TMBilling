@@ -96,7 +96,7 @@ Sistem TMBilling dirancang dengan arsitektur pemisahan tanggung jawab 3 lapis (*
 - **Framework**: Python 3.11+ dengan Flask, Flask-SQLAlchemy, Flask-Migrate, Flask-CORS, Flask-WTF.
 - **Telemetry & VNC**: Telemetri dan screenshot memakai HTTP polling; kanal WebSocket hanya dipakai VNC melalui proses Websockify (`ws://<host>:8081/?token=...`, atau `wss://<host>/ws/vnc?token=...` di balik HTTPS).
 - **Service Layer**: Pemisahan logika bisnis dari endpoint HTTP menggunakan 36 service class independen dan 15 repository class.
-- **Background Scheduler**: APScheduler menjalankan routine maintenance, toleransi blackout, dan pembersihan sesi kadaluwarsa setiap 60 detik.
+- **Background Scheduler**: APScheduler menjalankan routine maintenance, deteksi blackout, dan pembersihan sesi kadaluwarsa setiap 60 detik.
 
 ### 2.2 Frontend Dashboard
 - **Teknologi**: Modular ES6 JavaScript (tanpa Node.js bundler runtime), TailwindCSS styling, Font Awesome icon set.
@@ -232,7 +232,7 @@ c:\Project GIT\TMBilling
 ### 4.3 Blackout Auto-Recovery System (Toleransi Mati Lampu & Uptime Tracker)
 - **Deskripsi**: Proteksi otomatis terhadap pemadaman listrik (*blackout*) mendadak di warnet.
 - **Pencatatan Uptime & Offline Tracker**: Menggunakan tabel `PCUptimeLog` yang merekam *heartbeat* klien setiap beberapa detik.
-- **Toleransi Blackout**: Jika listrik padam mendadak, server mendeteksi status offline seluruh PC secara serentak. Saat listrik menyala kembali dan PC booting, sistem secara cerdas **tidak memotong durasi pelanggan** selama masa mati lampu, melainkan memulihkan sisa waktu dan paket sesi secara otomatis (*Auto Session Resume*). Sisa waktu yang dikembalikan ke member memakai snapshot audit `sisa_audit` (bukan jam berjalan), sehingga tidak ada kelebihan waktu. `sesi.selesai_pada` diisi waktu referensi (`last_sync`/`mulai_pada`), bukan jam deteksi, agar waktu terpakai tidak membengkak sepanjang outage; sesi guest yang dipulihkan juga mengisi `selesai_pada`. Pemulihan member ditolak bila member masih punya sesi aktif lain dan saldo yang sudah kadaluarsa tidak dihidupkan.
+- **Toleransi Blackout**: Jika listrik padam mendadak, server mendeteksi status offline seluruh PC secara serentak. Saat listrik menyala kembali dan PC booting, sistem secara cerdas **tidak memotong durasi pelanggan** selama masa mati lampu, melainkan memulihkan sisa waktu dan paket sesi secara otomatis (*Auto Session Resume*). Sisa waktu yang dikembalikan ke member memakai snapshot audit `sisa_audit` (bukan jam berjalan), sehingga tidak ada kelebihan waktu. `sesi.selesai_pada` diisi waktu referensi (`last_sync`/`mulai_pada`), bukan jam deteksi, agar waktu terpakai tidak membengkak sepanjang outage; sesi guest yang dipulihkan juga mengisi `selesai_pada`. Pemulihan member ditolak bila member masih punya sesi aktif lain dan saldo yang sudah kadaluarsa tidak dihidupkan. Threshold deteksi dibatasi `1..1440` menit, dan hanya sesi bertanda `is_blackout_suspect` yang dapat di-resolve.
 - **Hard Delete Uptime Log**: Admin dapat membersihkan riwayat log uptime lama dengan konfirmasi aman.
 
 ### 4.4 5-Layer WarnetAgent Anti-Tamper Security & Registry Hash Verification
@@ -301,7 +301,7 @@ c:\Project GIT\TMBilling
 - **Fitur**:
   - Manajemen katalog menu (`MenuItem`), kategori (Makanan, Minuman, Snack, Voucher), dan stok barang.
   - Opsi *Unlimited Stock* untuk item yang tidak memerlukan pengurangan inventaris otomatis.
-  - **Multi-Metode Pembayaran**: Tunai (Cash), QRIS Dinamis/Statis, dan Transfer Bank.
+  - **Multi-Metode Pembayaran**: Tunai (Cash), QRIS Dinamis/Statis, dan Transfer Bank. Metode Tunai wajib menyertakan nominal `>= total_tagihan`; tunai kosong atau kurang ditolak.
   - **Charge to PC**: Tagihan makanan/minuman bisa langsung dibebankan ke sesi PC pelanggan dan dibayar saat sesi selesai.
   - **Gambar QRIS Statis**: Upload di Pengaturan divalidasi Pillow, diperkecil maks 800 px (PNG optimize / JPEG q90) dan disimpan dengan nama bertimestamp agar cache client otomatis berganti. Server mengirim `qris_path` relatif ke client (client membentuk URL dari `server_url` sendiri) serta `qris_url` absolut dari setting `app_public_url`; `/static/uploads/qris/` di-cache immutable 1 tahun.
   - **Refresh Konfigurasi Client**: Kiosk Tauri memuat konfigurasi sekali saja melalui `src/main.js` (loop 60 detik saat sehat, 5 detik saat gagal, refresh saat tab QRIS dibuka). Gambar QRIS diunduh ke data URI hanya bila URL berubah dan disimpan di RAM; bila unduhan gagal, client menampilkan "QRIS belum tersedia" (tidak menampilkan QRIS lama) agar tidak salah bayar.
@@ -346,6 +346,7 @@ c:\Project GIT\TMBilling
   - **Drag-and-Drop Responsive Grid**: Node meja dapat digeser bebas dengan snap-to-grid halus.
   - **Indikator Warna Dinamis**: Hijau (Kosong/Tersedia), Merah (Sesi Aktif), Oranye (Sisa Waktu < 10 Menit), Abu-abu (Offline).
   - **Quick Action Click**: Klik langsung pada node meja untuk membuka sesi, menambah durasi, atau melihat detail PC.
+  - **Arsip PC**: Menghapus PC yang sudah punya riwayat sesi tidak menghapus barisnya; PC ditandai `aktif=False` agar histori dan laporan tetap utuh. PC tanpa riwayat tetap dihapus permanen.
 
 ### 4.14 Database Maintenance & Cloud/Local Backup UI
 - **Deskripsi**: Fasilitas pemeliharaan database SQLite internal agar tetap kencang dan aman dari korupsi data.
@@ -466,7 +467,7 @@ c:\Project GIT\TMBilling
      - Memanggil `SesiService.cleanup_expired_sessions()` untuk memeriksa seluruh sesi aktif, menandai sesi kadaluwarsa sebagai `SELESAI`, dan memicu sinyal penguncian.
   2. **Layer 2 - Realtime Client Polling (WarnetAgent Klien)**:
      - Klien PC warnet (Tauri) mengirimkan request heartbeat/status setiap **1 s/d 3 detik** ke `/api/v1/public/client/status`.
-     - Handler `ClientService.get_status()` memanggil `SesiService.hitung_sisa_menit()` dan mengeksekusi `cleanup_expired_sessions()` saat sisa waktu bernilai `<= 0`, langsung mengembalikan payload lockscreen ke klien.
+     - Handler `ClientService.get_status()` memanggil `SesiService.hitung_sisa_menit()` dan menutup sesi lewat `SesiService.tutup_sesi(id, operator="system")` saat sisa waktu `<= 0`, sehingga tercatat satu transaksi `tutup_sesi` Rp0 sebelum payload lockscreen dikembalikan ke klien.
   3. **Layer 3 - Frontend Dashboard Polling (Web Kasir)**:
      - Dashboard kasir melakukan polling status berkala (dapat diatur: 1, 2, 3, atau 5 detik) ke `/api/v1/kasir/dashboard/pc`.
      - Backend di `DashboardService.get_pc_list()` secara proaktif memanggil `cleanup_expired_sessions()`, memastikan tampilan kasir selalu sinkron secara instan.
@@ -976,7 +977,7 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | PUT | /api/v1/kasir/settings/timezone | settings.update_timezone |
 | GET | /api/v1/kasir/settings/uninstall-token/client | settings.get_uninstall_token_for_client |
 
-> Catatan keamanan: `/uninstall-token/client` hanya memerlukan `X-Client-Key` dan kini **hanya** mengembalikan `uninstall_token` (token darurat server tidak lagi dibagikan ke client). Login darurat `POST /api/v1/public/client/emergency-login` diterima bila token server valid **atau** IP asal sama dengan `ip_address` PC terdaftar.
+> Catatan keamanan: `/uninstall-token/client` hanya memerlukan `X-Client-Key` dan kini **hanya** mengembalikan `uninstall_token` (token darurat server tidak lagi dibagikan ke client). `client_api_key` hanya dapat diubah lewat `/api/v1/kasir/settings/apikey`; handler setting generik menolak key tersebut. Login darurat `POST /api/v1/public/client/emergency-login` diterima bila token server valid **atau** IP koneksi peer sama dengan `ip_address` PC terdaftar. Identitas client memakai IP koneksi; `ip_address` di body hanya boleh berbeda bila request datang dari loopback.
 
 #### 🔹 Blueprint: shift (5 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
