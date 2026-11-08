@@ -1,6 +1,7 @@
 # tests/test_batch_sesi_routes.py
 """Automated tests for batch session and remote endpoints."""
 
+import inspect
 import pytest
 from app import create_app, db
 from app.models import PC, Paket, Grup, Sesi, Transaksi
@@ -121,6 +122,47 @@ def test_tambah_waktu_batch_and_tutup_batch(app_and_client):
     })
     assert res_tutup.status_code == 200
     assert res_tutup.get_json()["total_success"] == 2
+
+
+def test_tambah_waktu_batch_atomik(app_and_client, monkeypatch):
+    app, client = app_and_client
+    with app.app_context():
+        paket = Paket.query.filter_by(nama="Paket Batch 1 Jam").one()
+        paket_id = paket.id
+
+    res_buka = client.post("/api/v1/kasir/sesi/buka-guest-batch", json={
+        "pc_kodes": ["BATCH-PC-1", "BATCH-PC-2"],
+        "paket_id": paket_id,
+        "nama_guest_prefix": "Atomic",
+        "metode_pembayaran": "Tunai",
+    })
+    sesi_ids = [c["sesi_id"] for c in res_buka.get_json()["created"]]
+
+    asli = SesiService._tambah_waktu_sesi_locked
+    jumlah = {"n": 0}
+
+    def gagal_kedua(sesi_id, paket, operator="system", qty=1,
+                    metode_pembayaran="Tunai", commit=True):
+        jumlah["n"] += 1
+        if jumlah["n"] == 2:
+            raise ValueError("gagal simulasi")
+        kwargs = {"commit": commit} if "commit" in inspect.signature(asli).parameters else {}
+        return asli(sesi_id, paket, operator, qty, metode_pembayaran, **kwargs)
+
+    monkeypatch.setattr(SesiService, "_tambah_waktu_sesi_locked", staticmethod(gagal_kedua))
+
+    res = client.post("/api/v1/kasir/sesi/tambah-waktu-batch", json={
+        "sesi_ids": sesi_ids,
+        "paket_id": paket_id,
+        "qty": 1,
+        "metode_pembayaran": "Tunai",
+    })
+
+    assert res.status_code == 400
+    assert res.get_json()["total_success"] == 0
+    with app.app_context():
+        for sesi_id in sesi_ids:
+            assert db.session.get(Sesi, sesi_id).durasi_beli_menit == 60
 
 
 def test_remote_action_batch(app_and_client):

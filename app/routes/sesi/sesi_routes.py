@@ -143,40 +143,47 @@ def tambah_waktu_batch():
         if not sesi_ids or not isinstance(sesi_ids, list):
             return jsonify({"error": "Daftar sesi (sesi_ids) harus berupa array non-kosong"}), 400
 
-        success_list = []
-        errors = []
-
-        for sesi_id in sesi_ids:
-            try:
-                rencana = []
+        try:
+            entries = []
+            for sesi_id in sesi_ids:
                 if selections:
                     for sel in selections:
                         p_id = sel.get("paket_id")
                         q = int(sel.get("qty", 1))
-                        if q <= 0: raise ValueError("Kuantitas minimal 1")
+                        if q <= 0:
+                            raise ValueError("Kuantitas minimal 1")
                         p = PaketService.get_by_id(p_id)
-                        if not p: raise ValueError("Paket tidak ditemukan")
-                        rencana.append((p, q))
+                        if not p:
+                            raise ValueError("Paket tidak ditemukan")
+                        entries.append((sesi_id, p, q))
                 elif paket_id:
                     p = PaketService.get_by_id(paket_id)
-                    if not p: raise ValueError("Paket tidak ditemukan")
-                    rencana.append((p, qty))
+                    if not p:
+                        raise ValueError("Paket tidak ditemukan")
+                    entries.append((sesi_id, p, qty))
                 else:
                     raise ValueError("Paket belum dipilih")
 
-                for p, q in rencana:
-                    SesiService.tambah_waktu_sesi(sesi_id, p, operator=kasir, qty=q, metode_pembayaran=metode_pembayaran)
-                success_list.append(sesi_id)
-            except Exception as e:
-                errors.append({"sesi_id": sesi_id, "error": str(e)})
+            SesiService.tambah_waktu_sesi_batch(
+                entries, operator=kasir, metode_pembayaran=metode_pembayaran
+            )
+        except ValueError as e:
+            return jsonify({
+                "success": False,
+                "success_ids": [],
+                "errors": [{"error": str(e)}],
+                "total_success": 0,
+                "total_failed": len(sesi_ids)
+            }), 400
 
+        success_ids = list(dict.fromkeys(sesi_id for sesi_id, _, _ in entries))
         return jsonify({
-            "success": len(success_list) > 0,
-            "success_ids": success_list,
-            "errors": errors,
-            "total_success": len(success_list),
-            "total_failed": len(errors)
-        }), 200 if len(success_list) > 0 else 400
+            "success": True,
+            "success_ids": success_ids,
+            "errors": [],
+            "total_success": len(success_ids),
+            "total_failed": 0
+        }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

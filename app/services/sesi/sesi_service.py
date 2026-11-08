@@ -178,7 +178,23 @@ class SesiService:
             return SesiService._tambah_waktu_sesi_locked(sesi_id, paket, operator, qty, metode_pembayaran)
 
     @staticmethod
-    def _tambah_waktu_sesi_locked(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
+    def tambah_waktu_sesi_batch(entries, operator="system", metode_pembayaran="Tunai"):
+        """Tambah waktu beberapa sesi dalam satu transaksi; rollback semua bila gagal."""
+        with WRITE_LOCK:
+            hasil = []
+            try:
+                for sesi_id, paket, qty in entries:
+                    hasil.append(SesiService._tambah_waktu_sesi_locked(
+                        sesi_id, paket, operator, qty, metode_pembayaran, commit=False
+                    ))
+                db.session.commit()
+                return hasil
+            except Exception:
+                db.session.rollback()
+                raise
+
+    @staticmethod
+    def _tambah_waktu_sesi_locked(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai", commit=True):
         if not paket: raise ValueError("Paket tidak ditemukan")
         qty = validate_integer_range(qty, 1, 100, field_name="Kuantitas paket")
         metode_pembayaran = validate_payment_method(metode_pembayaran)
@@ -215,8 +231,9 @@ class SesiService:
                 operator=operator
             )
             db.session.add(transaksi)
-            db.session.commit()
-            
+            if commit:
+                db.session.commit()
+
             write_log("TAMBAH_WAKTU", f"Member:{sesi.member.username} | +{total_menit}m", user=operator, detail_json=detail_tambah)
             return {"tipe": "member", "waktu_tersimpan": sesi.member.waktu_tersimpan}
 
@@ -234,8 +251,9 @@ class SesiService:
                 operator=operator
             )
             db.session.add(transaksi)
-            db.session.commit()
-            
+            if commit:
+                db.session.commit()
+
             write_log("TAMBAH_WAKTU", f"Guest:{sesi.nama_guest} | +{total_menit}m", user=operator, detail_json=detail_tambah)
             return {"tipe": "guest", "sisa_menit": sesi.sisa_menit()}
 
