@@ -86,6 +86,14 @@ class UserService:
         if not user:
             raise ValueError("User tidak ditemukan")
 
+        new_role = str(data["role"]).strip().lower() if data.get("role") else user.role
+        new_aktif = user.aktif
+        if data.get("aktif") is not None:
+            new_aktif = str(data["aktif"]).lower() == "true"
+        if user.role == "admin" and user.aktif and (new_role != "admin" or not new_aktif):
+            if UserRepository.count_active_admins() <= 1:
+                raise ValueError("Tidak dapat menonaktifkan satu-satunya Admin tersisa!")
+
         if "username" in data and data["username"]:
             username = validate_username(data["username"], min_len=3, max_len=30, lowercase_only=False)
             if username != user.username:
