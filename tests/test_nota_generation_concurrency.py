@@ -4,6 +4,7 @@ from app import create_app
 from app.models import db, Transaksi, TransaksiMenu, MenuItem, User
 from app.services.transaksi.transaksi_service import TransaksiService
 from app.services.menu.menu_service import MenuService
+from app.repositories import TransaksiRepository
 from app.utils.timezone_utils import display_in_tz, now_utc
 
 
@@ -29,10 +30,23 @@ def test_transaksi_nota_generation_anti_collision_and_monotonic():
         try:
             # Nota selanjutnya HARUS 006, bukan 001 atau 002 (karena max existing adalah 005)
             next_nota = TransaksiService.generate_nota()
-            assert next_nota == f"{prefix}006"
+            assert next_nota.startswith(f"{prefix}006-")
         finally:
             db.session.delete(t)
             db.session.commit()
+
+
+def test_generate_nota_tanpa_reservasi_tetap_berbeda(monkeypatch):
+    app = create_app()
+    with app.app_context():
+        monkeypatch.setattr(TransaksiRepository, "get_max_nota_seq", lambda date_str: 5)
+
+        nota1 = TransaksiService.generate_nota()
+        nota2 = TransaksiService.generate_nota()
+
+        assert nota1 != nota2
+        assert nota1.startswith("TM-")
+        assert nota2.startswith("TM-")
 
 
 def test_menu_nota_generation_anti_skip_on_multi_item_order():

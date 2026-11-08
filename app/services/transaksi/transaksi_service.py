@@ -6,6 +6,7 @@ Modul ini menangani business logic terkait pembuatan nota,
 pencatatan transaksi gabungan, dan perhitungan saldo.
 """
 
+import secrets
 from datetime import datetime
 from app.repositories import TransaksiRepository
 from app.repositories import UserRepository
@@ -36,10 +37,5 @@ class TransaksiService:
         
         # Cari nomor urut tertinggi hari ini dalam satu query agregat
         new_num = TransaksiRepository.get_max_nota_seq(date_str) + 1
-            
-        from app.models import Transaksi
-        candidate = f"{prefix}{str(new_num).zfill(3)}"
-        while Transaksi.query.filter_by(no_nota=candidate).first() is not None:
-            new_num += 1
-            candidate = f"{prefix}{str(new_num).zfill(3)}"
-        return candidate
+
+        return f"{prefix}{str(new_num).zfill(3)}-{secrets.token_hex(3)}"

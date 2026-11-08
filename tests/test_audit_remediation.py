@@ -121,7 +121,7 @@ def test_nota_sequence_uses_highest_existing_number(ctx):
         ))
     db.session.commit()
 
-    assert TransaksiService.generate_nota() == f"TM-{hari_ini}-006"
+    assert TransaksiService.generate_nota().startswith(f"TM-{hari_ini}-006-")
 
 
 @pytest.mark.parametrize("payload", [
