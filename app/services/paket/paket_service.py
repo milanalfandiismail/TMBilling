@@ -55,8 +55,13 @@ class PaketService:
 
     @staticmethod
     def get_by_id(paket_id):
-        """Ambil satu detail paket berdasarkan ID."""
-        return PaketRepository.get_by_id(paket_id)
+        """Ambil satu detail paket berdasarkan ID, None bila tidak ada."""
+        from werkzeug.exceptions import NotFound
+
+        try:
+            return PaketRepository.get_by_id(paket_id)
+        except NotFound:
+            return None
 
     @staticmethod
     def create(data, operator="system"):
