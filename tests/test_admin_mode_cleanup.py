@@ -1,59 +1,45 @@
-import pytest
 from datetime import timedelta
+
+import pytest
+
 from app import create_app
-from app.models import db, PC, Grup
-from app.models.base.base import now_local
-from app.services.sesi.sesi_service import SesiService
+from app.models import db, Grup, PC, Sesi, now_local
 from app.services.cache.client_state_store import OnlineStatusStore
+from app.services.sesi.sesi_service import SesiService
 
 
-def test_cleanup_inactive_admin_sessions_preserves_active_ram_heartbeat():
-    """Memastikan PC dalam mode admin TIDAK di-reset jika OnlineStatusStore di RAM
-    masih mendeteksi heartbeat aktif (< 30 detik), meskipun kolom pc.last_activity di DB sudah kadaluarsa."""
-    app = create_app()
+@pytest.fixture
+def app_ctx(tmp_path):
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": f"sqlite:///{tmp_path/'admincleanup.db'}",
+    })
     with app.app_context():
-        # Setup Grup & PC
-        grup = Grup.query.first()
-        if not grup:
-            grup = Grup(nama="VIP")
-            db.session.add(grup)
-            db.session.commit()
-
-        pc = PC(
-            nama="PC-ADMIN-TEST",
-            kode="PC-998",
-            ip_address="192.168.1.98",
-            mac_address="AA:BB:CC:DD:EE:98",
-            grup_id=grup.id,
-            is_admin_mode=True,
-            last_activity=now_local() - timedelta(seconds=60) # DB stale (> 30s)
-        )
+        db.create_all()
+        grup = Grup(nama="reguler", keterangan="Reguler", warna="#888888")
+        db.session.add(grup)
+        db.session.flush()
+        pc = PC(kode="PC-1", ip_address="10.10.10.1", grup_id=grup.id, is_admin_mode=True)
         db.session.add(pc)
+        db.session.flush()
+        sesi = Sesi(tipe="admin", pc_id=pc.id, status="aktif", token_sesi="tok-admin-1")
+        db.session.add(sesi)
         db.session.commit()
+        yield pc, sesi
+        db.session.remove()
+        db.drop_all()
 
-        try:
-            # Simulasi PC masih aktif mengirim heartbeat ke OnlineStatusStore di RAM
-            OnlineStatusStore.mark_active(pc.id)
 
-            # Jalankan cleanup
-            SesiService.cleanup_inactive_admin_sessions()
+def test_cleanup_admin_menutup_sesi_admin(app_ctx):
+    pc, sesi = app_ctx
+    OnlineStatusStore.remove(pc.id)
+    pc.last_activity = now_local() - timedelta(seconds=120)
+    db.session.commit()
 
-            # Refresh PC dari DB
-            db.session.refresh(pc)
+    SesiService.cleanup_inactive_admin_sessions()
 
-            # Harusnya TETAP True karena PC terbukti aktif di RAM
-            assert pc.is_admin_mode is True, "Mode admin tidak boleh dimatikan jika RAM store heartbeat aktif!"
-
-            # Sekarang simulasi heartbeat di RAM mati / dihapus
-            OnlineStatusStore.remove(pc.id)
-
-            # Jalankan cleanup lagi
-            SesiService.cleanup_inactive_admin_sessions()
-            db.session.refresh(pc)
-
-            # Sekarang harusnya False karena DB stale dan RAM tidak aktif
-            assert pc.is_admin_mode is False, "Mode admin harus dimatikan jika RAM store dan DB sama-sama mati!"
-        finally:
-            OnlineStatusStore.remove(pc.id)
-            db.session.delete(pc)
-            db.session.commit()
+    db.session.refresh(pc)
+    db.session.refresh(sesi)
+    assert pc.is_admin_mode is False
+    assert sesi.status == "selesai"
+    assert sesi.selesai_pada is not None

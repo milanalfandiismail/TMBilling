@@ -498,6 +498,7 @@ class SesiService:
                 
             if not is_active:
                 pc.is_admin_mode = False
+                SesiRepository.close_active_admin_sessions_for_pc(pc.id)
                 count += 1
                 
         if count > 0:

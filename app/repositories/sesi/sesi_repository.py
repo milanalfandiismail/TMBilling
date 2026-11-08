@@ -114,6 +114,14 @@ class SesiRepository:
         sesi.afk_sejak = None
 
     @staticmethod
+    def close_active_admin_sessions_for_pc(pc_id):
+        """Menutup sesi admin aktif pada satu PC (Tanpa Commit)."""
+        sesi_list = Sesi.query.filter_by(pc_id=pc_id, tipe="admin", status="aktif").all()
+        for sesi in sesi_list:
+            SesiRepository.close_session(sesi)
+        return len(sesi_list)
+
+    @staticmethod
     def force_close_all_sesi(now):
         """Menutup paksa semua sesi aktif (Tanpa Commit)."""
         sesi_list = Sesi.query.filter_by(status="aktif").all()
