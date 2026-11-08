@@ -39,6 +39,8 @@ def run_cleanup_expired(app):
         try:
             SesiService.cleanup_expired()
             SesiService.cleanup_inactive_admin_sessions()
+            from app.services.blackout.blackout_service import BlackoutService
+            BlackoutService.deteksi()
         except Exception:
             record_run("cleanup_expired", False)
             raise
