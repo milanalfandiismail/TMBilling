@@ -1,7 +1,6 @@
 # tests/test_batch_sesi_routes.py
 """Automated tests for batch session and remote endpoints."""
 
-import inspect
 import pytest
 from app import create_app, db
 from app.models import PC, Paket, Grup, Sesi, Transaksi
@@ -160,13 +159,11 @@ def test_tambah_waktu_batch_atomik(app_and_client, monkeypatch):
     asli = SesiService._tambah_waktu_sesi_locked
     jumlah = {"n": 0}
 
-    def gagal_kedua(sesi_id, paket, operator="system", qty=1,
-                    metode_pembayaran="Tunai", commit=True):
+    def gagal_kedua(*args, **kwargs):
         jumlah["n"] += 1
         if jumlah["n"] == 2:
             raise ValueError("gagal simulasi")
-        kwargs = {"commit": commit} if "commit" in inspect.signature(asli).parameters else {}
-        return asli(sesi_id, paket, operator, qty, metode_pembayaran, **kwargs)
+        return asli(*args, **kwargs)
 
     monkeypatch.setattr(SesiService, "_tambah_waktu_sesi_locked", staticmethod(gagal_kedua))
 

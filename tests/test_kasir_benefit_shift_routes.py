@@ -75,7 +75,11 @@ def test_shift_end_with_catatan_and_receipt(client):
     assert "STRUK SERAH TERIMA SHIFT" in rcpt_data["receipt_text"]
     assert "Shift aman, selisih 0" in rcpt_data["receipt_text"]
 
-    # Get single shift summary
+    # Get single shift summary (hanya admin yang boleh minta id eksplisit)
+    kasir.role = "admin"
+    db.session.commit()
+    with client.session_transaction() as sess:
+        sess["kasir_role"] = "admin"
     res_summ = client.get(f"/api/v1/kasir/shift/{shift_id}/summary")
     assert res_summ.status_code == 200
     summ_data = res_summ.get_json()
