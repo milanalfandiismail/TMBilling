@@ -268,7 +268,7 @@ async function runFnBPosStrukE2ETest(page) {
             'dua baris transaksi_menu'
         );
         const nota = rows[0].no_nota;
-        assert.ok(/^TMM-\d{8}-\d{3}$/.test(nota), `format no_nota salah: ${nota}`);
+        assert.ok(/^TMM-\d{8}-\d{3}(-[0-9a-f]{6})?$/.test(nota), `format no_nota salah: ${nota}`);
         assert.ok(rows.every((r) => r.no_nota === nota), 'satu checkout harus satu no_nota');
 
         const rowIndomie = rows.find((r) => Number(r.menu_id) === Number(indomie.id));
@@ -323,9 +323,9 @@ async function runFnBPosStrukE2ETest(page) {
             'baris transaksi Aqua'
         );
         const nota = rows[0].no_nota;
-        assert.ok(/^TMM-\d{8}-\d{3}$/.test(nota));
+        assert.ok(/^TMM-\d{8}-\d{3}(-[0-9a-f]{6})?$/.test(nota));
         assert.notStrictEqual(nota, state.nota1, 'no_nota checkout kedua harus berbeda');
-        const seq = (n) => Number(n.match(/-(\d{3})$/)[1]);
+        const seq = (n) => Number(n.match(/-(\d{3})(?:-[0-9a-f]{6})?$/)[1]);
         assert.ok(seq(nota) > seq(state.nota1), `urutan nota harus naik: ${state.nota1} -> ${nota}`);
         assert.strictEqual(Number(rows[0].jumlah), 1);
         assert.strictEqual(Number(rows[0].total_harga), aqua.harga);

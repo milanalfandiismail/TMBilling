@@ -269,12 +269,6 @@ def _run_suite_worker(payload):
     return {"suite": suite_id, "exit_code": exit_code, "report": report, "error": error}
 
 
-def run_suite(suite_id, jobs=1):
-    """Jalankan satu suite pada sandbox baru; serial, tanpa pool."""
-    result = _run_suite_worker((suite_id,))
-    return result["exit_code"], result["report"]
-
-
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Orkestrator E2E TMBilling (sandbox + guard database produksi).")
     parser.add_argument("--suite", help="id suite; pisahkan dengan koma untuk beberapa suite")
@@ -366,25 +360,20 @@ def main(argv=None):
         elif runner_code != 0 and exit_code == 0:
             exit_code = 1
 
-    if jobs == 1:
-        for suite_id in suite_ids:
-            print("\n" + "-" * 65)
-            print("Suite: {}".format(suite_id))
-            print("-" * 65)
-            consume(_run_suite_worker((suite_id,)))
-    else:
-        context = multiprocessing.get_context("spawn")
-        try:
-            with context.Pool(processes=jobs, maxtasksperchild=1) as pool:
-                tasks = [(suite_id,) for suite_id in suite_ids]
-                for result in pool.imap_unordered(_run_suite_worker, tasks, chunksize=1):
-                    print("\n" + "-" * 65)
-                    print("Selesai: {}".format(result["suite"]))
-                    print("-" * 65)
-                    consume(result)
-        except KeyboardInterrupt:
-            print("\nDIBATALKAN: menghentikan worker...")
-            return 2
+    # Selalu proses terpisah per suite: `app.config` membaca environment saat
+    # import, jadi menjalankan beberapa suite di proses yang sama memakai DB suite pertama.
+    context = multiprocessing.get_context("spawn")
+    try:
+        with context.Pool(processes=jobs, maxtasksperchild=1) as pool:
+            tasks = [(suite_id,) for suite_id in suite_ids]
+            for result in pool.imap_unordered(_run_suite_worker, tasks, chunksize=1):
+                print("\n" + "-" * 65)
+                print("Selesai: {}".format(result["suite"]))
+                print("-" * 65)
+                consume(result)
+    except KeyboardInterrupt:
+        print("\nDIBATALKAN: menghentikan worker...")
+        return 2
 
     if failed > 0 and exit_code == 0:
         exit_code = 1

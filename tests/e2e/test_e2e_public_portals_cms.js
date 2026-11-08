@@ -399,7 +399,7 @@ async function runPublicPortalsCMSE2ETest(page) {
     await check(report, CHECK_NAMES[9], async () => {
         const res = await loginMember(page, 'member1', 'salah-total');
         assert.strictEqual(res.status, 401);
-        assert.strictEqual(res.body.error, 'Password yang Anda masukkan salah');
+        assert.strictEqual(res.body.error, 'Username atau password salah');
         const toast = await waitPortalToast(page, 'salah');
         assert.ok(/salah/i.test(toast));
         assert.ok(page.url().includes('/member/login'));

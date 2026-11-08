@@ -360,7 +360,7 @@ class MenuService:
 
     @staticmethod
     def generate_nota_menu():
-        """Generate nomor nota transaksi menu unik dengan format TMM-YYYYMMDD-NNN."""
+        """Generate nomor nota transaksi menu unik dengan format TMM-YYYYMMDD-NNN-hex6."""
         from app.utils.timezone_utils import display_in_tz, now_utc
         from app.models import TransaksiMenu
         today_local = display_in_tz(now_utc())

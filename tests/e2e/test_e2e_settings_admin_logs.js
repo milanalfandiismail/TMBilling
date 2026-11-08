@@ -25,7 +25,7 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 const { BASE_URL, CLIENT_API_KEY, login, logout, tab, settingsTab, unique, check } = require('./lib/harness');
-const { dbQuery } = require('./lib/db');
+const { dbQuery, dbExec } = require('./lib/db');
 const { createReport, finish } = require('./lib/report');
 
 const LEGACY_TOKENS = ['TM_UNINSTALL_SAFE_2026', 'TM123qaz!@#'];
@@ -171,12 +171,16 @@ async function runSettingsAdminLogsE2ETest(page) {
     await check(report, 'Token uninstall acak, stabil di dua panggilan, dan tidak membocorkan emergency token', async () => {
         const url = `${BASE_URL}/api/v1/kasir/settings/uninstall-token/client`;
         const headers = { 'X-Client-Key': CLIENT_API_KEY };
+        // Endpoint memetakan request.remote_addr ke PC terdaftar; Playwright datang dari loopback.
+        const [pc] = await dbQuery("SELECT id, ip_address FROM pc WHERE kode = 'PC-05'");
+        await dbExec("UPDATE pc SET ip_address = '127.0.0.1' WHERE id = ?", [pc.id]);
         const first = await page.request.get(url, { headers });
         assert.strictEqual(first.status(), 200);
         const a = await first.json();
         assert.strictEqual(a.success, true);
         const second = await page.request.get(url, { headers });
         const b = await second.json();
+        await dbExec('UPDATE pc SET ip_address = ? WHERE id = ?', [pc.ip_address, pc.id]);
 
         assert.ok(typeof a.uninstall_token === 'string' && /^[A-Za-z0-9_-]{32,}$/.test(a.uninstall_token), `token tidak acak/url-safe: ${a.uninstall_token}`);
         LEGACY_TOKENS.forEach((legacy) => assert.notStrictEqual(a.uninstall_token, legacy, 'token legacy masih dipakai'));

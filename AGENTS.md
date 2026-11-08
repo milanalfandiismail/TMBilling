@@ -277,9 +277,10 @@ python run.py
 build_and_deploy.bat
 
 # Menjalankan Master Runner E2E Sandbox Terisolasi (Zero Database Mutation Guarantee)
-# 11 suite Chromium sungguhan (Playwright): 335 check, guard sha256 instance/warnet.db
+# 11 suite Chromium sungguhan (Playwright): 330 check, paralel otomatis semua CPU
 npm run test:e2e
 # atau langsung via Python: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py
+# Serial untuk debug: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py --jobs 1
 
 # Menjalankan satu suite saja (reseed + restart sandbox per suite)
 .venv\Scripts\python.exe tests/e2e/run_all_e2e.py --suite pc_billing
@@ -292,19 +293,19 @@ npm run test:e2e:sandbox
 
 ### 7.1 Peta Suite E2E (`tests/e2e/`)
 
-Runner Chromium sungguhan (Playwright) dengan sandbox terisolasi; setiap suite dijalankan pada database baru di `instance/warnet_e2e_sandbox.db` dan `instance/warnet.db` dijaga sha256+rowcount.
+Runner Chromium sungguhan (Playwright) dengan sandbox terisolasi; setiap suite dijalankan pada database baru di `instance/e2e/<suite>/warnet.db`, port dinamis, serta catatan/backup per suite. Guard memeriksa `instance/warnet.db` (sha256+rowcount), `backups/`, `instance/notes/`, `.env`, dan `initial_admin.txt`.
 
 | Berkas | Tanggung Jawab |
 |---|---|
-| `tests/e2e/run_all_e2e.py` | Orkestrator: snapshot guard DB produksi, reseed + restart sandbox per suite, exit code nyata, `--list/--suite/--json/--no-guard`. |
+| `tests/e2e/run_all_e2e.py` | Orkestrator paralel process-per-suite: `--jobs 0` semua CPU / `1` serial, snapshot guard produksi (DB, `backups/`, `instance/notes/`, `.env`, `initial_admin.txt`), exit code nyata, `--list/--suite/--no-guard/--self-test`. |
 | `tests/e2e/run_all_e2e.js` | Registry suite + CLI Node; memuat `lib/browser.js`. |
-| `tests/e2e/e2e_sandbox_server.py` | Sandbox port 7016: Waitress `app:create_app`, DB sementara, `TM_NOTES_DIR`/`PROJECT_ROOT` terisolasi, proses dibungkus Job Object Windows. |
+| `tests/e2e/e2e_sandbox_server.py` | Sandbox per suite: path `instance/e2e/<suite>/`, port dinamis, Waitress `app:create_app`, `TM_NOTES_DIR`/`PROJECT_ROOT`/`BACKUP_DIR` terisolasi, proses dibungkus Job Object Windows. |
 | `tests/e2e/seed_e2e_data.py` | Seed deterministik (admin/kasir1, member1..3 + member_expired, 5 PC, paket, menu, tutorial, transaksi historis). |
 | `tests/e2e/lib/browser.js` | Driver Chromium, `BASE_URL`, deteksi binary Playwright hilang. |
 | `tests/e2e/lib/harness.js` | `login/logout/tab/settingsTab/api/clientPoll/hardwarePost/waitFor/unique/check`. |
-| `tests/e2e/lib/db.js` | `dbQuery/dbExec` via `.venv` sqlite3 (hanya DB sandbox). |
+| `tests/e2e/lib/db.js` | `dbQuery/dbExec` via `.venv` sqlite3; path dari `E2E_SANDBOX_DB`, menolak `instance/warnet.db`. |
 | `tests/e2e/lib/report.js` | Kontrak laporan `{total,passed,failed,checks[]}`. |
-| `tests/e2e/lib/coverage_manifest.js` | 31 tab container + 10 sub-tab settings + 8 portal, pemilik suite per tab. |
+| `tests/e2e/lib/coverage_manifest.js` | 29 tab container + 10 sub-tab settings + 8 portal, pemilik suite per tab. |
 | `tests/e2e/test_e2e_backup_restore.js` | Suite `backup_restore`: backup → mutasi → restore di sandbox, validasi admin/konfirmasi/404/403, dan guard folder `backups/` produksi tidak berubah. |
 | `tests/e2e/test_e2e_*.js` | 11 suite: `pc_billing`, `fnb_pos`, `member_paket`, `auth_shift_notes`, `hardware_maintenance_remote`, `tournament_game`, `settings_admin_logs`, `backup_restore`, `public_portals_cms`, `coverage`, `perf_invariants`. |
 

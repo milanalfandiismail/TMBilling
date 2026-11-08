@@ -1141,18 +1141,20 @@ python -m pytest tests/ -q
 Seluruh pengujian harus berstatus **PASSED (386 passed, 0 failed)** sebelum melakukan commit atau push.
 
 ### 10.1.1 Pengujian End-to-End Browser (Playwright)
-`tests/e2e/` menjalankan **11 suite Chromium sungguhan** (335 check) terhadap sandbox terisolasi:
+`tests/e2e/` menjalankan **11 suite Chromium sungguhan** (330 check) secara paralel terhadap sandbox terisolasi:
 
 ```powershell
-npm run test:e2e                                            # semua suite
-.venv\Scripts\python.exe tests/e2e/run_all_e2e.py --suite pc_billing
+npm run test:e2e                                            # semua suite, worker = jumlah CPU
+.venv\Scripts\python.exe tests/e2e/run_all_e2e.py --jobs 1  # serial untuk debug
+.venv\Scripts\python.exe tests/e2e/run_all_e2e.py --suite pc_billing --jobs 2
 .venv\Scripts\python.exe tests/e2e/run_all_e2e.py --list
 npm run test:e2e:sandbox                                    # server sandbox interaktif port 7016
 ```
 
-- Setiap suite mendapat database baru (`instance/warnet_e2e_sandbox.db`) dan server baru; `instance/warnet.db` dijaga sha256 + jumlah baris dan kegagalan guard membuat exit code 1.
+- Setiap suite berjalan di proses Python sendiri dengan database `instance/e2e/<suite>/warnet.db`, port dinamis, catatan `instance/e2e/<suite>/notes`, dan backup `instance/e2e/<suite>/backups`; `E2E_BASE_URL` dan `E2E_SANDBOX_DB` diteruskan ke runner Node.
+- `instance/warnet.db` (sha256 + jumlah baris), `backups/`, `instance/notes/`, `.env`, dan `initial_admin.txt` dijaga read-only; kegagalan guard membuat exit code 1.
 - Direktori catatan diisolasi lewat `TM_NOTES_DIR`, jadi test tidak menyentuh catatan produksi.
-- Cakupan: 31 tab container, 10 sub-tab settings, 8 portal publik, siklus billing, POS kantin, member/paket/grup, shift & rekonsiliasi kas, telemetri hardware & anti-maling, turnamen, RBAC/redaksi setting, blackout & emergency login, invarian zero-thrash dan reflow responsif.
+- Cakupan: 29 tab container, 10 sub-tab settings, 8 portal publik, siklus billing, POS kantin, member/paket/grup, shift & rekonsiliasi kas, telemetri hardware & anti-maling, turnamen, RBAC/redaksi setting, blackout & emergency login, invarian zero-thrash dan reflow responsif.
 - Check harus membuktikan transisi state, baris database, aritmetika uang, atau kontrak error — bukan sekadar "elemen ada".
 
 

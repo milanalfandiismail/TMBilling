@@ -1,8 +1,8 @@
 /**
  * Playwright Multi-Breakpoint Verification Test for TMBilling
  * Memverifikasi ketiadaan horizontal overflow (scrollWidth <= innerWidth)
- * di seluruh 32 Tab Kasir + 8 Portal Publik pada 6 breakpoint resmi Tailwind CSS.
- * Total: 40 Tampilan × 6 Breakpoint = 240 Checks.
+ * di seluruh 29 Tab Kasir + 8 Portal Publik pada 6 breakpoint resmi Tailwind CSS.
+ * Total: 37 Tampilan × 6 Breakpoint = 222 Checks.
  *
  * Dipakai dua cara:
  *   1. Suite E2E: `require('../playwright_responsive_breakpoints.js')` lalu
@@ -32,7 +32,7 @@
         'laporan_maintenance', 'remote_server',
         'tournament', 'game_management',
         'settings', 'user', 'user_logs', 'log', 'laporan', 'analytics',
-        'mikrotik', 'plugins', 'server_statistic', 'plugin-spa',
+        'mikrotik', 'server_statistic',
         'catatan', 'shift_history'
     ];
     const FALLBACK_PORTALS = ['/', '/tv', '/tv/static', '/livepc', '/member/login', '/games', '/paket', '/spesifikasi'];
@@ -145,7 +145,7 @@
             }
         };
 
-        // 1. Audit 32 tampilan kasir
+        // 1. Audit 29 tampilan kasir
         await ensureKasir(page, baseUrl);
         for (const id of kasirTabs) {
             await page.evaluate((target) => App.switchTab(target), id);

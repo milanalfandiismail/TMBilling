@@ -575,7 +575,8 @@ async function runAuthShiftNotesE2ETest(page) {
     await check(report, 'Login dibatasi 429 setelah 5 kegagalan untuk (IP, username) yang sama', async () => {
         const csrf = await page.evaluate(() => document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
         const kirim = () => page.request.post(`${BASE_URL}/api/v1/kasir/auth/login`, {
-            headers: { 'X-CSRFToken': csrf },
+            // IP terpisah agar batas per-IP tidak mencemari login admin di bawah.
+            headers: { 'X-CSRFToken': csrf, 'X-Forwarded-For': '198.51.100.77' },
             data: { username: 'throttle_probe_e2e', password: 'salah-terus' },
         });
 
