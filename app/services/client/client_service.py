@@ -14,6 +14,7 @@ from app.repositories import PCRepository
 from app.repositories import SesiRepository
 from app.services.sesi.sesi_service import SesiService
 from app.services.settings.settings_service import SettingsService
+from app.services.write_lock import WRITE_LOCK
 from app.utils.logger import write_log
 
 
@@ -111,7 +112,6 @@ class ClientService:
     @staticmethod
     def get_status(ip_address, mac_address, role=None):
         """Polling rutin dari client: Validasi IP & MAC jika sudah terikat."""
-        persist_beat = False
         try:
             pc = PCRepository.get_by_ip(ip_address)
 
@@ -203,15 +203,18 @@ class ClientService:
                     # C. Sesi Ada -> tandai heartbeat & hitung sisa waktu
                     try:
                         now = now_local()
-                        last_persisted = sesi.last_sync
-                        if (last_persisted is None
-                                or (now - last_persisted).total_seconds()
-                                >= ClientService.HEARTBEAT_PERSIST_SECONDS):
-                            sesi.last_sync = now
-                            persist_beat = True
+                        with WRITE_LOCK:
+                            fresh = SesiRepository.get_by_id(sesi.id)
+                            last_persisted = fresh.last_sync if fresh else None
+                            if (fresh and fresh.status == "aktif" and (last_persisted is None
+                                    or (now - last_persisted).total_seconds()
+                                    >= ClientService.HEARTBEAT_PERSIST_SECONDS)):
+                                fresh.last_sync = now
+                                db.session.commit()
                     except Exception as beat_err:
+                        db.session.rollback()
                         write_log("CLIENT_HEARTBEAT_ERROR",
-                                  f"Gagal siapkan heartbeat PC {pc.kode}: {beat_err}")
+                                  f"Gagal simpan heartbeat PC {pc.kode}: {beat_err}")
 
                     try:
                         sisa = SesiService.sync_waktu_member(sesi)
@@ -263,14 +266,6 @@ class ClientService:
                     cmd = ClientService.pop_command(pc.id)
                     if cmd:
                         res["command"] = cmd
-
-            if persist_beat:
-                try:
-                    db.session.commit()
-                except Exception as beat_err:
-                    db.session.rollback()
-                    write_log("CLIENT_HEARTBEAT_ERROR",
-                              f"Gagal simpan heartbeat PC {pc.kode}: {beat_err}")
 
             return res
 

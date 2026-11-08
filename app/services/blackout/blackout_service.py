@@ -16,6 +16,7 @@ from app.repositories import MemberRepository
 from app.repositories import PCRepository
 from app.utils.logger import write_log
 from app.services.transaksi.transaksi_service import TransaksiService
+from app.services.write_lock import WRITE_LOCK
 from app.config import Config
 from datetime import timedelta
 import secrets
@@ -39,30 +40,36 @@ class BlackoutService:
         sesi_list = SesiRepository.get_aktif_belum_suspect_lama_sync(batas_waktu)
 
         count = 0
-        for sesi in sesi_list:
-            # 1. Hitung sisa waktu Dashboard (Real-time jam sekarang)
-            sisa_dashboard = sesi.sisa_menit()
+        with WRITE_LOCK:
+            for sesi in sesi_list:
+                # Baca ulang: heartbeat bisa saja baru menyimpan last_sync setelah query di atas.
+                sesi = SesiRepository.get_by_id(sesi.id)
+                if (not sesi or sesi.status != "aktif" or sesi.is_blackout_suspect
+                        or not sesi.last_sync or sesi.last_sync >= batas_waktu):
+                    continue
+                # 1. Hitung sisa waktu Dashboard (Real-time jam sekarang)
+                sisa_dashboard = sesi.sisa_menit()
 
-            # 2. Hitung sisa waktu Audit (Snapshot saat PC terakhir lapor/mati)
-            waktu_referensi = sesi.last_sync or sesi.mulai_pada
-            sisa_audit = sesi.hitung_sisa_pada(waktu_referensi)
-            
-            # 3. Proses DB secara atomik (3-Layer Arch)
-            if sesi.tipe == "member" and sesi.member:
-                sesi.member.waktu_tersimpan = max(0, sisa_audit)
-                db.session.add(sesi.member)
-            
-            sesi.is_blackout_suspect = True
-            sesi.is_blackout_resolved = False
-            sesi.sisa_menit_saat_mati = max(0, sisa_audit)
-            sesi.status = "selesai"
-            sesi.selesai_pada = waktu_referensi
-            
-            db.session.commit()
+                # 2. Hitung sisa waktu Audit (Snapshot saat PC terakhir lapor/mati)
+                waktu_referensi = sesi.last_sync or sesi.mulai_pada
+                sisa_audit = sesi.hitung_sisa_pada(waktu_referensi)
 
-            label = f"Member:{sesi.member.username}" if sesi.member else f"Guest:{sesi.nama_guest or '?'}"
-            write_log("BLACKOUT_DETECT", f"#{sesi.id} | Dash: {sisa_dashboard}m | Audit: {sisa_audit}m", user="kasir")
-            count += 1
+                # 3. Proses DB secara atomik (3-Layer Arch)
+                if sesi.tipe == "member" and sesi.member:
+                    sesi.member.waktu_tersimpan = max(0, sisa_audit)
+                    db.session.add(sesi.member)
+
+                sesi.is_blackout_suspect = True
+                sesi.is_blackout_resolved = False
+                sesi.sisa_menit_saat_mati = max(0, sisa_audit)
+                sesi.status = "selesai"
+                sesi.selesai_pada = waktu_referensi
+
+                db.session.commit()
+
+                label = f"Member:{sesi.member.username}" if sesi.member else f"Guest:{sesi.nama_guest or '?'}"
+                write_log("BLACKOUT_DETECT", f"#{sesi.id} | Dash: {sisa_dashboard}m | Audit: {sisa_audit}m", user="kasir")
+                count += 1
 
         write_log("BLACKOUT_DETECT", f"Total terdeteksi: {count} sesi", user="kasir")
         return count
