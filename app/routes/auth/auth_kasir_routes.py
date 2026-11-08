@@ -112,17 +112,18 @@ def check_session():
     # Jika session valid, pertahankan durasi cookie permanent & cek IP whitelist
     if result.get("logged_in"):
         session.permanent = True
-        try:
-            from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
-            auth_flag = session.get("ip_wh_authenticated")
-            token_ver = session.get("ip_wh_token_version")
-            if IpWhitelistService.is_enabled() and not IpWhitelistService.is_session_token_valid(auth_flag, token_ver):
-                client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
-                if not IpWhitelistService.is_ip_whitelisted(client_ip):
-                    result = {"logged_in": False, "reason": "ip_not_whitelisted"}
+        if result.get("role") != "admin":
+            try:
+                from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+                auth_flag = session.get("ip_wh_authenticated")
+                token_ver = session.get("ip_wh_token_version")
+                if IpWhitelistService.is_enabled() and not IpWhitelistService.is_session_token_valid(auth_flag, token_ver):
+                    client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
+                    if not IpWhitelistService.is_ip_whitelisted(client_ip):
+                        result = {"logged_in": False, "reason": "ip_not_whitelisted"}
 
-        except Exception:
-            pass
+            except Exception:
+                pass
 
     if not result.get("logged_in"):
         # Bersihkan session jika tidak valid (DRY)
