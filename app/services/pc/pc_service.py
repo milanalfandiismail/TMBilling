@@ -130,18 +130,25 @@ class PCService:
         if not re.match(r'^[A-Za-z0-9\-_]+$', kode):
             raise ValueError("Kode PC hanya boleh berisi huruf, angka, tanda hubung (-), atau garis bawah (_)")
         
-        if PCRepository.get_by_kode(kode):
+        existing = PCRepository.find_by_kode(kode)
+        if existing and existing.aktif:
             raise ValueError(f"PC dengan kode {kode} sudah ada")
 
         # --- VALIDASI IP ADDRESS UNIK ---
         ip_address = validate_ip_address(data.get("ip_address"), allow_empty=True, version=4)
-        if ip_address and PCRepository.find_by_ip(ip_address):
-            raise ValueError(f"IP Address '{ip_address}' sudah digunakan oleh PC lain")
+        if ip_address:
+            bentrok = (PCRepository.find_ip_exclude(ip_address, existing.id)
+                       if existing else PCRepository.find_by_ip(ip_address))
+            if bentrok:
+                raise ValueError(f"IP Address '{ip_address}' sudah digunakan oleh PC lain")
 
         # --- VALIDASI MAC ADDRESS UNIK ---
         mac_address = validate_mac_address(data.get("mac_address"), allow_empty=True)
-        if mac_address and PCRepository.find_by_mac(mac_address):
-            raise ValueError(f"MAC Address '{mac_address}' sudah digunakan oleh PC lain")
+        if mac_address:
+            bentrok = (PCRepository.find_mac_exclude(mac_address, existing.id)
+                       if existing else PCRepository.find_by_mac(mac_address))
+            if bentrok:
+                raise ValueError(f"MAC Address '{mac_address}' sudah digunakan oleh PC lain")
 
         grup_nama = data.get("grup", "reguler")
         grup_obj = GrupRepository.find_by_nama(grup_nama)
@@ -150,16 +157,24 @@ class PCService:
 
         nama_pc = validate_string_length(data.get("nama") or kode, min_len=1, max_len=50, field_name="Nama PC", required=False)
 
-        pc = PC(
-            kode=kode,
-            nama=nama_pc,
-            ip_address=ip_address,
-            mac_address=mac_address,
-            grup_id=grup_obj.id,
-        )
-        
-        db.session.add(pc)
-        db.session.commit()
+        if existing:
+            pc = existing
+            pc.aktif = True
+            pc.nama = nama_pc
+            pc.ip_address = ip_address
+            pc.mac_address = mac_address
+            pc.grup_id = grup_obj.id
+            db.session.commit()
+        else:
+            pc = PC(
+                kode=kode,
+                nama=nama_pc,
+                ip_address=ip_address,
+                mac_address=mac_address,
+                grup_id=grup_obj.id,
+            )
+            db.session.add(pc)
+            db.session.commit()
         
         detail_pc = {
             "kode": kode,
@@ -256,8 +271,26 @@ class PCService:
 
         kode = pc.kode
         try:
-            # 2. Detach sesi historis (Category B) agar histori keuangan tetap utuh
-            Sesi.query.filter_by(pc_id=pc.id).update({"pc_id": None})
+            # 2. PC dengan riwayat sesi cukup diarsipkan agar histori tetap utuh
+            if Sesi.query.filter_by(pc_id=pc.id).first():
+                pc.aktif = False
+                db.session.commit()
+                from app.services.cache import PCNetworkCacheStore, cleanup_pc_cache
+                PCNetworkCacheStore.invalidate()
+                cleanup_pc_cache(pc_id)
+                try:
+                    from app.services.hardware.hardware_service import TELEMETRY_HISTORY
+                    TELEMETRY_HISTORY.pop(pc_id, None)
+                except Exception:
+                    pass
+                try:
+                    from app.services.client.client_service import PENDING_COMMANDS
+                    PENDING_COMMANDS.pop(pc_id, None)
+                except Exception:
+                    pass
+                write_log("ARSIP_PC", f"PC:{kode} diarsipkan karena memiliki riwayat sesi",
+                          user=operator, detail_json={"kode": kode, "pc_id": pc_id})
+                return {"success": True, "message": f"PC {kode} diarsipkan"}
 
             # 3. Hapus seluruh data anak langsung (Category A)
             PCUptimeLog.query.filter_by(pc_id=pc.id).delete()
@@ -421,14 +454,15 @@ class PCService:
             
             generated_ip = str(ipaddress.IPv4Address(int(ip_start_obj) + offset))
 
-            # 1. Validasi Kode PC
+            # 1. Validasi Kode PC (kode arsip boleh dipakai lagi)
             existing_code_pc = PCRepository.find_by_kode(kode)
-            if existing_code_pc:
+            if existing_code_pc and existing_code_pc.aktif:
                 raise ValueError(f"Kode PC {kode} sudah ada di database")
 
-            # 2. Validasi IP Address
+            # 2. Validasi IP Address (baris arsip yang sama boleh dipakai ulang)
             existing_ip_pc = PCRepository.find_by_ip(generated_ip)
-            if existing_ip_pc:
+            if existing_ip_pc and (
+                    not existing_code_pc or existing_ip_pc.id != existing_code_pc.id):
                 raise ValueError(f"PC {kode} dengan IP {generated_ip} bentrok dengan PC {existing_ip_pc.kode}")
 
         # Loop kedua: Jika validasi lolos semua, simpan ke database
@@ -437,15 +471,21 @@ class PCService:
         for offset, i in enumerate(range(start_n, end_n + 1)):
             kode = _build_batch_code(i)
             generated_ip = str(ipaddress.IPv4Address(int(ip_start_obj) + offset))
-            
-            pc = PC(
-                kode=kode,
-                nama=kode,
-                ip_address=generated_ip,
-                grup_id=grup_obj.id,
-                aktif=True
-            )
-            pc_to_save.append(pc)
+
+            existing = PCRepository.find_by_kode(kode)
+            if existing:
+                existing.nama = kode
+                existing.ip_address = generated_ip
+                existing.grup_id = grup_obj.id
+                existing.aktif = True
+            else:
+                pc_to_save.append(PC(
+                    kode=kode,
+                    nama=kode,
+                    ip_address=generated_ip,
+                    grup_id=grup_obj.id,
+                    aktif=True
+                ))
             added.append(kode)
 
         if pc_to_save:

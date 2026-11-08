@@ -137,23 +137,25 @@ class TestPCHardDelete(unittest.TestCase):
         TELEMETRY_HISTORY[pc_id] = [{"cpu_usage": 25.0}]
         PENDING_COMMANDS[pc_id] = "screenshot"
 
-        # Execute Hard Delete
+        # Execute delete: a PC with history is archived, not removed
         result = PCService.delete(pc_id, operator="admin")
         self.assertTrue(result["success"])
 
-        # Verification: PC must not exist in DB
-        self.assertIsNone(PC.query.get(pc_id))
+        # Verification: PC still exists but inactive
+        saved_pc = PC.query.get(pc_id)
+        self.assertIsNotNone(saved_pc)
+        self.assertFalse(saved_pc.aktif)
 
-        # Verification: Category A records must be deleted
-        self.assertEqual(PCUptimeLog.query.filter_by(pc_id=pc_id).count(), 0)
-        self.assertEqual(HardwareMonitor.query.filter_by(pc_id=pc_id).count(), 0)
-        self.assertEqual(PCProcess.query.filter_by(pc_id=pc_id).count(), 0)
-        self.assertEqual(MaintenanceTicket.query.filter_by(pc_id=pc_id).count(), 0)
+        # Verification: Category A records are preserved
+        self.assertEqual(PCUptimeLog.query.filter_by(pc_id=pc_id).count(), 1)
+        self.assertEqual(HardwareMonitor.query.filter_by(pc_id=pc_id).count(), 1)
+        self.assertEqual(PCProcess.query.filter_by(pc_id=pc_id).count(), 1)
+        self.assertEqual(MaintenanceTicket.query.filter_by(pc_id=pc_id).count(), 1)
 
-        # Verification: Category B (Sesi) is preserved with pc_id = None
+        # Verification: Category B (Sesi) keeps its pc_id
         saved_sesi = Sesi.query.get(sesi.id)
         self.assertIsNotNone(saved_sesi)
-        self.assertIsNone(saved_sesi.pc_id)
+        self.assertEqual(saved_sesi.pc_id, pc_id)
 
         # Verification: Category C (Grup) is preserved
         self.assertIsNotNone(Grup.query.get(self.grup.id))
@@ -161,6 +163,15 @@ class TestPCHardDelete(unittest.TestCase):
         # Verification: In-memory state cleared
         self.assertNotIn(pc_id, TELEMETRY_HISTORY)
         self.assertNotIn(pc_id, PENDING_COMMANDS)
+
+    def test_delete_pc_tanpa_riwayat_tetap_hard_delete(self):
+        pc_id = self.pc.id
+        self.assertEqual(Sesi.query.filter_by(pc_id=pc_id).count(), 0)
+
+        result = PCService.delete(pc_id, operator="admin")
+
+        self.assertTrue(result["success"])
+        self.assertIsNone(PC.query.get(pc_id))
 
     def test_delete_pc_blocked_when_active_session_exists(self):
         # Create active session on PC
