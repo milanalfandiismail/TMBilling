@@ -26,6 +26,12 @@ class ShiftRecord(db.Model):
     """
 
     __tablename__ = "shift_record"
+    __table_args__ = (
+        db.Index(
+            "uq_aktif_shift", "status", unique=True,
+            sqlite_where=db.text("status = 'AKTIF'"),
+        ),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     kasir_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)

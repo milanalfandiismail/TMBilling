@@ -5,8 +5,10 @@ tutup shift dengan hitung buta, dan cetak struk handover.
 """
 
 import json
+from sqlalchemy.exc import IntegrityError
 from app.models import db, now_local
 from app.models import ShiftRecord, Transaksi, TransaksiMenu, User
+from app.services.write_lock import WRITE_LOCK
 from app.utils.timezone_utils import format_display
 
 
@@ -45,23 +47,28 @@ class ShiftService:
         if not kasir:
             raise ValueError("Kasir tidak ditemukan")
 
-        # Cek apakah masih ada shift aktif di sistem (single active shift system-wide)
-        aktif = ShiftRecord.query.filter_by(status="AKTIF").first()
-        if aktif:
-            kasir_aktif_nama = aktif.kasir.nama_lengkap or aktif.kasir.username if aktif.kasir else "Kasir Lain"
-            raise ValueError(
-                f"Tidak dapat membuka shift baru: Masih ada shift aktif oleh '{kasir_aktif_nama}' "
-                f"sejak {format_display(aktif.waktu_mulai)} (ID #{aktif.id}). "
-                "Selesaikan shift tersebut terlebih dahulu."
-            )
+        with WRITE_LOCK:
+            # Cek apakah masih ada shift aktif di sistem (single active shift system-wide)
+            aktif = ShiftRecord.query.filter_by(status="AKTIF").first()
+            if aktif:
+                kasir_aktif_nama = aktif.kasir.nama_lengkap or aktif.kasir.username if aktif.kasir else "Kasir Lain"
+                raise ValueError(
+                    f"Tidak dapat membuka shift baru: Masih ada shift aktif oleh '{kasir_aktif_nama}' "
+                    f"sejak {format_display(aktif.waktu_mulai)} (ID #{aktif.id}). "
+                    "Selesaikan shift tersebut terlebih dahulu."
+                )
 
-        shift = ShiftRecord(
-            kasir_id=kasir.id,
-            modal_awal=modal_awal,
-            status="AKTIF",
-        )
-        db.session.add(shift)
-        db.session.commit()
+            shift = ShiftRecord(
+                kasir_id=kasir.id,
+                modal_awal=modal_awal,
+                status="AKTIF",
+            )
+            db.session.add(shift)
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                raise ValueError("Tidak dapat membuka shift baru: masih ada shift aktif")
 
         from app.utils.logger import write_log
         
