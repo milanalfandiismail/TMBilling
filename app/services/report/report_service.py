@@ -387,8 +387,8 @@ class ReportService:
         return LogAuditService.get_system_logs(limit, filter_text, kategori)
 
     @staticmethod
-    def clear_system_logs(operator="system"):
-        return LogAuditService.clear_system_logs(operator)
+    def clear_system_logs(operator="system", archive=True):
+        return LogAuditService.clear_system_logs(operator, archive)
 
     @staticmethod
     def clear_all_transactions(operator="system"):
