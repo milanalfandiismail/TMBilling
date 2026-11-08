@@ -362,7 +362,7 @@ async function runPCBillingLifecycleE2ETest(page) {
         assert.ok(['KOSONG', 'OFFLINE'].includes(timerPc1), `kartu PC-01 harus kosong, dapat "${timerPc1}"`);
     });
 
-    await check(report, 'Sesi kedaluwarsa via polling: status selesai tanpa duplikasi transaksi', async () => {
+    await check(report, 'Sesi kedaluwarsa via polling: status selesai dengan satu transaksi tutup', async () => {
         const paket = await paketByNama('Uji 1 Menit');
         assert.strictEqual(paket.durasi_menit, 1);
         assert.strictEqual(paket.harga, 1000);
@@ -393,8 +393,13 @@ async function runPCBillingLifecycleE2ETest(page) {
         assert.ok(sesiRows[0].selesai_pada, 'selesai_pada harus terisi');
 
         const after = await dbQuery('SELECT jenis, jumlah FROM transaksi WHERE sesi_id = ?', [open.sesi_id]);
-        assert.strictEqual(after.length, 1, 'kedaluwarsa tidak boleh menambah transaksi tutup');
-        assert.strictEqual(Number(after[0].jumlah), 1000);
+        assert.strictEqual(after.length, 2, 'kedaluwarsa harus mencatat tepat satu transaksi tutup');
+        assert.strictEqual(
+            after.filter((t) => t.jenis === 'tutup_sesi').length,
+            1,
+            'transaksi tutup_sesi harus tercatat sekali'
+        );
+        assert.strictEqual(after.reduce((sum, t) => sum + Number(t.jumlah), 0), 1000);
     });
 
     await check(report, 'Tutup sesi via UI: status selesai dan total struk = total transaksi sesi', async () => {
@@ -497,15 +502,15 @@ async function runPCBillingLifecycleE2ETest(page) {
         await dbExec("UPDATE sesi SET mulai_pada = datetime(mulai_pada, '-40 minutes') WHERE id = ?", [state.staleSesiId]);
         await dbExec("UPDATE sesi SET last_sync = datetime(mulai_pada, '+30 minutes') WHERE id = ?", [state.staleSesiId]);
 
-        // Sesi PC-05 dari check heartbeat bisa sync < 1 detik lalu (batas deteksi 0 menit);
-        // mundurkan supaya hasil deteksi deterministik.
+        // Sesi PC-05 dari check heartbeat bisa sync < 1 detik lalu;
+        // mundurkan supaya hasil deteksi deterministik pada threshold 1 menit.
         const pc5 = await pcByKode('PC-05');
         const pc5Aktif = (await dbQuery('SELECT id FROM sesi WHERE pc_id = ? AND status = ?', [pc5.id, SESI_AKTIF]))[0];
         assert.ok(pc5Aktif, 'prasyarat: sesi PC-05 aktif dari check heartbeat');
         state.pc5SesiId = Number(pc5Aktif.id);
         await dbExec("UPDATE sesi SET last_sync = datetime(last_sync, '-10 minutes') WHERE id = ?", [state.pc5SesiId]);
 
-        const deteksi = await api(page, 'API.blackout.deteksi(0)');
+        const deteksi = await api(page, 'API.blackout.deteksi(1)');
         assert.strictEqual(deteksi.success, true);
         assert.ok(deteksi.total >= 1, `harus ada sesi terdeteksi, dapat ${deteksi.total}`);
 
