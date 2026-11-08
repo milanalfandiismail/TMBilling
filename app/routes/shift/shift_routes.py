@@ -73,6 +73,9 @@ def get_active_shift():
 def get_shift_summary(shift_id=None):
     """Ringkasan pendapatan shift aktif (HANYA untuk admin preview, bukan blind count)."""
     try:
+        if shift_id and session.get("kasir_role", "kasir") != "admin":
+            return jsonify({"error": "Akses ditolak"}), 403
+
         if not shift_id:
             role = session.get("kasir_role", "kasir")
             if role == "admin":
