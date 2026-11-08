@@ -70,9 +70,9 @@ class HardwareService:
             ValueError: Jika PC tidak ditemukan berdasarkan IP/MAC.
         """
         try:
-            # 1. Ambil MAC Address dan IP Address asli yang dikirim Agen
+            # Identitas PC hanya boleh dari IP koneksi; body tidak boleh mengganti PC.
             mac_address = data.get("MacAddress", data.get("mac_address"))
-            ip_address = data.get("IpAddress", data.get("ip_address"))
+            ip_address = client_ip
 
             pc = None
             pc_id = None
@@ -80,18 +80,13 @@ class HardwareService:
 
             # 2. Resolve identitas PC dari cache RAM dulu; ORM hanya di-load saat cache miss.
             from app.services.cache.memory_store import PCNetworkCacheStore
-            cached = PCNetworkCacheStore.resolve_pc(ip=ip_address or client_ip, mac=mac_address)
+            cached = PCNetworkCacheStore.resolve_pc(ip=client_ip)
             if cached:
                 pc_id = cached["id"]
                 pc_kode = cached["kode"]
 
             if pc_id is None:
-                if mac_address:
-                    pc = PCRepository.find_by_mac(mac_address)
-                if not pc and ip_address:
-                    pc = PCRepository.find_by_ip(ip_address)
-                if not pc:
-                    pc = PCRepository.get_by_ip(client_ip)
+                pc = PCRepository.find_by_ip(client_ip)
                 if pc:
                     pc_id = pc.id
                     pc_kode = pc.kode
@@ -99,7 +94,7 @@ class HardwareService:
 
             # Jika tidak terdaftar sama sekali di database kasir, lemparkan error terhormat!
             if pc_id is None:
-                raise ValueError(f"PC dengan MAC '{mac_address}' atau IP '{ip_address}' belum terdaftar di database kasir.")
+                raise ValueError(f"PC dengan IP '{client_ip}' belum terdaftar di database kasir.")
 
             # 3. Update In-Memory Online Status & Anti-Theft Boot Tracker
             was_offline = not OnlineStatusStore.is_online(pc_id, timeout_seconds=15)
