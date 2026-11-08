@@ -39,12 +39,14 @@ def save_mikrotik_config():
         from app.utils.validators import validate_integer_range, validate_string_length
         data = request.get_json() or {}
         config = MikroTikConfig.get_instance()
+        host = data.get("host") or ""
+        username = data.get("username") or ""
         
         # Update config fields
         config.enabled = bool(data.get("enabled", False))
-        config.host = validate_string_length(data.get("host", ""), min_len=1, max_len=255, field_name="Host MikroTik", required=config.enabled) if config.enabled else data.get("host", "").strip()
+        config.host = validate_string_length(host, min_len=1, max_len=255, field_name="Host MikroTik", required=config.enabled) if config.enabled else host.strip()
         config.port = validate_integer_range(data.get("port", 8728), min_val=1, max_val=65535, field_name="Port MikroTik")
-        config.username = validate_string_length(data.get("username", ""), min_len=1, max_len=64, field_name="Username MikroTik", required=config.enabled) if config.enabled else data.get("username", "").strip()
+        config.username = validate_string_length(username, min_len=1, max_len=64, field_name="Username MikroTik", required=config.enabled) if config.enabled else username.strip()
         
         # Jangan replace password jika kosong (agar tidak hilang)
         new_pass = data.get("password")
