@@ -184,19 +184,23 @@ class SesiService:
         """Tambah waktu beberapa sesi dalam satu transaksi; rollback semua bila gagal."""
         with WRITE_LOCK:
             hasil = []
+            audit_logs = []
             try:
                 for sesi_id, paket, qty in entries:
                     hasil.append(SesiService._tambah_waktu_sesi_locked(
-                        sesi_id, paket, operator, qty, metode_pembayaran, commit=False
+                        sesi_id, paket, operator, qty, metode_pembayaran,
+                        commit=False, audit_logs=audit_logs,
                     ))
                 db.session.commit()
-                return hasil
             except Exception:
                 db.session.rollback()
                 raise
+            for message, detail in audit_logs:
+                write_log("TAMBAH_WAKTU", message, user=operator, detail_json=detail)
+            return hasil
 
     @staticmethod
-    def _tambah_waktu_sesi_locked(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai", commit=True):
+    def _tambah_waktu_sesi_locked(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai", commit=True, audit_logs=None):
         if not paket: raise ValueError("Paket tidak ditemukan")
         qty = validate_integer_range(qty, 1, 100, field_name="Kuantitas paket")
         metode_pembayaran = validate_payment_method(metode_pembayaran)
@@ -238,7 +242,11 @@ class SesiService:
             if commit:
                 db.session.commit()
 
-            write_log("TAMBAH_WAKTU", f"Member:{sesi.member.username} | +{total_menit}m", user=operator, detail_json=detail_tambah)
+            message = f"Member:{sesi.member.username} | +{total_menit}m"
+            if audit_logs is None:
+                write_log("TAMBAH_WAKTU", message, user=operator, detail_json=detail_tambah)
+            else:
+                audit_logs.append((message, detail_tambah))
             return {"tipe": "member", "waktu_tersimpan": sesi.member.waktu_tersimpan}
 
         elif sesi.tipe == "guest":
@@ -258,7 +266,11 @@ class SesiService:
             if commit:
                 db.session.commit()
 
-            write_log("TAMBAH_WAKTU", f"Guest:{sesi.nama_guest} | +{total_menit}m", user=operator, detail_json=detail_tambah)
+            message = f"Guest:{sesi.nama_guest} | +{total_menit}m"
+            if audit_logs is None:
+                write_log("TAMBAH_WAKTU", message, user=operator, detail_json=detail_tambah)
+            else:
+                audit_logs.append((message, detail_tambah))
             return {"tipe": "guest", "sisa_menit": sesi.sisa_menit()}
 
     @staticmethod
