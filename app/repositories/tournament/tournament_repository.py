@@ -53,9 +53,12 @@ class TournamentRepository:
         ).filter(TurnamenMatch.pemenang_id.is_none()).all()
 
     @staticmethod
-    def get_teams_by_ids(team_ids):
-        """Ambil daftar tim berdasarkan ID."""
-        return TurnamenTim.query.filter(TurnamenTim.id.in_(team_ids)).all()
+    def get_teams_by_ids(team_ids, turnamen_id=None):
+        """Ambil daftar tim berdasarkan ID, opsional dibatasi ke satu turnamen."""
+        query = TurnamenTim.query.filter(TurnamenTim.id.in_(team_ids))
+        if turnamen_id is not None:
+            query = query.filter(TurnamenTim.turnamen_id == turnamen_id)
+        return query.all()
 
     @staticmethod
     def save(entity):
