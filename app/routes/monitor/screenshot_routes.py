@@ -6,15 +6,24 @@ Blueprint ini menangani endpoint bagi kasir untuk memicu capture screenshot
 dan client PC untuk mengunggah tangkapan layar.
 """
 
+import io
 import os
 import time
 from datetime import datetime, timezone
 from flask import request, jsonify, session, current_app
+from PIL import Image
 from app.middleware.auth import login_required, admin_required, shift_required
 from app.routes.client.client_routes import api_key_required
+from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
 from app.utils.logger import write_log
 from app.utils.timezone_utils import format_display, display_in_tz, get_tz_short_name
 from werkzeug.utils import secure_filename
+
+
+def _upload_folder():
+    """Folder screenshot: config eksplisit untuk test/deploy, fallback folder lama."""
+    configured = current_app.config.get("SCREENSHOT_UPLOAD_DIR")
+    return configured or os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots')
 
 
 def _screenshot_filename(kode):
@@ -69,7 +78,9 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
         try:
             from app.repositories import PCRepository
 
-            client_ip = request.headers.get("X-IP-Address") or request.remote_addr
+            client_ip = IpWhitelistService.extract_client_ip(
+                headers=request.headers, remote_addr=request.remote_addr
+            )
             pc = PCRepository.get_by_ip(client_ip)
             if not pc:
                 return jsonify({"error": "IP PC tidak dikenal"}), 404
@@ -78,13 +89,17 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
             if not image_data:
                 return jsonify({"error": "Data gambar kosong"}), 400
 
-            upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots')
-            if not os.path.exists(upload_folder):
-                os.makedirs(upload_folder, exist_ok=True)
-
-            file_path = os.path.join(upload_folder, _screenshot_filename(pc.kode))
-            with open(file_path, "wb") as f:
-                f.write(image_data)
+            try:
+                with Image.open(io.BytesIO(image_data)) as img:
+                    img.verify()
+                with Image.open(io.BytesIO(image_data)) as img:
+                    img.thumbnail((1280, 1280))
+                    upload_folder = _upload_folder()
+                    os.makedirs(upload_folder, exist_ok=True)
+                    file_path = os.path.join(upload_folder, _screenshot_filename(pc.kode))
+                    img.convert("RGB").save(file_path, format="PNG")
+            except Exception:
+                return jsonify({"error": "Data gambar tidak valid"}), 400
 
             write_log("SCREENSHOT_UPLOAD", f"Screenshot PC {pc.kode} berhasil disimpan")
             return jsonify({"success": True, "message": "Screenshot berhasil diunggah"}), 200
@@ -103,7 +118,7 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
             if not pc:
                 return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
 
-            screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', _screenshot_filename(pc.kode))
+            screenshot_path = os.path.join(_upload_folder(), _screenshot_filename(pc.kode))
             if os.path.exists(screenshot_path):
                 mtime = os.path.getmtime(screenshot_path)
                 dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
@@ -148,7 +163,7 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
             now_local_dt = display_in_tz(datetime.now(timezone.utc))
 
             for pc in pcs_sorted:
-                screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', _screenshot_filename(pc.kode))
+                screenshot_path = os.path.join(_upload_folder(), _screenshot_filename(pc.kode))
                 mtime = _screenshot_mtime(screenshot_path)
                 if mtime is not None:
                     dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
