@@ -404,10 +404,9 @@ class ShiftService:
         if shift.status != "AKTIF":
             raise ValueError("Shift sudah ditutup sebelumnya")
 
-        shift.waktu_selesai = now_local()
-        db.session.commit()
-
         summary = ShiftService.get_shift_summary(shift_id)
+
+        shift.waktu_selesai = now_local()
 
         if alasan_clean:
             catatan_lengkap = f"[FORCE CLOSE oleh {admin_username}] {alasan_clean}"
