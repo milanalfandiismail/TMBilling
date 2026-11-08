@@ -214,8 +214,10 @@ c:\Project GIT\TMBilling
 
 4. **Menjalankan Pengujian Backend (Pytest)**:
    ```powershell
-   .\.venv\Scripts\python.exe -m pytest
+   .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+   npm run test:unit
    ```
+   > `npm run test:unit` menjalankan seluruh unit test paralel memakai semua core (per-worker DB/temp/backup/notes). Gunakan `.\.venv\Scripts\python.exe -m pytest` untuk mode serial.
 
 5. **Menjalankan Pengujian End-to-End Browser (Playwright)**:
    ```powershell

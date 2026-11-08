@@ -2,7 +2,9 @@
 
 | Metric | Value |
 |---|---|
-| pytest serial | 105.01 s / 491 passed |
+| pytest serial (baseline) | 105.01 s / 491 passed |
+| pytest serial (final) | 113.90 s / 493 passed |
+| pytest paralel `npm run test:unit` | 25.88 s / 493 passed |
 | bili proxy CPU in 15 s | 0.38 s |
 | bili proxy one-core share | 2.5 % |
 | logical cores | 16 |

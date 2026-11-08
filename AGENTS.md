@@ -261,8 +261,17 @@ Jalankan perintah-perintah berikut langsung di terminal atau command prompt:
 # Menjalankan unit test pytest spesifik
 .venv\Scripts\python.exe -m pytest tests/test_monitor_vnc_routes.py -v
 
-# Menjalankan seluruh test suite
+# Menjalankan seluruh test suite (serial)
 .venv\Scripts\python.exe -m pytest tests/ -v
+
+# Install dev-only test runner (pytest-xdist)
+.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+
+# Seluruh unit test memakai semua core (per-worker DB/temp/backup/notes)
+npm run test:unit
+
+# Pencarian literal all-core (default semua core; SEARCH_WORKERS=1 untuk serial)
+.venv\Scripts\python.exe scripts\allcore_search.py "pola1|pola2" app tests
 
 # Cek sintaks JavaScript dengan Node.js
 node -c app/static/js/kasir/modules/dashboard/dashboard_process_monitor.js
