@@ -18,6 +18,22 @@ class TestSettingsApiKey(unittest.TestCase):
         db.drop_all()
         self.app_context.pop()
 
+    def test_setting_generik_tidak_bisa_ubah_client_api_key(self):
+        admin = User.query.filter_by(username="admin").first()
+        with self.client.session_transaction() as sess:
+            sess["kasir_id"] = admin.id
+            sess["kasir_username"] = admin.username
+            sess["kasir_role"] = "admin"
+
+        before = self.app.config["CLIENT_API_KEY"]
+        res = self.client.put(
+            "/api/v1/kasir/settings/client_api_key",
+            json={"value": "LEWAT-JALUR-SALAH"},
+        )
+
+        assert res.status_code == 400
+        assert self.app.config["CLIENT_API_KEY"] == before
+
     def test_update_client_api_key_endpoint(self):
         admin = User.query.filter_by(username="admin").first()
         assert admin is not None

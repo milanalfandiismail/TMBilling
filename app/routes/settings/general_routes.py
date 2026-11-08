@@ -149,6 +149,11 @@ def handle_setting(key):
         if value is None:
             return jsonify({"error": "Nilai 'value' wajib diisi"}), 400
 
+        if key == "client_api_key":
+            return jsonify({
+                "error": "Client API Key harus diubah lewat endpoint /api/v1/kasir/settings/apikey"
+            }), 400
+
         if key == "warnet_announcement":
             from app.utils.helpers import sanitize_html
             value = sanitize_html(str(value))
