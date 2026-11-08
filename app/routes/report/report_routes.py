@@ -212,7 +212,7 @@ def delete_transaction_endpoint(t_id):
         kasir = session.get("kasir_username", "kasir")
         if ReportService.delete_transaction(t_id, operator=kasir):
             return jsonify({"success": True, "message": "Struk berhasil dihapus"}), 200
-        return jsonify({"error": "Gagal menghapus struk"}), 500
+        return jsonify({"error": "Struk tidak ditemukan"}), 404
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
