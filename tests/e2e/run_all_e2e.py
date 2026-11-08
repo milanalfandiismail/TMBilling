@@ -1,25 +1,31 @@
 """Master E2E Test Orchestrator TMBilling.
 
 Alur per suite:
-    prepare_sandbox_database() -> start_sandbox_server() ->
+    prepare_sandbox_database(paths) -> start_sandbox_server(port, paths) ->
     node tests/e2e/run_all_e2e.js --suite <id> --json results/<id>.json ->
-    stop_sandbox_server()
+    stop_sandbox_server(proc, paths)
+
+Setiap suite berjalan di proses Python baru karena `app` membaca environment
+saat import. `--jobs 0` memakai semua CPU; `--jobs 1` untuk debug serial.
 
 Semua angka hasil diambil dari laporan JSON yang ditulis runner Node; tidak ada
 total yang ditulis tangan di skrip ini.
 
-Exit code: 0 semua check lulus, 1 ada check gagal atau database produksi
-berubah, 2 lingkungan/setup bermasalah (port terpakai, sandbox gagal start).
+Exit code: 0 semua check lulus, 1 ada check gagal atau berkas produksi
+berubah, 2 lingkungan/setup bermasalah (browser, sandbox, laporan hilang).
 """
 
 import argparse
+import contextlib
 import hashlib
 import json
+import multiprocessing
 import os
+import socket
 import sqlite3
 import subprocess
 import sys
-import urllib.request
+import traceback
 
 if sys.platform == "win32":
     try:
@@ -36,7 +42,22 @@ PROD_DB_PATH = os.path.join(INSTANCE_DIR, "warnet.db")
 E2E_DIR = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(E2E_DIR, "results")
 RUNNER_JS = os.path.join(E2E_DIR, "run_all_e2e.js")
-SANDBOX_PORT = 7016
+
+
+def resolve_jobs(requested, suite_count):
+    if suite_count <= 0:
+        raise ValueError("tidak ada suite untuk dijalankan")
+    if requested < 0:
+        raise ValueError("--jobs tidak boleh negatif")
+    if requested == 0:
+        return min(suite_count, os.cpu_count() or 4)
+    return min(requested, suite_count)
+
+
+def free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
 
 
 def _sha256(path):
@@ -84,14 +105,6 @@ def snapshot_diff(before, after):
     return diffs
 
 
-def sandbox_port_busy(port=SANDBOX_PORT):
-    try:
-        with urllib.request.urlopen("http://127.0.0.1:{}/kasir/login".format(port), timeout=1.5) as resp:
-            return resp.status == 200
-    except Exception:
-        return False
-
-
 def print_suite_ids():
     """Cetak registry suite apa adanya dari CLI Node (satu sumber daftar)."""
     completed = subprocess.run(["node", RUNNER_JS, "--list"], cwd=PROJECT_ROOT)
@@ -107,44 +120,96 @@ def node_suite_ids():
     return [line.strip() for line in completed.stdout.splitlines() if line.strip()]
 
 
-def run_suite(suite_id):
-    """Jalankan satu suite pada sandbox yang baru di-seed.
+def _run_suite_worker(payload):
+    """Worker process: satu suite, satu DB, satu port, satu log."""
+    from tests.e2e.e2e_sandbox_server import (
+        sandbox_paths,
+        start_sandbox_server,
+        stop_sandbox_server,
+    )
 
-    Mengembalikan (exit_code_runner, laporan_json_atau_None).
-    """
-    from tests.e2e.e2e_sandbox_server import start_sandbox_server, stop_sandbox_server
-
+    suite_id = payload[0]
+    paths = sandbox_paths(suite_id)
     os.makedirs(RESULTS_DIR, exist_ok=True)
     report_path = os.path.join(RESULTS_DIR, "{}.json".format(suite_id))
-    # Laporan run sebelumnya tidak boleh dianggap hasil run ini.
+    log_path = os.path.join(RESULTS_DIR, "{}.log".format(suite_id))
     if os.path.exists(report_path):
         os.remove(report_path)
 
     proc = None
-    db_path = None
+    exit_code = 2
+    error = None
     try:
-        proc, db_path = start_sandbox_server(port=SANDBOX_PORT)
-        completed = subprocess.run(
-            ["node", RUNNER_JS, "--suite", suite_id, "--json", report_path],
-            cwd=PROJECT_ROOT,
-        )
-        exit_code = completed.returncode
-    finally:
-        if proc:
-            stop_sandbox_server(proc, db_path)
+        with open(log_path, "w", encoding="utf-8", errors="replace") as log, \
+                contextlib.redirect_stdout(log), contextlib.redirect_stderr(log):
+            try:
+                for attempt in range(3):
+                    port = free_port()
+                    try:
+                        proc, _ = start_sandbox_server(port=port, paths=paths, timeout_sec=60)
+                        break
+                    except RuntimeError as exc:
+                        if "Port" not in str(exc) or attempt == 2:
+                            raise
+                        print("[E2E] Port {} dipakai, mencoba port lain...".format(port))
+                if proc is None:
+                    raise RuntimeError("sandbox gagal start setelah 3 percobaan port")
+
+                env = os.environ.copy()
+                env["E2E_BASE_URL"] = "http://127.0.0.1:{}".format(port)
+                env["E2E_SANDBOX_DB"] = paths.db_path
+                env["TM_NOTES_DIR"] = paths.notes_dir
+                env["BACKUP_DIR"] = paths.backup_dir
+                completed = subprocess.run(
+                    ["node", RUNNER_JS, "--suite", suite_id, "--json", report_path],
+                    cwd=PROJECT_ROOT,
+                    env=env,
+                    stdout=log,
+                    stderr=subprocess.STDOUT,
+                )
+                exit_code = completed.returncode
+            except Exception as exc:
+                error = str(exc)
+                traceback.print_exc(file=log)
+            finally:
+                if proc:
+                    stop_sandbox_server(proc, paths)
+    except Exception as exc:
+        error = str(exc)
+        exit_code = 2
 
     report = None
     if os.path.exists(report_path):
-        with open(report_path, encoding="utf-8") as fh:
-            report = json.load(fh)
-    return exit_code, report
+        try:
+            with open(report_path, encoding="utf-8") as fh:
+                report = json.load(fh)
+        except (OSError, ValueError) as exc:
+            error = "laporan tidak bisa dibaca: {}".format(exc)
+            exit_code = 2
+    else:
+        error = error or "laporan tidak ditulis"
+        exit_code = 2
+
+    return {"suite": suite_id, "exit_code": exit_code, "report": report, "error": error}
+
+
+def run_suite(suite_id, jobs=1):
+    """Jalankan satu suite pada sandbox baru; serial, tanpa pool."""
+    result = _run_suite_worker((suite_id,))
+    return result["exit_code"], result["report"]
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Orkestrator E2E TMBilling (sandbox + guard database produksi).")
     parser.add_argument("--suite", help="id suite; pisahkan dengan koma untuk beberapa suite")
     parser.add_argument("--list", action="store_true", help="cetak daftar id suite lalu keluar")
-    parser.add_argument("--no-guard", action="store_true", help="lewati pemeriksaan database produksi")
+    parser.add_argument("--no-guard", action="store_true", help="lewati pemeriksaan berkas produksi")
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=0,
+        help="jumlah worker paralel; 0 = semua CPU (default), 1 = serial",
+    )
     parser.add_argument(
         "--self-test",
         action="store_true",
@@ -165,15 +230,17 @@ def main(argv=None):
     else:
         suite_ids = [s for s in node_suite_ids() if not s.startswith("_")]
 
+    try:
+        jobs = resolve_jobs(args.jobs, len(suite_ids))
+    except ValueError as exc:
+        print("GAGAL: {}".format(exc))
+        return 2
+
     print("=" * 65)
     print("TMBILLING E2E TEST ORCHESTRATOR")
     print("=" * 65)
     print("Suite: {}".format(", ".join(suite_ids)))
-
-    if sandbox_port_busy():
-        print("GAGAL: port {} sudah dipakai (sandbox standalone masih hidup?).".format(SANDBOX_PORT))
-        print("Hentikan dulu proses `npm run test:e2e:sandbox` sebelum menjalankan orkestrator.")
-        return 2
+    print("Worker: {}".format(jobs))
 
     before = None
     if not args.no_guard:
@@ -185,20 +252,25 @@ def main(argv=None):
 
     total = passed = failed = 0
     exit_code = 0
-    for suite_id in suite_ids:
-        print("\n" + "-" * 65)
-        print("Suite: {}".format(suite_id))
-        print("-" * 65)
-        try:
-            runner_code, report = run_suite(suite_id)
-        except Exception as exc:
-            print("GAGAL: sandbox untuk suite {} tidak bisa dijalankan: {}".format(suite_id, exc))
-            return 2
 
+    def consume(result):
+        nonlocal total, passed, failed, exit_code
+        suite_id = result["suite"]
+        report = result["report"]
+        runner_code = result["exit_code"]
         if report is None:
-            print("GAGAL: runner tidak menulis laporan untuk suite {} (exit code {}).".format(suite_id, runner_code))
+            print("GAGAL: suite {} tidak menghasilkan laporan (exit code {}).".format(suite_id, runner_code))
+            if result.get("error"):
+                print("  {}".format(result["error"]))
+            log_path = os.path.join(RESULTS_DIR, "{}.log".format(suite_id))
+            if os.path.exists(log_path):
+                with open(log_path, encoding="utf-8", errors="replace") as fh:
+                    tail = fh.read()[-2000:].strip()
+                if tail:
+                    print("  --- log terakhir {} ---".format(suite_id))
+                    print(tail)
             exit_code = 2
-            break
+            return
 
         total += report.get("total", 0)
         passed += report.get("passed", 0)
@@ -208,8 +280,32 @@ def main(argv=None):
                 suite_id, report.get("total", 0), report.get("passed", 0), report.get("failed", 0), runner_code
             )
         )
-        if runner_code != 0 and exit_code == 0:
+        if result.get("error"):
+            print("  error: {}".format(result["error"]))
+        if runner_code == 2:
+            exit_code = 2
+        elif runner_code != 0 and exit_code == 0:
             exit_code = 1
+
+    if jobs == 1:
+        for suite_id in suite_ids:
+            print("\n" + "-" * 65)
+            print("Suite: {}".format(suite_id))
+            print("-" * 65)
+            consume(_run_suite_worker((suite_id,)))
+    else:
+        context = multiprocessing.get_context("spawn")
+        try:
+            with context.Pool(processes=jobs, maxtasksperchild=1) as pool:
+                tasks = [(suite_id,) for suite_id in suite_ids]
+                for result in pool.imap_unordered(_run_suite_worker, tasks, chunksize=1):
+                    print("\n" + "-" * 65)
+                    print("Selesai: {}".format(result["suite"]))
+                    print("-" * 65)
+                    consume(result)
+        except KeyboardInterrupt:
+            print("\nDIBATALKAN: menghentikan worker...")
+            return 2
 
     if failed > 0 and exit_code == 0:
         exit_code = 1
