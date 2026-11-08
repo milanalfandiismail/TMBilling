@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from app.models import db, now_local
 from app.models import ShiftRecord, Transaksi, TransaksiMenu, User
 from app.services.write_lock import WRITE_LOCK
-from app.utils.timezone_utils import format_display
+from app.utils.timezone_utils import format_display, get_local_date_range_utc
 
 
 class ShiftService:
@@ -485,15 +485,12 @@ class ShiftService:
         if kasir_id:
             query = query.filter_by(kasir_id=kasir_id)
         if tanggal_mulai:
-            t_mulai = str(tanggal_mulai).strip()
-            if len(t_mulai) == 10:
-                t_mulai = f"{t_mulai} 00:00:00"
-            query = query.filter(ShiftRecord.waktu_mulai >= t_mulai)
+            start_utc, _ = get_local_date_range_utc(str(tanggal_mulai).strip())
+            query = query.filter(ShiftRecord.waktu_mulai >= start_utc)
         if tanggal_selesai:
-            t_selesai = str(tanggal_selesai).strip()
-            if len(t_selesai) == 10:
-                t_selesai = f"{t_selesai} 23:59:59"
-            query = query.filter(ShiftRecord.waktu_mulai <= t_selesai)
+            start_utc, end_utc = get_local_date_range_utc(str(tanggal_selesai).strip())
+            query = query.filter(ShiftRecord.waktu_selesai >= start_utc,
+                                 ShiftRecord.waktu_selesai < end_utc)
 
         total = query.count()
         shifts = query.order_by(ShiftRecord.id.desc()).offset(offset).limit(limit).all()
