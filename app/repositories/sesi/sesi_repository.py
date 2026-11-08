@@ -26,8 +26,8 @@ class SesiRepository:
 
     @staticmethod
     def get_by_id(sesi_id):
-        """Mengambil sesi berdasarkan ID (404 jika tidak ditemukan)."""
-        return Sesi.query.get_or_404(sesi_id)
+        """Mengambil sesi berdasarkan ID, None jika tidak ditemukan."""
+        return db.session.get(Sesi, sesi_id)
 
     @staticmethod
     def get_aktif_by_pc(pc_id):
