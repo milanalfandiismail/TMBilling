@@ -33,8 +33,7 @@ if errorlevel 1 (
 :: 2. Beri jeda 2 detik agar respon HTTP 200 sampai ke browser kasir
 timeout /t 2 /nobreak >nul 2>&1 || ping 127.0.0.1 -n 2 >nul
 
-:: 3. Matikan server: proses background start.bat + proses run.py apa pun + pemilik port
-taskkill /f /im pythonw.exe >nul 2>&1
+:: 3. Matikan server: proses run.py apa pun + pemilik port
 powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { ($_.Name -eq 'python.exe' -or $_.Name -eq 'pythonw.exe') -and $_.CommandLine -like '*run.py*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" >nul 2>&1
 powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort %TM_PORT% -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }" >nul 2>&1
 
