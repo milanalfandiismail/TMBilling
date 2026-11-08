@@ -26,3 +26,22 @@ def test_get_by_id_tidak_commit(tmp_path, monkeypatch):
         result = MemberService.get_by_id(m.id)
         assert result.waktu_tersimpan == 0
         assert called == []
+
+
+def test_get_riwayat_paket_tidak_commit(tmp_path, monkeypatch):
+    app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": f"sqlite:///{tmp_path/'riwayat.db'}"})
+    with app.app_context():
+        g = Grup(nama="reguler")
+        db.session.add(g)
+        db.session.commit()
+        m = Member(username="m2", grup_id=g.id, waktu_tersimpan=60,
+                   kadaluarsa_pada=now_local() - timedelta(days=1), aktif=True)
+        m.set_password("rahasia")
+        db.session.add(m)
+        db.session.commit()
+
+        called = []
+        monkeypatch.setattr(db.session, "commit", lambda: called.append(1))
+        MemberService.get_riwayat_paket(m.id)
+
+        assert called == []

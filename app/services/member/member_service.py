@@ -435,8 +435,8 @@ class MemberService:
             return []
             
         # Update status kadaluarsa sebelum hitung saldo untuk refund
-        if member.cek_kadaluarsa():
-            db.session.commit()
+        member.cek_kadaluarsa()
+        # shortcut: expiry dipersist saat write berikutnya; jalur baca tidak commit.
             
         transaksi_list = TransaksiRepository.get_riwayat_paket_member(member_id)
         result = []
