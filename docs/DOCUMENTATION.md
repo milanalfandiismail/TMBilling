@@ -232,7 +232,7 @@ c:\Project GIT\TMBilling
 ### 4.3 Blackout Auto-Recovery System (Toleransi Mati Lampu & Uptime Tracker)
 - **Deskripsi**: Proteksi otomatis terhadap pemadaman listrik (*blackout*) mendadak di warnet.
 - **Pencatatan Uptime & Offline Tracker**: Menggunakan tabel `PCUptimeLog` yang merekam *heartbeat* klien setiap beberapa detik.
-- **Toleransi Blackout**: Jika listrik padam mendadak, server mendeteksi status offline seluruh PC secara serentak. Saat listrik menyala kembali dan PC booting, sistem secara cerdas **tidak memotong durasi pelanggan** selama masa mati lampu, melainkan memulihkan sisa waktu dan paket sesi secara otomatis (*Auto Session Resume*). Sisa waktu yang dikembalikan ke member memakai snapshot audit `sisa_audit` (bukan jam berjalan), sehingga tidak ada kelebihan waktu. `sesi.selesai_pada` diisi waktu referensi (`last_sync`/`mulai_pada`), bukan jam deteksi, agar waktu terpakai tidak membengkak sepanjang outage; sesi guest yang dipulihkan juga mengisi `selesai_pada`. Pemulihan member ditolak bila member masih punya sesi aktif lain dan saldo yang sudah kadaluarsa tidak dihidupkan. Threshold deteksi dibatasi `1..1440` menit, dan hanya sesi bertanda `is_blackout_suspect` yang dapat di-resolve.
+- **Toleransi Blackout**: Jika listrik padam mendadak, server mendeteksi status offline seluruh PC secara serentak. Saat listrik menyala kembali dan PC booting, sistem secara cerdas **tidak memotong durasi pelanggan** selama masa mati lampu, melainkan memulihkan sisa waktu dan paket sesi secara otomatis (*Auto Session Resume*). Sisa waktu yang dikembalikan ke member memakai snapshot audit `sisa_audit` (bukan jam berjalan), sehingga tidak ada kelebihan waktu. `sesi.selesai_pada` diisi waktu referensi (`last_sync`/`mulai_pada`), bukan jam deteksi, agar waktu terpakai tidak membengkak sepanjang outage; sesi guest yang dipulihkan juga mengisi `selesai_pada`. Pemulihan member ditolak bila member masih punya sesi aktif lain dan saldo yang sudah kadaluarsa tidak dihidupkan. Threshold deteksi dibatasi `1..1440` menit, deteksi dijalankan di dalam `WRITE_LOCK` dan memuat ulang tiap sesi serta melewati sesi yang heartbeat-nya masih baru, sehingga heartbeat aktif tidak salah dianggap mati lampu; hanya sesi bertanda `is_blackout_suspect` yang dapat di-resolve. Force close all juga mereset `pc.is_admin_mode` agar kiosk tidak tertinggal dalam mode admin.
 - **Hard Delete Uptime Log**: Admin dapat membersihkan riwayat log uptime lama dengan konfirmasi aman.
 
 ### 4.4 5-Layer WarnetAgent Anti-Tamper Security & Registry Hash Verification
@@ -259,7 +259,7 @@ c:\Project GIT\TMBilling
   - **GPU PNP Device ID** & Nama Grafis
   - **RAM Serials** (Daftar nomor seri keping memori)
   - **Disk Serials** (Daftar nomor seri SSD/HDD)
-- **Deteksi Pencurian / Pergantian Komponen**: Setiap kali PC klien booting, agen mengirimkan spesifikasi hardware saat ini (*current specs*). Sistem secara otomatis membandingkannya dengan baseline tersimpan via `HardwareService.process_hardware_metric`. Jika terdapat perbedaan (GPU PNP ID berbeda, RAM serial hilang/berkurang, Disk diganti, Motherboard ditukar), dashboard kasir seketika memunculkan alert diskrepansi visual merah solid dengan deskripsi komponen yang berubah.
+- **Deteksi Pencurian / Pergantian Komponen**: Setiap kali PC klien booting, agen mengirimkan spesifikasi hardware saat ini (*current specs*). Sistem secara otomatis membandingkannya dengan baseline tersimpan via `HardwareService.process_hardware_metric`. Jika terdapat perbedaan (GPU PNP ID berbeda, RAM serial hilang/berkurang, Disk diganti, Motherboard ditukar), dashboard kasir seketika memunculkan alert diskrepansi visual merah solid dengan deskripsi komponen yang berubah. Identitas PC diambil dari IP koneksi peer (`IpWhitelistService.extract_client_ip`), bukan field `IpAddress` di body, sehingga telemetri tidak bisa dipalsukan untuk PC lain.
 - **Visualisasi Audit di Tab Hardware Checker & Modal Detail PC**:
   - Modal detail PC mengambil data satu PC via `GET /api/v1/kasir/monitor/hardware/<int:pc_id>` (bukan lagi memuat seluruh daftar `/monitor/all`).
   - **🔒 Baseline Resmi (Terkunci)** — spesifikasi yang terdaftar saat tombol *Update Baseline* terakhir ditekan, disertai badge `TERDAFTAR`.
@@ -295,6 +295,7 @@ c:\Project GIT\TMBilling
 - **Natural Sorting**: Daftar PC terurut secara natural (`PC-01`, `PC-02`, ..., `PC-09`, `PC-10`, `PC-11`, bukan urutan ASCII yang melompat).
 - **Live Zoom**: Klik thumbnail untuk memperbesar screenshot secara instan tanpa lag.
 - **Nama Berkas Aman**: `_screenshot_filename()` membuang pemisah path sebelum `secure_filename`, sehingga kode PC seperti `PC/01` tetap menjadi `PC01.png` dan tidak bisa menulis di luar folder screenshot.
+- **Identitas & Validasi Unggah**: Endpoint unggah menentukan PC dari IP koneksi peer (`IpWhitelistService.extract_client_ip`), bukan header `X-IP-Address`, sehingga satu PC tidak bisa menimpa screenshot PC lain. Byte gambar divalidasi Pillow (`verify()` lalu dibuka ulang), dinormalkan ke PNG dengan sisi maksimum 1280 px, dan data tidak valid ditolak `400`.
 
 ### 4.8 POS Kantin & Billing FnB Multi-Payment (Cash/QRIS/Bank + Struk Thermal)
 - **Deskripsi**: Modul kasir kantin / FnB lengkap yang terintegrasi langsung dengan billing PC.
@@ -366,9 +367,13 @@ c:\Project GIT\TMBilling
   - Custom Group Rates: Tarif berbeda untuk tipe ruangan Reguler, VIP, Sofa, atau VVIP Simulator.
   - Reset State Sesi: Proteksi pembersihan data sesi sementara saat PC selesai digunakan.
   - Refund Paket Nominal Penuh: Refund guest & member mengembalikan nilai penuh transaksi (`-jumlah`) sambil memotong menit tersisa (guest dibatasi sisa waktu, member `max(0, saldo - durasi)`).
-  - Satu Sesi Aktif per PC: Unique index parsial `uq_aktif_sesi_pc` (`pc_id` WHERE `status='aktif'`) menolak sesi ganda pada satu meja; pelanggaran dipetakan menjadi `ValueError("PC sedang dipakai")`.
-  - Serialisasi Tulis Saldo: `app/services/write_lock.py` (`WRITE_LOCK`) membungkus `tambah_waktu`/`refund_paket` member dan `tambah_waktu_sesi` agar dua request bersamaan tidak saling menimpa saldo (read-modify-write) pada satu proses server.
-  - Hapus Nota Paket Ditolak: nota `beli_paket`/`beli_paket_member` tidak bisa dihapus dari riwayat; API membalas 400 dengan arahan memakai Refund agar saldo member ikut kembali. Penghapusan riwayat transaksi juga membersihkan `TransaksiMenu` pada rentang tanggal yang sama.
+  - Satu Sesi Aktif per PC & Member: Unique index parsial `uq_aktif_sesi_pc` (`pc_id` WHERE `status='aktif'`) dan `uq_aktif_sesi_member` (`member_id` WHERE `status='aktif'`) menolak sesi ganda; pelanggaran dipetakan menjadi `ValueError("PC sedang dipakai")`.
+  - Top-up Multi-Paket Atomik: `tambah_waktu_batch` membungkus `WRITE_LOCK`, menulis seluruh item dengan `commit=False`, lalu satu commit; kegagalan salah satu item me-rollback semuanya dan audit log ditulis setelah commit.
+  - Hapus Member Beriwayat Ditolak: member yang punya riwayat sesi/transaksi tidak dapat dihapus (`400`); nonaktifkan akunnya agar histori tetap utuh.
+  - Serialisasi Tulis Saldo: `app/services/write_lock.py` (`WRITE_LOCK`) membungkus `tambah_waktu`/`refund_paket`/`tambah_waktu_batch` member dan `tambah_waktu_sesi` agar dua request bersamaan tidak saling menimpa saldo (read-modify-write) pada satu proses server.
+  - Paket Tidak Ditemukan: edit/hapus paket yang sudah tidak ada dibalas `404` ("Paket tidak ditemukan"), bukan `500`.
+  - Logout Portal Member: `POST /api/v1/public/auth/logout` memanggil `AuthService.logout` untuk mengakhiri sesi kiosk dengan token sesi.
+  - Hapus Nota Paket Ditolak: nota `beli_paket`/`beli_paket_member` tidak bisa dihapus dari riwayat; API membalas 400 dengan arahan memakai Refund agar saldo member ikut kembali. Penghapusan riwayat transaksi juga membersihkan `TransaksiMenu` pada rentang tanggal yang sama, menolak rentang tanggal yang masih dipakai sesi aktif, dan menghapus transaksi yang tidak ada membalas `404`; pembersihan log sistem meneruskan opsi arsip.
 
 ### 4.16 Shift Kasir & Serah Terima Shift (Hitung Buta / Blind Cash Reconciliation)
 - **Deskripsi**: Sistem manajemen jam kerja dan serah terima shift kasir anti-manipulasi berbasis *Blind Count (Hitung Buta)*, rekonsiliasi laci fisik, dan struk handover thermal.
@@ -378,6 +383,8 @@ c:\Project GIT\TMBilling
   - **Kalkulasi Selisih Otomatis**: Sistem membandingkan `Uang Fisik Aktual` vs `Modal Awal + Transaksi Tunai Bersih`. Status selisih (`PAS / Rp 0`, `SURPLUS (+)`, atau `DEFISIT (-)`) langsung terkunci permanen di database.
   - **Pemisahan Tunai vs Non-Tunai**: Transaksi QRIS dan transfer otomatis dipisahkan dari perhitungan kas fisik laci kasir.
   - **Ringkasan Lintas Kasir**: Rekap shift menghitung seluruh transaksi pada rentang waktu shift (bukan hanya `user_id` kasir pemilik shift) dan tidak meng-clamp nilai negatif, sehingga selisih refund berlebih tetap terlihat.
+  - **Akses Ringkasan & Struk**: `GET /api/v1/kasir/shift/<id>/summary` dan struk shift hanya boleh dibaca pemilik shift atau admin; kasir lain mendapat `403` sehingga hitung buta tidak bisa diintip.
+  - **Satu Shift Aktif**: Unique index parsial `uq_aktif_shift` (`status='AKTIF'`) plus `WRITE_LOCK` mencegah dua kasir membuka shift aktif bersamaan; `force_close_shift` menghitung ringkasan sebelum satu commit.
   - **Admin Force Close Shift**: Administrator dapat menutup paksa shift kasir aktif dalam situasi darurat dengan pencatatan audit log.
   - **Struk Thermal Handover 58mm / 80mm**: Pencetakan bukti serah terima shift fisik lengkap dengan rincian penerimaan tunai, non-tunai, modal awal, rekonsiliasi laci, dan selisih keuangan untuk ditandatangani kedua kasir.
   - **Tab Riwayat Serah Terima Shift**: Menampilkan rekapitulasi seluruh shift sebelumnya dengan filter tanggal otomatis, badge status, modal detail, dan tata letak responsif (*fit-to-table* pada breakpoint LG/XL).
@@ -391,9 +398,10 @@ c:\Project GIT\TMBilling
 ### 4.18 Turnamen & Bracket eSports Engine
 - **Deskripsi**: Sistem manajemen turnamen warnet bawaan untuk game kompetitif (Valorant, MLBB, Dota 2, dll.).
 - **Fitur**:
-  - Pembuatan bagan turnamen (*Single Elimination*, *Double Elimination*, *Swiss Round*).
-  - Pendaftaran nama tim dan daftar susunan pemain (*roster*).
-  - Update skor pertandingan secara *live* yang terhubung ke layar TV Public.
+  - Pembuatan bagan turnamen (*Single Elimination*, *Double Elimination*, *Swiss Round*) dengan format `playoff`/`swiss`/`multi`.
+  - Pendaftaran nama tim dan daftar susunan pemain (*roster*); nama tim kosong diabaikan sebelum validasi minimal 2 tim.
+  - Update skor pertandingan secara *live* yang terhubung ke layar TV Public; skor hanya diterima untuk tim yang benar-benar bertanding di match tersebut dan match yang sudah selesai tidak bisa diubah.
+  - `finish_stage` menolak babak yang sudah selesai, tim milik turnamen lain, dan pembuatan bracket babak berikutnya yang sudah ada.
 
 ### 4.19 Public TV Billboard & Scoreboard Display
 - **Deskripsi**: Halaman antarmuka khusus untuk ditampilkan pada layar TV besar atau monitor proyektor di lobi warnet (`/tv`).
@@ -408,6 +416,7 @@ c:\Project GIT\TMBilling
   - Grafik tren pendapatan harian, mingguan, dan bulanan.
   - Analisis jam sibuk (*Peak Hours Occupancy Heatmap*) untuk optimasi promosi.
   - Perbandingan rasio keuntungan antara pendapatan sewa PC vs penjualan F&B kantin.
+  - Laporan harian memakai tanggal lokal server (`get_today_local_date()`), bukan tanggal UTC, agar transaksi dini hari tidak jatuh ke hari sebelumnya.
   - Paket Terlaris: `get_top_paket` mengelompokkan transaksi per `paket_id` sehingga paket yang sudah dihapus tetap terhitung dan diberi label "Paket dihapus".
 
 ### 4.21 Emergency Mode & Offline Fallback (SHA-256 Auth)
@@ -441,6 +450,7 @@ c:\Project GIT\TMBilling
 - **Fitur**:
   - Secara otomatis mengatur limit bandwidth download/upload pada IP PC klien saat sesi billing aktif.
   - Memutus (*drop/block*) akses internet PC klien ketika sesi billing habis atau PC dalam status terkunci.
+  - Form konfigurasi yang mengirim `host`/`username` null diperlakukan sebagai string kosong sehingga tidak memicu `500`.
 
 ### 4.26 Maintenance Ticket & Issue Reporting System
 - **Deskripsi**: Sistem tiket pelaporan kerusakan perangkat keras atau kendala teknis di warnet.
@@ -468,6 +478,7 @@ c:\Project GIT\TMBilling
   2. **Layer 2 - Realtime Client Polling (WarnetAgent Klien)**:
      - Klien PC warnet (Tauri) mengirimkan request heartbeat/status setiap **1 s/d 3 detik** ke `/api/v1/public/client/status`.
      - Handler `ClientService.get_status()` memanggil `SesiService.hitung_sisa_menit()` dan menutup sesi lewat `SesiService.tutup_sesi(id, operator="system")` saat sisa waktu `<= 0`, sehingga tercatat satu transaksi `tutup_sesi` Rp0 sebelum payload lockscreen dikembalikan ke klien.
+     - Heartbeat `sesi.last_sync` diperbarui maksimal tiap 30 detik lewat UPDATE bersyarat tanpa SELECT tambahan; kegagalan sinkronisasi waktu member hanya dicatat dan tidak menutup sesi berbayar.
   3. **Layer 3 - Frontend Dashboard Polling (Web Kasir)**:
      - Dashboard kasir melakukan polling status berkala (dapat diatur: 1, 2, 3, atau 5 detik) ke `/api/v1/kasir/dashboard/pc`.
      - Backend di `DashboardService.get_pc_list()` secara proaktif memanggil `cleanup_expired_sessions()`, memastikan tampilan kasir selalu sinkron secara instan.
