@@ -447,6 +447,8 @@ class TournamentService:
         m = TournamentRepository.get_match_by_id(match_id)
         if not m:
             raise ValueError("Match tidak ditemukan")
+        if m.pemenang_id is not None:
+            raise ValueError("Match sudah selesai")
 
         skor1 = validate_integer_range(data.get("skor1", 0), 0, 999, "Skor tim 1")
         skor2 = validate_integer_range(data.get("skor2", 0), 0, 999, "Skor tim 2")
@@ -461,6 +463,9 @@ class TournamentService:
                 pemenang_id = m.tim2_id
             else:
                 raise ValueError("Skor seri. Silakan tentukan tim pemenang secara manual.")
+
+        if pemenang_id not in (m.tim1_id, m.tim2_id):
+            raise ValueError("Pemenang harus salah satu tim di match ini")
 
         try:
             m.skor1 = skor1
