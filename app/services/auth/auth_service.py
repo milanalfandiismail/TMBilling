@@ -154,34 +154,34 @@ class AuthService:
             }
 
 
-        # =========================================================================
-        # 2. MEMBER / KASIR LOGOUT PROCESS
-        # =========================================================================
-        # Fokus: Validasi token dan penutupan sesi aktif secara aman.
+    # =========================================================================
+    # 2. MEMBER / KASIR LOGOUT PROCESS
+    # =========================================================================
+    # Fokus: Validasi token dan penutupan sesi aktif secara aman.
 
-        @staticmethod
-        def logout(ip_address, mac_address, token_sesi=None):
-            """Logout member atau kasir dan menutup sesi aktif di database."""
-            pc = PCRepository.get_by_ip_and_mac(ip_address, mac_address)
-            if not pc:
-                raise ValueError("PC tidak terdaftar")
+    @staticmethod
+    def logout(ip_address, mac_address, token_sesi=None):
+        """Logout member atau kasir dan menutup sesi aktif di database."""
+        pc = PCRepository.get_by_ip_and_mac(ip_address, mac_address)
+        if not pc:
+            raise ValueError("PC tidak terdaftar")
 
-            sesi = SesiRepository.get_aktif_by_pc(pc.id)
-            if not sesi:
-                raise ValueError("Tidak ada sesi aktif")
-            
-            if not token_sesi or sesi.token_sesi != token_sesi:
-                raise ValueError("Token salah")
+        sesi = SesiRepository.get_aktif_by_pc(pc.id)
+        if not sesi:
+            raise ValueError("Tidak ada sesi aktif")
 
-            # Sinkronisasi sisa saldo / kuota
-            sisa = sesi.sisa_menit()
-            if sesi.tipe == "member" and sesi.member:
-                sesi.member.waktu_tersimpan = sisa
-            elif sesi.tipe == "kasir" and sesi.user:
-                sesi.user.sisa_kuota_menit = sisa
+        if not token_sesi or sesi.token_sesi != token_sesi:
+            raise ValueError("Token salah")
 
-            SesiRepository.close_session(sesi)
-            db.session.commit()
+        # Sinkronisasi sisa saldo / kuota
+        sisa = sesi.sisa_menit()
+        if sesi.tipe == "member" and sesi.member:
+            sesi.member.waktu_tersimpan = sisa
+        elif sesi.tipe == "kasir" and sesi.user:
+            sesi.user.sisa_kuota_menit = sisa
+
+        SesiRepository.close_session(sesi)
+        db.session.commit()
         return {"success": True}
 
 
