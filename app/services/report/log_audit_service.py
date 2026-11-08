@@ -9,9 +9,10 @@ pembersihan log, serta penghapusan riwayat audit.
 import re
 import json
 from datetime import datetime
-from app.models import db, now_local
+from app.models import db
 from app.repositories import TransaksiRepository, SesiRepository, MenuRepository
 from app.utils.logger import read_logs, write_log, clear_logs
+from app.utils.timezone_utils import get_local_date_range_utc
 
 
 LOCKED_TRANSAKSI_JENIS = frozenset({
@@ -197,8 +198,13 @@ class LogAuditService:
     @staticmethod
     def clear_transactions_by_date(tanggal, operator="system"):
         """Menghapus riwayat transaksi & sesi pada tanggal tertentu (Audit)."""
-        if tanggal == now_local().strftime("%Y-%m-%d") and SesiRepository.get_all_aktif():
-            raise ValueError("Tutup semua sesi aktif sebelum menghapus riwayat hari ini")
+        _, target_end = get_local_date_range_utc(tanggal)
+        for sesi in SesiRepository.get_all_aktif():
+            mulai = sesi.mulai_pada or sesi.waktu_mulai_sesi
+            if mulai and mulai < target_end:
+                raise ValueError(
+                    "Tutup semua sesi aktif sebelum menghapus riwayat tanggal ini"
+                )
         try:
             count_t = TransaksiRepository.delete_by_date(tanggal)
             count_m = MenuRepository.delete_transaksi_by_date(tanggal)
