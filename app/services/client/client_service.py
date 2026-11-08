@@ -221,19 +221,8 @@ class ClientService:
 
                     # D. Jika Waktu Habis -> Selesaikan Sesi
                     if sisa <= 0:
-                        sesi.status = "selesai"
-                        sesi.selesai_pada = now_local()
-                        sesi.is_afk = False
-                        sesi.afk_pin = None
-                        sesi.afk_sejak = None
-                        if sesi.tipe == "member" and sesi.member:
-                            sesi.member.waktu_tersimpan = 0
-                            db.session.add(sesi.member)
-                        elif sesi.tipe == "kasir" and sesi.user:
-                            sesi.user.sisa_kuota_menit = 0
-                            db.session.add(sesi.user)
-                        db.session.commit()
-                        
+                        SesiService.tutup_sesi(sesi.id, operator="system")
+
                         timer_str = SettingsService.get("auto_shutdown_timer_seconds", "180")
                         try:
                             shutdown_timer = int(timer_str)

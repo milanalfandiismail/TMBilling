@@ -138,6 +138,18 @@ class TestClientHeartbeatPersist(unittest.TestCase):
         self._poll()
         self.assertEqual(self._db_sesi().status, "selesai")
 
+    def test_expired_session_creates_close_transaction(self):
+        from app.models import Transaksi
+        sesi = self._db_sesi()
+        sesi.mulai_pada = now_local() - timedelta(minutes=61)
+        db.session.commit()
+
+        self._poll()
+
+        db.session.remove()
+        trx = Transaksi.query.filter_by(sesi_id=self.sesi_id, jenis="tutup_sesi").first()
+        self.assertIsNotNone(trx)
+
     def test_second_poll_within_window_issues_no_update(self):
         self._poll()
         stmts = self._capture_sql(self._poll)
