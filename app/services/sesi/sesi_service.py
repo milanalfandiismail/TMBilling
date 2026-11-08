@@ -201,6 +201,8 @@ class SesiService:
 
         sesi = SesiRepository.get_aktif_by_id(sesi_id)
         if not sesi: raise ValueError("Sesi tidak aktif")
+        if sesi.tipe not in ("guest", "member"):
+            raise ValueError("Sesi admin tidak bisa ditambah waktu")
 
         if paket.grup_id != sesi.pc.grup_id:
             raise ValueError(f"Paket zona {paket.grup.nama.upper()} tidak cocok dengan PC!")

@@ -88,6 +88,25 @@ def test_buka_guest_batch_success(app_and_client):
     assert data["created"][1]["nama_guest"] == "Squad-2"
 
 
+def test_tambah_waktu_sesi_admin_ditolak(app_and_client):
+    app, client = app_and_client
+    with app.app_context():
+        pc = PC.query.filter_by(kode="BATCH-PC-1").one()
+        paket = Paket.query.filter_by(nama="Paket Batch 1 Jam").one()
+        sesi = SesiService.buka_admin(pc.id, "token-admin-test", admin_nama="ADMIN")
+        sesi_id = sesi.id
+        paket_id = paket.id
+
+    res = client.post(f"/api/v1/kasir/sesi/tambah-waktu-sesi/{sesi_id}", json={
+        "paket_id": paket_id,
+        "qty": 1,
+        "metode_pembayaran": "Tunai",
+    })
+
+    assert res.status_code == 400
+    assert "admin" in res.get_json()["error"].lower()
+
+
 def test_tambah_waktu_batch_and_tutup_batch(app_and_client):
     """Test tambah waktu batch dan tutup sesi batch."""
     app, client = app_and_client
