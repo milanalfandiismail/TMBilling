@@ -163,6 +163,10 @@ class BlackoutService:
         pc_baru = PCRepository.get_by_id(pc_baru_id)
         
         if not sesi or not pc_baru: raise ValueError("Data tidak ditemukan")
+        if sesi.tipe != "guest":
+            raise ValueError("Sesi guest tidak ditemukan")
+        if not sesi.is_blackout_suspect or sesi.is_blackout_resolved:
+            raise ValueError("Sesi bukan suspect blackout yang valid")
         if sesi.pc and pc_baru.grup_id != sesi.pc.grup_id:
             raise ValueError("Hanya bisa pindah ke PC grup yang sama")
         if SesiRepository.get_aktif_by_pc(pc_baru.id):
@@ -192,7 +196,9 @@ class BlackoutService:
         """Tutup catatan blackout tanpa memberikan kompensasi apa pun (Guest/Member)."""
         sesi = SesiRepository.get_by_id(sesi_id)
         if not sesi: raise ValueError("Sesi tidak ditemukan")
-        
+        if not sesi.is_blackout_suspect or sesi.is_blackout_resolved:
+            raise ValueError("Sesi bukan suspect blackout yang valid")
+
         # Menandai sesi lama sebagai selesai & resolved
         sesi.status = "selesai"
         sesi.selesai_pada = now_local()

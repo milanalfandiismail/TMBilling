@@ -78,3 +78,27 @@ def test_resolve_member_tidak_menghidupkan_saldo_kadaluarsa(ctx):
     BlackoutService.resolve_member(sesi.id, operator="kasir")
 
     assert db.session.get(Member, member.id).waktu_tersimpan == 0
+
+
+def test_resolve_guest_lanjut_menolak_sesi_bukan_suspect(ctx):
+    sesi = Sesi(tipe="guest", nama_guest="Normal", pc_id=ctx["pcs"][0].id,
+                paket_id=ctx["paket"].id, durasi_beli_menit=60, total_bayar=12000,
+                status="aktif", token_sesi="n" * 64)
+    db.session.add(sesi)
+    db.session.commit()
+
+    with pytest.raises(ValueError, match="suspect"):
+        BlackoutService.resolve_guest_lanjut(sesi.id, ctx["pcs"][1].id, operator="kasir")
+
+    assert Sesi.query.filter_by(pc_id=ctx["pcs"][1].id, status="aktif").first() is None
+
+
+def test_resolve_tutup_menolak_sesi_bukan_suspect(ctx):
+    sesi = Sesi(tipe="guest", nama_guest="Normal", pc_id=ctx["pcs"][0].id,
+                paket_id=ctx["paket"].id, durasi_beli_menit=60, total_bayar=12000,
+                status="aktif", token_sesi="m" * 64)
+    db.session.add(sesi)
+    db.session.commit()
+
+    with pytest.raises(ValueError, match="suspect"):
+        BlackoutService.resolve_tutup_tanpa_kompensasi(sesi.id, operator="kasir")
