@@ -18,6 +18,8 @@ from app.routes.settings.settings_routes import settings_api_bp
 # Fokus: Mengambil seluruh data pengaturan untuk ditampilkan di dashboard.
 
 CASHIER_SAFE_SETTINGS = ("payment_methods", "vnc_password")
+GENERIC_SETTING_PREFIXES = ("warnet_", "backup_", "tv_", "qris_", "mikrotik_", "screenshot_")
+GENERIC_SETTING_KEYS = {"payment_methods"}
 
 
 @settings_api_bp.route("/", methods=["GET"])
@@ -153,6 +155,9 @@ def handle_setting(key):
             return jsonify({
                 "error": "Client API Key harus diubah lewat endpoint /api/v1/kasir/settings/apikey"
             }), 400
+
+        if key not in GENERIC_SETTING_KEYS and not key.startswith(GENERIC_SETTING_PREFIXES):
+            return jsonify({"error": f"Setting '{key}' tidak boleh diubah lewat endpoint generik"}), 400
 
         if key == "warnet_announcement":
             from app.utils.helpers import sanitize_html
