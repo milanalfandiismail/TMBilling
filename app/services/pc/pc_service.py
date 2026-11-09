@@ -350,20 +350,19 @@ class PCService:
             raise ValueError("PC tidak ditemukan")
         
         pc.is_admin_mode = False
-        
-        # Tutup sesi admin jika ada
-        from app.repositories import SesiRepository
-        sesi_aktif = SesiRepository.get_aktif_by_pc(pc.id)
-        if sesi_aktif and (sesi_aktif.tipe == "admin" or sesi_aktif.tipe == "guest"):
-            sesi_aktif.status = "selesai"
-            sesi_aktif.selesai_pada = now_local()
 
-        db.session.commit()
+        # Tutup sesi admin/guest lewat service agar transaksi tutup tercatat
+        from app.repositories import SesiRepository
+        from app.services.sesi.sesi_service import SesiService
+        sesi_aktif = SesiRepository.get_aktif_by_pc(pc.id)
+        if sesi_aktif and sesi_aktif.tipe in ("admin", "guest"):
+            SesiService.tutup_sesi(sesi_aktif.id, operator=operator)
+        else:
+            db.session.commit()
 
         # Antrekan perintah lock ke client agar client segera kembali ke kiosk
         from app.services.client.client_service import ClientService
-        if pc.ip_address:
-            ClientService.queue_command(pc.ip_address, "lock")
+        ClientService.queue_command(pc.id, "lock")
 
         write_log("RESET_ADMIN", f"Mode Admin PC {pc.kode} dimatikan paksa", user=operator, detail_json={"kode": pc.kode})
         return True
