@@ -236,6 +236,8 @@ def clear_date_transactions_endpoint(tanggal):
         if ReportService.clear_transactions_by_date(tanggal, operator=kasir):
             return jsonify({"success": True, "message": f"Transaksi tanggal {tanggal} berhasil dihapus"}), 200
         return jsonify({"error": "Gagal menghapus transaksi"}), 500
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
