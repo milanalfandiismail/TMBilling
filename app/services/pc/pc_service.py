@@ -311,7 +311,7 @@ class PCService:
 
             # 6. Cleanup screenshot file di filesystem jika ada
             try:
-                screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{kode}.png")
+                screenshot_path = os.path.join(current_app.static_folder, 'uploads', 'screenshots', f"{kode}.png")
                 if os.path.exists(screenshot_path):
                     os.remove(screenshot_path)
             except Exception:

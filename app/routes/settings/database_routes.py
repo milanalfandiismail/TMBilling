@@ -87,11 +87,8 @@ QRIS_MAX_SIDE = 800
 
 
 def _qris_upload_dir():
-    """Direktori gambar QRIS (env QRIS_UPLOAD_DIR untuk test/sandbox)."""
-    override = os.environ.get("QRIS_UPLOAD_DIR")
-    if override:
-        return override
-    return os.path.join(current_app.root_path, 'static', 'uploads', 'qris')
+    """Direktori gambar QRIS selalu mengikuti static folder aplikasi."""
+    return os.path.join(current_app.static_folder, "uploads", "qris")
 
 
 def _normalize_qris(file):
@@ -153,7 +150,12 @@ def upload_qris():
         
         # Simpan path url ke settings database
         qris_url = f"/static/uploads/qris/{unique_filename}"
+        old_url = SettingsService.get("qris_image_url", "")
         SettingsService.set("qris_image_url", qris_url)
+        if old_url.startswith("/static/uploads/qris/") and old_url != qris_url:
+            old_path = os.path.join(upload_folder, os.path.basename(old_url))
+            if os.path.exists(old_path):
+                os.remove(old_path)
         
         # Log manual action
         operator = session.get("kasir_username", "admin")

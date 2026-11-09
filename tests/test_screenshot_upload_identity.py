@@ -21,8 +21,8 @@ def app_ctx(tmp_path):
         "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
         "SECRET_KEY": "test-screenshot",
         "CLIENT_API_KEY": "test-key",
-        "SCREENSHOT_UPLOAD_DIR": str(tmp_path),
     })
+    app.static_folder = str(tmp_path)
     with app.app_context():
         db.create_all()
         grup = Grup(nama="reguler")
@@ -34,7 +34,7 @@ def app_ctx(tmp_path):
                   mac_address="AA:BB:CC:DD:EE:02", grup_id=grup.id, aktif=True)
         db.session.add_all([pc_a, pc_b])
         db.session.commit()
-        yield app.test_client(), pc_a, pc_b, tmp_path
+        yield app.test_client(), pc_a, pc_b, tmp_path / "uploads" / "screenshots"
         db.session.remove()
         db.drop_all()
 

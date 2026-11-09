@@ -21,9 +21,8 @@ from werkzeug.utils import secure_filename
 
 
 def _upload_folder():
-    """Folder screenshot: config eksplisit untuk test/deploy, fallback folder lama."""
-    configured = current_app.config.get("SCREENSHOT_UPLOAD_DIR")
-    return configured or os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots')
+    """Folder screenshot selalu mengikuti static folder aplikasi."""
+    return os.path.join(current_app.static_folder, "uploads", "screenshots")
 
 
 def _screenshot_filename(kode):

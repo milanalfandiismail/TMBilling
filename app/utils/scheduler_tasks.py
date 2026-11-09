@@ -118,7 +118,7 @@ def run_auto_screenshots(app):
         from app.services.health.health_service import HealthService
         from app.repositories import SesiRepository
 
-        screenshot_dir = os.path.join(app.root_path, "static", "uploads", "screenshots")
+        screenshot_dir = os.path.join(app.static_folder, "uploads", "screenshots")
         if not HealthService.has_free_space(screenshot_dir):
             write_log("SCHEDULER", "Screenshot otomatis dilewati: ruang disk < 512 MB", user="SYSTEM")
             record_run("auto_screenshots", True)

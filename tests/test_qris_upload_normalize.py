@@ -14,9 +14,8 @@ from app.services import SettingsService
 class TestQrisUploadNormalize(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        self.env = mock.patch.dict(os.environ, {"QRIS_UPLOAD_DIR": self.tmp})
-        self.env.start()
         self.app = create_app()
+        self.app.static_folder = self.tmp
         self.app.config["TESTING"] = True
         self.app.config["WTF_CSRF_ENABLED"] = False
         self.app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
@@ -37,7 +36,6 @@ class TestQrisUploadNormalize(unittest.TestCase):
         db.session.remove()
         db.drop_all()
         self.ctx.pop()
-        self.env.stop()
 
     def _png(self, size):
         img = Image.new("RGB", size, "white")
@@ -56,7 +54,7 @@ class TestQrisUploadNormalize(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         url = res.get_json()["qris_url"]
         self.assertEqual(SettingsService.get("qris_image_url"), url)
-        path = os.path.join(self.tmp, os.path.basename(url))
+        path = os.path.join(self.tmp, "uploads", "qris", os.path.basename(url))
         with Image.open(path) as out:
             self.assertLessEqual(max(out.size), 800)
         self.assertLess(os.path.getsize(path), 200_000)
