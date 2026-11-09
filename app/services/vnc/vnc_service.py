@@ -178,6 +178,12 @@ class VNCClientProxyService:
         try:
             import secrets
             token = secrets.token_urlsafe(24)
+            # Cabut token lama agar hanya satu sesi aktif per PC
+            with cls._proxies_lock:
+                old = cls._active_proxies.get(pc_id)
+                old_token = old.get("token") if old else None
+            if old_token:
+                VNCService.remove_token(old_token)
             # Daftarkan token target client_ip:5900
             VNCService.set_token(token, client_ip, 5900)
             
