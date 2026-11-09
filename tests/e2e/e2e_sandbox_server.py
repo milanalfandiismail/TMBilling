@@ -250,6 +250,10 @@ def start_sandbox_server(port=7016, paths=DEFAULT_PATHS, timeout_sec=20):
         "--call",
         "--host=127.0.0.1",
         f"--port={port}",
+        # Uji E2E mensimulasikan PC klien lewat header X-Forwarded-For dari
+        # loopback; waitress tanpa trusted-proxy membuang header itu.
+        "--trusted-proxy=127.0.0.1",
+        "--trusted-proxy-headers=x-forwarded-for",
         "app:create_app",
     ]
 
