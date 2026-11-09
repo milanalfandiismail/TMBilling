@@ -8,6 +8,7 @@ hardware semua PC di dashboard kasir.
 """
 from flask import Blueprint, request, jsonify, session
 from app.services import HardwareService
+from app.services.hardware.hardware_service import InvalidMetricError
 from app.utils.helpers import natural_sort_key
 from app.utils.logger import write_log
 from app.middleware.auth import login_required, admin_required, shift_required
@@ -70,6 +71,8 @@ def receive_hardware_data():
             "polling_interval": polling_interval
         }), 200
 
+    except InvalidMetricError as metric_e:
+        return jsonify({"error": str(metric_e)}), 400
     except ValueError as val_e:
         return jsonify({"error": str(val_e)}), 404
     except Exception as e:

@@ -31,6 +31,17 @@ from app.services.cache.memory_store import (
 TELEMETRY_HISTORY = TelemetryHistoryStore._store
 
 
+class InvalidMetricError(ValueError):
+    pass
+
+
+def _metric_float(value, field):
+    try:
+        return round(float(value), 1)
+    except (TypeError, ValueError):
+        raise InvalidMetricError(f"Metrik {field} tidak valid")
+
+
 class HardwareService:
     """Service untuk memproses log metric hardware PC."""
 
@@ -106,9 +117,9 @@ class HardwareService:
             in_grace = AntiTheftGraceTracker.is_in_grace_period(pc_id, grace_seconds=60)
 
             # 4. Parse nilai metrik hardware
-            cpu_usage = round(float(data.get("CpuUsage", data.get("cpuUsage", data.get("cpu_usage", 0.0)))), 1)
-            cpu_temp = round(float(data.get("CpuTemp", data.get("cpuTemp", data.get("cpu_temp", 0.0)))), 1)
-            gpu_temp = round(float(data.get("GpuTemp", data.get("gpuTemp", data.get("gpu_temp", 0.0)))), 1)
+            cpu_usage = _metric_float(data.get("CpuUsage", data.get("cpuUsage", data.get("cpu_usage", 0.0))), "CPU")
+            cpu_temp = _metric_float(data.get("CpuTemp", data.get("cpuTemp", data.get("cpu_temp", 0.0))), "CPU temp")
+            gpu_temp = _metric_float(data.get("GpuTemp", data.get("gpuTemp", data.get("gpu_temp", 0.0))), "GPU temp")
             total_ram = str(data.get("TotalRam", data.get("totalRam", data.get("total_ram", "Unknown"))))
             nic_speed = str(data.get("NicSpeed", data.get("nicSpeed", data.get("nic_speed", "Unknown"))))
             motherboard = str(data.get("Motherboard", data.get("motherboard", "Unknown")))
