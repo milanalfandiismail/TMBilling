@@ -333,22 +333,10 @@ class ClientService:
             if norm_client_mac != norm_db_mac:
                 raise ValueError("Identitas PC tidak valid (MAC Mismatch)")
 
-        # Tutup sesi member/guest yang mungkin sedang aktif
+        # Tutup sesi aktif lewat service agar transaksi tutup tercatat
         existing = SesiRepository.get_aktif_by_pc(pc.id)
         if existing:
-            sisa_final = existing.sisa_menit()
-            if existing.tipe == "member" and existing.member:
-                existing.member.waktu_tersimpan = sisa_final
-                db.session.add(existing.member)
-            elif existing.tipe == "kasir" and existing.user:
-                existing.user.sisa_kuota_menit = sisa_final
-                db.session.add(existing.user)
-            existing.status = "selesai"
-            existing.selesai_pada = now_local()
-            existing.is_afk = False
-            existing.afk_pin = None
-            existing.afk_sejak = None
-            db.session.commit()
+            SesiService.tutup_sesi(existing.id, operator="system")
 
         # Buat sesi khusus emergency admin
         import secrets
@@ -395,23 +383,11 @@ class ClientService:
         if not user or not user.check_password(password) or user.role != "admin":
             raise ValueError("Invalid admin credentials")
         
-        # Tutup sesi member/guest yang mungkin sedang aktif
+        # Tutup sesi aktif lewat service agar transaksi tutup tercatat
         existing = SesiRepository.get_aktif_by_pc(pc.id)
         if existing:
-            sisa_final = existing.sisa_menit()
-            if existing.tipe == "member" and existing.member:
-                existing.member.waktu_tersimpan = sisa_final
-                db.session.add(existing.member)
-            elif existing.tipe == "kasir" and existing.user:
-                existing.user.sisa_kuota_menit = sisa_final
-                db.session.add(existing.user)
-            existing.status = "selesai"
-            existing.selesai_pada = now_local()
-            existing.is_afk = False
-            existing.afk_pin = None
-            existing.afk_sejak = None
-            db.session.commit()
-        
+            SesiService.tutup_sesi(existing.id, operator="system")
+
         # Buat sesi khusus admin
         token = secrets.token_hex(32)
         pc.is_admin_mode = True # Aktifkan mode admin di DB
