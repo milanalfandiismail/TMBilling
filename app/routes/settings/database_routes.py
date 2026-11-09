@@ -178,7 +178,11 @@ def get_uninstall_token_for_client():
     def execute_request():
         try:
             from app.repositories.pc.pc_repository import PCRepository
-            if not PCRepository.find_by_ip(request.remote_addr or ""):
+            from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+            client_ip = IpWhitelistService.extract_client_ip(
+                headers=request.headers, remote_addr=request.remote_addr
+            )
+            if not PCRepository.find_by_ip(client_ip):
                 return jsonify({"error": "Perangkat tidak terdaftar"}), 403
             # Token darurat server tidak boleh bocor ke endpoint client; hanya token uninstall
             uninstall_token = SettingsService.get_or_create_uninstall_token()
