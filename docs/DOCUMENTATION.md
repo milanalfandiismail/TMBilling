@@ -227,7 +227,7 @@ c:\Project GIT\TMBilling
 - **Bi-directional Clipboard Sync**: Teks yang disalin di browser kasir otomatis terkirim ke clipboard Windows PC klien, dan sebaliknya teks yang disalin di PC klien disinkronkan ke browser kasir melalui kanal WebSocket Websockify.
 - **Auto-Firewall & Fail-Fast Multiplexing**: Skrip `allow_firewall.bat` memastikan port TightVNC diizinkan oleh Windows Firewall, dan mekanisme multiplexing token mencegah tabrakan sesi VNC antar kasir. Token proxy kini acak per sesi (`secrets.token_urlsafe(24)`), bukan pola `client_<id>` yang bisa ditebak.
 - **Auto-Generated Random VNC Password**: Sistem secara otomatis meng-generate password acak 8 karakter saat pertama kali dijalankan jika belum dikonfigurasi di tabel settings (`SettingsService.get_or_create_vnc_password`), menggantikan ketergantungan pada password default statis demi keamanan jaringan LAN.
-- **Otorisasi & Non-Blocking Start**: Seluruh route VNC wajib `@login_required` + `@admin_required`. Permintaan start tidak lagi menahan worker 25 detik: server membalas `202 {pending: true}` dan route status mem-poll hasil (`poll_vnc_result`) lalu memulai proxy saat TightVNC siap. Reaper hanya mematikan proxy milik PC yang benar-benar offline.
+- **Otorisasi & Non-Blocking Start**: Seluruh route VNC wajib `@login_required` + `@admin_required`. Permintaan start tidak lagi menahan worker 25 detik: server membalas `202 {pending: true}` dan route status mem-poll hasil (`poll_vnc_result`) lalu memulai proxy saat TightVNC siap. Token lama dicabut saat proxy dimulai ulang, file token ditulis atomik (`os.replace`), dan reaper mematikan proxy milik PC offline maupun proxy yang idle melewati batas.
 
 ### 4.3 Blackout Auto-Recovery System (Toleransi Mati Lampu & Uptime Tracker)
 - **Deskripsi**: Proteksi otomatis terhadap pemadaman listrik (*blackout*) mendadak di warnet.
@@ -259,7 +259,7 @@ c:\Project GIT\TMBilling
   - **GPU PNP Device ID** & Nama Grafis
   - **RAM Serials** (Daftar nomor seri keping memori)
   - **Disk Serials** (Daftar nomor seri SSD/HDD)
-- **Deteksi Pencurian / Pergantian Komponen**: Setiap kali PC klien booting, agen mengirimkan spesifikasi hardware saat ini (*current specs*). Sistem secara otomatis membandingkannya dengan baseline tersimpan via `HardwareService.process_hardware_metric`. Jika terdapat perbedaan (GPU PNP ID berbeda, RAM serial hilang/berkurang, Disk diganti, Motherboard ditukar), dashboard kasir seketika memunculkan alert diskrepansi visual merah solid dengan deskripsi komponen yang berubah. Identitas PC diambil dari IP koneksi peer (`IpWhitelistService.extract_client_ip`), bukan field `IpAddress` di body, sehingga telemetri tidak bisa dipalsukan untuk PC lain.
+- **Deteksi Pencurian / Pergantian Komponen**: Setiap kali PC klien booting, agen mengirimkan spesifikasi hardware saat ini (*current specs*). Sistem secara otomatis membandingkannya dengan baseline tersimpan via `HardwareService.process_hardware_metric`. Jika terdapat perbedaan (GPU PNP ID berbeda, RAM serial hilang/berkurang, Disk diganti, Motherboard ditukar), dashboard kasir seketika memunculkan alert diskrepansi visual merah solid dengan deskripsi komponen yang berubah. Identitas PC diambil dari IP koneksi peer (`IpWhitelistService.extract_client_ip`), bukan field `IpAddress` di body, sehingga telemetri tidak bisa dipalsukan untuk PC lain; nilai metrik non-numerik ditolak `400`.
 - **Visualisasi Audit di Tab Hardware Checker & Modal Detail PC**:
   - Modal detail PC mengambil data satu PC via `GET /api/v1/kasir/monitor/hardware/<int:pc_id>` (bukan lagi memuat seluruh daftar `/monitor/all`).
   - **🔒 Baseline Resmi (Terkunci)** — spesifikasi yang terdaftar saat tombol *Update Baseline* terakhir ditekan, disertai badge `TERDAFTAR`.
@@ -289,13 +289,14 @@ c:\Project GIT\TMBilling
 - **Fitur**:
   - Menampilkan nama proses, PID, CPU usage, dan Memory usage.
   - Tombol **End Task / Kill Process** jarak jauh untuk mematikan game yang not-responding atau software terlarang.
+- **Reset Mode Admin**: `PCService.reset_admin_mode` menutup sesi admin/guest lewat `SesiService.tutup_sesi` (tercatat sebagai transaksi) lalu mengantre perintah `lock` dengan id PC agar kiosk kembali terkunci.
 
 ### 4.7 Screenshot Monitor with Natural Sorting
 - **Deskripsi**: Layar pengawasan visual yang menampilkan *thumbnail live screenshot* dari seluruh PC klien yang aktif.
 - **Natural Sorting**: Daftar PC terurut secara natural (`PC-01`, `PC-02`, ..., `PC-09`, `PC-10`, `PC-11`, bukan urutan ASCII yang melompat).
 - **Live Zoom**: Klik thumbnail untuk memperbesar screenshot secara instan tanpa lag.
 - **Nama Berkas Aman**: `_screenshot_filename()` membuang pemisah path sebelum `secure_filename`, sehingga kode PC seperti `PC/01` tetap menjadi `PC01.png` dan tidak bisa menulis di luar folder screenshot.
-- **Identitas & Validasi Unggah**: Endpoint unggah menentukan PC dari IP koneksi peer (`IpWhitelistService.extract_client_ip`), bukan header `X-IP-Address`, sehingga satu PC tidak bisa menimpa screenshot PC lain. Byte gambar divalidasi Pillow (`verify()` lalu dibuka ulang), dinormalkan ke PNG dengan sisi maksimum 1280 px, dan data tidak valid ditolak `400`.
+- **Identitas & Validasi Unggah**: Endpoint unggah menentukan PC dari IP koneksi peer (`IpWhitelistService.extract_client_ip`), bukan header `X-IP-Address`, sehingga satu PC tidak bisa menimpa screenshot PC lain. Byte gambar divalidasi Pillow (`verify()` lalu dibuka ulang), dinormalkan ke PNG dengan sisi maksimum 1280 px, disimpan di `static/uploads/screenshots`, dan data tidak valid ditolak `400`.
 
 ### 4.8 POS Kantin & Billing FnB Multi-Payment (Cash/QRIS/Bank + Struk Thermal)
 - **Deskripsi**: Modul kasir kantin / FnB lengkap yang terintegrasi langsung dengan billing PC.
@@ -348,6 +349,7 @@ c:\Project GIT\TMBilling
   - **Indikator Warna Dinamis**: Hijau (Kosong/Tersedia), Merah (Sesi Aktif), Oranye (Sisa Waktu < 10 Menit), Abu-abu (Offline).
   - **Quick Action Click**: Klik langsung pada node meja untuk membuka sesi, menambah durasi, atau melihat detail PC.
   - **Arsip PC**: Menghapus PC yang sudah punya riwayat sesi tidak menghapus barisnya; PC ditandai `aktif=False` agar histori dan laporan tetap utuh. PC tanpa riwayat tetap dihapus permanen.
+  - **Omzet Hari Ini**: Kartu omzet memakai `get_today_local_date()` sesuai zona waktu setting, bukan tanggal UTC, sehingga transaksi dini hari tidak jatuh ke hari sebelumnya.
 
 ### 4.14 Database Maintenance & Cloud/Local Backup UI
 - **Deskripsi**: Fasilitas pemeliharaan database SQLite internal agar tetap kencang dan aman dari korupsi data.
@@ -384,7 +386,7 @@ c:\Project GIT\TMBilling
   - **Pemisahan Tunai vs Non-Tunai**: Transaksi QRIS dan transfer otomatis dipisahkan dari perhitungan kas fisik laci kasir.
   - **Ringkasan Lintas Kasir**: Rekap shift menghitung seluruh transaksi pada rentang waktu shift (bukan hanya `user_id` kasir pemilik shift) dan tidak meng-clamp nilai negatif, sehingga selisih refund berlebih tetap terlihat.
   - **Akses Ringkasan & Struk**: `GET /api/v1/kasir/shift/<id>/summary` dan struk shift hanya boleh dibaca pemilik shift atau admin; kasir lain mendapat `403` sehingga hitung buta tidak bisa diintip.
-  - **Satu Shift Aktif**: Unique index parsial `uq_aktif_shift` (`status='AKTIF'`) plus `WRITE_LOCK` mencegah dua kasir membuka shift aktif bersamaan; `force_close_shift` menghitung ringkasan sebelum satu commit.
+  - **Satu Shift Aktif**: Unique index parsial `uq_aktif_shift` (`status='AKTIF'`) plus `WRITE_LOCK` mencegah dua kasir membuka shift aktif bersamaan; `start_shift` menolak akun kasir nonaktif dan `force_close_shift` menghitung ringkasan sebelum satu commit.
   - **Admin Force Close Shift**: Administrator dapat menutup paksa shift kasir aktif dalam situasi darurat dengan pencatatan audit log.
   - **Struk Thermal Handover 58mm / 80mm**: Pencetakan bukti serah terima shift fisik lengkap dengan rincian penerimaan tunai, non-tunai, modal awal, rekonsiliasi laci, dan selisih keuangan untuk ditandatangani kedua kasir.
   - **Tab Riwayat Serah Terima Shift**: Menampilkan rekapitulasi seluruh shift sebelumnya dengan filter tanggal otomatis, badge status, modal detail, dan tata letak responsif (*fit-to-table* pada breakpoint LG/XL).
@@ -394,6 +396,7 @@ c:\Project GIT\TMBilling
 - **Fitur**:
   - Tempat operator meninggalkan pesan operasional untuk shift berikutnya.
   - Catatan disimpan persisten di database dan dapat dibaca oleh seluruh kasir dan admin.
+  - Nama berkas baru dipesan atomik (`O_CREAT|O_EXCL`); rename ke judul yang sudah dipakai menghasilkan nama unik (`judul_1.txt`) sehingga catatan lain tidak tertimpa.
 
 ### 4.18 Turnamen & Bracket eSports Engine
 - **Deskripsi**: Sistem manajemen turnamen warnet bawaan untuk game kompetitif (Valorant, MLBB, Dota 2, dll.).
@@ -417,6 +420,7 @@ c:\Project GIT\TMBilling
   - Analisis jam sibuk (*Peak Hours Occupancy Heatmap*) untuk optimasi promosi.
   - Perbandingan rasio keuntungan antara pendapatan sewa PC vs penjualan F&B kantin.
   - Laporan harian memakai tanggal lokal server (`get_today_local_date()`), bukan tanggal UTC, agar transaksi dini hari tidak jatuh ke hari sebelumnya.
+  - Tanggal laporan tidak valid dan pagination di luar `page >= 1`/`per_page 1..100` dibalas `400`; struk hanya untuk pemilik atau admin.
   - Paket Terlaris: `get_top_paket` mengelompokkan transaksi per `paket_id` sehingga paket yang sudah dihapus tetap terhitung dan diberi label "Paket dihapus".
 
 ### 4.21 Emergency Mode & Offline Fallback (SHA-256 Auth)
@@ -478,7 +482,7 @@ c:\Project GIT\TMBilling
   2. **Layer 2 - Realtime Client Polling (WarnetAgent Klien)**:
      - Klien PC warnet (Tauri) mengirimkan request heartbeat/status setiap **1 s/d 3 detik** ke `/api/v1/public/client/status`.
      - Handler `ClientService.get_status()` memanggil `SesiService.hitung_sisa_menit()` dan menutup sesi lewat `SesiService.tutup_sesi(id, operator="system")` saat sisa waktu `<= 0`, sehingga tercatat satu transaksi `tutup_sesi` Rp0 sebelum payload lockscreen dikembalikan ke klien.
-     - Heartbeat `sesi.last_sync` diperbarui maksimal tiap 30 detik lewat UPDATE bersyarat tanpa SELECT tambahan; kegagalan sinkronisasi waktu member hanya dicatat dan tidak menutup sesi berbayar.
+     - Heartbeat `sesi.last_sync` diperbarui maksimal tiap 30 detik lewat UPDATE bersyarat tanpa SELECT tambahan; kegagalan sinkronisasi waktu member hanya dicatat dan tidak menutup sesi berbayar. Takeover `emergency_login`/`admin_login` menutup sesi lama lewat `SesiService.tutup_sesi` sehingga sisa waktu tercatat sebagai transaksi penutupan.
   3. **Layer 3 - Frontend Dashboard Polling (Web Kasir)**:
      - Dashboard kasir melakukan polling status berkala (dapat diatur: 1, 2, 3, atau 5 detik) ke `/api/v1/kasir/dashboard/pc`.
      - Backend di `DashboardService.get_pc_list()` secara proaktif memanggil `cleanup_expired_sessions()`, memastikan tampilan kasir selalu sinkron secara instan.
@@ -988,7 +992,7 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | PUT | /api/v1/kasir/settings/timezone | settings.update_timezone |
 | GET | /api/v1/kasir/settings/uninstall-token/client | settings.get_uninstall_token_for_client |
 
-> Catatan keamanan: `/uninstall-token/client` hanya memerlukan `X-Client-Key` dan kini **hanya** mengembalikan `uninstall_token` (token darurat server tidak lagi dibagikan ke client). `client_api_key` hanya dapat diubah lewat `/api/v1/kasir/settings/apikey`; handler setting generik menolak key tersebut. Login darurat `POST /api/v1/public/client/emergency-login` diterima bila token server valid **atau** IP koneksi peer sama dengan `ip_address` PC terdaftar. Identitas client memakai IP koneksi; `ip_address` di body hanya boleh berbeda bila request datang dari loopback.
+> Catatan keamanan: `/uninstall-token/client` hanya memerlukan `X-Client-Key`, menentukan PC dari IP koneksi peer, dan kini **hanya** mengembalikan `uninstall_token` (token darurat server tidak lagi dibagikan ke client). `client_api_key` hanya dapat diubah lewat `/api/v1/kasir/settings/apikey`; handler setting generik menolak key tersebut dan hanya menerima prefix `warnet_`/`backup_`/`tv_`/`qris_`/`mikrotik_`/`screenshot_` serta `payment_methods`. Login darurat `POST /api/v1/public/client/emergency-login` diterima bila token server valid **atau** IP koneksi peer sama dengan `ip_address` PC terdaftar. Identitas client memakai IP koneksi; `ip_address` di body hanya boleh berbeda bila request datang dari loopback.
 
 #### 🔹 Blueprint: shift (5 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
