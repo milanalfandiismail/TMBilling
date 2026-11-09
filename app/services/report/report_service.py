@@ -91,6 +91,8 @@ class ReportService:
                 "breakdown_metode": breakdown_metode,
                 "history_struk": ReportService._format_history_struk(history_struk)
             }
+        except ValueError:
+            raise
         except Exception as e:
             raise Exception(f"Gagal hitung laporan: {str(e)}")
 
@@ -194,6 +196,8 @@ class ReportService:
                 "breakdown_metode": breakdown_metode,
                 "history_menu": history_menu
             }
+        except ValueError:
+            raise
         except Exception as e:
             raise Exception(f"Gagal hitung laporan kantin: {str(e)}")
 

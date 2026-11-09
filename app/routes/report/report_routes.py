@@ -36,6 +36,8 @@ def get_laporan():
             
         laporan = ReportService.get_laporan_by_tanggal(tanggal, kasir_id, page, per_page, metode_pembayaran, q)
         return jsonify(laporan), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -57,6 +59,8 @@ def get_laporan_kantin():
             
         laporan = ReportService.get_laporan_kantin_by_tanggal(tanggal, kasir_id, page, per_page, metode_pembayaran, q)
         return jsonify(laporan), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
