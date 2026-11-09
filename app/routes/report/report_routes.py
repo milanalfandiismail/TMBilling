@@ -13,6 +13,16 @@ from app.services import ReportService
 report_api_bp = Blueprint("report", __name__)
 
 
+def _pagination_args(default_per_page):
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", default_per_page, type=int)
+    if page is None or page < 1:
+        raise ValueError("Parameter page harus >= 1")
+    if per_page is None or not (1 <= per_page <= 100):
+        raise ValueError("Parameter per_page harus 1..100")
+    return page, per_page
+
+
 # =========================================================================
 # 1. FINANCIAL REPORTS (LAPORAN KEUANGAN)
 # =========================================================================
@@ -26,8 +36,7 @@ def get_laporan():
         tanggal = request.args.get("tanggal")
         kasir_id = request.args.get("kasir_id")
         metode_pembayaran = request.args.get("metode_pembayaran")
-        page = request.args.get("page", 1, type=int)
-        per_page = request.args.get("per_page", 10, type=int)
+        page, per_page = _pagination_args(10)
         q = request.args.get("q", "").strip()
         
         # RULE: Kasir hanya boleh lihat laporan diri sendiri
@@ -49,8 +58,7 @@ def get_laporan_kantin():
         tanggal = request.args.get("tanggal")
         kasir_id = request.args.get("kasir_id")
         metode_pembayaran = request.args.get("metode_pembayaran")
-        page = request.args.get("page", 1, type=int)
-        per_page = request.args.get("per_page", 12, type=int)
+        page, per_page = _pagination_args(12)
         q = request.args.get("q", "").strip()
         
         # RULE: Kasir hanya boleh lihat laporan diri sendiri
