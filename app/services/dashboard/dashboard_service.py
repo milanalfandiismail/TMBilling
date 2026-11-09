@@ -12,6 +12,7 @@ from app.services.sesi.sesi_service import SesiService
 from app.services.pc.pc_service import PCService
 from app.repositories import TransaksiRepository, MenuRepository
 from app.models import now_local, Sesi, PC, db
+from app.utils.timezone_utils import get_today_local_date
 
 _OMZET_TTL_SECONDS = 5
 _omzet_cache = {"key": None, "value": None, "ts": 0.0}
@@ -146,7 +147,7 @@ class DashboardService:
             pc_list.append(pc_dict)
         
         # F. Omzet Hari Ini untuk Header Dashboard
-        hari_ini = now.date()
+        hari_ini = get_today_local_date()
         total_billing, total_menu = DashboardService._get_omzet(hari_ini)
         omzet_hari_ini = total_billing + total_menu
 
