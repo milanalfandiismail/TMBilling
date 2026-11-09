@@ -128,7 +128,9 @@ def get_struk(identifier):
         
         if not data:
             return jsonify({"error": "Data transaksi tidak ditemukan"}), 404
-            
+        if session.get("kasir_role") != "admin" and data.get("kasir_id") != session.get("kasir_id"):
+            return jsonify({"error": "Struk ini milik kasir lain"}), 403
+
         return jsonify(data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -145,6 +147,8 @@ def get_struk_menu(t_menu_id):
         data = ReportService.get_struk_menu_data(t_menu_id, kasir_name=kasir)
         if not data:
             return jsonify({"error": "Data transaksi menu tidak ditemukan"}), 404
+        if session.get("kasir_role") != "admin" and data.get("kasir_id") != session.get("kasir_id"):
+            return jsonify({"error": "Struk ini milik kasir lain"}), 403
         return jsonify(data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
