@@ -46,6 +46,8 @@ class ShiftService:
         kasir = User.query.filter_by(username=kasir_username).first()
         if not kasir:
             raise ValueError("Kasir tidak ditemukan")
+        if not kasir.aktif:
+            raise ValueError("Kasir tidak aktif")
 
         with WRITE_LOCK:
             # Cek apakah masih ada shift aktif di sistem (single active shift system-wide)
