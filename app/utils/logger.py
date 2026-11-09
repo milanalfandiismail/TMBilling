@@ -223,11 +223,10 @@ def write_log(aksi, detail, user="kasir", detail_json=None, category=None):
     browser_agent = "-"
     
     if has_request_context():
-        x_forwarded = request.headers.get("X-Forwarded-For")
-        if x_forwarded:
-            ip_address = x_forwarded.split(",")[0].strip()
-        else:
-            ip_address = request.remote_addr or "-"
+        from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+        ip_address = IpWhitelistService.extract_client_ip(
+            headers=request.headers, remote_addr=request.remote_addr
+        )
         browser_agent = request.user_agent.string or "-"
     elif user == "SYSTEM":
         browser_agent = "SYSTEM"
