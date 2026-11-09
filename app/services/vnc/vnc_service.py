@@ -165,11 +165,6 @@ class VNCClientProxyService:
     _vnc_status_lock = threading.Lock()
     
     @classmethod
-    def allocate_port(cls):
-        # Deprecated: We now route all traffic via Port 8081 using Token Multiplexing
-        return VNCService.LISTEN_PORT
-
-    @classmethod
     def start_proxy(cls, pc_id, client_ip):
         success, msg = VNCService.ensure_websockify_running()
         if not success:
@@ -270,7 +265,8 @@ class VNCClientProxyService:
                 except Exception:
                     pass
 
-                if is_pc_offline:
+                idle = time.time() - float(info.get("started_at") or 0) > max_idle_seconds
+                if is_pc_offline or idle:
                     stale_pc_ids.append(pc_id)
                     
         count = 0

@@ -2,10 +2,6 @@ import pytest
 import time
 from app.services.vnc.vnc_service import VNCClientProxyService
 
-def test_port_allocation_within_range():
-    port = VNCClientProxyService.allocate_port()
-    assert port == 8081
-
 def test_readiness_flag_signaling():
     pc_id = 9991
     state, err = VNCClientProxyService.poll_vnc_result(pc_id)
