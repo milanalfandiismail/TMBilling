@@ -4,6 +4,7 @@ import socket
 import sys
 import os
 import logging
+import tempfile
 import threading
 import time
 
@@ -32,6 +33,22 @@ class VNCService:
                 logger.info(f"Membuat token file default di: {cls.TOKEN_FILE_PATH}")
 
     @classmethod
+    def _write_targets(cls, targets):
+        """Menulis seluruh token lewat file sementara lalu replace atomik."""
+        dir_name = os.path.dirname(cls.TOKEN_FILE_PATH) or "."
+        os.makedirs(dir_name, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(dir=dir_name, prefix="vnc_tokens_", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                for t, target in targets.items():
+                    f.write(f"{t}: {target}\n")
+            os.replace(tmp_path, cls.TOKEN_FILE_PATH)
+        except Exception:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            raise
+
+    @classmethod
     def set_token(cls, token, host, port):
         """Menambahkan atau memperbarui token target secara thread-safe."""
         cls.ensure_default_tokens()
@@ -48,9 +65,7 @@ class VNCService:
 
             targets[token.strip()] = f"{host}:{port}"
 
-            with open(cls.TOKEN_FILE_PATH, "w") as f:
-                for t, target in targets.items():
-                    f.write(f"{t}: {target}\n")
+            cls._write_targets(targets)
             logger.info(f"Token VNC diperbarui: {token} -> {host}:{port}")
 
     @classmethod
@@ -70,9 +85,7 @@ class VNCService:
 
             if token.strip() in targets:
                 targets.pop(token.strip())
-                with open(cls.TOKEN_FILE_PATH, "w") as f:
-                    for t, target in targets.items():
-                        f.write(f"{t}: {target}\n")
+                cls._write_targets(targets)
                 logger.info(f"Token VNC dihapus: {token}")
 
     @classmethod
