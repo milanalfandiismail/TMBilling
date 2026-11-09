@@ -12,6 +12,7 @@ from app.utils.helpers import natural_sort_key
 from app.utils.logger import write_log
 from app.middleware.auth import login_required, admin_required, shift_required
 from app.routes.client.client_routes import api_key_required
+from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
 
 monitor_api_bp = Blueprint("monitor", __name__)
 monitor_kasir_bp = Blueprint("monitor_kasir", __name__)
@@ -55,7 +56,9 @@ def receive_hardware_data():
         if not data:
             return jsonify({"error": "No JSON payload provided"}), 400
 
-        client_ip = request.remote_addr
+        client_ip = IpWhitelistService.extract_client_ip(
+            headers=request.headers, remote_addr=request.remote_addr
+        )
         pc = HardwareService.process_hardware_metric(client_ip, data)
 
         from app.services.settings.settings_service import SettingsService
