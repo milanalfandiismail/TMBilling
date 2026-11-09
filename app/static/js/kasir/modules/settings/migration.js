@@ -601,7 +601,7 @@ const MigrationModule = {
                 const pollInterval = setInterval(async () => {
                     attempts++;
                     try {
-                        const checkRes = await fetch('/api/v1/auth/check', { cache: 'no-store' });
+                        const checkRes = await fetch('/api/v1/kasir/auth/check', { cache: 'no-store' });
                         if (checkRes.ok) {
                             clearInterval(pollInterval);
                             setStep(4, 'done');
