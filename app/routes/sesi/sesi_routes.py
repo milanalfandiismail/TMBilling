@@ -199,13 +199,18 @@ def tambah_waktu_sesi(sesi_id):
         
         selections = data.get("selections")
         if selections:
+            entries = []
             for sel in selections:
-                paket_id = sel.get("paket_id")
                 qty = int(sel.get("qty", 1))
                 if qty <= 0:
                     raise ValueError("Kuantitas harus minimal 1")
-                paket = PaketService.get_by_id(paket_id)
-                SesiService.tambah_waktu_sesi(sesi_id, paket, operator=kasir, qty=qty, metode_pembayaran=metode_pembayaran)
+                paket = PaketService.get_by_id(sel.get("paket_id"))
+                if not paket:
+                    raise ValueError("Paket tidak ditemukan")
+                entries.append((sesi_id, paket, qty))
+            SesiService.tambah_waktu_sesi_batch(
+                entries, operator=kasir, metode_pembayaran=metode_pembayaran
+            )
             return jsonify({
                 "success": True,
                 "message": "Waktu berhasil ditambahkan"
