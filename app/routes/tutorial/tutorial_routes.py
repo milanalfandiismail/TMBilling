@@ -76,6 +76,7 @@ def delete_tutorial(tutorial_id):
 import os
 import uuid
 from flask import current_app
+from PIL import Image
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
@@ -125,6 +126,12 @@ def upload_tutorial_image():
         if not allowed_file(file.filename):
             return jsonify({"error": "Format file tidak didukung (.png, .jpg, .jpeg, .webp, .gif)"}), 400
 
+        try:
+            Image.open(file.stream).verify()
+        except Exception:
+            raise ValueError("File gambar tidak valid")
+        file.stream.seek(0)
+
         ext = file.filename.rsplit('.', 1)[1].lower()
         filename = f"{uuid.uuid4().hex}.{ext}"
         upload_dir = os.path.join(current_app.root_path, 'static', 'assets', 'tutorials', 'temp')
@@ -134,6 +141,8 @@ def upload_tutorial_image():
 
         url = f"/static/assets/tutorials/temp/{filename}"
         return jsonify({"url": url, "uploaded": True})
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
