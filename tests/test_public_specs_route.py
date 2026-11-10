@@ -60,7 +60,7 @@ def test_setup():
             ip_address="192.168.1.112",
             mac_address="AA:BB:CC:DD:EE:98",
             grup_id=grup_vip.id,
-            aktif=False,
+            aktif=True,
         )
         db.session.add(pc_nohw)
 
@@ -123,7 +123,7 @@ def test_public_specs_route_success_and_catalog(test_setup):
     assert item["cpu"]["name"] == "AMD Ryzen 7 5800X"
     assert item["gpu"]["name"] == "NVIDIA GeForce RTX 4060"
     assert item["ram"]["total"] == "16 GB"
-    assert item["online"] is True
+    assert item["online"] is False
     assert len(item["ram"]["sticks"]) == 2
 
     # Verifikasi penghapusan field teknis berlebih

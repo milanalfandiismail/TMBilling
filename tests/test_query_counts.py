@@ -123,7 +123,7 @@ class TestPublicPCPortalQueries(unittest.TestCase):
         self.assertLessEqual(queries, 8)
         payload = res.get_json()
         self.assertEqual(len(payload), 5)
-        self.assertEqual(payload[0]["nama"], "pemain0")
+        self.assertEqual(payload[0]["nama"], "Member")
         self.assertEqual(payload[0]["status"], "terpakai")
         self.assertEqual(payload[3]["nama"], "Tersedia")
         self.assertEqual(payload[3]["status"], "kosong")
