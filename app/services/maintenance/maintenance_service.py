@@ -58,6 +58,7 @@ class MaintenanceService:
     @staticmethod
     def get_tickets(status=None, pc_id=None, grup=None, limit=50):
         """Ambil list tiket perawatan untuk Dashboard Perawatan PC."""
+        limit = validate_integer_range(limit, 1, 500, "Limit tiket")
         query = MaintenanceTicket.query
         if pc_id:
             query = query.filter_by(pc_id=pc_id)

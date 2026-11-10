@@ -54,6 +54,8 @@ def list_tickets():
 
         tickets = MaintenanceService.get_tickets(status=status, pc_id=pc_id, grup=grup, limit=limit)
         return jsonify({"success": True, "tickets": tickets}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
