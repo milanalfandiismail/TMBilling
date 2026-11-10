@@ -153,7 +153,7 @@ class PaketService:
                 perubahan["kadaluarsa_hari"] = {"lama": paket.kadaluarsa_hari, "baru": val}
                 paket.kadaluarsa_hari = val
         if "aktif" in data:
-            val = bool(data["aktif"])
+            val = str(data["aktif"]).strip().lower() in ("true", "1", "yes")
             if val != paket.aktif:
                 perubahan["aktif"] = {"lama": paket.aktif, "baru": val}
                 paket.aktif = val
