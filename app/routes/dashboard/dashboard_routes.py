@@ -95,6 +95,8 @@ def analytics_data():
         end = request.args.get('end')
         data = OwnerAnalyticsService.get_all_analytics(start, end)
         return jsonify({"success": True, "data": data})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

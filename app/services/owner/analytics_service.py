@@ -20,18 +20,18 @@ class OwnerAnalyticsService:
         now_aware = now_utc().astimezone(tz)
         
         if end_str:
-            try: 
+            try:
                 end_dt = datetime.strptime(end_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, tzinfo=tz)
-            except: 
-                end_dt = now_aware
+            except ValueError:
+                raise ValueError("Format tanggal harus YYYY-MM-DD")
         else:
             end_dt = now_aware
-            
+
         if start_str:
-            try: 
+            try:
                 start_dt = datetime.strptime(start_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, tzinfo=tz)
-            except: 
-                start_dt = (end_dt - timedelta(days=6)).replace(hour=0, minute=0, second=0)
+            except ValueError:
+                raise ValueError("Format tanggal harus YYYY-MM-DD")
         else:
             start_dt = (end_dt - timedelta(days=6)).replace(hour=0, minute=0, second=0)
             
