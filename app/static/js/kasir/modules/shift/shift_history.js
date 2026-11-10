@@ -359,7 +359,7 @@ window.ShiftHistory = {
                 tanggal_mulai: tanggalMulai,
                 tanggal_selesai: tanggalSelesai,
                 kasir_id: kasirId,
-                limit: 200
+                limit: 100
             });
 
             if (!res.success) throw new Error(res.error || 'Gagal memuat riwayat');
