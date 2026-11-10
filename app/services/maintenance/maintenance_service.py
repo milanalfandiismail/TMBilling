@@ -39,6 +39,9 @@ class MaintenanceService:
             status="BARU"
         )
 
+        if prioritas_valid == "KRITIS":
+            pc.aktif = False
+
         db.session.add(ticket)
         db.session.commit()
         
@@ -88,6 +91,8 @@ class MaintenanceService:
             ticket.resolved_by = resolved_by
             ticket.resolusi = resolusi_valid
             ticket.biaya = biaya_valid
+            if ticket.pc:
+                ticket.pc.aktif = True
         elif status_valid == "DITOLAK":
             ticket.resolusi = resolusi_valid
 
