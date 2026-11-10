@@ -1,6 +1,7 @@
 # app/services/game/game_service.py
 
 import os
+from flask import current_app
 from werkzeug.utils import secure_filename
 from app.repositories.game.game_repository import GameRepository
 from app.models.game.game import Game
@@ -8,8 +9,10 @@ from app.utils.logger import write_log
 
 from app.utils.validators import validate_string_length, validate_choice, validate_filename
 
-UPLOAD_FOLDER = os.path.join('app', 'static', 'uploads', 'games')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'ico'}
+
+def _upload_folder():
+    return os.path.join(current_app.static_folder, 'uploads', 'games')
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -22,14 +25,15 @@ class GameService:
             
         clean_filename = validate_filename(icon_file.filename, allowed_extensions=ALLOWED_EXTENSIONS, field_name="Icon Game")
             
-        if not os.path.exists(UPLOAD_FOLDER):
-            os.makedirs(UPLOAD_FOLDER)
+        upload_folder = _upload_folder()
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
             
         filename = secure_filename(clean_filename)
         # Tambahkan timestamp agar unik
         import time
         unique_filename = f"{int(time.time())}_{filename}"
-        filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
+        filepath = os.path.join(upload_folder, unique_filename)
         icon_file.save(filepath)
         return unique_filename
 
@@ -40,7 +44,7 @@ class GameService:
             return
         try:
             filename = os.path.basename(icon_filename.replace("\\", "/"))
-            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            filepath = os.path.join(_upload_folder(), filename)
             if os.path.exists(filepath):
                 os.remove(filepath)
         except Exception:
