@@ -298,6 +298,7 @@ def _render_public_specs_page():
     import re
     import time
     from app.models import Grup, PC
+    from app.services.cache.client_state_store import OnlineStatusStore
     from sqlalchemy.orm import joinedload, selectinload
 
     cache = current_app.config.setdefault("_SPECS_CACHE", {"body": None, "expires": 0.0})
@@ -323,8 +324,9 @@ def _render_public_specs_page():
     specs_catalog = {}
 
     for g in groups:
-        if len(g.pc_list) > 0:
-            g.sorted_pc_list = sorted(g.pc_list, key=extract_number)
+        active_pcs = [pc for pc in g.pc_list if pc.aktif]
+        if active_pcs:
+            g.sorted_pc_list = sorted(active_pcs, key=extract_number)
             groups_with_pcs.append(g)
 
             # Estimasi tarif per jam dari paket termurah jika tersedia
@@ -352,7 +354,7 @@ def _render_public_specs_page():
                         "warna": g.warna or "#3b82f6",
                         "hourly_rate": hourly_rate,
                     },
-                    "online": bool(pc.aktif),
+                    "online": OnlineStatusStore.is_online(pc.id, 45),
                     "cpu": {
                         "name": hw.cpu_name if (hw and hw.cpu_name) else "Belum Terkumpul",
                         "cores": baseline.get("cpu", {}).get("cores", None) if isinstance(baseline.get("cpu"), dict) else None,
