@@ -111,7 +111,7 @@ def toggle_whitelist():
     """POST — Enable/disable IP whitelist."""
     try:
         data = request.get_json(silent=True) or {}
-        enabled = data.get('enabled', False)
+        enabled = str(data.get('enabled', False)).strip().lower() in ("true", "1", "yes")
         IpWhitelistService.set_enabled(enabled)
 
         operator = session.get('kasir_username', 'admin')

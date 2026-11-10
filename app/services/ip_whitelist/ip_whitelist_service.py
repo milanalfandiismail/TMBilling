@@ -39,8 +39,8 @@ class IpWhitelistService:
     @staticmethod
     def set_enabled(enabled):
         """Aktifkan/nonaktifkan whitelist."""
-        val = 'true' if enabled else 'false'
-        SettingsService.set(IpWhitelistService.ENABLED_KEY, val)
+        flag = str(enabled).strip().lower() in ("true", "1", "yes")
+        SettingsService.set(IpWhitelistService.ENABLED_KEY, "true" if flag else "false")
 
     @staticmethod
     def get_public_url():
