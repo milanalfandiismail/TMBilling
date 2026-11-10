@@ -305,6 +305,7 @@ c:\Project GIT\TMBilling
   - Opsi *Unlimited Stock* untuk item yang tidak memerlukan pengurangan inventaris otomatis.
   - **Multi-Metode Pembayaran**: Tunai (Cash), QRIS Dinamis/Statis, dan Transfer Bank. Metode Tunai wajib menyertakan nominal `>= total_tagihan`; tunai kosong atau kurang ditolak.
   - **Charge to PC**: Tagihan makanan/minuman bisa langsung dibebankan ke sesi PC pelanggan dan dibayar saat sesi selesai.
+  - **Validasi Gambar Menu**: Unggah gambar menu memvalidasi byte dengan Pillow (`verify()` lalu `seek(0)`) setelah cek ekstensi; file non-gambar yang dinamai `.png` ditolak `400`.
   - **Gambar QRIS Statis**: Upload di Pengaturan divalidasi Pillow, diperkecil maks 800 px (PNG optimize / JPEG q90) dan disimpan dengan nama bertimestamp agar cache client otomatis berganti. Server mengirim `qris_path` relatif ke client (client membentuk URL dari `server_url` sendiri) serta `qris_url` absolut dari setting `app_public_url`; `/static/uploads/qris/` di-cache immutable 1 tahun.
   - **Refresh Konfigurasi Client**: Kiosk Tauri memuat konfigurasi sekali saja melalui `src/main.js` (loop 60 detik saat sehat, 5 detik saat gagal, refresh saat tab QRIS dibuka). Gambar QRIS diunduh ke data URI hanya bila URL berubah dan disimpan di RAM; bila unduhan gagal, client menampilkan "QRIS belum tersedia" (tidak menampilkan QRIS lama) agar tidak salah bayar.
   - **Cetak Struk Thermal**: Format struk 58mm / 80mm ESC/POS dengan logo warnet, rincian pesanan, total rupiah, dan footer terima kasih.
@@ -317,6 +318,7 @@ c:\Project GIT\TMBilling
 - **Deskripsi**: Sistem Content Management System (CMS) mandiri di dalam aplikasi kasir untuk membuat SOP, tutorial pemakaian, dan panduan operator warnet.
 - **Fitur**:
   - Custom CKEditor 5 Build (berada di `tools/ckeditor-builder`) yang mendukung format teks kaya, tabel, highlight, dan upload gambar lokal otomatis saat artikel disimpan.
+  - **Validasi Gambar Tutorial**: Endpoint `/api/v1/kasir/tutorials/upload-image` memvalidasi byte dengan Pillow setelah cek ekstensi; file non-gambar ditolak `400` dan tidak disimpan ke folder temp.
   - *Smart Tutorial Seeding*: Server otomatis menginisialisasi panduan standar saat database baru dibuat.
   - *Export / Import Tutorial*: Kemampuan backup dan restore artikel panduan.
 
@@ -337,6 +339,8 @@ c:\Project GIT\TMBilling
 - **Pembersihan Log dengan Otorisasi Supervisor**: Riwayat audit log tidak dapat dihapus sembarangan dan membutuhkan verifikasi password level Administrator/Super Admin.
 - **Anti Brute-Force Login**: `services/auth/login_throttle.py` membatasi 5 kegagalan per kombinasi (IP, username) dalam 5 menit dan membalas HTTP 429; berlaku pada login kasir, `admin-check`, `client/admin-login`, dan portal member. Logout wajib menyertakan token sesi yang cocok, dan setiap login sukses memanggil `session.clear()` agar sesi lama tidak menempel.
 - **Batas Unggah & Nama Berkas**: `MAX_CONTENT_LENGTH = 64 MB` mencegah unggahan raksasa; nama file screenshot dibersihkan dengan `secure_filename` setelah membuang pemisah path sehingga kode PC tidak bisa keluar dari folder upload.
+- **Toggle Whitelist**: `POST /api/v1/kasir/settings/ip-whitelist/toggle` menormalkan string boolean; `"false"` benar-benar menonaktifkan whitelist, bukan dianggap truthy.
+- **Hapus User Beriwayat**: user yang masih punya `ShiftRecord` atau `Transaksi` tidak dapat dihapus (`400`); nonaktifkan akun agar histori tetap utuh. Race username saat pembuatan user di-rollback menjadi `ValueError("Username sudah terdaftar")`.
 - **Hapus Audit Blackout & Kontrol LHM Khusus Admin**: `/api/v1/kasir/blackout/clear` dan start/stop TMLHMService memakai `@admin_required`.
 - **Sanitasi HTML Pengumuman**: Teks pengumuman kiosk (hasil CKEditor) disanitasi `SafeHTMLParser` saat ditulis maupun dibaca, memakai allowlist protokol (`http://`, `https://`, `mailto:`, `/`, `#`, `data:image/`).
 
@@ -374,6 +378,8 @@ c:\Project GIT\TMBilling
   - Hapus Member Beriwayat Ditolak: member yang punya riwayat sesi/transaksi tidak dapat dihapus (`400`); nonaktifkan akunnya agar histori tetap utuh.
   - Serialisasi Tulis Saldo: `app/services/write_lock.py` (`WRITE_LOCK`) membungkus `tambah_waktu`/`refund_paket`/`tambah_waktu_batch` member dan `tambah_waktu_sesi` agar dua request bersamaan tidak saling menimpa saldo (read-modify-write) pada satu proses server.
   - Paket Tidak Ditemukan: edit/hapus paket yang sudah tidak ada dibalas `404` ("Paket tidak ditemukan"), bukan `500`.
+  - Parsing Boolean Paket: flag `aktif` menerima string `"true"`/`"1"`/`"yes"` dan `"false"` benar-benar menonaktifkan; nilai string tidak lagi dianggap truthy mentah.
+  - Privasi Portal Publik: `/api/v1/public/member/pc-status` menampilkan nama member sebagai "Member", bukan username; total belanja portal hanya menjumlahkan transaksi pembelian valid (`jumlah > 0` dan bukan refund).
   - Logout Portal Member: `POST /api/v1/public/auth/logout` memanggil `AuthService.logout` untuk mengakhiri sesi kiosk dengan token sesi.
   - Hapus Nota Paket Ditolak: nota `beli_paket`/`beli_paket_member` tidak bisa dihapus dari riwayat; API membalas 400 dengan arahan memakai Refund agar saldo member ikut kembali. Penghapusan riwayat transaksi juga membersihkan `TransaksiMenu` pada rentang tanggal yang sama, menolak rentang tanggal yang masih dipakai sesi aktif, dan menghapus transaksi yang tidak ada membalas `404`; pembersihan log sistem meneruskan opsi arsip.
 
@@ -387,6 +393,7 @@ c:\Project GIT\TMBilling
   - **Ringkasan Lintas Kasir**: Rekap shift menghitung seluruh transaksi pada rentang waktu shift (bukan hanya `user_id` kasir pemilik shift) dan tidak meng-clamp nilai negatif, sehingga selisih refund berlebih tetap terlihat.
   - **Akses Ringkasan & Struk**: `GET /api/v1/kasir/shift/<id>/summary` dan struk shift hanya boleh dibaca pemilik shift atau admin; kasir lain mendapat `403` sehingga hitung buta tidak bisa diintip.
   - **Satu Shift Aktif**: Unique index parsial `uq_aktif_shift` (`status='AKTIF'`) plus `WRITE_LOCK` mencegah dua kasir membuka shift aktif bersamaan; `start_shift` menolak akun kasir nonaktif dan `force_close_shift` menghitung ringkasan sebelum satu commit.
+  - **Riwayat Shift**: Non-admin hanya dapat membaca riwayat shift miliknya sendiri (`kasir_id` dipaksa dari sesi), `limit` dibatasi `1..100`, `offset >= 0`, dan tanggal tidak valid dibalas `400`; rentang tanggal memakai zona waktu lokal setting.
   - **Admin Force Close Shift**: Administrator dapat menutup paksa shift kasir aktif dalam situasi darurat dengan pencatatan audit log.
   - **Struk Thermal Handover 58mm / 80mm**: Pencetakan bukti serah terima shift fisik lengkap dengan rincian penerimaan tunai, non-tunai, modal awal, rekonsiliasi laci, dan selisih keuangan untuk ditandatangani kedua kasir.
   - **Tab Riwayat Serah Terima Shift**: Menampilkan rekapitulasi seluruh shift sebelumnya dengan filter tanggal otomatis, badge status, modal detail, dan tata letak responsif (*fit-to-table* pada breakpoint LG/XL).
@@ -421,7 +428,9 @@ c:\Project GIT\TMBilling
   - Perbandingan rasio keuntungan antara pendapatan sewa PC vs penjualan F&B kantin.
   - Laporan harian memakai tanggal lokal server (`get_today_local_date()`), bukan tanggal UTC, agar transaksi dini hari tidak jatuh ke hari sebelumnya.
   - Tanggal laporan tidak valid dan pagination di luar `page >= 1`/`per_page 1..100` dibalas `400`; struk hanya untuk pemilik atau admin.
-  - Paket Terlaris: `get_top_paket` mengelompokkan transaksi per `paket_id` sehingga paket yang sudah dihapus tetap terhitung dan diberi label "Paket dihapus".
+  - Paket Terlaris: `get_top_paket` mengelompokkan transaksi per `paket_id` sehingga paket yang sudah dihapus tetap terhitung dan diberi label "Paket dihapus"; baris `refund_paket` tidak dihitung sebagai penjualan.
+  - **Akuntansi Refund**: pendapatan harian dan pendapatan per kasir hanya menjumlahkan transaksi yang belum direfund (`is_refunded == False`); refund rate memakai total pembelian sebagai penyebut sehingga tidak pernah melebihi 100% karena baris refund ikut terhitung.
+  - **Validasi Tanggal**: parameter `start`/`end` yang bukan `YYYY-MM-DD` dibalas `400` ("Format tanggal harus YYYY-MM-DD"); tanpa parameter analytics tetap memakai rentang 7 hari terakhir.
 
 ### 4.21 Emergency Mode & Offline Fallback (SHA-256 Auth)
 - **Deskripsi**: Mekanisme penanganan darurat ketika jaringan lokal warnet terputus total dari server billing.
@@ -461,6 +470,8 @@ c:\Project GIT\TMBilling
 - **Fitur**:
   - Pelanggan dapat melaporkan kendala langsung dari widget overlay PC klien (misal mouse macet atau headset mati sebelah).
   - Kasir menerima notifikasi tiket, mengubah status menjadi `In-Progress` atau `Resolved`, dan merekam riwayat perbaikan oleh teknisi.
+  - **Sinkronisasi Status PC**: tiket prioritas `KRITIS` menonaktifkan PC (`aktif=False`) saat dibuat, dan status `SELESAI` mengaktifkannya kembali dalam commit yang sama.
+  - **Validasi Laporan**: tanggal laporan yang tidak valid dibalas `400` (tidak lagi diam-diam mengabaikan filter) dan `limit` daftar tiket dibatasi `1..500`.
 
 ### 4.27 Fitur Kunci Meja AFK / Istirahat Sementara (Temporary AFK Screen Lock)
 - **Deskripsi**: Solusi keamanan privasi pelanggan saat meninggalkan meja sementara (istirahat makan, ibadah, atau toilet) tanpa mematikan sesi billing.
@@ -531,7 +542,7 @@ Backend TMBilling terbagi ke dalam **34 Blueprint** modular di `app/routes/`:
 - `blackout_routes.py`: Handler deteksi pemadaman listrik dan pemulihan sesi pelanggan.
 - `client_routes.py`: Komunikasi IPC dan heartbeat agent klien warnet.
 - `dashboard_routes.py`: API penyedia data statistik ringkas dashboard kasir.
-- `game_kasir_routes.py` & `game_public_routes.py`: Manajemen katalog game dan katalog publik.
+- `game_kasir_routes.py` & `game_public_routes.py`: Manajemen katalog game dan katalog publik; ikon menolak `.svg` dan disimpan di `current_app.static_folder/uploads/games`.
 - `grup_routes.py`: CRUD grup kategori ruangan / tarif.
 - `uptime_routes.py`: Pemantauan uptime PC, riwayat hardware baseline, dan penghapusan log.
 - `maintenance_routes.py`: Pengelolaan tiket pemeliharaan dan pelaporan kendala.
@@ -792,6 +803,8 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | GET | /tv-static | public_tv_static |
 | GET | /tv/dynamic | public_tv_dynamic |
 | GET | /tv/static | public_tv_static |
+
+> `/spesifikasi` hanya menyajikan PC aktif (`pc.aktif=True`) dan status online diambil dari heartbeat `OnlineStatusStore` (timeout 45 detik), bukan flag arsip PC.
 
 #### 🔹 Blueprint: grup (4 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
