@@ -106,6 +106,8 @@ def get_report():
             kategori=kategori
         )
         return jsonify({"success": True, "report": report_data}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

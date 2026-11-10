@@ -115,24 +115,15 @@ class MaintenanceService:
         from app.utils.timezone_utils import get_local_date_range_utc
 
         if start_date and end_date and start_date == end_date:
-            try:
-                start_utc, end_utc = get_local_date_range_utc(start_date)
-                query = query.filter(MaintenanceTicket.resolved_at >= start_utc, MaintenanceTicket.resolved_at < end_utc)
-            except Exception:
-                pass
+            start_utc, end_utc = get_local_date_range_utc(start_date)
+            query = query.filter(MaintenanceTicket.resolved_at >= start_utc, MaintenanceTicket.resolved_at < end_utc)
         else:
             if start_date:
-                try:
-                    start_utc, _ = get_local_date_range_utc(start_date)
-                    query = query.filter(MaintenanceTicket.resolved_at >= start_utc)
-                except Exception:
-                    pass
+                start_utc, _ = get_local_date_range_utc(start_date)
+                query = query.filter(MaintenanceTicket.resolved_at >= start_utc)
             if end_date:
-                try:
-                    _, end_utc = get_local_date_range_utc(end_date)
-                    query = query.filter(MaintenanceTicket.resolved_at < end_utc)
-                except Exception:
-                    pass
+                _, end_utc = get_local_date_range_utc(end_date)
+                query = query.filter(MaintenanceTicket.resolved_at < end_utc)
         if pc_id:
             query = query.filter_by(pc_id=pc_id)
         elif grup:
