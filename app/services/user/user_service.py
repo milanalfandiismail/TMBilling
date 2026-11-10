@@ -6,6 +6,7 @@ Menangani business logic untuk pembuatan, update, penonaktifan,
 dan hapus data staff yang mengoperasikan sistem billing.
 """
 
+from sqlalchemy.exc import IntegrityError
 from app.models import db, ShiftRecord, Transaksi
 from app.repositories import UserRepository
 from app.utils.logger import write_log
@@ -66,7 +67,11 @@ class UserService:
         )
         new_user.set_password(password)
         db.session.add(new_user)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            raise ValueError("Username sudah terdaftar")
         
         detail_user = {
             "username": username,
