@@ -180,7 +180,10 @@ def dashboard_page():
     total_play_minutes = sum(s.menit_terpakai() for s in member.sesi_list)
     total_play_hours = round(total_play_minutes / 60, 1)
 
-    total_spent = sum(t.jumlah for t in member.transaksi_list if not t.is_refunded)
+    total_spent = sum(
+        t.jumlah for t in member.transaksi_list
+        if t.jumlah > 0 and not t.is_refunded
+    )
 
     sesi_history = SesiRepository.get_history_by_member(member.id, limit=10)
 
