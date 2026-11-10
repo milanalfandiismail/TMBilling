@@ -137,7 +137,7 @@ def public_pc_status():
                 nama_tampil = "Admin / Teknisi"
             elif s:
                 if s.member:
-                    nama_tampil = s.member.username
+                    nama_tampil = "Member"
                 else:
                     nama_tampil = "Guest"
 
