@@ -142,7 +142,7 @@ class OwnerAnalyticsService:
             Transaksi.paket_id, func.count(Transaksi.id)
         ).filter(
             Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end,
-            Transaksi.is_refunded == False
+            Transaksi.is_refunded == False, Transaksi.jenis != "refund_paket"
         ).group_by(Transaksi.paket_id).order_by(func.count(Transaksi.id).desc()).all()
 
         ids = [pid for pid, _ in rows if pid]
@@ -165,8 +165,13 @@ class OwnerAnalyticsService:
 
     @staticmethod
     def get_refund_rate(start, end):
-        total = Transaksi.query.filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end).count()
-        refund = Transaksi.query.filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end, Transaksi.is_refunded == True).count()
+        base_filter = (
+            Transaksi.dibuat_pada >= start,
+            Transaksi.dibuat_pada <= end,
+            Transaksi.jenis != "refund_paket",
+        )
+        total = Transaksi.query.filter(*base_filter).count()
+        refund = Transaksi.query.filter(*base_filter, Transaksi.is_refunded == True).count()
         return {'total': total, 'refund': refund, 'refund_rate': round((refund / total * 100), 1) if total > 0 else 0}
 
     @staticmethod
