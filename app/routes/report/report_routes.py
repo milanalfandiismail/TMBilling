@@ -300,6 +300,8 @@ def export_billing():
             mimetype="application/pdf",
             headers={"Content-Disposition": f"attachment;filename={filename}"}
         )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -323,6 +325,8 @@ def export_kantin():
             mimetype="application/pdf",
             headers={"Content-Disposition": f"attachment;filename={filename}"}
         )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -341,6 +345,8 @@ def export_pnl():
             mimetype="application/pdf",
             headers={"Content-Disposition": f"attachment;filename={filename}"}
         )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
