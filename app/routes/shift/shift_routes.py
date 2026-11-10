@@ -186,9 +186,15 @@ def get_shift_history():
     try:
         limit = request.args.get("limit", 10, type=int)
         offset = request.args.get("offset", 0, type=int)
+        if limit is None or not (1 <= limit <= 100):
+            raise ValueError("Parameter limit harus 1..100")
+        if offset is None or offset < 0:
+            raise ValueError("Parameter offset harus >= 0")
         tanggal_mulai = request.args.get("tanggal_mulai")
         tanggal_selesai = request.args.get("tanggal_selesai")
         kasir_id = request.args.get("kasir_id", type=int)
+        if session.get("kasir_role") != "admin":
+            kasir_id = session.get("kasir_id")
 
         shifts = ShiftService.get_shift_history(
             limit=limit,
@@ -199,6 +205,8 @@ def get_shift_history():
         )
         return jsonify({"success": True, "shifts": shifts}), 200
 
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
