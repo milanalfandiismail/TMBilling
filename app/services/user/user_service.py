@@ -6,7 +6,7 @@ Menangani business logic untuk pembuatan, update, penonaktifan,
 dan hapus data staff yang mengoperasikan sistem billing.
 """
 
-from app.models import db
+from app.models import db, ShiftRecord, Transaksi
 from app.repositories import UserRepository
 from app.utils.logger import write_log
 from app.utils.validators import validate_username, validate_password, validate_string_length
@@ -159,8 +159,11 @@ class UserService:
             if admin_count <= 1:
                 raise ValueError("Tidak dapat menghapus satu-satunya Admin tersisa!")
 
-        # Hard delete. Kalau ada referensi di tabel transaksi (user_id), pastikan di-set NULL.
-        # SQLite ForeignKey ondelete="SET NULL" sudah dipasang di transaksi.py
+        punya_shift = ShiftRecord.query.filter_by(kasir_id=user.id).first() is not None
+        punya_transaksi = Transaksi.query.filter_by(user_id=user.id).first() is not None
+        if punya_shift or punya_transaksi:
+            raise ValueError("User punya riwayat shift/transaksi. Nonaktifkan saja.")
+
         db.session.delete(user)
         db.session.commit()
         write_log("HAPUS_USER", f"User:{user.username} dihapus secara permanen", user=operator, detail_json={"username": user.username})
