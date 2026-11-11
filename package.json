@@ -1,7 +1,7 @@
 {
   "name": "tmbilling",
   "version": "1.6.5-rc2",
-  "description": "<!-- markdownlint-disable MD033 MD041 -->\r <h1 align=\"center\">\ud83d\udda5\ufe0f TMBilling</h1>",
+  "description": "<!-- markdownlint-disable MD033 MD041 -->\r <h1 align=\"center\">🖥️ TMBilling</h1>",
   "main": "index.js",
   "directories": {
     "doc": "docs"
@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.3.1",
-    "qrcodejs": "^1.0.0",
-    "@novnc/novnc": "^1.4.0"
+    "@novnc/novnc": "^1.4.0",
+    "qrcodejs": "^1.0.0"
   }
 }
