@@ -126,18 +126,6 @@ class SesiRepository:
             SesiRepository.close_session(sesi)
         return len(sesi_list)
 
-    @staticmethod
-    def force_close_all_sesi(now):
-        """Menutup paksa semua sesi aktif (Tanpa Commit)."""
-        sesi_list = Sesi.query.filter_by(status="aktif").all()
-        for sesi in sesi_list:
-            sesi.status = "selesai"
-            sesi.selesai_pada = now
-            sesi.is_afk = False
-            sesi.afk_pin = None
-            sesi.afk_sejak = None
-        return len(sesi_list)
-
 
     # =========================================================================
     # 4. LAPORAN & STATISTIK (REPORTING)

@@ -202,6 +202,7 @@ class SesiService:
     @staticmethod
     def _tambah_waktu_sesi_locked(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai", commit=True, audit_logs=None):
         if not paket: raise ValueError("Paket tidak ditemukan")
+        if not paket.aktif: raise ValueError("Paket tidak aktif")
         qty = validate_integer_range(qty, 1, 100, field_name="Kuantitas paket")
         metode_pembayaran = validate_payment_method(metode_pembayaran)
 

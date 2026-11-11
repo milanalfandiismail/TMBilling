@@ -58,6 +58,60 @@ def test_update_commit_dulu_baru_sync(tmp_path, monkeypatch):
         assert urutan == ["commit", "sync"]
 
 
+def test_mikrotik_worker_uses_captured_username_without_orm_session(tmp_path, monkeypatch):
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": f"sqlite:///{tmp_path / 'captured.db'}",
+    })
+    with app.app_context():
+        grup = Grup(nama="reguler")
+        db.session.add(grup)
+        db.session.commit()
+        member = Member(username="m-captured", grup_id=grup.id, aktif=True)
+        member.set_password("pw")
+        db.session.add(member)
+        db.session.add(
+            MikroTikConfig(enabled=True, host="127.0.0.1", username="u", password="p")
+        )
+        db.session.commit()
+
+        panggilan = []
+
+        class CapturingClient:
+            def __init__(self, *a, **k):
+                pass
+
+            def login(self):
+                return True
+
+            def get_user(self, username):
+                panggilan.append(("get_user", username))
+                return {".id": "1"}
+
+            def set_user_password(self, user_id, password):
+                panggilan.append(("set_password", user_id, password))
+
+            def close(self):
+                pass
+
+        class DeferredExecutor:
+            def submit(self, fn):
+                self.fn = fn
+
+        executor = DeferredExecutor()
+        monkeypatch.setattr(member_service, "MikroTikAPIClient", CapturingClient)
+        monkeypatch.setattr(member_service, "_MIKROTIK_EXECUTOR", executor)
+
+        member_service.MemberService._sync_mikrotik("update", member, "baru")
+        db.session.expire_all()
+
+        worker = threading.Thread(target=executor.fn)
+        worker.start()
+        worker.join(timeout=5)
+
+        assert panggilan == [("get_user", "m-captured"), ("set_password", "1", "baru")]
+
+
 def test_sinkronisasi_mikrotik_berjalan_satu_per_satu(tmp_path, monkeypatch):
     app = create_app(
         {

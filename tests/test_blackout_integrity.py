@@ -93,6 +93,40 @@ def test_resolve_guest_lanjut_menolak_sesi_bukan_suspect(ctx):
     assert Sesi.query.filter_by(pc_id=ctx["pcs"][1].id, status="aktif").first() is None
 
 
+def test_resolve_guest_same_rejects_archived_pc(ctx):
+    pc = ctx["pcs"][0]
+    pc.aktif = False
+    sesi = Sesi(tipe="guest", nama_guest="Arsip", pc_id=pc.id, paket_id=ctx["paket"].id,
+                durasi_beli_menit=60, total_bayar=12000, status="selesai",
+                is_blackout_suspect=True, sisa_menit_saat_mati=40, token_sesi="a" * 64)
+    db.session.add(sesi)
+    db.session.commit()
+
+    with pytest.raises(ValueError):
+        BlackoutService.resolve_guest_sama(sesi.id, operator="kasir")
+
+    db.session.expire_all()
+    assert db.session.get(Sesi, sesi.id).is_blackout_resolved is False
+    assert Sesi.query.filter_by(pc_id=pc.id, status="aktif").first() is None
+
+
+def test_resolve_guest_move_rejects_archived_destination(ctx):
+    pc_tujuan = ctx["pcs"][1]
+    pc_tujuan.aktif = False
+    sesi = Sesi(tipe="guest", nama_guest="Arsip", pc_id=ctx["pcs"][0].id, paket_id=ctx["paket"].id,
+                durasi_beli_menit=60, total_bayar=12000, status="selesai",
+                is_blackout_suspect=True, sisa_menit_saat_mati=40, token_sesi="b" * 64)
+    db.session.add(sesi)
+    db.session.commit()
+
+    with pytest.raises(ValueError):
+        BlackoutService.resolve_guest_lanjut(sesi.id, pc_tujuan.id, operator="kasir")
+
+    db.session.expire_all()
+    assert db.session.get(Sesi, sesi.id).is_blackout_resolved is False
+    assert Sesi.query.filter_by(pc_id=pc_tujuan.id, status="aktif").first() is None
+
+
 def test_resolve_tutup_menolak_sesi_bukan_suspect(ctx):
     sesi = Sesi(tipe="guest", nama_guest="Normal", pc_id=ctx["pcs"][0].id,
                 paket_id=ctx["paket"].id, durasi_beli_menit=60, total_bayar=12000,

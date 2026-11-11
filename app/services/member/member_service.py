@@ -63,23 +63,26 @@ class MemberService:
         if not host or not username:
             return
 
+        # Baca scalar di thread pemanggil: session ORM milik request tidak aman dari worker.
+        member_username = member.username
+
         def task():
             client = None
             try:
                 client = MikroTikAPIClient(host, username, mikrotik_password, port)
                 if client.login():
                     if action == "add":
-                        client.add_user(member.username, password or member.username, profile)
+                        client.add_user(member_username, password or member_username, profile)
                     elif action == "update" and password:
-                        user = client.get_user(member.username)
+                        user = client.get_user(member_username)
                         if user and '.id' in user:
                             client.set_user_password(user['.id'], password)
                     elif action == "delete":
-                        user = client.get_user(member.username)
+                        user = client.get_user(member_username)
                         if user and '.id' in user:
                             client.remove_user(user['.id'])
             except Exception as e:
-                write_log("MIKROTIK_ERROR", f"Gagal {action} user {member.username}: {str(e)}")
+                write_log("MIKROTIK_ERROR", f"Gagal {action} user {member_username}: {str(e)}")
             finally:
                 if client:
                     client.close()
@@ -318,6 +321,8 @@ class MemberService:
             raise ValueError("Member tidak ditemukan")
         if not paket:
             raise ValueError("Paket tidak ditemukan")
+        if not paket.aktif:
+            raise ValueError("Paket tidak aktif")
         member.cek_kadaluarsa()
         if SesiRepository.get_aktif_by_member(member.id):
             raise ValueError("Member sedang bermain. Gunakan tombol '+Waktu' di dashboard PC.")

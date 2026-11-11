@@ -199,7 +199,7 @@ async function runPCBillingLifecycleE2ETest(page) {
             'Tutup blackout mencatat transaksi tutup_sesi Rp0',
             'Emergency login tanpa token ditolak 403 tanpa mengubah PC maupun sesi',
             'Emergency login bertoken menutup sesi aktif, mengaktifkan admin mode, dan mencatat audit',
-            'Force-all menutup semua sesi aktif tanpa membuat transaksi baru',
+            'Force-all menutup semua sesi aktif dan mencatat tutup_sesi Rp0',
             'Pendapatan analytics naik tepat sebesar transaksi pemulihan blackout',
         ]) {
             check(report, name, async () => { throw err; });
@@ -779,8 +779,10 @@ async function runPCBillingLifecycleE2ETest(page) {
         }
     });
 
-    await check(report, 'Force-all menutup semua sesi aktif tanpa membuat transaksi baru', async () => {
-        const aktifBefore = (await dbQuery('SELECT id FROM sesi WHERE status = ? ORDER BY id', [SESI_AKTIF])).map((r) => Number(r.id));
+    await check(report, 'Force-all menutup semua sesi aktif dan mencatat tutup_sesi Rp0', async () => {
+        const aktifRows = await dbQuery('SELECT id, tipe FROM sesi WHERE status = ? ORDER BY id', [SESI_AKTIF]);
+        const aktifBefore = aktifRows.map((r) => Number(r.id));
+        const billable = aktifRows.filter((r) => r.tipe === 'guest' || r.tipe === 'member').map((r) => Number(r.id));
         assert.ok(aktifBefore.length >= 1, 'harus ada sesi aktif untuk ditutup');
 
         const trxBefore = (await dbQuery('SELECT COUNT(*) AS n, COALESCE(MAX(id), 0) AS maxId FROM transaksi'))[0];
@@ -798,16 +800,22 @@ async function runPCBillingLifecycleE2ETest(page) {
         assert.strictEqual(sisa, 0, 'semua sesi aktif harus tertutup');
 
         const placeholders = aktifBefore.map(() => '?').join(',');
-        const rows = await dbQuery(`SELECT id, status, selesai_pada FROM sesi WHERE id IN (${placeholders})`, aktifBefore);
+        const rows = await dbQuery(`SELECT id, status, selesai_pada, is_blackout_suspect FROM sesi WHERE id IN (${placeholders})`, aktifBefore);
         assert.strictEqual(rows.length, aktifBefore.length, 'jumlah sesi yang diubah harus sama');
         for (const r of rows) {
             assert.strictEqual(r.status, SESI_SELESAI, `sesi #${r.id} harus selesai`);
             assert.ok(r.selesai_pada, `sesi #${r.id} harus punya selesai_pada`);
+            if (billable.includes(Number(r.id))) {
+                assert.strictEqual(Number(r.is_blackout_suspect), 1, `sesi #${r.id} harus masuk riwayat blackout`);
+            }
         }
 
-        const trxAfter = (await dbQuery('SELECT COUNT(*) AS n, COALESCE(MAX(id), 0) AS maxId FROM transaksi'))[0];
-        assert.strictEqual(Number(trxAfter.n), Number(trxBefore.n), 'force-all tidak boleh membuat transaksi');
-        assert.strictEqual(Number(trxAfter.maxId), Number(trxBefore.maxId), 'max(id) transaksi tidak boleh berubah');
+        const placeholdersBillable = billable.map(() => '?').join(',');
+        const tutup = await dbQuery(
+            `SELECT COUNT(DISTINCT sesi_id) AS n FROM transaksi WHERE id > ? AND jenis = 'tutup_sesi' AND jumlah = 0 AND sesi_id IN (${placeholdersBillable})`,
+            [Number(trxBefore.maxId), ...billable]
+        );
+        assert.strictEqual(Number(tutup[0].n), billable.length, 'satu tutup_sesi Rp0 per sesi billable');
     });
 
     await check(report, 'Pendapatan analytics naik tepat sebesar transaksi pemulihan blackout', async () => {
