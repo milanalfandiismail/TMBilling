@@ -37,10 +37,9 @@ class BlackoutService:
         threshold = menit_threshold if menit_threshold is not None else Config.BLACKOUT_THRESHOLD_MINUTES
         batas_waktu = now_local() - timedelta(minutes=threshold)
 
-        sesi_list = SesiRepository.get_aktif_belum_suspect_lama_sync(batas_waktu)
-
         count = 0
         with WRITE_LOCK:
+            sesi_list = SesiRepository.get_aktif_belum_suspect_lama_sync(batas_waktu)
             for sesi in sesi_list:
                 # Baca ulang: heartbeat bisa saja baru menyimpan last_sync setelah query di atas.
                 sesi = SesiRepository.get_by_id(sesi.id)

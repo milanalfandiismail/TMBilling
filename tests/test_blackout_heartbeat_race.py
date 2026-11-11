@@ -21,6 +21,30 @@ def app_ctx(tmp_path):
         db.drop_all()
 
 
+def test_stale_candidate_query_runs_under_write_lock(app_ctx, monkeypatch):
+    from app.services.blackout import blackout_service as module
+
+    state = {"held": False, "queried_under_lock": False}
+
+    class TrackingLock:
+        def __enter__(self):
+            state["held"] = True
+
+        def __exit__(self, *exc):
+            state["held"] = False
+            return False
+
+    def tracked_query(batas_waktu):
+        state["queried_under_lock"] = state["held"]
+        return []
+
+    monkeypatch.setattr(module, "WRITE_LOCK", TrackingLock())
+    monkeypatch.setattr(SesiRepository, "get_aktif_belum_suspect_lama_sync", tracked_query)
+
+    assert BlackoutService.deteksi(menit_threshold=1) == 0
+    assert state["queried_under_lock"] is True
+
+
 def test_deteksi_tidak_menutup_sesi_yang_baru_sync(app_ctx, monkeypatch):
     sesi = Sesi(
         tipe="guest", nama_guest="Tamu", status="aktif",
