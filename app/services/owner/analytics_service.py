@@ -142,6 +142,7 @@ class OwnerAnalyticsService:
             Transaksi.paket_id, func.count(Transaksi.id)
         ).filter(
             Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end,
+            Transaksi.paket_id.isnot(None),
             Transaksi.is_refunded == False, Transaksi.jenis != "refund_paket"
         ).group_by(Transaksi.paket_id).order_by(func.count(Transaksi.id).desc()).all()
 
@@ -168,6 +169,7 @@ class OwnerAnalyticsService:
         base_filter = (
             Transaksi.dibuat_pada >= start,
             Transaksi.dibuat_pada <= end,
+            Transaksi.paket_id.isnot(None),
             Transaksi.jenis != "refund_paket",
         )
         total = Transaksi.query.filter(*base_filter).count()

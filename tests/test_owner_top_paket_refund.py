@@ -38,3 +38,34 @@ def test_top_paket_dan_refund_rate_memakai_pembelian(ctx):
 
     assert top["data"] == [1]
     assert rate == {"total": 2, "refund": 1, "refund_rate": 50.0}
+
+
+def test_non_package_transactions_do_not_change_package_analytics(ctx):
+    base = ctx
+    end = base + dt.timedelta(hours=1)
+    db.session.add_all([
+        Transaksi(no_nota="TM-20260101-010", jenis="tutup_sesi", jumlah=0,
+                  menit=0, paket_id=None, is_refunded=False, dibuat_pada=base),
+        Transaksi(no_nota="TM-20260101-011", jenis="tutup_sesi", jumlah=0,
+                  menit=0, paket_id=None, is_refunded=False, dibuat_pada=base),
+        Transaksi(no_nota="TM-20260101-012", jenis="tutup_sesi", jumlah=0,
+                  menit=0, paket_id=None, is_refunded=False, dibuat_pada=base),
+        Transaksi(no_nota="TM-20260101-013", jenis="tutup_sesi", jumlah=0,
+                  menit=0, paket_id=None, is_refunded=False, dibuat_pada=base),
+        Transaksi(no_nota="TM-20260101-014", jenis="pindah_pc", jumlah=0,
+                  menit=0, paket_id=None, is_refunded=False, dibuat_pada=base),
+    ])
+    db.session.commit()
+
+    top = OwnerAnalyticsService.get_top_paket(base, end)
+    rate = OwnerAnalyticsService.get_refund_rate(base, end)
+
+    assert top["labels"] == ["Paket 1 Jam"]
+    assert top["data"] == [1]
+    assert rate == {"total": 2, "refund": 1, "refund_rate": 50.0}
+
+    empty_start = end + dt.timedelta(days=1)
+    assert OwnerAnalyticsService.get_top_paket(empty_start, empty_start)["data"] == []
+    assert OwnerAnalyticsService.get_refund_rate(empty_start, empty_start) == {
+        "total": 0, "refund": 0, "refund_rate": 0
+    }
