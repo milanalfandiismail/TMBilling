@@ -56,10 +56,19 @@ def check_ip_whitelist():
         return None
 
     # =========================================================================
-    # STEP 3: Admin role or session authenticated via bypass token?
+    # STEP 3: Admin role (divalidasi ulang ke database) atau session bypass token?
     # =========================================================================
     if flask_session.get('kasir_role') == 'admin':
-        return None
+        from app.repositories import UserRepository
+        user = UserRepository.get_by_id(flask_session.get('kasir_id'))
+        if user and user.aktif and user.role == 'admin':
+            return None
+        if user and user.aktif:
+            # Role berubah setelah login: pakai role terbaru, jangan beri bypass admin.
+            flask_session['kasir_role'] = user.role
+        else:
+            flask_session.clear()
+            flask_session.modified = True
 
     auth_flag = flask_session.get('ip_wh_authenticated')
     token_ver = flask_session.get('ip_wh_token_version')
