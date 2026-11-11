@@ -14,7 +14,7 @@ def _read():
 def test_updater_aborts_on_pip_or_migration_failure():
     text = _read()
 
-    pip_start = text.index('pip.exe" install -r requirements.txt')
+    pip_start = text.index("-m pip install -r requirements.txt")
     pip_block = text[pip_start:text.index(":: 6.", pip_start)]
     assert "goto :fail" in pip_block
     assert "[WARN]" not in pip_block
@@ -25,9 +25,24 @@ def test_updater_aborts_on_pip_or_migration_failure():
     assert "[WARN]" not in mig_block
 
 
+def test_dependency_install_always_runs_with_selected_python():
+    """pip wajib dijalankan lewat interpreter terpilih, bukan hanya bila pip.exe ada."""
+    text = _read()
+    assert '"%TM_PY%" -m pip install -r requirements.txt --quiet' in text
+    assert '".venv\\Scripts\\pip.exe" install' not in text
+
+
+def test_updater_claims_single_flight_and_releases_on_exit():
+    text = _read()
+    claim = text.index('update_claim.py" claim')
+    release = text.index('update_claim.py" release')
+    assert claim < release
+    assert 'exit /b %TM_EXIT%' in text
+
+
 def test_fail_path_does_not_start_server():
     text = _read()
     fail_section = text[re.search(r"^:fail\s*$", text, re.M).start():]
 
     assert 'start ""' not in fail_section
-    assert "exit /b 1" in fail_section
+    assert "TM_EXIT=1" in fail_section

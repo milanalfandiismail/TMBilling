@@ -244,37 +244,53 @@ def update_github():
             return jsonify({"error": "Asset paket pembaruan server tidak ditemukan di rilis GitHub"}), 400
 
         temp_path = os.path.join(current_app.instance_path, "temp_update.zip")
+        pending_path = temp_path + ".pending"
         os.makedirs(current_app.instance_path, exist_ok=True)
 
-        req = urllib.request.Request(asset_url, headers={"User-Agent": "TMBilling-Update-Download"})
-        with urllib.request.urlopen(req, timeout=60) as resp, open(temp_path, "wb") as out_file:
-            while True:
-                chunk = resp.read(64 * 1024)
-                if not chunk:
-                    break
-                out_file.write(chunk)
+        from install_scripts import update_claim
+        if not update_claim.acquire("web"):
+            return jsonify({"error": "Pembaruan lain sedang berjalan. Tunggu hingga selesai lalu ulangi."}), 409
 
-        # Validasi integritas berkas ZIP
-        is_valid_structure = False
         try:
-            with zipfile.ZipFile(temp_path, "r") as zf:
-                all_files = zf.namelist()
-                norm_files = [f.replace("\\", "/") for f in all_files]
-                has_run = any(f == "run.py" for f in norm_files)
-                has_app = any(f.startswith("app/") for f in norm_files)
-                has_config = any(f == "app/config.py" for f in norm_files)
-                if has_run and has_app and has_config:
-                    is_valid_structure = True
-        except zipfile.BadZipFile:
-            _safe_remove_temp(temp_path)
-            return jsonify({"error": "Berkas ZIP dari GitHub rusak / bukan format ZIP valid"}), 400
+            req = urllib.request.Request(asset_url, headers={"User-Agent": "TMBilling-Update-Download"})
+            with urllib.request.urlopen(req, timeout=60) as resp, open(pending_path, "wb") as out_file:
+                while True:
+                    chunk = resp.read(64 * 1024)
+                    if not chunk:
+                        break
+                    out_file.write(chunk)
 
-        if not is_valid_structure:
-            _safe_remove_temp(temp_path)
-            return jsonify({"error": "Berkas ZIP dari GitHub bukan paket rilis TMBilling yang valid"}), 400
+            # Validasi integritas berkas ZIP
+            is_valid_structure = False
+            try:
+                with zipfile.ZipFile(pending_path, "r") as zf:
+                    all_files = zf.namelist()
+                    norm_files = [f.replace("\\", "/") for f in all_files]
+                    has_run = any(f == "run.py" for f in norm_files)
+                    has_app = any(f.startswith("app/") for f in norm_files)
+                    has_config = any(f == "app/config.py" for f in norm_files)
+                    if has_run and has_app and has_config:
+                        is_valid_structure = True
+            except zipfile.BadZipFile:
+                raise ValueError("Berkas ZIP dari GitHub rusak / bukan format ZIP valid")
 
-        write_log("APPLICATION_UPDATE", "Pembaruan otomatis dari GitHub dipicu melalui dashboard", user=operator)
-        _launch_updater()
+            if not is_valid_structure:
+                raise ValueError("Berkas ZIP dari GitHub bukan paket rilis TMBilling yang valid")
+
+            # Publikasi atomik: paket lama yang tertinggal tidak pernah setengah tertimpa
+            os.replace(pending_path, temp_path)
+
+            write_log("APPLICATION_UPDATE", "Pembaruan otomatis dari GitHub dipicu melalui dashboard", user=operator)
+            _launch_updater()  # klaim tetap dipegang; updater.bat mengadopsinya
+
+        except ValueError as ve:
+            update_claim.release()
+            _safe_remove_temp(pending_path)
+            return jsonify({"error": str(ve)}), 400
+        except Exception:
+            update_claim.release()
+            _safe_remove_temp(pending_path)
+            raise
 
         return jsonify({
             "success": True,
@@ -300,42 +316,56 @@ def upload_update():
             return jsonify({"error": "File update wajib dipilih"}), 400
 
         temp_path = os.path.join(current_app.instance_path, "temp_update.zip")
+        pending_path = temp_path + ".pending"
         os.makedirs(current_app.instance_path, exist_ok=True)
-        file.save(temp_path)
 
-        is_valid_structure = False
-        is_safe = True
+        from install_scripts import update_claim
+        if not update_claim.acquire("web"):
+            return jsonify({"error": "Pembaruan lain sedang berjalan. Tunggu hingga selesai lalu ulangi."}), 409
+
         try:
-            with zipfile.ZipFile(temp_path, "r") as zf:
-                all_files = zf.namelist()
-                norm_files = [f.replace("\\", "/") for f in all_files]
-                has_run = any(f == "run.py" for f in norm_files)
-                has_app = any(f.startswith("app/") for f in norm_files)
-                has_config = any(f == "app/config.py" for f in norm_files)
-                if has_run and has_app and has_config:
-                    is_valid_structure = True
+            file.save(pending_path)
 
-                for member in all_files:
-                    norm = member.replace("\\", "/")
-                    if norm.startswith("/") or ".." in norm.split("/"):
-                        is_safe = False
-                        break
-        except zipfile.BadZipFile:
-            _safe_remove_temp(temp_path)
-            return jsonify({"error": "Berkas bukan format ZIP yang valid"}), 400
+            is_valid_structure = False
+            is_safe = True
+            try:
+                with zipfile.ZipFile(pending_path, "r") as zf:
+                    all_files = zf.namelist()
+                    norm_files = [f.replace("\\", "/") for f in all_files]
+                    has_run = any(f == "run.py" for f in norm_files)
+                    has_app = any(f.startswith("app/") for f in norm_files)
+                    has_config = any(f == "app/config.py" for f in norm_files)
+                    if has_run and has_app and has_config:
+                        is_valid_structure = True
 
-        if not is_valid_structure:
-            _safe_remove_temp(temp_path)
-            return jsonify({
-                "error": "Berkas ZIP bukan paket rilis TMBilling yang valid (wajib memuat run.py dan folder app/)."
-            }), 400
+                    for member in all_files:
+                        norm = member.replace("\\", "/")
+                        if norm.startswith("/") or ".." in norm.split("/"):
+                            is_safe = False
+                            break
+            except zipfile.BadZipFile:
+                raise ValueError("Berkas bukan format ZIP yang valid")
 
-        if not is_safe:
-            _safe_remove_temp(temp_path)
-            return jsonify({"error": "Path traversal terdeteksi pada berkas ZIP"}), 400
+            if not is_valid_structure:
+                raise ValueError("Berkas ZIP bukan paket rilis TMBilling yang valid (wajib memuat run.py dan folder app/).")
 
-        write_log("APPLICATION_UPDATE", "Pembaruan manual melalui upload ZIP dipicu melalui dashboard", user=operator)
-        _launch_updater()
+            if not is_safe:
+                raise ValueError("Path traversal terdeteksi pada berkas ZIP")
+
+            # Publikasi atomik: paket lama yang tertinggal tidak pernah setengah tertimpa
+            os.replace(pending_path, temp_path)
+
+            write_log("APPLICATION_UPDATE", "Pembaruan manual melalui upload ZIP dipicu melalui dashboard", user=operator)
+            _launch_updater()  # klaim tetap dipegang; updater.bat mengadopsinya
+
+        except ValueError as ve:
+            update_claim.release()
+            _safe_remove_temp(pending_path)
+            return jsonify({"error": str(ve)}), 400
+        except Exception:
+            update_claim.release()
+            _safe_remove_temp(pending_path)
+            raise
 
         return jsonify({
             "success": True,

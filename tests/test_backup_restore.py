@@ -254,3 +254,75 @@ def test_backup_list_admin_and_forbidden_for_kasir(backup_env, monkeypatch):
         sess["kasir_id"] = kasir_id
         sess["kasir_role"] = "kasir"
     assert client.get("/api/v1/kasir/backup/list").status_code == 403
+
+
+def test_maintenance_mode_stays_active_for_overlapping_restores():
+    """Restore yang tumpang tindih tidak boleh membuka gerbang lebih awal."""
+    from app.services import maintenance_mode
+
+    with maintenance_mode.restoring():
+        with maintenance_mode.restoring():
+            pass
+        assert maintenance_mode.is_active() is True
+    assert maintenance_mode.is_active() is False
+
+
+def _versioned_backup(backup_env, revision="deadbeefcafe"):
+    """Buat arsip backup yang menyertakan tabel revisi Alembic (DB produksi)."""
+    app, db_file, backup_dir, _a, _k = backup_env
+    con = sqlite3.connect(str(db_file))
+    try:
+        con.execute("CREATE TABLE IF NOT EXISTS alembic_version (version_num VARCHAR(32) NOT NULL)")
+        con.execute("DELETE FROM alembic_version")
+        con.execute("INSERT INTO alembic_version VALUES (?)", (revision,))
+        con.commit()
+    finally:
+        con.close()
+    with app.app_context():
+        return BackupService(backup_dir=str(backup_dir)).create_backup()
+
+
+def test_restore_migrates_versioned_backup(backup_env, monkeypatch):
+    from install_scripts import run_migration
+
+    app, _db_file, backup_dir, _a, _k = backup_env
+    arsip = _versioned_backup(backup_env)
+    dipanggil = {}
+
+    def fake_run(app_arg=None):
+        dipanggil["app"] = app_arg
+        return True
+
+    monkeypatch.setattr(run_migration, "run", fake_run)
+    with app.app_context():
+        BackupService(backup_dir=str(backup_dir)).restore_backup(arsip)
+
+    assert dipanggil["app"] is app
+
+
+def test_restore_rolls_back_when_migration_fails(backup_env, monkeypatch):
+    from install_scripts import run_migration
+
+    app, _db_file, backup_dir, _a, _k = backup_env
+    arsip = _versioned_backup(backup_env)
+    with app.app_context():
+        db.session.add(Grup(nama="penanda-sebelum-restore"))
+        db.session.commit()
+
+    monkeypatch.setattr(run_migration, "run", lambda app=None: False)
+    with app.app_context(), pytest.raises(ValueError, match="dikembalikan"):
+        BackupService(backup_dir=str(backup_dir)).restore_backup(arsip)
+
+    assert Grup.query.filter_by(nama="penanda-sebelum-restore").first() is not None
+
+
+def test_restore_skips_migration_for_unversioned_backup(backup_env, monkeypatch):
+    from install_scripts import run_migration
+
+    app, _db_file, backup_dir, _a, _k = backup_env
+    with app.app_context():
+        arsip = BackupService(backup_dir=str(backup_dir)).create_backup()
+
+    monkeypatch.setattr(run_migration, "run", lambda app=None: pytest.fail("migrasi tidak boleh dijalankan"))
+    with app.app_context():
+        BackupService(backup_dir=str(backup_dir)).restore_backup(arsip)

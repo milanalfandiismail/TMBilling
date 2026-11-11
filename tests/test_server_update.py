@@ -44,18 +44,25 @@ def client(app_context):
 
 @pytest.fixture(autouse=True)
 def cleanup_temp_update(app_context):
+    from install_scripts import update_claim
+
     temp_zip = os.path.join(app_context.instance_path, "temp_update.zip")
-    if os.path.exists(temp_zip):
-        try:
-            os.remove(temp_zip)
-        except Exception:
-            pass
+    pending = temp_zip + ".pending"
+    update_claim.release()
+    for path in (temp_zip, pending):
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+            except Exception:
+                pass
     yield
-    if os.path.exists(temp_zip):
-        try:
-            os.remove(temp_zip)
-        except Exception:
-            pass
+    update_claim.release()
+    for path in (temp_zip, pending):
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+            except Exception:
+                pass
 
 
 def test_parse_version_semver():
@@ -278,6 +285,119 @@ def test_update_github_rejects_ssrf_url(client):
         assert res.status_code == 400
         data = res.get_json()
         assert "tidak diizinkan" in data["error"].lower()
+
+
+def _valid_zip():
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zf:
+        zf.writestr("run.py", "# entry")
+        zf.writestr("app/config.py", "# config")
+        zf.writestr("app/__init__.py", "# init")
+    buffer.seek(0)
+    return buffer
+
+
+def test_concurrent_update_requests_rejected(client):
+    """Request update kedua harus ditolak 409 dan tidak menimpa paket yang pertama."""
+    with patch("app.routes.settings.migration_routes._launch_updater") as mock_launch:
+        first = client.post(
+            "/api/v1/kasir/settings/migration/upload",
+            data={"update_file": (_valid_zip(), "satu.zip")},
+            content_type="multipart/form-data",
+        )
+        assert first.status_code == 200
+        temp_zip = os.path.join(client.application.instance_path, "temp_update.zip")
+        isi_pertama = open(temp_zip, "rb").read()
+
+        second = client.post(
+            "/api/v1/kasir/settings/migration/upload",
+            data={"update_file": (_valid_zip(), "dua.zip")},
+            content_type="multipart/form-data",
+        )
+        assert second.status_code == 409
+        assert mock_launch.call_count == 1
+        assert open(temp_zip, "rb").read() == isi_pertama
+
+
+def _journal_root(tmp_path):
+    root = tmp_path / "root"
+    instance = root / "instance"
+    root.mkdir()
+    instance.mkdir()
+    return root, instance
+
+
+def test_recover_interrupted_swap_restores_old_tree(tmp_path, monkeypatch):
+    """Jurnal penukaran yang terputus harus mengembalikan pohon lama."""
+    from install_scripts import extract_update
+
+    root, instance = _journal_root(tmp_path)
+    rollback = instance / "rollback_test"
+    (rollback / "app").mkdir(parents=True)
+    (rollback / "app" / "lama.txt").write_text("lama")
+    (root / "app").mkdir()
+    (root / "app" / "baru.txt").write_text("baru")
+    journal = instance / "update_journal.json"
+    journal.write_text(json.dumps({
+        "rollback_dir": str(rollback),
+        "staging_dir": str(instance / "staging_update"),
+        "entries": [{"name": "app", "had_old": True, "old_moved": True, "new_installed": True}],
+    }))
+
+    monkeypatch.setattr(extract_update, "root_dir", str(root))
+    monkeypatch.setattr(extract_update, "instance_dir", str(instance))
+    monkeypatch.setattr(extract_update, "journal_path", str(journal))
+
+    assert extract_update.recover_interrupted_swap() is True
+    assert (root / "app" / "lama.txt").exists()
+    assert not (root / "app" / "baru.txt").exists()
+    assert not journal.exists()
+
+
+def test_recover_interrupted_swap_removes_new_paths(tmp_path, monkeypatch):
+    """Path yang sebelumnya tidak ada harus dihapus saat recovery."""
+    from install_scripts import extract_update
+
+    root, instance = _journal_root(tmp_path)
+    rollback = instance / "rollback_test"
+    rollback.mkdir()
+    (root / "migrations").mkdir()
+    (root / "migrations" / "baru.py").write_text("x")
+    journal = instance / "update_journal.json"
+    journal.write_text(json.dumps({
+        "rollback_dir": str(rollback),
+        "staging_dir": str(instance / "staging_update"),
+        "entries": [{"name": "migrations", "had_old": False, "old_moved": False, "new_installed": True}],
+    }))
+
+    monkeypatch.setattr(extract_update, "root_dir", str(root))
+    monkeypatch.setattr(extract_update, "instance_dir", str(instance))
+    monkeypatch.setattr(extract_update, "journal_path", str(journal))
+
+    assert extract_update.recover_interrupted_swap() is True
+    assert not (root / "migrations").exists()
+
+
+def test_recover_interrupted_swap_fails_without_backup(tmp_path, monkeypatch):
+    """Cadangan yang hilang harus dilaporkan gagal, bukan dianggap pulih."""
+    from install_scripts import extract_update
+
+    root, instance = _journal_root(tmp_path)
+    rollback = instance / "rollback_test"
+    rollback.mkdir()
+    journal = instance / "update_journal.json"
+    journal.write_text(json.dumps({
+        "rollback_dir": str(rollback),
+        "staging_dir": str(instance / "staging_update"),
+        "entries": [{"name": "app", "had_old": True, "old_moved": True, "new_installed": True}],
+    }))
+
+    monkeypatch.setattr(extract_update, "root_dir", str(root))
+    monkeypatch.setattr(extract_update, "instance_dir", str(instance))
+    monkeypatch.setattr(extract_update, "journal_path", str(journal))
+
+    assert extract_update.recover_interrupted_swap() is False
+    assert journal.exists()
 
 
 

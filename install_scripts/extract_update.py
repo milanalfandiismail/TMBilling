@@ -1,6 +1,8 @@
 # install_scripts/extract_update.py
 """Skrip ekstraksi update aman & backup database sebelum migrasi."""
+import json
 import os
+import shutil
 import sys
 import zipfile
 from datetime import datetime
@@ -11,6 +13,7 @@ if root_dir not in sys.path:
 instance_dir = os.path.join(root_dir, "instance")
 temp_zip = os.path.join(instance_dir, "temp_update.zip")
 staging_dir = os.path.join(instance_dir, "staging_update")
+journal_path = os.path.join(instance_dir, "update_journal.json")
 backups_dir = os.path.join(root_dir, "backups")
 db_path = os.path.join(instance_dir, "warnet.db")
 
@@ -52,47 +55,105 @@ def backup_database():
             os.remove(backup_file)
         return False
 
+def _remove_path(path):
+    if os.path.isdir(path):
+        shutil.rmtree(path, ignore_errors=True)
+    elif os.path.exists(path):
+        os.remove(path)
+
+
+def _write_journal(journal):
+    tmp = journal_path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(journal, f)
+    os.replace(tmp, journal_path)
+
+
+def recover_interrupted_swap() -> bool:
+    """Pulihkan pohon aplikasi bila penukaran berkas terputus (kill/power loss).
+
+    Return True bila tidak ada jurnal atau rollback berhasil; False bila
+    cadangan yang dibutuhkan hilang sehingga pemulihan otomatis tidak aman.
+    """
+    if not os.path.exists(journal_path):
+        return True
+    try:
+        with open(journal_path, encoding="utf-8") as f:
+            journal = json.load(f)
+        rollback_dir = journal["rollback_dir"]
+        for entry in reversed(journal["entries"]):
+            name = entry["name"]
+            dst = os.path.join(root_dir, name)
+            backup = os.path.join(rollback_dir, name)
+            if entry.get("had_old"):
+                if not os.path.exists(backup):
+                    if os.path.exists(dst):
+                        continue  # pohon lama belum tersentuh
+                    print(f"[UPDATER ERROR] Recovery: cadangan {name} tidak ditemukan.")
+                    return False
+                if os.path.exists(dst):
+                    _remove_path(dst)
+                os.replace(backup, dst)
+            elif entry.get("new_installed"):
+                _remove_path(dst)  # path yang sebelumnya tidak ada
+        os.remove(journal_path)
+        shutil.rmtree(rollback_dir, ignore_errors=True)
+        print("[UPDATER] Pemulihan penukaran berkas dari pembaruan sebelumnya selesai.")
+        return True
+    except Exception as e:
+        print(f"[UPDATER ERROR] Pemulihan penukaran berkas gagal: {e}")
+        return False
+
+
 def swap_staging_into_tree(staging):
     """Tukar isi top-level hasil staging ke root_dir, rollback bila gagal di tengah.
 
-    Menggunakan os.replace per entri agar kegagalan tidak meninggalkan aplikasi
-    setengah terpasang (campuran berkas lama & baru).
+    Jurnal `instance/update_journal.json` ditulis sebelum tiap langkah agar
+    pemulihan bisa dilanjutkan setelah proses terbunuh atau listrik padam.
     """
     rollback_dir = os.path.join(instance_dir, f"rollback_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
     os.makedirs(rollback_dir, exist_ok=True)
-    replaced, moved_old = [], []
-    try:
-        for entry in sorted(os.listdir(staging)):
-            src = os.path.join(staging, entry)
-            dst = os.path.join(root_dir, entry)
-            if os.path.exists(dst):
-                os.replace(dst, os.path.join(rollback_dir, entry))
-                moved_old.append(entry)
-            os.replace(src, dst)
-            replaced.append(entry)
-    except Exception:
-        for entry in reversed(replaced):
-            try:
-                os.replace(os.path.join(root_dir, entry), os.path.join(staging, entry))
-            except OSError:
-                pass
-        for entry in reversed(moved_old):
-            try:
-                os.replace(os.path.join(rollback_dir, entry), os.path.join(root_dir, entry))
-            except OSError:
-                pass
-        raise
+    journal = {"rollback_dir": rollback_dir, "staging_dir": staging, "entries": [
+        {
+            "name": entry,
+            "had_old": os.path.exists(os.path.join(root_dir, entry)),
+            "old_moved": False,
+            "new_installed": False,
+        }
+        for entry in sorted(os.listdir(staging))
+    ]}
+    _write_journal(journal)
 
     try:
-        os.rmdir(rollback_dir)
-    except OSError:
-        pass
+        for entry in journal["entries"]:
+            name = entry["name"]
+            src = os.path.join(staging, name)
+            dst = os.path.join(root_dir, name)
+            if entry["had_old"]:
+                os.replace(dst, os.path.join(rollback_dir, name))
+                entry["old_moved"] = True
+                _write_journal(journal)
+            os.replace(src, dst)
+            entry["new_installed"] = True
+            _write_journal(journal)
+    except Exception:
+        recover_interrupted_swap()
+        raise
+
+    os.remove(journal_path)
+    shutil.rmtree(rollback_dir, ignore_errors=True)
 
 
 def main():
     if not os.path.exists(temp_zip):
         print("[UPDATER] temp_update.zip tidak ditemukan. Selesai.")
         return 0
+
+    # 0. Pulihkan penukaran berkas yang terputus sebelum menyentuh apa pun
+    if not recover_interrupted_swap():
+        print("[UPDATER ERROR] Pemulihan file dari pembaruan sebelumnya gagal.")
+        print("                 Periksa instance/update_journal.json dan instance/rollback_*, lalu ulangi.")
+        return 3
 
     # 1. Backup database warnet.db — batalkan bila gagal, jangan timpa kode tanpa cadangan
     if not backup_database():
@@ -104,7 +165,6 @@ def main():
     success = False
     try:
         if os.path.isdir(staging_dir):
-            import shutil
             shutil.rmtree(staging_dir)
         os.makedirs(staging_dir, exist_ok=True)
 

@@ -65,6 +65,57 @@ def _snapshot_db(src_path, dest_path):
         src.close()
 
 
+def _db_revision(path):
+    """Revisi Alembic di DB; None bila tabel alembic_version tidak ada."""
+    con = sqlite3.connect(path, timeout=30)
+    try:
+        row = con.execute("SELECT version_num FROM alembic_version").fetchone()
+        return row[0] if row else None
+    except sqlite3.DatabaseError:
+        return None
+    finally:
+        con.close()
+
+
+def _reset_db_connections():
+    try:
+        from app.models import db
+        db.session.remove()
+        db.engine.dispose()
+    except Exception as e:
+        write_log("DATABASE_RESTORE", f"Reset koneksi DB gagal: {e}", user="SYSTEM")
+
+
+def _apply_zip_db(zip_path, dest_path) -> bool:
+    """Tulis DB dari arsip backup ZIP ke database aktif."""
+    import zipfile
+
+    tmp_dir = tempfile.mkdtemp(prefix="tm_restore_payload_")
+    try:
+        with zipfile.ZipFile(zip_path) as zipf:
+            member = next((m for m in zipf.namelist() if m.lower().endswith(".db")), None)
+            if not member:
+                return False
+            extracted = os.path.join(tmp_dir, "payload.db")
+            with zipf.open(member) as src_f, open(extracted, "wb") as dst_f:
+                shutil.copyfileobj(src_f, dst_f)
+        _snapshot_db(extracted, dest_path)
+        return True
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def _migrate_restored_database() -> bool:
+    """Bawa DB hasil restore ke head Alembic kode yang sedang berjalan."""
+    try:
+        from flask import current_app
+        from install_scripts import run_migration
+        return bool(run_migration.run(current_app._get_current_object()))
+    except Exception as e:
+        write_log("DATABASE_RESTORE", f"Migrasi setelah restore gagal: {e}", user="SYSTEM")
+        return False
+
+
 class BackupService:
     """Service untuk backup database SQLite secara otomatis.
     
@@ -253,20 +304,21 @@ class BackupService:
             with _BACKUP_LOCK, WRITE_LOCK:
                 safety_backup = self.create_backup()
 
-                src = sqlite3.connect(extracted)
-                dst = sqlite3.connect(self.db_path, timeout=30)
-                try:
-                    src.backup(dst)
-                finally:
-                    src.close()
-                    dst.close()
+                _snapshot_db(extracted, self.db_path)
+                _reset_db_connections()
 
-                try:
-                    from app.models import db
-                    db.session.remove()
-                    db.engine.dispose()
-                except Exception as e:
-                    write_log("DATABASE_RESTORE", f"Reset koneksi DB gagal: {e}", user="SYSTEM")
+                # Backup dari versi lama membawa revisi Alembic lama; jalankan
+                # migrasi agar kode baru tidak berjalan di atas skema usang.
+                if _db_revision(self.db_path) and not _migrate_restored_database():
+                    if not _apply_zip_db(safety_backup, self.db_path):
+                        raise ValueError(
+                            "Migrasi skema setelah restore gagal dan backup pengaman tidak bisa dipulihkan. "
+                            f"Pulihkan manual dari: {os.path.basename(safety_backup)}"
+                        )
+                    _reset_db_connections()
+                    raise ValueError(
+                        "Migrasi skema setelah restore gagal; database dikembalikan ke kondisi sebelum restore."
+                    )
 
                 from app.services.cache import reset_all_cache
                 reset_all_cache()

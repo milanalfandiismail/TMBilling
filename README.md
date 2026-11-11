@@ -117,7 +117,7 @@ c:\Project GIT\TMBilling
 
 5. **Cara Pembaruan / Update Versi Server**:
    - **Update Otomatis 1-Klik (Mulai v1.6.5-rc2)**:
-     Buka Dashboard Kasir > menu **Pengaturan** > sub-tab **Migrasi & Update**, klik tombol **Cek Pembaruan GitHub**, lalu tekan **Mulai Update 1-Klik**. Sistem otomatis mencadangkan database, mengekstrak rilis baru, memasang dependensi, menjalankan migrasi skema, dan memulai ulang server tanpa mengunci file. Bila pemasangan dependensi atau migrasi gagal, updater berhenti dan **tidak** menyalakan server (detail rollback ada di `docs/DOCUMENTATION.md` §9.3).
+     Buka Dashboard Kasir > menu **Pengaturan** > sub-tab **Migrasi & Update**, klik tombol **Cek Pembaruan GitHub**, lalu tekan **Mulai Update 1-Klik**. Sistem otomatis mencadangkan database, mengekstrak rilis baru, memasang dependensi, menjalankan migrasi skema, dan memulai ulang server tanpa mengunci file. Hanya satu pembaruan dapat berjalan pada satu waktu (klaim `instance/update.lock`; permintaan kedua dibalas `409`), penukaran berkas dicatat di `instance/update_journal.json` sehingga pembaruan yang terputus di tengah jalan dipulihkan otomatis pada percobaan berikutnya, dan paket hanya dipublikasikan lewat `os.replace` setelah unduhan selesai. Bila pemasangan dependensi atau migrasi gagal, updater berhenti dan **tidak** menyalakan server (detail rollback ada di `docs/DOCUMENTATION.md` §9.3).
    - **Update Cepat via `update.bat`**:
      Unduh rilis `TMBilling_Server_v<versi>.zip`, lalu jalankan:
      ```cmd
@@ -147,7 +147,7 @@ c:\Project GIT\TMBilling
         *Data aman: `.env`, `instance/`, dan `backups/` tidak ada di dalam ZIP dan tidak akan tertimpa. Jangan hapus `plugins/` bila Anda memakai plugin kustom.*
      5. Pasang dependensi (wajib bila `requirements.txt` berubah):
         ```cmd
-        .venv\Scripts\pip.exe install -r requirements.txt
+        .venv\Scripts\python.exe -m pip install -r requirements.txt
         ```
      6. Jalankan migrasi skema (wajib bila rilis membawa perubahan skema; aman diulang):
         ```cmd

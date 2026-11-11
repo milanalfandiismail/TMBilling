@@ -365,6 +365,8 @@ c:\Project GIT\TMBilling
   - *SQLite VACUUM & Optimize*: Mengompresi dan merapikan indeks database langsung dari tombol di pengaturan.
   - *Arsip Pra-Purge Konsisten*: sebelum menghapus riwayat, `DBMaintenanceService` menyimpan snapshot Online Backup API + `PRAGMA integrity_check` ke `default_backup_dir()/archive` (bukan `copy2` berkas WAL yang bisa kehilangan isi `-wal`).
   - *Database Restore Modal*: Antarmuka pemulihan database dengan proteksi konfirmasi ganda.
+  - *Migrasi Setelah Restore*: DB dari arsip yang punya tabel `alembic_version` langsung dimigrasikan ke revisi `head` (`run_migration.run(app)`) selama maintenance mode masih aktif; bila migrasi gagal, DB dikembalikan otomatis dari backup pengaman yang dibuat sebelum restore dan request dibalas `400` dengan pesan yang jelas. Arsip tanpa `alembic_version` (mis. database hasil `db.create_all()` di test/sandbox) dilewati migrasinya.
+  - *Gerbang Maintenance Tahan Tumpang Tindih*: `services/maintenance_mode.py` memakai hitungan konteks aktif di bawah lock, sehingga dua restore yang berjalan bersamaan tidak membuka kembali API publik saat konteks pertama selesai.
 
 ### 4.15 Manajemen Member, Paket & Billing Rates
 - **Deskripsi**: Pengelolaan akun pelanggan member, saldo deposit, dan paket promosi warnet.
@@ -1123,7 +1125,9 @@ Semua jalur update server bermuara ke `install_scripts/updater.bat`, sehingga pe
 | `update.bat` | `update.bat TMBilling_Server_v<versi>.zip` atau drag-and-drop ZIP | `updater.bat`, semi-manual |
 | Manual total | Langkah 1–8 di bawah | Dikerjakan sendiri |
 
-`updater.bat` melakukan: preflight Python 3.11+, menghentikan proses server (background `pythonw`, proses `run.py`, dan pemilik port 7015), membatalkan tanpa mengubah berkas bila port masih hidup, backup database via SQLite Online Backup API, ekstraksi ZIP ke `instance/staging_update`, penukaran berkas per entri top-level dengan `os.replace` (cadangan `instance/rollback_<timestamp>`), `pip install` **sebelum** migrasi, migrasi, lalu start ulang. Bila backup/ekstraksi/penukaran gagal, server dinyalakan kembali, berkas live di-rollback, dan ZIP dipertahankan di `instance/temp_update.zip`. Bila `pip install` atau migrasi gagal, updater berhenti di label `:fail` dengan exit code `1` dan **tidak** menyalakan server; perbaiki penyebabnya lalu jalankan `start.bat`, atau rollback sesuai prosedur di bawah.
+`updater.bat` melakukan: preflight Python 3.11+, mengambil klaim pembaruan tunggal lintas-proses (`install_scripts/update_claim.py claim`, lock `instance/update.lock`; bila klaim dipegang proses lain — misalnya route dashboard yang baru memulai update — runner berhenti dengan pesan "Pembaruan lain sedang berjalan"), memulihkan penukaran berkas yang terputus sebelumnya (`recover_interrupted_swap()` pada `install_scripts/extract_update.py` membaca `instance/update_journal.json` dan mengembalikan tiap entri dari `instance/rollback_<timestamp>`), menghentikan proses server (background `pythonw`, proses `run.py`, dan pemilik port 7015), membatalkan tanpa mengubah berkas bila port masih hidup, backup database via SQLite Online Backup API, ekstraksi ZIP ke `instance/staging_update`, penukaran berkas per entri top-level dengan `os.replace` yang dicatat ke jurnal, `"%TM_PY%" -m pip install -r requirements.txt --quiet` **tanpa syarat** (wajib, tidak bergantung pada keberadaan `pip.exe` di `.venv`), migrasi, lalu start ulang. Klaim selalu dilepas di label `:done`. Bila backup/ekstraksi/penukaran gagal, server dinyalakan kembali, berkas live di-rollback, dan ZIP dipertahankan di `instance/temp_update.zip`. Bila `pip install` atau migrasi gagal, updater berhenti di label `:fail` dengan exit code `1` dan **tidak** menyalakan server; perbaiki penyebabnya lalu jalankan `start.bat`, atau rollback sesuai prosedur di bawah.
+
+Endpoint dashboard (GitHub 1-Klik maupun Upload ZIP) juga memakai klaim yang sama: unduhan ditulis ke `instance/temp_update.zip.pending` lalu dipublikasikan atomik dengan `os.replace` hanya setelah ZIP valid, dan permintaan update kedua saat klaim masih dipegang dibalas `409` tanpa menyentuh paket pertama.
 
 **Prosedur manual total (tanpa `update.bat`):**
 
@@ -1149,7 +1153,7 @@ Semua jalur update server bermuara ke `install_scripts/updater.bat`, sehingga pe
    Jangan menyentuh `.env`, `instance/`, dan `backups/` kustom.
 5. Pasang dependensi:
    ```cmd
-   .venv\Scripts\pip.exe install -r requirements.txt
+   .venv\Scripts\python.exe -m pip install -r requirements.txt
    ```
    Bila langkah ini gagal, jangan lanjut start; perbaiki atau balikkan kode ke versi lama.
 6. Jalankan migrasi:

@@ -9,9 +9,9 @@ if root_dir not in sys.path:
 
 from app import create_app, db
 
-def run() -> bool:
+def run(app=None) -> bool:
     print("[MIGRATION] Menjalankan migrasi skema database...")
-    app = create_app()
+    app = app or create_app()
     with app.app_context():
         migrations_dir = os.path.join(root_dir, "migrations")
         if not os.path.exists(migrations_dir):

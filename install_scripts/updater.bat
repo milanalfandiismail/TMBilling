@@ -6,6 +6,7 @@ cd /d "%~dp0.."
 set "TM_PORT=7015"
 set "TM_PY=.venv\Scripts\python.exe"
 if not exist "%TM_PY%" set "TM_PY=python"
+set "TM_EXIT=0"
 
 echo ==========================================================
 echo    TMBilling Server - Menjalankan Pembaruan Sistem...
@@ -26,6 +27,15 @@ if errorlevel 1 (
     echo         Server TIDAK diubah dan tetap berjalan seperti sebelumnya.
     echo         Langkah: instal Python 3.11+, hapus folder .venv, jalankan install.bat,
     echo         lalu ulangi pembaruan ini.
+    echo ==========================================================
+    exit /b 1
+)
+
+:: 1c. Klaim pembaruan tunggal: satu updater saja, termasuk yang dipicu dashboard
+"%TM_PY%" "install_scripts\update_claim.py" claim
+if errorlevel 1 (
+    echo [ERROR] Pembaruan lain sedang berjalan atau belum selesai.
+    echo         Tunggu hingga selesai lalu ulangi. Tidak ada berkas yang diubah.
     echo ==========================================================
     exit /b 1
 )
@@ -53,26 +63,25 @@ if not defined PORT_FREE (
     echo [ERROR] Server masih berjalan di port %TM_PORT% dan tidak bisa dihentikan.
     echo         Pembaruan dibatalkan. Tidak ada berkas yang diubah.
     echo ==========================================================
-    exit /b 1
+    set "TM_EXIT=1"
+    goto :done
 )
 
-:: 4. Backup database (SQLite Online Backup API) + ekstraksi berkas rilis
+:: 4. Backup database (SQLite Online Backup API) + pulihkan swap terputus + ekstraksi
 "%TM_PY%" "install_scripts\extract_update.py"
 if errorlevel 1 (
-    echo [ERROR] Backup database atau ekstraksi pembaruan gagal.
+    echo [ERROR] Backup database, pemulihan, atau ekstraksi pembaruan gagal.
     echo         Server akan dinyalakan kembali tanpa menjalankan migrasi.
     echo         Paket pembaruan dipertahankan di instance\temp_update.zip.
     goto :restart_server
 )
 
 :: 5. Pasang dependensi lebih dulu, agar migrasi berjalan dengan pustaka versi baru
-if exist ".venv\Scripts\pip.exe" (
-    ".venv\Scripts\pip.exe" install -r requirements.txt --quiet
-    if errorlevel 1 (
-        echo [ERROR] Pemasangan dependensi gagal.
-        echo         Server TIDAK dinyalakan dengan kode baru yang belum lengkap.
-        goto :fail
-    )
+"%TM_PY%" -m pip install -r requirements.txt --quiet
+if errorlevel 1 (
+    echo [ERROR] Pemasangan dependensi gagal.
+    echo         Server TIDAK dinyalakan dengan kode baru yang belum lengkap.
+    goto :fail
 )
 
 :: 6. Migrasi skema database setelah kode & dependensi baru terpasang
@@ -92,7 +101,7 @@ if exist ".venv\Scripts\pythonw.exe" (
 )
 
 echo [OK] Server TMBilling telah dinyalakan kembali.
-exit /b 0
+goto :done
 
 :fail
 echo ==========================================================
@@ -101,4 +110,8 @@ echo         Backup database: backups\warnet_backup_before_update_*.db
 echo         Rollback kode (bila perlu): instance\rollback_*
 echo         Setelah diperbaiki, jalankan start.bat secara manual.
 echo ==========================================================
-exit /b 1
+set "TM_EXIT=1"
+
+:done
+"%TM_PY%" "install_scripts\update_claim.py" release >nul 2>&1
+exit /b %TM_EXIT%
