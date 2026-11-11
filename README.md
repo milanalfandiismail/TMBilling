@@ -117,7 +117,7 @@ c:\Project GIT\TMBilling
 
 5. **Cara Pembaruan / Update Versi Server**:
    - **Update Otomatis 1-Klik (Mulai v1.6.5-rc2)**:
-     Buka Dashboard Kasir > menu **Pengaturan** > sub-tab **Migrasi & Update**, klik tombol **Cek Pembaruan GitHub**, lalu tekan **Mulai Update 1-Klik**. Sistem otomatis mencadangkan database, mengekstrak rilis baru, menjalankan migrasi skema, dan memulai ulang server tanpa mengunci file.
+     Buka Dashboard Kasir > menu **Pengaturan** > sub-tab **Migrasi & Update**, klik tombol **Cek Pembaruan GitHub**, lalu tekan **Mulai Update 1-Klik**. Sistem otomatis mencadangkan database, mengekstrak rilis baru, memasang dependensi, menjalankan migrasi skema, dan memulai ulang server tanpa mengunci file. Bila pemasangan dependensi atau migrasi gagal, updater berhenti dan **tidak** menyalakan server (detail rollback ada di `docs/DOCUMENTATION.md` §9.3).
    - **Update Cepat via `update.bat`**:
      Unduh rilis `TMBilling_Server_v<versi>.zip`, lalu jalankan:
      ```cmd

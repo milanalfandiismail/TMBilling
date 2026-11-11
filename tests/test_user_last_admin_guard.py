@@ -67,3 +67,23 @@ def test_admin_kedua_masih_boleh_diturunkan():
 
         db.session.expire_all()
         assert User.query.filter_by(username="admin_b").first().role == "kasir"
+
+
+def test_admin_nonaktif_tetap_boleh_dihapus_saat_tinggal_satu_admin_aktif():
+    app = _app()
+    with app.app_context():
+        db.create_all()
+        User.query.delete()
+        db.session.commit()
+        aktif = User(username="admin_aktif", nama_lengkap="Admin", role="admin", aktif=True)
+        aktif.set_password("pass123")
+        nonaktif = User(username="admin_nonaktif", nama_lengkap="Admin", role="admin", aktif=False)
+        nonaktif.set_password("pass123")
+        db.session.add_all([aktif, nonaktif])
+        db.session.commit()
+
+        UserService.delete_user(nonaktif.id, operator="admin_aktif")
+
+        db.session.expire_all()
+        assert db.session.get(User, nonaktif.id) is None
+        assert db.session.get(User, aktif.id) is not None

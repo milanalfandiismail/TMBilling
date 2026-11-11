@@ -34,6 +34,8 @@ def create_tutorial():
             "message": "Panduan berhasil ditambahkan",
             "tutorial": t.to_dict()
         }), 201
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -53,6 +55,8 @@ def update_tutorial(tutorial_id):
             "message": "Panduan berhasil diperbarui",
             "tutorial": t.to_dict()
         })
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -150,14 +154,21 @@ def upload_tutorial_image():
 @login_required
 @admin_required
 def cleanup_temp_images():
-    """POST — Hapus semua file sementara di folder temp tutorial (dipanggil saat Batal)."""
+    """POST — Hapus file temp milik editor ini saja (payload `files`)."""
     try:
-        import shutil
+        import re
+        data = request.get_json(silent=True) or {}
         temp_dir = os.path.join(current_app.root_path, 'static', 'assets', 'tutorials', 'temp')
-        if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
-            os.makedirs(temp_dir, exist_ok=True)
-        return jsonify({"success": True, "message": "Folder temp berhasil dibersihkan"})
+        removed = 0
+        for name in data.get("files") or []:
+            safe = os.path.basename(str(name or ""))
+            if not re.fullmatch(r"[0-9a-f]{32}\.(?:png|jpe?g|gif|webp)", safe):
+                continue
+            path = os.path.join(temp_dir, safe)
+            if os.path.isfile(path):
+                os.remove(path)
+                removed += 1
+        return jsonify({"success": True, "removed": removed})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

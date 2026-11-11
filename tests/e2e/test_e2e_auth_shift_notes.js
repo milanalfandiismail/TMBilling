@@ -7,8 +7,10 @@
  * rupiah yang eksak, atau hasil otorisasi. Keberadaan elemen saja bukan check.
  *
  * Perilaku produk yang SENGAJA berlaku dan tidak boleh "diperbaiki" di sini:
- * - `get_shift_summary()` read-only: total dihitung dari `transaksi` dalam
- *   jendela shift, tidak pernah menulis/meng-commit `shift_record`.
+ * - `get_shift_summary()` read-only dan HANYA untuk admin: total dihitung dari
+ *   `transaksi` dalam jendela shift, tidak pernah menulis/meng-commit
+ *   `shift_record`. Suite ini berjalan sebagai kasir, jadi ringkasan dibaca
+ *   lewat context admin terpisah.
  * - `force_close_shift()` menyimpan `uang_fisik = NULL` dan `selisih = NULL`
  *   (tidak memalsukan laci seimbang) dan struk mencetak BELUM DIHITUNG.
  * - Tutup shift biasa menyimpan selisih riil (blind cash reconciliation).
@@ -120,6 +122,18 @@ async function loginBersih(page, role) {
     // /kasir/login me-redirect balik ke dashboard. Bunuh halaman dulu.
     await page.goto('about:blank');
     return login(page, role);
+}
+
+/** Ringkasan shift hanya untuk admin; baca lewat context terpisah agar sesi kasir tetap jalan. */
+async function ringkasanAdmin(page) {
+    const ctx = await page.context().browser().newContext();
+    try {
+        const adminPage = await ctx.newPage();
+        await login(adminPage, 'admin');
+        return await adminPage.evaluate(() => API.shift.summary());
+    } finally {
+        await ctx.close();
+    }
 }
 
 async function runAuthShiftNotesE2ETest(page) {
@@ -268,7 +282,7 @@ async function runAuthShiftNotesE2ETest(page) {
             [shift.waktu_mulai, akhir]
         );
 
-        const summary = await page.evaluate(() => API.shift.summary());
+        const summary = await ringkasanAdmin(page);
         assert.strictEqual(summary.success, true, JSON.stringify(summary));
         const s = summary.summary;
         state.totalSeharusnya = Number(s.total_seharusnya);
@@ -306,15 +320,22 @@ async function runAuthShiftNotesE2ETest(page) {
         state.crossCashierTrxId = inserted.lastInsertRowid;
 
         const totalSampai = async (harapan) => {
+            const ctx = await page.context().browser().newContext();
+            const adminPage = await ctx.newPage();
+            await login(adminPage, 'admin');
             const deadline = Date.now() + 5000;
             let nilai = null;
-            do {
-                const summary = await page.evaluate(() => API.shift.summary());
-                assert.strictEqual(summary.success, true, JSON.stringify(summary));
-                nilai = Number(summary.summary.total_billing);
-                if (nilai === harapan) break;
-                await sleep(100);
-            } while (Date.now() < deadline);
+            try {
+                do {
+                    const summary = await adminPage.evaluate(() => API.shift.summary());
+                    assert.strictEqual(summary.success, true, JSON.stringify(summary));
+                    nilai = Number(summary.summary.total_billing);
+                    if (nilai === harapan) break;
+                    await sleep(100);
+                } while (Date.now() < deadline);
+            } finally {
+                await ctx.close();
+            }
             return nilai;
         };
 
@@ -334,7 +355,7 @@ async function runAuthShiftNotesE2ETest(page) {
 
     await check(report, CHECK_NAMES[6], async () => {
         const sebelum = await dbOne('SELECT * FROM shift_record WHERE id = ?', [state.shift1Id]);
-        const summary = await page.evaluate(() => API.shift.summary());
+        const summary = await ringkasanAdmin(page);
         assert.strictEqual(summary.success, true);
         assert.strictEqual(Number(summary.summary.total_billing), state.totalBilling);
         const sesudah = await dbOne('SELECT * FROM shift_record WHERE id = ?', [state.shift1Id]);
@@ -380,7 +401,7 @@ async function runAuthShiftNotesE2ETest(page) {
         const sesi = await api(page, `API.sesi.bukaGuest('PC-02', ${paket.id}, 'Guest Shift Dua', 'Tunai')`);
         assert.strictEqual(sesi.success, true, JSON.stringify(sesi));
 
-        const summary = await page.evaluate(() => API.shift.summary());
+        const summary = await ringkasanAdmin(page);
         assert.strictEqual(summary.success, true);
         const seharusnya = Number(summary.summary.total_seharusnya);
         assert.strictEqual(seharusnya, 25000, 'modal 20.000 + billing tunai 5.000');

@@ -388,8 +388,16 @@ const Tutorials = {
     closeTutorialModal() {
         const modal = document.getElementById('modal-tutorial-editor');
         if (modal) modal.classList.add('hidden');
-        // Bersihkan gambar sementara di folder temp
-        API.request('/api/v1/kasir/tutorials/cleanup-temp', { method: 'POST' }).catch(() => {});
+        // Hapus hanya gambar temp milik editor ini (jangan folder temp global)
+        const html = this.ckeditorInstance ? this.ckeditorInstance.getData() : '';
+        const files = [...String(html).matchAll(/\/static\/assets\/tutorials\/temp\/([^"'\s>)]+)/g)]
+            .map(m => m[1]);
+        if (files.length) {
+            API.request('/api/v1/kasir/tutorials/cleanup-temp', {
+                method: 'POST',
+                body: JSON.stringify({ files })
+            }).catch(() => {});
+        }
     },
 
     async saveTutorial() {

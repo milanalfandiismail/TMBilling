@@ -36,3 +36,25 @@ def test_match_selesai_tidak_bisa_ditimpa(app_ctx):
     TournamentService.update_match_skor(match.id, {"skor1": 1, "skor2": 0})
     with pytest.raises(ValueError, match="selesai"):
         TournamentService.update_match_skor(match.id, {"skor1": 0, "skor2": 1})
+
+
+def test_match_tanpa_lawan_tidak_bisa_diskor(tmp_path):
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": f"sqlite:///{tmp_path/'bracket.db'}",
+    })
+    with app.app_context():
+        db.create_all()
+        TournamentService.create_tournament({"nama": "Cup Bye", "teams": ["A", "B", "C"]})
+        match = TurnamenMatch.query.filter(
+            (TurnamenMatch.tim1_id.is_(None)) | (TurnamenMatch.tim2_id.is_(None))
+        ).first()
+        assert match is not None
+
+        with pytest.raises(ValueError, match="kedua tim"):
+            TournamentService.update_match_skor(match.id, {"skor1": 1, "skor2": 0})
+
+        db.session.refresh(match)
+        assert match.pemenang_id is None
+        db.session.remove()
+        db.drop_all()

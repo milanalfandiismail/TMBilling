@@ -1,0 +1,33 @@
+import os
+import re
+
+UPDATER = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "install_scripts", "updater.bat")
+)
+
+
+def _read():
+    with open(UPDATER, encoding="utf-8", errors="replace") as f:
+        return f.read()
+
+
+def test_updater_aborts_on_pip_or_migration_failure():
+    text = _read()
+
+    pip_start = text.index('pip.exe" install -r requirements.txt')
+    pip_block = text[pip_start:text.index(":: 6.", pip_start)]
+    assert "goto :fail" in pip_block
+    assert "[WARN]" not in pip_block
+
+    mig_start = text.index("install_scripts\\run_migration.py")
+    mig_block = text[mig_start:text.index(":restart_server", mig_start)]
+    assert "goto :fail" in mig_block
+    assert "[WARN]" not in mig_block
+
+
+def test_fail_path_does_not_start_server():
+    text = _read()
+    fail_section = text[re.search(r"^:fail\s*$", text, re.M).start():]
+
+    assert 'start ""' not in fail_section
+    assert "exit /b 1" in fail_section

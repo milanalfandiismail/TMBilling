@@ -1,6 +1,6 @@
 import os
 import pytest
-from app import create_app, db
+from app import create_app, db, bootstrap_app_data
 from app.models import User
 
 def test_bootstrap_admin_never_uses_hardcoded_admin123(tmp_path):
@@ -16,8 +16,12 @@ def test_bootstrap_admin_never_uses_hardcoded_admin123(tmp_path):
         "PROJECT_ROOT": str(tmp_path),
     })
 
+    # create_app() tidak lagi membuat tabel; init_db.py melakukannya lalu bootstrap.
     with app.app_context():
-        # Karena create_app() sudah menjalankan bootstrap di DB kosong clean_warnet.db:
+        db.create_all()
+    bootstrap_app_data(app)
+
+    with app.app_context():
         admin = User.query.filter_by(username="admin").first()
         assert admin is not None
         assert not admin.check_password("admin123")

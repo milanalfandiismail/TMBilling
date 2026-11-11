@@ -230,10 +230,18 @@ def _register_context_processors(app):
             format_display=format_display
         )
 
-def _init_app_context(app):
-    """Inisialisasi yang membutuhkan app context (database dan admin)."""
+def bootstrap_app_data(app):
+    """Seed data awal & admin. True bila skema sudah ada dan seed dijalankan."""
     with app.app_context():
-        db.create_all()
+        from sqlalchemy import inspect
+        # DB baru boleh dibuatkan skema; DB ber-Alembic hanya diubah lewat migrasi.
+        inspector = inspect(db.engine)
+        if not inspector.has_table("user") and not inspector.has_table("alembic_version"):
+            db.create_all()
+            inspector = inspect(db.engine)
+        if not inspector.has_table("user"):
+            # Skema belum ada: biarkan init_db.py / run_migration.py yang menyiapkannya.
+            return False
 
         # Seed IP whitelist defaults (idempotent)
         try:
@@ -291,6 +299,20 @@ def _init_app_context(app):
                         app.logger.warning(f"Gagal mencatat initial_admin.txt: {io_err}")
         except Exception as e:
             app.logger.error(f"Gagal membuat admin default saat bootstrap: {e}")
+
+        return True
+
+
+def _install_bootstrap_guard(app):
+    """Bootstrap data saat skema pertama kali tersedia (mis. test membuat tabel setelah factory)."""
+
+    @app.before_request
+    def _ensure_app_bootstrapped():
+        if app.config.get("_BOOTSTRAP_DONE"):
+            return None
+        if bootstrap_app_data(app):
+            app.config["_BOOTSTRAP_DONE"] = True
+        return None
 
 def _render_public_specs_page():
     """Render halaman /spesifikasi dengan cache 5 detik."""
@@ -411,6 +433,9 @@ def create_app(config_override=None):
 
     db.init_app(app)
 
+    # Bootstrap data harus jalan sebelum middleware IP whitelist (urutan before_request).
+    _install_bootstrap_guard(app)
+
     # IP Whitelist middleware
     from app.middleware import check_ip_whitelist
     app.before_request(check_ip_whitelist)
@@ -451,6 +476,7 @@ def create_app(config_override=None):
     _register_blueprints(app)
     _register_public_routes(app)
     _register_context_processors(app)
-    _init_app_context(app)
+    if bootstrap_app_data(app):
+        app.config["_BOOTSTRAP_DONE"] = True
 
     return app

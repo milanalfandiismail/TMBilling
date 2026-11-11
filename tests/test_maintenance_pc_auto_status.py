@@ -31,3 +31,26 @@ def test_tiket_kritis_dan_selesai_mengubah_status_pc(ctx):
     MaintenanceService.update_status(ticket.id, "SELESAI", resolved_by="teknisi", biaya=50000)
     db.session.refresh(pc)
     assert pc.aktif is True
+
+
+def test_selesaikan_tiket_ringan_tidak_menghidupkan_pc_bila_masih_ada_kritis_terbuka(ctx):
+    pc = ctx
+
+    kritis = MaintenanceService.create_ticket(
+        pc_id=pc.id, reporter="kasir", kategori="HARDWARE",
+        prioritas="KRITIS", judul="Motherboard mati", deskripsi="Tidak menyala"
+    )
+    ringan = MaintenanceService.create_ticket(
+        pc_id=pc.id, reporter="kasir", kategori="LAINNYA",
+        prioritas="RENDAH", judul="Mouse macet", deskripsi="Klik kiri keras"
+    )
+    db.session.refresh(pc)
+    assert pc.aktif is False
+
+    MaintenanceService.update_status(ringan.id, "SELESAI", resolved_by="teknisi")
+    db.session.refresh(pc)
+    assert pc.aktif is False
+
+    MaintenanceService.update_status(kritis.id, "SELESAI", resolved_by="teknisi")
+    db.session.refresh(pc)
+    assert pc.aktif is True

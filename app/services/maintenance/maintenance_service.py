@@ -92,8 +92,16 @@ class MaintenanceService:
             ticket.resolved_by = resolved_by
             ticket.resolusi = resolusi_valid
             ticket.biaya = biaya_valid
+            # PC hanya dihidupkan bila tidak ada tiket KRITIS lain yang masih terbuka.
             if ticket.pc:
-                ticket.pc.aktif = True
+                kritis_terbuka = MaintenanceTicket.query.filter(
+                    MaintenanceTicket.pc_id == ticket.pc_id,
+                    MaintenanceTicket.id != ticket.id,
+                    MaintenanceTicket.prioritas == "KRITIS",
+                    MaintenanceTicket.status.in_(["BARU", "DIPROSES"]),
+                ).first()
+                if not kritis_terbuka:
+                    ticket.pc.aktif = True
         elif status_valid == "DITOLAK":
             ticket.resolusi = resolusi_valid
 

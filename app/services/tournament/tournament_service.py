@@ -454,6 +454,8 @@ class TournamentService:
             raise ValueError("Match tidak ditemukan")
         if m.pemenang_id is not None:
             raise ValueError("Match sudah selesai")
+        if m.tim1_id is None or m.tim2_id is None:
+            raise ValueError("Match belum memiliki kedua tim")
 
         skor1 = validate_integer_range(data.get("skor1", 0), 0, 999, "Skor tim 1")
         skor2 = validate_integer_range(data.get("skor2", 0), 0, 999, "Skor tim 2")

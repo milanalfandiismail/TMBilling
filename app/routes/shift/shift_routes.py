@@ -71,24 +71,15 @@ def get_active_shift():
 @shift_api_bp.route("/<int:shift_id>/summary", methods=["GET"])
 @login_required
 def get_shift_summary(shift_id=None):
-    """Ringkasan pendapatan shift aktif (HANYA untuk admin preview, bukan blind count)."""
+    """Ringkasan pendapatan shift (HANYA admin; kasir wajib hitung buta)."""
     try:
-        if shift_id and session.get("kasir_role", "kasir") != "admin":
+        if session.get("kasir_role", "kasir") != "admin":
             return jsonify({"error": "Akses ditolak"}), 403
 
         if not shift_id:
-            role = session.get("kasir_role", "kasir")
-            if role == "admin":
-                from app.models.shift.shift_record import ShiftRecord
-                active_s = ShiftRecord.query.filter_by(status="AKTIF").first()
-                shift_id = active_s.id if active_s else None
-            else:
-                kasir_id = session.get("kasir_id")
-                from app.repositories import UserRepository
-                user = UserRepository.get_by_id(kasir_id) if kasir_id else None
-                kasir_username = user.username if user else session.get("kasir_username", "kasir")
-                shift = ShiftService.get_active_shift(kasir_username)
-                shift_id = shift.id if shift else None
+            from app.models.shift.shift_record import ShiftRecord
+            active_s = ShiftRecord.query.filter_by(status="AKTIF").first()
+            shift_id = active_s.id if active_s else None
 
         if not shift_id:
             return jsonify({"error": "Tidak ada shift aktif"}), 400

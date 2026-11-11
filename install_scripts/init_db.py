@@ -6,11 +6,13 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import create_app
+from app import bootstrap_app_data
 from app.models.base.base import db
 
 app = create_app()
 with app.app_context():
     db.create_all()
+    bootstrap_app_data(app)
     print('[OK] Tabel database berhasil diinisialisasi.')
 
     project_root = app.config.get("PROJECT_ROOT") or os.path.abspath(os.path.join(app.root_path, ".."))

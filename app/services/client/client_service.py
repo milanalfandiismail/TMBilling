@@ -119,14 +119,12 @@ class ClientService:
             # ❌ IP tidak ditemukan → coba fallback ke MAC (lebih stabil, tidak berubah)
             if not pc:
                 pc = PCRepository.find_by_mac(mac_address)
-
-                if pc:
-                    # ✅ Ketemu via MAC! IP client berubah (DHCP renew).
-                    # ⚠️ IP di DB TETAP — jangan diupdate otomatis. Security dulu.
-                    write_log("CLIENT_STATUS_MAC_FALLBACK",
-                              f"PC {pc.kode} IP={ip_address} via MAC fallback (DB IP={pc.ip_address})")
-                else:
-                    # ❌ MAC juga ga ketemu → PC beneran ga terdaftar
+                if pc and not pc.aktif:
+                    write_log("CLIENT_STATUS_INACTIVE",
+                              f"PC {pc.kode} nonaktif/arsip ditolak: IP={ip_address} MAC={mac_address}")
+                    pc = None
+                if not pc:
+                    # ❌ MAC ga ketemu / PC arsip → PC beneran ga terdaftar
                     write_log("CLIENT_STATUS_UNKNOWN",
                               f"PC tidak dikenal: IP={ip_address} MAC={mac_address}")
                     return {
@@ -134,6 +132,10 @@ class ClientService:
                         "message": "PC tidak dikenal",
                         "shutdown_timer": 180
                     }
+                # ✅ Ketemu via MAC! IP client berubah (DHCP renew).
+                # ⚠️ IP di DB TETAP — jangan diupdate otomatis. Security dulu.
+                write_log("CLIENT_STATUS_MAC_FALLBACK",
+                          f"PC {pc.kode} IP={ip_address} via MAC fallback (DB IP={pc.ip_address})")
 
             # Kondisi A: MAC di DB masih kosong -> Langsung isi otomatis (Auto-register pasif)
             if not pc.mac_address:

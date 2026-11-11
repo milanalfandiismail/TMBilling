@@ -319,6 +319,7 @@ c:\Project GIT\TMBilling
 - **Fitur**:
   - Custom CKEditor 5 Build (berada di `tools/ckeditor-builder`) yang mendukung format teks kaya, tabel, highlight, dan upload gambar lokal otomatis saat artikel disimpan.
   - **Validasi Gambar Tutorial**: Endpoint `/api/v1/kasir/tutorials/upload-image` memvalidasi byte dengan Pillow setelah cek ekstensi; file non-gambar ditolak `400` dan tidak disimpan ke folder temp.
+  - **Validasi Input & Cleanup Per-Editor**: Judul/isi yang tidak memenuhi aturan service dibalas `400` (bukan `500`). Saat editor ditutup, `POST /api/v1/kasir/tutorials/cleanup-temp` hanya menghapus berkas di `static/assets/tutorials/temp/` yang dirujuk payload editor tersebut, sehingga draft admin lain tidak ikut terhapus.
   - *Smart Tutorial Seeding*: Server otomatis menginisialisasi panduan standar saat database baru dibuat.
   - *Export / Import Tutorial*: Kemampuan backup dan restore artikel panduan.
 
@@ -340,7 +341,7 @@ c:\Project GIT\TMBilling
 - **Anti Brute-Force Login**: `services/auth/login_throttle.py` membatasi 5 kegagalan per kombinasi (IP, username) dalam 5 menit dan membalas HTTP 429; berlaku pada login kasir, `admin-check`, `client/admin-login`, dan portal member. Logout wajib menyertakan token sesi yang cocok, dan setiap login sukses memanggil `session.clear()` agar sesi lama tidak menempel.
 - **Batas Unggah & Nama Berkas**: `MAX_CONTENT_LENGTH = 64 MB` mencegah unggahan raksasa; nama file screenshot dibersihkan dengan `secure_filename` setelah membuang pemisah path sehingga kode PC tidak bisa keluar dari folder upload.
 - **Toggle Whitelist**: `POST /api/v1/kasir/settings/ip-whitelist/toggle` menormalkan string boolean; `"false"` benar-benar menonaktifkan whitelist, bukan dianggap truthy.
-- **Hapus User Beriwayat**: user yang masih punya `ShiftRecord` atau `Transaksi` tidak dapat dihapus (`400`); nonaktifkan akun agar histori tetap utuh. Race username saat pembuatan user di-rollback menjadi `ValueError("Username sudah terdaftar")`.
+- **Hapus User Beriwayat**: user yang masih punya `ShiftRecord` atau `Transaksi` tidak dapat dihapus (`400`); nonaktifkan akun agar histori tetap utuh. Guard "admin terakhir" hanya berlaku untuk admin yang masih aktif, sehingga admin nonaktif tetap bisa dihapus saat tersisa satu admin aktif. Race username saat pembuatan user di-rollback menjadi `ValueError("Username sudah terdaftar")`.
 - **Hapus Audit Blackout & Kontrol LHM Khusus Admin**: `/api/v1/kasir/blackout/clear` dan start/stop TMLHMService memakai `@admin_required`.
 - **Sanitasi HTML Pengumuman**: Teks pengumuman kiosk (hasil CKEditor) disanitasi `SafeHTMLParser` saat ditulis maupun dibaca, memakai allowlist protokol (`http://`, `https://`, `mailto:`, `/`, `#`, `data:image/`).
 
@@ -391,8 +392,8 @@ c:\Project GIT\TMBilling
   - **Kalkulasi Selisih Otomatis**: Sistem membandingkan `Uang Fisik Aktual` vs `Modal Awal + Transaksi Tunai Bersih`. Status selisih (`PAS / Rp 0`, `SURPLUS (+)`, atau `DEFISIT (-)`) langsung terkunci permanen di database.
   - **Pemisahan Tunai vs Non-Tunai**: Transaksi QRIS dan transfer otomatis dipisahkan dari perhitungan kas fisik laci kasir.
   - **Ringkasan Lintas Kasir**: Rekap shift menghitung seluruh transaksi pada rentang waktu shift (bukan hanya `user_id` kasir pemilik shift) dan tidak meng-clamp nilai negatif, sehingga selisih refund berlebih tetap terlihat.
-  - **Akses Ringkasan & Struk**: `GET /api/v1/kasir/shift/<id>/summary` dan struk shift hanya boleh dibaca pemilik shift atau admin; kasir lain mendapat `403` sehingga hitung buta tidak bisa diintip.
-  - **Satu Shift Aktif**: Unique index parsial `uq_aktif_shift` (`status='AKTIF'`) plus `WRITE_LOCK` mencegah dua kasir membuka shift aktif bersamaan; `start_shift` menolak akun kasir nonaktif dan `force_close_shift` menghitung ringkasan sebelum satu commit.
+  - **Akses Ringkasan & Struk**: `GET /api/v1/kasir/shift/summary` khusus admin (kasir selalu `403`, termasuk tanpa `shift_id`), sedangkan `GET /api/v1/kasir/shift/<id>/summary` dan struk shift hanya boleh dibaca pemilik shift atau admin; kasir lain mendapat `403` sehingga hitung buta tidak bisa diintip.
+  - **Satu Shift Aktif**: Unique index parsial `uq_aktif_shift` (`status='AKTIF'`) plus `WRITE_LOCK` mencegah dua kasir membuka shift aktif bersamaan; `start_shift` menolak akun kasir nonaktif, dan `end_shift`/`force_close_shift` diserialisasi `WRITE_LOCK` sehingga dua request tutup tidak sama-sama menang (yang kalah mendapat `400 "Shift sudah ditutup sebelumnya"`).
   - **Riwayat Shift**: Non-admin hanya dapat membaca riwayat shift miliknya sendiri (`kasir_id` dipaksa dari sesi), `limit` dibatasi `1..100`, `offset >= 0`, dan tanggal tidak valid dibalas `400`; rentang tanggal memakai zona waktu lokal setting.
   - **Admin Force Close Shift**: Administrator dapat menutup paksa shift kasir aktif dalam situasi darurat dengan pencatatan audit log.
   - **Struk Thermal Handover 58mm / 80mm**: Pencetakan bukti serah terima shift fisik lengkap dengan rincian penerimaan tunai, non-tunai, modal awal, rekonsiliasi laci, dan selisih keuangan untuk ditandatangani kedua kasir.
@@ -403,6 +404,7 @@ c:\Project GIT\TMBilling
 - **Fitur**:
   - Tempat operator meninggalkan pesan operasional untuk shift berikutnya.
   - Catatan disimpan persisten di database dan dapat dibaca oleh seluruh kasir dan admin.
+  - Seluruh endpoint catatan memakai `@login_required`, sehingga sesi kasir yang sudah dihapus atau dinonaktifkan langsung ditolak `401` (tidak bisa lanjut dari cookie lama).
   - Nama berkas baru dipesan atomik (`O_CREAT|O_EXCL`); rename ke judul yang sudah dipakai menghasilkan nama unik (`judul_1.txt`) sehingga catatan lain tidak tertimpa.
 
 ### 4.18 Turnamen & Bracket eSports Engine
@@ -410,7 +412,7 @@ c:\Project GIT\TMBilling
 - **Fitur**:
   - Pembuatan bagan turnamen (*Single Elimination*, *Double Elimination*, *Swiss Round*) dengan format `playoff`/`swiss`/`multi`.
   - Pendaftaran nama tim dan daftar susunan pemain (*roster*); nama tim kosong diabaikan sebelum validasi minimal 2 tim.
-  - Update skor pertandingan secara *live* yang terhubung ke layar TV Public; skor hanya diterima untuk tim yang benar-benar bertanding di match tersebut dan match yang sudah selesai tidak bisa diubah.
+  - Update skor pertandingan secara *live* yang terhubung ke layar TV Public; skor hanya diterima untuk tim yang benar-benar bertanding di match tersebut, match yang belum punya kedua tim ditolak, dan match yang sudah selesai tidak bisa diubah.
   - `finish_stage` menolak babak yang sudah selesai, tim milik turnamen lain, dan pembuatan bracket babak berikutnya yang sudah ada.
 
 ### 4.19 Public TV Billboard & Scoreboard Display
@@ -470,7 +472,7 @@ c:\Project GIT\TMBilling
 - **Fitur**:
   - Pelanggan dapat melaporkan kendala langsung dari widget overlay PC klien (misal mouse macet atau headset mati sebelah).
   - Kasir menerima notifikasi tiket, mengubah status menjadi `In-Progress` atau `Resolved`, dan merekam riwayat perbaikan oleh teknisi.
-  - **Sinkronisasi Status PC**: tiket prioritas `KRITIS` menonaktifkan PC (`aktif=False`) saat dibuat, dan status `SELESAI` mengaktifkannya kembali dalam commit yang sama.
+  - **Sinkronisasi Status PC**: tiket prioritas `KRITIS` menonaktifkan PC (`aktif=False`) saat dibuat; status `SELESAI` hanya mengaktifkan kembali PC bila tidak ada tiket `KRITIS` lain yang masih `BARU`/`DIPROSES`, sehingga menyelesaikan tiket ringan (atau tiket pada PC arsip) tidak menghidupkan PC yang seharusnya nonaktif.
   - **Validasi Laporan**: tanggal laporan yang tidak valid dibalas `400` (tidak lagi diam-diam mengabaikan filter) dan `limit` daftar tiket dibatasi `1..500`.
 
 ### 4.27 Fitur Kunci Meja AFK / Istirahat Sementara (Temporary AFK Screen Lock)
@@ -494,6 +496,7 @@ c:\Project GIT\TMBilling
      - Klien PC warnet (Tauri) mengirimkan request heartbeat/status setiap **1 s/d 3 detik** ke `/api/v1/public/client/status`.
      - Handler `ClientService.get_status()` memanggil `SesiService.hitung_sisa_menit()` dan menutup sesi lewat `SesiService.tutup_sesi(id, operator="system")` saat sisa waktu `<= 0`, sehingga tercatat satu transaksi `tutup_sesi` Rp0 sebelum payload lockscreen dikembalikan ke klien.
      - Heartbeat `sesi.last_sync` diperbarui maksimal tiap 30 detik lewat UPDATE bersyarat tanpa SELECT tambahan; kegagalan sinkronisasi waktu member hanya dicatat dan tidak menutup sesi berbayar. Takeover `emergency_login`/`admin_login` menutup sesi lama lewat `SesiService.tutup_sesi` sehingga sisa waktu tercatat sebagai transaksi penutupan.
+     - Identitas PC diambil dari IP koneksi; bila IP berubah, fallback MAC hanya dipakai untuk PC yang masih `aktif=True`. PC yang dinonaktifkan/diarsipkan dibalas `{"status": "kosong", "message": "PC tidak dikenal"}` sehingga sesi lama tidak lanjut di meja yang sedang maintenance.
   3. **Layer 3 - Frontend Dashboard Polling (Web Kasir)**:
      - Dashboard kasir melakukan polling status berkala (dapat diatur: 1, 2, 3, atau 5 detik) ke `/api/v1/kasir/dashboard/pc`.
      - Backend di `DashboardService.get_pc_list()` secara proaktif memanggil `cleanup_expired_sessions()`, memastikan tampilan kasir selalu sinkron secara instan.
@@ -525,6 +528,10 @@ c:\Project GIT\TMBilling
   - Kredensial dicetak ke terminal dan disimpan ke berkas satu-kali-pakai `initial_admin.txt` di root direktori.
   - Berkas `initial_admin.txt` otomatis dilindungi oleh `.gitignore` agar tidak sengaja ter-commit ke repositori publik.
   - Operator diarahkan untuk mengganti password di menu **Manajemen Staff > Akun Kasir & Admin**.
+- **Bootstrap Skema & Seed Terkontrol**:
+  - `bootstrap_app_data(app)` menjalankan seed pengaturan/whitelist/tutorial dan bootstrap superadmin hanya setelah tabel `user` tersedia.
+  - Factory hanya memanggil `db.create_all()` bila database benar-benar baru (belum ada tabel `user` maupun `alembic_version`); database yang sudah ber-`alembic_version` tidak disentuh factory dan wajib melalui `run_migration.py`, sehingga upgrade legacy tidak bentrok dengan tabel yang sudah ada.
+  - `install_scripts/init_db.py` memanggil `db.create_all()` + `bootstrap_app_data()` untuk instalasi awal.
 - **Dynamic Random VNC Password**:
   - Pengaturan password VNC otomatis di-generate acak 8 karakter (`secrets.token_urlsafe(8)`) saat pertama kali diakses jika belum disetel di tabel database settings.
 - **Anti-SSRF Protection & Active Session Guard**:
@@ -1114,7 +1121,7 @@ Semua jalur update server bermuara ke `install_scripts/updater.bat`, sehingga pe
 | `update.bat` | `update.bat TMBilling_Server_v<versi>.zip` atau drag-and-drop ZIP | `updater.bat`, semi-manual |
 | Manual total | Langkah 1–8 di bawah | Dikerjakan sendiri |
 
-`updater.bat` melakukan: preflight Python 3.11+, menghentikan proses server (background `pythonw`, proses `run.py`, dan pemilik port 7015), membatalkan tanpa mengubah berkas bila port masih hidup, backup database via SQLite Online Backup API, ekstraksi ZIP ke `instance/staging_update`, penukaran berkas per entri top-level dengan `os.replace` (cadangan `instance/rollback_<timestamp>`), `pip install` **sebelum** migrasi, migrasi, lalu start ulang. Bila backup/ekstraksi/penukaran gagal, server dinyalakan kembali, berkas live di-rollback, dan ZIP dipertahankan di `instance/temp_update.zip`.
+`updater.bat` melakukan: preflight Python 3.11+, menghentikan proses server (background `pythonw`, proses `run.py`, dan pemilik port 7015), membatalkan tanpa mengubah berkas bila port masih hidup, backup database via SQLite Online Backup API, ekstraksi ZIP ke `instance/staging_update`, penukaran berkas per entri top-level dengan `os.replace` (cadangan `instance/rollback_<timestamp>`), `pip install` **sebelum** migrasi, migrasi, lalu start ulang. Bila backup/ekstraksi/penukaran gagal, server dinyalakan kembali, berkas live di-rollback, dan ZIP dipertahankan di `instance/temp_update.zip`. Bila `pip install` atau migrasi gagal, updater berhenti di label `:fail` dengan exit code `1` dan **tidak** menyalakan server; perbaiki penyebabnya lalu jalankan `start.bat`, atau rollback sesuai prosedur di bawah.
 
 **Prosedur manual total (tanpa `update.bat`):**
 
@@ -1147,7 +1154,7 @@ Semua jalur update server bermuara ke `install_scripts/updater.bat`, sehingga pe
    ```cmd
    .venv\Scripts\python.exe install_scripts\run_migration.py
    ```
-   Output normal berakhir dengan `[MIGRATION] Safety sync skema berhasil.`
+   Output normal berakhir dengan `[MIGRATION] Safety sync skema berhasil.` Bila upgrade atau safety sync gagal, skrip mencetak `[MIGRATION ERROR] ...`, keluar dengan kode bukan nol, dan **tidak** men-stamp revisi ke `head` sehingga upaya berikutnya tetap menjalankan migrasi yang belum selesai.
 7. Nyalakan server:
    ```cmd
    start.bat

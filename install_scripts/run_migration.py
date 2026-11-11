@@ -18,7 +18,6 @@ def run() -> bool:
             print("[MIGRATION] Folder migrations tidak ditemukan.")
             return False
 
-        ok = True
         try:
             from flask_migrate import upgrade, stamp
             from sqlalchemy import inspect, text
@@ -39,7 +38,8 @@ def run() -> bool:
             print("[MIGRATION] Alembic upgrade berhasil.")
         except (Exception, SystemExit) as e:
             print(f"[MIGRATION ERROR] Alembic upgrade gagal: {e}")
-            ok = False
+            # Jangan lanjut ke safety sync/stamp head: DB tidak boleh diklaim sudah di head.
+            return False
 
         # Safety Net: sinkronisasi tabel & kolom baru
         try:
@@ -126,10 +126,10 @@ def run() -> bool:
             stamp(directory=migrations_dir, revision="head")
             print("[MIGRATION] Safety sync skema berhasil.")
         except (Exception, SystemExit) as sync_err:
-            print(f"[MIGRATION WARNING] Safety sync skema: {sync_err}")
-            ok = False
+            print(f"[MIGRATION ERROR] Safety sync skema: {sync_err}")
+            return False
 
-        return ok
+        return True
 
 if __name__ == "__main__":
     sys.exit(0 if run() else 1)

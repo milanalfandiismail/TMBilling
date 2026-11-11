@@ -158,8 +158,8 @@ class UserService:
         if not user:
             raise ValueError("User tidak ditemukan")
             
-        if user.role == 'admin':
-            # Pastikan minimal ada 1 admin yang tersisa
+        if user.role == 'admin' and user.aktif:
+            # Pastikan minimal ada 1 admin aktif yang tersisa
             admin_count = UserRepository.count_active_admins()
             if admin_count <= 1:
                 raise ValueError("Tidak dapat menghapus satu-satunya Admin tersisa!")

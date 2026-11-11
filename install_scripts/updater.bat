@@ -68,15 +68,23 @@ if errorlevel 1 (
 :: 5. Pasang dependensi lebih dulu, agar migrasi berjalan dengan pustaka versi baru
 if exist ".venv\Scripts\pip.exe" (
     ".venv\Scripts\pip.exe" install -r requirements.txt --quiet
-    if errorlevel 1 echo [WARN] Pemasangan dependensi gagal. Jalankan manual: .venv\Scripts\pip install -r requirements.txt
+    if errorlevel 1 (
+        echo [ERROR] Pemasangan dependensi gagal.
+        echo         Server TIDAK dinyalakan dengan kode baru yang belum lengkap.
+        goto :fail
+    )
 )
 
 :: 6. Migrasi skema database setelah kode & dependensi baru terpasang
 "%TM_PY%" "install_scripts\run_migration.py"
-if errorlevel 1 echo [WARN] Migrasi skema gagal. Periksa log di atas sebelum menggunakan aplikasi.
+if errorlevel 1 (
+    echo [ERROR] Migrasi skema gagal.
+    echo         Server TIDAK dinyalakan otomatis; periksa log di atas dan pulihkan dari backup bila perlu.
+    goto :fail
+)
 
 :restart_server
-:: 7. Nyalakan kembali server seperti start.bat (juga dipakai saat pembaruan gagal)
+:: 7. Nyalakan kembali server seperti start.bat (juga dipakai saat ekstraksi gagal)
 if exist ".venv\Scripts\pythonw.exe" (
     start "" ".venv\Scripts\pythonw.exe" run.py
 ) else (
@@ -85,3 +93,12 @@ if exist ".venv\Scripts\pythonw.exe" (
 
 echo [OK] Server TMBilling telah dinyalakan kembali.
 exit /b 0
+
+:fail
+echo ==========================================================
+echo [GAGAL] Pembaruan tidak selesai. Server dibiarkan mati.
+echo         Backup database: backups\warnet_backup_before_update_*.db
+echo         Rollback kode (bila perlu): instance\rollback_*
+echo         Setelah diperbaiki, jalankan start.bat secara manual.
+echo ==========================================================
+exit /b 1

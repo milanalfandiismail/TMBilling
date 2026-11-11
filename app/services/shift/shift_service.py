@@ -5,11 +5,21 @@ tutup shift dengan hitung buta, dan cetak struk handover.
 """
 
 import json
+from functools import wraps
 from sqlalchemy.exc import IntegrityError
 from app.models import db, now_local
 from app.models import ShiftRecord, Transaksi, TransaksiMenu, User
 from app.services.write_lock import WRITE_LOCK
 from app.utils.timezone_utils import format_display, get_local_date_range_utc
+
+
+def _serialized(fn):
+    """Serialkan tutup shift agar dua request tidak sama-sama menang."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        with WRITE_LOCK:
+            return fn(*args, **kwargs)
+    return wrapper
 
 
 class ShiftService:
@@ -290,6 +300,7 @@ class ShiftService:
         }
 
     @staticmethod
+    @_serialized
     def end_shift(shift_id, uang_fisik, catatan=None, operator="system"):
         """Tutup shift dengan hitung buta dan serah terima.
 
@@ -388,6 +399,7 @@ class ShiftService:
         }
 
     @staticmethod
+    @_serialized
     def force_close_shift(shift_id, admin_username, alasan=""):
         """Emergency force-close shift aktif oleh admin.
 

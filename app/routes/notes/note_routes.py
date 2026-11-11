@@ -2,20 +2,13 @@
 import os
 from flask import Blueprint, jsonify, request, session, send_file
 from app.services.notes.note_service import NoteService
+from app.middleware.auth import login_required
 from app.utils.logger import write_log
 
 notes_api_bp = Blueprint("notes_api", __name__)
 
-def is_authenticated():
-    """Memeriksa apakah sesi kasir atau admin sedang aktif."""
-    return bool(session.get("kasir_id") or session.get("kasir_username"))
-
-@notes_api_bp.before_request
-def check_auth():
-    if not is_authenticated():
-        return jsonify({"success": False, "error": "Akses Ditolak: Harap login terlebih dahulu"}), 401
-
 @notes_api_bp.route("", methods=["GET"])
+@login_required
 def list_notes():
     """Mengambil daftar seluruh berkas catatan dengan opsi filter pencarian."""
     query = request.args.get("q")
@@ -26,6 +19,7 @@ def list_notes():
         return jsonify({"success": False, "error": str(e)}), 500
 
 @notes_api_bp.route("/<filename>", methods=["GET"])
+@login_required
 def get_note(filename):
     """Mengambil detail dan isi satu catatan."""
     try:
@@ -39,6 +33,7 @@ def get_note(filename):
         return jsonify({"success": False, "error": str(e)}), 500
 
 @notes_api_bp.route("", methods=["POST"])
+@login_required
 def create_note():
     """Membuat berkas catatan baru."""
     data = request.get_json() or {}
@@ -60,6 +55,7 @@ def create_note():
         return jsonify({"success": False, "error": str(e)}), 500
 
 @notes_api_bp.route("/<filename>", methods=["PUT"])
+@login_required
 def save_note(filename):
     """Menyimpan isi catatan dan update judul jika diubah."""
     data = request.get_json() or {}
@@ -77,6 +73,7 @@ def save_note(filename):
         return jsonify({"success": False, "error": str(e)}), 500
 
 @notes_api_bp.route("/<filename>", methods=["DELETE"])
+@login_required
 def delete_note(filename):
     """Menghapus berkas catatan."""
     try:
@@ -96,6 +93,7 @@ def delete_note(filename):
         return jsonify({"success": False, "error": str(e)}), 500
 
 @notes_api_bp.route("/<filename>/download", methods=["GET"])
+@login_required
 def download_note(filename):
     """Mengunduh berkas .txt catatan secara langsung."""
     try:
@@ -114,6 +112,7 @@ def download_note(filename):
         return jsonify({"success": False, "error": str(e)}), 500
 
 @notes_api_bp.route("/<filename>/pin", methods=["POST"])
+@login_required
 def toggle_pin_note(filename):
     """Menyematkan atau melepas sematan (pin/unpin) catatan."""
     try:
@@ -134,6 +133,7 @@ def toggle_pin_note(filename):
         return jsonify({"success": False, "error": str(e)}), 500
 
 @notes_api_bp.route("/<filename>/duplicate", methods=["POST"])
+@login_required
 def duplicate_note(filename):
     """Menduplikasi berkas catatan."""
     try:

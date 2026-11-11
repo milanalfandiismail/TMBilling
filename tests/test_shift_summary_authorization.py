@@ -53,3 +53,26 @@ def test_admin_boleh_baca_shift_id_eksplisit(ctx):
 
     assert resp.status_code == 200
     assert "summary" in resp.get_json()
+
+
+def test_kasir_tanpa_id_tidak_boleh_melihat_ringkasan_shift_aktif(ctx):
+    app, _, kasir, _ = ctx
+    from app.models import Transaksi
+    from datetime import datetime
+
+    aktif = ShiftRecord(kasir_id=kasir.id, modal_awal=0, status="AKTIF",
+                        waktu_mulai=datetime(2026, 1, 1, 8, 0, 0))
+    db.session.add(aktif)
+    db.session.commit()
+    db.session.add(Transaksi(jenis="beli_paket", jumlah=12345,
+                             metode_pembayaran="Tunai", user_id=kasir.id,
+                             dibuat_pada=datetime(2026, 1, 1, 9, 0, 0)))
+    db.session.commit()
+
+    client = app.test_client()
+    _login(client, kasir)
+
+    resp = client.get("/api/v1/kasir/shift/summary")
+
+    assert resp.status_code == 403
+    assert "total_billing" not in resp.get_json()
