@@ -10,6 +10,7 @@ update last activity.
 import hmac
 from datetime import timedelta
 
+from app.config import Config
 from app.models import db, now_local, Sesi
 from app.repositories import PCRepository
 from app.repositories import SesiRepository
@@ -158,6 +159,13 @@ class ClientService:
 
             # B. Cek Sesi Aktif
             sesi = SesiRepository.get_aktif_by_pc(pc.id)
+            if sesi and sesi.last_sync:
+                batas_blackout = now_local() - timedelta(minutes=Config.BLACKOUT_THRESHOLD_MINUTES)
+                if sesi.last_sync < batas_blackout:
+                    # Deteksi sebelum heartbeat: last_sync baru tidak boleh menghapus batas outage.
+                    from app.services.blackout.blackout_service import BlackoutService
+                    BlackoutService.deteksi()
+                    sesi = SesiRepository.get_aktif_by_pc(pc.id)
             UptimeMemoryStore.set_billing(pc.id, bool(sesi))
             
             # 🔥 STATUS ADMIN & SYSTEM AUTHORITY

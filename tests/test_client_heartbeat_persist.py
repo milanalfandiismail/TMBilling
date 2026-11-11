@@ -119,6 +119,31 @@ class TestClientHeartbeatPersist(unittest.TestCase):
         self._poll()
         self.assertGreater(self._db_sesi().last_sync, stale)
 
+    def test_poll_detects_blackout_before_advancing_stale_heartbeat(self):
+        from app.config import Config
+        base = now_local()
+        old_sync = base - timedelta(minutes=70)
+        sesi = self._db_sesi()
+        sesi.durasi_beli_menit = 180
+        sesi.mulai_pada = base - timedelta(minutes=80)
+        sesi.last_sync = old_sync
+        db.session.commit()
+
+        original = Config.BLACKOUT_THRESHOLD_MINUTES
+        Config.BLACKOUT_THRESHOLD_MINUTES = 60
+        try:
+            res = self._poll()
+        finally:
+            Config.BLACKOUT_THRESHOLD_MINUTES = original
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.get_json()["status"], "kosong")
+        sesi = self._db_sesi()
+        self.assertEqual(sesi.status, "selesai")
+        self.assertTrue(sesi.is_blackout_suspect)
+        self.assertEqual(sesi.sisa_menit_saat_mati, 170)
+        self.assertEqual(sesi.last_sync, old_sync)
+
     def test_blackout_detects_guest_after_poll(self):
         self._poll()
         self.assertEqual(BlackoutService.deteksi(0), 1)
