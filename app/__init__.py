@@ -476,6 +476,13 @@ def create_app(config_override=None):
     _register_blueprints(app)
     _register_public_routes(app)
     _register_context_processors(app)
+
+    # Screenshot lama di static publik dipindah ke folder instance sebelum request pertama.
+    # Dilewati saat TESTING agar pembuatan app di test tidak menyentuh berkas upload nyata.
+    if not app.config.get("TESTING"):
+        from app.routes.monitor.screenshot_routes import migrate_legacy_screenshots
+        migrate_legacy_screenshots(app)
+
     if bootstrap_app_data(app):
         app.config["_BOOTSTRAP_DONE"] = True
 

@@ -296,7 +296,8 @@ c:\Project GIT\TMBilling
 - **Natural Sorting**: Daftar PC terurut secara natural (`PC-01`, `PC-02`, ..., `PC-09`, `PC-10`, `PC-11`, bukan urutan ASCII yang melompat).
 - **Live Zoom**: Klik thumbnail untuk memperbesar screenshot secara instan tanpa lag.
 - **Nama Berkas Aman**: `_screenshot_filename()` membuang pemisah path sebelum `secure_filename`, sehingga kode PC seperti `PC/01` tetap menjadi `PC01.png` dan tidak bisa menulis di luar folder screenshot.
-- **Identitas & Validasi Unggah**: Endpoint unggah menentukan PC dari IP koneksi peer (`IpWhitelistService.extract_client_ip`), bukan header `X-IP-Address`, sehingga satu PC tidak bisa menimpa screenshot PC lain. Byte gambar divalidasi Pillow (`verify()` lalu dibuka ulang), dinormalkan ke PNG dengan sisi maksimum 1280 px, disimpan di `static/uploads/screenshots`, dan data tidak valid ditolak `400`.
+- **Identitas & Validasi Unggah**: Endpoint unggah menentukan PC dari IP koneksi peer (`IpWhitelistService.extract_client_ip`), bukan header `X-IP-Address`, sehingga satu PC tidak bisa menimpa screenshot PC lain. Byte gambar divalidasi Pillow (`verify()` lalu dibuka ulang), dinormalkan ke PNG dengan sisi maksimum 1280 px, disimpan di `instance/uploads/screenshots` (folder privat, **bukan** static publik), dan data tidak valid ditolak `400`.
+- **Akses Admin-Only**: `GET /api/v1/kasir/monitor/screenshot/all`, `.../screenshot/status/<pc_id>`, dan `.../screenshot/image/<pc_id>` memakai `@login_required` + `@admin_required`, sehingga kasir tidak bisa membaca metadata maupun byte gambar. JSON tetap memuat kunci `screenshot_url`, kini menunjuk route gambar terproteksi; helper `migrate_legacy_screenshots(app)` memindahkan screenshot lama dari `static/uploads/screenshots` ke folder instance saat startup (dilewati saat `TESTING`).
 
 ### 4.8 POS Kantin & Billing FnB Multi-Payment (Cash/QRIS/Bank + Struk Thermal)
 - **Deskripsi**: Modul kasir kantin / FnB lengkap yang terintegrasi langsung dengan billing PC.
@@ -341,6 +342,7 @@ c:\Project GIT\TMBilling
 - **Anti Brute-Force Login**: `services/auth/login_throttle.py` membatasi 5 kegagalan per kombinasi (IP, username) dalam 5 menit dan membalas HTTP 429; berlaku pada login kasir, `admin-check`, `client/admin-login`, dan portal member. Logout wajib menyertakan token sesi yang cocok, dan setiap login sukses memanggil `session.clear()` agar sesi lama tidak menempel.
 - **Batas Unggah & Nama Berkas**: `MAX_CONTENT_LENGTH = 64 MB` mencegah unggahan raksasa; nama file screenshot dibersihkan dengan `secure_filename` setelah membuang pemisah path sehingga kode PC tidak bisa keluar dari folder upload.
 - **Toggle Whitelist**: `POST /api/v1/kasir/settings/ip-whitelist/toggle` menormalkan string boolean; `"false"` benar-benar menonaktifkan whitelist, bukan dianggap truthy.
+- **Pengecualian Admin Divalidasi ke Database**: Middleware whitelist hanya membebaskan sesi yang user-nya masih ada, `aktif=True`, dan ber-role `admin` di database. Sesi dengan cookie lama ber-role admin yang sudah diturunkan/dinonaktifkan tidak lagi mendapat bypass (role sesi disegarkan dari DB atau sesi dibersihkan), sehingga pengecualian admin tidak bisa dipakai satu request pun setelah demosi.
 - **Hapus User Beriwayat**: user yang masih punya `ShiftRecord` atau `Transaksi` tidak dapat dihapus (`400`); nonaktifkan akun agar histori tetap utuh. Guard "admin terakhir" hanya berlaku untuk admin yang masih aktif, sehingga admin nonaktif tetap bisa dihapus saat tersisa satu admin aktif. Race username saat pembuatan user di-rollback menjadi `ValueError("Username sudah terdaftar")`.
 - **Hapus Audit Blackout & Kontrol LHM Khusus Admin**: `/api/v1/kasir/blackout/clear` dan start/stop TMLHMService memakai `@admin_required`.
 - **Sanitasi HTML Pengumuman**: Teks pengumuman kiosk (hasil CKEditor) disanitasi `SafeHTMLParser` saat ditulis maupun dibaca, memakai allowlist protokol (`http://`, `https://`, `mailto:`, `/`, `#`, `data:image/`).
@@ -713,7 +715,7 @@ Jika terjadi kegagalan:
 
 ### 8.2 Katalog Endpoint REST API (34 Blueprint)
 
-Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/routes/`: **239 Route** (katalog per blueprint di bawah merinci endpoint utama; route dinamis/registrasi manual tidak selalu punya baris sendiri).
+Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/routes/`: **240 Route** (katalog per blueprint di bawah merinci endpoint utama; route dinamis/registrasi manual tidak selalu punya baris sendiri).
 
 > Endpoint kesehatan `GET /api/health` terdaftar sebagai blueprint `health_api` (`app/routes/public/health_routes.py`), dan didaftarkan di `app/__init__.py:135`.
 
@@ -895,7 +897,7 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | POST | /api/v1/public/monitor/processes/<int:pc_id>/kill | monitor.kill_pc_process |
 | POST | /api/v1/public/monitor/screenshot/upload | monitor.upload_screenshot |
 
-#### 🔹 Blueprint: monitor_kasir (14 Endpoint)
+#### 🔹 Blueprint: monitor_kasir (15 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
 | :--- | :--- | :--- |
 | DELETE | /api/v1/kasir/monitor/<int:hardware_id> | monitor_kasir.delete_hardware_data_kasir |
@@ -907,6 +909,7 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | POST | /api/v1/kasir/monitor/remote/<int:pc_id>/<string:action> | monitor_kasir.trigger_remote_action |
 | POST | /api/v1/kasir/monitor/remote/batch | monitor_kasir.trigger_remote_action_batch |
 | GET | /api/v1/kasir/monitor/screenshot/all | monitor_kasir.get_all_screenshot_status |
+| GET | /api/v1/kasir/monitor/screenshot/image/<int:pc_id> | monitor_kasir.get_screenshot_image |
 | GET | /api/v1/kasir/monitor/screenshot/status/<int:pc_id> | monitor_kasir.get_screenshot_status |
 | POST | /api/v1/kasir/monitor/screenshot/trigger/<int:pc_id> | monitor_kasir.trigger_screenshot |
 | POST | /api/v1/kasir/monitor/vnc_client/<int:pc_id>/start | monitor_kasir.start_vnc_client |

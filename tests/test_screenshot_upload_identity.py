@@ -15,14 +15,16 @@ def _png_bytes():
 
 @pytest.fixture
 def app_ctx(tmp_path):
+    instance_dir = tmp_path / "instance"
     app = create_app({
         "TESTING": True,
         "WTF_CSRF_ENABLED": False,
         "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
         "SECRET_KEY": "test-screenshot",
         "CLIENT_API_KEY": "test-key",
+        "INSTANCE_PATH": str(instance_dir),
     })
-    app.static_folder = str(tmp_path)
+    app.static_folder = str(tmp_path / "static")
     with app.app_context():
         db.create_all()
         grup = Grup(nama="reguler")
@@ -34,7 +36,7 @@ def app_ctx(tmp_path):
                   mac_address="AA:BB:CC:DD:EE:02", grup_id=grup.id, aktif=True)
         db.session.add_all([pc_a, pc_b])
         db.session.commit()
-        yield app.test_client(), pc_a, pc_b, tmp_path / "uploads" / "screenshots"
+        yield app.test_client(), pc_a, pc_b, instance_dir / "uploads" / "screenshots"
         db.session.remove()
         db.drop_all()
 

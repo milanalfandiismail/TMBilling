@@ -10,7 +10,7 @@ import io
 import os
 import time
 from datetime import datetime, timezone
-from flask import request, jsonify, session, current_app
+from flask import request, jsonify, session, current_app, send_from_directory
 from PIL import Image
 from app.middleware.auth import login_required, admin_required, shift_required
 from app.routes.client.client_routes import api_key_required
@@ -21,8 +21,28 @@ from werkzeug.utils import secure_filename
 
 
 def _upload_folder():
-    """Folder screenshot selalu mengikuti static folder aplikasi."""
-    return os.path.join(current_app.static_folder, "uploads", "screenshots")
+    """Folder screenshot privat (instance), tidak disajikan sebagai static publik."""
+    return os.path.join(current_app.instance_path, "uploads", "screenshots")
+
+
+def migrate_legacy_screenshots(app):
+    """Pindahkan screenshot lama dari static publik ke folder instance privat."""
+    legacy = os.path.join(app.static_folder, "uploads", "screenshots")
+    target = os.path.join(app.instance_path, "uploads", "screenshots")
+    if not os.path.isdir(legacy):
+        return
+    os.makedirs(target, exist_ok=True)
+    for name in os.listdir(legacy):
+        if not name.lower().endswith(".png"):
+            continue
+        src = os.path.join(legacy, name)
+        dst = os.path.join(target, name)
+        if not os.path.isfile(src):
+            continue
+        if os.path.exists(dst) and os.path.getmtime(dst) >= os.path.getmtime(src):
+            os.remove(src)
+        else:
+            os.replace(src, dst)
 
 
 def _screenshot_filename(kode):
@@ -108,6 +128,7 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
 
     @kasir_bp.route("/screenshot/status/<int:pc_id>", methods=["GET"])
     @login_required
+    @admin_required
     def get_screenshot_status(pc_id):
         """Mengecek status dan timestamp screenshot terakhir untuk PC tertentu."""
         try:
@@ -131,7 +152,7 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
                     display_time = f"{local_dt.strftime('%d/%m %H:%M')} {tz_label}"
                 return jsonify({
                     "success": True,
-                    "screenshot_url": f"/static/uploads/screenshots/{_screenshot_filename(pc.kode)}",
+                    "screenshot_url": f"/api/v1/kasir/monitor/screenshot/image/{pc.id}",
                     "screenshot_time": full_time,
                     "screenshot_time_display": display_time,
                     "mtime": mtime
@@ -147,8 +168,24 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 500
 
+    @kasir_bp.route("/screenshot/image/<int:pc_id>", methods=["GET"])
+    @login_required
+    @admin_required
+    def get_screenshot_image(pc_id):
+        """Sajikan byte screenshot hanya untuk admin yang login."""
+        from app.repositories import PCRepository
+
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+        filename = _screenshot_filename(pc.kode)
+        if not os.path.exists(os.path.join(_upload_folder(), filename)):
+            return jsonify({"success": False, "error": "Screenshot tidak tersedia"}), 404
+        return send_from_directory(_upload_folder(), filename, mimetype="image/png")
+
     @kasir_bp.route("/screenshot/all", methods=["GET"])
     @login_required
+    @admin_required
     def get_all_screenshot_status():
         """Mengecek status dan timestamp screenshot terakhir untuk semua PC."""
         try:
@@ -177,7 +214,7 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
                         "pc_kode": pc.kode,
                         "pc_grup_id": pc.grup_id or 0,
                         "pc_grup_nama": pc.grup.nama if pc.grup else "Unknown",
-                        "screenshot_url": f"/static/uploads/screenshots/{_screenshot_filename(pc.kode)}",
+                        "screenshot_url": f"/api/v1/kasir/monitor/screenshot/image/{pc.id}",
                         "screenshot_time": full_time,
                         "screenshot_time_display": display_time,
                         "mtime": mtime

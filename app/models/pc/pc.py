@@ -104,7 +104,7 @@ class PC(db.Model):
             has_screenshot = bool(screenshot_info and screenshot_info.get('has_screenshot'))
             screenshot_time = screenshot_info.get('screenshot_time') if screenshot_info else None
         else:
-            screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{self.kode}.png")
+            screenshot_path = os.path.join(current_app.instance_path, 'uploads', 'screenshots', f"{self.kode}.png")
             has_screenshot = os.path.exists(screenshot_path)
             screenshot_time = None
             if has_screenshot:
@@ -154,7 +154,7 @@ class PC(db.Model):
             "is_admin_mode": is_admin,
             "is_system_mode": is_system,
             "is_afk": s.is_afk if s else False,
-            "screenshot_url": f"/static/uploads/screenshots/{self.kode}.png" if has_screenshot else None,
+            "screenshot_url": f"/api/v1/kasir/monitor/screenshot/image/{self.id}" if has_screenshot else None,
             "screenshot_time": screenshot_time,
             "pos_x": self.pos_x if self.pos_x is not None else -1,
             "pos_y": self.pos_y if self.pos_y is not None else -1
