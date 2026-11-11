@@ -22,7 +22,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `build_and_deploy.bat` | Skrip batch Windows untuk kompilasi otomatis seluruh biner klien (Rust/C#) dan build aset CSS. |
 | `developer_install.bat` | Skrip instalasi cepat virtual environment Python, dependencies pip, dan node modules. |
 | `install.bat` | Skrip instalasi server produksi untuk pengguna akhir. |
-| `update.bat` | Runner batch Windows mandiri di root direktori untuk pembaruan manual aplikasi via CLI atau drag-and-drop berkas ZIP rilis. |
+| `update.bat` | Runner batch Windows mandiri di root direktori untuk pembaruan manual aplikasi via CLI atau drag-and-drop berkas ZIP rilis; mengambil klaim `update_claim.py` **sebelum** menyalin ZIP ke `instance/temp_update.zip` sehingga update otomatis yang sedang berjalan tidak tertimpa. |
 | `start.bat` & `stop.bat` | Skrip otomasi start/stop background service server pada Windows. |
 | `package.json` | Konfigurasi npm, devDependencies (TailwindCSS 4.3 via `@tailwindcss/cli`, Playwright, FontAwesome 7), dan skrip build vendor/CSS. |
 | `requirements.txt` | Daftar pustaka Python backend (Flask 3.1.3, SQLAlchemy 2.1, APScheduler, Waitress, dll; wajib Python 3.11+). |

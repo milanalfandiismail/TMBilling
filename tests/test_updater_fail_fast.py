@@ -40,6 +40,17 @@ def test_updater_claims_single_flight_and_releases_on_exit():
     assert 'exit /b %TM_EXIT%' in text
 
 
+def test_update_bat_claims_before_overwriting_package():
+    """update.bat tidak boleh menimpa paket ZIP sebelum klaim didapat."""
+    path = os.path.abspath(os.path.join(os.path.dirname(UPDATER), "..", "update.bat"))
+    with open(path, encoding="utf-8", errors="replace") as f:
+        text = f.read()
+
+    claim = text.index('update_claim.py" claim')
+    copy = text.index('copy /y "%~1" "instance\\temp_update.zip"')
+    assert claim < copy
+
+
 def test_fail_path_does_not_start_server():
     text = _read()
     fail_section = text[re.search(r"^:fail\s*$", text, re.M).start():]

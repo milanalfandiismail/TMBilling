@@ -1,4 +1,5 @@
 @echo off
+setlocal
 title TMBilling Server - Update
 color 0B
 cd /d "%~dp0"
@@ -12,8 +13,17 @@ if "%~1"=="" goto :check_instance_zip
 if exist "%~1" (
     echo [INFO] Menyiapkan paket pembaruan dari: "%~1"
     if not exist "instance" mkdir "instance"
+    set "TM_PY=.venv\Scripts\python.exe"
+    if not exist "%TM_PY%" set "TM_PY=python"
+    "%TM_PY%" "install_scripts\update_claim.py" claim
+    if errorlevel 1 (
+        echo [ERROR] Pembaruan lain sedang berjalan atau belum selesai.
+        echo         Tunggu hingga selesai lalu ulangi. Tidak ada berkas yang diubah.
+        exit /b 1
+    )
     copy /y "%~1" "instance\temp_update.zip" >nul
     if errorlevel 1 (
+        "%TM_PY%" "install_scripts\update_claim.py" release >nul 2>&1
         echo [ERROR] Gagal menyalin paket pembaruan ke instance\temp_update.zip
         echo         Pembaruan dibatalkan. Server tidak diubah.
         exit /b 1
