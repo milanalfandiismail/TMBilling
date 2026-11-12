@@ -12,6 +12,13 @@ from app.models.base.base import db
 app = create_app()
 with app.app_context():
     db.create_all()
+    # Skema dibuat langsung dari model, jadi revisi di-stamp head agar
+    # `flask db upgrade` berikutnya tidak memutar ulang migrasi lama.
+    from flask_migrate import stamp
+    stamp(
+        directory=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "migrations"),
+        revision="head",
+    )
     bootstrap_app_data(app)
     print('[OK] Tabel database berhasil diinisialisasi.')
 
