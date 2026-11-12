@@ -16,19 +16,20 @@ branch_labels = None
 depends_on = None
 
 
+def _columns(table):
+    inspector = sa.inspect(op.get_bind())
+    if not inspector.has_table(table):
+        return set()
+    return {c["name"] for c in inspector.get_columns(table)}
+
+
 def upgrade():
-    with op.batch_alter_table('game', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('tipe', sa.String(length=50), nullable=True, server_default='game'))
-        batch_op.alter_column('kategori',
-               existing_type=sa.VARCHAR(length=100),
-               type_=sa.String(length=500),
-               existing_nullable=True)
+    # SQLite tidak menegakkan panjang VARCHAR, jadi pelebaran kategori tidak perlu
+    # recreate tabel (batch_alter_table memicu circular dependency pada skema create_all).
+    if "tipe" not in _columns("game"):
+        op.add_column('game', sa.Column('tipe', sa.String(length=50), nullable=True, server_default='game'))
 
 
 def downgrade():
-    with op.batch_alter_table('game', schema=None) as batch_op:
-        batch_op.alter_column('kategori',
-               existing_type=sa.String(length=500),
-               type_=sa.VARCHAR(length=100),
-               existing_nullable=True)
-        batch_op.drop_column('tipe')
+    if "tipe" in _columns("game"):
+        op.drop_column('game', 'tipe')

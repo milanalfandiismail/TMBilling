@@ -51,6 +51,18 @@ def test_create_app_tidak_membuat_skema_pada_db_ber_alembic(tmp_path):
         assert not inspector.has_table("maintenance_ticket")
 
 
+def test_run_migration_setelah_create_all_tidak_gagal_duplicate_column(tmp_path):
+    from install_scripts.run_migration import run as run_migration
+
+    app = _app(tmp_path, "fresh_migrate.db")
+
+    with app.app_context():
+        assert run_migration(app) is True
+        inspector = inspect(db.engine)
+        cols = [c["name"] for c in inspector.get_columns("transaksi")]
+        assert "operator" in cols
+
+
 def test_legacy_revision_can_create_maintenance_ticket(tmp_path):
     from flask_migrate import upgrade
 

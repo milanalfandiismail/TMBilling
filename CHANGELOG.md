@@ -8,6 +8,10 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+### Perbaikan Migrasi Skema Saat Update (2026-11-12)
+- **Update Gagal pada Instalasi Baru**: `install_scripts/run_migration.py` tidak lagi memutar ulang seluruh migrasi pada database hasil `db.create_all()`; bila skema sudah identik dengan metadata model, revisi langsung di-`stamp` ke `head` sehingga `updater.bat` tidak berhenti di `:fail` karena `duplicate column name: operator`.
+- **Migrasi Idempoten**: migrasi `f3a1b2c4d5e6` (kolom `operator`) dan `b7e2c91a4f01` (kolom peripheral/CCTV) memeriksa kolom yang sudah ada sebelum menambah/menghapus, dan migrasi `8f7e6d5c4b3a` tidak lagi me-recreate tabel `game` hanya untuk melebarkan `kategori` (SQLite tidak menegakkan panjang `VARCHAR`).
+
 ### Remediasi Audit Keamanan & Integritas Finansial (2026-11-07)
 - **Refund & Masa Aktif Member**: refund member memanggil `cek_kadaluarsa()` lebih dulu (menolak saldo yang sudah hangus), tanggal kadaluarsa hasil refund di-clamp ke waktu sekarang (tidak lagi menjadi `None`/abadi), dan klaim refund atomik `TransaksiRepository.claim_refund()` mencegah nota refund ganda saat request bersamaan.
 - **Token Darurat Tidak Lagi Bocor ke Client**: `GET /api/v1/kasir/settings/uninstall-token/client` hanya mengembalikan `uninstall_token`; `emergency_token` server tidak pernah dikirim lagi. Emergency login diterima bila token server valid **atau** IP asal request sama dengan `ip_address` PC terdaftar (`hmac.compare_digest`).

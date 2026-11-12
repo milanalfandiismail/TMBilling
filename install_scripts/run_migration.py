@@ -9,6 +9,17 @@ if root_dir not in sys.path:
 
 from app import create_app, db
 
+
+def _schema_matches_metadata(inspector) -> bool:
+    """True bila semua tabel & kolom model sudah ada di database."""
+    for table in db.metadata.sorted_tables:
+        if not inspector.has_table(table.name):
+            return False
+        cols = {c["name"] for c in inspector.get_columns(table.name)}
+        if {c.name for c in table.columns} - cols:
+            return False
+    return True
+
 def run(app=None) -> bool:
     print("[MIGRATION] Menjalankan migrasi skema database...")
     app = app or create_app()
@@ -30,12 +41,20 @@ def run(app=None) -> bool:
 
             if current_rev is None and inspector.has_table("transaksi"):
                 try:
-                    stamp(directory=migrations_dir, revision="e8f9a0b1c2d3")
+                    if _schema_matches_metadata(inspector):
+                        # DB hasil db.create_all() sudah identik dengan model: replay
+                        # migrasi lama justru gagal (kolom sudah ada), jadi langsung head.
+                        stamp(directory=migrations_dir, revision="head")
+                        current_rev = "head"
+                        print("[MIGRATION] Skema sudah identik dengan model, stamp head.")
+                    else:
+                        stamp(directory=migrations_dir, revision="e8f9a0b1c2d3")
                 except Exception as stamp_err:
                     print(f"[MIGRATION WARNING] Auto-stamp: {stamp_err}")
 
-            upgrade(directory=migrations_dir)
-            print("[MIGRATION] Alembic upgrade berhasil.")
+            if current_rev != "head":
+                upgrade(directory=migrations_dir)
+                print("[MIGRATION] Alembic upgrade berhasil.")
         except (Exception, SystemExit) as e:
             print(f"[MIGRATION ERROR] Alembic upgrade gagal: {e}")
             # Jangan lanjut ke safety sync/stamp head: DB tidak boleh diklaim sudah di head.
