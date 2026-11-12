@@ -15,6 +15,7 @@ Catatan desain:
 """
 
 import ctypes
+import json
 import os
 import re
 import socket
@@ -48,7 +49,17 @@ class SandboxPaths:
     notes_dir: str
     project_root: str
     backup_dir: str
+    instance_dir: str
     log_path: str
+
+    @property
+    def routes_path(self):
+        return os.path.join(os.path.dirname(self.db_path), "routes.json")
+
+    @property
+    def temp_dir(self):
+        # TEMP/TMP per suite: restore & update memakai tempfile, jangan ikut disk global.
+        return os.path.join(os.path.dirname(self.db_path), "tmp")
 
 
 DEFAULT_PATHS = SandboxPaths(
@@ -56,6 +67,7 @@ DEFAULT_PATHS = SandboxPaths(
     notes_dir=SANDBOX_NOTES_DIR,
     project_root=SANDBOX_PROJECT_ROOT,
     backup_dir=SANDBOX_BACKUP_DIR,
+    instance_dir=os.path.join(INSTANCE_DIR, "e2e", "instance"),
     log_path=SANDBOX_LOG_PATH,
 )
 
@@ -69,6 +81,7 @@ def sandbox_paths(suite_id):
         notes_dir=os.path.join(root, "notes"),
         project_root=os.path.join(root, "root"),
         backup_dir=os.path.join(root, "backups"),
+        instance_dir=os.path.join(root, "instance"),
         log_path=os.path.join(root, "server.log"),
     )
 
@@ -194,6 +207,10 @@ def _sandbox_env(paths=DEFAULT_PATHS):
     env["TM_NOTES_DIR"] = paths.notes_dir
     env["PROJECT_ROOT"] = paths.project_root
     env["BACKUP_DIR"] = paths.backup_dir
+    env["E2E_INSTANCE_PATH"] = paths.instance_dir
+    # Log rute dipakai gerbang cakupan E2E; satu berkas per suite.
+    env["E2E_API_LOG"] = os.path.join(os.path.dirname(paths.db_path), "requests.log")
+    env["TEMP"] = env["TMP"] = paths.temp_dir
     return env
 
 
@@ -211,8 +228,9 @@ def prepare_sandbox_database(paths=DEFAULT_PATHS):
     os.environ["TM_NOTES_DIR"] = paths.notes_dir
     os.environ["PROJECT_ROOT"] = paths.project_root
     os.environ["BACKUP_DIR"] = paths.backup_dir
+    os.environ["E2E_INSTANCE_PATH"] = paths.instance_dir
 
-    for sandbox_only in (paths.notes_dir, paths.project_root, paths.backup_dir):
+    for sandbox_only in (paths.notes_dir, paths.project_root, paths.backup_dir, paths.instance_dir, paths.temp_dir):
         if os.path.isdir(sandbox_only):
             shutil.rmtree(sandbox_only, ignore_errors=True)
         os.makedirs(sandbox_only, exist_ok=True)
@@ -223,11 +241,17 @@ def prepare_sandbox_database(paths=DEFAULT_PATHS):
         except OSError:
             pass
 
-    from app import create_app
     from app.models import db
+    from tests.e2e.sandbox_app import create_app
     from tests.e2e.seed_e2e_data import seed_sandbox
 
     app = create_app()
+    routes = sorted(
+        f"{rule.endpoint} {sorted(rule.methods - {'HEAD', 'OPTIONS'})[0]}"
+        for rule in app.url_map.iter_rules()
+    )
+    with open(paths.routes_path, "w", encoding="utf-8") as fh:
+        json.dump(routes, fh, indent=2)
     seed_sandbox(app)
     with app.app_context():
         db.engine.dispose()
@@ -254,7 +278,7 @@ def start_sandbox_server(port=7016, paths=DEFAULT_PATHS, timeout_sec=20):
         # loopback; waitress tanpa trusted-proxy membuang header itu.
         "--trusted-proxy=127.0.0.1",
         "--trusted-proxy-headers=x-forwarded-for",
-        "app:create_app",
+        "tests.e2e.sandbox_app:create_app",
     ]
 
     # Log ke berkas, bukan PIPE: PIPE yang tidak dibaca bisa memblokir server
@@ -328,7 +352,7 @@ def stop_sandbox_server(proc, paths=DEFAULT_PATHS):
             except OSError:
                 time.sleep(0.5)
 
-    for sandbox_only in (paths.notes_dir, paths.project_root, paths.backup_dir):
+    for sandbox_only in (paths.notes_dir, paths.project_root, paths.backup_dir, paths.instance_dir, paths.temp_dir):
         shutil.rmtree(sandbox_only, ignore_errors=True)
 
 

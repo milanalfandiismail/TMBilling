@@ -28,9 +28,13 @@ def test_env_sandbox_menunjuk_path_suite(tmp_path):
         project_root=str(tmp_path / "root"),
         backup_dir=str(tmp_path / "backups"),
         log_path=str(tmp_path / "server.log"),
+        instance_dir=str(tmp_path / "instance"),
     )
     env = _sandbox_env(paths)
     assert env["DATABASE_URL"] == "sqlite:///" + paths.db_path.replace(os.sep, "/")
     assert env["TM_NOTES_DIR"] == paths.notes_dir
     assert env["PROJECT_ROOT"] == paths.project_root
     assert env["BACKUP_DIR"] == paths.backup_dir
+    assert env["E2E_INSTANCE_PATH"] == paths.instance_dir
+    assert env["TEMP"] == env["TMP"] == paths.temp_dir
+    assert env["E2E_API_LOG"] == str(tmp_path / "requests.log")

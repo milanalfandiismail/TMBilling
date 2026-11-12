@@ -7,7 +7,8 @@ import sys
 import zipfile
 from datetime import datetime
 
-root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+# TM_UPDATE_ROOT dipakai E2E agar ekstraktor bisa diuji pada pohon sementara.
+root_dir = os.path.abspath(os.environ.get("TM_UPDATE_ROOT") or os.path.join(os.path.dirname(__file__), ".."))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 instance_dir = os.path.join(root_dir, "instance")

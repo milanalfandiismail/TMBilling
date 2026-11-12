@@ -378,6 +378,18 @@ def main(argv=None):
     if failed > 0 and exit_code == 0:
         exit_code = 1
 
+    if not args.suite and not args.self_test and failed == 0 and exit_code == 0:
+        from tests.e2e.check_coverage_gate import run as gate_run
+
+        missing = gate_run(os.path.join(INSTANCE_DIR, "e2e"))
+        if missing:
+            print("\nGATE GAGAL: {} rute tidak pernah dipanggil".format(len(missing)))
+            for endpoint in missing:
+                print("  - {}".format(endpoint))
+            print("Tambahkan check E2E untuk rute di atas, atau daftarkan di tests/e2e/api_exempt.py dengan alasan nyata.")
+            return 1
+        print("\nGATE LULUS: semua rute terpakai atau dikecualikan")
+
     print("\n" + "=" * 65)
     print("TOTAL: {} check, {} lulus, {} gagal".format(total, passed, failed))
     print("=" * 65)
