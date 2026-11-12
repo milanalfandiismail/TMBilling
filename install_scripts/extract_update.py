@@ -105,12 +105,30 @@ def recover_interrupted_swap() -> bool:
         return False
 
 
+def _preserve_legacy_screenshots(staging):
+    """Salin screenshot lama ke staging agar ikut selamat saat `app/` diganti.
+
+    Screenshot lama masih berada di `app/static/uploads/screenshots`; migrasi
+    startup aplikasi baru yang memindahkannya ke `instance_path`.
+    """
+    legacy = os.path.join(root_dir, "app", "static", "uploads", "screenshots")
+    if not os.path.isdir(legacy):
+        return
+    target = os.path.join(staging, "app", "static", "uploads", "screenshots")
+    os.makedirs(target, exist_ok=True)
+    for name in os.listdir(legacy):
+        source = os.path.join(legacy, name)
+        if name.lower().endswith(".png") and os.path.isfile(source):
+            shutil.copy2(source, os.path.join(target, name))
+
+
 def swap_staging_into_tree(staging):
     """Tukar isi top-level hasil staging ke root_dir, rollback bila gagal di tengah.
 
     Jurnal `instance/update_journal.json` ditulis sebelum tiap langkah agar
     pemulihan bisa dilanjutkan setelah proses terbunuh atau listrik padam.
     """
+    _preserve_legacy_screenshots(staging)
     rollback_dir = os.path.join(instance_dir, f"rollback_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
     os.makedirs(rollback_dir, exist_ok=True)
     journal = {"rollback_dir": rollback_dir, "staging_dir": staging, "entries": [
@@ -133,9 +151,11 @@ def swap_staging_into_tree(staging):
                 os.replace(dst, os.path.join(rollback_dir, name))
                 entry["old_moved"] = True
                 _write_journal(journal)
-            os.replace(src, dst)
+            # Niat dipersist sebelum replace: bila proses mati tepat setelah
+            # replace, jurnal sudah menyatakan path baru terpasang.
             entry["new_installed"] = True
             _write_journal(journal)
+            os.replace(src, dst)
     except Exception:
         recover_interrupted_swap()
         raise

@@ -1,6 +1,7 @@
 """Test health endpoint, guard disk, dan status scheduler."""
 
 import collections
+import os
 
 import pytest
 
@@ -78,6 +79,31 @@ def test_backup_refuses_when_disk_low(health_env, tmp_path, monkeypatch):
             BackupService(backup_dir=str(backup_dir)).create_backup()
 
     assert list(backup_dir.iterdir()) == []
+
+
+def test_free_space_guard_fails_closed_when_unavailable(monkeypatch):
+    monkeypatch.setattr(HealthService, "free_bytes", staticmethod(lambda _p: None))
+
+    assert HealthService.has_free_space("X:/tidak-ada") is False
+
+
+def test_auto_screenshot_checks_instance_path(health_env, monkeypatch):
+    app, _admin_id, _kasir_id = health_env
+    from app.services import SettingsService
+    from app.repositories import SesiRepository
+    from app.utils.scheduler_tasks import run_auto_screenshots
+
+    checked = []
+    monkeypatch.setattr(
+        HealthService, "free_bytes", staticmethod(lambda path: checked.append(path) or 10 ** 10)
+    )
+    monkeypatch.setattr(SesiRepository, "get_all_aktif", staticmethod(lambda: []))
+
+    with app.app_context():
+        SettingsService.set("screenshot_auto_enabled", "1")
+        run_auto_screenshots(app)
+
+    assert checked == [os.path.join(app.instance_path, "uploads", "screenshots")]
 
 
 def test_auto_screenshot_skips_on_low_disk(health_env, monkeypatch):

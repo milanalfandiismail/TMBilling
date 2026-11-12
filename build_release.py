@@ -102,6 +102,10 @@ def main():
                     # Exclude __pycache__ from search
                     if "__pycache__" in dirs:
                         dirs.remove("__pycache__")
+                    # Screenshot runtime tidak boleh ikut paket rilis publik
+                    if os.path.abspath(root) == os.path.abspath(os.path.join(project_dir, "app", "static", "uploads", "screenshots")):
+                        dirs[:] = []
+                        continue
                         
                     for file in files:
                         file_path = os.path.join(root, file)

@@ -378,6 +378,105 @@ def test_recover_interrupted_swap_removes_new_paths(tmp_path, monkeypatch):
     assert not (root / "migrations").exists()
 
 
+def test_recover_interrupted_swap_removes_new_path_after_replace_crash(tmp_path, monkeypatch):
+    """Proses mati tepat setelah replace tetap harus dipulihkan dari jurnal."""
+    from install_scripts import extract_update
+
+    root, instance = _journal_root(tmp_path)
+    staging = instance / "staging_update"
+    (staging / "app").mkdir(parents=True)
+    (staging / "app" / "baru.txt").write_text("baru")
+    (staging / "migrations").mkdir()
+    (staging / "migrations" / "001.py").write_text("x")
+    (root / "app").mkdir()
+    (root / "app" / "lama.txt").write_text("lama")
+
+    monkeypatch.setattr(extract_update, "root_dir", str(root))
+    monkeypatch.setattr(extract_update, "instance_dir", str(instance))
+    monkeypatch.setattr(extract_update, "journal_path", str(instance / "update_journal.json"))
+
+    real_replace = os.replace
+
+    def crash_after_replace(src, dst):
+        real_replace(src, dst)
+        if os.path.basename(str(dst)) == "migrations":
+            raise SystemExit("proses mati setelah replace")
+
+    monkeypatch.setattr(extract_update.os, "replace", crash_after_replace)
+    with pytest.raises(SystemExit):
+        extract_update.swap_staging_into_tree(str(staging))
+    assert (root / "migrations").exists()
+
+    monkeypatch.setattr(extract_update.os, "replace", real_replace)
+    assert extract_update.recover_interrupted_swap() is True
+    assert not (root / "migrations").exists()
+    assert (root / "app" / "lama.txt").exists()
+
+
+def test_update_preserves_legacy_screenshots(tmp_path, monkeypatch):
+    """Screenshot lama harus ikut selamat saat folder app/ diganti."""
+    from install_scripts import extract_update
+    from app.routes.monitor.screenshot_routes import migrate_legacy_screenshots
+
+    root, instance = _journal_root(tmp_path)
+    legacy_dir = root / "app" / "static" / "uploads" / "screenshots"
+    legacy_dir.mkdir(parents=True)
+    (legacy_dir / "PC-A.png").write_bytes(b"png-lama")
+    (root / "app" / "lama.txt").write_text("lama")
+    staging = instance / "staging_update"
+    (staging / "app").mkdir(parents=True)
+    (staging / "app" / "baru.txt").write_text("baru")
+
+    monkeypatch.setattr(extract_update, "root_dir", str(root))
+    monkeypatch.setattr(extract_update, "instance_dir", str(instance))
+    monkeypatch.setattr(extract_update, "journal_path", str(instance / "update_journal.json"))
+
+    extract_update.swap_staging_into_tree(str(staging))
+    assert (root / "app" / "static" / "uploads" / "screenshots" / "PC-A.png").exists()
+
+    app = create_app({
+        "TESTING": True,
+        "WTF_CSRF_ENABLED": False,
+        "SQLALCHEMY_DATABASE_URI": "sqlite://",
+        "INSTANCE_PATH": str(instance),
+    })
+    app.static_folder = str(root / "app" / "static")
+    migrate_legacy_screenshots(app)
+
+    private = instance / "uploads" / "screenshots" / "PC-A.png"
+    assert private.exists()
+    assert not (root / "app" / "static" / "uploads" / "screenshots" / "PC-A.png").exists()
+
+
+def test_update_aborts_without_touching_live_tree_if_screenshot_copy_fails(tmp_path, monkeypatch):
+    """Gagal menyalin screenshot harus membatalkan sebelum pohon live disentuh."""
+    from install_scripts import extract_update
+
+    root, instance = _journal_root(tmp_path)
+    legacy_dir = root / "app" / "static" / "uploads" / "screenshots"
+    legacy_dir.mkdir(parents=True)
+    (legacy_dir / "PC-A.png").write_bytes(b"png-lama")
+    (root / "app" / "lama.txt").write_text("lama")
+    staging = instance / "staging_update"
+    (staging / "app").mkdir(parents=True)
+    (staging / "app" / "baru.txt").write_text("baru")
+
+    monkeypatch.setattr(extract_update, "root_dir", str(root))
+    monkeypatch.setattr(extract_update, "instance_dir", str(instance))
+    monkeypatch.setattr(extract_update, "journal_path", str(instance / "update_journal.json"))
+    monkeypatch.setattr(
+        extract_update.shutil, "copy2",
+        lambda *a, **k: (_ for _ in ()).throw(OSError("disk penuh")),
+    )
+
+    with pytest.raises(OSError):
+        extract_update.swap_staging_into_tree(str(staging))
+
+    assert (root / "app" / "lama.txt").exists()
+    assert not (root / "app" / "baru.txt").exists()
+    assert not (instance / "update_journal.json").exists()
+
+
 def test_recover_interrupted_swap_fails_without_backup(tmp_path, monkeypatch):
     """Cadangan yang hilang harus dilaporkan gagal, bukan dianggap pulih."""
     from install_scripts import extract_update

@@ -24,7 +24,8 @@ class HealthService:
     @classmethod
     def has_free_space(cls, path, minimum=MIN_FREE_BYTES):
         free = cls.free_bytes(path)
-        return free is None or free >= minimum
+        # Kapasitas tak diketahui = gagal tertutup, jangan tulis berkas besar.
+        return free is not None and free >= minimum
 
     @classmethod
     def get_health(cls, app):

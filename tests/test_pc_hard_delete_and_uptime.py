@@ -165,12 +165,24 @@ class TestPCHardDelete(unittest.TestCase):
         self.assertNotIn(pc_id, PENDING_COMMANDS)
 
     def test_delete_pc_tanpa_riwayat_tetap_hard_delete(self):
+        import tempfile
+
         pc_id = self.pc.id
         self.assertEqual(Sesi.query.filter_by(pc_id=pc_id).count(), 0)
 
-        result = PCService.delete(pc_id, operator="admin")
+        with tempfile.TemporaryDirectory() as tmp:
+            self.app.instance_path = tmp
+            shot_dir = os.path.join(tmp, "uploads", "screenshots")
+            os.makedirs(shot_dir)
+            shot = os.path.join(shot_dir, f"{self.pc.kode}.png")
+            with open(shot, "wb") as f:
+                f.write(b"png")
 
-        self.assertTrue(result["success"])
+            result = PCService.delete(pc_id, operator="admin")
+
+            self.assertTrue(result["success"])
+            self.assertFalse(os.path.exists(shot))
+
         self.assertIsNone(PC.query.get(pc_id))
 
     def test_delete_pc_blocked_when_active_session_exists(self):
