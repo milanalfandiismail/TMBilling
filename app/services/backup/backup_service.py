@@ -77,6 +77,32 @@ def _db_revision(path):
         con.close()
 
 
+_CORE_TABLES = frozenset({"grup", "pc", "sesi", "transaksi"})
+
+
+def _inspect_schema(path):
+    """(tabel inti lengkap, skema identik dengan metadata model) dari file SQLite."""
+    con = sqlite3.connect(path, timeout=30)
+    try:
+        tables = {}
+        for (name,) in con.execute("SELECT name FROM sqlite_master WHERE type='table'"):
+            tables[name] = {row[1] for row in con.execute(f'PRAGMA table_info("{name}")')}
+    except sqlite3.DatabaseError:
+        return False, False
+    finally:
+        con.close()
+
+    if _CORE_TABLES - tables.keys():
+        return False, False
+
+    from app.models import db
+    for table in db.metadata.sorted_tables:
+        columns = tables.get(table.name)
+        if columns is None or {c.name for c in table.columns} - columns:
+            return True, False
+    return True, True
+
+
 def _reset_db_connections():
     try:
         from app.models import db
@@ -301,24 +327,36 @@ class BackupService:
             if not _integrity_ok(extracted):
                 raise ValueError("Arsip backup rusak (integrity_check gagal)")
 
+            # Tolak file SQLite valid yang bukan database TMBilling sebelum
+            # database aktif ditimpa.
+            core_ok, schema_current = _inspect_schema(extracted)
+            if not core_ok:
+                raise ValueError(
+                    "Arsip backup bukan database TMBilling (tabel inti tidak lengkap)"
+                )
+
             with _BACKUP_LOCK, WRITE_LOCK:
                 safety_backup = self.create_backup()
 
                 _snapshot_db(extracted, self.db_path)
                 _reset_db_connections()
 
-                # Backup dari versi lama membawa revisi Alembic lama; jalankan
-                # migrasi agar kode baru tidak berjalan di atas skema usang.
-                if _db_revision(self.db_path) and not _migrate_restored_database():
-                    if not _apply_zip_db(safety_backup, self.db_path):
+                # Backup versi lama membawa revisi Alembic lama atau skema lama
+                # tanpa revisi; migrasikan agar kode baru tidak berjalan di atas
+                # skema usang.
+                if _db_revision(self.db_path) or not schema_current:
+                    migrated = _migrate_restored_database()
+                    core_ok, schema_current = _inspect_schema(self.db_path)
+                    if not migrated or not (core_ok and schema_current):
+                        if not _apply_zip_db(safety_backup, self.db_path):
+                            raise ValueError(
+                                "Migrasi skema setelah restore gagal dan backup pengaman tidak bisa dipulihkan. "
+                                f"Pulihkan manual dari: {os.path.basename(safety_backup)}"
+                            )
+                        _reset_db_connections()
                         raise ValueError(
-                            "Migrasi skema setelah restore gagal dan backup pengaman tidak bisa dipulihkan. "
-                            f"Pulihkan manual dari: {os.path.basename(safety_backup)}"
+                            "Migrasi skema setelah restore gagal; database dikembalikan ke kondisi sebelum restore."
                         )
-                    _reset_db_connections()
-                    raise ValueError(
-                        "Migrasi skema setelah restore gagal; database dikembalikan ke kondisi sebelum restore."
-                    )
 
                 from app.services.cache import reset_all_cache
                 reset_all_cache()

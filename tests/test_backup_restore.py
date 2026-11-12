@@ -326,3 +326,85 @@ def test_restore_skips_migration_for_unversioned_backup(backup_env, monkeypatch)
     monkeypatch.setattr(run_migration, "run", lambda app=None: pytest.fail("migrasi tidak boleh dijalankan"))
     with app.app_context():
         BackupService(backup_dir=str(backup_dir)).restore_backup(arsip)
+
+
+def _zip_plain_db(tmp_path, source, name="warnet.db"):
+    target = tmp_path / "custom_backup.zip"
+    with zipfile.ZipFile(target, "w") as zf:
+        zf.write(source, name)
+    return str(target)
+
+
+def test_restore_rejects_empty_database_without_replacing_live_db(backup_env, tmp_path):
+    app, _db_file, backup_dir, _a, _k = backup_env
+    with app.app_context():
+        db.session.add(Grup(nama="penanda-aktif"))
+        db.session.commit()
+
+    kosong = tmp_path / "kosong.db"
+    sqlite3.connect(str(kosong)).close()
+
+    with app.app_context(), pytest.raises(ValueError, match="bukan database TMBilling"):
+        BackupService(backup_dir=str(backup_dir)).restore_backup(_zip_plain_db(tmp_path, kosong))
+
+    with app.app_context():
+        assert Grup.query.filter_by(nama="penanda-aktif").first() is not None
+
+
+def test_restore_rejects_database_without_core_tables(backup_env, tmp_path):
+    app, _db_file, backup_dir, _a, _k = backup_env
+    asing = tmp_path / "asing.db"
+    con = sqlite3.connect(str(asing))
+    try:
+        con.execute("CREATE TABLE foo (id INTEGER PRIMARY KEY)")
+        con.commit()
+    finally:
+        con.close()
+
+    with app.app_context(), pytest.raises(ValueError, match="bukan database TMBilling"):
+        BackupService(backup_dir=str(backup_dir)).restore_backup(
+            _zip_plain_db(tmp_path, asing, "asing.db")
+        )
+
+
+def test_restore_migrates_unversioned_legacy_database(backup_env, tmp_path, monkeypatch):
+    from install_scripts import run_migration
+
+    app, db_file, backup_dir, _a, _k = backup_env
+    with app.app_context():
+        arsip_kini = BackupService(backup_dir=str(backup_dir)).create_backup()
+
+    legacy = _extract_db(arsip_kini, tmp_path / "legacy.db")
+    con = sqlite3.connect(str(legacy))
+    try:
+        con.execute("ALTER TABLE game DROP COLUMN tipe")
+        con.commit()
+    finally:
+        con.close()
+    arsip = _zip_plain_db(tmp_path, legacy)
+
+    dipanggil = {}
+
+    def fake_run(app_arg=None):
+        dipanggil["app"] = app_arg
+        con = sqlite3.connect(str(db_file), timeout=30)
+        try:
+            con.execute("ALTER TABLE game ADD COLUMN tipe VARCHAR(50)")
+            con.commit()
+        finally:
+            con.close()
+        return True
+
+    monkeypatch.setattr(run_migration, "run", fake_run)
+    with app.app_context():
+        hasil = BackupService(backup_dir=str(backup_dir)).restore_backup(arsip)
+
+    assert dipanggil["app"] is app
+    assert "safety_backup" in hasil
+
+    con = sqlite3.connect(str(db_file), timeout=30)
+    try:
+        kolom = {row[1] for row in con.execute("PRAGMA table_info(game)")}
+    finally:
+        con.close()
+    assert "tipe" in kolom
