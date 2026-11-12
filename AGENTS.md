@@ -288,7 +288,7 @@ python run.py
 build_and_deploy.bat
 
 # Menjalankan Master Runner E2E Sandbox Terisolasi (Zero Database Mutation Guarantee)
-# 11 suite Chromium sungguhan (Playwright): 330 check, paralel otomatis semua CPU
+# 15 suite Chromium sungguhan (Playwright): 366 check, paralel otomatis semua CPU
 npm run test:e2e
 # atau langsung via Python: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py
 # Serial untuk debug: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py --jobs 1
@@ -314,7 +314,10 @@ Runner Chromium sungguhan (Playwright) dengan sandbox terisolasi; setiap suite d
 |---|---|
 | `tests/e2e/run_all_e2e.py` | Orkestrator paralel process-per-suite: `--jobs 0` semua CPU / `1` serial, snapshot guard produksi (DB, `backups/`, `instance/notes/`, `.env`, `initial_admin.txt`), exit code nyata, `--list/--suite/--no-guard/--self-test`. |
 | `tests/e2e/run_all_e2e.js` | Registry suite + CLI Node; memuat `lib/browser.js`. |
-| `tests/e2e/e2e_sandbox_server.py` | Sandbox per suite: path `instance/e2e/<suite>/`, port dinamis, Waitress `app:create_app`, `TM_NOTES_DIR`/`PROJECT_ROOT`/`BACKUP_DIR` terisolasi, proses dibungkus Job Object Windows. |
+| `tests/e2e/e2e_sandbox_server.py` | Sandbox per suite: path `instance/e2e/<suite>/`, port dinamis, Waitress `tests.e2e.sandbox_app:create_app`, `TM_NOTES_DIR`/`PROJECT_ROOT`/`BACKUP_DIR`/`E2E_INSTANCE_PATH`/`E2E_API_LOG`/`TEMP` terisolasi, menulis `routes.json` dari `url_map`, proses dibungkus Job Object Windows. |
+| `tests/e2e/sandbox_app.py` | Factory sandbox: meneruskan `INSTANCE_PATH` dari env `E2E_INSTANCE_PATH` dan mencatat `endpoint method` tiap request ke `E2E_API_LOG` (dipakai gerbang cakupan). |
+| `tests/e2e/check_coverage_gate.py` | Gerbang cakupan: membandingkan `routes.json` dengan `requests.log` semua suite dikurangi `api_exempt.EXEMPT`; cetak `GATE LULUS`/`GATE GAGAL` (exit 1). |
+| `tests/e2e/api_exempt.py` | Rute yang sah tidak dipanggil dari sandbox (proses/jaringan nyata) beserta alasannya. |
 | `tests/e2e/seed_e2e_data.py` | Seed deterministik (admin/kasir1, member1..3 + member_expired, 5 PC, paket, menu, tutorial, transaksi historis). |
 | `tests/e2e/lib/browser.js` | Driver Chromium, `BASE_URL`, deteksi binary Playwright hilang. |
 | `tests/e2e/lib/harness.js` | `login/logout/tab/settingsTab/api/clientPoll/hardwarePost/waitFor/unique/check`. |
@@ -322,7 +325,7 @@ Runner Chromium sungguhan (Playwright) dengan sandbox terisolasi; setiap suite d
 | `tests/e2e/lib/report.js` | Kontrak laporan `{total,passed,failed,checks[]}`. |
 | `tests/e2e/lib/coverage_manifest.js` | 29 tab container + 10 sub-tab settings + 8 portal, pemilik suite per tab. |
 | `tests/e2e/test_e2e_backup_restore.js` | Suite `backup_restore`: backup → mutasi → restore di sandbox, validasi admin/konfirmasi/404/403, dan guard folder `backups/` produksi tidak berubah. |
-| `tests/e2e/test_e2e_*.js` | 11 suite: `pc_billing`, `fnb_pos`, `member_paket`, `auth_shift_notes`, `hardware_maintenance_remote`, `tournament_game`, `settings_admin_logs`, `backup_restore`, `public_portals_cms`, `coverage`, `perf_invariants`. |
+| `tests/e2e/test_e2e_*.js` | 15 suite: `pc_billing`, `fnb_pos`, `member_paket`, `auth_shift_notes`, `hardware_maintenance_remote`, `tournament_game`, `settings_admin_logs`, `backup_restore`, `public_portals_cms`, `coverage`, `perf_invariants`, `update_restore` (klaim update, restore DB, tukar berkas + pemulihan jurnal), `screenshot_whitelist` (screenshot privat + revalidasi role), `analytics_cleanup` (top paket tanpa baris siklus hidup + guard hapus tanggal), `route_smoke` (semua rute sisa agar gerbang cakupan lulus). |
 
 ---
 
