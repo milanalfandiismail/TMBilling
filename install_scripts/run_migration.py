@@ -141,6 +141,20 @@ def run(app=None) -> bool:
                 from app.models.menu.menu import MenuStockLog
                 MenuStockLog.__table__.create(db.engine)
 
+            # Index yang dibuat lewat migrasi rc2. DB hasil db.create_all() di-stamp
+            # head tanpa melewati migrasi, jadi index-nya dipasang ulang di sini.
+            with db.engine.connect() as conn:
+                if inspector.has_table("sesi"):
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_sesi_mulai_pada ON sesi (mulai_pada)"))
+                if inspector.has_table("transaksi"):
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transaksi_member_id ON transaksi (member_id)"))
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transaksi_user_id ON transaksi (user_id)"))
+                if inspector.has_table("transaksi_menu"):
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transaksi_menu_tanggal ON transaksi_menu (tanggal)"))
+                if inspector.has_table("shift_record"):
+                    conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_aktif_shift ON shift_record (status) WHERE status = 'AKTIF'"))
+                conn.commit()
+
             from flask_migrate import stamp
             stamp(directory=migrations_dir, revision="head")
             print("[MIGRATION] Safety sync skema berhasil.")

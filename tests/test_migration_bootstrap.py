@@ -63,6 +63,30 @@ def test_run_migration_setelah_create_all_tidak_gagal_duplicate_column(tmp_path)
         assert "operator" in cols
 
 
+def test_run_migration_memasang_index_rc2_pada_db_create_all(tmp_path):
+    from install_scripts.run_migration import run as run_migration
+
+    names = (
+        "uq_aktif_shift", "uq_aktif_sesi_pc", "uq_aktif_sesi_member",
+        "ix_transaksi_menu_tanggal", "ix_transaksi_member_id",
+        "ix_transaksi_user_id", "ix_sesi_mulai_pada",
+    )
+    app = _app(tmp_path, "fresh_index.db")
+
+    with app.app_context():
+        with db.engine.connect() as conn:
+            for name in names:
+                conn.execute(text(f"DROP INDEX IF EXISTS {name}"))
+            conn.commit()
+
+        assert run_migration(app) is True
+
+        with db.engine.connect() as conn:
+            ada = {r[0] for r in conn.execute(
+                text("SELECT name FROM sqlite_master WHERE type='index'"))}
+        assert set(names) <= ada
+
+
 def test_legacy_revision_can_create_maintenance_ticket(tmp_path):
     from flask_migrate import upgrade
 
