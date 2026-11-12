@@ -41,6 +41,12 @@ class SesiService:
     @staticmethod
     def buka_guest(pc_kode, paket_id, nama_guest="Guest", operator="system", metode_pembayaran="Tunai"):
         """Buka sesi baru untuk guest dan generate nota pembelian."""
+        # Satu blok dengan hapus riwayat per tanggal agar nota baru tidak terhapus.
+        with WRITE_LOCK:
+            return SesiService._buka_guest_locked(pc_kode, paket_id, nama_guest, operator, metode_pembayaran)
+
+    @staticmethod
+    def _buka_guest_locked(pc_kode, paket_id, nama_guest, operator, metode_pembayaran):
         nama_guest = validate_string_length(nama_guest or "Guest", min_len=1, max_len=50, field_name="Nama Guest", required=True)
         metode_pembayaran = validate_payment_method(metode_pembayaran)
         pc = PCRepository.get_by_kode(pc_kode)

@@ -11,6 +11,7 @@ import json
 from datetime import datetime
 from app.models import db
 from app.repositories import TransaksiRepository, SesiRepository, MenuRepository
+from app.services.write_lock import WRITE_LOCK
 from app.utils.logger import read_logs, write_log, clear_logs
 from app.utils.timezone_utils import get_local_date_range_utc
 
@@ -198,32 +199,36 @@ class LogAuditService:
     @staticmethod
     def clear_transactions_by_date(tanggal, operator="system"):
         """Menghapus riwayat transaksi & sesi pada tanggal tertentu (Audit)."""
-        _, target_end = get_local_date_range_utc(tanggal)
-        for sesi in SesiRepository.get_all_aktif():
-            mulai = sesi.mulai_pada or sesi.waktu_mulai_sesi
-            if mulai and mulai < target_end:
-                raise ValueError(
-                    "Tutup semua sesi aktif sebelum menghapus riwayat tanggal ini"
-                )
-        try:
-            count_t = TransaksiRepository.delete_by_date(tanggal)
-            count_m = MenuRepository.delete_transaksi_by_date(tanggal)
-            count_s = SesiRepository.delete_history_by_date(tanggal)
-            db.session.commit()
-            write_log(
-                "CLEAR_TANGGAL",
-                f"Riwayat tanggal {tanggal} dihapus ({count_t} transaksi, {count_m} kantin, {count_s} sesi)",
-                user=operator,
-                detail_json={"tanggal_target": tanggal, "transaksi_dihapus": count_t, "menu_dihapus": count_m, "sesi_dihapus": count_s}
-            )
-            return True
-        except Exception as e:
+        # Cek sesi aktif dan hapus riwayat harus satu blok dengan pembukaan sesi
+        # (WRITE_LOCK) agar nota sesi yang baru dibuka tidak ikut terhapus.
+        with WRITE_LOCK:
+            _, target_end = get_local_date_range_utc(tanggal)
+            for sesi in SesiRepository.get_all_aktif():
+                mulai = sesi.mulai_pada or sesi.waktu_mulai_sesi
+                if mulai and mulai < target_end:
+                    raise ValueError(
+                        "Tutup semua sesi aktif sebelum menghapus riwayat tanggal ini"
+                    )
             try:
-                db.session.rollback()
-            except Exception:
-                pass
-            write_log("ERROR", f"Gagal hapus riwayat tanggal {tanggal}: {str(e)}", user=operator, detail_json={"error": str(e), "tanggal_target": tanggal})
-            return False
+                count_t = TransaksiRepository.delete_by_date(tanggal)
+                count_m = MenuRepository.delete_transaksi_by_date(tanggal)
+                count_s = SesiRepository.delete_history_by_date(tanggal)
+                db.session.commit()
+            except Exception as e:
+                try:
+                    db.session.rollback()
+                except Exception:
+                    pass
+                write_log("ERROR", f"Gagal hapus riwayat tanggal {tanggal}: {str(e)}", user=operator, detail_json={"error": str(e), "tanggal_target": tanggal})
+                return False
+
+        write_log(
+            "CLEAR_TANGGAL",
+            f"Riwayat tanggal {tanggal} dihapus ({count_t} transaksi, {count_m} kantin, {count_s} sesi)",
+            user=operator,
+            detail_json={"tanggal_target": tanggal, "transaksi_dihapus": count_t, "menu_dihapus": count_m, "sesi_dihapus": count_s}
+        )
+        return True
 
     @staticmethod
     def prepare_export_data(filter_text=""):
