@@ -81,6 +81,30 @@ const suites = [
     runner: require('./test_e2e_perf_invariants.js').runPerfInvariantsE2ETest,
   },
   {
+    id: 'update_restore',
+    title: 'Klaim update tunggal, recovery jurnal, dan validasi skema restore',
+    browser: true,
+    runner: require('./test_e2e_update_restore.js').runUpdateRestoreE2ETest,
+  },
+  {
+    id: 'screenshot_whitelist',
+    title: 'Privasi screenshot dan revalidasi role whitelist',
+    browser: true,
+    runner: require('./test_e2e_screenshot_whitelist.js').runScreenshotWhitelistE2ETest,
+  },
+  {
+    id: 'analytics_cleanup',
+    title: 'Analitik paket tanpa baris siklus hidup dan guard hapus tanggal',
+    browser: true,
+    runner: require('./test_e2e_analytics_cleanup.js').runAnalyticsCleanupE2ETest,
+  },
+  {
+    id: 'route_smoke',
+    title: 'Smoke semua rute tersisa yang belum dipakai suite bisnis',
+    browser: true,
+    runner: require('./test_e2e_route_smoke.js').runRouteSmokeE2ETest,
+  },
+  {
     id: '_selftest',
     title: 'Self-test: membuktikan runner meneruskan kegagalan',
     browser: false,

@@ -15,7 +15,8 @@ const CREDENTIALS = {
   kasir: { username: 'kasir1', password: 'kasir123' },
 };
 
-const DEFAULT_WAIT_MS = 5000;
+// 14 suite jalan paralel di semua core; 5 detik terbukti terlalu ketat.
+const DEFAULT_WAIT_MS = 10000;
 const POLL_INTERVAL_MS = 100;
 
 // Sub-tab settings yang punya container `#subtab-<nama>` sendiri.
