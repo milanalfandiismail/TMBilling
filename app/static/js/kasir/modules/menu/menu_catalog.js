@@ -78,6 +78,10 @@ window.MenuCatalog = {
         }
 
         this.currentView = view;
+        const catalogBox = document.getElementById("menu-catalog-scroll-container");
+        const arsipBox = document.getElementById("menu-arsip-list");
+        if (catalogBox) catalogBox.classList.toggle("hidden", view === "archived");
+        if (arsipBox) arsipBox.classList.toggle("hidden", view !== "archived");
         const activeBtn = document.getElementById("menu-tab-active-btn");
         const archivedBtn = document.getElementById("menu-tab-archived-btn");
 
@@ -566,76 +570,16 @@ window.MenuCatalog = {
     },
 
     renderArchivedCatalog(data) {
-        this.setupCatalogScroll();
-        const grid = document.getElementById("menu-catalog-grid");
-        if (!grid) return;
-
-        if (!data || data.length === 0) {
-            grid.innerHTML = `
-                <div class="col-span-full flex flex-col items-center justify-center py-20 text-neutral-500">
-                    <div class="w-12 h-12 rounded-xl bg-[#141414] border border-[#222] flex items-center justify-center text-neutral-500 mb-3">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-                    </div>
-                    <p class="text-xs lg:text-sm xl:text-base font-bold text-neutral-300">Tidak ada menu yang diarsipkan</p>
-                    <p class="text-[10px] lg:text-xs xl:text-sm text-neutral-500 mt-1">Menu yang dihapus/diarsipkan akan tersimpan di sini</p>
-                </div>`;
-            return;
-        }
-
-        grid.innerHTML = data.map(m => {
-            const resolvedImg = m.gambar_path && window.API ? API.resolveMediaUrl(m.gambar_path) : (m.gambar_path || '');
-            const imgHtml = resolvedImg 
-                ? `<div class="w-full aspect-[4/3] rounded-lg overflow-hidden border border-[#1f1f1f] bg-[#0c0c0c] relative opacity-60">
-                     <img src="${resolvedImg}" alt="${m.nama}" class="w-full h-full object-cover object-center grayscale" loading="lazy">
-                     <span class="absolute top-2 right-2 px-1.5 py-0.5 bg-amber-500/90 text-black text-[9px] font-bold rounded shadow uppercase">Arsip</span>
-                   </div>`
-                : `<div class="w-full aspect-[4/3] rounded-lg border border-[#1f1f1f] bg-[#090909] flex flex-col items-center justify-center text-neutral-600 relative">
-                     <span class="absolute top-2 right-2 px-1.5 py-0.5 bg-amber-500/90 text-black text-[9px] font-bold rounded shadow uppercase">Arsip</span>
-                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
-                     </svg>
-                   </div>`;
-
-            const trxCount = m.transaksi_count || 0;
-            const trxInfo = trxCount > 0 ? `${trxCount} transaksi historis` : 'Belum pernah terjual';
-
-            return `
-                <div class="bg-[#0a0a0a] border border-[#222] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between relative group">
-                    <!-- Preview Button (Top Left: Always clickable via tapping or preview button) -->
-                    ${resolvedImg ? `
-                    <div class="absolute top-2 left-2 z-10 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                        <button type="button" onclick="Menu.openLightbox('${resolvedImg}', '${m.nama.replace(/'/g, "\\'")}', '${Utils.formatRupiah(m.harga)}')" class="p-1 xl:px-2 xl:py-1 rounded bg-black/75 hover:bg-neutral-800 text-neutral-200 hover:text-white border border-[#2a2a2a] transition-all shadow flex items-center gap-1 text-[10px] xl:text-xs font-bold" title="Lihat Fullscreen">
-                            <svg class="w-3.5 h-3.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                            <span class="hidden xl:inline">Preview</span>
-                        </button>
-                    </div>
-                    ` : ''}
-
-                    <div class="space-y-2">
-                        ${imgHtml}
-                        <div>
-                            <h4 class="text-xs lg:text-xs xl:text-sm font-bold text-neutral-300 line-clamp-2 leading-snug" title="${m.nama}">${m.nama}</h4>
-                            <div class="mt-1.5 pt-1.5 border-t border-[#181818] flex items-center justify-between gap-1 flex-wrap">
-                                <span class="text-xs lg:text-xs xl:text-sm text-neutral-300 font-bold font-mono tabular-nums">${Utils.formatRupiah(m.harga)}</span>
-                                <span class="text-[9px] lg:text-[10px] text-neutral-500 font-mono">${trxInfo}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Action Buttons -->
-                    <div class="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-[#181818] remote-hide-action">
-                        <button onclick="Menu.restoreItem(${m.id}, '${m.nama}')" 
-                            class="flex-1 py-1.5 px-2 rounded bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-600/30 text-[10px] lg:text-xs xl:text-xs font-bold transition-colors flex items-center justify-center gap-1" title="Pulihkan ke katalog aktif">
-                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                            <span>Pulihkan</span>
-                        </button>
-                        <button onclick="Menu.hardDeleteItem(${m.id}, '${m.nama}')" 
-                            class="p-1.5 rounded bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-900/40 transition-colors shrink-0" title="Hapus Permanen">
-                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
-                    </div>
-                </div>`;
-        }).join('');
+        const container = document.getElementById("menu-arsip-list");
+        if (!container) return;
+        ArsipList._onChange = () => this.loadCatalog();
+        container.innerHTML = ArsipList.rows({
+            items: data || [],
+            res: "menu",
+            labelOf: (m) => m.nama,
+            metaOf: (m) => `${m.transaksi_count || 0} transaksi historis · ${Utils.formatRupiah(m.harga)}`,
+            emptyText: "Belum ada menu diarsipkan"
+        });
     },
 
     async restoreItem(menuId, nama) {

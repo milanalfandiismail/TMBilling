@@ -8,6 +8,10 @@
                 <p class="text-[10px] sm:text-xs 2xl:text-sm text-neutral-500">Kelola stasiun warnet: status, grup, IP address, dan mode unit</p>
             </div>
             <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1 text-[11px] shrink-0">
+                    <button type="button" id="pc-view-aktif" onclick="PC.toggleView(false)" class="px-2.5 py-1 rounded bg-neutral-100 text-black font-bold">Aktif</button>
+                    <button type="button" id="pc-view-arsip" onclick="PC.toggleView(true)" class="px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium">Diarsipkan</button>
+                </div>
                 <div class="relative flex-1 sm:w-48 2xl:w-64">
                     <label for="pc-search-input" class="sr-only">Cari PC</label>
                     <input type="text" id="pc-search-input" placeholder="Cari PC / IP / MAC..."
@@ -70,5 +74,6 @@
                 {% endfor %}
             </div>
         </div>
+        <div id="pc-arsip-list" class="hidden border border-[#1c1c1c] rounded bg-[#050505]"></div>
     </div>
 </div>

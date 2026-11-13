@@ -9,6 +9,29 @@ const PC = {
     _allPcs: [],
     _lastFingerprint: null,
     _hasResizeListener: false,
+    arsipMode: false,
+
+    toggleView(arsip) {
+        this.arsipMode = arsip;
+        document.getElementById('pc-table').classList.toggle('hidden', arsip);
+        document.getElementById('pc-group-tabs').classList.toggle('hidden', arsip);
+        document.getElementById('pc-arsip-list').classList.toggle('hidden', !arsip);
+        document.getElementById('pc-view-aktif').className = arsip
+            ? 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium'
+            : 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold';
+        document.getElementById('pc-view-arsip').className = arsip
+            ? 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold'
+            : 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium';
+        if (arsip) {
+            ArsipList.mount({
+                res: 'pc',
+                container: document.getElementById('pc-arsip-list'),
+                labelOf: (i) => i.kode,
+                metaOf: (i) => i.nama_grup || '',
+                emptyText: 'Belum ada PC diarsipkan'
+            });
+        }
+    },
 
     getAdaptivePerPage() {
         const width = window.innerWidth;

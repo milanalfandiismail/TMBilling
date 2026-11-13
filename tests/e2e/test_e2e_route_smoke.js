@@ -8,7 +8,7 @@
  */
 const assert = require('assert');
 const { createReport, record, finish } = require('./lib/report');
-const { BASE_URL, login, check } = require('./lib/harness');
+const { BASE_URL, login, tab, check } = require('./lib/harness');
 
 const ID = '999999';
 
@@ -265,6 +265,28 @@ async function runRouteSmokeE2ETest(page) {
   for (const [label, entries] of KASIR_GROUPS) {
     await check(report, `Rute kasir: ${label}`, () => runSmokeGroup(page, token, label, entries));
   }
+
+  await check(report, 'Tab Data Diarsipkan memakai pill kategori, bukan tumpukan seksi', async () => {
+    await login(page, 'admin');
+    await tab(page, 'arsip');
+    await page.waitForSelector('#arsip-pill-pc', { state: 'visible', timeout: 10000 });
+    await page.click('#arsip-pill-pc');
+    const pillClass = await page.getAttribute('#arsip-pill-pc', 'class');
+    assert.ok(/bg-neutral-100/.test(pillClass || ''), 'pill PC harus aktif setelah diklik');
+    const panelText = await page.locator('#arsip-panel').innerText();
+    assert.ok(!panelText.includes('Grup PC / Zona'), 'panel PC tidak boleh menampilkan seksi grup');
+  });
+
+  await check(report, 'Pill arsip per tab menukar daftar aktif dengan daftar arsip', async () => {
+    await tab(page, 'paket');
+    await page.waitForSelector('#paket-view-arsip', { state: 'visible', timeout: 10000 });
+    await page.click('#paket-view-arsip');
+    await page.waitForSelector('#paket-arsip-list', { state: 'visible', timeout: 5000 });
+    assert.ok(await page.locator('#paket-table').isHidden(), 'tabel aktif harus tersembunyi saat mode arsip');
+    await page.click('#paket-view-aktif');
+    await page.waitForSelector('#paket-table', { state: 'visible', timeout: 5000 });
+    assert.ok(await page.locator('#paket-arsip-list').isHidden(), 'daftar arsip harus tersembunyi saat kembali aktif');
+  });
 
   return finish(report);
 }

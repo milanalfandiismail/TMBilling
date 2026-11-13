@@ -235,7 +235,7 @@ window.MenuCrud = {
             Toast.error("Akses terbatas hanya untuk Administrator");
             return;
         }
-        const menu = this.items.find(m => m.id === menuId) || this.archivedItems.find(m => m.id === menuId);
+        const menu = this.items.find(m => m.id === menuId);
         if (!menu) return;
 
         const modal = document.getElementById("menu-modal");

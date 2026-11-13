@@ -9,6 +9,29 @@ const Paket = {
     _allPaketList: [],
     _lastFingerprint: null,
     _hasResizeListener: false,
+    arsipMode: false,
+
+    toggleView(arsip) {
+        this.arsipMode = arsip;
+        document.getElementById('paket-table').classList.toggle('hidden', arsip);
+        document.getElementById('paket-group-tabs').classList.toggle('hidden', arsip);
+        document.getElementById('paket-arsip-list').classList.toggle('hidden', !arsip);
+        document.getElementById('paket-view-aktif').className = arsip
+            ? 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium'
+            : 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold';
+        document.getElementById('paket-view-arsip').className = arsip
+            ? 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold'
+            : 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium';
+        if (arsip) {
+            ArsipList.mount({
+                res: 'paket',
+                container: document.getElementById('paket-arsip-list'),
+                labelOf: (i) => i.nama,
+                metaOf: (i) => i.nama_grup || '',
+                emptyText: 'Belum ada paket diarsipkan'
+            });
+        }
+    },
 
     getAdaptivePerPage() {
         const width = window.innerWidth;

@@ -13,6 +13,29 @@ const Member = {
     _lastFingerprint: null,
     _hasResizeListener: false,
     _allGroups: [],
+    arsipMode: false,
+
+    toggleView(arsip) {
+        this.arsipMode = arsip;
+        document.getElementById('member-table').classList.toggle('hidden', arsip);
+        document.getElementById('member-group-tabs').classList.toggle('hidden', arsip);
+        document.getElementById('member-arsip-list').classList.toggle('hidden', !arsip);
+        document.getElementById('member-view-aktif').className = arsip
+            ? 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium'
+            : 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold';
+        document.getElementById('member-view-arsip').className = arsip
+            ? 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold'
+            : 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium';
+        if (arsip) {
+            ArsipList.mount({
+                res: 'member',
+                container: document.getElementById('member-arsip-list'),
+                labelOf: (i) => i.username,
+                metaOf: (i) => i.nama_lengkap || '',
+                emptyText: 'Belum ada member diarsipkan'
+            });
+        }
+    },
 
     getAdaptivePerPage() {
         const width = window.innerWidth;

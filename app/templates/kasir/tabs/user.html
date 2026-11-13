@@ -11,6 +11,10 @@
                 <p class="text-[10px] sm:text-xs 2xl:text-sm text-neutral-500">Kelola akun kasir & administrator, hak akses, dan benefit bermain</p>
             </div>
             <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1 text-[11px] shrink-0">
+                    <button type="button" id="user-view-aktif" onclick="User.toggleView(false)" class="px-2.5 py-1 rounded bg-neutral-100 text-black font-bold">Aktif</button>
+                    <button type="button" id="user-view-arsip" onclick="User.toggleView(true)" class="px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium">Diarsipkan</button>
+                </div>
                 <div class="relative flex-1 sm:w-48 2xl:w-64">
                     <label for="user-search-input" class="sr-only">Cari Staff</label>
                     <input type="text" id="user-search-input" placeholder="Cari user / staff..."
@@ -58,5 +62,6 @@
                 </table>
             </div>
         </div>
+        <div id="user-arsip-list" class="hidden border border-[#1c1c1c] rounded bg-[#050505]"></div>
     </div>
 </div>

@@ -9,7 +9,8 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 ## [1.6.5-rc3] - 2026-11-13 - Release Candidate 3
 
 ### Added
-- **Tab Data Diarsipkan**: tab baru `arsip` (`modules/arsip/index.js`) mengumpulkan seluruh data terarsip — grup, PC, paket, member, user, game, menu — lewat `GET /api/v1/kasir/arsip/` dengan tombol Pulihkan dan Hapus Permanen.
+- **Tab Data Diarsipkan**: tab baru `arsip` (`modules/arsip/index.js`) mengumpulkan seluruh data terarsip — grup, PC, paket, member, user, game, menu — lewat `GET /api/v1/kasir/arsip/`, dengan pills kategori (satu kategori tampil sekaligus) serta tombol Pulihkan dan Hapus Permanen.
+- **Arsip Per Tab**: tab grup, PC, paket, member, user, game, dan menu FnB kini punya pill `Aktif | Diarsipkan`; data yang diarsipkan tetap terlihat di tab asalnya, bukan hilang. Baris arsip memakai renderer bersama `core/arsip_list.js` (Pulihkan / Hapus Permanen).
 - **Arsip Grup**: kolom `grup.aktif` (migrasi `a1b2c3d4e5f6`) plus `POST /api/v1/kasir/grup/<id>/archive` dan `/restore`; daftar grup reguler menyembunyikan grup arsip.
 - **Daftar Bersih dari Arsip**: daftar PC, paket, member, user, dan game kini hanya menampilkan data aktif; `?include_arsip=1` untuk menampilkan semuanya.
 - **Arsip dan Hapus Permanen Terpisah**: PC, Paket, Member, User, dan Game punya aksi arsip (`POST .../<id>/archive`, `aktif = False`, bisa dipulihkan) dan hapus permanen (`DELETE .../<id>`) yang benar-benar menghapus baris utama. Body `{"confirm": "<kode/nama/username>"}` wajib; konfirmasi salah atau kosong dibalas 400.

@@ -8,6 +8,28 @@ const Grup = {
     searchQuery: '',
     currentPage: 1,
     perPage: 7,
+    arsipMode: false,
+
+    toggleView(arsip) {
+        this.arsipMode = arsip;
+        document.getElementById('grup-table').classList.toggle('hidden', arsip);
+        document.getElementById('grup-arsip-list').classList.toggle('hidden', !arsip);
+        document.getElementById('grup-view-aktif').className = arsip
+            ? 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium'
+            : 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold';
+        document.getElementById('grup-view-arsip').className = arsip
+            ? 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold'
+            : 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium';
+        if (arsip) {
+            ArsipList.mount({
+                res: 'grup',
+                container: document.getElementById('grup-arsip-list'),
+                labelOf: (i) => i.nama,
+                metaOf: (i) => i.keterangan || '',
+                emptyText: 'Belum ada grup diarsipkan'
+            });
+        }
+    },
 
     refreshLive() {
         if (typeof App !== 'undefined' && App.currentTab !== 'grup') return;

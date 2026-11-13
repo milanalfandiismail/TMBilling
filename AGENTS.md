@@ -195,7 +195,8 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 - `app.js`: Entry point inisialisasi aplikasi kasir, event delegation, dan routing 31 tab.
 - `core/api.js`: Klien HTTP REST terpusat dengan penanganan CSRF otomatis dan error reporting.
 - `core/modal.js`: Pengendali modal dialog modular; `Modal.confirm` mendukung opsi `requireCheck` (satu checkbox wajib dicentang, tombol setuju nonaktif sampai aktif) yang dipakai hapus permanen PC/Paket/Member/User/Game.
-- `core/skeleton.js`: Skeleton loader statis (tanpa animasi) untuk 30 tab tampilan.
+- `core/arsip_list.js`: Renderer baris arsip bersama (`ArsipList.mount/rows/restore/hapus`) yang dipakai tab Data Diarsipkan, pill arsip grup/PC/paket/member/user/game, dan tampilan arsip menu FnB.
+- `core/skeleton.js`: Skeleton loader statis (tanpa animasi) untuk 31 tab tampilan.
 - `core/toast.js`: Sistem notifikasi toast floating modern.
 - `core/utils.js`: Formatter mata uang Rupiah, kalkulator waktu, dan escape HTML sanitizer.
 - `components/modal-buka.js`: Modal alur pembukaan sesi baru meja PC (Prepaid/Postpaid/Member).
@@ -247,7 +248,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Unit PC & Meja Klien** | `modules/pc.js`, `modules/pc/` | `routes/pc/pc_routes.py`, `services/pc/` (prefetch sesi aktif sekali query) | `PC`, `Grup` |
 | **Log Mutasi Stok FnB** | `modules/menu/stock_log.js` | `routes/menu/menu_routes.py`, `services/menu/` | `MenuItem`, in-memory store |
 | **Laporan Penjualan FnB** | `modules/laporan_menu.js` | `routes/menu/menu_routes.py`, `services/menu/` | `TransaksiMenu`, `MenuItem` |
-| **Tab Data Diarsipkan** | `modules/arsip/index.js` | `routes/arsip/arsip_routes.py` (agregat `GET /api/v1/kasir/arsip/`), `services/arsip/`, `repositories/arsip/`; pemulihan `POST /<resource>/<id>/restore` | `Grup`, `PC`, `Paket`, `Member`, `User`, `Game`, `MenuItem` |
+| **Tab Data Diarsipkan** | `modules/arsip/index.js` (pills kategori), `core/arsip_list.js` (baris arsip bersama, juga dipakai pill `Aktif \| Diarsipkan` di tab grup/PC/paket/member/user/game dan arsip menu FnB) | `routes/arsip/arsip_routes.py` (agregat `GET /api/v1/kasir/arsip/`), `services/arsip/`, `repositories/arsip/`; pemulihan `POST /<resource>/<id>/restore` | `Grup`, `PC`, `Paket`, `Member`, `User`, `Game`, `MenuItem` |
 | **Sticky Notes Antar Shift** | `modules/catatan.js` | `routes/notes/note_routes.py`, `services/notes/` | Scratchpad disk store |
 | **Audit Log Terpusat** | `modules/log.js` | `routes/user/user_routes.py`, `services/user/`, `utils/logger.py` (file JSON `logs/warnet.log`, rotasi gzip; tanpa tabel DB) | — (file-based) |
 | **Cetak Ulang Struk Kasir** | `modules/struk.js` | `routes/report/report_routes.py` (`get_struk`, `get_struk_menu`), `services/transaksi/` | `Transaksi` |
@@ -291,7 +292,7 @@ python run.py
 build_and_deploy.bat
 
 # Menjalankan Master Runner E2E Sandbox Terisolasi (Zero Database Mutation Guarantee)
-# 15 suite Chromium sungguhan (Playwright): 372 check, paralel otomatis semua CPU
+# 15 suite Chromium sungguhan (Playwright): 374 check, paralel otomatis semua CPU
 npm run test:e2e
 # atau langsung via Python: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py
 # Serial untuk debug: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py --jobs 1

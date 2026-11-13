@@ -9,6 +9,28 @@ const User = {
     searchQuery: '',
     currentPage: 1,
     perPage: 7,
+    arsipMode: false,
+
+    toggleView(arsip) {
+        this.arsipMode = arsip;
+        document.getElementById('user-table').classList.toggle('hidden', arsip);
+        document.getElementById('user-arsip-list').classList.toggle('hidden', !arsip);
+        document.getElementById('user-view-aktif').className = arsip
+            ? 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium'
+            : 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold';
+        document.getElementById('user-view-arsip').className = arsip
+            ? 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold'
+            : 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium';
+        if (arsip) {
+            ArsipList.mount({
+                res: 'user',
+                container: document.getElementById('user-arsip-list'),
+                labelOf: (i) => i.username,
+                metaOf: (i) => i.role || '',
+                emptyText: 'Belum ada user diarsipkan'
+            });
+        }
+    },
 
     refreshLive() {
         if (typeof App !== 'undefined' && App.currentTab !== 'user') return;

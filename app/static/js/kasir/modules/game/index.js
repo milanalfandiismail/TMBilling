@@ -11,6 +11,28 @@ const GameManagement = {
     perPage: 8,
     _hasResizeListener: false,
     _wasMobile: null,
+    arsipMode: false,
+
+    toggleView(arsip) {
+        this.arsipMode = arsip;
+        document.getElementById('game-table-wrap').classList.toggle('hidden', arsip);
+        document.getElementById('game-arsip-list').classList.toggle('hidden', !arsip);
+        document.getElementById('game-view-aktif').className = arsip
+            ? 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium'
+            : 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold';
+        document.getElementById('game-view-arsip').className = arsip
+            ? 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold'
+            : 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium';
+        if (arsip) {
+            ArsipList.mount({
+                res: 'game',
+                container: document.getElementById('game-arsip-list'),
+                labelOf: (i) => i.nama,
+                metaOf: (i) => i.tipe || '',
+                emptyText: 'Belum ada game diarsipkan'
+            });
+        }
+    },
     
     // Canvas Cropper State (Aspect Ratio 3:4)
     cropperState: {

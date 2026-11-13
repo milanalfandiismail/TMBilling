@@ -440,14 +440,17 @@ async function runFnBPosStrukE2ETest(page) {
         );
 
         await page.click('#menu-tab-archived-btn');
-        // Tampilan arsip memakai grid katalog yang sama (#menu-catalog-grid), bukan grid terpisah.
-        await page.waitForSelector(`#menu-catalog-grid h4[title="${indomie.nama}"]`, { state: 'visible', timeout: 5000 });
-        const archivedCard = page.locator(`#menu-catalog-grid div:has(h4[title="${indomie.nama}"])`).first();
-        const archivedText = await archivedCard.innerText();
+        // Tampilan arsip memakai baris standar ArsipList (#menu-arsip-list), bukan kartu katalog.
+        await page.waitForSelector('#menu-arsip-list', { state: 'visible', timeout: 5000 });
+        const archivedRow = page.locator(`#menu-arsip-list div:has(p:text-is("${indomie.nama}"))`).first();
+        await archivedRow.waitFor({ state: 'visible', timeout: 5000 });
+        const archivedText = await archivedRow.innerText();
         assert.ok(new RegExp(`${soldRows} transaksi historis`).test(archivedText),
             `arsip harus menampilkan ${soldRows} transaksi historis, dapat: ${archivedText}`);
 
-        await archivedCard.locator('button', { hasText: 'Pulihkan' }).click();
+        await archivedRow.locator('button[title="Pulihkan"]').click();
+        await page.waitForSelector('#modal-confirm-btn', { state: 'visible', timeout: 5000 });
+        await page.click('#modal-confirm-btn');
         await dbWait('SELECT is_active FROM menu_item WHERE id = ?', [indomie.id],
             (r) => Number(r[0].is_active) === 1, 'menu dipulihkan di DB');
         await page.click('#menu-tab-active-btn');
