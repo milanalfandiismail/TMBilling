@@ -682,6 +682,48 @@ async function runTournamentGameE2ETest(page) {
         }, state.tutorialTitleEdited, { label: 'judul panduan hilang dari sidebar' });
     });
 
+    await check(report, 'Kelola Game: filter jenis dan kategori berdampingan di desktop', async () => {
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await page.goto(BASE_URL + '/kasir/');
+        await tab(page, 'game_management');
+        await page.waitForSelector('#game-type-filter', { state: 'visible' });
+        const gap = await page.evaluate(() => {
+            const a = document.getElementById('game-type-filter').getBoundingClientRect();
+            const b = document.getElementById('game-category-filter').getBoundingClientRect();
+            return b.left - a.right;
+        });
+        assert.ok(gap >= 0 && gap <= 12, 'jarak filter ' + gap + 'px');
+    });
+
+    await check(report, 'Kelola Game: paginasi membatasi maksimal 8 baris per halaman', async () => {
+        await page.setViewportSize({ width: 1600, height: 900 });
+        const perPage = await page.evaluate(() => window.GameManagement.getAdaptivePerPage());
+        assert.ok(perPage >= 6 && perPage <= 8, 'perPage ' + perPage);
+    });
+
+    await check(report, 'Modal game utuh di layar kecil tanpa tab segmen dan emoji', async () => {
+        await page.setViewportSize({ width: 360, height: 800 });
+        await page.evaluate(() => window.GameManagement.openAddModal());
+        await page.waitForSelector('#game-modal', { state: 'visible' });
+        const info = await page.evaluate(() => {
+            const box = document.querySelector('#game-modal > div:last-child').getBoundingClientRect();
+            return {
+                top: box.top,
+                bottom: box.bottom,
+                width: box.width,
+                hasTabs: !!document.getElementById('tab-btn-modal-data'),
+                hasEmoji: /[🌀-🫿]/u.test(document.getElementById('game-modal').innerText),
+                vw: window.innerWidth,
+                vh: window.innerHeight,
+            };
+        });
+        assert.ok(info.top >= 0 && info.bottom <= info.vh + 1, 'modal keluar viewport');
+        assert.ok(info.width <= info.vw, 'modal lebih lebar dari viewport');
+        assert.strictEqual(info.hasTabs, false, 'tab segmen masih ada');
+        assert.strictEqual(info.hasEmoji, false, 'emoji masih ada di modal');
+        await page.evaluate(() => window.GameManagement.closeModal());
+    });
+
     return finish(report);
 }
 

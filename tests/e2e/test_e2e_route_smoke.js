@@ -631,6 +631,22 @@ async function runRouteSmokeE2ETest(page) {
     }
   });
 
+  await check(report, 'Data Diarsipkan: pill kategori dan grup tidak butuh scroll horizontal', async () => {
+    await tab(page, 'arsip');
+    await page.waitForSelector('#arsip-pills button');
+    for (const width of [360, 768, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      await page.click('#arsip-pill-pc');
+      await page.waitForTimeout(150);
+      const fits = await page.evaluate(() => ['arsip-pills', 'arsip-grup-pills'].every((id) => {
+        const el = document.getElementById(id);
+        return el.scrollWidth <= el.clientWidth + 1;
+      }));
+      assert.ok(fits, 'scroll horizontal pada ' + width + 'px');
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+  });
+
   return finish(report);
 }
 

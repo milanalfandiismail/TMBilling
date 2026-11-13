@@ -43,11 +43,9 @@ const GameManagement = {
     },
 
     getAdaptivePerPage() {
-        const width = window.innerWidth;
-        if (width >= 1536) return 10;
-        if (width >= 1280) return 8;
-        if (width >= 768) return 7;
-        return 6; // mobile
+        if (window.innerWidth >= 1536) return 8;
+        if (window.innerWidth >= 768) return 7;
+        return 6;
     },
 
     _initResizeListener() {
@@ -427,58 +425,16 @@ const GameManagement = {
         this.renderCropperCanvas();
     },
 
-    modalActiveTab: 'data',
-
-    switchModalTab(tabName) {
-        this.modalActiveTab = tabName;
-        const secData = document.getElementById('modal-section-data');
-        const secCover = document.getElementById('modal-section-cover');
-        const btnData = document.getElementById('tab-btn-modal-data');
-        const btnCover = document.getElementById('tab-btn-modal-cover');
-
-        if (!secData || !secCover) return;
-
-        if (tabName === 'cover') {
-            secData.classList.add('max-md:hidden');
-            secCover.classList.remove('max-md:hidden');
-            secCover.classList.add('max-md:flex');
-
-            if (btnData) {
-                btnData.className = "flex-1 py-2 text-xs font-bold transition-colors border-b-2 border-transparent text-neutral-400 hover:text-neutral-200 flex items-center justify-center gap-1.5";
-            }
-            if (btnCover) {
-                btnCover.className = "flex-1 py-2 text-xs font-bold transition-colors border-b-2 border-neutral-200 text-neutral-100 flex items-center justify-center gap-1.5";
-            }
-
-            setTimeout(() => {
-                this.renderCropperCanvas();
-            }, 40);
-        } else {
-            secCover.classList.add('max-md:hidden');
-            secCover.classList.remove('max-md:flex');
-            secData.classList.remove('max-md:hidden');
-
-            if (btnData) {
-                btnData.className = "flex-1 py-2 text-xs font-bold transition-colors border-b-2 border-neutral-200 text-neutral-100 flex items-center justify-center gap-1.5";
-            }
-            if (btnCover) {
-                btnCover.className = "flex-1 py-2 text-xs font-bold transition-colors border-b-2 border-transparent text-neutral-400 hover:text-neutral-200 flex items-center justify-center gap-1.5";
-            }
-        }
-    },
-
     openAddModal() {
         this.resetForm();
-        this.switchModalTab('data');
         document.getElementById('form-game-tipe').value = 'game';
         document.getElementById('form-game-aktif').checked = true;
-        document.getElementById('game-modal-title').textContent = 'Tambah Item Baru (Game / Aplikasi)';
+        document.getElementById('game-modal-title').textContent = 'Tambah Item Baru';
         document.getElementById('game-modal').classList.remove('hidden');
     },
 
     openEditModal(game) {
         this.resetForm();
-        this.switchModalTab('data');
         
         document.getElementById('form-game-id').value = game.id;
         document.getElementById('form-game-tipe').value = (game.tipe || 'game').toLowerCase();
