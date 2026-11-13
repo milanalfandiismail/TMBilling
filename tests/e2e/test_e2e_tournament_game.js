@@ -472,8 +472,8 @@ async function runTournamentGameE2ETest(page) {
         }, state.gameNameEdited, { label: 'baris hasil edit tampil sebelum dihapus' });
 
         await page.click('#game-table-body button[title="Hapus permanen"]');
-        await page.waitForSelector('#modal-confirm-input', { state: 'visible', timeout: 5000 });
-        await page.fill('#modal-confirm-input', state.gameNameEdited);
+        await page.waitForSelector('#modal-confirm-check', { state: 'visible', timeout: 5000 });
+        await page.check('#modal-confirm-check');
         await page.click('#modal-confirm-btn');
 
         await dbWait(

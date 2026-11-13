@@ -23,6 +23,9 @@ function sandboxInstanceDir() {
 }
 
 async function http(page, method, url, body) {
+    // URL absolut: setelah role diturunkan, dashboard bisa menavigasi halaman ke
+    // about:blank sehingga fetch relatif gagal di-parse.
+    const target = url.startsWith('http') ? url : `${BASE_URL}${url}`;
     return page.evaluate(async ({ method, url, body }) => {
         const headers = {};
         if (body !== undefined) headers['Content-Type'] = 'application/json';
@@ -38,7 +41,7 @@ async function http(page, method, url, body) {
         let json = null;
         try { json = JSON.parse(text); } catch (e) { /* respons non-JSON */ }
         return { status: res.status, json, text };
-    }, { method, url, body });
+    }, { method, url: target, body });
 }
 
 /** Ambil status dari halaman tanpa cookie sesi (anonim). */

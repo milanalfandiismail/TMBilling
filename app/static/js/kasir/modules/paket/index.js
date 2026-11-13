@@ -279,7 +279,7 @@ const Paket = {
             } catch (err) {
                 Toast.error(err.message);
             }
-        }, null, { requireText: nama });
+        }, null, { requireCheck: 'Saya paham data ini dihapus permanen dan tidak bisa dikembalikan.' });
     },
 
     async archive(id) {

@@ -436,7 +436,7 @@ async function runMemberPaketE2ETest(page) {
     await check(report, CHECK_NAMES[11], async () => {
         await paketSearch(page, state.paketName);
         await clickRowButton(page, '#paket-table', state.paketName, 'Hapus permanen');
-        await page.fill('#modal-confirm-input', state.paketName);
+        await page.check('#modal-confirm-check');
         await clickConfirm(page, '#modal-confirm-btn');
 
         await dbWait(

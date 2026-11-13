@@ -385,7 +385,7 @@ const PC = {
             } catch (err) {
                 Toast.error(err.message || 'Gagal menghapus PC');
             }
-        }, null, { requireText: kode });
+        }, null, { requireCheck: 'Saya paham data ini dihapus permanen dan tidak bisa dikembalikan.' });
     },
 
     async archive(id) {

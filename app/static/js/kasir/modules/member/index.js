@@ -370,7 +370,7 @@ const Member = {
             } catch (err) {
                 Toast.error(err.message);
             }
-        }, null, { requireText: username });
+        }, null, { requireCheck: 'Saya paham data ini dihapus permanen dan tidak bisa dikembalikan.' });
     },
 
     async archive(id) {

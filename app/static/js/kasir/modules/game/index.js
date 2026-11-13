@@ -806,7 +806,7 @@ const GameManagement = {
             } catch (e) {
                 Toast.error('Terjadi kesalahan jaringan');
             }
-        }, null, { requireText: nama });
+        }, null, { requireCheck: 'Saya paham data ini dihapus permanen dan tidak bisa dikembalikan.' });
     },
 
     async archiveGame(id) {
