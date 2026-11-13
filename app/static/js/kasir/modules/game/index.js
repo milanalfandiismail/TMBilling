@@ -19,6 +19,8 @@ const GameManagement = {
         document.getElementById('game-arsip-list').classList.toggle('hidden', !arsip);
         document.getElementById('game-view-aktif').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_OFF : ArsipList.PILL_ON);
         document.getElementById('game-view-arsip').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_ON : ArsipList.PILL_OFF);
+        ArsipList.filter.tipe = arsip ? this.currentType : null;
+        ArsipList.filter.kategori = arsip ? this.currentCategory : null;
         if (arsip) {
             ArsipList.mount({
                 res: 'game',
@@ -147,12 +149,22 @@ const GameManagement = {
     filterType(type) {
         this.currentType = type;
         this.currentPage = 1;
+        if (this.arsipMode) {
+            ArsipList.filter.tipe = type;
+            ArsipList.mount({ res: 'game', container: document.getElementById('game-arsip-list') });
+            return;
+        }
         this.fetchGames();
     },
 
     filterCategory(cat) {
         this.currentCategory = cat;
         this.currentPage = 1;
+        if (this.arsipMode) {
+            ArsipList.filter.kategori = cat;
+            ArsipList.mount({ res: 'game', container: document.getElementById('game-arsip-list') });
+            return;
+        }
         this.fetchGames();
     },
 
@@ -179,6 +191,12 @@ const GameManagement = {
         this.currentType = 'all';
         this.currentCategory = 'all';
         this.currentPage = 1;
+        if (this.arsipMode) {
+            ArsipList.filter.tipe = 'all';
+            ArsipList.filter.kategori = 'all';
+            ArsipList.mount({ res: 'game', container: document.getElementById('game-arsip-list') });
+            return;
+        }
         this.fetchGames();
     },
 

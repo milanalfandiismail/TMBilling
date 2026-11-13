@@ -341,6 +341,28 @@ async function runRouteSmokeE2ETest(page) {
     assert.ok(await page.locator('#paket-arsip-list').isHidden(), 'daftar arsip harus tersembunyi saat kembali aktif');
   });
 
+  await check(report, 'Grup arsip tetap menampilkan pill grup dan memfilter daftar arsip', async () => {
+    await tab(page, 'paket');
+    await page.click('#paket-view-arsip');
+    await page.waitForSelector('#paket-arsip-list', { state: 'visible', timeout: 5000 });
+    assert.ok(await page.locator('#paket-group-tabs').isVisible(), 'pill grup harus tetap terlihat di mode arsip');
+    const pills = page.locator('#paket-group-tabs button');
+    if (await pills.count() > 1) await pills.nth(1).click();
+    await page.waitForTimeout(300);
+    assert.ok(await page.locator('#paket-arsip-list').isVisible(), 'daftar arsip harus tetap tampil setelah memilih pill');
+    await page.click('#paket-view-aktif');
+  });
+
+  await check(report, 'Konfirmasi arsip grup menyebut PC, paket, dan member', async () => {
+    await tab(page, 'grup');
+    await page.waitForSelector('#grup-table button[title="Arsipkan"]', { state: 'visible', timeout: 10000 });
+    await page.click('#grup-table button[title="Arsipkan"]');
+    await page.waitForSelector('#modal-confirm-message', { state: 'visible', timeout: 5000 });
+    const text = await page.innerText('#modal-confirm-message');
+    await page.click('#modal-cancel-btn');
+    assert.match(text, /PC, paket, dan member/i);
+  });
+
   return finish(report);
 }
 

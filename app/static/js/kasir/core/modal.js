@@ -86,7 +86,7 @@ const Modal = {
                     </div>
                     <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider font-mono">Konfirmasi Aksi</h3>
                 </div>
-                <div class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 mb-5 leading-relaxed flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">${message}</div>${checkHtml}
+                <div id="modal-confirm-message" class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 mb-5 leading-relaxed flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">${message}</div>${checkHtml}
                 <div class="flex gap-3 justify-end pt-3 border-t border-[#1c1c1c] shrink-0">
                     <button id="modal-cancel-btn" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Batal</button>
                     <button id="modal-confirm-btn" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">

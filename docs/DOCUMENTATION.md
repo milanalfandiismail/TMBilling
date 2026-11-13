@@ -68,7 +68,7 @@
    - [7.6 Deploy Scripts & Configuration](#76-deploy-scripts--configuration)
 8. [Spesifikasi Protokol API & VNC Bridge](#8-spesifikasi-protokol-api--vnc-bridge)
 9. [Panduan Operasional Kasir & Troubleshooting](#9-panduan-operasional-kasir--troubleshooting)
-10. [Panduan Kontribusi, Testing & SOP Dual-Engine (248 Test Files / 681 Test)](#10-panduan-kontribusi-testing--sop-dual-engine)
+10. [Panduan Kontribusi, Testing & SOP Dual-Engine (248 Test Files / 684 Test)](#10-panduan-kontribusi-testing--sop-dual-engine)
 
 ---
 
@@ -195,7 +195,7 @@ c:\Project GIT\TMBilling
 │   ├── TMBilling_Monitor/              # Hardware Telemetry & Sensor Daemon
 │   ├── TMBilling_Uninstaller/          # Secure Uninstaller (Registry & Service Clean)
 │   └── Deploy/                         # Deployment & Firewall Helper Scripts
-├── tests/                              # 248 File Pytest / 681 Test + 15 Suite E2E
+├── tests/                              # 248 File Pytest / 684 Test + 15 Suite E2E
 ├── build_and_deploy.bat                # Skrip Build Otomatis Klien & Server
 ├── developer_install.bat               # Skrip Inisialisasi Dev Environment Cepat
 ├── CHANGELOG.md                        # Riwayat Rilis Lengkap (Keep a Changelog)
@@ -1195,14 +1195,14 @@ Endpoint dashboard (GitHub 1-Klik maupun Upload ZIP) juga memakai klaim yang sam
 ## 10. Panduan Kontribusi, Testing & SOP Dual-Engine
 
 ### 10.1 Standar Testing Backend (Pytest)
-Repositori TMBilling dilengkapi **248 file pengujian unit dan integrasi** dengan **681 test specs** aktif:
+Repositori TMBilling dilengkapi **248 file pengujian unit dan integrasi** dengan **684 test specs** aktif:
 ```powershell
 python -m pytest tests/ -q
 ```
-Seluruh pengujian harus berstatus **PASSED (681 passed, 0 failed)** sebelum melakukan commit atau push.
+Seluruh pengujian harus berstatus **PASSED (684 passed, 0 failed)** sebelum melakukan commit atau push.
 
 ### 10.1.1 Pengujian End-to-End Browser (Playwright)
-`tests/e2e/` menjalankan **15 suite Chromium sungguhan** (376 check) secara paralel terhadap sandbox terisolasi:
+`tests/e2e/` menjalankan **15 suite Chromium sungguhan** (378 check) secara paralel terhadap sandbox terisolasi:
 
 ```powershell
 npm run test:e2e                                            # semua suite, worker = jumlah CPU
@@ -1226,7 +1226,7 @@ Seluruh aktivitas rekayasa perangkat lunak wajib mematuhi protokol **Dual-Engine
 1. **Engine 1 - Planning & Brainstorming (Plugin `superpowers`)**:
    - `brainstorming`: Menganalisis kebutuhan pengguna dan merancang arsitektur sebelum coding.
    - `writing-plans`: Menyusun rencana kerja bertahap yang modular dan terverifikasi.
-   - `systematic-debugging`: Investigasi akar masalah secara mendalam sebelum perbaikan; verifikasi regresi (681 test specs) dan jangan commit/push otomatis setelah bugfix.
+   - `systematic-debugging`: Investigasi akar masalah secara mendalam sebelum perbaikan; verifikasi regresi (684 test specs) dan jangan commit/push otomatis setelah bugfix.
    - `test-driven-development`: Memastikan spesifikasi pengujian ada untuk setiap perubahan fitur krusial.
    - `git-discipline`: Dilarang keras melakukan `git commit` maupun `git push` secara sepihak/otomatis (baik saat fitur baru maupun setelah debugging/bugfix) sebelum ada perintah eksplisit dari USER. Selalu laporkan hasil pekerjaan dan tunggu aba-aba USER.
 2. **Engine 2 - Execution & Verification (MCP `codebase-memory`)**:

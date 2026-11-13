@@ -14,10 +14,10 @@ const Paket = {
     toggleView(arsip) {
         this.arsipMode = arsip;
         document.getElementById('paket-table').classList.toggle('hidden', arsip);
-        document.getElementById('paket-group-tabs').classList.toggle('hidden', arsip);
         document.getElementById('paket-arsip-list').classList.toggle('hidden', !arsip);
         document.getElementById('paket-view-aktif').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_OFF : ArsipList.PILL_ON);
         document.getElementById('paket-view-arsip').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_ON : ArsipList.PILL_OFF);
+        ArsipList.filter.grup = arsip ? this.currentGrupId : null;
         if (arsip) {
             ArsipList.mount({
                 res: 'paket',
@@ -169,6 +169,11 @@ const Paket = {
         this.currentGrupId = Number(grupId);
         this.currentPage = 1;
         this.renderTabs();
+        if (this.arsipMode) {
+            ArsipList.filter.grup = this.currentGrupId;
+            ArsipList.mount({ res: 'paket', container: document.getElementById('paket-arsip-list') });
+            return;
+        }
         this.renderActiveGroup();
     },
 

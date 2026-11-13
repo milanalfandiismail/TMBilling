@@ -11,6 +11,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 ### Added
 - **Tab Data Diarsipkan**: tab baru `arsip` (`modules/arsip/index.js`) mengumpulkan seluruh data terarsip — grup, PC, paket, member, user, game, menu — lewat `GET /api/v1/kasir/arsip/`, dengan pills kategori (satu kategori tampil sekaligus) serta tombol Pulihkan dan Hapus Permanen.
 - **Arsip Per Tab**: tab grup, PC, paket, member, user, game, dan menu FnB kini punya pill `Aktif | Diarsipkan`; data yang diarsipkan tetap terlihat di tab asalnya, bukan hilang. Baris arsip memakai renderer bersama `core/arsip_list.js` (Pulihkan / Hapus Permanen).
+- **Arsip Grup Berantai**: mengarsipkan grup kini ikut mengarsipkan PC, paket, dan member miliknya dalam satu transaksi (`WRITE_LOCK`), ditolak bila grup masih punya sesi aktif. Restore grup tidak berantai - PC/paket/member dipulihkan manual dari tab arsipnya.
 - **Arsip Grup**: kolom `grup.aktif` (migrasi `a1b2c3d4e5f6`) plus `POST /api/v1/kasir/grup/<id>/archive` dan `/restore`; daftar grup reguler menyembunyikan grup arsip.
 - **Daftar Bersih dari Arsip**: daftar PC, paket, member, user, dan game kini hanya menampilkan data aktif; `?include_arsip=1` untuk menampilkan semuanya.
 - **Arsip dan Hapus Permanen Terpisah**: PC, Paket, Member, User, dan Game punya aksi arsip (`POST .../<id>/archive`, `aktif = False`, bisa dipulihkan) dan hapus permanen (`DELETE .../<id>`) yang benar-benar menghapus baris utama. Body `{"confirm": "<kode/nama/username>"}` wajib; konfirmasi salah atau kosong dibalas 400.
@@ -20,10 +21,11 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 ### Changed
 - **Konfirmasi Centang**: hapus permanen kini memakai satu checkbox "Saya paham data ini dihapus permanen dan tidak bisa dikembalikan" pada `Modal.confirm` (`requireCheck`); tombol setuju nonaktif sampai dicentang, menggantikan konfirmasi ketik nama sebelumnya.
 - **Arsip Mengikuti Kolom Tab Asal**: tampilan arsip kini memakai bentuk dan kolom yang sama dengan data aktifnya (`ArsipList.SCHEMA`) — tabel untuk grup/paket/member/user/game, kartu untuk PC dan katalog FnB — baik lewat pill `Aktif | Diarsipkan` di tab asal maupun lewat pills kategori di tab Data Diarsipkan. Modal menu FnB untuk arsip dan hapus permanen kini memakai `Modal.confirm` (bukan `confirm()` bawaan), dan kartu arsip tidak lagi merender tombol yang tidak berfungsi.
+- **Pill Filter Tetap Aktif di Mode Arsip**: pill grup pada tab PC/paket/member dan filter tipe/kategori pada tab game tetap tampil saat melihat arsip dan benar-benar memfilter daftar arsip (`ArsipList.filter` + `match`). Konfirmasi arsip grup menyebutkan PC, paket, dan member yang ikut diarsipkan.
 - **Versi 1.6.5-rc3**: `Config.VERSION` dan semua cermin versi (package.json, klien Tauri, README, DOCUMENTATION, AGENTS) dinaikkan ke `1.6.5-rc3`.
 
 ### Fixed
-- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (681 unit test, 376 check E2E, 34 blueprint, 254 rute).
+- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (684 unit test, 378 check E2E, 34 blueprint, 254 rute).
 
 ## [Unreleased]
 

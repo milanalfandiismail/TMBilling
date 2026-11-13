@@ -287,12 +287,26 @@ const ArsipList = {
         return payload.data || {};
     },
 
+    filter: { grup: null, tipe: null, kategori: null },
+
+    match(item) {
+        const { grup, tipe, kategori } = this.filter;
+        if (grup !== null && Number(item.grup_id) !== Number(grup)) return false;
+        if (tipe !== null && tipe !== 'all' && item.tipe !== tipe) return false;
+        if (kategori !== null && kategori !== 'all') {
+            const list = item.kategori_list || (item.kategori ? String(item.kategori).split(',') : []);
+            const names = list.map(k => String(k).trim().toLowerCase());
+            if (!names.includes(String(kategori).toLowerCase())) return false;
+        }
+        return true;
+    },
+
     async mount({ res, container, items }) {
         const el = typeof container === 'string' ? document.getElementById(container) : container;
         if (!el) return;
         this._refresh = () => this.mount({ res, container });
         try {
-            const list = items || await this.fetch(res);
+            const list = (items || await this.fetch(res)).filter(i => this.match(i));
             el.innerHTML = list.length
                 ? this.render({ items: list, res })
                 : `<div class="flex flex-col items-center justify-center py-10 text-neutral-500 bg-[#050505] border border-dashed border-[#1c1c1c] rounded">

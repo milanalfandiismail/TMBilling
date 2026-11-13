@@ -18,10 +18,10 @@ const Member = {
     toggleView(arsip) {
         this.arsipMode = arsip;
         document.getElementById('member-table').classList.toggle('hidden', arsip);
-        document.getElementById('member-group-tabs').classList.toggle('hidden', arsip);
         document.getElementById('member-arsip-list').classList.toggle('hidden', !arsip);
         document.getElementById('member-view-aktif').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_OFF : ArsipList.PILL_ON);
         document.getElementById('member-view-arsip').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_ON : ArsipList.PILL_OFF);
+        ArsipList.filter.grup = arsip ? this.currentGrupId : null;
         if (arsip) {
             ArsipList.mount({
                 res: 'member',
@@ -181,6 +181,11 @@ const Member = {
         this.currentGrupId = (grupId !== undefined && grupId !== null && grupId !== '') ? String(grupId) : '';
         this.currentPage = 1;
         this.renderGroupTabs(this._allGroups || []);
+        if (this.arsipMode) {
+            ArsipList.filter.grup = this.currentGrupId || null;
+            ArsipList.mount({ res: 'member', container: document.getElementById('member-arsip-list') });
+            return;
+        }
         this.load();
     },
 

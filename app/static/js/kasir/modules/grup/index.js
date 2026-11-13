@@ -268,7 +268,7 @@ const Grup = {
     },
 
     async archive(id, nama) {
-        Modal.confirm(`Arsipkan grup ${nama}? Grup arsip tidak muncul di pilihan dan bisa dipulihkan dari tab Data Diarsipkan.`, async () => {
+        Modal.confirm(`Arsipkan grup ${nama}? PC, paket, dan member di grup ini ikut diarsipkan. Pulihkan manual dari tab arsipnya.`, async () => {
             try {
                 await API.grup.archive(id);
                 Toast.success("Grup berhasil diarsipkan");
