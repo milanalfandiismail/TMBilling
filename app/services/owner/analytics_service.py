@@ -51,6 +51,8 @@ class OwnerAnalyticsService:
     @staticmethod
     def get_pendapatan_harian(start, end):
         start, end = OwnerAnalyticsService._normalize_range(start, end)
+        # Omzet net: pembelian yang direfund tidak dihitung dan refund tidak tampil sebagai baris.
+        # Kebijakan ini dikunci tests/test_owner_refund_accounting.py.
         billing = db.session.query(Transaksi.dibuat_pada, Transaksi.jumlah)\
             .filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end, Transaksi.jumlah > 0,
                     Transaksi.is_refunded == False).all()

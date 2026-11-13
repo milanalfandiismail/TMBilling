@@ -43,3 +43,14 @@ def test_pendapatan_mengabaikan_transaksi_refund(ctx):
 
     assert sum(harian["billing"]) == 20000
     assert sum(per_kasir["data"]) == 20000
+
+
+def test_total_rentang_sama_dengan_laporan_detail(ctx):
+    _, base = ctx
+    from app.services.report.report_service import ReportService
+
+    harian = OwnerAnalyticsService.get_pendapatan_harian(base, base + dt.timedelta(hours=1))
+    laporan = ReportService.get_laporan_by_tanggal("2026-01-01")
+
+    assert sum(harian["billing"]) == laporan["total_pendapatan_billing"] == 20000
+    assert laporan["total_pendapatan"] == 20000
