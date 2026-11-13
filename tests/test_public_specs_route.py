@@ -124,6 +124,8 @@ def test_public_specs_route_success_and_catalog(test_setup):
     assert item["gpu"]["name"] == "NVIDIA GeForce RTX 4060"
     assert item["ram"]["total"] == "16 GB"
     assert item["online"] is False
+    assert "hourly_rate" not in item["grup"]
+    assert set(item["grup"].keys()) == {"nama", "warna"}
     assert len(item["ram"]["sticks"]) == 2
 
     # Verifikasi penghapusan field teknis berlebih

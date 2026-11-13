@@ -334,7 +334,6 @@ def _render_public_specs_page():
         Grup.query
         .options(
             selectinload(Grup.pc_list).joinedload(PC.hardware),
-            selectinload(Grup.paket_list),
         )
         .all()
     )
@@ -353,15 +352,6 @@ def _render_public_specs_page():
             g.sorted_pc_list = sorted(active_pcs, key=extract_number)
             groups_with_pcs.append(g)
 
-            # Estimasi tarif per jam dari paket termurah jika tersedia
-            hourly_rate = None
-            if getattr(g, "paket_list", None):
-                for p in g.paket_list:
-                    if p.aktif and p.durasi_menit > 0:
-                        rate = (p.harga / p.durasi_menit) * 60
-                        if hourly_rate is None or rate < hourly_rate:
-                            hourly_rate = int(round(rate))
-
             for pc in g.sorted_pc_list:
                 hw = pc.hardware
                 baseline = {}
@@ -376,7 +366,6 @@ def _render_public_specs_page():
                     "grup": {
                         "nama": g.nama,
                         "warna": g.warna or "#3b82f6",
-                        "hourly_rate": hourly_rate,
                     },
                     "online": OnlineStatusStore.is_online(pc.id, 45),
                     "cpu": {
