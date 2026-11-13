@@ -61,6 +61,16 @@ window.DashboardModalRemote = {
         if (kb) kb.classList.add('hidden');
     },
 
+    waitForVncProxy: async function(pcId, timeoutMs = 30000, intervalMs = 700) {
+        const deadline = Date.now() + timeoutMs;
+        while (Date.now() < deadline) {
+            const st = await API.request('/api/v1/kasir/monitor/vnc_client/' + pcId + '/status');
+            if (st && st.active && st.token) return st;
+            await new Promise(r => setTimeout(r, intervalMs));
+        }
+        return null;
+    },
+
     startRemote: async function(pcId, pcKode) {
         if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const loading = document.getElementById('modal-vnc-loading');
@@ -75,8 +85,10 @@ window.DashboardModalRemote = {
                 throw new Error((res && res.error) || 'Gagal memulai VNC di client');
             }
 
-            const token = res.token || `client_${pcId}`;
-            const port = res.port || 8081;
+            const proxy = await this.waitForVncProxy(pcId);
+            if (!proxy) throw new Error('Proxy VNC tidak siap. Periksa service websockify di server.');
+            const token = proxy.token;
+            const port = proxy.port || 8081;
             let url = (typeof VNCClient !== 'undefined' && VNCClient.resolveWebSocketUrl)
                 ? VNCClient.resolveWebSocketUrl(token, port)
                 : (window.location.protocol === 'https:'
@@ -113,14 +125,14 @@ window.DashboardModalRemote = {
                     if (loading) loading.classList.add('hidden');
                     const isAbnormal = e && e.detail && !e.detail.clean;
                     if (isAbnormal) {
-                        Toast.error(`Koneksi remote ke PC ${pcKode} terputus. Pastikan Firewall di PC Client mengizinkan Port 5900.`);
+                        Toast.error(`Koneksi remote ke PC ${pcKode} terputus. Periksa proxy VNC di server dan status TightVNC di PC client.`);
                     }
-                    this.disconnectRemote(pcId);
+                    this._resetRemoteUi();
                 },
                 onError: (err) => {
                     if (loading) loading.classList.add('hidden');
                     Toast.error(`Gagal koneksi remote: ${err.message}`);
-                    this.disconnectRemote(pcId);
+                    this._resetRemoteUi();
                 },
                 onResolution: (w, h) => {
                     const resBadge = document.getElementById('modal-vnc-resolution');
@@ -145,11 +157,11 @@ window.DashboardModalRemote = {
             Toast.error(err.message || 'Gagal memulai remote session');
             if (loading) loading.classList.add('hidden');
             if (connectBtn) connectBtn.classList.remove('hidden');
-            this.disconnectRemote(pcId);
+            this._resetRemoteUi();
         }
     },
 
-    disconnectRemote: async function(pcId) {
+    _resetRemoteUi: function() {
         if (this.vncSession) {
             this.vncSession.disconnect();
             this.vncSession = null;
@@ -184,7 +196,10 @@ window.DashboardModalRemote = {
 
         const clipDrawer = document.getElementById('modal-vnc-clipboard-drawer');
         if (clipDrawer) clipDrawer.classList.add('hidden');
+    },
 
+    disconnectRemote: async function(pcId) {
+        this._resetRemoteUi();
         try {
             await API.request(`/api/v1/kasir/monitor/vnc_client/${pcId}/stop`, { method: 'POST' });
         } catch (err) {

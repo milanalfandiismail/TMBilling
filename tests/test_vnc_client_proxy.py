@@ -36,6 +36,21 @@ def test_proxy_lifecycle_tracking():
     assert success is True
     assert VNCClientProxyService.get_proxy(pc_id) is None
 
+def test_cleanup_keeps_proxy_regardless_of_age(monkeypatch):
+    from app.services.cache import OnlineStatusStore
+
+    pc_id = 9993
+    VNCClientProxyService._active_proxies[pc_id] = {
+        "port": 8095, "client_ip": "192.168.1.60", "token": "old", "started_at": time.time() - 3600
+    }
+    monkeypatch.setattr(OnlineStatusStore, "is_online", classmethod(lambda cls, pid, timeout_seconds=45: True))
+    assert VNCClientProxyService.cleanup_stale_proxies() == 0
+    assert VNCClientProxyService.get_proxy(pc_id) is not None
+
+    monkeypatch.setattr(OnlineStatusStore, "is_online", classmethod(lambda cls, pid, timeout_seconds=45: False))
+    assert VNCClientProxyService.cleanup_stale_proxies() == 1
+    assert VNCClientProxyService.get_proxy(pc_id) is None
+
 def test_token_file_management(tmp_path):
     from app.services.vnc.vnc_service import VNCService
     token_file = str(tmp_path / "vnc_tokens.cfg")

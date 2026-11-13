@@ -15,6 +15,7 @@ class OnlineStatusStore:
     _lock = threading.Lock()
     _last_ping_ts = {}  # pc_id -> float (time.time())
     _last_activity_dt = {}  # pc_id -> datetime (local timezone)
+    _last_ip = {}  # pc_id -> str (IP peer terakhir yang melapor)
 
     @classmethod
     def mark_active(cls, pc_id: int, dt=None):
@@ -41,16 +42,30 @@ class OnlineStatusStore:
             return max(0.0, time.time() - ts)
 
     @classmethod
+    def set_ip(cls, pc_id: int, ip: str):
+        if not ip:
+            return
+        with cls._lock:
+            cls._last_ip[pc_id] = ip
+
+    @classmethod
+    def get_ip(cls, pc_id: int):
+        with cls._lock:
+            return cls._last_ip.get(pc_id)
+
+    @classmethod
     def remove(cls, pc_id: int):
         with cls._lock:
             cls._last_ping_ts.pop(pc_id, None)
             cls._last_activity_dt.pop(pc_id, None)
+            cls._last_ip.pop(pc_id, None)
 
     @classmethod
     def clear(cls):
         with cls._lock:
             cls._last_ping_ts.clear()
             cls._last_activity_dt.clear()
+            cls._last_ip.clear()
 
 
 class AntiTheftGraceTracker:

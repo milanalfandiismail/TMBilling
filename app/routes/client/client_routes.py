@@ -296,6 +296,9 @@ def _resolve_client_pc(data):
             pc = PCRepository.find_by_mac(mac_address)
         if pc:
             PCNetworkCacheStore.invalidate()
+    if pc and ip_address:
+        from app.services.cache import OnlineStatusStore
+        OnlineStatusStore.set_ip(pc.id, ip_address)
     return pc, ip_address, mac_address
 
 

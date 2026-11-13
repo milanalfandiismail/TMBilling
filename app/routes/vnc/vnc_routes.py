@@ -111,10 +111,8 @@ def handle_stop_vnc_client(pc_id):
             return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
             
         from app.services.vnc.vnc_service import VNCClientProxyService
-        from app.services import ClientService
         
         VNCClientProxyService.stop_proxy(pc.id)
-        ClientService.queue_fast_command(pc.id, "vnc_stop")
         
         operator = session.get("kasir_username", "admin")
         write_log("VNC_CLIENT_STOP", f"Proxy VNC client PC {pc.kode} dihentikan", user=operator, detail_json={"pc_kode": pc.kode})
@@ -139,7 +137,9 @@ def handle_status_vnc_client(pc_id):
                 pc = PCRepository.get_by_id(pc_id)
                 if not pc:
                     return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
-                success, msg, port, token = VNCClientProxyService.start_proxy(pc.id, pc.ip_address)
+                from app.services.cache import OnlineStatusStore
+                target_ip = OnlineStatusStore.get_ip(pc.id) or pc.ip_address
+                success, msg, port, token = VNCClientProxyService.start_proxy(pc.id, target_ip)
                 if not success:
                     return jsonify({"success": False, "error": f"Gagal mengaktifkan proxy server: {msg}"}), 500
                 operator = session.get("kasir_username", "admin")
@@ -160,7 +160,6 @@ def handle_status_vnc_client(pc_id):
         }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-
 
 @vnc_api_bp.route("/client/<int:pc_id>/start", methods=["POST"])
 @login_required

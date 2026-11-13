@@ -6,12 +6,12 @@ from app.utils.scheduler_tasks import run_cleanup_vnc_proxies
 
 
 def test_vnc_cleanup_stale_proxies():
-    """Memastikan cleanup_stale_proxies membersihkan proxy yang sudah idle/stale
-    atau jika PC klien telah offline."""
+    """Memastikan cleanup_stale_proxies hanya membersihkan proxy milik PC offline,
+    berapa pun umur proxy-nya."""
     # Setup mock active proxies
     with VNCClientProxyService._proxies_lock:
         VNCClientProxyService._active_proxies.clear()
-        # Proxy 1: Sangat lama (> 600 detik)
+        # Proxy 1: Sangat lama (> 600 detik) tapi PC tetap online
         VNCClientProxyService._active_proxies[101] = {
             "port": 8081,
             "client_ip": "192.168.1.101",
@@ -33,20 +33,22 @@ def test_vnc_cleanup_stale_proxies():
             "started_at": time.time() - 10
         }
 
-    # Set PC 103 online
+    # Set PC 101 dan 103 online, 102 dibiarkan offline
+    OnlineStatusStore.mark_active(101)
     OnlineStatusStore.mark_active(103)
 
     # Jalankan cleanup
-    cleaned = VNCClientProxyService.cleanup_stale_proxies(max_idle_seconds=600)
-    assert cleaned == 2  # 101 (timeout) and 102 (offline)
+    cleaned = VNCClientProxyService.cleanup_stale_proxies()
+    assert cleaned == 1  # hanya 102 (offline)
 
-    # Sisa hanya 103
+    # Proxy berumur lama milik PC online tetap hidup
     with VNCClientProxyService._proxies_lock:
-        assert 101 not in VNCClientProxyService._active_proxies
+        assert 101 in VNCClientProxyService._active_proxies
         assert 102 not in VNCClientProxyService._active_proxies
         assert 103 in VNCClientProxyService._active_proxies
 
-    # Bersihkan 103
+    # Bersihkan 101 dan 103
+    VNCClientProxyService.stop_proxy(101)
     VNCClientProxyService.stop_proxy(103)
 
 

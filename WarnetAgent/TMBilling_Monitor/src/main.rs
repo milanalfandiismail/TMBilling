@@ -898,6 +898,36 @@ fn find_tvnserver_path() -> Option<std::path::PathBuf> {
     None
 }
 
+/// True bila baris netstat menunjukkan koneksi ESTABLISHED dari luar loopback pada port tertentu.
+fn is_established_for_port(line: &str, port: u16) -> bool {
+    let parts: Vec<&str> = line.split_whitespace().collect();
+    if parts.len() < 4 {
+        return false;
+    }
+    let suffix = format!(":{}", port);
+    if !parts[1].ends_with(&suffix) || parts[3].to_uppercase() != "ESTABLISHED" {
+        return false;
+    }
+    let remote_addr = parts[2];
+    !remote_addr.starts_with("127.0.0.1") && !remote_addr.starts_with("[::1]")
+}
+
+/// PID pemilik socket LISTENING pada port tertentu dari output netstat.
+fn listening_pid_from_netstat(output: &str, port: u16) -> Option<String> {
+    let suffix = format!(":{}", port);
+    for line in output.lines() {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() < 5 || !parts[1].ends_with(&suffix) {
+            continue;
+        }
+        let state = parts[3].to_uppercase();
+        if state == "LISTENING" || state == "LISTEN" {
+            return Some(parts[parts.len() - 1].to_string());
+        }
+    }
+    None
+}
+
 fn has_active_vnc_connections(port: u16) -> bool {
     use std::process::Command;
     if let Ok(output) = Command::new("cmd")
@@ -907,21 +937,7 @@ fn has_active_vnc_connections(port: u16) -> bool {
     {
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            for line in stdout.lines() {
-                let parts: Vec<&str> = line.split_whitespace().collect();
-                if parts.len() >= 4 {
-                    let local_addr = parts[1];
-                    if local_addr.contains(&format!(":{}", port)) {
-                        let state = parts[3];
-                        if state.to_uppercase() == "ESTABLISHED" {
-                            let remote_addr = parts[2];
-                            if !remote_addr.starts_with("127.0.0.1") && !remote_addr.starts_with("[::1]") {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
+            return stdout.lines().any(|line| is_established_for_port(line, port));
         }
     }
     false
@@ -944,29 +960,22 @@ fn get_process_listening_on_port(port: u16) -> Option<String> {
     
     if output.status.success() {
         let stdout = String::from_utf8_lossy(&output.stdout);
-        for line in stdout.lines() {
-            let parts: Vec<&str> = line.split_whitespace().collect();
-            if parts.len() >= 5 {
-                let local_addr = parts[1];
-                if local_addr.contains(&format!(":{}", port)) {
-                    let pid = parts[parts.len() - 1];
-                    let task_output = Command::new("tasklist")
-                        .args(&["/FI", &format!("PID eq {}", pid), "/NH"])
-                        .creation_flags(0x08000000)
-                        .output()
-                        .ok()?;
-                    if task_output.status.success() {
-                        let task_stdout = String::from_utf8_lossy(&task_output.stdout);
-                        if let Some(first_line) = task_stdout.lines().next() {
-                            let task_parts: Vec<&str> = first_line.split_whitespace().collect();
-                            if !task_parts.is_empty() {
-                                return Some(format!("{} (PID: {})", task_parts[0], pid));
-                            }
-                        }
-                    }
+        let pid = listening_pid_from_netstat(&stdout, port)?;
+        let task_output = Command::new("tasklist")
+            .args(&["/FI", &format!("PID eq {}", pid), "/NH"])
+            .creation_flags(0x08000000)
+            .output()
+            .ok()?;
+        if task_output.status.success() {
+            let task_stdout = String::from_utf8_lossy(&task_output.stdout);
+            if let Some(first_line) = task_stdout.lines().next() {
+                let task_parts: Vec<&str> = first_line.split_whitespace().collect();
+                if !task_parts.is_empty() {
+                    return Some(format!("{} (PID: {})", task_parts[0], pid));
                 }
             }
         }
+        return Some(format!("PID {}", pid));
     }
     None
 }
@@ -1463,5 +1472,20 @@ mod tests {
         let encrypted = obfuscate_vnc_password("milan");
         println!("ENCRYPTED MILAN: {:?}", encrypted);
         assert_eq!(encrypted, vec![251, 239, 20, 218, 120, 248, 213, 8]);
+    }
+
+    #[test]
+    fn netstat_matches_exact_port_only() {
+        assert!(is_established_for_port("  TCP    0.0.0.0:5900    10.0.0.5:52000    ESTABLISHED    4321", 5900));
+        assert!(!is_established_for_port("  TCP    0.0.0.0:59001   10.0.0.5:52000    ESTABLISHED    4321", 5900));
+        assert!(!is_established_for_port("  TCP    0.0.0.0:5900    127.0.0.1:52000    ESTABLISHED    4321", 5900));
+        assert!(!is_established_for_port("  TCP    0.0.0.0:5900    10.0.0.5:52000    LISTENING    4321", 5900));
+    }
+
+    #[test]
+    fn netstat_listener_pid_parsed() {
+        let out = "  TCP    0.0.0.0:5900    0.0.0.0:0    LISTENING    7788";
+        assert_eq!(listening_pid_from_netstat(out, 5900), Some("7788".to_string()));
+        assert_eq!(listening_pid_from_netstat(out, 5901), None);
     }
 }

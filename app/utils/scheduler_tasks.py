@@ -157,7 +157,7 @@ def run_cleanup_vnc_proxies(app):
     with app.app_context():
         try:
             from app.services.vnc.vnc_service import VNCClientProxyService
-            cleaned = VNCClientProxyService.cleanup_stale_proxies(max_idle_seconds=600)
+            cleaned = VNCClientProxyService.cleanup_stale_proxies()
             if cleaned > 0:
                 from app.utils.logger import write_log
                 write_log("VNC_CLEANUP", f"Cleanup VNC proxy: {cleaned} proxy/token orphaned dibersihkan", user="SYSTEM")

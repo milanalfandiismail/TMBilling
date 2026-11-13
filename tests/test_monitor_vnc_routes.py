@@ -1,3 +1,4 @@
+import time
 import pytest
 from app import create_app, db
 from app.models import PC, Grup, User
@@ -67,6 +68,41 @@ def test_vnc_status_endpoint(admin_client):
     data = res.get_json()
     assert data["success"] is True
     assert data["active"] is False
+
+def test_stop_queues_single_vnc_stop(admin_client, monkeypatch):
+    from app.services import ClientService
+
+    client, pc_id = admin_client
+    calls = []
+    monkeypatch.setattr(ClientService, "queue_fast_command", lambda pid, cmd: calls.append((pid, cmd)))
+    VNCClientProxyService._active_proxies[pc_id] = {
+        "port": 8081, "client_ip": "192.168.1.102", "token": "tok", "started_at": time.time()
+    }
+
+    res = client.post(f"/api/v1/kasir/monitor/vnc_client/{pc_id}/stop")
+
+    assert res.status_code == 200
+    assert [c for c in calls if c[1] == "vnc_stop"] == [(pc_id, "vnc_stop")]
+    VNCClientProxyService._active_proxies.pop(pc_id, None)
+
+def test_status_uses_last_seen_client_ip(admin_client, monkeypatch):
+    from app.services.cache import OnlineStatusStore
+
+    client, pc_id = admin_client
+    OnlineStatusStore.set_ip(pc_id, "10.0.0.7")
+    seen = {}
+
+    def fake_start(cls, pid, ip):
+        seen["ip"] = ip
+        return True, "ok", 8081, "tok"
+
+    monkeypatch.setattr(VNCClientProxyService, "poll_vnc_result", classmethod(lambda cls, pid: ("ready", None)))
+    monkeypatch.setattr(VNCClientProxyService, "start_proxy", classmethod(fake_start))
+
+    res = client.get(f"/api/v1/kasir/monitor/vnc_client/{pc_id}/status")
+
+    assert res.status_code == 200
+    assert seen["ip"] == "10.0.0.7"
 
 def test_kasir_monitor_all_endpoint(admin_client):
     client, pc_id = admin_client

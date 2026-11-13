@@ -267,7 +267,8 @@ class VNCClientProxyService:
         return "ready", None
 
     @classmethod
-    def cleanup_stale_proxies(cls, max_idle_seconds=600):
+    def cleanup_stale_proxies(cls):
+        # Proxy hidup mengikuti sesi, bukan umur: hanya PC offline yang dibersihkan.
         stale_pc_ids = []
         with cls._proxies_lock:
             for pc_id, info in cls._active_proxies.items():
@@ -278,8 +279,7 @@ class VNCClientProxyService:
                 except Exception:
                     pass
 
-                idle = time.time() - float(info.get("started_at") or 0) > max_idle_seconds
-                if is_pc_offline or idle:
+                if is_pc_offline:
                     stale_pc_ids.append(pc_id)
                     
         count = 0
