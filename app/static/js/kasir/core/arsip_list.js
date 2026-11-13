@@ -80,14 +80,14 @@ const ArsipList = {
         return payload.data || {};
     },
 
-    async mount({ res, container }) {
+    async mount({ res, container, items }) {
         const el = typeof container === 'string' ? document.getElementById(container) : container;
         if (!el) return;
         this._refresh = () => this.mount({ res, container });
         try {
-            const items = await this.fetch(res);
-            el.innerHTML = items.length
-                ? this.render({ items, res })
+            const list = items || await this.fetch(res);
+            el.innerHTML = list.length
+                ? this.render({ items: list, res })
                 : `<p class="text-xs text-neutral-500 text-center py-6">${this.esc(this.schemaOf(res).emptyText)}</p>`;
         } catch (e) {
             el.innerHTML = `<p class="text-xs text-red-400 px-2.5 py-3">${this.esc(e.message || 'Gagal memuat data arsip')}</p>`;
