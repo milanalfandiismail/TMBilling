@@ -10,15 +10,62 @@ if root_dir not in sys.path:
 from app import create_app, db
 
 
-def _schema_matches_metadata(inspector) -> bool:
-    """True bila semua tabel & kolom model sudah ada di database."""
+def _sync_missing_columns(inspector) -> list[str]:
+    """Tambahkan kolom model yang belum ada di database lama.
+
+    Kolom NOT NULL tanpa default dibuat nullable agar ALTER TABLE tetap jalan;
+    data lama tidak diubah dan tidak ada baris yang dihapus.
+    """
+    from sqlalchemy import text
+
+    added = []
+    dialect = db.engine.dialect
     for table in db.metadata.sorted_tables:
         if not inspector.has_table(table.name):
-            return False
-        cols = {c["name"] for c in inspector.get_columns(table.name)}
-        if {c.name for c in table.columns} - cols:
-            return False
-    return True
+            continue
+        existing = {c["name"] for c in inspector.get_columns(table.name)}
+        for column in table.columns:
+            if column.name in existing:
+                continue
+            ddl = (
+                f'ALTER TABLE "{table.name}" ADD COLUMN "{column.name}" '
+                f"{column.type.compile(dialect=dialect)}"
+            )
+            default = column.default
+            if default is not None and getattr(default, "is_scalar", False):
+                value = default.arg
+                if isinstance(value, str):
+                    ddl += " DEFAULT '" + value.replace("'", "''") + "'"
+                elif isinstance(value, bool):
+                    ddl += f" DEFAULT {1 if value else 0}"
+                elif isinstance(value, (int, float)):
+                    ddl += f" DEFAULT {value}"
+            with db.engine.connect() as conn:
+                conn.execute(text(ddl))
+                conn.commit()
+            added.append(f"{table.name}.{column.name}")
+    return added
+
+
+def _backfill_payment_method() -> None:
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+    for table in ("transaksi", "transaksi_menu"):
+        if not inspector.has_table(table):
+            continue
+        cols = {c["name"] for c in inspector.get_columns(table)}
+        if "metode_pembayaran" not in cols:
+            continue
+        with db.engine.connect() as conn:
+            conn.execute(
+                text(
+                    f"UPDATE {table} SET metode_pembayaran = 'Tunai' "
+                    "WHERE metode_pembayaran IS NULL"
+                )
+            )
+            conn.commit()
+
 
 def run(app=None) -> bool:
     print("[MIGRATION] Menjalankan migrasi skema database...")
@@ -41,16 +88,18 @@ def run(app=None) -> bool:
 
             if current_rev is None and inspector.has_table("transaksi"):
                 try:
-                    if _schema_matches_metadata(inspector):
-                        # DB hasil db.create_all() sudah identik dengan model: replay
-                        # migrasi lama justru gagal (kolom sudah ada), jadi langsung head.
-                        stamp(directory=migrations_dir, revision="head")
-                        current_rev = "head"
-                        print("[MIGRATION] Skema sudah identik dengan model, stamp head.")
-                    else:
-                        stamp(directory=migrations_dir, revision="e8f9a0b1c2d3")
+                    added = _sync_missing_columns(inspector)
+                    _backfill_payment_method()
+                    stamp(directory=migrations_dir, revision="head")
+                    current_rev = "head"
+                    print(
+                        "[MIGRATION] Skema lama disinkronkan"
+                        + (f" ({len(added)} kolom)" if added else "")
+                        + ", stamp head."
+                    )
                 except Exception as stamp_err:
-                    print(f"[MIGRATION WARNING] Auto-stamp: {stamp_err}")
+                    print(f"[MIGRATION ERROR] Sinkronisasi skema lama: {stamp_err}")
+                    return False
 
             if current_rev != "head":
                 upgrade(directory=migrations_dir)
