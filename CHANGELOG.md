@@ -19,10 +19,11 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ### Changed
 - **Konfirmasi Centang**: hapus permanen kini memakai satu checkbox "Saya paham data ini dihapus permanen dan tidak bisa dikembalikan" pada `Modal.confirm` (`requireCheck`); tombol setuju nonaktif sampai dicentang, menggantikan konfirmasi ketik nama sebelumnya.
+- **Arsip Mengikuti Kolom Tab Asal**: tampilan arsip kini memakai bentuk dan kolom yang sama dengan data aktifnya (`ArsipList.SCHEMA`) — tabel untuk grup/paket/member/user/game, kartu untuk PC dan katalog FnB — baik lewat pill `Aktif | Diarsipkan` di tab asal maupun lewat pills kategori di tab Data Diarsipkan. Modal menu FnB untuk arsip dan hapus permanen kini memakai `Modal.confirm` (bukan `confirm()` bawaan), dan kartu arsip tidak lagi merender tombol yang tidak berfungsi.
 - **Versi 1.6.5-rc3**: `Config.VERSION` dan semua cermin versi (package.json, klien Tauri, README, DOCUMENTATION, AGENTS) dinaikkan ke `1.6.5-rc3`.
 
 ### Fixed
-- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (681 unit test, 372 check E2E, 34 blueprint, 254 rute).
+- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (681 unit test, 376 check E2E, 34 blueprint, 254 rute).
 
 ## [Unreleased]
 

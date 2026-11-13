@@ -837,7 +837,7 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | :--- | :--- | :--- |
 | GET | /api/v1/kasir/arsip/ | arsip_api.daftar_arsip |
 
-> `GET /api/v1/kasir/arsip/` mengagregasi seluruh data terarsip (grup, pc, paket, member, user, game, menu) untuk tab **Data Diarsipkan**. Tab itu menampilkan satu kategori sekaligus lewat pill horizontal (`#arsip-pills`), bukan tumpukan seksi. Setiap tab sumber (grup, PC, paket, member, user, game) dan katalog FnB juga punya pill `Aktif | Diarsipkan` sehingga data terarsip tetap terlihat di tab asalnya. Baris arsip di kedua jalur dirender oleh modul bersama `app/static/js/kasir/core/arsip_list.js` (`ArsipList.rows`), dengan tombol Pulihkan dan Hapus Permanen. Pemulihan memakai `POST /api/v1/kasir/<resource>/<id>/restore`; grup memperoleh kolom `aktif` lewat migrasi `a1b2c3d4e5f6`.
+> `GET /api/v1/kasir/arsip/` mengagregasi seluruh data terarsip (grup, pc, paket, member, user, game, menu) untuk tab **Data Diarsipkan**. Tab itu menampilkan satu kategori sekaligus lewat pill horizontal (`#arsip-pills`), bukan tumpukan seksi. Setiap tab sumber (grup, PC, paket, member, user, game) dan katalog FnB juga punya pill `Aktif | Diarsipkan` sehingga data terarsip tetap terlihat di tab asalnya. Baris/kartu arsip di kedua jalur dirender oleh modul bersama `app/static/js/kasir/core/arsip_list.js` (`ArsipList.mount`), yang menyimpan skema kolom per resource sehingga arsip selalu menampilkan kolom yang sama dengan data aktifnya (grup/paket/member/user/game berupa tabel, PC dan menu FnB berupa kartu), dengan tombol Pulihkan dan Hapus Permanen. Pemulihan memakai `POST /api/v1/kasir/<resource>/<id>/restore`; grup memperoleh kolom `aktif` lewat migrasi `a1b2c3d4e5f6`.
 
 #### 🔹 Blueprint: maintenance (6 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
@@ -1202,7 +1202,7 @@ python -m pytest tests/ -q
 Seluruh pengujian harus berstatus **PASSED (681 passed, 0 failed)** sebelum melakukan commit atau push.
 
 ### 10.1.1 Pengujian End-to-End Browser (Playwright)
-`tests/e2e/` menjalankan **15 suite Chromium sungguhan** (374 check) secara paralel terhadap sandbox terisolasi:
+`tests/e2e/` menjalankan **15 suite Chromium sungguhan** (376 check) secara paralel terhadap sandbox terisolasi:
 
 ```powershell
 npm run test:e2e                                            # semua suite, worker = jumlah CPU

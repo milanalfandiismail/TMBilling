@@ -424,10 +424,11 @@ async function runFnBPosStrukE2ETest(page) {
         await openMenuTab(page);
         await page.evaluate(() => { if (window.Menu) Menu.closeRestockModal(); });
         await clearCart(page);
-        page.once('dialog', (dialog) => dialog.accept());
         const card = page.locator(cardSelector(indomie.nama)).first();
         await card.hover();
         await card.locator('button[title="Arsipkan Menu"]').click();
+        await page.waitForSelector('#modal-confirm-btn', { state: 'visible', timeout: 5000 });
+        await page.click('#modal-confirm-btn');
 
         await dbWait('SELECT is_active FROM menu_item WHERE id = ?', [indomie.id],
             (r) => Number(r[0].is_active) === 0, 'menu terarsip di DB');
@@ -440,13 +441,15 @@ async function runFnBPosStrukE2ETest(page) {
         );
 
         await page.click('#menu-tab-archived-btn');
-        // Tampilan arsip memakai baris standar ArsipList (#menu-arsip-list), bukan kartu katalog.
+        // Arsip menu dirender sebagai kartu katalog dari skema ArsipList.
         await page.waitForSelector('#menu-arsip-list', { state: 'visible', timeout: 5000 });
         const archivedRow = page.locator(`#menu-arsip-list div:has(p:text-is("${indomie.nama}"))`).first();
         await archivedRow.waitFor({ state: 'visible', timeout: 5000 });
         const archivedText = await archivedRow.innerText();
         assert.ok(new RegExp(`${soldRows} transaksi historis`).test(archivedText),
             `arsip harus menampilkan ${soldRows} transaksi historis, dapat: ${archivedText}`);
+        const archivedButtons = (await archivedRow.locator('button').evaluateAll(btns => btns.map(b => b.title))).sort();
+        assert.deepStrictEqual(archivedButtons, ['Hapus permanen', 'Pulihkan'], 'kartu arsip hanya menawarkan pulihkan dan hapus');
 
         await archivedRow.locator('button[title="Pulihkan"]').click();
         await page.waitForSelector('#modal-confirm-btn', { state: 'visible', timeout: 5000 });

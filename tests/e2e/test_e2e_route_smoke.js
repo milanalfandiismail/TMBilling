@@ -266,6 +266,59 @@ async function runRouteSmokeE2ETest(page) {
     await check(report, `Rute kasir: ${label}`, () => runSmokeGroup(page, token, label, entries));
   }
 
+  await check(report, 'Header dan aksi arsip mengikuti tabel aktif tiap tab', async () => {
+    await login(page, 'admin');
+    const diffs = [];
+    for (const [t, tabId] of [['grup', 'grup'], ['paket', 'paket'], ['member', 'member'], ['user', 'user'], ['game', 'game_management']]) {
+      await tab(page, tabId);
+      await page.waitForTimeout(250);
+      const result = await page.evaluate(({ res, tabId }) => {
+        const samples = {
+          grup: { id: 1, nama: 'G', keterangan: 'k' },
+          paket: { id: 1, nama: 'P', durasi_menit: 60, harga: 5000, kadaluarsa_hari: 30 },
+          member: { id: 1, username: 'm', nama_lengkap: 'M', grup: 'Reguler', waktu_tersimpan: 60, kadaluarsa_pada_display: '-' },
+          user: { id: 1, username: 'u', role: 'kasir', kuota_main_bulanan: 0 },
+          game: { id: 1, nama: 'G', tipe: 'FPS', kategori: 'eSports' }
+        };
+        const div = document.createElement('div');
+        div.innerHTML = ArsipList.render({ items: [samples[res]], res });
+        const heads = [...div.querySelectorAll('thead th')].map(e => e.textContent.trim());
+        const buttons = [...div.querySelectorAll('tbody button')].map(b => b.title).sort();
+        const scope = document.getElementById(`tab-${tabId}`) || document;
+        const tables = [...scope.querySelectorAll('table')]
+          .filter(tb => tb.querySelectorAll('thead th').length > 1)
+          .sort((a, b) => b.querySelectorAll('thead th').length - a.querySelectorAll('thead th').length);
+        const active = [...(tables[0]?.querySelectorAll('thead th') || [])]
+          .filter(e => e.offsetParent !== null)
+          .map(e => e.textContent.trim());
+        return { heads, buttons, active };
+      }, { res: t, tabId });
+      if (JSON.stringify(result.heads) !== JSON.stringify(result.active)) {
+        diffs.push(`${t}: ${JSON.stringify(result.active)} vs ${JSON.stringify(result.heads)}`);
+      }
+      if (JSON.stringify(result.buttons) !== JSON.stringify(['Hapus permanen', 'Pulihkan'])) {
+        diffs.push(`${t}: aksi ${JSON.stringify(result.buttons)}`);
+      }
+    }
+    assert.deepStrictEqual(diffs, []);
+  });
+
+  await check(report, 'Semua tab menampilkan daftar arsip tanpa teks rusak', async () => {
+    await login(page, 'admin');
+    const broken = [];
+    for (const [t, tabId] of [['grup', 'grup'], ['pc', 'pc'], ['paket', 'paket'], ['member', 'member'], ['user', 'user'], ['game', 'game_management'], ['menu', 'menu']]) {
+      await tab(page, tabId);
+      await page.click(t === 'menu' ? '#menu-tab-archived-btn' : `#${t}-view-arsip`);
+      await page.waitForTimeout(300);
+      const el = page.locator(`#${t}-arsip-list`);
+      if (!(await el.isVisible())) { broken.push(`${t}:tidak-terlihat`); continue; }
+      const text = (await el.innerText()).trim();
+      if (/undefined|NaN/.test(text)) broken.push(`${t}:teks-rusak`);
+      if (text === '') broken.push(`${t}:kosong-tanpa-pesan`);
+    }
+    assert.deepStrictEqual(broken, []);
+  });
+
   await check(report, 'Tab Data Diarsipkan memakai pill kategori, bukan tumpukan seksi', async () => {
     await login(page, 'admin');
     await tab(page, 'arsip');

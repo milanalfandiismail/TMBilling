@@ -195,7 +195,7 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 - `app.js`: Entry point inisialisasi aplikasi kasir, event delegation, dan routing 31 tab.
 - `core/api.js`: Klien HTTP REST terpusat dengan penanganan CSRF otomatis dan error reporting.
 - `core/modal.js`: Pengendali modal dialog modular; `Modal.confirm` mendukung opsi `requireCheck` (satu checkbox wajib dicentang, tombol setuju nonaktif sampai aktif) yang dipakai hapus permanen PC/Paket/Member/User/Game.
-- `core/arsip_list.js`: Renderer baris arsip bersama (`ArsipList.mount/rows/restore/hapus`) yang dipakai tab Data Diarsipkan, pill arsip grup/PC/paket/member/user/game, dan tampilan arsip menu FnB.
+- `core/arsip_list.js`: Skema kolom arsip per resource (`ArsipList.SCHEMA`) + renderer tabel/kartu bersama (`ArsipList.mount/render/table/cards/restore/hapus`). Arsip selalu memakai bentuk dan kolom yang sama dengan data aktifnya; dipakai tab Data Diarsipkan, pill arsip grup/PC/paket/member/user/game, dan tampilan arsip menu FnB.
 - `core/skeleton.js`: Skeleton loader statis (tanpa animasi) untuk 31 tab tampilan.
 - `core/toast.js`: Sistem notifikasi toast floating modern.
 - `core/utils.js`: Formatter mata uang Rupiah, kalkulator waktu, dan escape HTML sanitizer.
@@ -292,7 +292,7 @@ python run.py
 build_and_deploy.bat
 
 # Menjalankan Master Runner E2E Sandbox Terisolasi (Zero Database Mutation Guarantee)
-# 15 suite Chromium sungguhan (Playwright): 374 check, paralel otomatis semua CPU
+# 15 suite Chromium sungguhan (Playwright): 376 check, paralel otomatis semua CPU
 npm run test:e2e
 # atau langsung via Python: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py
 # Serial untuk debug: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py --jobs 1
