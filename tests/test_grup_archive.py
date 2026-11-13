@@ -1,7 +1,7 @@
 import pytest
 
 from app import create_app
-from app.models import db, Grup, User
+from app.models import db, Grup, Member, Paket, PC, Sesi, User
 from app.services.grup.grup_service import GrupService
 
 
@@ -32,6 +32,51 @@ def test_restore_grup_yang_tidak_diarsip_ditolak(ctx):
     grup = GrupService.create({"nama": "zona-aktif"})
     with pytest.raises(ValueError, match="tidak dalam arsip"):
         GrupService.restore(grup.id)
+
+
+def _isi_grup(grup):
+    """Satu PC, satu paket, dan satu member aktif di dalam grup."""
+    db.session.add_all([
+        PC(kode=f"PC-{grup.id}", grup_id=grup.id),
+        Paket(nama=f"paket-{grup.id}", durasi_menit=60, harga=5000, grup_id=grup.id),
+        Member(username=f"member{grup.id}", password_hash="x", grup_id=grup.id),
+    ])
+    db.session.commit()
+
+
+def test_archive_grup_ikut_mengarsipkan_pc_paket_member(ctx):
+    grup = GrupService.create({"nama": "zona-cascade"})
+    _isi_grup(grup)
+
+    GrupService.archive(grup.id)
+
+    assert db.session.get(Grup, grup.id).aktif is False
+    assert PC.query.filter_by(grup_id=grup.id, aktif=True).count() == 0
+    assert Paket.query.filter_by(grup_id=grup.id, aktif=True).count() == 0
+    assert Member.query.filter_by(grup_id=grup.id, aktif=True).count() == 0
+
+
+def test_archive_grup_ditolak_bila_ada_sesi_aktif(ctx):
+    grup = GrupService.create({"nama": "zona-sesi"})
+    _isi_grup(grup)
+    pc = PC.query.filter_by(grup_id=grup.id).first()
+    db.session.add(Sesi(tipe="guest", pc_id=pc.id, status="aktif"))
+    db.session.commit()
+
+    with pytest.raises(ValueError, match="Masih ada sesi aktif di grup ini"):
+        GrupService.archive(grup.id)
+    assert db.session.get(Grup, grup.id).aktif is True
+
+
+def test_restore_grup_tidak_menghidupkan_pc_terarsip(ctx):
+    grup = GrupService.create({"nama": "zona-pulih"})
+    _isi_grup(grup)
+    GrupService.archive(grup.id)
+
+    GrupService.restore(grup.id)
+
+    assert db.session.get(Grup, grup.id).aktif is True
+    assert PC.query.filter_by(grup_id=grup.id, aktif=True).count() == 0
 
 
 def test_route_arsip_dan_restore_grup(ctx):

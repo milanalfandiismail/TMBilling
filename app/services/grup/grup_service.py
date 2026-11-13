@@ -8,7 +8,7 @@ penghapusan (tidak bisa hapus grup yang masih punya relasi).
 
 import re
 from app.models import db
-from app.models import Grup
+from app.models import Grup, Member, Paket, PC, Sesi
 from app.repositories import GrupRepository
 from app.services.write_lock import WRITE_LOCK
 from app.utils.logger import write_log
@@ -38,16 +38,26 @@ class GrupService:
 
     @staticmethod
     def archive(grup_id, operator="system"):
-        """Arsipkan grup (nonaktif) tanpa menghapus relasinya."""
+        """Arsipkan grup beserta PC, paket, dan member miliknya."""
         grup = GrupRepository.get_by_id(grup_id)
         if not grup:
             raise ValueError("Grup tidak ditemukan")
         if not grup.aktif:
             raise ValueError("Grup tidak dalam arsip")
         with WRITE_LOCK:
+            sesi_aktif = Sesi.query.join(PC, Sesi.pc_id == PC.id).filter(
+                PC.grup_id == grup.id, Sesi.status == "aktif"
+            ).count()
+            if sesi_aktif:
+                raise ValueError("Masih ada sesi aktif di grup ini")
+            n_pc = PC.query.filter_by(grup_id=grup.id, aktif=True).update({"aktif": False})
+            n_paket = Paket.query.filter_by(grup_id=grup.id, aktif=True).update({"aktif": False})
+            n_member = Member.query.filter_by(grup_id=grup.id, aktif=True).update({"aktif": False})
             grup.aktif = False
             db.session.commit()
-        write_log("ARSIP_GRUP", f"Grup {grup.nama} diarsipkan", user=operator, detail_json={"nama_grup": grup.nama})
+        write_log("ARSIP_GRUP", f"Grup {grup.nama} diarsipkan", user=operator, detail_json={
+            "nama_grup": grup.nama, "pc": n_pc, "paket": n_paket, "member": n_member
+        })
         return grup
 
     @staticmethod
