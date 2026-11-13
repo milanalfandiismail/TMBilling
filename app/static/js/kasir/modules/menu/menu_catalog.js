@@ -573,13 +573,7 @@ window.MenuCatalog = {
         const container = document.getElementById("menu-arsip-list");
         if (!container) return;
         ArsipList._onChange = () => this.loadCatalog();
-        container.innerHTML = ArsipList.rows({
-            items: data || [],
-            res: "menu",
-            labelOf: (m) => m.nama,
-            metaOf: (m) => `${m.transaksi_count || 0} transaksi historis · ${Utils.formatRupiah(m.harga)}`,
-            emptyText: "Belum ada menu diarsipkan"
-        });
+        ArsipList.mount({ res: "menu", container, items: data || [] });
     },
 
     async restoreItem(menuId, nama) {

@@ -384,58 +384,52 @@ window.MenuCrud = {
         }
     },
 
-    async deleteItem(menuId, nama) {
+    deleteItem(menuId, nama) {
         event.stopPropagation(); // Mencegah klik di card
         if (window.App && App.user && App.user.role === 'kasir') {
             Toast.error("Akses terbatas hanya untuk Administrator");
             return;
         }
-        if (!confirm(`Apakah Anda yakin ingin mengarsipkan menu '${nama}' dari katalog aktif?\n\nMenu akan dipindahkan ke tab 'Arsip Menu' dan dapat dipulihkan kembali kapan saja.`)) {
-            return;
-        }
-
-        try {
-            const res = await window.API.menu.delete(menuId);
-            if (res.success) {
-                Toast.success(res.message || `Menu '${nama}' berhasil dipindahkan ke arsip`);
-                await this.loadCatalog();
-                // Hapus dari keranjang jika ada
-                this.removeFromCart(menuId);
-            } else {
-                Toast.error(res.error || "Gagal mengarsipkan menu");
+        Modal.confirm(`Arsipkan menu '${nama}' dari katalog aktif? Menu dipindahkan ke tampilan arsip dan bisa dipulihkan kapan saja.`, async () => {
+            try {
+                const res = await window.API.menu.delete(menuId);
+                if (res.success) {
+                    Toast.success(res.message || `Menu '${nama}' berhasil dipindahkan ke arsip`);
+                    await this.loadCatalog();
+                    // Hapus dari keranjang jika ada
+                    this.removeFromCart(menuId);
+                } else {
+                    Toast.error(res.error || "Gagal mengarsipkan menu");
+                }
+            } catch (error) {
+                Toast.error("Gagal mengarsipkan menu: error koneksi");
             }
-        } catch (error) {
-            Toast.error("Gagal mengarsipkan menu: error koneksi");
-        }
+        });
     },
 
-    async hardDeleteItem(menuId, nama) {
+    hardDeleteItem(menuId, nama) {
         event.stopPropagation();
         if (window.App && App.user && App.user.role === 'kasir') {
             Toast.error("Akses terbatas hanya untuk Administrator");
             return;
         }
-        const warning = `PERINGATAN KERAS!\n\nAnda akan menghapus menu '${nama}' BESERTA SELURUH transaksi penjualan terkait secara permanen.\n\nData F&B historis untuk menu ini akan HILANG TOTAL dan tidak dapat dipulihkan. Lanjutkan?`;
-        if (!confirm(warning)) {
-            return;
-        }
-        // Konfirmasi kedua agar tidak terjadi kecelakaan klik
-        if (!confirm("Konfirmasi terakhir: hapus permanen menu + semua transaksinya?")) {
-            return;
-        }
-
-        try {
-            const res = await window.API.menu.deletePermanent(menuId);
-            if (res.success) {
-                Toast.success(res.message || "Menu dihapus permanen");
-                await this.loadCatalog();
-                this.removeFromCart(menuId);
-            } else {
-                Toast.error(res.error || "Gagal menghapus permanen");
-            }
-        } catch (error) {
-            Toast.error("Gagal menghapus permanen: error koneksi");
-        }
+        Modal.confirm(`Hapus permanen menu '${nama}' beserta seluruh transaksi penjualannya? Data historis menu ini akan hilang total.`,
+            async () => {
+                try {
+                    const res = await window.API.menu.deletePermanent(menuId);
+                    if (res.success) {
+                        Toast.success(res.message || "Menu dihapus permanen");
+                        await this.loadCatalog();
+                        this.removeFromCart(menuId);
+                    } else {
+                        Toast.error(res.error || "Gagal menghapus permanen");
+                    }
+                } catch (error) {
+                    Toast.error("Gagal menghapus permanen: error koneksi");
+                }
+            },
+            null,
+            { requireCheck: "Saya paham data ini dihapus permanen dan tidak bisa dikembalikan." });
     },
 
     // =========================================================================

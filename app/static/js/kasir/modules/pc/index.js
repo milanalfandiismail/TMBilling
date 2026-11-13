@@ -16,19 +16,12 @@ const PC = {
         document.getElementById('pc-table').classList.toggle('hidden', arsip);
         document.getElementById('pc-group-tabs').classList.toggle('hidden', arsip);
         document.getElementById('pc-arsip-list').classList.toggle('hidden', !arsip);
-        document.getElementById('pc-view-aktif').className = arsip
-            ? 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium'
-            : 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold';
-        document.getElementById('pc-view-arsip').className = arsip
-            ? 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold'
-            : 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium';
+        document.getElementById('pc-view-aktif').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_OFF : ArsipList.PILL_ON);
+        document.getElementById('pc-view-arsip').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_ON : ArsipList.PILL_OFF);
         if (arsip) {
             ArsipList.mount({
                 res: 'pc',
-                container: document.getElementById('pc-arsip-list'),
-                labelOf: (i) => i.kode,
-                metaOf: (i) => i.nama_grup || '',
-                emptyText: 'Belum ada PC diarsipkan'
+                container: document.getElementById('pc-arsip-list')
             });
         }
     },

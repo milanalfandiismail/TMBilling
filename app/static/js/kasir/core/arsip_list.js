@@ -57,8 +57,9 @@ const ArsipList = {
         }
     },
 
-    PILL_ON: 'bg-neutral-100 text-black border-neutral-100',
-    PILL_OFF: 'bg-[#101010] text-neutral-400 border-[#242424] hover:text-neutral-200',
+    PILL_BASE: 'px-2.5 py-1 rounded text-[11px] ',
+    PILL_ON: 'bg-neutral-100 text-black font-bold',
+    PILL_OFF: 'text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium',
 
     esc(value) {
         return (typeof Utils !== 'undefined' && Utils.escapeHtml)
@@ -101,10 +102,6 @@ const ArsipList = {
     },
 
     // Alias lama: pemanggil yang masih memakai labelOf/metaOf mendapat bentuk yang benar.
-    rows({ items, res }) {
-        return this.render({ items: items || [], res });
-    },
-
     table({ items, res }) {
         const schema = this.schemaOf(res);
         const head = schema.head || [];

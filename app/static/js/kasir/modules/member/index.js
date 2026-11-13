@@ -20,19 +20,12 @@ const Member = {
         document.getElementById('member-table').classList.toggle('hidden', arsip);
         document.getElementById('member-group-tabs').classList.toggle('hidden', arsip);
         document.getElementById('member-arsip-list').classList.toggle('hidden', !arsip);
-        document.getElementById('member-view-aktif').className = arsip
-            ? 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium'
-            : 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold';
-        document.getElementById('member-view-arsip').className = arsip
-            ? 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold'
-            : 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium';
+        document.getElementById('member-view-aktif').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_OFF : ArsipList.PILL_ON);
+        document.getElementById('member-view-arsip').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_ON : ArsipList.PILL_OFF);
         if (arsip) {
             ArsipList.mount({
                 res: 'member',
-                container: document.getElementById('member-arsip-list'),
-                labelOf: (i) => i.username,
-                metaOf: (i) => i.nama_lengkap || '',
-                emptyText: 'Belum ada member diarsipkan'
+                container: document.getElementById('member-arsip-list')
             });
         }
     },

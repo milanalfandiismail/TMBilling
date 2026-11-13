@@ -16,19 +16,12 @@ const Paket = {
         document.getElementById('paket-table').classList.toggle('hidden', arsip);
         document.getElementById('paket-group-tabs').classList.toggle('hidden', arsip);
         document.getElementById('paket-arsip-list').classList.toggle('hidden', !arsip);
-        document.getElementById('paket-view-aktif').className = arsip
-            ? 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium'
-            : 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold';
-        document.getElementById('paket-view-arsip').className = arsip
-            ? 'px-2.5 py-1 rounded bg-neutral-100 text-black font-bold'
-            : 'px-2.5 py-1 rounded text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] font-medium';
+        document.getElementById('paket-view-aktif').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_OFF : ArsipList.PILL_ON);
+        document.getElementById('paket-view-arsip').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_ON : ArsipList.PILL_OFF);
         if (arsip) {
             ArsipList.mount({
                 res: 'paket',
-                container: document.getElementById('paket-arsip-list'),
-                labelOf: (i) => i.nama,
-                metaOf: (i) => i.nama_grup || '',
-                emptyText: 'Belum ada paket diarsipkan'
+                container: document.getElementById('paket-arsip-list')
             });
         }
     },
