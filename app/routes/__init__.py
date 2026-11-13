@@ -53,6 +53,7 @@ from app.routes.public.tv_public_routes import tv_public_api_bp
 from app.routes.public.health_routes import health_api_bp
 from app.routes.tutorial.tutorial_routes import tutorial_api_bp
 from app.routes.notes.note_routes import notes_api_bp
+from app.routes.arsip.arsip_routes import arsip_api_bp
 
 __all__ = [
     'auth_api_bp', 'auth_kasir_api_bp', 'client_api_bp', 'dashboard_bp',
@@ -62,5 +63,5 @@ __all__ = [
     'member_portal_bp', 'shift_api_bp', 'migration_api_bp', 'mikrotik_api_bp',
     'game_kasir_api_bp', 'game_public_api_bp', 'server_monitor_bp', 'vnc_api_bp', 'maintenance_api_bp',
     'uptime_api_bp', 'tv_public_api_bp', 'health_api_bp', 'tutorial_api_bp',
-    'notes_api_bp'
+    'notes_api_bp', 'arsip_api_bp'
 ]

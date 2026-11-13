@@ -85,7 +85,8 @@ def _register_blueprints(app):
         tv_public_api_bp,
         health_api_bp,
         tutorial_api_bp,
-        notes_api_bp
+        notes_api_bp,
+        arsip_api_bp
     )
 
     # ==========================================
@@ -122,6 +123,7 @@ def _register_blueprints(app):
     app.register_blueprint(uptime_api_bp, url_prefix="/api/v1/kasir/uptime")
     app.register_blueprint(tutorial_api_bp, url_prefix="/api/v1/kasir/tutorials")
     app.register_blueprint(notes_api_bp, url_prefix="/api/v1/kasir/notes")
+    app.register_blueprint(arsip_api_bp, url_prefix="/api/v1/kasir/arsip")
 
     # ==========================================
     # 3. PUBLIC APIs (/api/v1/public/...)
