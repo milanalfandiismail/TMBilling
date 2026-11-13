@@ -315,6 +315,17 @@ const ArsipList = {
         return true;
     },
 
+    // Jumlah per grup untuk pill — sumbernya data mode yang sedang tampil.
+    counts(items) {
+        const counts = {};
+        (items || []).forEach(i => {
+            if (i.grup_id === null || i.grup_id === undefined) return;
+            const key = String(i.grup_id);
+            counts[key] = (counts[key] || 0) + 1;
+        });
+        return counts;
+    },
+
     async mount({ res, container, items }) {
         const el = typeof container === 'string' ? document.getElementById(container) : container;
         if (!el) return;

@@ -35,6 +35,7 @@ const Arsip = {
 
     switchKategori(key) {
         this.active = key;
+        this.renderGrupPills();
         this.renderPills();
         this.renderPanel();
     },
@@ -47,28 +48,40 @@ const Arsip = {
         this.renderPanel();
     },
 
-    // Pill grup selalu ada - termasuk grup yang sudah diarsipkan - supaya isinya bisa difilter lalu dipulihkan.
+    // Pill grup mengikuti kategori yang dibuka: grup tanpa data arsip pada kategori itu tidak tampil.
     renderGrupPills() {
-        const groups = Array.isArray(this.grupList) ? this.grupList : [];
+        const el = document.getElementById('arsip-grup-pills');
+        if (!el) return;
+        const counts = ArsipList.counts((this.data || {})[this.active] || []);
+        if (Object.keys(counts).length === 0) {
+            this.grupFilter = null;
+            ArsipList.setGrup(null);
+            el.innerHTML = '';
+            el.classList.add('hidden');
+            return;
+        }
+        el.classList.remove('hidden');
+
         const button = (id, arg, label, color, on) => `
-            <button type="button" id="${id}" onclick="Arsip.switchGrup(${arg})"
+            <button type="button" id="${id}" ${arg === null ? '' : `data-grup="${arg}"`} onclick="Arsip.switchGrup(${arg})"
                 class="px-2.5 py-1 rounded text-[11px] whitespace-nowrap transition-colors border flex items-center gap-1.5 ${on
                     ? 'bg-neutral-100 text-black font-bold border-neutral-100'
                     : 'text-neutral-400 hover:text-neutral-200 border-transparent hover:bg-[#171717]'}">
                 ${color ? `<span class="w-1.5 h-1.5 rounded-full" style="background-color: ${color};"></span>` : ''}
                 ${ArsipList.esc(label)}
             </button>`;
-        const html = [button('arsip-grup-all', 'null', 'Semua Grup', null, this.grupFilter === null)]
+        const groups = (Array.isArray(this.grupList) ? this.grupList : [])
+            .filter(g => counts[String(g.id)]);
+        const html = [button('arsip-grup-all', null, `Semua Grup (${Object.values(counts).reduce((a, b) => a + b, 0)})`, null, this.grupFilter === null)]
             .concat(groups.map(g => button(
                 `arsip-grup-${g.id}`,
                 Number(g.id),
-                `${g.nama}${g.aktif === false ? ' · arsip' : ''}`,
+                `${g.nama}${g.aktif === false ? ' · arsip' : ''} (${counts[String(g.id)]})`,
                 g.warna || '#3b82f6',
                 Number(this.grupFilter) === Number(g.id)
             )))
             .join('');
-        const el = document.getElementById('arsip-grup-pills');
-        if (el) el.innerHTML = html;
+        el.innerHTML = html;
     },
 
     renderPills() {
@@ -78,7 +91,7 @@ const Arsip = {
             const count = (data[k.key] || []).filter(i => ArsipList.match(i)).length;
             const on = k.key === this.active;
             return `<button type="button" id="arsip-pill-${k.key}" onclick="Arsip.switchKategori('${k.key}')"
-                class="px-2.5 py-1 rounded text-[11px] font-bold whitespace-nowrap transition-colors border ${on ? ArsipList.PILL_ON : ArsipList.PILL_OFF}">
+                class="px-2.5 py-1 rounded text-[11px] font-bold uppercase whitespace-nowrap transition-colors border ${on ? ArsipList.PILL_ON : ArsipList.PILL_OFF}">
                 ${k.label} <span id="arsip-count-${k.key}" class="${on ? 'text-black/60' : 'text-neutral-600'}">${count}</span>
             </button>`;
         }).join('');

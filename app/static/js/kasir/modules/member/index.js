@@ -119,6 +119,7 @@ const Member = {
             this.totalPages = memberData.pages || 1;
             this.totalRecords = memberData.total || 0;
             this.currentPage = memberData.current_page || 1;
+            this._grupCounts = memberData.grup_counts || {};
 
             const groups = grupData.grup || grupData.grup_list || grupData || [];
             this._allGroups = groups;
@@ -141,6 +142,12 @@ const Member = {
         try {
             const grupData = await API.grup.list({ include_arsip: true });
             this._allGroups = grupData.grup || grupData.grup_list || grupData || [];
+            this._arsipCounts = ArsipList.counts(await ArsipList.fetch('member'));
+            if (this.currentGrupId && !this._arsipCounts[String(this.currentGrupId)]) {
+                this.currentGrupId = '';
+                ArsipList.setGrup(null);
+                ArsipList.mount({ res: 'member', container: document.getElementById('member-arsip-list') });
+            }
             this.renderGroupTabs(this._allGroups);
         } catch (e) { /* daftar grup arsip opsional */ }
     },
@@ -164,6 +171,9 @@ const Member = {
         `;
 
         tabsHtml += groups.map(g => {
+            const counts = this.arsipMode ? (this._arsipCounts || {}) : (this._grupCounts || {});
+            const count = counts[String(g.id)] || 0;
+            if (count === 0) return '';
             const isActive = String(this.currentGrupId) === String(g.id);
             const gColor = g.warna || '#3B82F6';
 
@@ -173,7 +183,7 @@ const Member = {
                         class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 bg-[#161616] text-white border shadow-sm"
                         style="border-color: ${gColor};">
                         <span class="w-2 h-2 rounded-full" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}</span>
+                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''} (${count})</span>
                     </button>
                 `;
             } else {
@@ -181,7 +191,7 @@ const Member = {
                     <button type="button" onclick="Member.selectGroup(${g.id})"
                         class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 bg-[#0a0a0a] text-neutral-400 border border-[#1f1f1f] hover:border-[#333] hover:text-neutral-200">
                         <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}</span>
+                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''} (${count})</span>
                     </button>
                 `;
             }

@@ -88,6 +88,19 @@ class MemberRepository:
             return query.order_by(fallback_order, Member.username.asc()).paginate(page=page, per_page=per_page, error_out=False)
 
     @staticmethod
+    def counts_by_grup(search_query=None, aktif_only=True):
+        """Jumlah member per grup_id untuk filter yang sama dengan daftar."""
+        query = db.session.query(Member.grup_id, db.func.count(Member.id))
+        if search_query:
+            query = query.filter(
+                (Member.username.ilike(f"%{search_query}%")) |
+                (Member.nama_lengkap.ilike(f"%{search_query}%"))
+            )
+        if aktif_only:
+            query = query.filter(Member.aktif.is_(True))
+        return {grup_id: total for grup_id, total in query.group_by(Member.grup_id).all()}
+
+    @staticmethod
     def get_all_aktif():
         """Mengambil semua member dengan status aktif saja."""
         return Member.query.filter_by(aktif=True).all()

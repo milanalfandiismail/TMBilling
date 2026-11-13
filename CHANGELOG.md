@@ -26,10 +26,12 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Pill Grup Arsip Lengkap**: tab Data Diarsipkan kini punya pill grup sendiri (grup terarsip tetap muncul dengan label ` · arsip`), dan pill grup di tab PC/paket/member memuat grup terarsip lewat `?include_arsip=1`.
 - **Refresh Real-Time Setelah Pulihkan**: `ArsipList.onChanged` menjalankan ulang daftar arsip **dan** seluruh callback pemanggil (`_refresh` + `_callbacks`), sehingga memulihkan atau menghapus permanen langsung memperbarui daftar, total, dan pill grup tanpa reload.
 - **Total dan Warna Kartu Arsip**: footer `Total N <unit> arsip` mengikuti jumlah baris yang benar-benar tampil setelah filter, dan kartu PC terarsip memakai warna kartu aktif (`border-[#242424]`, tanpa `opacity-60`).
+- **Angka Pill Grup Mengikuti Mode**: hitungan pill grup di tab PC/paket/member diambil dari data mode yang sedang tampil (`ArsipList.counts`) — mode aktif menghitung data aktif, mode arsip menghitung data arsip — dan grup tanpa data pada mode itu tidak ditampilkan; member memakai `grup_counts` dari server agar angka ikut hasil pencarian.
+- **Pill Grup Tab Data Diarsipkan Per Kategori**: pill grup di tab terpusat dihitung hanya dari kategori yang sedang dibuka (mis. kategori Member hanya menampilkan grup yang punya member terarsip, dengan angka `NAMA (n)`), dan baris pill grup disembunyikan untuk kategori tanpa grup (`Grup PC / Zona`, `User Staff`, `Menu FnB`). Label pill kategori kini uppercase.
 - **Versi 1.6.5-rc3**: `Config.VERSION` dan semua cermin versi (package.json, klien Tauri, README, DOCUMENTATION, AGENTS) dinaikkan ke `1.6.5-rc3`.
 
 ### Fixed
-- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (685 unit test, 383 check E2E, 34 blueprint, 254 rute).
+- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (686 unit test, 383 check E2E, 34 blueprint, 254 rute).
 
 ## [Unreleased]
 

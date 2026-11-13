@@ -144,7 +144,14 @@ const PC = {
         try {
             const grupData = await API.grup.list({ include_arsip: true });
             this.groups = grupData.grup || grupData.grup_list || grupData || [];
+            this._arsipCounts = ArsipList.counts(await ArsipList.fetch('pc'));
             this.renderTabs();
+            if (this.arsipMode && this.currentGrupId && !this._arsipCounts[String(this.currentGrupId)]) {
+                this.currentGrupId = null;
+                ArsipList.setGrup(null);
+                this.renderTabs();
+                ArsipList.mount({ res: 'pc', container: document.getElementById('pc-arsip-list') });
+            }
         } catch (e) { /* daftar grup arsip opsional */ }
     },
 
@@ -158,7 +165,10 @@ const PC = {
         }
 
         const tabsHtml = this.groups.map(g => {
-            const count = (this._allPcs || []).filter(p => Number(p.grup_id) === Number(g.id)).length;
+            const count = this.arsipMode
+                ? ((this._arsipCounts || {})[String(g.id)] || 0)
+                : (this._allPcs || []).filter(p => Number(p.grup_id) === Number(g.id)).length;
+            if (this.arsipMode && count === 0) return '';
             const isActive = Number(this.currentGrupId) === Number(g.id);
             const gColor = g.warna || '#3B82F6';
 

@@ -124,7 +124,8 @@ class MemberService:
             "current_page": pagination.page,
             "per_page": pagination.per_page,
             "has_next": pagination.has_next,
-            "has_prev": pagination.has_prev
+            "has_prev": pagination.has_prev,
+            "grup_counts": {str(k): v for k, v in MemberRepository.counts_by_grup(search_query, aktif_only).items() if k is not None}
         }
 
     @staticmethod

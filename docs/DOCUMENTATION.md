@@ -68,7 +68,7 @@
    - [7.6 Deploy Scripts & Configuration](#76-deploy-scripts--configuration)
 8. [Spesifikasi Protokol API & VNC Bridge](#8-spesifikasi-protokol-api--vnc-bridge)
 9. [Panduan Operasional Kasir & Troubleshooting](#9-panduan-operasional-kasir--troubleshooting)
-10. [Panduan Kontribusi, Testing & SOP Dual-Engine (248 Test Files / 685 Test)](#10-panduan-kontribusi-testing--sop-dual-engine)
+10. [Panduan Kontribusi, Testing & SOP Dual-Engine (248 Test Files / 686 Test)](#10-panduan-kontribusi-testing--sop-dual-engine)
 
 ---
 
@@ -195,7 +195,7 @@ c:\Project GIT\TMBilling
 │   ├── TMBilling_Monitor/              # Hardware Telemetry & Sensor Daemon
 │   ├── TMBilling_Uninstaller/          # Secure Uninstaller (Registry & Service Clean)
 │   └── Deploy/                         # Deployment & Firewall Helper Scripts
-├── tests/                              # 248 File Pytest / 685 Test + 15 Suite E2E
+├── tests/                              # 248 File Pytest / 686 Test + 15 Suite E2E
 ├── build_and_deploy.bat                # Skrip Build Otomatis Klien & Server
 ├── developer_install.bat               # Skrip Inisialisasi Dev Environment Cepat
 ├── CHANGELOG.md                        # Riwayat Rilis Lengkap (Keep a Changelog)
@@ -837,7 +837,7 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | :--- | :--- | :--- |
 | GET | /api/v1/kasir/arsip/ | arsip_api.daftar_arsip |
 
-> `GET /api/v1/kasir/arsip/` mengagregasi seluruh data terarsip (grup, pc, paket, member, user, game, menu) untuk tab **Data Diarsipkan**. Tab itu menampilkan satu kategori sekaligus lewat pill horizontal (`#arsip-pills`), bukan tumpukan seksi, dan punya pill grup sendiri (`#arsip-grup-pills`, tombol `Semua` + tiap grup; grup terarsip tetap muncul dengan label ` · arsip`) sehingga item arsip bisa difilter per grup lalu dipulihkan. Setiap tab sumber (grup, PC, paket, member, user, game) dan katalog FnB juga punya pill `Aktif | Diarsipkan` sehingga data terarsip tetap terlihat di tab asalnya; pill grup pada tab PC/paket/member memuat grup terarsip (`?include_arsip=1`) dan tetap tampil di mode arsip. Baris/kartu arsip di kedua jalur dirender oleh modul bersama `app/static/js/kasir/core/arsip_list.js` (`ArsipList.mount`), yang menyimpan skema kolom per resource sehingga arsip selalu menampilkan kolom yang sama dengan data aktifnya (grup/paket/member/user/game berupa tabel, PC dan menu FnB berupa kartu), dengan tombol Pulihkan dan Hapus Permanen, plus footer `Total N <unit> arsip` yang mengikuti hasil filter. Filter grup dinormalkan lewat `ArsipList.setGrup` (`''`/`null` = semua), dan `Member.to_dict()` ikut mengirim `grup_id` agar filter member bekerja. Setelah Pulihkan/Hapus Permanen, `ArsipList.onChanged` menjalankan ulang daftar **dan** callback pemanggil sehingga daftar, total, dan pill grup ikut segar tanpa reload. Kartu PC terarsip memakai warna kartu aktif (`border-[#242424]`, tanpa `opacity-60`). Pemulihan memakai `POST /api/v1/kasir/<resource>/<id>/restore`; grup memperoleh kolom `aktif` lewat migrasi `a1b2c3d4e5f6`.
+> `GET /api/v1/kasir/arsip/` mengagregasi seluruh data terarsip (grup, pc, paket, member, user, game, menu) untuk tab **Data Diarsipkan**. Tab itu menampilkan satu kategori sekaligus lewat pill horizontal (`#arsip-pills`), bukan tumpukan seksi, dan punya pill grup sendiri (`#arsip-grup-pills`, tombol `Semua` + tiap grup; grup terarsip tetap muncul dengan label ` · arsip`) sehingga item arsip bisa difilter per grup lalu dipulihkan. Pill grup itu dihitung **hanya dari kategori yang sedang dibuka** (mis. kategori Member hanya menampilkan grup yang punya member terarsip, dengan label `NAMA (n)`); baris pill grup disembunyikan untuk kategori tanpa grup (`grup`, `user`, `menu`) dan label pill kategori dirender uppercase. Setiap tab sumber (grup, PC, paket, member, user, game) dan katalog FnB juga punya pill `Aktif | Diarsipkan` sehingga data terarsip tetap terlihat di tab asalnya; pill grup pada tab PC/paket/member memuat grup terarsip (`?include_arsip=1`) dan tetap tampil di mode arsip. Baris/kartu arsip di kedua jalur dirender oleh modul bersama `app/static/js/kasir/core/arsip_list.js` (`ArsipList.mount`), yang menyimpan skema kolom per resource sehingga arsip selalu menampilkan kolom yang sama dengan data aktifnya (grup/paket/member/user/game berupa tabel, PC dan menu FnB berupa kartu), dengan tombol Pulihkan dan Hapus Permanen, plus footer `Total N <unit> arsip` yang mengikuti hasil filter. Filter grup dinormalkan lewat `ArsipList.setGrup` (`''`/`null` = semua), dan `Member.to_dict()` ikut mengirim `grup_id` agar filter member bekerja. Setelah Pulihkan/Hapus Permanen, `ArsipList.onChanged` menjalankan ulang daftar **dan** callback pemanggil sehingga daftar, total, dan pill grup ikut segar tanpa reload. Kartu PC terarsip memakai warna kartu aktif (`border-[#242424]`, tanpa `opacity-60`). Angka pill grup mengikuti mode yang sedang tampil: mode aktif memakai data aktif (member lewat `grup_counts` dari server), mode arsip memakai `ArsipList.counts` atas data arsip, dan grup tanpa data pada mode itu tidak ditampilkan. Pemulihan memakai `POST /api/v1/kasir/<resource>/<id>/restore`; grup memperoleh kolom `aktif` lewat migrasi `a1b2c3d4e5f6`.
 
 #### 🔹 Blueprint: maintenance (6 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
@@ -1195,11 +1195,11 @@ Endpoint dashboard (GitHub 1-Klik maupun Upload ZIP) juga memakai klaim yang sam
 ## 10. Panduan Kontribusi, Testing & SOP Dual-Engine
 
 ### 10.1 Standar Testing Backend (Pytest)
-Repositori TMBilling dilengkapi **248 file pengujian unit dan integrasi** dengan **685 test specs** aktif:
+Repositori TMBilling dilengkapi **248 file pengujian unit dan integrasi** dengan **686 test specs** aktif:
 ```powershell
 python -m pytest tests/ -q
 ```
-Seluruh pengujian harus berstatus **PASSED (685 passed, 0 failed)** sebelum melakukan commit atau push.
+Seluruh pengujian harus berstatus **PASSED (686 passed, 0 failed)** sebelum melakukan commit atau push.
 
 ### 10.1.1 Pengujian End-to-End Browser (Playwright)
 `tests/e2e/` menjalankan **15 suite Chromium sungguhan** (383 check) secara paralel terhadap sandbox terisolasi:
@@ -1226,7 +1226,7 @@ Seluruh aktivitas rekayasa perangkat lunak wajib mematuhi protokol **Dual-Engine
 1. **Engine 1 - Planning & Brainstorming (Plugin `superpowers`)**:
    - `brainstorming`: Menganalisis kebutuhan pengguna dan merancang arsitektur sebelum coding.
    - `writing-plans`: Menyusun rencana kerja bertahap yang modular dan terverifikasi.
-   - `systematic-debugging`: Investigasi akar masalah secara mendalam sebelum perbaikan; verifikasi regresi (685 test specs) dan jangan commit/push otomatis setelah bugfix.
+   - `systematic-debugging`: Investigasi akar masalah secara mendalam sebelum perbaikan; verifikasi regresi (686 test specs) dan jangan commit/push otomatis setelah bugfix.
    - `test-driven-development`: Memastikan spesifikasi pengujian ada untuk setiap perubahan fitur krusial.
    - `git-discipline`: Dilarang keras melakukan `git commit` maupun `git push` secara sepihak/otomatis (baik saat fitur baru maupun setelah debugging/bugfix) sebelum ada perintah eksplisit dari USER. Selalu laporkan hasil pekerjaan dan tunggu aba-aba USER.
 2. **Engine 2 - Execution & Verification (MCP `codebase-memory`)**:
