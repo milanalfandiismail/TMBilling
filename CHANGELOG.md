@@ -31,8 +31,9 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Versi 1.6.5-rc3**: `Config.VERSION` dan semua cermin versi (package.json, klien Tauri, README, DOCUMENTATION, AGENTS) dinaikkan ke `1.6.5-rc3`.
 
 ### Fixed
+- **Pill Grup Member di Mode Aktif**: tab member kini menampilkan pill untuk seluruh grup aktif walau grup tersebut belum punya member; grup kosong tampil tanpa angka dan memilihnya menampilkan state "Member Tidak Ditemukan", sedangkan mode arsip tetap hanya menampilkan grup yang punya member terarsip.
 - **Pill Grup Kembali ke Mode Aktif**: `_loadArsipGroups()` pada tab PC/paket/member menyimpan daftar grup arsip di field terpisah (`_arsipGroups`) dan tidak lagi menimpa daftar grup aktif, sehingga pill grup tidak tertinggal menampilkan grup beserta angka arsip setelah pengguna kembali dari `Diarsipkan` ke `Aktif`; `toggleView(false)` juga langsung merender ulang pill grup.
-- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (686 unit test, 384 check E2E, 34 blueprint, 254 rute).
+- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (686 unit test, 385 check E2E, 34 blueprint, 254 rute).
 
 ## [Unreleased]
 

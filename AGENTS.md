@@ -292,7 +292,7 @@ python run.py
 build_and_deploy.bat
 
 # Menjalankan Master Runner E2E Sandbox Terisolasi (Zero Database Mutation Guarantee)
-# 15 suite Chromium sungguhan (Playwright): 384 check, paralel otomatis semua CPU
+# 15 suite Chromium sungguhan (Playwright): 385 check, paralel otomatis semua CPU
 npm run test:e2e
 # atau langsung via Python: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py
 # Serial untuk debug: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py --jobs 1

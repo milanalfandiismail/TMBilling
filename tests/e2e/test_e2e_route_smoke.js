@@ -569,7 +569,21 @@ async function runRouteSmokeE2ETest(page) {
     assert.strictEqual(state.grupFilter, null, 'filter grup arsip harus dilepas');
     assert.strictEqual(state.pills, aktifPills, 'pill grup harus kembali menghitung data aktif');
     assert.ok(!/ARSIP/i.test(state.text), 'pill grup tidak boleh menyisakan label arsip');
-    assert.strictEqual(state.text.replace(/\s+/g, ' ').trim(), aktifText.replace(/\s+/g, ' ').trim(), 'pill grup harus sama seperti sebelum masuk arsip');
+    const mismatch = await page.evaluate(async () => {
+      const res = await fetch('/api/v1/kasir/paket/', { credentials: 'include' });
+      const body = await res.json();
+      const list = body.paket || body.data || body || [];
+      const perGrup = {};
+      list.forEach(p => { const k = String(p.grup_id); perGrup[k] = (perGrup[k] || 0) + 1; });
+      return Paket.groups.filter(g => {
+        const btn = document.querySelector(`#paket-group-tabs button[onclick="Paket.selectGroup(${Number(g.id)})"]`);
+        if (!btn) return true;
+        const badge = btn.querySelector('span:last-child');
+        const n = perGrup[String(g.id)] || 0;
+        return Number((badge && badge.textContent) || 0) !== n;
+      }).map(g => g.nama);
+    });
+    assert.deepStrictEqual(mismatch, [], 'angka pill grup harus mengikuti data aktif');
 
     await page.evaluate(async (id) => {
       const csrf = document.querySelector('meta[name="csrf-token"]');
@@ -578,6 +592,43 @@ async function runRouteSmokeE2ETest(page) {
         headers: { 'X-CSRFToken': csrf ? csrf.getAttribute('content') : '' },
       });
     }, paket);
+    await page.click('#paket-group-tabs button:first-child');
+    await page.waitForFunction((prev) => document.getElementById('paket-group-tabs').innerText.replace(/\s+/g, ' ').trim() === prev, aktifText.replace(/\s+/g, ' ').trim(), { timeout: 10000 });
+  });
+
+  await check(report, 'Tab member menampilkan pill untuk semua grup di mode aktif', async () => {
+    await login(page, 'admin');
+    await tab(page, 'member');
+    await page.waitForSelector('#member-group-tabs button', { timeout: 10000 });
+
+    const info = await page.evaluate(async () => {
+      const gres = await fetch('/api/v1/kasir/grup/', { credentials: 'include' });
+      const gbody = await gres.json();
+      const groups = gbody.grup || gbody.grup_list || gbody.data || gbody || [];
+      const mres = await fetch('/api/v1/kasir/member/?per_page=1', { credentials: 'include' });
+      const mbody = await mres.json();
+      const counts = (mbody.data && mbody.data.grup_counts) || mbody.grup_counts || {};
+      return {
+        total: groups.length,
+        empty: groups.filter(g => !counts[String(g.id)]).map(g => ({ id: g.id, nama: g.nama })),
+        pills: Array.from(document.querySelectorAll('#member-group-tabs button'))
+          .map(b => b.textContent.replace(/\s+/g, ' ').trim()),
+      };
+    });
+
+    assert.strictEqual(info.pills.length, info.total + 1, 'pill SEMUA + semua grup aktif harus tampil');
+    assert.ok(!info.pills.some(t => /\(0\)/.test(t)), 'grup tanpa member tidak menampilkan angka 0');
+    assert.ok(!info.pills.some(t => /ARSIP/i.test(t)), 'mode aktif tidak menampilkan label ARSIP');
+
+    if (info.empty.length) {
+      const target = info.empty[0];
+      const pill = page.locator('#member-group-tabs button', { hasText: target.nama.toUpperCase() }).first();
+      await pill.click();
+      await page.waitForSelector('#member-table', { state: 'visible', timeout: 10000 });
+      await page.waitForFunction(() => /Member Tidak Ditemukan/i.test(document.getElementById('member-table').textContent), null, { timeout: 10000 });
+      await page.click('#member-group-tabs button:first-child');
+      await page.waitForTimeout(300);
+    }
   });
 
   return finish(report);
