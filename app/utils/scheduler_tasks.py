@@ -2,6 +2,7 @@
 
 """Wrapper untuk background tasks scheduler (APScheduler)."""
 
+import json
 import os
 import re
 from datetime import datetime, timedelta
@@ -14,17 +15,31 @@ UNIT_MULTIPLIER = {
     "jam": 3600,
     "hari": 86400,
     "minggu": 604800,
+    "bulan": 2592000,
 }
 
+_SETTINGS_KEY = "scheduler_last_runs"
 _LAST_RUN = {}
 
 
 def record_run(job_id, ok=True):
-    """Catat eksekusi terakhir per job di memori proses."""
+    """Catat eksekusi terakhir per job di memori dan simpan ke Settings."""
     _LAST_RUN[job_id] = {"at": datetime.now().isoformat(timespec="seconds"), "ok": bool(ok)}
+    try:
+        from app.services import SettingsService
+        SettingsService.set(_SETTINGS_KEY, json.dumps(_LAST_RUN))
+    except Exception:
+        pass
 
 
 def get_last_runs():
+    if not _LAST_RUN:
+        try:
+            from app.services import SettingsService
+            data = json.loads(SettingsService.get(_SETTINGS_KEY, "{}") or "{}")
+            _LAST_RUN.update(data)
+        except Exception:
+            pass
     return dict(_LAST_RUN)
 
 
@@ -41,7 +56,8 @@ def run_cleanup_expired(app):
             SesiService.cleanup_inactive_admin_sessions()
             from app.services.blackout.blackout_service import BlackoutService
             BlackoutService.deteksi()
-        except Exception:
+        except Exception as e:
+            write_log("SCHEDULER_ERROR", f"Error cleanup sesi: {e}", user="SYSTEM")
             record_run("cleanup_expired", False)
             raise
         record_run("cleanup_expired", True)
@@ -62,8 +78,18 @@ def run_database_backup(app):
         try:
             backup_manager = BackupService(db_path=db_path, backup_dir=backup_dir)
             if os.path.exists(db_path):
-                backup_manager.create_backup()
+                report = {}
+                backup_manager.create_backup(report=report)
                 backup_manager.cleanup_old_backups(max_keep=5)
+                failed = report.get("failed") or []
+                if failed:
+                    write_log(
+                        "BACKUP_CLOUD_FAILED",
+                        "Unggahan cloud gagal: " + ", ".join(failed),
+                        user="SYSTEM",
+                    )
+                record_run("database_backup", not failed)
+                return
             else:
                 write_log("BACKUP_ERROR", f"File {db_path} tidak ditemukan!", user="SYSTEM")
                 record_run("database_backup", False)

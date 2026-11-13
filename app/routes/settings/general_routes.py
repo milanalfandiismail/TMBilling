@@ -4,6 +4,7 @@ Termasuk auto-shutdown, client polling, apikey, timezone, dan scheduler.
 import os
 import sys
 import subprocess
+import time
 from flask import request, jsonify, session, current_app
 from app.services import SettingsService
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
@@ -335,6 +336,27 @@ def scheduler_status():
     return jsonify({"last_runs": get_last_runs()}), 200
 
 
+def _restart_server(app) -> bool:
+    """Jalankan proses baru; hanya keluar bila proses itu hidup setelah 2 detik."""
+    from app.utils.scheduler_tasks import run_flush_uptime
+
+    run_flush_uptime(app)
+    env = os.environ.copy()
+    env.pop('WERKZEUG_SERVER_FD', None)
+    env.pop('WERKZEUG_RUN_MAIN', None)
+    proc = subprocess.Popen([sys.executable] + sys.argv, env=env)
+    time.sleep(2)
+    if proc.poll() is not None:
+        write_log(
+            "SCHEDULER_RESTART_ERROR",
+            f"Proses baru berhenti (exit {proc.returncode}); server lama tetap berjalan",
+            user="SYSTEM",
+        )
+        return False
+    os._exit(0)
+    return True
+
+
 @settings_api_bp.route("/scheduler/restart", methods=["POST"])
 @login_required
 @admin_required
@@ -352,13 +374,7 @@ def restart_scheduler():
         def _do_restart():
             import time
             time.sleep(1.5)
-            # Hapus env var werkzeug (WERKZEUG_SERVER_FD) agar tidak diwariskan
-            # ke process baru, karena FD tersebut sudah invalid setelah parent exit
-            env = os.environ.copy()
-            env.pop('WERKZEUG_SERVER_FD', None)
-            env.pop('WERKZEUG_RUN_MAIN', None)
-            subprocess.Popen([sys.executable] + sys.argv, env=env)
-            os._exit(0)
+            _restart_server(current_app._get_current_object())
 
         threading.Thread(target=_do_restart, daemon=True).start()
         return resp

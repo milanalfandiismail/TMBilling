@@ -202,7 +202,7 @@ class BackupService:
             
             time.sleep(self.interval)
 
-    def create_backup(self) -> str:
+    def create_backup(self, report: dict | None = None) -> str:
         """Membuat salinan database terkompresi (.zip) dan mengunggahnya ke cloud provider aktif."""
         import zipfile
         from app.services.settings.settings_service import SettingsService
@@ -301,6 +301,9 @@ class BackupService:
             except Exception as e:
                 print(f"[Backup] Summary notification error: {e}")
 
+        if report is not None:
+            report["uploaded"] = list(uploaded_success)
+            report["failed"] = list(uploaded_failed)
         return dest_path
 
     def restore_backup(self, zip_path) -> dict:

@@ -28,6 +28,7 @@ from app.utils.scheduler_tasks import (
 )
 import os
 import time
+from datetime import datetime
 
 app = create_app()
 
@@ -66,14 +67,14 @@ def start_scheduler(app, autostart=True):
         id="database_backup"
     )
 
-    # Task 3: Cleanup log (interval dinamis)
-    cleanup_seconds = get_scheduler_interval("auto_cleanup_value", "auto_cleanup_unit", 30, "hari")
+    # Task 3: Cleanup log — harian, run pertama langsung. Retensi dibaca di dalam job.
     scheduler.add_job(
         func=run_cleanup_logs,
         args=[app],
         trigger="interval",
-        seconds=cleanup_seconds,
-        id="cleanup_logs"
+        seconds=86400,
+        id="cleanup_logs",
+        next_run_time=datetime.now()
     )
 
     # Task 4: Auto Screenshot (interval dinamis)
