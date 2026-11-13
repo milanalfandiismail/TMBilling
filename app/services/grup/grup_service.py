@@ -10,6 +10,7 @@ import re
 from app.models import db
 from app.models import Grup
 from app.repositories import GrupRepository
+from app.services.write_lock import WRITE_LOCK
 from app.utils.logger import write_log
 from app.utils.validators import validate_hex_color, validate_string_length
 
@@ -31,9 +32,37 @@ class GrupService:
         return cleaned
 
     @staticmethod
-    def get_all():
+    def get_all(aktif_only=True):
         """Ambil semua grup melalui repository."""
-        return GrupRepository.get_all()
+        return GrupRepository.get_all(aktif_only=aktif_only)
+
+    @staticmethod
+    def archive(grup_id, operator="system"):
+        """Arsipkan grup (nonaktif) tanpa menghapus relasinya."""
+        grup = GrupRepository.get_by_id(grup_id)
+        if not grup:
+            raise ValueError("Grup tidak ditemukan")
+        if not grup.aktif:
+            raise ValueError("Grup tidak dalam arsip")
+        with WRITE_LOCK:
+            grup.aktif = False
+            db.session.commit()
+        write_log("ARSIP_GRUP", f"Grup {grup.nama} diarsipkan", user=operator, detail_json={"nama_grup": grup.nama})
+        return grup
+
+    @staticmethod
+    def restore(grup_id, operator="system"):
+        """Pulihkan grup dari arsip."""
+        grup = GrupRepository.get_by_id(grup_id)
+        if not grup:
+            raise ValueError("Grup tidak ditemukan")
+        if grup.aktif:
+            raise ValueError("Grup tidak dalam arsip")
+        with WRITE_LOCK:
+            grup.aktif = True
+            db.session.commit()
+        write_log("RESTORE_GRUP", f"Grup {grup.nama} dipulihkan dari arsip", user=operator, detail_json={"nama_grup": grup.nama})
+        return grup
 
     @staticmethod
     def create(data, operator="system"):

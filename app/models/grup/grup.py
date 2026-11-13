@@ -34,6 +34,7 @@ class Grup(db.Model):
     nama = db.Column(db.String(50), unique=True, nullable=False)
     warna = db.Column(db.String(20), default="#888888")
     keterangan = db.Column(db.String(255), nullable=True)
+    aktif = db.Column(db.Boolean, nullable=False, default=True, server_default=db.text("1"))
     dibuat_pada = db.Column(db.DateTime, default=now_local)
 
     def __init__(self, nama, keterangan=None, warna="#888888"):
