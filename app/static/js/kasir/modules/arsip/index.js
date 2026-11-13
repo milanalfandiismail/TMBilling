@@ -43,28 +43,7 @@ const Arsip = {
         this.grupFilter = id === null ? null : Number(id);
         ArsipList.setGrup(this.grupFilter);
         this.renderGrupPills();
-        this.renderPanel();
-    },
-
-    // Pill grup selalu ada, termasuk grup yang sudah diarsipkan, supaya isinya bisa difilter lalu dipulihkan.
-    renderGrupPills() {
-        const groups = Array.isArray(this.grupList) ? this.grupList : [];
-        const pill = (id, label, color, on) => `<button type="button" id="${id}"
-                onclick="Arsip.switchGrup(${id === 'arsip-grup-all' ? 'null' : id.split('-').pop()})"
-                class="px-2.5 py-1 rounded text-[11px] whitespace-nowrap transition-colors border flex items-center gap-1.5 ${on ? 'bg-neutral-100 text-black font-bold border-neutral-100' : 'text-neutral-400 hover:text-neutral-200 border-transparent hover:bg-[#171717]'}">
-                ${color ? `<span class="w-1.5 h-1.5 rounded-full" style="background-color:${color};"></span>` : ''}${ArsipList.esc(label)}
-            </button>`;
-        const html = [pill('arsip-grup-all', 'Semua Grup', null, this.grupFilter === null)]
-            .concat(groups.map(g => pill(`arsip-grup-${g.id}`, `${g.nama}${g.aktif === false ? ' · arsip' : ''}`, g.warna || '#3b82f6', Number(this.grupFilter) === Number(g.id))))
-            .join('');
-        const el = document.getElementById('arsip-grup-pills');
-        if (el) el.innerHTML = html;
-    },
-
-    switchGrup(id) {
-        this.grupFilter = id === null ? null : Number(id);
-        ArsipList.setGrup(this.grupFilter);
-        this.renderGrupPills();
+        this.renderPills();
         this.renderPanel();
     },
 
@@ -95,7 +74,8 @@ const Arsip = {
     renderPills() {
         const data = this.data || {};
         document.getElementById('arsip-pills').innerHTML = this.kategori.map(k => {
-            const count = (data[k.key] || []).length;
+            // Jumlah ikut filter grup, sama seperti daftar yang tampil di panel.
+            const count = (data[k.key] || []).filter(i => ArsipList.match(i)).length;
             const on = k.key === this.active;
             return `<button type="button" id="arsip-pill-${k.key}" onclick="Arsip.switchKategori('${k.key}')"
                 class="px-2.5 py-1 rounded text-[11px] font-bold whitespace-nowrap transition-colors border ${on ? ArsipList.PILL_ON : ArsipList.PILL_OFF}">

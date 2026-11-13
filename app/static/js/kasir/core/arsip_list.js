@@ -303,7 +303,9 @@ const ArsipList = {
 
     match(item) {
         const { grup, tipe, kategori } = this.filter;
-        if (grup !== null && Number(item.grup_id) !== Number(grup)) return false;
+        // Grup & menu tidak punya grup_id; keduanya tidak ikut disaring pill grup.
+        if (grup !== null && item.grup_id !== undefined && item.grup_id !== null
+            && Number(item.grup_id) !== Number(grup)) return false;
         if (tipe !== null && tipe !== 'all' && item.tipe !== tipe) return false;
         if (kategori !== null && kategori !== 'all') {
             const list = item.kategori_list || (item.kategori ? String(item.kategori).split(',') : []);

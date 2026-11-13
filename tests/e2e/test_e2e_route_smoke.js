@@ -397,6 +397,17 @@ async function runRouteSmokeE2ETest(page) {
     const onClass = await grupPill.getAttribute('class');
     assert.ok(/bg-neutral-100/.test(onClass || ''), 'pill grup terpilih harus ditandai');
     assert.ok(await page.locator('#arsip-panel').isVisible());
+    const counts = await page.evaluate(() => {
+        const data = Arsip.data || {};
+        for (const el of document.querySelectorAll('[id^="arsip-count-"]')) {
+            const key = el.id.replace('arsip-count-', '');
+            const expected = (data[key] || []).filter(i => ArsipList.match(i)).length;
+            const shown = Number(el.textContent);
+            if (shown !== expected) throw new Error(`${key}: pill ${shown} != ${expected}`);
+        }
+        return true;
+    });
+    assert.ok(counts, 'jumlah di pill harus sama dengan baris yang tampil');
     await page.click('#arsip-grup-all');
   });
 
