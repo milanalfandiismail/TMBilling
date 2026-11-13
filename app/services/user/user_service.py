@@ -16,9 +16,9 @@ class UserService:
     """Service untuk manajemen data User kasir/admin."""
 
     @staticmethod
-    def get_all_users():
+    def get_all_users(aktif_only=True):
         """Ambil semua data user."""
-        users = UserRepository.get_all()
+        users = UserRepository.get_all(aktif_only=aktif_only)
         return [u.to_dict() for u in users]
 
     @staticmethod

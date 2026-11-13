@@ -19,7 +19,7 @@ def list_games():
         q = request.args.get("q")
         if q: q = q.strip()
             
-        games = GameService.get_all(aktif_only=False, category=category, tipe=tipe, search_query=q)
+        games = GameService.get_all(aktif_only=request.args.get("include_arsip") != "1", category=category, tipe=tipe, search_query=q)
         return jsonify({
             "success": True,
             "data": [g.to_dict() for g in games]

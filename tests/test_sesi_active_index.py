@@ -25,4 +25,4 @@ def test_migrasi_index_baru_punya_head_tunggal():
     cfg = Config("migrations/alembic.ini")
     cfg.set_main_option("script_location", "migrations")
     script = ScriptDirectory.from_config(cfg)
-    assert script.get_heads() == ["e5f6a7b8c9d0"]
+    assert script.get_heads() == ["a1b2c3d4e5f6"]

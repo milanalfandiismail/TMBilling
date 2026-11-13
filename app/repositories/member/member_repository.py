@@ -1,4 +1,4 @@
-# app/repositories/member_repository.py
+﻿# app/repositories/member_repository.py
 
 """Repository untuk entitas Member.
 
@@ -25,7 +25,7 @@ class MemberRepository:
         return Member.query.order_by(Member.username).all()
 
     @staticmethod
-    def get_paginated(search_query=None, page=1, per_page=5, grup_id=None, sort_by="grup_id", order="asc"):
+    def get_paginated(search_query=None, page=1, per_page=5, grup_id=None, sort_by="grup_id", order="asc", aktif_only=True):
         """Mengambil member dengan filter pencarian, pengurutan, dan pagination."""
         query = Member.query.options(
             joinedload(Member.grup),
@@ -39,6 +39,9 @@ class MemberRepository:
         
         if grup_id:
             query = query.filter(Member.grup_id == grup_id)
+
+        if aktif_only:
+            query = query.filter(Member.aktif.is_(True))
         
         order_dir = db.asc if (order or "asc").lower() == "asc" else db.desc
         

@@ -20,7 +20,7 @@ user_api_bp = Blueprint("user", __name__)
 def get_all_users():
     """Ambil daftar semua user kasir/admin."""
     try:
-        users = UserService.get_all_users()
+        users = UserService.get_all_users(aktif_only=request.args.get("include_arsip") != "1")
         return jsonify(users), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -48,7 +48,8 @@ def list_member():
             per_page,
             grup_id=grup_id,
             sort_by=sort_by,
-            order=order
+            order=order,
+            aktif_only=request.args.get("include_arsip") != "1"
         )
         return jsonify(result), 200
     except Exception as e:

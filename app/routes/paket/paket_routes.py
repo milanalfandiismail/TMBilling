@@ -26,7 +26,7 @@ def list_paket():
     """Ambil semua paket dengan filter opsional dan dukungan paginasi."""
     try:
         # Parsing Query Parameters dari URL
-        aktif_only = request.args.get('aktif', 'false').lower() == 'true'
+        aktif_only = request.args.get('aktif', 'true' if request.args.get('include_arsip') != '1' else 'false').lower() == 'true'
         grup_id_raw = request.args.get('grup_id')
         grup_nama = request.args.get('grup') # legacy compatibility
         search_query = request.args.get('q')

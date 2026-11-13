@@ -39,7 +39,7 @@ def list_pc():
                 grup_id = grup_id_raw
                 
         # Non-paginated flat list response with filters
-        pcs = PCService.get_all(aktif_only=False, grup_id=grup_id, search_query=q)
+        pcs = PCService.get_all(aktif_only=request.args.get("include_arsip") != "1", grup_id=grup_id, search_query=q)
         sesi_map = PCService.get_sesi_map()
         grouped = PCService.group_by_grup(pcs, sesi_map)
         return jsonify({

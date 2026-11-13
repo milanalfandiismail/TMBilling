@@ -42,9 +42,12 @@ class UserRepository:
         return User.query.get(user_id)
 
     @staticmethod
-    def get_all():
+    def get_all(aktif_only=False):
         """Mengambil semua user (aktif dan tidak)."""
-        return User.query.order_by(User.id.asc()).all()
+        query = User.query
+        if aktif_only:
+            query = query.filter_by(aktif=True)
+        return query.order_by(User.id.asc()).all()
 
     @staticmethod
     def find_by_username(username):
