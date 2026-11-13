@@ -192,14 +192,11 @@
 
                 <!-- Modal Content (Scrollable if screen is small) -->
                 <div class="p-5 sm:p-6 overflow-y-auto space-y-4 divide-y divide-neutral-800/60 font-sans text-xs sm:text-sm">
-                    <!-- Status & Tarif Banner -->
+                    <!-- Status Operasional -->
                     <div class="pb-3 flex flex-wrap items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
                             <span class="text-neutral-500 text-xs font-mono">Status Operasional:</span>
                             <span id="modal-online-badge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1.5 border"></span>
-                        </div>
-                        <div id="modal-rate-container" class="text-neutral-400 text-xs font-mono">
-                            Estimasi Tarif: <span id="modal-hourly-rate" class="font-bold text-neutral-200"></span>
                         </div>
                     </div>
 
@@ -310,17 +307,6 @@
                 }
             }
 
-            // Rate container
-            const rateContainer = document.getElementById('modal-rate-container');
-            const hourlyRateEl = document.getElementById('modal-hourly-rate');
-            if (rateContainer && hourlyRateEl) {
-                if (item.grup && item.grup.hourly_rate) {
-                    hourlyRateEl.textContent = `Rp ${item.grup.hourly_rate.toLocaleString('id-ID')} / jam`;
-                    rateContainer.style.display = 'block';
-                } else {
-                    rateContainer.style.display = 'none';
-                }
-            }
 
             // CPU
             document.getElementById('modal-cpu-name').textContent = item.cpu ? item.cpu.name : 'Belum Terkumpul';

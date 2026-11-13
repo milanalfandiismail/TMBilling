@@ -215,6 +215,10 @@ def test_public_specs_modal_structure_and_controller(test_setup):
     assert 'id="modal-cpu-name"' in html
     assert 'id="modal-gpu-name"' in html
     assert 'id="modal-ram-total"' in html
+    assert 'id="modal-rate-container"' not in html
+    assert 'id="modal-hourly-rate"' not in html
+    assert "Estimasi Tarif" not in html
+    assert "hourly_rate" not in html
 
     # Pastikan elemen yang dibuang tidak ada di HTML
     assert 'id="modal-mobo-name"' not in html
