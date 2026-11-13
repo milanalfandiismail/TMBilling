@@ -508,7 +508,9 @@ async function runMemberPaketE2ETest(page) {
         state.pcKode = pcKode;
 
         await grupSearch(page, state.grupName);
-        await clickRowButton(page, '#grup-table', state.grupName, 'Hapus Grup');
+        await clickRowButton(page, '#grup-table', state.grupName, 'Hapus permanen');
+        await page.waitForSelector('#modal-confirm-check');
+        await page.check('#modal-confirm-check');
         await clickConfirm(page, '#modal-confirm-btn');
 
         const toast = await waitKasirToast(page, 'PC');
@@ -521,7 +523,9 @@ async function runMemberPaketE2ETest(page) {
         await dbExec('DELETE FROM pc WHERE kode = ?', [state.pcKode]);
 
         await grupSearch(page, state.grupName);
-        await clickRowButton(page, '#grup-table', state.grupName, 'Hapus Grup');
+        await clickRowButton(page, '#grup-table', state.grupName, 'Hapus permanen');
+        await page.waitForSelector('#modal-confirm-check');
+        await page.check('#modal-confirm-check');
         await clickConfirm(page, '#modal-confirm-btn');
 
         await dbWait(

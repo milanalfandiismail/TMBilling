@@ -9,6 +9,9 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 ## [1.6.5-rc3] - 2026-11-13 - Release Candidate 3
 
 ### Added
+- **Tab Data Diarsipkan**: tab baru `arsip` (`modules/arsip/index.js`) mengumpulkan seluruh data terarsip — grup, PC, paket, member, user, game, menu — lewat `GET /api/v1/kasir/arsip/` dengan tombol Pulihkan dan Hapus Permanen.
+- **Arsip Grup**: kolom `grup.aktif` (migrasi `a1b2c3d4e5f6`) plus `POST /api/v1/kasir/grup/<id>/archive` dan `/restore`; daftar grup reguler menyembunyikan grup arsip.
+- **Daftar Bersih dari Arsip**: daftar PC, paket, member, user, dan game kini hanya menampilkan data aktif; `?include_arsip=1` untuk menampilkan semuanya.
 - **Arsip dan Hapus Permanen Terpisah**: PC, Paket, Member, User, dan Game punya aksi arsip (`POST .../<id>/archive`, `aktif = False`, bisa dipulihkan) dan hapus permanen (`DELETE .../<id>`) yang benar-benar menghapus baris utama. Body `{"confirm": "<kode/nama/username>"}` wajib; konfirmasi salah atau kosong dibalas 400.
 - **Riwayat Tidak Ikut Terhapus**: purge melepas referensi (`sesi.pc_id`, `sesi.paket_id`, `sesi.member_id`, `sesi.user_id`, `transaksi.paket_id`, `transaksi.member_id`, `transaksi.user_id`) menjadi NULL di dalam `WRITE_LOCK`, jadi laporan dan struk lama tetap utuh nominalnya.
 - **Pengecualian User Ber-shift**: `DELETE /api/v1/kasir/user/<id>` tetap ditolak bila user punya riwayat shift (`shift_record.kasir_id` NOT NULL) — gunakan arsip.
@@ -18,7 +21,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Versi 1.6.5-rc3**: `Config.VERSION` dan semua cermin versi (package.json, klien Tauri, README, DOCUMENTATION, AGENTS) dinaikkan ke `1.6.5-rc3`.
 
 ### Fixed
-- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (669 unit test, 367 check E2E, 33 blueprint, 246 rute).
+- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (681 unit test, 372 check E2E, 34 blueprint, 254 rute).
 
 ## [Unreleased]
 

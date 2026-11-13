@@ -28,7 +28,7 @@
 **TMBilling** adalah solusi manajemen operasional terpadu untuk warnet, cybercafe, dan arena esports modern. Dirancang dengan arsitektur **3-Layer Separation of Concerns (SoC)** yang tangguh, sistem ini mengintegrasikan server billing kasir, kasir kantin/FnB terpadu, kendali jarak jauh (remote control TightVNC berbasis web), monitoring hardware baseline anti-maling, dan pertahanan klien 5-lapis (*5-Layer Anti-Tamper Security*).
 
 > 📚 **Dokumentasi Lengkap (Single Source of Truth):**  
-> Untuk panduan arsitektur mendalam, spesifikasi fitur lengkap, katalog 33 Blueprint & 246 Route API, dan skema database, buka **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)**.
+> Untuk panduan arsitektur mendalam, spesifikasi fitur lengkap, katalog 34 Blueprint & 254 Route API, dan skema database, buka **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)**.
 
 ---
 
@@ -46,7 +46,7 @@
 - 🍔 **POS Kantin & Log Mutasi Stok Inventaris**: Kasir penjualan makanan/minuman dengan stok unlimited/limited, audit log mutasi stok (`MenuStockLog`), restock barang, multi-payment (Tunai/QRIS/Transfer), dan cetak struk thermal 58mm/80mm.
 - 📋 **Dynamic Tutorials CMS**: Modul SOP dan panduan operator warnet bawaan berbasis custom CKEditor 5 WYSIWYG.
 - 📂 **Process Monitor**: Pantau dan matikan proses aplikasi yang not-responding dari jarak jauh.
-- 🗂️ **Arsip vs Hapus Permanen Terpisah**: Setiap PC, paket, member, user, dan game punya dua aksi berbeda — arsip (nonaktifkan, bisa dipulihkan) dan hapus permanen yang meminta konfirmasi centang, melepas relasi riwayat tanpa menghapus data transaksi.
+- 🗂️ **Arsip vs Hapus Permanen Terpisah**: Setiap PC, paket, member, user, game, grup, dan menu punya dua aksi berbeda — arsip (nonaktifkan, bisa dipulihkan) dan hapus permanen yang meminta konfirmasi centang, melepas relasi riwayat tanpa menghapus data transaksi. Semua data terarsip terkumpul di tab **Data Diarsipkan** dengan tombol pulihkan.
 - 📱 **Responsive Dual-Layout**: Antarmuka adaptif untuk layar 1024px, 1920px Full HD, serta layar sentuh tablet/smartphone.
 
 ---
@@ -58,7 +58,7 @@ c:\Project GIT\TMBilling
 ├── app/                        # Backend Server Flask & Frontend Kasir Web
 │   ├── config.py               # Single Source of Version Truth (v1.6.5-rc3)
 │   ├── models/                 # 24 Model Database SQLAlchemy
-│   ├── routes/                 # 33 Blueprint REST + VNC Bridge (246 Route)
+│   ├── routes/                 # 34 Blueprint REST + VNC Bridge (254 Route)
 │   ├── services/               # 36 Service Class Logika Bisnis (31 Sub-Domain)
 │   └── static/js/kasir/        # Modular Vanilla ES6 Frontend JS
 ├── docs/                       # Master Dokumentasi
@@ -224,7 +224,7 @@ c:\Project GIT\TMBilling
    ```powershell
    npm run test:e2e
    ```
-   > 15 suite Chromium (367 check) berjalan paralel otomatis memakai seluruh CPU (`--jobs 1` untuk serial). Setiap suite memakai database, port, catatan, dan backup sendiri; `instance/warnet.db`, `backups/`, `instance/notes/`, `.env`, dan `initial_admin.txt` dijaga guard sha256.
+   > 15 suite Chromium (372 check) berjalan paralel otomatis memakai seluruh CPU (`--jobs 1` untuk serial). Setiap suite memakai database, port, catatan, dan backup sendiri; `instance/warnet.db`, `backups/`, `instance/notes/`, `.env`, dan `initial_admin.txt` dijaga guard sha256.
 
 6. **Memeriksa Kompilasi Klien Rust**:
    ```powershell
@@ -238,7 +238,7 @@ c:\Project GIT\TMBilling
 
 | Dokumen | Deskripsi |
 | :--- | :--- |
-| **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog lengkap 31 domain fitur, 33 Blueprint & 246 Route REST API, skema 24 model database, panduan backend/frontend/Rust, dan spesifikasi VNC bridge (WebSocket via Websockify). |
+| **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog lengkap 31 domain fitur, 34 Blueprint & 254 Route REST API, skema 24 model database, panduan backend/frontend/Rust, dan spesifikasi VNC bridge (WebSocket via Websockify). |
 | **[CHANGELOG.md](file:///c:/Project%20GIT/TMBilling/CHANGELOG.md)** | **Catatan Rilis** — Riwayat log perubahan dan rilis dari `v1.0.0` hingga `v1.6.5-rc3`. |
 
 ---

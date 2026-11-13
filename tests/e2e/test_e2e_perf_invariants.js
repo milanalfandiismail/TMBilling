@@ -15,7 +15,7 @@
  *   E. Polling berhenti/tertahan saat tab browser tersembunyi lalu pulih.
  *   F. Guard `Dashboard._loading` mencegah request tumpang tindih, dan
  *      perpindahan tab cepat tidak memicu badai request.
- *   G. Matriks reflow 37 tampilan × 6 breakpoint (222 checks).
+ *   G. Matriks reflow 38 tampilan × 6 breakpoint (228 checks).
  *
  * Semua kelas terlarang di bawah ini WAJIB nol di `app/static/js/kasir` dan
  * `app/templates/kasir`. Portal publik (`app/templates/public/**`) sengaja
@@ -382,9 +382,9 @@ async function runPerfInvariantsE2ETest(page) {
 
   // ------------------------------------------------ G. matriks reflow responsif
   const responsive = await runResponsiveBreakpointsTest(page, { baseUrl: BASE_URL });
-  await check(report, `reflow responsif bersih di ${responsive.totalChecks} sel (37 tampilan × 6 breakpoint)`, () => {
-    if (responsive.totalChecks !== 222) {
-      throw new Error(`matriks hanya ${responsive.totalChecks} sel, seharusnya 222`);
+  await check(report, `reflow responsif bersih di ${responsive.totalChecks} sel (38 tampilan × 6 breakpoint)`, () => {
+    if (responsive.totalChecks !== 228) {
+      throw new Error(`matriks hanya ${responsive.totalChecks} sel, seharusnya 228`);
     }
     if (responsive.failed) {
       const detail = responsive.failures.slice(0, 3).map((failure) => {

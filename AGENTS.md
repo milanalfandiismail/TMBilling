@@ -52,7 +52,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 
 #### A. Konfigurasi & Inisialisasi
 - `app/config.py`: **Single Source of Version Truth** (`VERSION = "1.6.5-rc3"`), dynamic random `SECRET_KEY` generator with write-through `.env` persistence, konfigurasi database SQLite, session lifetime, batas upload `MAX_CONTENT_LENGTH = 64 MB`, dan environment loader.
-- `app/__init__.py`: Application Factory (`create_app(config_override=None)`), inisialisasi CORS, custom `TMBillingCSRFProtect` (Bearer client key dibandingkan dengan `hmac.compare_digest`), Flask-Migrate, `bootstrap_app_data(app)` (seed pengaturan/whitelist/tutorial + bootstrap superadmin acak unik `initial_admin.txt`; hanya menjalankan `db.create_all()` untuk database yang benar-benar baru, database ber-`alembic_version` tidak disentuh factory dan wajib lewat migrasi), guard `before_request` lazy bila skema baru tersedia setelah factory, dan pendaftaran 33 Blueprint.
+- `app/__init__.py`: Application Factory (`create_app(config_override=None)`), inisialisasi CORS, custom `TMBillingCSRFProtect` (Bearer client key dibandingkan dengan `hmac.compare_digest`), Flask-Migrate, `bootstrap_app_data(app)` (seed pengaturan/whitelist/tutorial + bootstrap superadmin acak unik `initial_admin.txt`; hanya menjalankan `db.create_all()` untuk database yang benar-benar baru, database ber-`alembic_version` tidak disentuh factory dan wajib lewat migrasi), guard `before_request` lazy bila skema baru tersedia setelah factory, dan pendaftaran 34 Blueprint.
 
 #### B. Model ORM SQLAlchemy (`app/models/` — 17 Sub-Domain)
 | Subfolder Model | Model SQLAlchemy & Entitas Data |
@@ -84,7 +84,8 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `routes/client/` | Handshake client agent PC, detak jantung (heartbeat), penerimaan status sesi, dan emergency login yang diotorisasi token server **atau** IP koneksi peer sama dengan `pc.ip_address`. Identitas client diambil dari IP koneksi (`IpWhitelistService.extract_client_ip`); `ip_address` di body hanya boleh berbeda bila request datang dari loopback. `GET /api/v1/public/client/warnet` mengirim `qris_path` relatif (dipakai client), `qris_url` absolut (dari setting `app_public_url`, fallback `request.host_url`), dan announcement yang sudah disanitasi `sanitize_html`. |
 | `routes/dashboard/` | Data agregat statistik dashboard kasir, total pendapatan hari ini, dan summary PC. |
 | `routes/game/` | CRUD katalog game klien, uploader cover game, dan crop ikon otomatis; ikon SVG ditolak, folder ikon mengikuti `current_app.static_folder`. |
-| `routes/grup/` | Manajemen grup ruangan dan penetapan tarif bertingkat. |
+| `routes/grup/` | Manajemen grup ruangan dan penetapan tarif bertingkat; `POST /grup/<id>/archive` dan `/restore` mengubah kolom `aktif`. |
+| `routes/arsip/` | Endpoint agregat `GET /api/v1/kasir/arsip/` untuk tab Data Diarsipkan (grup, pc, paket, member, user, game, menu). |
 | `routes/hardware/` | Audit spek hardware, pembaruan baseline anti-maling, dan log perubahan komponen. |
 | `routes/maintenance/` | Tiket servis pemeliharaan PC dan status perbaikan hardware. |
 | `routes/member/` | Registrasi member, top-up saldo (multi-paket satu transaksi atomik), reset password, dan riwayat transaksi member; `/pc-status` publik menyamarkan nama member menjadi "Member" dan total belanja portal hanya menghitung pembelian valid (bukan refund). |
@@ -115,7 +116,8 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/cloudflare_tunnel/`: Integrasi zero-trust Cloudflare Ingress daemon (log cloudflared ditulis ke `logs/` di samping biner).
 - `services/dashboard/`: Kalkulasi metrik visual denah meja dan kartu status PC; cache omzet hari ini 5 detik (`_get_omzet`, `clear_omzet_cache`) agar polling dashboard tidak mengulang agregasi; batas hari omzet memakai `get_today_local_date()` (zona waktu setting), bukan tanggal UTC.
 - `services/game/`: Manajemen file aset executable game dan integrasi launcher; ikon SVG ditolak dan folder unggah mengikuti `current_app.static_folder/uploads/games`.
-- `services/grup/`: Logika validasi tarif grup meja.
+- `services/grup/`: Logika validasi tarif grup meja; `archive`/`restore` menyetel `grup.aktif` dalam `WRITE_LOCK`.
+- `services/arsip/`: Agregasi data terarsip lintas 7 kategori untuk tab Data Diarsipkan.
 - `services/hardware/`: Evaluasi diskrepansi hardware baseline (anti pencurian komponen); laporan uptime memakai eager load PC/grup dan tidak menulis di jalur GET (flush hanya dari scheduler 60 detik); identitas PC telemetri diambil dari IP koneksi peer (bukan `IpAddress` body) lalu di-resolve lewat `PCNetworkCacheStore` tanpa SELECT ulang tabel `pc`, `get_one_with_pc()` melayani modal detail satu PC, dan metrik non-numerik dibalas 400 (`InvalidMetricError`).
 - `services/health/`: Guard sumber daya (`MIN_FREE_BYTES = 512 MB`) dan payload `GET /api/health` publik (`db`/`disk`/`backup`, tanpa angka/path; status `degraded` tetap HTTP 200); `has_free_space()` gagal tertutup bila kapasitas disk tidak terbaca.
 - `services/ip_whitelist/`: Proteksi akses kasir hanya dari subnet IP yang terdaftar; toggle menerima string boolean (`"false"` benar-benar menonaktifkan).
@@ -139,9 +141,9 @@ Seluruh aturan bisnis murni berada di layer service:
 - `services/user/`: Validasi RBAC hak akses pengguna; `archive_user` menonaktifkan akun, `delete_user` menghapus permanen sambil melepas `transaksi.user_id`/`sesi.user_id` tetapi tetap menolak user yang punya riwayat `shift_record` (`kasir_id` NOT NULL — nonaktifkan saja), guard "admin terakhir" hanya berlaku untuk admin yang masih aktif sehingga admin nonaktif tetap bisa dihapus, dan race username saat `create_user` di-rollback menjadi `ValueError("Username sudah terdaftar")`.
 - `services/vnc/`: Broker koneksi TCP TightVNC dan pengelola proses Websockify untuk klien browser; token proxy acak (`secrets.token_urlsafe(24)`), token lama dicabut saat proxy dimulai ulang, penulisan file token atomik (`os.replace`), polling status non-blocking (`poll_vnc_result`, start membalas 202), dan reaper mematikan proxy milik PC offline atau yang idle melewati batas.
 
-#### E. Data Access Layer Repositories (`app/repositories/` — 14 Sub-Domain)
+#### E. Data Access Layer Repositories (`app/repositories/` — 15 Sub-Domain)
 Pemisahan query ORM mentah dari service:
-`game/`, `grup/`, `hardware/`, `member/`, `menu/`, `paket/`, `pc/`, `process/`, `sesi/`, `settings/`, `tournament/`, `transaksi/`, `tutorial/`, `user/`.
+`arsip/`, `game/`, `grup/`, `hardware/`, `member/`, `menu/`, `paket/`, `pc/`, `process/`, `sesi/`, `settings/`, `tournament/`, `transaksi/`, `tutorial/`, `user/`.
 
 #### F. Middleware & Utilities (`app/middleware/` & `app/utils/`)
 - `middleware/auth.py`: Decorator `@login_required`, `@admin_required`, `@shift_required`.
@@ -190,7 +192,7 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 ### 5. Frontend Dashboard Kasir (`app/static/` & `app/templates/`)
 
 #### A. Modular ES6 JavaScript (`app/static/js/kasir/`)
-- `app.js`: Entry point inisialisasi aplikasi kasir, event delegation, dan routing 30 tab.
+- `app.js`: Entry point inisialisasi aplikasi kasir, event delegation, dan routing 31 tab.
 - `core/api.js`: Klien HTTP REST terpusat dengan penanganan CSRF otomatis dan error reporting.
 - `core/modal.js`: Pengendali modal dialog modular; `Modal.confirm` mendukung opsi `requireCheck` (satu checkbox wajib dicentang, tombol setuju nonaktif sampai aktif) yang dipakai hapus permanen PC/Paket/Member/User/Game.
 - `core/skeleton.js`: Skeleton loader statis (tanpa animasi) untuk 30 tab tampilan.
@@ -200,15 +202,15 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 - `components/modal-tambah.js`: Modal penambahan durasi waktu bermain.
 - `components/modal-confirm-tambah.js`: Konfirmasi pembayaran perpanjangan durasi.
 - `modules/dashboard/`: Logika view dashboard utama (`dashboard_card.js`, `dashboard_compact.js`, `dashboard_detail_modal.js`, `dashboard_process_monitor.js`, `dashboard_selection.js`, `map_view.js`, `sidebar.js`).
-- `modules/`: 27 Modul fitur independen (`blackout.js`, `catatan.js`, `game.js`, `grup.js`, `hardware_checker.js`, `laporan.js`, `laporan_maintenance.js`, `laporan_menu.js`, `log.js`, `maintenance.js`, `member.js`, `menu.js`, `mikrotik.js`, `monitor.js`, `owner.js`, `paket.js`, `pc.js`, `remote.js`, `screenshot.js`, `server_monitor.js`, `settings.js`, `shift.js`, `struk.js`, `tournament.js`, `tutorials.js`, `uptime.js`, `user.js`).
+- `modules/`: 29 Modul fitur independen (`blackout.js`, `catatan.js`, `game.js`, `grup.js`, `hardware_checker.js`, `laporan.js`, `laporan_maintenance.js`, `laporan_menu.js`, `log.js`, `maintenance.js`, `member.js`, `menu.js`, `mikrotik.js`, `monitor.js`, `owner.js`, `paket.js`, `pc.js`, `arsip/` (tab Data Diarsipkan), `remote.js`, `screenshot.js`, `server_monitor.js`, `settings.js`, `shift.js`, `struk.js`, `tournament.js`, `tutorials.js`, `uptime.js`, `user.js`).
 
 #### B. Template Jinja2 HTML (`app/templates/`)
 - `templates/kasir/base.html`: Shell induk HTML dashboard kasir, deklarasi CSS/JS dan meta CSRF.
-- `templates/kasir/index.html`: Kontainer view 30 tab modular kasir.
+- `templates/kasir/index.html`: Kontainer view 31 tab modular kasir.
 - `templates/kasir/login.html`: Halaman login kasir dan administrator.
 - `templates/kasir/documentation.html`: Portal internal dokumentasi interaktif & CMS tutorial sistem (`/kasir/documentation`).
 - `templates/kasir/components/`: Partisi navbar (`navbar.html`), sidebar (`sidebar.html`, `sidebar_admin.html`, `sidebar_kasir.html`), dan modal induk (`modals.html`).
-- `templates/kasir/tabs/`: 28 Tampilan tab independen lengkap (`dashboard.html`, `pc.html`, `grup.html`, `paket.html`, `menu.html`, `menu_stock_log.html`, `laporan_menu.html`, `member.html`, `monitor.html`, `hardware_checker.html`, `uptime.html`, `screenshot.html`, `maintenance.html`, `laporan_maintenance.html`, `shift_history.html`, `catatan.html`, `tournament.html`, `game.html`, `remote_server.html`, `user.html`, `user_logs.html`, `log.html`, `laporan.html`, `struk.html`, `blackout.html`, `mikrotik.html`, `analytics.html`, `settings.html`) ditambah tab `server_statistic.html` (di `server_monitor/`).
+- `templates/kasir/tabs/`: 29 Tampilan tab independen lengkap (`dashboard.html`, `pc.html`, `grup.html`, `paket.html`, `menu.html`, `menu_stock_log.html`, `laporan_menu.html`, `member.html`, `monitor.html`, `hardware_checker.html`, `uptime.html`, `screenshot.html`, `maintenance.html`, `laporan_maintenance.html`, `shift_history.html`, `catatan.html`, `tournament.html`, `game.html`, `remote_server.html`, `user.html`, `user_logs.html`, `log.html`, `laporan.html`, `struk.html`, `blackout.html`, `arsip.html`, `mikrotik.html`, `analytics.html`, `settings.html`) ditambah tab `server_statistic.html` (di `server_monitor/`).
 - `templates/public/`: 8 Halaman portal publik (`landing/` info billing, `tv/` & `tv/static` billboard display, `livepc/` live scoreboard, `member/` kiosk login & dashboard, `game/` katalog game, `paket/` daftar tarif, `specs/` spesifikasi PC modern minimalis berbasis compact 2-column mobile grid, debounced search toolbar & modal hardware ringkas fokus trio utama CPU, GPU, RAM serta penyesuaian kode PC client Tauri tanpa telemetri berlebih; katalog hanya memuat PC aktif dan status `"online"` diambil dari heartbeat `OnlineStatusStore`, bukan flag arsip `pc.aktif`).
 
 ---
@@ -245,6 +247,7 @@ Tabel pencarian cepat file penanggung jawab fitur operasional:
 | **Unit PC & Meja Klien** | `modules/pc.js`, `modules/pc/` | `routes/pc/pc_routes.py`, `services/pc/` (prefetch sesi aktif sekali query) | `PC`, `Grup` |
 | **Log Mutasi Stok FnB** | `modules/menu/stock_log.js` | `routes/menu/menu_routes.py`, `services/menu/` | `MenuItem`, in-memory store |
 | **Laporan Penjualan FnB** | `modules/laporan_menu.js` | `routes/menu/menu_routes.py`, `services/menu/` | `TransaksiMenu`, `MenuItem` |
+| **Tab Data Diarsipkan** | `modules/arsip/index.js` | `routes/arsip/arsip_routes.py` (agregat `GET /api/v1/kasir/arsip/`), `services/arsip/`, `repositories/arsip/`; pemulihan `POST /<resource>/<id>/restore` | `Grup`, `PC`, `Paket`, `Member`, `User`, `Game`, `MenuItem` |
 | **Sticky Notes Antar Shift** | `modules/catatan.js` | `routes/notes/note_routes.py`, `services/notes/` | Scratchpad disk store |
 | **Audit Log Terpusat** | `modules/log.js` | `routes/user/user_routes.py`, `services/user/`, `utils/logger.py` (file JSON `logs/warnet.log`, rotasi gzip; tanpa tabel DB) | — (file-based) |
 | **Cetak Ulang Struk Kasir** | `modules/struk.js` | `routes/report/report_routes.py` (`get_struk`, `get_struk_menu`), `services/transaksi/` | `Transaksi` |
@@ -288,7 +291,7 @@ python run.py
 build_and_deploy.bat
 
 # Menjalankan Master Runner E2E Sandbox Terisolasi (Zero Database Mutation Guarantee)
-# 15 suite Chromium sungguhan (Playwright): 367 check, paralel otomatis semua CPU
+# 15 suite Chromium sungguhan (Playwright): 372 check, paralel otomatis semua CPU
 npm run test:e2e
 # atau langsung via Python: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py
 # Serial untuk debug: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py --jobs 1
@@ -323,7 +326,7 @@ Runner Chromium sungguhan (Playwright) dengan sandbox terisolasi; setiap suite d
 | `tests/e2e/lib/harness.js` | `login/logout/tab/settingsTab/api/clientPoll/hardwarePost/waitFor/unique/check`. |
 | `tests/e2e/lib/db.js` | `dbQuery/dbExec` via `.venv` sqlite3; path dari `E2E_SANDBOX_DB`, menolak `instance/warnet.db`. |
 | `tests/e2e/lib/report.js` | Kontrak laporan `{total,passed,failed,checks[]}`. |
-| `tests/e2e/lib/coverage_manifest.js` | 29 tab container + 10 sub-tab settings + 8 portal, pemilik suite per tab. |
+| `tests/e2e/lib/coverage_manifest.js` | 30 tab container + 10 sub-tab settings + 8 portal, pemilik suite per tab. |
 | `tests/e2e/test_e2e_backup_restore.js` | Suite `backup_restore`: backup → mutasi → restore di sandbox, validasi admin/konfirmasi/404/403, dan guard folder `backups/` produksi tidak berubah. |
 | `tests/e2e/test_e2e_*.js` | 15 suite: `pc_billing`, `fnb_pos`, `member_paket`, `auth_shift_notes`, `hardware_maintenance_remote`, `tournament_game`, `settings_admin_logs`, `backup_restore`, `public_portals_cms`, `coverage`, `perf_invariants`, `update_restore` (klaim update, restore DB, tukar berkas + pemulihan jurnal), `screenshot_whitelist` (screenshot privat + revalidasi role), `analytics_cleanup` (top paket tanpa baris siklus hidup + guard hapus tanggal), `route_smoke` (semua rute sisa agar gerbang cakupan lulus). |
 
@@ -370,7 +373,7 @@ Untuk menjaga agar penggunaan CPU browser (Brave, Chrome, Edge) tetap sangat ren
 - **Zero Infinite Keyframe Loops**: DILARANG menambahkan CSS keyframes looping tak berhingga seperti `pulse-*-bg`, `animate-ping`, `animate-pulse`, `animate-modal-in`, `animate-in`, `fade-in`, atau `zoom-in`. Status darurat meja (Terputus, API Key Salah, LAN Drop, Hardware Swapped) WAJIB menggunakan badge visual solid berkontras tinggi dan teks tegas (`[ ⚠️ TERPUTUS ]`, `[ 🔑 KEY TIDAK COCOK ]`, `[ ⚠️ LAN 100M ]`) tanpa animasi berkedip.
 - **Zero Compositing Blur Filter**: DILARANG menggunakan CSS filter `backdrop-blur-*` dan `hover:brightness-*` pada modal overlay atau kartu meja. Modal overlay WAJIB menggunakan solid dark semi-transparan (`bg-black/90` atau `bg-black/95`) untuk mencegah GPU/CPU convolution composite pass berulang.
 - **Strict Dirty-Checking pada Polling**: Setiap fungsi update berulang (seperti `syncLiveCards` setiap 1 detik) WAJIB membandingkan nilai sebelum menyentuh DOM (`textContent`, `className`, `innerHTML`, `style`). Mutasi DOM hanya boleh dieksekusi bila terdapat perbedaan nilai riil.
-- **Static Skeletons**: Seluruh placeholder loading skeleton di 30 tab dan `skeleton.js` menggunakan balok statis netral (`bg-[#202020]` atau `bg-neutral-800`) tanpa animasi denyut `animate-pulse`.
+- **Static Skeletons**: Seluruh placeholder loading skeleton di 31 tab dan `skeleton.js` menggunakan balok statis netral (`bg-[#202020]` atau `bg-neutral-800`) tanpa animasi denyut `animate-pulse`.
 
 ### 6. Komunikasi
 - Respon selalu menggunakan **Bahasa Indonesia** kecuali jika diminta lain oleh pengguna.

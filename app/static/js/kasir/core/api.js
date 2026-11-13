@@ -73,6 +73,7 @@ const API = {
         list: () => API.request('/api/v1/kasir/grup/'),
         create: (data) => API.request('/api/v1/kasir/grup/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/v1/kasir/grup/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        archive: (id) => API.request(`/api/v1/kasir/grup/${id}/archive`, { method: 'POST' }),
         delete: (id) => API.request(`/api/v1/kasir/grup/${id}`, { method: 'DELETE' })
     },
 
