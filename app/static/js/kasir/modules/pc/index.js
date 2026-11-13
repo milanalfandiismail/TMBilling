@@ -4,7 +4,7 @@ const PC = {
     currentPage: 1,
     perPage: 6,
     searchQuery: '',
-    currentGrupId: null,
+    currentGrupId: '',
     groups: [],
     _allPcs: [],
     _lastFingerprint: null,
@@ -17,7 +17,7 @@ const PC = {
         document.getElementById('pc-arsip-list').classList.toggle('hidden', !arsip);
         document.getElementById('pc-view-aktif').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_OFF : ArsipList.PILL_ON);
         document.getElementById('pc-view-arsip').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_ON : ArsipList.PILL_OFF);
-        ArsipList.setGrup(arsip ? this.currentGrupId : null);
+        ArsipList.setGrup(arsip ? (this.currentGrupId || null) : null);
         if (arsip) {
             this._loadArsipGroups();
             ArsipList.onChanged(() => { this._loadArsipGroups(); this.load(true); });
@@ -27,6 +27,7 @@ const PC = {
             });
         } else {
             ArsipList.onChanged(null);
+            this.currentGrupId = '';
             this.renderTabs();
             this.load(true);
         }
@@ -98,8 +99,8 @@ const PC = {
             const groups = [...rawGroups].sort((a, b) => Number(a.id) - Number(b.id));
             this.groups = groups;
 
-            if (!this.currentGrupId || !groups.some(g => Number(g.id) === Number(this.currentGrupId))) {
-                this.currentGrupId = groups.length > 0 ? Number(groups[0].id) : null;
+            if (this.currentGrupId && !groups.some(g => Number(g.id) === Number(this.currentGrupId))) {
+                this.currentGrupId = '';
             }
 
             const newFingerprint = JSON.stringify({
@@ -149,7 +150,7 @@ const PC = {
             this._arsipCounts = ArsipList.counts(await ArsipList.fetch('pc'));
             this.renderTabs();
             if (this.arsipMode && this.currentGrupId && !this._arsipCounts[String(this.currentGrupId)]) {
-                this.currentGrupId = null;
+                this.currentGrupId = '';
                 ArsipList.setGrup(null);
                 this.renderTabs();
                 ArsipList.mount({ res: 'pc', container: document.getElementById('pc-arsip-list') });
@@ -166,8 +167,18 @@ const PC = {
             return;
         }
 
+        const total = this.arsipMode
+            ? Object.values(this._arsipCounts || {}).reduce((a, b) => a + b, 0)
+            : (this._allPcs || []).length;
+        const allTab = `
+            <button type="button" onclick="PC.selectGroup('')"
+                class="px-2.5 sm:px-3 2xl:px-3.5 py-1 sm:py-1.5 2xl:py-2 rounded text-xs 2xl:text-sm font-bold transition-all flex items-center gap-1.5 2xl:gap-2 shrink-0 ${!this.currentGrupId ? 'bg-[#161616] text-white border border-neutral-400 shadow-sm' : 'bg-[#0c0c0c] hover:bg-[#141414] text-neutral-400 hover:text-neutral-200 border border-[#1c1c1c]'}">
+                <span class="w-2 h-2 2xl:w-2.5 2xl:h-2.5 rounded-full bg-neutral-500"></span>
+                <span class="tracking-wide uppercase">SEMUA</span>
+                <span class="text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0.2 2xl:py-0.5 rounded font-mono ${!this.currentGrupId ? 'bg-[#242424] text-neutral-200 font-bold' : 'bg-[#141414] text-neutral-500 font-semibold'}">${total} UNIT</span>
+            </button>`;
         const source = this.arsipMode ? (this._arsipGroups || this.groups) : this.groups;
-        const tabsHtml = source.map(g => {
+        const tabsHtml = allTab + source.map(g => {
             const count = this.arsipMode
                 ? ((this._arsipCounts || {})[String(g.id)] || 0)
                 : (this._allPcs || []).filter(p => Number(p.grup_id) === Number(g.id)).length;
@@ -181,7 +192,7 @@ const PC = {
                         class="px-2.5 sm:px-3 2xl:px-3.5 py-1 sm:py-1.5 2xl:py-2 rounded text-xs 2xl:text-sm font-bold transition-all flex items-center gap-1.5 2xl:gap-2 shrink-0 bg-[#161616] text-white border shadow-sm"
                         style="border-color: ${gColor};">
                         <span class="w-2 h-2 2xl:w-2.5 2xl:h-2.5 rounded-full" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}</span>
+                        <span class="tracking-wide uppercase">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}</span>
                         <span class="text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0.2 2xl:py-0.5 rounded font-mono bg-[#242424] text-neutral-200 font-bold">${count} UNIT</span>
                     </button>
                 `;
@@ -190,7 +201,7 @@ const PC = {
                     <button type="button" onclick="PC.selectGroup(${g.id})"
                         class="px-2.5 sm:px-3 2xl:px-3.5 py-1 sm:py-1.5 2xl:py-2 rounded text-xs 2xl:text-sm font-bold transition-all flex items-center gap-1.5 2xl:gap-2 shrink-0 bg-[#0c0c0c] hover:bg-[#141414] text-neutral-400 hover:text-neutral-200 border border-[#1c1c1c]">
                         <span class="w-1.5 h-1.5 2xl:w-2 2xl:h-2 rounded-full opacity-60" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}</span>
+                        <span class="tracking-wide uppercase">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}</span>
                         <span class="text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0.2 2xl:py-0.5 rounded font-mono bg-[#141414] text-neutral-500 font-semibold">${count} UNIT</span>
                     </button>
                 `;
@@ -201,11 +212,11 @@ const PC = {
     },
 
     selectGroup(grupId) {
-        this.currentGrupId = Number(grupId);
+        this.currentGrupId = (grupId === '' || grupId === null || grupId === undefined) ? '' : Number(grupId);
         this.currentPage = 1;
         this.renderTabs();
         if (this.arsipMode) {
-            ArsipList.setGrup(this.currentGrupId);
+            ArsipList.setGrup(this.currentGrupId || null);
             ArsipList.mount({ res: 'pc', container: document.getElementById('pc-arsip-list') });
             return;
         }
@@ -213,11 +224,10 @@ const PC = {
     },
 
     renderActiveGroup() {
-        if (!this.currentGrupId && this.groups.length > 0) {
-            this.currentGrupId = Number(this.groups[0].id);
-        }
-        const activeGroup = (this.groups || []).find(g => Number(g.id) === Number(this.currentGrupId));
-        const filteredPcs = (this._allPcs || []).filter(p => Number(p.grup_id) === Number(this.currentGrupId));
+        const activeGroup = (this.groups || []).find(g => Number(g.id) === Number(this.currentGrupId)) || null;
+        const filteredPcs = this.currentGrupId
+            ? (this._allPcs || []).filter(p => Number(p.grup_id) === Number(this.currentGrupId))
+            : (this._allPcs || []);
 
         PCGrid.render(filteredPcs, {
             activeGroup: activeGroup,

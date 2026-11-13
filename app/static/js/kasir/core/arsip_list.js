@@ -168,7 +168,7 @@ const ArsipList = {
                     const tags = kat.length
                         ? kat.map(k => `<span class="px-1.5 py-0.5 rounded bg-[#171717] border border-[#262626] text-[10px] text-neutral-400">${ArsipList.esc(k)}</span>`).join('')
                         : '<span class="text-neutral-600 text-xs">-</span>';
-                    const tipe = g.tipe ? `text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#171717] border border-[#262626] text-neutral-400">${ArsipList.esc(g.tipe)}</span>` : '';
+                    const tipe = g.tipe ? `<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#171717] border border-[#262626] text-neutral-400 uppercase">${ArsipList.esc(g.tipe)}</span>` : '';
                     const cover = icon
                         ? `<img src="${icon}" alt="${ArsipList.esc(g.nama)}" class="w-8 h-11 xl:w-9 xl:h-12 rounded object-cover border border-[#1c1c1c] bg-[#141414] shadow-sm flex-shrink-0">`
                         : `<div class="w-8 h-11 xl:w-9 xl:h-12 rounded border border-[#1c1c1c] bg-[#141414] flex items-center justify-center text-[9px] text-neutral-600 flex-shrink-0">-</div>`;

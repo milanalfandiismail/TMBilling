@@ -21,7 +21,7 @@ const Member = {
         document.getElementById('member-arsip-list').classList.toggle('hidden', !arsip);
         document.getElementById('member-view-aktif').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_OFF : ArsipList.PILL_ON);
         document.getElementById('member-view-arsip').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_ON : ArsipList.PILL_OFF);
-        ArsipList.setGrup(arsip ? this.currentGrupId : null);
+        ArsipList.setGrup(arsip ? (this.currentGrupId || null) : null);
         if (arsip) {
             this._loadArsipGroups();
             ArsipList.onChanged(() => { this._loadArsipGroups(); this.load(true); });
@@ -31,6 +31,7 @@ const Member = {
             });
         } else {
             ArsipList.onChanged(null);
+            this.currentGrupId = '';
             this.renderGroupTabs(this.arsipMode ? (this._arsipGroups || []) : (this._allGroups || []));
             this.load(true);
         }
@@ -168,7 +169,7 @@ const Member = {
             <button type="button" onclick="Member.selectGroup('')"
                 class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${isAllActive ? 'bg-[#161616] text-white border border-neutral-400 shadow-sm' : 'bg-[#0a0a0a] text-neutral-400 border border-[#1f1f1f] hover:border-[#333] hover:text-neutral-200'}">
                 <span class="w-1.5 h-1.5 rounded-full ${isAllActive ? 'bg-neutral-200' : 'bg-neutral-600'}"></span>
-                <span class="tracking-wide">SEMUA</span>
+                <span class="tracking-wide uppercase">SEMUA</span>
             </button>
         `;
 
@@ -186,7 +187,7 @@ const Member = {
                         class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 bg-[#161616] text-white border shadow-sm"
                         style="border-color: ${gColor};">
                         <span class="w-2 h-2 rounded-full" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}${countLabel}</span>
+                        <span class="tracking-wide uppercase">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}${countLabel}</span>
                     </button>
                 `;
             } else {
@@ -194,7 +195,7 @@ const Member = {
                     <button type="button" onclick="Member.selectGroup(${g.id})"
                         class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 bg-[#0a0a0a] text-neutral-400 border border-[#1f1f1f] hover:border-[#333] hover:text-neutral-200">
                         <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}${countLabel}</span>
+                        <span class="tracking-wide uppercase">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}${countLabel}</span>
                     </button>
                 `;
             }

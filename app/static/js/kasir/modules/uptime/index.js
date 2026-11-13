@@ -311,11 +311,11 @@ const UptimeTracker = {
             const activeCls = isActive 
                 ? "bg-neutral-100 text-black font-bold shadow-sm" 
                 : "bg-[#161616] hover:bg-[#222] text-neutral-300 hover:text-white border border-[#262626]";
-            const label = g === 'Semua' ? '🌐 Semua' : g.toUpperCase();
+            const label = g === 'Semua' ? 'SEMUA' : g.toUpperCase();
             return `
                 <button type="button" onclick="UptimeTracker.filterByGroup('${g}')"
                     class="uptime-group-btn px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs transition-all whitespace-nowrap flex items-center gap-1.5 ${activeCls}">
-                    <span>${label}</span>
+                    <span class="uppercase">${label}</span>
                     <span class="px-1.5 py-0.2 rounded-full text-[9px] ${isActive ? 'bg-black/20 text-black font-bold' : 'bg-[#262626] text-neutral-400'} font-mono">${count}</span>
                 </button>
             `;
