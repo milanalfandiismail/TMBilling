@@ -331,18 +331,22 @@ const BukaModal = {
                 onConfirm: async () => {
                     try {
                         const res = await API.sesi.bukaGuestBatch(pcKodes, parseInt(paketId), namaGuest, metodePembayaran);
-                        if (res.success) {
-                            Toast.success(`🟢 Berhasil membuka ${res.total_success} sesi bersama!`);
-                            Modal.closeModal();
-                            if (window.DashboardSelection) {
-                                window.DashboardSelection.clearSelection();
-                            }
-                            if (typeof Dashboard !== 'undefined') Dashboard.load();
-                        } else {
-                            Toast.error(res.error || 'Gagal membuka sesi');
+                        const gagal = res.errors || [];
+                        if (gagal.length) {
+                            const daftar = gagal.map(e => e.pc_kode + ': ' + e.error).join('; ');
+                            Toast.error('Sebagian sesi gagal dibuka — ' + daftar);
+                            if (res.total_success > 0 && typeof Dashboard !== 'undefined') Dashboard.load();
+                            return false;
                         }
+                        Toast.success('Berhasil membuka ' + res.total_success + ' sesi bersama!');
+                        Modal.closeModal();
+                        if (window.DashboardSelection) {
+                            window.DashboardSelection.clearSelection();
+                        }
+                        if (typeof Dashboard !== 'undefined') Dashboard.load();
                     } catch (err) {
                         Toast.error(err.message);
+                        return false;
                     }
                 }
             });
@@ -371,6 +375,7 @@ const BukaModal = {
                         if (typeof Dashboard !== 'undefined') Dashboard.load();
                     } catch (err) {
                         Toast.error(err.message);
+                        return false;
                     }
                 }
             });

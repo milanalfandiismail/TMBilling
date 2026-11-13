@@ -181,15 +181,15 @@ const API = {
         bukaGuest: (pcKode, paketId, namaGuest, metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/sesi/buka-guest', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, paket_id: paketId, nama_guest: namaGuest, metode_pembayaran: metodePembayaran }) }),
         bukaGuestBatch: (pcKodes, paketId, prefix = 'Guest', metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/sesi/buka-guest-batch', { method: 'POST', body: JSON.stringify({ pc_kodes: pcKodes, paket_id: paketId, nama_guest_prefix: prefix, metode_pembayaran: metodePembayaran }) }),
         bukaMember: (pcKode, username) => API.request('/api/v1/kasir/sesi/buka-member', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, username }) }),
-        tambahWaktu: (sesiId, paketIdOrPayload, qty = 1, metodePembayaran = 'Tunai') => {
+        tambahWaktu: (sesiId, paketIdOrPayload, qty = 1, metodePembayaran = 'Tunai', clientRequestId = null) => {
             if (paketIdOrPayload && typeof paketIdOrPayload === 'object') {
-                const payload = { metode_pembayaran: metodePembayaran, ...paketIdOrPayload };
+                const payload = { metode_pembayaran: metodePembayaran, ...paketIdOrPayload, client_request_id: clientRequestId };
                 return API.request(`/api/v1/kasir/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify(payload) });
             }
-            return API.request(`/api/v1/kasir/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify({ paket_id: paketIdOrPayload, qty, metode_pembayaran: metodePembayaran }) });
+            return API.request(`/api/v1/kasir/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify({ paket_id: paketIdOrPayload, qty, metode_pembayaran: metodePembayaran, client_request_id: clientRequestId }) });
         },
-        tambahWaktuBatch: (sesiIds, payloadOrPaketId, qty = 1, metodePembayaran = 'Tunai') => {
-            let bodyData = { sesi_ids: sesiIds, metode_pembayaran: metodePembayaran };
+        tambahWaktuBatch: (sesiIds, payloadOrPaketId, qty = 1, metodePembayaran = 'Tunai', clientRequestId = null) => {
+            let bodyData = { sesi_ids: sesiIds, metode_pembayaran: metodePembayaran, client_request_id: clientRequestId };
             if (payloadOrPaketId && typeof payloadOrPaketId === 'object' && payloadOrPaketId.selections) {
                 bodyData.selections = payloadOrPaketId.selections;
             } else if (typeof payloadOrPaketId === 'number' || typeof payloadOrPaketId === 'string') {
@@ -320,9 +320,9 @@ const API = {
             return API.request(url);
         },
         stockLogDates: () => API.request('/api/v1/kasir/menu/stock-logs/dates'),
-        checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0, metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/menu/checkout', {
+        checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0, metodePembayaran = 'Tunai', clientRequestId = null) => API.request('/api/v1/kasir/menu/checkout', {
             method: 'POST',
-            body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode, tunai, kembalian, metode_pembayaran: metodePembayaran })
+            body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode, tunai, kembalian, metode_pembayaran: metodePembayaran, client_request_id: clientRequestId })
         }),
         transaksi: () => API.request('/api/v1/kasir/menu/transaksi')
     },

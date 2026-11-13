@@ -11,6 +11,7 @@ from app.models import db
 from app.models import MenuItem, TransaksiMenu, MenuStockLog
 from app.repositories import MenuRepository
 from app.repositories import UserRepository
+from app.services import idempotency
 from app.utils.logger import write_log
 from app.utils.validators import validate_string_length, validate_integer_range, validate_choice, validate_payment_method
 
@@ -367,8 +368,10 @@ class MenuService:
         return f"{prefix}{str(new_num).zfill(3)}-{secrets.token_hex(3)}"
 
     @staticmethod
-    def checkout_menu_order(cart_items, pc_kode, kasir_username, operator="system", tunai=0, kembalian=0, metode_pembayaran="Tunai"):
+    def checkout_menu_order(cart_items, pc_kode, kasir_username, operator="system", tunai=0, kembalian=0, metode_pembayaran="Tunai", client_request_id=None):
         """Memproses transaksi pembelian F&B terpisah dari billing PC."""
+        if not idempotency.claim(client_request_id):
+            raise ValueError("Permintaan ini sudah diproses")
         try:
             if not cart_items or not isinstance(cart_items, list):
                 raise ValueError("Daftar belanjaan kosong atau tidak valid")

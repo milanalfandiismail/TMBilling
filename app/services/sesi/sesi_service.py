@@ -18,6 +18,7 @@ from app.repositories import (
     TransaksiRepository
 )
 from app.services.transaksi.transaksi_service import TransaksiService
+from app.services import idempotency
 from app.services.write_lock import WRITE_LOCK
 from app.utils.logger import write_log
 from app.utils.validators import (
@@ -180,14 +181,18 @@ class SesiService:
     # Fokus: Menambah durasi sesi dan sinkronisasi saldo waktu member.
 
     @staticmethod
-    def tambah_waktu_sesi(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
+    def tambah_waktu_sesi(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai", client_request_id=None):
         """Tambah durasi pada sesi berjalan (Guest/Member) + Suntik Nota TM."""
+        if not idempotency.claim(client_request_id):
+            raise ValueError("Permintaan ini sudah diproses")
         with WRITE_LOCK:
             return SesiService._tambah_waktu_sesi_locked(sesi_id, paket, operator, qty, metode_pembayaran)
 
     @staticmethod
-    def tambah_waktu_sesi_batch(entries, operator="system", metode_pembayaran="Tunai"):
+    def tambah_waktu_sesi_batch(entries, operator="system", metode_pembayaran="Tunai", client_request_id=None):
         """Tambah waktu beberapa sesi dalam satu transaksi; rollback semua bila gagal."""
+        if not idempotency.claim(client_request_id):
+            raise ValueError("Permintaan ini sudah diproses")
         with WRITE_LOCK:
             hasil = []
             audit_logs = []
@@ -423,7 +428,12 @@ class SesiService:
             operator=operator
         )
         db.session.add(transaksi)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            write_log("PINDAH_PC_ERROR", f"Gagal pindah sesi {sesi_id}: {str(e)}")
+            raise ValueError("Gagal memindahkan sesi") from e
 
         detail_pindah = {
             "pc_lama": pc_lama_kode,

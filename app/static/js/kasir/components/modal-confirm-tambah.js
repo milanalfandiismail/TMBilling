@@ -43,33 +43,45 @@ const ModalConfirmTambah = {
             </div>
         `;
 
+        document.querySelectorAll('.modal-confirm-overlay').forEach(el => el.remove());
+
         const modalDiv = document.createElement('div');
         modalDiv.className = 'fixed inset-0 bg-black/85 flex items-center justify-center z-[60] p-4 modal-confirm-overlay';
         modalDiv.innerHTML = html;
         document.body.appendChild(modalDiv);
 
+        const btnCancel = modalDiv.querySelector('#modal-confirm-cancel-btn');
+        const btnSubmit = modalDiv.querySelector('#modal-confirm-submit-btn');
+
         const closeModal = () => {
             modalDiv.remove();
         };
 
-        setTimeout(() => {
-            const btnCancel = document.getElementById('modal-confirm-cancel-btn');
-            const btnSubmit = document.getElementById('modal-confirm-submit-btn');
+        if (btnCancel) {
+            btnCancel.onclick = () => {
+                closeModal();
+                if (onCancel) onCancel();
+            };
+        }
 
-            if (btnCancel) {
-                btnCancel.onclick = () => {
-                    closeModal();
-                    if (onCancel) onCancel();
-                };
-            }
+        modalDiv.addEventListener('click', (event) => {
+            if (event.target === modalDiv) closeModal();
+        });
 
-            if (btnSubmit) {
-                btnSubmit.onclick = () => {
-                    closeModal();
-                    if (onConfirm) onConfirm();
-                };
-            }
-        }, 10);
+        if (btnSubmit) {
+            btnSubmit.onclick = async () => {
+                if (btnSubmit.disabled) return;
+                btnSubmit.disabled = true;
+                btnSubmit.classList.add('opacity-60', 'cursor-not-allowed');
+                try {
+                    const lanjut = onConfirm ? await onConfirm() : true;
+                    if (lanjut !== false) closeModal();
+                } finally {
+                    btnSubmit.disabled = false;
+                    btnSubmit.classList.remove('opacity-60', 'cursor-not-allowed');
+                }
+            };
+        }
     }
 };
 

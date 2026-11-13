@@ -165,7 +165,8 @@ def tambah_waktu_batch():
                     raise ValueError("Paket belum dipilih")
 
             SesiService.tambah_waktu_sesi_batch(
-                entries, operator=kasir, metode_pembayaran=metode_pembayaran
+                entries, operator=kasir, metode_pembayaran=metode_pembayaran,
+                client_request_id=data.get("client_request_id")
             )
         except ValueError as e:
             return jsonify({
@@ -209,7 +210,8 @@ def tambah_waktu_sesi(sesi_id):
                     raise ValueError("Paket tidak ditemukan")
                 entries.append((sesi_id, paket, qty))
             SesiService.tambah_waktu_sesi_batch(
-                entries, operator=kasir, metode_pembayaran=metode_pembayaran
+                entries, operator=kasir, metode_pembayaran=metode_pembayaran,
+                client_request_id=data.get("client_request_id")
             )
             return jsonify({
                 "success": True,
@@ -221,7 +223,7 @@ def tambah_waktu_sesi(sesi_id):
             if qty <= 0:
                 raise ValueError("Kuantitas harus minimal 1")
             paket = PaketService.get_by_id(paket_id)
-            result = SesiService.tambah_waktu_sesi(sesi_id, paket, operator=kasir, qty=qty, metode_pembayaran=metode_pembayaran)
+            result = SesiService.tambah_waktu_sesi(sesi_id, paket, operator=kasir, qty=qty, metode_pembayaran=metode_pembayaran, client_request_id=data.get("client_request_id"))
             return jsonify({
                 "success": True,
                 "message": f"Ditambahkan {paket.durasi_menit * qty} menit",

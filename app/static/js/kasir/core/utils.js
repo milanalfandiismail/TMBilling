@@ -111,5 +111,9 @@ const Utils = {
         if (!str || typeof str !== 'string') return false;
         const cleaned = str.trim().replace(/[:-]/g, '');
         return /^[0-9A-Fa-f]{12}$/.test(cleaned);
+    },
+    requestId() {
+        if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+        return String(Date.now()) + '-' + Math.random().toString(16).slice(2);
     }
 };

@@ -271,7 +271,7 @@ def checkout_order():
             return jsonify({"success": False, "error": "Kasir tidak terautentikasi"}), 401
 
         operator = kasir_username
-        result = MenuService.checkout_menu_order(cart_items, pc_kode, kasir_username, operator=operator, tunai=tunai, kembalian=kembalian, metode_pembayaran=metode_pembayaran)
+        result = MenuService.checkout_menu_order(cart_items, pc_kode, kasir_username, operator=operator, tunai=tunai, kembalian=kembalian, metode_pembayaran=metode_pembayaran, client_request_id=payload.get("client_request_id"))
 
         return jsonify({"success": True, "data": result, "message": "Transaksi F&B berhasil diproses!"}), 200
     except ValueError as val_e:

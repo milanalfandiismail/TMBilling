@@ -195,6 +195,7 @@ window.MenuCart = {
 
         this._checkoutTotal = total;
         this._checkoutPcKode = pcKode;
+        this._checkoutRequestId = Utils.requestId();
         const pecahanHtml = [1000, 2000, 5000, 10000, 20000, 50000, 100000].map(n =>
             `<button type="button" onclick="Menu.setTunai(${n})" class="px-1.5 py-1.5 bg-[#141414] hover:bg-[#202020] border border-[#222] text-[10px] text-neutral-300 font-bold rounded transition-colors text-center font-mono">Rp${(n/1000).toFixed(0)}k</button>`
         ).join('');
@@ -382,8 +383,9 @@ window.MenuCart = {
         const pcKode = this._checkoutPcKode;
 
         try {
-            const res = await window.API.menu.checkout(cartItems, pcKode, tunai, kembalian, metodePembayaran);
+            const res = await window.API.menu.checkout(cartItems, pcKode, tunai, kembalian, metodePembayaran, this._checkoutRequestId);
             if (res.success) {
+                this._checkoutRequestId = null;
                 Toast.success(`Pembayaran berhasil! Kembalian: Rp ${kembalian.toLocaleString('id-ID')}`);
                 this.cart = [];
                 this.renderCart();

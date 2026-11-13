@@ -380,12 +380,13 @@ const TambahModal = {
                 { label: 'Pembayaran', value: metodePembayaran, highlight: true }
             );
 
+            const requestId = Utils.requestId();
             ModalConfirmTambah.open({
                 title: `Konfirmasi Tambah Waktu ${sesiIds.length} Sesi Bersama`,
                 dataLines: dataLines,
                 onConfirm: async () => {
                     try {
-                        const res = await API.sesi.tambahWaktuBatch(sesiIds, { selections: selections }, 1, metodePembayaran);
+                        const res = await API.sesi.tambahWaktuBatch(sesiIds, { selections: selections }, 1, metodePembayaran, requestId);
                         if (res.success) {
                             Toast.success(`🟢 Berhasil menambah waktu pada ${res.total_success} sesi!`);
                             Modal.closeModal();
@@ -455,12 +456,13 @@ const TambahModal = {
                     { label: 'Pembayaran', value: metodePembayaran, highlight: true }
                 );
 
+                const requestId = Utils.requestId();
                 ModalConfirmTambah.open({
                     title: "Konfirmasi Tambah Waktu Sesi",
                     dataLines: dataLines,
                     onConfirm: async () => {
                         try {
-                            await API.sesi.tambahWaktu(this.sesiId, { selections: selections }, 1, metodePembayaran);
+                            await API.sesi.tambahWaktu(this.sesiId, { selections: selections }, 1, metodePembayaran, requestId);
                             Toast.success('Waktu berhasil ditambahkan');
                             Modal.closeModal();
                             if (typeof Dashboard !== 'undefined') Dashboard.load();
