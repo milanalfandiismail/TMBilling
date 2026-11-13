@@ -12,7 +12,7 @@ from app.models import Sesi
 from app.models import Member
 from app.models import PC
 from app.models import Paket, User
-from sqlalchemy import func, or_
+from sqlalchemy import case, func, or_
 from sqlalchemy.orm import joinedload
 
 
@@ -314,7 +314,7 @@ class TransaksiRepository:
         """Mengambil ringkasan jumlah transaksi dan total per metode pembayaran berdasarkan filter."""
         query = db.session.query(
             Transaksi.metode_pembayaran,
-            func.count(Transaksi.id),
+            func.sum(case((Transaksi.jenis != "refund_paket", 1), else_=0)),
             func.sum(Transaksi.jumlah)
         ).filter(Transaksi.no_nota != None)
 
