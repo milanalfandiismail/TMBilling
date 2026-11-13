@@ -1,0 +1,20 @@
+<!-- ===== TAB: ARSIP ===== -->
+<div id="tab-arsip" class="tab-content hidden space-y-2 sm:space-y-2.5">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 xl:p-3.5 2xl:p-5 space-y-2.5 2xl:space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 2xl:pb-3 border-b border-[#1c1c1c]">
+            <div>
+                <h3 class="text-xs sm:text-sm 2xl:text-base font-bold text-neutral-100 uppercase tracking-wider">Data Diarsipkan</h3>
+                <p class="text-[10px] sm:text-xs 2xl:text-sm text-neutral-500">Pulihkan data ke daftar aktif atau hapus permanen</p>
+            </div>
+            <button onclick="Arsip.load()"
+                class="px-2.5 sm:px-3 2xl:px-4 py-1.5 2xl:py-2 bg-[#171717] border border-[#262626] hover:bg-[#222222] text-neutral-200 text-xs 2xl:text-sm font-bold rounded transition-colors shrink-0">
+                Muat Ulang
+            </button>
+        </div>
+
+        <div id="arsip-sections" class="space-y-3 2xl:space-y-4">
+            <div class="h-20 bg-[#202020] rounded"></div>
+            <div class="h-20 bg-[#202020] rounded"></div>
+        </div>
+    </div>
+</div>

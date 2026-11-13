@@ -306,7 +306,7 @@ const App = {
     updatePageTitle(tab) {
         const titles = {
             dash: 'Dashboard', pc: 'Unit PC', paket: 'Paket', member: 'Member',
-            grup: 'Grup', game: 'Kelola Game & Aplikasi', game_management: 'Kelola Game & Aplikasi', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Aktivitas Sistem',
+            grup: 'Grup', arsip: 'Data Diarsipkan', game: 'Kelola Game & Aplikasi', game_management: 'Kelola Game & Aplikasi', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Aktivitas Sistem',
             monitor: 'Hardware Monitor', hardware_checker: 'Hardware Checker', maintenance: 'Perawatan PC', laporan_maintenance: 'Laporan Perawatan', blackout: 'Pemulihan Mati Lampu', screenshot: 'Screenshot Monitor',
             uptime: 'Uptime Tracker',
             user: 'Kelola User', shift_history: 'Riwayat Serah Terima Shift', user_logs: 'Log & Audit Staff', settings: 'Pengaturan', struk: 'Riwayat',
@@ -381,6 +381,7 @@ const App = {
             case 'uptime': if (typeof UptimeTracker !== 'undefined') await UptimeTracker.init(); break;
             case 'blackout': await Blackout.load(); break;
             case 'user': if (typeof User !== 'undefined') await User.load(); break;
+            case 'arsip': if (typeof Arsip !== 'undefined') await Arsip.load(); break;
             case 'shift_history':
                 if (typeof Shift !== 'undefined') {
                     await Shift.loadHistoryKasirList();

@@ -32,6 +32,7 @@ const tabs = {
   member: 'member_paket',
   paket: 'member_paket',
   grup: 'member_paket',
+  arsip: 'route_smoke',
 
   menu: 'fnb_pos',
   menu_stock_log: 'fnb_pos',
