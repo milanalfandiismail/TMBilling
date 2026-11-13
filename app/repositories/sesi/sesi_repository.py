@@ -134,7 +134,7 @@ class SesiRepository:
     @staticmethod
     def count_by_date(tanggal=None):
         """Menghitung total jumlah sesi pada tanggal tertentu atau semua sesi jika tanggal None."""
-        query = Sesi.query
+        query = Sesi.query.filter(Sesi.tipe.in_(("guest", "member")))
         if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
             from app.utils.timezone_utils import get_local_date_range_utc
             start_utc, end_utc = get_local_date_range_utc(tanggal)
@@ -161,17 +161,16 @@ class SesiRepository:
 
     @staticmethod
     def get_distinct_tanggal():
-        """Mengambil daftar tanggal unik dari sesi, transaksi, penjualan menu, dan tiket perbaikan untuk filter laporan (dalam display timezone)."""
+        """Mengambil daftar tanggal unik dari sesi, transaksi, dan penjualan menu untuk filter laporan (dalam display timezone)."""
         from app.utils.timezone_utils import convert_utc_datetimes_to_distinct_dates
-        from app.models import TransaksiMenu, MaintenanceTicket
+        from app.models import TransaksiMenu
         
         # Ambil semua timestamp
         dt_sesi = [r[0] for r in db.session.query(Sesi.mulai_pada).filter(Sesi.mulai_pada != None).all()]
         dt_trans = [r[0] for r in db.session.query(Transaksi.dibuat_pada).filter(Transaksi.dibuat_pada != None).all()]
         dt_menu = [r[0] for r in db.session.query(TransaksiMenu.tanggal).filter(TransaksiMenu.tanggal != None).all()]
-        dt_maint = [r[0] for r in db.session.query(MaintenanceTicket.resolved_at).filter(MaintenanceTicket.resolved_at != None).all()]
         
-        all_dts = dt_sesi + dt_trans + dt_menu + dt_maint
+        all_dts = dt_sesi + dt_trans + dt_menu
         return convert_utc_datetimes_to_distinct_dates(all_dts)
 
     
