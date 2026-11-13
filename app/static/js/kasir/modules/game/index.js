@@ -236,7 +236,7 @@ const GameManagement = {
 
             let tagsHtml = '';
             if (katList.length > 0) {
-                tagsHtml = katList.map(tag => `<span class="px-1.5 py-0.5 bg-[#141414] border border-[#1c1c1c] rounded text-[10px] 2xl:text-xs text-neutral-300 font-mono inline-block truncate max-w-[120px]">${tag}</span>`).join(' ');
+                tagsHtml = katList.map(tag => `<span class="px-1.5 py-0.5 bg-[#141414] border border-[#1c1c1c] rounded text-[10px] 2xl:text-xs text-neutral-300 font-mono inline-block">${tag}</span>`).join(' ');
             } else {
                 tagsHtml = '<span class="text-neutral-600 text-xs">-</span>';
             }
