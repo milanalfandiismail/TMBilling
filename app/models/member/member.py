@@ -133,6 +133,7 @@ class Member(db.Model):
             "email": self.email,
             "no_hp": self.no_hp,
             "grup": self.grup.nama if self.grup else "reguler",
+            "grup_id": self.grup_id,
             "grup_warna": self.grup.warna if self.grup else "#888888",
             "waktu_tersimpan": waktu_tampil,
             "kadaluarsa_pada": self.kadaluarsa_pada.strftime("%Y-%m-%d %H:%M:%S") if self.kadaluarsa_pada else None,

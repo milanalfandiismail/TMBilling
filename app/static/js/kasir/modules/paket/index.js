@@ -17,12 +17,17 @@ const Paket = {
         document.getElementById('paket-arsip-list').classList.toggle('hidden', !arsip);
         document.getElementById('paket-view-aktif').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_OFF : ArsipList.PILL_ON);
         document.getElementById('paket-view-arsip').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_ON : ArsipList.PILL_OFF);
-        ArsipList.filter.grup = arsip ? this.currentGrupId : null;
+        ArsipList.setGrup(arsip ? this.currentGrupId : null);
         if (arsip) {
+            this._loadArsipGroups();
+            ArsipList.onChanged(() => { this._loadArsipGroups(); this.load(true); });
             ArsipList.mount({
                 res: 'paket',
                 container: document.getElementById('paket-arsip-list')
             });
+        } else {
+            ArsipList.onChanged(null);
+            this.load(true);
         }
     },
 
@@ -126,6 +131,14 @@ const Paket = {
         }
     },
 
+    async _loadArsipGroups() {
+        try {
+            const grupData = await API.grup.list({ include_arsip: true });
+            this.groups = grupData.grup || grupData.grup_list || grupData || [];
+            this.renderTabs();
+        } catch (e) { /* daftar grup arsip opsional */ }
+    },
+
     renderTabs() {
         const tabsContainer = document.getElementById('paket-group-tabs');
         if (!tabsContainer) return;
@@ -146,7 +159,7 @@ const Paket = {
                         class="px-2.5 sm:px-3 2xl:px-3.5 py-1 sm:py-1.5 2xl:py-2 rounded text-xs 2xl:text-sm font-bold transition-all flex items-center gap-1.5 2xl:gap-2 shrink-0 bg-[#161616] text-white border shadow-sm"
                         style="border-color: ${gColor};">
                         <span class="w-2 h-2 2xl:w-2.5 2xl:h-2.5 rounded-full" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
+                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}</span>
                         <span class="text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0.2 2xl:py-0.5 rounded font-mono bg-[#242424] text-neutral-200 font-bold">${count}</span>
                     </button>
                 `;
@@ -155,7 +168,7 @@ const Paket = {
                     <button type="button" onclick="Paket.selectGroup(${g.id})"
                         class="px-2.5 sm:px-3 2xl:px-3.5 py-1 sm:py-1.5 2xl:py-2 rounded text-xs 2xl:text-sm font-bold transition-all flex items-center gap-1.5 2xl:gap-2 shrink-0 bg-[#0c0c0c] hover:bg-[#141414] text-neutral-400 hover:text-neutral-200 border border-[#1c1c1c]">
                         <span class="w-1.5 h-1.5 2xl:w-2 2xl:h-2 rounded-full opacity-60" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
+                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}</span>
                         <span class="text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0.2 2xl:py-0.5 rounded font-mono bg-[#141414] text-neutral-500 font-semibold">${count}</span>
                     </button>
                 `;
@@ -170,7 +183,7 @@ const Paket = {
         this.currentPage = 1;
         this.renderTabs();
         if (this.arsipMode) {
-            ArsipList.filter.grup = this.currentGrupId;
+            ArsipList.setGrup(this.currentGrupId);
             ArsipList.mount({ res: 'paket', container: document.getElementById('paket-arsip-list') });
             return;
         }

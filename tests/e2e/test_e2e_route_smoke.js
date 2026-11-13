@@ -363,6 +363,96 @@ async function runRouteSmokeE2ETest(page) {
     assert.match(text, /PC, paket, dan member/i);
   });
 
+  await check(report, 'Filter grup arsip member tidak lagi kosong saat pill grup diklik', async () => {
+    await login(page, 'admin');
+    await tab(page, 'member');
+    await page.waitForSelector('#member-view-arsip', { state: 'visible', timeout: 10000 });
+    await page.click('#member-view-arsip');
+    await page.waitForSelector('#member-arsip-list', { state: 'visible', timeout: 5000 });
+    const pills = page.locator('#member-group-tabs button');
+    assert.ok(await pills.count() > 1, 'pill grup member harus ada');
+    await pills.nth(1).click();
+    await page.waitForTimeout(300);
+    const grup = await page.evaluate(() => ArsipList.filter.grup);
+    assert.ok(grup !== null && grup !== 0 && grup !== '', `filter grup harus id grup, dapat ${grup}`);
+    await pills.nth(0).click();
+    await page.waitForTimeout(200);
+    assert.strictEqual(await page.evaluate(() => ArsipList.filter.grup), null);
+    await page.click('#member-view-aktif');
+  });
+
+  await check(report, 'Tab Data Diarsipkan punya pill grup lengkap dan bisa memfilter', async () => {
+    await login(page, 'admin');
+    await tab(page, 'arsip');
+    await page.waitForSelector('#arsip-grup-all', { state: 'visible', timeout: 10000 });
+    const totalGrup = await page.evaluate(async () => {
+      const res = await fetch('/api/v1/kasir/grup/?include_arsip=1', { credentials: 'include' });
+      const body = await res.json();
+      return (body.data || body.grup || body || []).length;
+    });
+    assert.strictEqual(await page.locator('#arsip-grup-pills button').count(), totalGrup + 1);
+    const grupPill = page.locator('#arsip-grup-pills button').nth(1);
+    await grupPill.click();
+    await page.waitForTimeout(300);
+    const onClass = await grupPill.getAttribute('class');
+    assert.ok(/bg-neutral-100/.test(onClass || ''), 'pill grup terpilih harus ditandai');
+    assert.ok(await page.locator('#arsip-panel').isVisible());
+    await page.click('#arsip-grup-all');
+  });
+
+  await check(report, 'Total arsip mengikuti jumlah yang tampil, bukan data aktif', async () => {
+    await login(page, 'admin');
+    const paketId = await page.evaluate(async () => {
+      const res = await fetch('/api/v1/kasir/paket/', { credentials: 'include' });
+      const body = await res.json();
+      const list = body.paket || body.data || body || [];
+      return list.length ? list[0].id : null;
+    });
+    assert.ok(paketId, 'seed harus punya minimal satu paket');
+    const status = await page.evaluate(async (id) => {
+      const csrf = document.querySelector('meta[name="csrf-token"]');
+      const res = await fetch(`/api/v1/kasir/paket/${id}/archive`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'X-CSRFToken': csrf ? csrf.getAttribute('content') : '' },
+      });
+      return res.status;
+    }, paketId);
+    assert.strictEqual(status, 200);
+
+    await tab(page, 'paket');
+    await page.click('#paket-view-arsip');
+    await page.waitForSelector('#arsip-total-paket', { state: 'visible', timeout: 10000 });
+    const rows = await page.locator('#paket-arsip-list tbody tr').count();
+    const text = await page.innerText('#arsip-total-paket');
+    assert.match(text, new RegExp(`Total\\s+${rows}\\b`), `footer harus menghitung ${rows} baris, dapat "${text}"`);
+    assert.match(text, /Paket arsip/);
+  });
+
+  await check(report, 'Pulihkan dari arsip langsung memperbarui daftar dan total', async () => {
+    const before = await page.locator('#paket-arsip-list tbody tr').count();
+    assert.ok(before > 0, 'butuh minimal satu paket terarsip dari check sebelumnya');
+    await page.locator('#paket-arsip-list button[title="Pulihkan"]').first().click();
+    await page.waitForSelector('#modal-confirm-btn', { state: 'visible', timeout: 5000 });
+    await page.click('#modal-confirm-btn');
+    await page.waitForFunction(
+      (n) => document.querySelectorAll('#paket-arsip-list tbody tr').length < n,
+      before, { timeout: 15000 }
+    );
+    await page.click('#paket-view-aktif');
+  });
+
+  await check(report, 'Kartu PC arsip tidak dipudarkan dibanding kartu aktif', async () => {
+    await tab(page, 'pc');
+    await page.click('#pc-view-arsip');
+    await page.waitForSelector('#pc-arsip-list', { state: 'visible', timeout: 10000 });
+    const opacity = await page.evaluate(() => {
+      const card = document.querySelector('#pc-arsip-list [class*="bg-[#0c0c0c]"]');
+      return card ? getComputedStyle(card).opacity : null;
+    });
+    if (opacity !== null) assert.strictEqual(opacity, '1');
+    await page.click('#pc-view-aktif');
+  });
+
   return finish(report);
 }
 

@@ -21,12 +21,17 @@ const Member = {
         document.getElementById('member-arsip-list').classList.toggle('hidden', !arsip);
         document.getElementById('member-view-aktif').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_OFF : ArsipList.PILL_ON);
         document.getElementById('member-view-arsip').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_ON : ArsipList.PILL_OFF);
-        ArsipList.filter.grup = arsip ? this.currentGrupId : null;
+        ArsipList.setGrup(arsip ? this.currentGrupId : null);
         if (arsip) {
+            this._loadArsipGroups();
+            ArsipList.onChanged(() => { this._loadArsipGroups(); this.load(true); });
             ArsipList.mount({
                 res: 'member',
                 container: document.getElementById('member-arsip-list')
             });
+        } else {
+            ArsipList.onChanged(null);
+            this.load(true);
         }
     },
 
@@ -132,6 +137,14 @@ const Member = {
         }
     },
 
+    async _loadArsipGroups() {
+        try {
+            const grupData = await API.grup.list({ include_arsip: true });
+            this._allGroups = grupData.grup || grupData.grup_list || grupData || [];
+            this.renderGroupTabs(this._allGroups);
+        } catch (e) { /* daftar grup arsip opsional */ }
+    },
+
     renderGroupTabs(groups) {
         const tabsContainer = document.getElementById('member-group-tabs');
         if (!tabsContainer) return;
@@ -160,7 +173,7 @@ const Member = {
                         class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 bg-[#161616] text-white border shadow-sm"
                         style="border-color: ${gColor};">
                         <span class="w-2 h-2 rounded-full" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
+                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}</span>
                     </button>
                 `;
             } else {
@@ -168,7 +181,7 @@ const Member = {
                     <button type="button" onclick="Member.selectGroup(${g.id})"
                         class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 bg-[#0a0a0a] text-neutral-400 border border-[#1f1f1f] hover:border-[#333] hover:text-neutral-200">
                         <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
+                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}</span>
                     </button>
                 `;
             }
@@ -182,7 +195,7 @@ const Member = {
         this.currentPage = 1;
         this.renderGroupTabs(this._allGroups || []);
         if (this.arsipMode) {
-            ArsipList.filter.grup = this.currentGrupId || null;
+            ArsipList.setGrup(this.currentGrupId);
             ArsipList.mount({ res: 'member', container: document.getElementById('member-arsip-list') });
             return;
         }

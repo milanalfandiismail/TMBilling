@@ -22,10 +22,14 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Konfirmasi Centang**: hapus permanen kini memakai satu checkbox "Saya paham data ini dihapus permanen dan tidak bisa dikembalikan" pada `Modal.confirm` (`requireCheck`); tombol setuju nonaktif sampai dicentang, menggantikan konfirmasi ketik nama sebelumnya.
 - **Arsip Mengikuti Kolom Tab Asal**: tampilan arsip kini memakai bentuk dan kolom yang sama dengan data aktifnya (`ArsipList.SCHEMA`) — tabel untuk grup/paket/member/user/game, kartu untuk PC dan katalog FnB — baik lewat pill `Aktif | Diarsipkan` di tab asal maupun lewat pills kategori di tab Data Diarsipkan. Modal menu FnB untuk arsip dan hapus permanen kini memakai `Modal.confirm` (bukan `confirm()` bawaan), dan kartu arsip tidak lagi merender tombol yang tidak berfungsi.
 - **Pill Filter Tetap Aktif di Mode Arsip**: pill grup pada tab PC/paket/member dan filter tipe/kategori pada tab game tetap tampil saat melihat arsip dan benar-benar memfilter daftar arsip (`ArsipList.filter` + `match`). Konfirmasi arsip grup menyebutkan PC, paket, dan member yang ikut diarsipkan.
+- **Filter Grup Arsip Tidak Lagi Kosong**: filter grup memakai `ArsipList.setGrup` sehingga pilihan "Semua" benar-benar mengosongkan filter (sebelumnya `''` menjadi `0` dan menyembunyikan semua baris), dan `Member.to_dict()` ikut mengirim `grup_id` agar pill grup member berfungsi tanpa harus kembali ke "Semua" dulu.
+- **Pill Grup Arsip Lengkap**: tab Data Diarsipkan kini punya pill grup sendiri (grup terarsip tetap muncul dengan label ` · arsip`), dan pill grup di tab PC/paket/member memuat grup terarsip lewat `?include_arsip=1`.
+- **Refresh Real-Time Setelah Pulihkan**: `ArsipList.onChanged` menjalankan ulang daftar arsip **dan** seluruh callback pemanggil (`_refresh` + `_callbacks`), sehingga memulihkan atau menghapus permanen langsung memperbarui daftar, total, dan pill grup tanpa reload.
+- **Total dan Warna Kartu Arsip**: footer `Total N <unit> arsip` mengikuti jumlah baris yang benar-benar tampil setelah filter, dan kartu PC terarsip memakai warna kartu aktif (`border-[#242424]`, tanpa `opacity-60`).
 - **Versi 1.6.5-rc3**: `Config.VERSION` dan semua cermin versi (package.json, klien Tauri, README, DOCUMENTATION, AGENTS) dinaikkan ke `1.6.5-rc3`.
 
 ### Fixed
-- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (684 unit test, 378 check E2E, 34 blueprint, 254 rute).
+- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (685 unit test, 383 check E2E, 34 blueprint, 254 rute).
 
 ## [Unreleased]
 

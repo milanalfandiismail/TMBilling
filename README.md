@@ -46,7 +46,7 @@
 - 🍔 **POS Kantin & Log Mutasi Stok Inventaris**: Kasir penjualan makanan/minuman dengan stok unlimited/limited, audit log mutasi stok (`MenuStockLog`), restock barang, multi-payment (Tunai/QRIS/Transfer), dan cetak struk thermal 58mm/80mm.
 - 📋 **Dynamic Tutorials CMS**: Modul SOP dan panduan operator warnet bawaan berbasis custom CKEditor 5 WYSIWYG.
 - 📂 **Process Monitor**: Pantau dan matikan proses aplikasi yang not-responding dari jarak jauh.
-- 🗂️ **Arsip vs Hapus Permanen Terpisah**: Setiap PC, paket, member, user, game, grup, dan menu punya dua aksi berbeda — arsip (nonaktifkan, bisa dipulihkan) dan hapus permanen yang meminta konfirmasi centang, melepas relasi riwayat tanpa menghapus data transaksi. Semua data terarsip terkumpul di tab **Data Diarsipkan** dengan tombol pulihkan.
+- 🗂️ **Arsip vs Hapus Permanen Terpisah**: Setiap PC, paket, member, user, game, grup, dan menu punya dua aksi berbeda — arsip (nonaktifkan, bisa dipulihkan) dan hapus permanen yang meminta konfirmasi centang, melepas relasi riwayat tanpa menghapus data transaksi. Semua data terarsip terkumpul di tab **Data Diarsipkan** dengan pill kategori + pill grup, footer `Total N arsip`, dan tombol pulihkan yang langsung menyegarkan daftar.
 - 📱 **Responsive Dual-Layout**: Antarmuka adaptif untuk layar 1024px, 1920px Full HD, serta layar sentuh tablet/smartphone.
 
 ---
@@ -224,7 +224,7 @@ c:\Project GIT\TMBilling
    ```powershell
    npm run test:e2e
    ```
-   > 15 suite Chromium (378 check) berjalan paralel otomatis memakai seluruh CPU (`--jobs 1` untuk serial). Setiap suite memakai database, port, catatan, dan backup sendiri; `instance/warnet.db`, `backups/`, `instance/notes/`, `.env`, dan `initial_admin.txt` dijaga guard sha256.
+   > 15 suite Chromium (383 check) berjalan paralel otomatis memakai seluruh CPU (`--jobs 1` untuk serial). Setiap suite memakai database, port, catatan, dan backup sendiri; `instance/warnet.db`, `backups/`, `instance/notes/`, `.env`, dan `initial_admin.txt` dijaga guard sha256.
 
 6. **Memeriksa Kompilasi Klien Rust**:
    ```powershell

@@ -12,6 +12,7 @@ const ArsipList = {
     SCHEMA: {
         grup: {
             emptyText: 'Belum ada grup diarsipkan',
+            unit: 'Grup',
             ariaLabel: () => '',
             render(items) {
                 const rows = items.map(g => {
@@ -43,6 +44,7 @@ const ArsipList = {
 
         paket: {
             emptyText: 'Belum ada paket diarsipkan',
+            unit: 'Paket',
             render(items) {
                 const rows = items.map(p => `<tr class="hover:bg-[#121212] transition-colors">
                     <td class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 text-left">
@@ -69,6 +71,7 @@ const ArsipList = {
 
         member: {
             emptyText: 'Belum ada member diarsipkan',
+            unit: 'Member',
             render(items) {
                 const rows = items.map(m => {
                     const grupNama = (typeof m.grup === 'object' ? m.grup.nama : m.grup) || 'reguler';
@@ -117,6 +120,7 @@ const ArsipList = {
 
         user: {
             emptyText: 'Belum ada user diarsipkan',
+            unit: 'User',
             render(items) {
                 const rows = items.map(u => {
                     const roleBadge = u.role === 'admin'
@@ -156,6 +160,7 @@ const ArsipList = {
 
         game: {
             emptyText: 'Belum ada game diarsipkan',
+            unit: 'Game',
             render(items) {
                 const rows = items.map(g => {
                     const icon = g.icon_url ? API.resolveMediaUrl(g.icon_url) : '';
@@ -195,14 +200,15 @@ const ArsipList = {
 
         pc: {
             emptyText: 'Belum ada PC diarsipkan',
+            unit: 'Unit',
             render(items) {
-                const cards = items.map(pc => `<div class="bg-[#0c0c0c] border border-[#1a1a1a] opacity-60 rounded p-2.5 sm:p-3 2xl:p-3.5 transition-colors hover:bg-[#121212] relative group flex flex-col justify-between min-h-[82px] sm:min-h-[88px] 2xl:min-h-[98px]">
+                const cards = items.map(pc => `<div class="bg-[#0c0c0c] border border-[#242424] rounded p-2.5 sm:p-3 2xl:p-3.5 transition-colors hover:bg-[#121212] relative group flex flex-col justify-between min-h-[82px] sm:min-h-[88px] 2xl:min-h-[98px]">
                     <div class="flex items-center justify-between gap-1.5 min-w-0">
                         <div class="flex items-center gap-1.5 min-w-0 flex-1">
                             <svg class="w-3.5 h-3.5 2xl:w-4 2xl:h-4 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                             <span class="font-bold text-xs sm:text-xs 2xl:text-sm text-neutral-100 truncate min-w-0" title="${ArsipList.esc(pc.kode)}">${ArsipList.esc(pc.kode)}</span>
                         </div>
-                        <span class="w-2 h-2 2xl:w-2.5 2xl:h-2.5 rounded-full bg-neutral-600 shrink-0" title="ARSIP"></span>
+                        <span class="w-2 h-2 2xl:w-2.5 2xl:h-2.5 rounded-full bg-neutral-500 shrink-0" title="ARSIP"></span>
                     </div>
                     <div class="text-[9px] sm:text-[10px] 2xl:text-xs text-neutral-400 font-mono my-1 flex items-center justify-between gap-1.5 min-w-0">
                         <span class="truncate min-w-0 flex-1">${ArsipList.esc(pc.ip_address || '-')}</span>
@@ -218,6 +224,7 @@ const ArsipList = {
 
         menu: {
             emptyText: 'Belum ada menu diarsipkan',
+            unit: 'Menu',
             render(items) {
                 const cards = items.map(m => {
                     const img = m.gambar_path ? API.resolveMediaUrl(m.gambar_path) : '';
@@ -289,6 +296,11 @@ const ArsipList = {
 
     filter: { grup: null, tipe: null, kategori: null },
 
+    // '' / undefined dari pill yang belum dipilih jangan sampai jadi 0 dan menyaring semua baris.
+    setGrup(value) {
+        this.filter.grup = (value === '' || value === null || value === undefined) ? null : Number(value);
+    },
+
     match(item) {
         const { grup, tipe, kategori } = this.filter;
         if (grup !== null && Number(item.grup_id) !== Number(grup)) return false;
@@ -308,7 +320,7 @@ const ArsipList = {
         try {
             const list = (items || await this.fetch(res)).filter(i => this.match(i));
             el.innerHTML = list.length
-                ? this.render({ items: list, res })
+                ? this.render({ items: list, res }) + this.totalFooter(list.length, res)
                 : `<div class="flex flex-col items-center justify-center py-10 text-neutral-500 bg-[#050505] border border-dashed border-[#1c1c1c] rounded">
                        <p class="text-xs font-bold uppercase tracking-wider text-neutral-400">${this.esc(this.schemaOf(res).emptyText)}</p>
                    </div>`;
@@ -319,6 +331,13 @@ const ArsipList = {
 
     render({ items, res }) {
         return this.schemaOf(res).render(items);
+    },
+
+    totalFooter(n, res) {
+        const unit = this.schemaOf(res).unit || 'Item';
+        return `<div id="arsip-total-${res}" class="flex items-center justify-between py-1.5 px-2.5 mt-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs font-mono">
+            <span>Total <strong class="text-neutral-100">${n}</strong> ${this.esc(unit)} arsip</span>
+        </div>`;
     },
 
     // variant: table (24-32px ikon tabel), small (game), card (PC), menu (gaya kartu katalog).
@@ -375,9 +394,15 @@ const ArsipList = {
             { requireCheck: `${label} akan dihapus permanen dan tidak bisa dikembalikan.` });
     },
 
+    _callbacks: [],
+
+    onChanged(cb) {
+        this._callbacks = cb ? [cb] : [];
+    },
+
     _changed() {
-        if (this._onChange) this._onChange();
-        else if (this._refresh) this._refresh();
+        if (this._refresh) this._refresh();
+        this._callbacks.forEach(cb => { try { cb(); } catch (e) { /* callback opsional */ } });
     }
 };
 

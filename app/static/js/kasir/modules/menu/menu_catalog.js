@@ -572,7 +572,7 @@ window.MenuCatalog = {
     renderArchivedCatalog(data) {
         const container = document.getElementById("menu-arsip-list");
         if (!container) return;
-        ArsipList._onChange = () => this.loadCatalog();
+        ArsipList.onChanged(() => this.loadCatalog());
         ArsipList.mount({ res: "menu", container, items: data || [] });
     },
 

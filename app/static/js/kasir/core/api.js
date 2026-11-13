@@ -70,7 +70,7 @@ const API = {
 
     // 🟢 KELOLA GRUP (Baru ditambahkan agar FE dinamis)
     grup: {
-        list: () => API.request('/api/v1/kasir/grup/'),
+        list: (opsi) => API.request('/api/v1/kasir/grup/' + (opsi && opsi.include_arsip ? '?include_arsip=1' : '')),
         create: (data) => API.request('/api/v1/kasir/grup/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/v1/kasir/grup/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
         archive: (id) => API.request(`/api/v1/kasir/grup/${id}/archive`, { method: 'POST' }),
