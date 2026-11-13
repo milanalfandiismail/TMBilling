@@ -44,6 +44,16 @@ class TestSettingsSecretRedaction(unittest.TestCase):
         self.assertNotIn("client_api_key", data)
         self.assertNotIn("uninstall_token", data)
 
+    def test_kasir_tidak_menerima_password_vnc(self):
+        SettingsService.set("vnc_password", "rahasia-vnc")
+        SettingsService.set("payment_methods", "Tunai,QRIS")
+        self._login("kasir")
+        res = self.client.get("/api/v1/kasir/settings/")
+        self.assertEqual(res.status_code, 200)
+        data = res.get_json()["settings"]
+        self.assertNotIn("vnc_password", data)
+        self.assertEqual(data.get("payment_methods"), "Tunai,QRIS")
+
     def test_admin_gets_full_settings_and_client_api_key(self):
         SettingsService.set("mikrotik_password", "rahasia-mikrotik")
         self._login("admin")

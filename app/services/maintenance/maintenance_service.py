@@ -181,7 +181,24 @@ class MaintenanceService:
         if not ticket:
             raise ValueError(f"Tiket dengan ID {ticket_id} tidak ditemukan.")
 
+        pc_id = ticket.pc_id
+        buka_kritis = ticket.prioritas == "KRITIS" and ticket.status in ("BARU", "DIPROSES")
+
         db.session.delete(ticket)
         db.session.commit()
+
+        # PC yang dinonaktifkan tiket KRITIS harus hidup lagi saat tiketnya dihapus.
+        if buka_kritis and pc_id:
+            kritis_lain = MaintenanceTicket.query.filter(
+                MaintenanceTicket.pc_id == pc_id,
+                MaintenanceTicket.prioritas == "KRITIS",
+                MaintenanceTicket.status.in_(["BARU", "DIPROSES"]),
+            ).first()
+            if not kritis_lain:
+                pc = PC.query.get(pc_id)
+                if pc:
+                    pc.aktif = True
+                    db.session.commit()
+
         write_log("HAPUS_TIKET", f"Tiket dihapus", user="system", detail_json={"ticket_id": ticket_id})
         return True

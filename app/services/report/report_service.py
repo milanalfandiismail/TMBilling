@@ -22,11 +22,11 @@ class ReportService:
     # =========================================================================
 
     @staticmethod
-    def get_laporan_harian():
+    def get_laporan_harian(kasir_id=None):
         """Ringkasan cepat pendapatan dan sesi hari ini (Dashboard Overview)."""
         hari_ini = get_today_local_date()
-        total_billing = TransaksiRepository.get_total_pendapatan_hari_ini(hari_ini)
-        total_menu = MenuRepository.get_total_pemasukan_by_date(hari_ini)
+        total_billing = TransaksiRepository.get_total_pendapatan_hari_ini(hari_ini, kasir_id=kasir_id)
+        total_menu = MenuRepository.get_total_pemasukan_by_date(hari_ini, kasir_id=kasir_id)
         total = int(total_billing or 0) + int(total_menu or 0)
         total_sesi = SesiRepository.count_by_date(hari_ini)
         aktif_sekarang = SesiRepository.count_aktif()

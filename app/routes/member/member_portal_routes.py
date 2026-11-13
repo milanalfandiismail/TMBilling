@@ -62,26 +62,28 @@ def login_action():
         return jsonify({"error": "Username dan password wajib diisi"}), 400
 
     from app.services.auth import login_throttle
-    if login_throttle.check(request.remote_addr, username):
+    from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+    client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
+    if login_throttle.check(client_ip, username):
         return jsonify({"error": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}), 429
 
     try:
         member = MemberRepository.get_by_username(username)
         if not member:
-            login_throttle.fail(request.remote_addr, username)
+            login_throttle.fail(client_ip, username)
             return jsonify({"error": "Username atau password salah"}), 401
 
         if not member.aktif:
             return jsonify({"error": "Akun member Anda dinonaktifkan oleh kasir"}), 403
 
         if not member.check_password(password):
-            login_throttle.fail(request.remote_addr, username)
+            login_throttle.fail(client_ip, username)
             return jsonify({"error": "Username atau password salah"}), 401
 
         if member.kadaluarsa_pada and now_local() > member.kadaluarsa_pada:
             return jsonify({"error": "Masa aktif member sudah kadaluarsa"}), 403
 
-        login_throttle.ok(request.remote_addr, username)
+        login_throttle.ok(client_ip, username)
         session.clear()
         session["member_id"] = member.id
         session["member_username"] = member.username

@@ -77,7 +77,8 @@ def get_laporan_kantin():
 def laporan_harian():
     """Ringkasan cepat pendapatan, total sesi, dan sesi aktif hari ini."""
     try:
-        laporan = ReportService.get_laporan_harian()
+        kasir_id = session.get("kasir_id") if session.get("kasir_role") == "kasir" else None
+        laporan = ReportService.get_laporan_harian(kasir_id=kasir_id)
         return jsonify(laporan), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

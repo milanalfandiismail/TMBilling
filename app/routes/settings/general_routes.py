@@ -17,7 +17,7 @@ from app.routes.settings.settings_routes import settings_api_bp
 # =========================================================================
 # Fokus: Mengambil seluruh data pengaturan untuk ditampilkan di dashboard.
 
-CASHIER_SAFE_SETTINGS = ("payment_methods", "vnc_password")
+CASHIER_SAFE_SETTINGS = ("payment_methods",)
 GENERIC_SETTING_PREFIXES = ("warnet_", "backup_", "tv_", "qris_", "mikrotik_", "screenshot_")
 GENERIC_SETTING_KEYS = {"payment_methods"}
 

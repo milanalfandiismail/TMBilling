@@ -23,6 +23,8 @@ def create_ticket():
         kategori = data.get("kategori")
         prioritas = data.get("prioritas")
         judul = data.get("judul")
+        if str(prioritas).strip().upper() == "KRITIS" and session.get("kasir_role") != "admin":
+            return jsonify({"error": "Prioritas KRITIS hanya dapat dibuat oleh admin"}), 403
         deskripsi = data.get("deskripsi")
         reporter = session.get("kasir_username", "kasir")
 

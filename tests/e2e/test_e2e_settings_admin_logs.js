@@ -10,7 +10,7 @@
  *
  * Perilaku produk yang SENGAJA berlaku dan tidak "diperbaiki" di sini:
  * - `GET /api/v1/kasir/settings/` mengirim seluruh setting + `client_api_key`
- *   hanya untuk role admin; role lain hanya `payment_methods` + `vnc_password`.
+ *   hanya untuk role admin; role kasir hanya `payment_methods`.
  * - `admin_required` menjawab 403 JSON (bukan redirect) untuk sesi kasir.
  * - Token uninstall/emergency adalah `secrets.token_urlsafe(32)` dan dibuat
  *   sekali; string legacy tidak boleh muncul lagi.
@@ -299,16 +299,16 @@ async function runSettingsAdminLogsE2ETest(page) {
         assert.match(body.error, /Hanya Admin yang diizinkan/i);
     });
 
-    await check(report, 'Payload settings kasir hanya berisi payment_methods dan vnc_password', async () => {
+    await check(report, 'Payload settings kasir hanya berisi payment_methods (tanpa vnc_password)', async () => {
         const res = await page.evaluate(() => API.settings.getAll());
         assert.ok(res && res.success);
         const keys = Object.keys(res.settings).sort();
-        assert.deepStrictEqual(keys, ['payment_methods', 'vnc_password']);
+        assert.deepStrictEqual(keys, ['payment_methods']);
+        assert.ok(!keys.includes('vnc_password'), 'kasir tidak boleh menerima vnc_password');
         Array.from(new Set([...ADMIN_SETTINGS_KEYS, 'backup_gdrive_client_id', 'backup_gdrive_client_secret', 'backup_gdrive_folder_id', 'uninstall_token', 'emergency_token']))
             .forEach((key) => assert.ok(!(key in res.settings), `${key} bocor ke kasir`));
         const adminOnly = Object.keys(adminSettings).filter((key) => !(key in res.settings));
         assert.ok(adminOnly.length > 0, 'payload admin dan kasir tidak berbeda');
-        assert.strictEqual(res.settings.vnc_password, await settingValue('vnc_password'));
     });
 
     await check(report, 'Mutasi admin oleh kasir ditolak 403 dan tidak mengubah data', async () => {
