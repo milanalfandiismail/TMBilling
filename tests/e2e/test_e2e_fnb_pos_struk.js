@@ -443,7 +443,7 @@ async function runFnBPosStrukE2ETest(page) {
         await page.click('#menu-tab-archived-btn');
         // Arsip menu dirender sebagai kartu katalog dari skema ArsipList.
         await page.waitForSelector('#menu-arsip-list', { state: 'visible', timeout: 5000 });
-        const archivedRow = page.locator(`#menu-arsip-list div:has(p:text-is("${indomie.nama}"))`).first();
+        const archivedRow = page.locator(`#menu-arsip-list div[title="${indomie.nama}"]`).first();
         await archivedRow.waitFor({ state: 'visible', timeout: 5000 });
         const archivedText = await archivedRow.innerText();
         assert.ok(new RegExp(`${soldRows} transaksi historis`).test(archivedText),
