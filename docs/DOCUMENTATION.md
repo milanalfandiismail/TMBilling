@@ -1248,3 +1248,22 @@ Repositori menyediakan skrip batch otomatis untuk menyederhanakan manajemen oper
 | **`install.bat`** | `WarnetAgent/Deploy/` | Instalasi otomatis klien PC warnet (konfigurasi IP server, registry, firewall, startup). |
 | **`uninstall.bat`** | `WarnetAgent/Deploy/` | Uninstalasi aman klien warnet via `TMBilling_Uninstaller.exe`. |
 | **`allow_firewall.bat`** | `WarnetAgent/Deploy/` | Konfigurasi aturan Windows Defender Firewall port 5900 TightVNC. |
+| **`scripts/upgrade_packages.py`** | `scripts/` | Sinkronisasi/upgrade dependensi Python: tanpa flag = `pip install -r requirements.txt`; `--latest` = upgrade semua paket ke versi terbaru lalu menulis ulang pin `requirements.txt` (salinan lama di `backups/requirements_<timestamp>.txt`); `--check` = daftar paket usang; `--dry-run` = cetak perintah pip saja. Menolak berjalan di luar virtual environment. |
+
+**Upgrade dependensi Python (manual atau script):**
+
+```powershell
+# Manual - mengikuti pin di requirements.txt
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
+# Manual - paket tertentu ke versi terbaru, lalu sesuaikan pin di requirements.txt
+.\.venv\Scripts\python.exe -m pip install --upgrade <paket>
+
+# Script - cek, sinkronkan, atau upgrade seluruh paket + tulis ulang pin
+.\.venv\Scripts\python.exe scripts\upgrade_packages.py --check
+.\.venv\Scripts\python.exe scripts\upgrade_packages.py
+.\.venv\Scripts\python.exe scripts\upgrade_packages.py --latest
+```
+
+`--latest` menulis ulang `requirements.txt` dan menyimpan salinan lama ke `backups/requirements_<timestamp>.txt`. Setelah upgrade, jalankan `npm run test:unit` (semua core) dan `npm run test:e2e` sebelum rilis. Upgrade dependensi tidak mengubah skema database; migrasi hanya perlu bila rilis membawa perubahan model.

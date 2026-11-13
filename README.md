@@ -232,6 +232,14 @@ c:\Project GIT\TMBilling
    cargo check
    ```
 
+7. **Upgrade / Sinkronisasi Dependensi Python**:
+   ```powershell
+   .\.venv\Scripts\python.exe scripts\upgrade_packages.py --check    # lihat paket yang sudah usang
+   .\.venv\Scripts\python.exe scripts\upgrade_packages.py            # pasang dependensi sesuai requirements.txt
+   .\.venv\Scripts\python.exe scripts\upgrade_packages.py --latest   # upgrade semua paket ke versi terbaru
+   ```
+   > `--latest` memasang versi terbaru untuk seluruh paket di `requirements.txt`, menulis ulang pin `nama==versi` di file itu, dan menyimpan salinan lama ke `backups/requirements_<timestamp>.txt`. Script menolak berjalan di luar virtual environment. Setelah upgrade, jalankan `npm run test:unit` untuk memastikan tidak ada regresi. Upgrade manual: `.\.venv\Scripts\python.exe -m pip install -r requirements.txt` (mengikuti pin yang ada) atau `.\.venv\Scripts\python.exe -m pip install -U <paket>` lalu sesuaikan pin di `requirements.txt`.
+
 ---
 
 ## 📚 Navigasi Dokumentasi

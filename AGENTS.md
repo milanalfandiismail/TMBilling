@@ -26,6 +26,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `start.bat` & `stop.bat` | Skrip otomasi start/stop background service server pada Windows. |
 | `package.json` | Konfigurasi npm, devDependencies (TailwindCSS 4.3 via `@tailwindcss/cli`, Playwright, FontAwesome 7), dan skrip build vendor/CSS. |
 | `requirements.txt` | Daftar pustaka Python backend (Flask 3.1.3, SQLAlchemy 2.1, APScheduler, Waitress, dll; wajib Python 3.11+). |
+| `scripts/` | Helper operasional: `allcore_search.py` (pencarian literal all-core), `migrate_timezone_to_utc.py` (migrasi data waktu), `upgrade_packages.py` (sinkronisasi/upgrade dependensi Python; `--latest` menulis ulang pin `requirements.txt` dan menyimpan salinan lama ke `backups/`). |
 | `tailwind.config.js` | Konfigurasi framework CSS Tailwind untuk dashboard kasir dan client kiosk UI. |
 | `CHANGELOG.md` | Riwayat log perubahan dan rilis versi aplikasi (*Keep a Changelog standard*). |
 | `README.md` | Ringkasan proyek publik, sorotan fitur, dan panduan instalasi cepat. |
@@ -278,6 +279,10 @@ npm run test:unit
 
 # Pencarian literal all-core (default semua core; SEARCH_WORKERS=1 untuk serial)
 .venv\Scripts\python.exe scripts\allcore_search.py "pola1|pola2" app tests
+
+# Upgrade dependensi Python di dalam .venv (--latest menulis ulang pin requirements.txt)
+.venv\Scripts\python.exe scripts\upgrade_packages.py --check
+.venv\Scripts\python.exe scripts\upgrade_packages.py --latest
 
 # Cek sintaks JavaScript dengan Node.js
 node -c app/static/js/kasir/modules/dashboard/dashboard_process_monitor.js
