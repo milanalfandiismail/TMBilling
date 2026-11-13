@@ -87,6 +87,21 @@ def archive_user(user_id):
         return jsonify({"error": f"Internal Error: {str(e)}"}), 500
 
 
+@user_api_bp.route("/<int:user_id>/restore", methods=["POST"])
+@login_required
+@admin_required
+def restore_user(user_id):
+    """Aktifkan kembali akun staff yang diarsipkan."""
+    operator = session.get("kasir_username", "admin")
+    try:
+        result = UserService.restore_user(user_id, operator)
+        return jsonify(result), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Internal Error: {str(e)}"}), 500
+
+
 @user_api_bp.route("/<int:user_id>", methods=["DELETE"])
 @login_required
 @admin_required

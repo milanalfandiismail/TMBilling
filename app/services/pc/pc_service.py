@@ -273,6 +273,24 @@ class PCService:
         return {"success": True, "message": f"PC {kode} diarsipkan"}
 
     @staticmethod
+    def restore(pc_id, operator="system"):
+        """Pulihkan PC dari arsip agar kembali muncul di denah dan daftar."""
+        from app.services.cache import PCNetworkCacheStore
+
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            raise ValueError("PC tidak ditemukan")
+        if pc.aktif:
+            raise ValueError("PC tidak dalam arsip")
+
+        kode = pc.kode
+        pc.aktif = True
+        db.session.commit()
+        PCNetworkCacheStore.invalidate()
+        write_log("RESTORE_PC", f"PC:{kode} dipulihkan dari arsip", user=operator, detail_json={"kode": kode, "pc_id": pc_id})
+        return {"success": True, "message": f"PC {kode} dipulihkan"}
+
+    @staticmethod
     def delete(pc_id, operator="system"):
         """Hapus PC permanen beserta data anaknya; riwayat sesi dilepas, bukan dihapus."""
         import os

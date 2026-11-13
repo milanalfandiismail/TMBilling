@@ -152,6 +152,21 @@ def arsipkan_pc(pc_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@pc_api_bp.route("/<int:pc_id>/restore", methods=["POST"])
+@login_required
+@admin_required
+def pulihkan_pc(pc_id):
+    """Pulihkan PC dari arsip."""
+    try:
+        kasir = session.get("kasir_username", "kasir")
+        result = PCService.restore(pc_id, operator=kasir)
+        return jsonify({"success": True, "message": result['message']}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @pc_api_bp.route("/reset-admin/<int:pc_id>", methods=["POST"])
 @login_required
 @shift_required

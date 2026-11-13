@@ -173,6 +173,23 @@ class GameService:
         return {"success": True, "message": f"Game '{game.nama}' berhasil diarsipkan"}
 
     @staticmethod
+    def restore(game_id, operator=None):
+        """Tampilkan kembali game yang diarsipkan di katalog dan daftar."""
+        from app.models import db
+
+        game = GameRepository.get_by_id(game_id)
+        if not game:
+            raise ValueError("Game tidak ditemukan")
+        if game.aktif:
+            raise ValueError("Game tidak dalam arsip")
+        game.aktif = True
+        db.session.commit()
+        op_name = operator if isinstance(operator, str) else "admin"
+        write_log("RESTORE_GAME", f"Game '{game.nama}' dipulihkan dari arsip", user=op_name,
+                  detail_json={"nama": game.nama})
+        return {"success": True, "message": f"Game '{game.nama}' berhasil dipulihkan"}
+
+    @staticmethod
     def delete(game_id, operator=None):
         game = GameRepository.get_by_id(game_id)
         if not game:

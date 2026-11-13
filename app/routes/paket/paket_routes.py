@@ -117,6 +117,21 @@ def arsipkan_paket(paket_id):
         return jsonify({"error": str(e)}), 500
 
 
+@paket_api_bp.route("/<int:paket_id>/restore", methods=["POST"])
+@login_required
+@admin_required
+def pulihkan_paket(paket_id):
+    """Pulihkan paket dari arsip."""
+    try:
+        kasir = session.get("kasir_username", "kasir")
+        PaketService.restore(paket_id, operator=kasir)
+        return jsonify({"success": True, "message": "Paket berhasil dipulihkan"}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @paket_api_bp.route("/<int:paket_id>", methods=["DELETE"])
 @login_required
 @admin_required

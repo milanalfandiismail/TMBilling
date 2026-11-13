@@ -119,6 +119,21 @@ def archive_member(member_id):
         return jsonify({"error": str(e)}), 500
 
 
+@member_api_bp.route("/<int:member_id>/restore", methods=["POST"])
+@login_required
+@admin_required
+def restore_member(member_id):
+    """Pulihkan member dari arsip."""
+    try:
+        kasir = session.get("kasir_username", "kasir")
+        MemberService.restore(member_id, operator=kasir)
+        return jsonify({"success": True, "message": "Member berhasil dipulihkan"}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @member_api_bp.route("/<int:member_id>", methods=["DELETE"])
 @login_required
 @admin_required

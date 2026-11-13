@@ -248,6 +248,21 @@ class MemberService:
         return True
 
     @staticmethod
+    def restore(member_id, operator="system"):
+        """Pulihkan member dari arsip agar bisa bermain/menambah saldo lagi."""
+        member = MemberRepository.get_by_id(member_id)
+        if not member:
+            raise ValueError("Member tidak ditemukan")
+        if member.aktif:
+            raise ValueError("Member tidak dalam arsip")
+
+        member.aktif = True
+        db.session.commit()
+        write_log("RESTORE_MEMBER", f"Member:{member.username} dipulihkan dari arsip", user=operator,
+                  detail_json={"username": member.username, "member_id": member_id})
+        return True
+
+    @staticmethod
     def delete(member_id, operator="system"):
         """Hapus member permanen; riwayat sesi/transaksi dilepas, bukan dihapus."""
         from app.models import Sesi, Transaksi

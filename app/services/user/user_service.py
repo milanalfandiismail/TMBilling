@@ -171,6 +171,22 @@ class UserService:
         return {"success": True, "message": "User berhasil diarsipkan"}
 
     @staticmethod
+    def restore_user(user_id, operator="admin"):
+        """Aktifkan kembali user yang diarsipkan."""
+        from app.models import db
+
+        user = UserRepository.get_by_id(user_id)
+        if not user:
+            raise ValueError("User tidak ditemukan")
+        if user.aktif:
+            raise ValueError("User tidak dalam arsip")
+        user.aktif = True
+        db.session.commit()
+        write_log("RESTORE_USER", f"User:{user.username} dipulihkan dari arsip", user=operator,
+                  detail_json={"username": user.username, "user_id": user_id})
+        return {"success": True, "message": "User berhasil dipulihkan"}
+
+    @staticmethod
     def delete_user(user_id, operator="admin"):
         """Hapus user permanen; transaksi dilepas, shift tetap menjadi penjaga."""
         from app.models import Sesi

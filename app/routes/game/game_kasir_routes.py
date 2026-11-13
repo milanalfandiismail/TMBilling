@@ -91,6 +91,20 @@ def arsip_game(game_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@game_kasir_api_bp.route("/<int:game_id>/restore", methods=["POST"])
+@login_required
+@admin_required
+def restore_game(game_id):
+    try:
+        kasir = session.get("kasir_username", "admin")
+        result = GameService.restore(game_id, operator=kasir)
+        return jsonify(result), 200
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @game_kasir_api_bp.route("/<int:game_id>", methods=["DELETE"])
 @login_required
 @admin_required

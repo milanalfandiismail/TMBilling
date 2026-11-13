@@ -177,6 +177,22 @@ class PaketService:
         return True
 
     @staticmethod
+    def restore(paket_id, operator="system"):
+        """Pulihkan paket dari arsip agar bisa dipilih kembali."""
+        paket = PaketRepository.get_by_id(paket_id)
+        if not paket:
+            raise ValueError("Paket tidak ditemukan")
+        if paket.aktif:
+            raise ValueError("Paket tidak dalam arsip")
+
+        nama_paket = paket.nama
+        paket.aktif = True
+        db.session.commit()
+        write_log("RESTORE_PAKET", f"Paket {nama_paket} dipulihkan dari arsip", user=operator,
+                  detail_json={"nama_paket": nama_paket, "paket_id": paket_id})
+        return True
+
+    @staticmethod
     def delete(paket_id, operator="system"):
         """Hapus paket permanen; riwayat sesi/transaksi dilepas, bukan dihapus."""
         from app.models import Sesi, Transaksi
