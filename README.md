@@ -224,7 +224,7 @@ c:\Project GIT\TMBilling
    ```powershell
    npm run test:e2e
    ```
-   > 15 suite Chromium (383 check) berjalan paralel otomatis memakai seluruh CPU (`--jobs 1` untuk serial). Setiap suite memakai database, port, catatan, dan backup sendiri; `instance/warnet.db`, `backups/`, `instance/notes/`, `.env`, dan `initial_admin.txt` dijaga guard sha256.
+   > 15 suite Chromium (384 check) berjalan paralel otomatis memakai seluruh CPU (`--jobs 1` untuk serial). Setiap suite memakai database, port, catatan, dan backup sendiri; `instance/warnet.db`, `backups/`, `instance/notes/`, `.env`, dan `initial_admin.txt` dijaga guard sha256.
 
 6. **Memeriksa Kompilasi Klien Rust**:
    ```powershell

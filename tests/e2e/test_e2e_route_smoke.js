@@ -532,6 +532,54 @@ async function runRouteSmokeE2ETest(page) {
     await page.click('#pc-view-aktif');
   });
 
+  await check(report, 'Pill grup kembali ke data aktif setelah keluar dari mode arsip', async () => {
+    await login(page, 'admin');
+    await tab(page, 'paket');
+    await page.waitForSelector('#paket-group-tabs button', { timeout: 10000 });
+    const aktifPills = await page.locator('#paket-group-tabs button').count();
+    const aktifText = await page.locator('#paket-group-tabs').innerText();
+    const paket = await page.evaluate(async () => {
+      const res = await fetch('/api/v1/kasir/paket/', { credentials: 'include' });
+      const body = await res.json();
+      const list = body.paket || body.data || body || [];
+      return list.length ? list[0].id : null;
+    });
+    assert.ok(paket, 'seed harus punya minimal satu paket');
+    const archived = await page.evaluate(async (id) => {
+      const csrf = document.querySelector('meta[name="csrf-token"]');
+      const res = await fetch(`/api/v1/kasir/paket/${id}/archive`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'X-CSRFToken': csrf ? csrf.getAttribute('content') : '' },
+      });
+      return res.ok;
+    }, paket);
+    assert.ok(archived, 'paket harus bisa diarsipkan');
+
+    await page.click('#paket-view-arsip');
+    await page.waitForSelector('#paket-arsip-list', { state: 'visible', timeout: 10000 });
+    await page.waitForTimeout(400);
+    await page.click('#paket-view-aktif');
+    await page.waitForSelector('#paket-arsip-list', { state: 'hidden', timeout: 10000 });
+
+    const state = await page.evaluate(() => ({
+      grupFilter: ArsipList.filter.grup,
+      pills: document.querySelectorAll('#paket-group-tabs button').length,
+      text: document.getElementById('paket-group-tabs').innerText,
+    }));
+    assert.strictEqual(state.grupFilter, null, 'filter grup arsip harus dilepas');
+    assert.strictEqual(state.pills, aktifPills, 'pill grup harus kembali menghitung data aktif');
+    assert.ok(!/ARSIP/i.test(state.text), 'pill grup tidak boleh menyisakan label arsip');
+    assert.strictEqual(state.text.replace(/\s+/g, ' ').trim(), aktifText.replace(/\s+/g, ' ').trim(), 'pill grup harus sama seperti sebelum masuk arsip');
+
+    await page.evaluate(async (id) => {
+      const csrf = document.querySelector('meta[name="csrf-token"]');
+      await fetch(`/api/v1/kasir/paket/${id}/restore`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'X-CSRFToken': csrf ? csrf.getAttribute('content') : '' },
+      });
+    }, paket);
+  });
+
   return finish(report);
 }
 

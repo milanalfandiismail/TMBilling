@@ -31,7 +31,8 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Versi 1.6.5-rc3**: `Config.VERSION` dan semua cermin versi (package.json, klien Tauri, README, DOCUMENTATION, AGENTS) dinaikkan ke `1.6.5-rc3`.
 
 ### Fixed
-- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (686 unit test, 383 check E2E, 34 blueprint, 254 rute).
+- **Pill Grup Kembali ke Mode Aktif**: `_loadArsipGroups()` pada tab PC/paket/member menyimpan daftar grup arsip di field terpisah (`_arsipGroups`) dan tidak lagi menimpa daftar grup aktif, sehingga pill grup tidak tertinggal menampilkan grup beserta angka arsip setelah pengguna kembali dari `Diarsipkan` ke `Aktif`; `toggleView(false)` juga langsung merender ulang pill grup.
+- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (686 unit test, 384 check E2E, 34 blueprint, 254 rute).
 
 ## [Unreleased]
 

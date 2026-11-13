@@ -27,6 +27,7 @@ const PC = {
             });
         } else {
             ArsipList.onChanged(null);
+            this.renderTabs();
             this.load(true);
         }
     },
@@ -141,9 +142,10 @@ const PC = {
     },
 
     async _loadArsipGroups() {
+        if (!this.arsipMode) return;
         try {
             const grupData = await API.grup.list({ include_arsip: true });
-            this.groups = grupData.grup || grupData.grup_list || grupData || [];
+            this._arsipGroups = grupData.grup || grupData.grup_list || grupData || [];
             this._arsipCounts = ArsipList.counts(await ArsipList.fetch('pc'));
             this.renderTabs();
             if (this.arsipMode && this.currentGrupId && !this._arsipCounts[String(this.currentGrupId)]) {
@@ -164,7 +166,8 @@ const PC = {
             return;
         }
 
-        const tabsHtml = this.groups.map(g => {
+        const source = this.arsipMode ? (this._arsipGroups || this.groups) : this.groups;
+        const tabsHtml = source.map(g => {
             const count = this.arsipMode
                 ? ((this._arsipCounts || {})[String(g.id)] || 0)
                 : (this._allPcs || []).filter(p => Number(p.grup_id) === Number(g.id)).length;

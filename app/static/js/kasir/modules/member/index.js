@@ -31,6 +31,7 @@ const Member = {
             });
         } else {
             ArsipList.onChanged(null);
+            this.renderGroupTabs(this._allGroups || []);
             this.load(true);
         }
     },
@@ -139,16 +140,17 @@ const Member = {
     },
 
     async _loadArsipGroups() {
+        if (!this.arsipMode) return;
         try {
             const grupData = await API.grup.list({ include_arsip: true });
-            this._allGroups = grupData.grup || grupData.grup_list || grupData || [];
+            this._arsipGroups = grupData.grup || grupData.grup_list || grupData || [];
             this._arsipCounts = ArsipList.counts(await ArsipList.fetch('member'));
             if (this.currentGrupId && !this._arsipCounts[String(this.currentGrupId)]) {
                 this.currentGrupId = '';
                 ArsipList.setGrup(null);
                 ArsipList.mount({ res: 'member', container: document.getElementById('member-arsip-list') });
             }
-            this.renderGroupTabs(this._allGroups);
+            this.renderGroupTabs(this.arsipMode ? this._arsipGroups : (this._allGroups || []));
         } catch (e) { /* daftar grup arsip opsional */ }
     },
 
