@@ -51,8 +51,8 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 ### 2. Backend Server (`app/`)
 
 #### A. Konfigurasi & Inisialisasi
-- `app/config.py`: **Single Source of Version Truth** (`VERSION = "1.6.5-rc2"`), dynamic random `SECRET_KEY` generator with write-through `.env` persistence, konfigurasi database SQLite, session lifetime, batas upload `MAX_CONTENT_LENGTH = 64 MB`, dan environment loader.
-- `app/__init__.py`: Application Factory (`create_app(config_override=None)`), inisialisasi CORS, custom `TMBillingCSRFProtect` (Bearer client key dibandingkan dengan `hmac.compare_digest`), Flask-Migrate, `bootstrap_app_data(app)` (seed pengaturan/whitelist/tutorial + bootstrap superadmin acak unik `initial_admin.txt`; hanya menjalankan `db.create_all()` untuk database yang benar-benar baru, database ber-`alembic_version` tidak disentuh factory dan wajib lewat migrasi), guard `before_request` lazy bila skema baru tersedia setelah factory, dan pendaftaran 34 blueprint.
+- `app/config.py`: **Single Source of Version Truth** (`VERSION = "1.6.5-rc3"`), dynamic random `SECRET_KEY` generator with write-through `.env` persistence, konfigurasi database SQLite, session lifetime, batas upload `MAX_CONTENT_LENGTH = 64 MB`, dan environment loader.
+- `app/__init__.py`: Application Factory (`create_app(config_override=None)`), inisialisasi CORS, custom `TMBillingCSRFProtect` (Bearer client key dibandingkan dengan `hmac.compare_digest`), Flask-Migrate, `bootstrap_app_data(app)` (seed pengaturan/whitelist/tutorial + bootstrap superadmin acak unik `initial_admin.txt`; hanya menjalankan `db.create_all()` untuk database yang benar-benar baru, database ber-`alembic_version` tidak disentuh factory dan wajib lewat migrasi), guard `before_request` lazy bila skema baru tersedia setelah factory, dan pendaftaran 33 Blueprint.
 
 #### B. Model ORM SQLAlchemy (`app/models/` — 17 Sub-Domain)
 | Subfolder Model | Model SQLAlchemy & Entitas Data |
@@ -192,7 +192,7 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 #### A. Modular ES6 JavaScript (`app/static/js/kasir/`)
 - `app.js`: Entry point inisialisasi aplikasi kasir, event delegation, dan routing 30 tab.
 - `core/api.js`: Klien HTTP REST terpusat dengan penanganan CSRF otomatis dan error reporting.
-- `core/modal.js`: Pengendali modal dialog modular.
+- `core/modal.js`: Pengendali modal dialog modular; `Modal.confirm` mendukung opsi `requireCheck` (satu checkbox wajib dicentang, tombol setuju nonaktif sampai aktif) yang dipakai hapus permanen PC/Paket/Member/User/Game.
 - `core/skeleton.js`: Skeleton loader statis (tanpa animasi) untuk 30 tab tampilan.
 - `core/toast.js`: Sistem notifikasi toast floating modern.
 - `core/utils.js`: Formatter mata uang Rupiah, kalkulator waktu, dan escape HTML sanitizer.
@@ -288,7 +288,7 @@ python run.py
 build_and_deploy.bat
 
 # Menjalankan Master Runner E2E Sandbox Terisolasi (Zero Database Mutation Guarantee)
-# 15 suite Chromium sungguhan (Playwright): 366 check, paralel otomatis semua CPU
+# 15 suite Chromium sungguhan (Playwright): 367 check, paralel otomatis semua CPU
 npm run test:e2e
 # atau langsung via Python: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py
 # Serial untuk debug: .venv\Scripts\python.exe tests/e2e/run_all_e2e.py --jobs 1

@@ -97,12 +97,12 @@ class Config:
     SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
     WTF_CSRF_TIME_LIMIT = None          # CSRF mengikuti umur session agar tidak kedaluwarsa sendiri
     MAX_CONTENT_LENGTH = 64 * 1024 * 1024  # 64 MB; update ZIP klien masih masuk
-    VERSION = "1.6.5-rc2"
+    VERSION = "1.6.5-rc3"
     VERSION_NAME = "Autonomous Offline Studio"
 
     @classmethod
     def get_version_tag(cls) -> str:
-        """Mengembalikan format versi dengan prefix 'v' (contoh: 'v1.6.5-rc2')."""
+        """Mengembalikan format versi dengan prefix 'v' (contoh: 'v1.6.5-rc3')."""
         return f"v{cls.VERSION}" if not str(cls.VERSION).startswith("v") else str(cls.VERSION)
 
     @classmethod

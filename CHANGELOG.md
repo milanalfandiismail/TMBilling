@@ -6,13 +6,21 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
-## [Unreleased]
+## [1.6.5-rc3] - 2026-11-13 - Release Candidate 3
 
-### Arsip dan Hapus Permanen Terpisah (2026-11-13)
-- **Dua Aksi Berbeda untuk PC, Paket, Member, User, dan Game**: `POST .../<id>/archive` menonaktifkan tanpa menghapus (`aktif = False`), sedangkan `DELETE .../<id>` kini benar-benar menghapus dan **wajib** body `{"confirm": "<kode/nama/username>"}`; konfirmasi salah atau kosong dibalas 400.
+### Added
+- **Arsip dan Hapus Permanen Terpisah**: PC, Paket, Member, User, dan Game punya aksi arsip (`POST .../<id>/archive`, `aktif = False`, bisa dipulihkan) dan hapus permanen (`DELETE .../<id>`) yang benar-benar menghapus baris utama. Body `{"confirm": "<kode/nama/username>"}` wajib; konfirmasi salah atau kosong dibalas 400.
 - **Riwayat Tidak Ikut Terhapus**: purge melepas referensi (`sesi.pc_id`, `sesi.paket_id`, `sesi.member_id`, `sesi.user_id`, `transaksi.paket_id`, `transaksi.member_id`, `transaksi.user_id`) menjadi NULL di dalam `WRITE_LOCK`, jadi laporan dan struk lama tetap utuh nominalnya.
-- **UI Konfirmasi Ketik Nama**: `Modal.confirm` menerima opsi `requireText`; tombol arsip (amber) dan hapus permanen kini terpisah di tabel PC, Paket, Member, User, Game.
 - **Pengecualian User Ber-shift**: `DELETE /api/v1/kasir/user/<id>` tetap ditolak bila user punya riwayat shift (`shift_record.kasir_id` NOT NULL) — gunakan arsip.
+
+### Changed
+- **Konfirmasi Centang**: hapus permanen kini memakai satu checkbox "Saya paham data ini dihapus permanen dan tidak bisa dikembalikan" pada `Modal.confirm` (`requireCheck`); tombol setuju nonaktif sampai dicentang, menggantikan konfirmasi ketik nama sebelumnya.
+- **Versi 1.6.5-rc3**: `Config.VERSION` dan semua cermin versi (package.json, klien Tauri, README, DOCUMENTATION, AGENTS) dinaikkan ke `1.6.5-rc3`.
+
+### Fixed
+- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (669 unit test, 367 check E2E, 33 blueprint, 246 rute).
+
+## [Unreleased]
 
 ### Perbaikan Migrasi Skema Saat Update (2026-11-12)
 - **Update Gagal pada Instalasi Baru**: `install_scripts/run_migration.py` tidak lagi memutar ulang seluruh migrasi pada database hasil `db.create_all()`; bila skema sudah identik dengan metadata model, revisi langsung di-`stamp` ke `head` sehingga `updater.bat` tidak berhenti di `:fail` karena `duplicate column name: operator`.

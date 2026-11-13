@@ -4,8 +4,8 @@
 
 # Master Dokumentasi Teknis & Operasional TMBilling (Single Source of Truth)
 
-> **Versi Rilis:** v1.6.5-rc2  
-> **Branch:** `v1.6.5-rc2` ("Autonomous Offline Studio")  
+> **Versi Rilis:** v1.6.5-rc3  
+> **Branch:** `v1.6.5-rc3` ("Autonomous Offline Studio")  
 > **Status:** Single Source of Truth Resmi Repositori TMBilling  
 > **Target Audiens:** Pengembang Backend/Frontend, Pengembang Rust/Tauri, Operator/Kasir, dan Administrator Sistem Warnet & Game Center.
 
@@ -53,7 +53,7 @@
    - [4.30 In-Place Reactive Rerender & Zero Page Reload Engine](#430-in-place-reactive-rerender--zero-page-reload-engine)
    - [4.31 Zero-Config Security & Credential Bootstrap Architecture](#431-zero-config-security--credential-bootstrap-architecture)
 5. [Panduan Teknis Backend (Flask & Python)](#5-panduan-teknis-backend-flask--python)
-   - [5.1 Daftar Blueprint & Routing (34 Blueprint)](#51-daftar-blueprint--routing)
+   - [5.1 Daftar Blueprint & Routing (33 Blueprint)](#51-daftar-blueprint--routing)
    - [5.2 Service Layer & Pola Arsitektur (36 Service Classes)](#52-service-layer--pola-arsitektur)
    - [5.3 Skema Database & 24 Model SQLAlchemy](#53-skema-database--24-model-sqlalchemy)
 6. [Panduan Teknis Frontend (Modular Vanilla JS & CSS)](#6-panduan-teknis-frontend-modular-vanilla-js--css)
@@ -68,7 +68,7 @@
    - [7.6 Deploy Scripts & Configuration](#76-deploy-scripts--configuration)
 8. [Spesifikasi Protokol API & VNC Bridge](#8-spesifikasi-protokol-api--vnc-bridge)
 9. [Panduan Operasional Kasir & Troubleshooting](#9-panduan-operasional-kasir--troubleshooting)
-10. [Panduan Kontribusi, Testing & SOP Dual-Engine (243 Test Files / 662 Test)](#10-panduan-kontribusi-testing--sop-dual-engine)
+10. [Panduan Kontribusi, Testing & SOP Dual-Engine (243 Test Files / 669 Test)](#10-panduan-kontribusi-testing--sop-dual-engine)
 
 ---
 
@@ -89,7 +89,7 @@
 
 Sistem TMBilling dirancang dengan arsitektur pemisahan tanggung jawab 3 lapis (*3-Layer Separation of Concerns*):
 - **Layer 1: Frontend (Browser / Kasir Dashboard)**: Web UI berbasis ES6 Modular Vanilla JS, standardized skeleton loader (core/skeleton.js), VNC web client berbasis canvas RFB, dan Process Monitor.
-- **Layer 2: Backend (Server Billing Flask)**: REST API engine dengan 34 Blueprint / 36 Service, background daemon APScheduler, VNC bridge via proses Websockify (port 8081), database SQLite dengan 24 Model SQLAlchemy, serta integrasi zero-trust Cloudflare Ingress.
+- **Layer 2: Backend (Server Billing Flask)**: REST API engine dengan 33 Blueprint / 36 Service, background daemon APScheduler, VNC bridge via proses Websockify (port 8081), database SQLite dengan 24 Model SQLAlchemy, serta integrasi zero-trust Cloudflare Ingress.
 - **Layer 3: WarnetAgent Client (PC Klien)**: Aplikasi klien Tauri 1.5 (Rust + HTML5/CSS) dengan low-level Win32 hooks dan TightVNC loopback port 5900, diawasi oleh Watchdog Service C++ (MGCTM.exe), validasi registry hash SHA-256, dan telemetri hardware LibreHardwareMonitor (TMMonitor.exe + HardwareHelper.exe).
 
 ### 2.1 Backend Server
@@ -120,7 +120,7 @@ Sistem TMBilling dirancang dengan arsitektur pemisahan tanggung jawab 3 lapis (*
 ```text
 c:\Project GIT\TMBilling
 ├── app/                                # Backend Server Flask & Frontend Kasir
-│   ├── config.py                       # Single Source of Version Truth (VERSION = "1.6.5-rc2")
+│   ├── config.py                       # Single Source of Version Truth (VERSION = "1.6.5-rc3")
 │   ├── models/                         # 24 Model Database SQLAlchemy
 │   │   ├── game/                       # Game & GameKategori
 │   │   ├── grup/                       # Grup Ruangan / Tarif (Reguler/VIP)
@@ -138,7 +138,7 @@ c:\Project GIT\TMBilling
 │   │   ├── transaksi/                  # Transaksi pembayaran billing
 │   │   ├── tutorial/                   # SystemTutorial (CMS Articles)
 │   │   └── user/                       # User & Role RBAC
-│   ├── routes/                         # 34 Blueprint HTTP REST + VNC Bridge
+│   ├── routes/                         # 33 Blueprint HTTP REST + VNC Bridge
 │   │   ├── auth/                       # Login/Logout kasir & admin
 │   │   ├── backup/                     # Database local & cloud backup
 │   │   ├── blackout/                   # Toleransi & recovery mati lampu
@@ -195,7 +195,7 @@ c:\Project GIT\TMBilling
 │   ├── TMBilling_Monitor/              # Hardware Telemetry & Sensor Daemon
 │   ├── TMBilling_Uninstaller/          # Secure Uninstaller (Registry & Service Clean)
 │   └── Deploy/                         # Deployment & Firewall Helper Scripts
-├── tests/                              # 243 File Pytest / 662 Test + 15 Suite E2E
+├── tests/                              # 244 File Pytest / 669 Test + 15 Suite E2E
 ├── build_and_deploy.bat                # Skrip Build Otomatis Klien & Server
 ├── developer_install.bat               # Skrip Inisialisasi Dev Environment Cepat
 ├── CHANGELOG.md                        # Riwayat Rilis Lengkap (Keep a Changelog)
@@ -332,7 +332,7 @@ c:\Project GIT\TMBilling
   - Kemudahan akses bagi Owner untuk melihat laporan keuangan dan analitik dari mana saja melalui smartphone.
 
 ### 4.11 Centralized Versioning System (`config.py` Truth)
-- **Deskripsi**: Standarisasi nomor versi aplikasi terpusat pada file [app/config.py](file:///c:/Project%20GIT/TMBilling/app/config.py) (`VERSION = "1.6.5-rc2"`).
+- **Deskripsi**: Standarisasi nomor versi aplikasi terpusat pada file [app/config.py](file:///c:/Project%20GIT/TMBilling/app/config.py) (`VERSION = "1.6.5-rc3"`).
 - **Penyebaran Otomatis**: Variabel versi ini otomatis diinjeksikan ke template Jinja2 (footer UI kasir), endpoint REST `/api/version`, dan response handshake klien agent.
 
 ### 4.12 RBAC Kasir & Centralized Audit Log System
@@ -343,7 +343,7 @@ c:\Project GIT\TMBilling
 - **Batas Unggah & Nama Berkas**: `MAX_CONTENT_LENGTH = 64 MB` mencegah unggahan raksasa; nama file screenshot dibersihkan dengan `secure_filename` setelah membuang pemisah path sehingga kode PC tidak bisa keluar dari folder upload.
 - **Toggle Whitelist**: `POST /api/v1/kasir/settings/ip-whitelist/toggle` menormalkan string boolean; `"false"` benar-benar menonaktifkan whitelist, bukan dianggap truthy.
 - **Pengecualian Admin Divalidasi ke Database**: Middleware whitelist hanya membebaskan sesi yang user-nya masih ada, `aktif=True`, dan ber-role `admin` di database. Sesi dengan cookie lama ber-role admin yang sudah diturunkan/dinonaktifkan tidak lagi mendapat bypass (role sesi disegarkan dari DB atau sesi dibersihkan), sehingga pengecualian admin tidak bisa dipakai satu request pun setelah demosi.
-- **Hapus User Beriwayat**: user yang masih punya `ShiftRecord` atau `Transaksi` tidak dapat dihapus (`400`); nonaktifkan akun agar histori tetap utuh. Guard "admin terakhir" hanya berlaku untuk admin yang masih aktif, sehingga admin nonaktif tetap bisa dihapus saat tersisa satu admin aktif. Race username saat pembuatan user di-rollback menjadi `ValueError("Username sudah terdaftar")`.
+- **Arsip, Hapus User, dan Guard Shift**: `POST /api/v1/kasir/user/<id>/archive` menonaktifkan akun (`aktif=False`). `DELETE /api/v1/kasir/user/<id>` menghapus permanen dengan body `{"confirm": "<username>"}` dan tetap **ditolak** (`400`) bila user punya `ShiftRecord`, karena `shift_record.kasir_id` NOT NULL; referensi `Transaksi.user_id` dan `Sesi.user_id` dilepas menjadi NULL sehingga histori keuangan tetap utuh. Guard "admin terakhir" hanya berlaku untuk admin yang masih aktif, sehingga admin nonaktif tetap bisa dihapus saat tersisa satu admin aktif. Race username saat pembuatan user di-rollback menjadi `ValueError("Username sudah terdaftar")`.
 - **Hapus Audit Blackout & Kontrol LHM Khusus Admin**: `/api/v1/kasir/blackout/clear` dan start/stop TMLHMService memakai `@admin_required`.
 - **Sanitasi HTML Pengumuman**: Teks pengumuman kiosk (hasil CKEditor) disanitasi `SafeHTMLParser` saat ditulis maupun dibaca, memakai allowlist protokol (`http://`, `https://`, `mailto:`, `/`, `#`, `data:image/`).
 
@@ -380,7 +380,7 @@ c:\Project GIT\TMBilling
   - Refund Paket Nominal Penuh: Refund guest & member mengembalikan nilai penuh transaksi (`-jumlah`) sambil memotong menit tersisa (guest dibatasi sisa waktu, member `max(0, saldo - durasi)`).
   - Satu Sesi Aktif per PC & Member: Unique index parsial `uq_aktif_sesi_pc` (`pc_id` WHERE `status='aktif'`) dan `uq_aktif_sesi_member` (`member_id` WHERE `status='aktif'`) menolak sesi ganda; pelanggaran dipetakan menjadi `ValueError("PC sedang dipakai")`.
   - Top-up Multi-Paket Atomik: `tambah_waktu_batch` membungkus `WRITE_LOCK`, menulis seluruh item dengan `commit=False`, lalu satu commit; kegagalan salah satu item me-rollback semuanya dan audit log ditulis setelah commit.
-  - Hapus Member Beriwayat Ditolak: member yang punya riwayat sesi/transaksi tidak dapat dihapus (`400`); nonaktifkan akunnya agar histori tetap utuh.
+  - Arsip vs Hapus Member: `POST /api/v1/kasir/member/<id>/archive` menonaktifkan member (ditolak bila masih punya sesi aktif). `DELETE /api/v1/kasir/member/<id>` menghapus permanen dengan body `{"confirm": "<nama member>"}`; referensi `Sesi.member_id` dan `Transaksi.member_id` dilepas menjadi NULL sehingga riwayat sesi/transaksi tetap ada tanpa identitas member.
   - Serialisasi Tulis Saldo: `app/services/write_lock.py` (`WRITE_LOCK`) membungkus `tambah_waktu`/`refund_paket`/`tambah_waktu_batch` member dan `tambah_waktu_sesi` agar dua request bersamaan tidak saling menimpa saldo (read-modify-write) pada satu proses server.
   - Paket Tidak Ditemukan: edit/hapus paket yang sudah tidak ada dibalas `404` ("Paket tidak ditemukan"), bukan `500`.
   - Parsing Boolean Paket: flag `aktif` menerima string `"true"`/`"1"`/`"yes"` dan `"false"` benar-benar menonaktifkan; nilai string tidak lagi dianggap truthy mentah.
@@ -549,7 +549,7 @@ c:\Project GIT\TMBilling
 ## 5. Panduan Teknis Backend (Flask & Python)
 
 ### 5.1 Daftar Blueprint & Routing
-Backend TMBilling terbagi ke dalam **34 Blueprint** modular di `app/routes/`:
+Backend TMBilling terbagi ke dalam **33 Blueprint** modular di `app/routes/`:
 - `auth_routes.py` & `auth_kasir_routes.py`: Manajemen autentikasi login session kasir dan administrator.
 - `backup_routes.py`: Endpoint pemicu backup database, download backup `.db`, dan restore database.
 - `blackout_routes.py`: Handler deteksi pemadaman listrik dan pemulihan sesi pelanggan.
@@ -713,13 +713,13 @@ Jika terjadi kegagalan:
 }
 ```
 
-### 8.2 Katalog Endpoint REST API (34 Blueprint)
+### 8.2 Katalog Endpoint REST API (33 Blueprint)
 
-Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/routes/`: **240 Route** (katalog per blueprint di bawah merinci endpoint utama; route dinamis/registrasi manual tidak selalu punya baris sendiri).
+Total Blueprint Terdaftar: **33 Blueprint** | Total dekorator route di `app/routes/`: **246 Route** (katalog per blueprint di bawah merinci endpoint utama; route dinamis/registrasi manual tidak selalu punya baris sendiri).
 
 > Endpoint kesehatan `GET /api/health` terdaftar sebagai blueprint `health_api` (`app/routes/public/health_routes.py`), dan didaftarkan di `app/__init__.py:135`.
 
-> **Arsip vs Hapus Permanen (PC, Paket, Member, User, Game)**: `POST .../<id>/archive` hanya menonaktifkan (`aktif = False`) sehingga datanya bisa dipulihkan lewat edit/registrasi ulang. `DELETE .../<id>` menghapus permanen dan **wajib** menyertakan body `{"confirm": "<kode PC / nama paket / nama member / username / nama game>"}` — tanpa itu route membalas 400. Riwayat transaksi/sesi tidak ikut terhapus; referensinya dilepas (`paket_id`, `member_id`, `user_id`, `pc_id` menjadi NULL) di dalam `WRITE_LOCK`. Pengecualian: `DELETE /api/v1/kasir/user/<id>` tetap ditolak bila user punya riwayat shift karena `shift_record.kasir_id` NOT NULL — nonaktifkan saja.
+> **Arsip vs Hapus Permanen (PC, Paket, Member, User, Game)**: `POST .../<id>/archive` hanya menonaktifkan (`aktif = False`) sehingga datanya bisa dipulihkan lewat edit/registrasi ulang. Di UI kasir, tombol arsip (ikon kotak, amber) dan hapus permanen (ikon sampah, merah) terpisah; hapus permanen menampilkan modal konfirmasi dengan satu checkbox yang wajib dicentang sebelum tombol setuju aktif. `DELETE .../<id>` menghapus permanen dan **wajib** menyertakan body `{"confirm": "<kode PC / nama paket / nama member / username / nama game>"}` - tanpa itu route membalas 400. Riwayat transaksi/sesi tidak ikut terhapus; referensinya dilepas (`paket_id`, `member_id`, `user_id`, `pc_id` menjadi NULL) di dalam `WRITE_LOCK`. Pengecualian: `DELETE /api/v1/kasir/user/<id>` tetap ditolak bila user punya riwayat shift karena `shift_record.kasir_id` NOT NULL — nonaktifkan saja.
 
 #### 🔹 Blueprint: auth (3 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
@@ -1186,14 +1186,14 @@ Endpoint dashboard (GitHub 1-Klik maupun Upload ZIP) juga memakai klaim yang sam
 ## 10. Panduan Kontribusi, Testing & SOP Dual-Engine
 
 ### 10.1 Standar Testing Backend (Pytest)
-Repositori TMBilling dilengkapi **243 file pengujian unit dan integrasi** dengan **662 test specs** aktif:
+Repositori TMBilling dilengkapi **244 file pengujian unit dan integrasi** dengan **669 test specs** aktif:
 ```powershell
 python -m pytest tests/ -q
 ```
-Seluruh pengujian harus berstatus **PASSED (662 passed, 0 failed)** sebelum melakukan commit atau push.
+Seluruh pengujian harus berstatus **PASSED (669 passed, 0 failed)** sebelum melakukan commit atau push.
 
 ### 10.1.1 Pengujian End-to-End Browser (Playwright)
-`tests/e2e/` menjalankan **15 suite Chromium sungguhan** (366 check) secara paralel terhadap sandbox terisolasi:
+`tests/e2e/` menjalankan **15 suite Chromium sungguhan** (367 check) secara paralel terhadap sandbox terisolasi:
 
 ```powershell
 npm run test:e2e                                            # semua suite, worker = jumlah CPU
@@ -1217,7 +1217,7 @@ Seluruh aktivitas rekayasa perangkat lunak wajib mematuhi protokol **Dual-Engine
 1. **Engine 1 - Planning & Brainstorming (Plugin `superpowers`)**:
    - `brainstorming`: Menganalisis kebutuhan pengguna dan merancang arsitektur sebelum coding.
    - `writing-plans`: Menyusun rencana kerja bertahap yang modular dan terverifikasi.
-   - `systematic-debugging`: Investigasi akar masalah secara mendalam sebelum perbaikan; verifikasi regresi (662 test specs) dan jangan commit/push otomatis setelah bugfix.
+   - `systematic-debugging`: Investigasi akar masalah secara mendalam sebelum perbaikan; verifikasi regresi (669 test specs) dan jangan commit/push otomatis setelah bugfix.
    - `test-driven-development`: Memastikan spesifikasi pengujian ada untuk setiap perubahan fitur krusial.
    - `git-discipline`: Dilarang keras melakukan `git commit` maupun `git push` secara sepihak/otomatis (baik saat fitur baru maupun setelah debugging/bugfix) sebelum ada perintah eksplisit dari USER. Selalu laporkan hasil pekerjaan dan tunggu aba-aba USER.
 2. **Engine 2 - Execution & Verification (MCP `codebase-memory`)**:
