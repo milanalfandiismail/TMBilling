@@ -137,6 +137,13 @@ const KASIR_GROUPS = [
     ['POST', `/api/v1/kasir/vnc/client/${ID}/start`, {}],
     ['POST', `/api/v1/kasir/vnc/client/${ID}/stop`, {}],
   ]],
+  ['arsip lanjutan', [
+    ['POST', '/api/v1/kasir/pc/999999/archive'],
+    ['POST', '/api/v1/kasir/paket/999999/archive'],
+    ['POST', '/api/v1/kasir/member/999999/archive'],
+    ['POST', '/api/v1/kasir/user/999999/archive'],
+    ['POST', '/api/v1/kasir/game/999999/archive'],
+  ]],
   ['laporan lanjutan', [
     ['GET', '/api/v1/kasir/report/blackout-log'],
     ['GET', '/api/v1/kasir/report/export/audit-pdf'],

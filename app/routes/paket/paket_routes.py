@@ -8,6 +8,7 @@ dalam sistem billing.
 
 from flask import Blueprint, request, jsonify, session
 from werkzeug.exceptions import NotFound
+from app.models import db
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.services import PaketService
 
@@ -99,14 +100,38 @@ def edit_paket(paket_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@paket_api_bp.route("/<int:paket_id>/archive", methods=["POST"])
+@login_required
+@admin_required
+def arsipkan_paket(paket_id):
+    """Nonaktifkan paket tanpa menghapus riwayat."""
+    try:
+        kasir = session.get("kasir_username", "kasir")
+        PaketService.archive(paket_id, operator=kasir)
+        return jsonify({"success": True, "message": "Paket berhasil diarsipkan"}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except NotFound:
+        return jsonify({"error": "Paket tidak ditemukan"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @paket_api_bp.route("/<int:paket_id>", methods=["DELETE"])
 @login_required
 @admin_required
 def hapus_paket(paket_id):
-    """Hapus paket (Proteksi otomatis jika paket sedang digunakan di sesi aktif)."""
+    """Hapus paket permanen (Proteksi otomatis jika paket sedang digunakan di sesi aktif)."""
     try:
+        from app.models import Paket
+        paket = db.session.get(Paket, paket_id)
+        if not paket:
+            return jsonify({"error": "Paket tidak ditemukan"}), 404
+        confirm = str((request.get_json(silent=True) or {}).get("confirm", "")).strip().lower()
+        if confirm != (paket.nama or "").lower():
+            return jsonify({"error": "Ketik nama paket untuk konfirmasi hapus permanen"}), 400
         kasir = session.get("kasir_username", "kasir")
-        
+
         PaketService.delete(paket_id, operator=kasir)
         return jsonify({
             "success": True, 

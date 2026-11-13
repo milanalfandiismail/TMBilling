@@ -26,7 +26,7 @@ def test_user_dengan_shift_tidak_bisa_dihapus(ctx):
     assert db.session.get(User, user.id) is not None
 
 
-def test_user_dengan_transaksi_tidak_bisa_dihapus(ctx):
+def test_user_dengan_transaksi_bisa_dihapus_dengan_referensi_dilepas(ctx):
     user = User(username="kasir_trx", nama_lengkap="Kasir", role="kasir")
     user.set_password("pass123")
     db.session.add(user)
@@ -34,8 +34,11 @@ def test_user_dengan_transaksi_tidak_bisa_dihapus(ctx):
     db.session.add(Transaksi(no_nota="TM-20260101-001", jenis="tutup_sesi",
                              jumlah=10000, menit=60, user_id=user.id))
     db.session.commit()
+    user_id = user.id
+    trx = Transaksi.query.filter_by(user_id=user_id).first()
+    trx_id = trx.id
 
-    with pytest.raises(ValueError, match="Nonaktifkan saja"):
-        UserService.delete_user(user.id)
+    UserService.delete_user(user_id)
 
-    assert db.session.get(User, user.id) is not None
+    assert db.session.get(User, user_id) is None
+    assert db.session.get(Transaksi, trx_id).user_id is None

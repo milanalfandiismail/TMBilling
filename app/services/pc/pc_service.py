@@ -244,11 +244,41 @@ class PCService:
         return pc
 
     @staticmethod
+    def archive(pc_id, operator="system"):
+        """Arsipkan PC (soft delete) tanpa menyentuh riwayat sesi."""
+        from app.services.cache import PCNetworkCacheStore, cleanup_pc_cache
+
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            raise ValueError("PC tidak ditemukan")
+        if pc.sesi_aktif:
+            raise ValueError(f"PC {pc.kode} tidak dapat diarsipkan karena sedang digunakan dalam sesi aktif.")
+
+        kode = pc.kode
+        pc.aktif = False
+        db.session.commit()
+        PCNetworkCacheStore.invalidate()
+        cleanup_pc_cache(pc_id)
+        try:
+            from app.services.hardware.hardware_service import TELEMETRY_HISTORY
+            TELEMETRY_HISTORY.pop(pc_id, None)
+        except Exception:
+            pass
+        try:
+            from app.services.client.client_service import PENDING_COMMANDS
+            PENDING_COMMANDS.pop(pc_id, None)
+        except Exception:
+            pass
+        write_log("ARSIP_PC", f"PC:{kode} diarsipkan", user=operator, detail_json={"kode": kode, "pc_id": pc_id})
+        return {"success": True, "message": f"PC {kode} diarsipkan"}
+
+    @staticmethod
     def delete(pc_id, operator="system"):
-        """Hapus unit PC secara permanen dari sistem beserta seluruh dependensinya."""
+        """Hapus PC permanen beserta data anaknya; riwayat sesi dilepas, bukan dihapus."""
         import os
         from flask import current_app
-        from app.models import PCUptimeLog, HardwareMonitor, PCProcess, MaintenanceTicket, Sesi
+        from app.models import PCUptimeLog, HardwareMonitor, PCProcess, MaintenanceTicket
+        from app.services.write_lock import WRITE_LOCK
 
         pc = PCRepository.get_by_id(pc_id)
         if not pc:
@@ -260,36 +290,19 @@ class PCService:
 
         kode = pc.kode
         try:
-            # 2. PC dengan riwayat sesi cukup diarsipkan agar histori tetap utuh
-            if Sesi.query.filter_by(pc_id=pc.id).first():
-                pc.aktif = False
+            with WRITE_LOCK:
+                # 2. Riwayat sesi tetap ada, hanya referensi PC-nya dilepas
+                Sesi.query.filter_by(pc_id=pc.id).update({"pc_id": None}, synchronize_session=False)
+
+                # 3. Hapus seluruh data anak langsung (Category A)
+                PCUptimeLog.query.filter_by(pc_id=pc.id).delete()
+                HardwareMonitor.query.filter_by(pc_id=pc.id).delete()
+                PCProcess.query.filter_by(pc_id=pc.id).delete()
+                MaintenanceTicket.query.filter_by(pc_id=pc.id).delete()
+
+                # 4. Hapus entitas PC
+                db.session.delete(pc)
                 db.session.commit()
-                from app.services.cache import PCNetworkCacheStore, cleanup_pc_cache
-                PCNetworkCacheStore.invalidate()
-                cleanup_pc_cache(pc_id)
-                try:
-                    from app.services.hardware.hardware_service import TELEMETRY_HISTORY
-                    TELEMETRY_HISTORY.pop(pc_id, None)
-                except Exception:
-                    pass
-                try:
-                    from app.services.client.client_service import PENDING_COMMANDS
-                    PENDING_COMMANDS.pop(pc_id, None)
-                except Exception:
-                    pass
-                write_log("ARSIP_PC", f"PC:{kode} diarsipkan karena memiliki riwayat sesi",
-                          user=operator, detail_json={"kode": kode, "pc_id": pc_id})
-                return {"success": True, "message": f"PC {kode} diarsipkan"}
-
-            # 3. Hapus seluruh data anak langsung (Category A)
-            PCUptimeLog.query.filter_by(pc_id=pc.id).delete()
-            HardwareMonitor.query.filter_by(pc_id=pc.id).delete()
-            PCProcess.query.filter_by(pc_id=pc.id).delete()
-            MaintenanceTicket.query.filter_by(pc_id=pc.id).delete()
-
-            # 4. Hapus entitas PC
-            db.session.delete(pc)
-            db.session.commit()
 
             # 5. Cleanup In-Memory states (Non-fatal)
             try:

@@ -269,12 +269,25 @@ const Paket = {
         }
     },
 
-    async delete(id) {
-        const message = '<div class="text-center"><p class="text-xs lg:text-base text-neutral-400">Hapus paket ini? Sesi berjalan tidak terpengaruh.</p></div>';
+    async delete(id, nama) {
+        const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-400">Hapus permanen paket <span class="font-mono font-bold text-neutral-100">${Utils.escapeHtml(nama || '')}</span>? Riwayat transaksi tetap ada tanpa referensi paket.</p></div>`;
         Modal.confirm(message, async () => {
             try {
-                await API.paket.delete(id);
+                await API.paket.delete(id, nama);
                 Toast.success('Paket berhasil dihapus');
+                this.load();
+            } catch (err) {
+                Toast.error(err.message);
+            }
+        }, null, { requireText: nama });
+    },
+
+    async archive(id) {
+        const message = '<div class="text-center"><p class="text-xs lg:text-base text-neutral-400">Arsipkan paket ini? Paket tidak lagi muncul di pilihan kasir.</p></div>';
+        Modal.confirm(message, async () => {
+            try {
+                await API.paket.archive(id);
+                Toast.success('Paket diarsipkan');
                 this.load();
             } catch (err) {
                 Toast.error(err.message);

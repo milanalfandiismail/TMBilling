@@ -371,6 +371,7 @@ async function runSettingsAdminLogsE2ETest(page) {
         await tab(page, 'user');
         await page.evaluate(([id, name]) => User.delete(id, name), [kasirId, kasirUsername]);
         await page.waitForSelector('#modal-confirm-btn', { state: 'visible', timeout: 5000 });
+        await page.fill('#modal-confirm-input', kasirUsername);
         await page.click('#modal-confirm-btn');
         await dbWait('SELECT id FROM user WHERE id = ?', [kasirId], (rows) => rows.length === 0, 'user terhapus dari DB');
 

@@ -137,25 +137,23 @@ class TestPCHardDelete(unittest.TestCase):
         TELEMETRY_HISTORY[pc_id] = [{"cpu_usage": 25.0}]
         PENDING_COMMANDS[pc_id] = "screenshot"
 
-        # Execute delete: a PC with history is archived, not removed
+        # Execute delete: PC dihapus permanen, riwayat sesi dilepas
         result = PCService.delete(pc_id, operator="admin")
         self.assertTrue(result["success"])
 
-        # Verification: PC still exists but inactive
-        saved_pc = PC.query.get(pc_id)
-        self.assertIsNotNone(saved_pc)
-        self.assertFalse(saved_pc.aktif)
+        # Verification: PC terhapus
+        self.assertIsNone(PC.query.get(pc_id))
 
-        # Verification: Category A records are preserved
-        self.assertEqual(PCUptimeLog.query.filter_by(pc_id=pc_id).count(), 1)
-        self.assertEqual(HardwareMonitor.query.filter_by(pc_id=pc_id).count(), 1)
-        self.assertEqual(PCProcess.query.filter_by(pc_id=pc_id).count(), 1)
-        self.assertEqual(MaintenanceTicket.query.filter_by(pc_id=pc_id).count(), 1)
+        # Verification: Category A ikut terhapus
+        self.assertEqual(PCUptimeLog.query.filter_by(pc_id=pc_id).count(), 0)
+        self.assertEqual(HardwareMonitor.query.filter_by(pc_id=pc_id).count(), 0)
+        self.assertEqual(PCProcess.query.filter_by(pc_id=pc_id).count(), 0)
+        self.assertEqual(MaintenanceTicket.query.filter_by(pc_id=pc_id).count(), 0)
 
-        # Verification: Category B (Sesi) keeps its pc_id
+        # Verification: Category B (Sesi) tetap ada tanpa referensi PC
         saved_sesi = Sesi.query.get(sesi.id)
         self.assertIsNotNone(saved_sesi)
-        self.assertEqual(saved_sesi.pc_id, pc_id)
+        self.assertIsNone(saved_sesi.pc_id)
 
         # Verification: Category C (Grup) is preserved
         self.assertIsNotNone(Grup.query.get(self.grup.id))

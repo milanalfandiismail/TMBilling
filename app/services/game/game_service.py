@@ -156,6 +156,23 @@ class GameService:
         return result
 
     @staticmethod
+    def archive(game_id, operator=None):
+        """Sembunyikan game dari katalog tanpa menghapus ikon/riwayatnya."""
+        from app.models import db
+
+        game = GameRepository.get_by_id(game_id)
+        if not game:
+            raise ValueError("Game tidak ditemukan")
+        if not game.aktif:
+            return {"success": True, "message": f"Game '{game.nama}' sudah diarsipkan"}
+        game.aktif = False
+        db.session.commit()
+        op_name = operator if isinstance(operator, str) else "admin"
+        write_log("GAME_ARCHIVE", f"Game '{game.nama}' diarsipkan", user=op_name,
+                  detail_json={"nama": game.nama, "kategori": game.kategori})
+        return {"success": True, "message": f"Game '{game.nama}' berhasil diarsipkan"}
+
+    @staticmethod
     def delete(game_id, operator=None):
         game = GameRepository.get_by_id(game_id)
         if not game:

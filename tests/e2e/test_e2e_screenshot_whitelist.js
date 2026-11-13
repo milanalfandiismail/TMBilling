@@ -108,7 +108,7 @@ async function runScreenshotWhitelistE2ETest(page) {
         const file = path.join(sandboxInstanceDir(), 'uploads', 'screenshots', `${pc5.kode}.png`);
         assert.ok(fs.existsSync(file), 'screenshot PC-05 tidak tersimpan');
 
-        const del = await http(page, 'DELETE', `/api/v1/kasir/pc/${pc5.id}`);
+        const del = await http(page, 'DELETE', `/api/v1/kasir/pc/${pc5.id}`, { confirm: pc5.kode });
         assert.strictEqual(del.status, 200, del.text);
         assert.strictEqual(fs.existsSync(file), false, 'screenshot PC-05 tertinggal setelah PC dihapus');
     });

@@ -359,13 +359,27 @@ const Member = {
         }
     },
 
-    async delete(id) {
+    async delete(id, username) {
         if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
-        const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold">Hapus member ini? Semua data dan sisa waktu akan <span class="text-red-400">dihapus permanen</span>.</p></div>`;
+        const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold">Hapus permanen member <span class="font-mono text-neutral-100">${Utils.escapeHtml(username || '')}</span>? Riwayat sesi & transaksi tetap ada tanpa nama member.</p></div>`;
         Modal.confirm(message, async () => {
             try {
-                await API.member.delete(id);
+                await API.member.delete(id, username);
                 Toast.success('Member berhasil dihapus');
+                this.load();
+            } catch (err) {
+                Toast.error(err.message);
+            }
+        }, null, { requireText: username });
+    },
+
+    async archive(id) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
+        const message = '<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold">Arsipkan member ini? Member dinonaktifkan, saldo & riwayat tetap utuh.</p></div>';
+        Modal.confirm(message, async () => {
+            try {
+                await API.member.archive(id);
+                Toast.success('Member diarsipkan');
                 this.load();
             } catch (err) {
                 Toast.error(err.message);

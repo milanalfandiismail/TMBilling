@@ -18,7 +18,7 @@ def app_ctx(tmp_path):
         db.drop_all()
 
 
-def test_hapus_member_dengan_riwayat_ditolak(app_ctx):
+def test_hapus_member_dengan_riwayat_melepas_referensi(app_ctx):
     grup = Grup(nama="Reguler")
     member = Member(username="budi", nama_lengkap="Budi", grup=grup)
     member.set_password("rahasia123")
@@ -27,8 +27,9 @@ def test_hapus_member_dengan_riwayat_ditolak(app_ctx):
     sesi = Sesi(tipe="member", member_id=member.id, status="selesai")
     db.session.add(sesi)
     db.session.commit()
+    member_id, sesi_id = member.id, sesi.id
 
-    with pytest.raises(ValueError, match="riwayat"):
-        MemberService.delete(member.id, operator="admin")
-    assert db.session.get(Member, member.id) is not None
-    assert db.session.get(Sesi, sesi.id).member_id == member.id
+    MemberService.delete(member_id, operator="admin")
+
+    assert db.session.get(Member, member_id) is None
+    assert db.session.get(Sesi, sesi_id).member_id is None

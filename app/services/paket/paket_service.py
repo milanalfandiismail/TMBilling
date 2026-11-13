@@ -163,16 +163,42 @@ class PaketService:
         return paket
 
     @staticmethod
-    def delete(paket_id, operator="system"):
-        """Hapus paket jika tidak sedang digunakan oleh sesi aktif manapun."""
+    def archive(paket_id, operator="system"):
+        """Nonaktifkan paket agar tidak muncul di pilihan tanpa menghapus riwayatnya."""
         paket = PaketRepository.get_by_id(paket_id)
+        if not paket:
+            raise ValueError("Paket tidak ditemukan")
+
+        nama_paket = paket.nama
+        paket.aktif = False
+        db.session.commit()
+        write_log("ARSIP_PAKET", f"Paket {nama_paket} diarsipkan", user=operator,
+                  detail_json={"nama_paket": nama_paket, "paket_id": paket_id})
+        return True
+
+    @staticmethod
+    def delete(paket_id, operator="system"):
+        """Hapus paket permanen; riwayat sesi/transaksi dilepas, bukan dihapus."""
+        from app.models import Sesi, Transaksi
+        from app.services.write_lock import WRITE_LOCK
+
+        paket = PaketRepository.get_by_id(paket_id)
+        if not paket:
+            raise ValueError("Paket tidak ditemukan")
 
         # PROTEKSI: Jangan hapus paket kalau ada user yang lagi main pake paket ini
         if SesiRepository.get_aktif_by_paket(paket.id):
             raise ValueError("Paket ini sedang dipakai member/guest yang sedang main!")
 
         nama_paket = paket.nama
-        db.session.delete(paket)
-        db.session.commit()
+        try:
+            with WRITE_LOCK:
+                Sesi.query.filter_by(paket_id=paket.id).update({"paket_id": None}, synchronize_session=False)
+                Transaksi.query.filter_by(paket_id=paket.id).update({"paket_id": None}, synchronize_session=False)
+                db.session.delete(paket)
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
         write_log("HAPUS_PAKET", f"Paket {nama_paket} dihapus permanen", user=operator, detail_json={"nama_paket": nama_paket})
         return True

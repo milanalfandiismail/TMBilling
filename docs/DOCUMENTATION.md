@@ -719,6 +719,8 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 
 > Endpoint kesehatan `GET /api/health` terdaftar sebagai blueprint `health_api` (`app/routes/public/health_routes.py`), dan didaftarkan di `app/__init__.py:135`.
 
+> **Arsip vs Hapus Permanen (PC, Paket, Member, User, Game)**: `POST .../<id>/archive` hanya menonaktifkan (`aktif = False`) sehingga datanya bisa dipulihkan lewat edit/registrasi ulang. `DELETE .../<id>` menghapus permanen dan **wajib** menyertakan body `{"confirm": "<kode PC / nama paket / nama member / username / nama game>"}` — tanpa itu route membalas 400. Riwayat transaksi/sesi tidak ikut terhapus; referensinya dilepas (`paket_id`, `member_id`, `user_id`, `pc_id` menjadi NULL) di dalam `WRITE_LOCK`. Pengecualian: `DELETE /api/v1/kasir/user/<id>` tetap ditolak bila user punya riwayat shift karena `shift_record.kasir_id` NOT NULL — nonaktifkan saja.
+
 #### 🔹 Blueprint: auth (3 Endpoint)
 | Method | Endpoint URL | Handler Endpoint |
 | :--- | :--- | :--- |
@@ -791,6 +793,7 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | :--- | :--- | :--- |
 | GET | /api/v1/kasir/game/ | game_kasir.list_games |
 | POST | /api/v1/kasir/game/ | game_kasir.tambah_game |
+| POST | /api/v1/kasir/game/<int:game_id>/archive | game_kasir.arsip_game |
 | DELETE | /api/v1/kasir/game/<int:game_id> | game_kasir.hapus_game |
 | POST, PUT | /api/v1/kasir/game/<int:game_id> | game_kasir.edit_game |
 | GET | /api/v1/kasir/game/kategori | game_kasir.list_kategori |
@@ -842,6 +845,7 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | :--- | :--- | :--- |
 | GET | /api/v1/kasir/member/ | member.list_member |
 | POST | /api/v1/kasir/member/ | member.tambah_member |
+| POST | /api/v1/kasir/member/<int:member_id>/archive | member.archive_member |
 | DELETE | /api/v1/kasir/member/<int:member_id> | member.delete_member |
 | GET | /api/v1/kasir/member/<int:member_id> | member.get_member_detail |
 | PUT | /api/v1/kasir/member/<int:member_id> | member.edit_member |
@@ -933,6 +937,7 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | :--- | :--- | :--- |
 | GET | /api/v1/kasir/paket/ | paket.list_paket |
 | POST | /api/v1/kasir/paket/ | paket.tambah_paket |
+| POST | /api/v1/kasir/paket/<int:paket_id>/archive | paket.arsipkan_paket |
 | DELETE | /api/v1/kasir/paket/<int:paket_id> | paket.hapus_paket |
 | PUT | /api/v1/kasir/paket/<int:paket_id> | paket.edit_paket |
 
@@ -941,6 +946,7 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | :--- | :--- | :--- |
 | GET | /api/v1/kasir/pc/ | pc.list_pc |
 | POST | /api/v1/kasir/pc/ | pc.tambah_pc |
+| POST | /api/v1/kasir/pc/<int:pc_id>/archive | pc.arsipkan_pc |
 | DELETE | /api/v1/kasir/pc/<int:pc_id> | pc.hapus_pc |
 | PUT | /api/v1/kasir/pc/<int:pc_id> | pc.edit_pc |
 | PUT | /api/v1/kasir/pc/<int:pc_id>/position | pc.update_pc_position |
@@ -1070,6 +1076,7 @@ Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/rout
 | :--- | :--- | :--- |
 | GET | /api/v1/kasir/user/ | user.get_all_users |
 | POST | /api/v1/kasir/user/ | user.create_user |
+| POST | /api/v1/kasir/user/<int:user_id>/archive | user.archive_user |
 | DELETE | /api/v1/kasir/user/<int:user_id> | user.delete_user |
 | GET | /api/v1/kasir/user/<int:user_id> | user.get_user |
 | PUT | /api/v1/kasir/user/<int:user_id> | user.update_user |

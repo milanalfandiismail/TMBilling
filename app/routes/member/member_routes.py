@@ -7,6 +7,7 @@ tambah waktu/saldo serta sistem refund paket.
 """
 
 from flask import Blueprint, request, jsonify, session
+from app.models import db
 from app.middleware.auth import login_required, admin_required, shift_required
 from app.services import MemberService
 from app.services import PaketService
@@ -103,12 +104,34 @@ def edit_member(member_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@member_api_bp.route("/<int:member_id>/archive", methods=["POST"])
+@login_required
+@admin_required
+def archive_member(member_id):
+    """Nonaktifkan member tanpa menghapus riwayat."""
+    try:
+        kasir = session.get("kasir_username", "kasir")
+        MemberService.archive(member_id, operator=kasir)
+        return jsonify({"success": True, "message": "Member berhasil diarsipkan"}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @member_api_bp.route("/<int:member_id>", methods=["DELETE"])
 @login_required
 @admin_required
 def delete_member(member_id):
-    """Hapus akun member (Akan gagal jika member sedang aktif bermain)."""
+    """Hapus akun member permanen (riwayat sesi/transaksi dilepas)."""
     try:
+        from app.models import Member
+        member = db.session.get(Member, member_id)
+        if not member:
+            return jsonify({"error": "Member tidak ditemukan"}), 404
+        confirm = str((request.get_json(silent=True) or {}).get("confirm", "")).strip().lower()
+        if confirm != (member.username or "").lower():
+            return jsonify({"error": "Ketik username member untuk konfirmasi hapus permanen"}), 400
         kasir = session.get("kasir_username", "kasir")
         MemberService.delete(member_id, operator=kasir)
         return jsonify({"success": True, "message": "Member berhasil dihapus"}), 200

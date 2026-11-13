@@ -120,10 +120,32 @@ def edit_pc(pc_id):
 @login_required
 @admin_required
 def hapus_pc(pc_id):
-    """Hapus unit PC dari database secara permanen."""
+    """Hapus unit PC permanen (riwayat sesi dilepas, bukan dihapus)."""
     try:
+        from app.models import PC
+        pc = PC.query.get(pc_id)
+        if not pc:
+            return jsonify({"error": "PC tidak ditemukan"}), 404
+        confirm = str((request.get_json(silent=True) or {}).get("confirm", "")).strip().lower()
+        if confirm != (pc.kode or "").lower():
+            return jsonify({"error": "Ketik kode PC untuk konfirmasi hapus permanen"}), 400
         kasir = session.get("kasir_username", "kasir")
         result = PCService.delete(pc_id, operator=kasir)
+        return jsonify({"success": True, "message": result['message']}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@pc_api_bp.route("/<int:pc_id>/archive", methods=["POST"])
+@login_required
+@admin_required
+def arsipkan_pc(pc_id):
+    """Arsipkan PC tanpa menghapus riwayat."""
+    try:
+        kasir = session.get("kasir_username", "kasir")
+        result = PCService.archive(pc_id, operator=kasir)
         return jsonify({"success": True, "message": result['message']}), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400

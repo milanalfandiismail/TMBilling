@@ -152,8 +152,30 @@ class UserService:
         return user.to_dict()
 
     @staticmethod
+    def archive_user(user_id, operator="admin"):
+        """Nonaktifkan user tanpa menghapus riwayat shift/transaksi."""
+        from app.models import db
+
+        user = UserRepository.get_by_id(user_id)
+        if not user:
+            raise ValueError("User tidak ditemukan")
+        if user.role == 'admin' and user.aktif:
+            if UserRepository.count_active_admins() <= 1:
+                raise ValueError("Tidak dapat menonaktifkan satu-satunya Admin tersisa!")
+        if not user.aktif:
+            return {"success": True, "message": "User sudah nonaktif"}
+        user.aktif = False
+        db.session.commit()
+        write_log("ARSIP_USER", f"User:{user.username} dinonaktifkan", user=operator,
+                  detail_json={"username": user.username, "user_id": user_id})
+        return {"success": True, "message": "User berhasil diarsipkan"}
+
+    @staticmethod
     def delete_user(user_id, operator="admin"):
-        """Hapus user (atau nonaktifkan jika berisiko)."""
+        """Hapus user permanen; transaksi dilepas, shift tetap menjadi penjaga."""
+        from app.models import Sesi
+        from app.services.write_lock import WRITE_LOCK
+
         user = UserRepository.get_by_id(user_id)
         if not user:
             raise ValueError("User tidak ditemukan")
@@ -164,13 +186,19 @@ class UserService:
             if admin_count <= 1:
                 raise ValueError("Tidak dapat menghapus satu-satunya Admin tersisa!")
 
-        punya_shift = ShiftRecord.query.filter_by(kasir_id=user.id).first() is not None
-        punya_transaksi = Transaksi.query.filter_by(user_id=user.id).first() is not None
-        if punya_shift or punya_transaksi:
-            raise ValueError("User punya riwayat shift/transaksi. Nonaktifkan saja.")
+        # ShiftRecord.kasir_id NOT NULL, jadi user ber-shift tidak bisa dilepas referensinya
+        if ShiftRecord.query.filter_by(kasir_id=user.id).first() is not None:
+            raise ValueError("User punya riwayat shift. Nonaktifkan saja.")
 
-        db.session.delete(user)
-        db.session.commit()
+        try:
+            with WRITE_LOCK:
+                Transaksi.query.filter_by(user_id=user.id).update({"user_id": None}, synchronize_session=False)
+                Sesi.query.filter_by(user_id=user.id).update({"user_id": None}, synchronize_session=False)
+                db.session.delete(user)
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
         write_log("HAPUS_USER", f"User:{user.username} dihapus secara permanen", user=operator, detail_json={"username": user.username})
         return {"success": True, "message": "User berhasil dihapus"}
 

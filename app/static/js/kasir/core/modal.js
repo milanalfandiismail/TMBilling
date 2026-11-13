@@ -67,7 +67,17 @@ const Modal = {
         }
     },
 
-    confirm(message, onConfirm, onCancel) {
+    confirm(message, onConfirm, onCancel, { requireText = null } = {}) {
+        const typedOk = () => {
+            if (!requireText) return true;
+            const el = document.getElementById('modal-confirm-input');
+            return (el ? el.value : '').trim() === requireText;
+        };
+        const inputHtml = requireText ? `
+                <div class="mb-4">
+                    <label class="block text-[11px] text-neutral-400 mb-1 font-mono">Ketik <span class="text-neutral-200 font-bold">${requireText}</span> untuk melanjutkan</label>
+                    <input id="modal-confirm-input" autocomplete="off" class="w-full bg-[#0c0c0c] border border-[#262626] focus:border-neutral-500 rounded px-3 py-2 text-sm text-neutral-100 font-mono outline-none">
+                </div>` : '';
         const content = `
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-5 sm:p-6 max-w-md lg:max-w-lg xl:max-w-xl w-[calc(100%-2rem)] mx-auto shadow-2xl flex flex-col max-h-[90vh]">
                 <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[#1c1c1c] shrink-0">
@@ -76,7 +86,7 @@ const Modal = {
                     </div>
                     <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider font-mono">Konfirmasi Aksi</h3>
                 </div>
-                <div class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 mb-5 leading-relaxed flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">${message}</div>
+                <div class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 mb-5 leading-relaxed flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">${message}</div>${inputHtml}
                 <div class="flex gap-3 justify-end pt-3 border-t border-[#1c1c1c] shrink-0">
                     <button id="modal-cancel-btn" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Batal</button>
                     <button id="modal-confirm-btn" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
@@ -93,6 +103,10 @@ const Modal = {
 
             if (e.key.toLowerCase() === 'e') {
                 e.preventDefault();
+                if (!typedOk()) {
+                    document.getElementById('modal-confirm-input')?.focus();
+                    return;
+                }
                 if (onConfirm && typeof onConfirm === 'function') {
                     const res = await onConfirm();
                     if (res === false) return;
@@ -119,6 +133,10 @@ const Modal = {
 
             if (confirmBtn) {
                 confirmBtn.onclick = async () => {
+                    if (!typedOk()) {
+                        document.getElementById('modal-confirm-input')?.focus();
+                        return;
+                    }
                     if (onConfirm && typeof onConfirm === 'function') {
                         const res = await onConfirm();
                         if (res === false) return;

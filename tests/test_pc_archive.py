@@ -28,10 +28,27 @@ def test_pc_dengan_riwayat_diarsipkan_bukan_dihapus(app):
         db.session.commit()
         pc_id, sesi_id = pc.id, sesi.id
 
-        PCService.delete(pc_id, operator="admin")
+        PCService.archive(pc_id, operator="admin")
 
         assert db.session.get(PC, pc_id).aktif is False
         assert db.session.get(Sesi, sesi_id).pc_id == pc_id
+
+
+def test_purge_pc_berriwayat_melepas_referensi_sesi(app):
+    with app.app_context():
+        grup = Grup.query.first()
+        pc = PC(kode="PURGE-1", nama="Purge", grup_id=grup.id, aktif=True)
+        db.session.add(pc)
+        db.session.commit()
+        sesi = Sesi(tipe="guest", nama_guest="Lama", pc_id=pc.id, status="selesai")
+        db.session.add(sesi)
+        db.session.commit()
+        pc_id, sesi_id = pc.id, sesi.id
+
+        PCService.delete(pc_id, operator="admin")
+
+        assert db.session.get(PC, pc_id) is None
+        assert db.session.get(Sesi, sesi_id).pc_id is None
 
 
 def test_kode_pc_arsip_bisa_didaftarkan_lagi(app):

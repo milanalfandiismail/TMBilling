@@ -75,7 +75,10 @@ const PCGrid = {
                             <button onclick="PC.edit(${pc.id})" class="p-1 rounded bg-[#161616] text-neutral-300 hover:text-white" title="Edit PC">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                             </button>
-                            <button onclick="PC.delete(${pc.id})" class="p-1 rounded bg-[#161616] text-red-400 hover:text-red-300" title="Hapus PC">
+                            <button onclick="PC.archive(${pc.id})" class="p-1 rounded bg-[#161616] text-amber-400 hover:text-amber-300" title="Arsipkan PC">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7v13H4V7m16 0H4m16 0l-1.5-3h-13L4 7m5 5v5m6-5v5"></path></svg>
+                            </button>
+                            <button onclick="PC.delete(${pc.id}, '${Utils.escapeHtml(pc.kode || '')}')" class="p-1 rounded bg-[#161616] text-red-400 hover:text-red-300" title="Hapus permanen PC">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
                         </div>`}
@@ -90,7 +93,10 @@ const PCGrid = {
                         <button onclick="PC.edit(${pc.id})" class="w-7 h-7 2xl:w-8 2xl:h-8 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center" title="Edit PC">
                             <svg class="w-3.5 h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                         </button>
-                        <button onclick="PC.delete(${pc.id})" class="w-7 h-7 2xl:w-8 2xl:h-8 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center" title="Hapus PC">
+                        <button onclick="PC.archive(${pc.id})" class="w-7 h-7 2xl:w-8 2xl:h-8 rounded bg-[#171717] border border-[#262626] text-amber-400 hover:bg-amber-500 hover:text-black transition-colors flex items-center justify-center" title="Arsipkan PC">
+                            <svg class="w-3.5 h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7v13H4V7m16 0H4m16 0l-1.5-3h-13L4 7m5 5v5m6-5v5"></path></svg>
+                        </button>
+                        <button onclick="PC.delete(${pc.id}, '${Utils.escapeHtml(pc.kode || '')}')" class="w-7 h-7 2xl:w-8 2xl:h-8 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center" title="Hapus permanen PC">
                             <svg class="w-3.5 h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </div>`}

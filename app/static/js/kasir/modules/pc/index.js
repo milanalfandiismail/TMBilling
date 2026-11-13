@@ -375,15 +375,28 @@ const PC = {
         }
     },
 
-    async delete(id) {
-        const message = '<div class="text-center"><p class="text-xs lg:text-base text-neutral-300 font-semibold mb-1">Hapus PC ini secara permanen?</p><p class="text-[11px] lg:text-sm text-neutral-500">Seluruh data uptime log, hardware telemetry, proses, dan tiket perawatan unit ini akan dihapus bersih.</p></div>';
+    async delete(id, kode) {
+        const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-300 font-semibold mb-1">Hapus permanen PC <span class="font-mono font-bold text-neutral-100">${Utils.escapeHtml(kode || '')}</span>?</p><p class="text-[11px] lg:text-sm text-neutral-500">Unit ini dihapus bersih; riwayat sesi tetap ada tanpa referensi PC.</p></div>`;
         Modal.confirm(message, async () => {
             try {
-                const res = await API.pc.delete(id);
+                const res = await API.pc.delete(id, kode);
                 Toast.success(res.message || 'PC berhasil dihapus');
                 this.load();
             } catch (err) {
                 Toast.error(err.message || 'Gagal menghapus PC');
+            }
+        }, null, { requireText: kode });
+    },
+
+    async archive(id) {
+        const message = '<div class="text-center"><p class="text-xs lg:text-base text-neutral-300 font-semibold mb-1">Arsipkan PC ini?</p><p class="text-[11px] lg:text-sm text-neutral-500">PC disembunyikan dari daftar aktif, seluruh riwayat tetap utuh.</p></div>';
+        Modal.confirm(message, async () => {
+            try {
+                const res = await API.pc.archive(id);
+                Toast.success(res.message || 'PC diarsipkan');
+                this.load();
+            } catch (err) {
+                Toast.error(err.message || 'Gagal mengarsipkan PC');
             }
         });
     },

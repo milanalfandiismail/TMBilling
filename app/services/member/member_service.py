@@ -232,15 +232,32 @@ class MemberService:
         return member
 
     @staticmethod
+    def archive(member_id, operator="system"):
+        """Nonaktifkan member tanpa menghapus riwayat sesi/transaksi."""
+        member = MemberRepository.get_by_id(member_id)
+        if not member:
+            raise ValueError("Member tidak ditemukan")
+        if SesiRepository.get_aktif_by_member(member.id):
+            raise ValueError("Member sedang bermain, tidak bisa diarsipkan")
+        if not member.aktif:
+            return True
+        member.aktif = False
+        db.session.commit()
+        write_log("ARSIP_MEMBER", f"Member:{member.username} diarsipkan", user=operator,
+                  detail_json={"username": member.username, "member_id": member_id})
+        return True
+
+    @staticmethod
     def delete(member_id, operator="system"):
-        """Hapus member secara permanen (Hanya jika tidak sedang main)."""
+        """Hapus member permanen; riwayat sesi/transaksi dilepas, bukan dihapus."""
+        from app.models import Sesi, Transaksi
+        from app.services.write_lock import WRITE_LOCK
+
         member = MemberRepository.get_by_id(member_id)
         if not member:
             raise ValueError("Member tidak ditemukan")
         if SesiRepository.get_aktif_by_member(member.id):
             raise ValueError("Member sedang bermain, tidak bisa dihapus")
-        if SesiRepository.has_history_for_member(member.id) or TransaksiRepository.has_history_for_member(member.id):
-            raise ValueError("Member punya riwayat sesi/transaksi. Nonaktifkan saja, jangan hapus.")
         
         # Ambil data sebelum objek dihapus dari database
         username = member.username
@@ -259,8 +276,15 @@ class MemberService:
                 self.username = username
         dummy_member = DummyMember(username)
 
-        db.session.delete(member)
-        db.session.commit()
+        try:
+            with WRITE_LOCK:
+                Sesi.query.filter_by(member_id=member.id).update({"member_id": None}, synchronize_session=False)
+                Transaksi.query.filter_by(member_id=member.id).update({"member_id": None}, synchronize_session=False)
+                db.session.delete(member)
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
         
         write_log("DELETE_MEMBER", f"Member:{username} dihapus", user=operator, detail_json=detail_member)
         

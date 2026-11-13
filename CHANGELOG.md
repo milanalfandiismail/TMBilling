@@ -8,6 +8,12 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 
+### Arsip dan Hapus Permanen Terpisah (2026-11-13)
+- **Dua Aksi Berbeda untuk PC, Paket, Member, User, dan Game**: `POST .../<id>/archive` menonaktifkan tanpa menghapus (`aktif = False`), sedangkan `DELETE .../<id>` kini benar-benar menghapus dan **wajib** body `{"confirm": "<kode/nama/username>"}`; konfirmasi salah atau kosong dibalas 400.
+- **Riwayat Tidak Ikut Terhapus**: purge melepas referensi (`sesi.pc_id`, `sesi.paket_id`, `sesi.member_id`, `sesi.user_id`, `transaksi.paket_id`, `transaksi.member_id`, `transaksi.user_id`) menjadi NULL di dalam `WRITE_LOCK`, jadi laporan dan struk lama tetap utuh nominalnya.
+- **UI Konfirmasi Ketik Nama**: `Modal.confirm` menerima opsi `requireText`; tombol arsip (amber) dan hapus permanen kini terpisah di tabel PC, Paket, Member, User, Game.
+- **Pengecualian User Ber-shift**: `DELETE /api/v1/kasir/user/<id>` tetap ditolak bila user punya riwayat shift (`shift_record.kasir_id` NOT NULL) — gunakan arsip.
+
 ### Perbaikan Migrasi Skema Saat Update (2026-11-12)
 - **Update Gagal pada Instalasi Baru**: `install_scripts/run_migration.py` tidak lagi memutar ulang seluruh migrasi pada database hasil `db.create_all()`; bila skema sudah identik dengan metadata model, revisi langsung di-`stamp` ke `head` sehingga `updater.bat` tidak berhenti di `:fail` karena `duplicate column name: operator`.
 - **Migrasi Idempoten**: migrasi `f3a1b2c4d5e6` (kolom `operator`) dan `b7e2c91a4f01` (kolom peripheral/CCTV) memeriksa kolom yang sudah ada sebelum menambah/menghapus, dan migrasi `8f7e6d5c4b3a` tidak lagi me-recreate tabel `game` hanya untuk melebarkan `kategori` (SQLite tidak menegakkan panjang `VARCHAR`).

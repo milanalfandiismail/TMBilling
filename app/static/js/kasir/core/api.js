@@ -82,7 +82,8 @@ const API = {
         get: (id) => API.request(`/api/v1/kasir/user/${id}`),
         create: (data) => API.request('/api/v1/kasir/user/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/v1/kasir/user/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: (id) => API.request(`/api/v1/kasir/user/${id}`, { method: 'DELETE' }),
+        delete: (id, confirm) => API.request(`/api/v1/kasir/user/${id}`, { method: 'DELETE', body: JSON.stringify({ confirm }) }),
+        archive: (id) => API.request(`/api/v1/kasir/user/${id}/archive`, { method: 'POST' }),
         resetKuota: (id) => API.request(`/api/v1/kasir/user/${id}/reset-kuota`, { method: 'POST' })
     },
 
@@ -116,7 +117,8 @@ const API = {
         getPaket: (memberId) => API.request(`/api/v1/kasir/member/${memberId}/paket`),
         create: data => API.request('/api/v1/kasir/member/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/v1/kasir/member/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: id => API.request(`/api/v1/kasir/member/${id}`, { method: 'DELETE' }),
+        delete: (id, confirm) => API.request(`/api/v1/kasir/member/${id}`, { method: 'DELETE', body: JSON.stringify({ confirm }) }),
+        archive: id => API.request(`/api/v1/kasir/member/${id}/archive`, { method: 'POST' }),
         tambahWaktu: (memberId, paketIdOrPayload, qty = 1, metodePembayaran = 'Tunai') => {
             if (paketIdOrPayload && typeof paketIdOrPayload === 'object') {
                 const payload = { metode_pembayaran: metodePembayaran, ...paketIdOrPayload };
@@ -147,7 +149,8 @@ const API = {
         },
         create: data => API.request('/api/v1/kasir/paket/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/v1/kasir/paket/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: id => API.request(`/api/v1/kasir/paket/${id}`, { method: 'DELETE' })
+        delete: (id, confirm) => API.request(`/api/v1/kasir/paket/${id}`, { method: 'DELETE', body: JSON.stringify({ confirm }) }),
+        archive: id => API.request(`/api/v1/kasir/paket/${id}/archive`, { method: 'POST' })
     },
 
     // 🔗 KELOLA PC
@@ -165,7 +168,8 @@ const API = {
         },
         create: data => API.request('/api/v1/kasir/pc/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/v1/kasir/pc/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: id => API.request(`/api/v1/kasir/pc/${id}`, { method: 'DELETE' }),
+        delete: (id, confirm) => API.request(`/api/v1/kasir/pc/${id}`, { method: 'DELETE', body: JSON.stringify({ confirm }) }),
+        archive: id => API.request(`/api/v1/kasir/pc/${id}/archive`, { method: 'POST' }),
         batch: data => API.request('/api/v1/kasir/pc/batch', { method: 'POST', body: JSON.stringify(data) }),
         wol: (pcIds) => API.request('/api/v1/kasir/pc/wol', { method: 'POST', body: JSON.stringify({ pc_ids: pcIds }) }),
         wolMac: (macAddresses) => API.request('/api/v1/kasir/pc/wol', { method: 'POST', body: JSON.stringify({ mac_addresses: macAddresses }) })

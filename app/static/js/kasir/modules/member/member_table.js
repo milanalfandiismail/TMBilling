@@ -119,7 +119,10 @@ const MemberTable = {
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                             </button>
                                             ${(window.App && App.user && App.user.role === 'kasir') ? '' : `
-                                            <button onclick="Member.delete(${m.id})" class="remote-hide-action w-7 h-7 sm:w-8 sm:h-8 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center" title="Hapus">
+                                            <button onclick="Member.archive(${m.id})" class="remote-hide-action w-7 h-7 sm:w-8 sm:h-8 rounded bg-[#171717] border border-[#262626] text-amber-400 hover:bg-amber-500 hover:text-black transition-colors flex items-center justify-center" title="Arsipkan">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7v13H4V7m16 0H4m16 0l-1.5-3h-13L4 7m5 5v5m6-5v5"></path></svg>
+                                            </button>
+                                            <button onclick="Member.delete(${m.id}, '${Utils.escapeHtml(m.username || '')}')" class="remote-hide-action w-7 h-7 sm:w-8 sm:h-8 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center" title="Hapus permanen">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                             </button>`}
                                         </div>

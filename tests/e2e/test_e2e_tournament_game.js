@@ -471,8 +471,10 @@ async function runTournamentGameE2ETest(page) {
             return body && body.innerText.includes(nama);
         }, state.gameNameEdited, { label: 'baris hasil edit tampil sebelum dihapus' });
 
-        page.once('dialog', (dialog) => dialog.accept());
-        await page.click('#game-table-body button[title="Hapus"]');
+        await page.click('#game-table-body button[title="Hapus permanen"]');
+        await page.waitForSelector('#modal-confirm-input', { state: 'visible', timeout: 5000 });
+        await page.fill('#modal-confirm-input', state.gameNameEdited);
+        await page.click('#modal-confirm-btn');
 
         await dbWait(
             'SELECT id FROM game WHERE id = ?',

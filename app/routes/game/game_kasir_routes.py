@@ -77,11 +77,32 @@ def edit_game(game_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@game_kasir_api_bp.route("/<int:game_id>/archive", methods=["POST"])
+@login_required
+@admin_required
+def arsip_game(game_id):
+    try:
+        kasir = session.get("kasir_username", "admin")
+        result = GameService.archive(game_id, operator=kasir)
+        return jsonify(result), 200
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @game_kasir_api_bp.route("/<int:game_id>", methods=["DELETE"])
 @login_required
 @admin_required
 def hapus_game(game_id):
     try:
+        from app.models import Game, db
+        game = db.session.get(Game, game_id)
+        if not game:
+            return jsonify({"success": False, "error": "Game tidak ditemukan"}), 404
+        confirm = str((request.get_json(silent=True) or {}).get("confirm", "")).strip().lower()
+        if confirm != (game.nama or "").lower():
+            return jsonify({"success": False, "error": "Ketik nama game untuk konfirmasi hapus permanen"}), 400
         kasir = session.get("kasir_username", "admin")
         result = GameService.delete(game_id, operator=kasir)
         return jsonify(result), 200
