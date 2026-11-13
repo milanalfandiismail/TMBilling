@@ -229,8 +229,8 @@ const GameManagement = {
             const iconUrl = g.icon_url && window.API ? API.resolveMediaUrl(g.icon_url) : (g.icon_url || defaultIcon);
             const isApp = (g.tipe || 'game').toLowerCase() === 'aplikasi';
             const tipeBadge = isApp 
-                ? '<span class="px-1.5 py-0.5 rounded text-[8.5px] sm:text-[9px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 uppercase">Aplikasi</span>'
-                : '<span class="px-1.5 py-0.5 rounded text-[8.5px] sm:text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">Game</span>';
+                ? '<span class="px-1.5 py-0.5 rounded text-[10px] 2xl:text-xs font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 uppercase">Aplikasi</span>'
+                : '<span class="px-1.5 py-0.5 rounded text-[10px] 2xl:text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">Game</span>';
 
             const katList = Array.isArray(g.kategori_list) && g.kategori_list.length > 0 
                 ? g.kategori_list 
@@ -238,7 +238,7 @@ const GameManagement = {
 
             let tagsHtml = '';
             if (katList.length > 0) {
-                tagsHtml = katList.map(tag => `<span class="px-1.5 py-0.5 bg-[#141414] border border-[#1c1c1c] rounded text-[9px] sm:text-[10px] text-neutral-300 font-mono inline-block truncate max-w-[120px]">${tag}</span>`).join(' ');
+                tagsHtml = katList.map(tag => `<span class="px-1.5 py-0.5 bg-[#141414] border border-[#1c1c1c] rounded text-[10px] 2xl:text-xs text-neutral-300 font-mono inline-block truncate max-w-[120px]">${tag}</span>`).join(' ');
             } else {
                 tagsHtml = '<span class="text-neutral-600 text-xs">-</span>';
             }
@@ -248,7 +248,7 @@ const GameManagement = {
                 html += `
                     <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs">
                         <!-- Col 1: Cover + Nama + Tipe (50%) -->
-                        <td class="px-2 py-1.5 align-middle overflow-hidden">
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 align-middle overflow-hidden">
                             <div class="flex items-center gap-2">
                                 <img src="${iconUrl}" alt="${g.nama}" 
                                     class="w-8 h-11 rounded object-cover border border-[#1c1c1c] bg-[#141414] shadow-sm flex-shrink-0 ${g.icon ? 'cursor-pointer' : ''}" 
@@ -261,28 +261,28 @@ const GameManagement = {
                             </div>
                         </td>
                         <!-- Col 2: Kategori & Status (30%) -->
-                        <td class="px-2 py-1.5 align-middle overflow-hidden">
-                            <div class="truncate max-w-[100px] text-[9.5px] text-neutral-400 leading-tight">${katList.slice(0, 2).join(', ') || '-'}</div>
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 align-middle overflow-hidden">
+                            <div class="truncate max-w-[100px] text-[10px] 2xl:text-xs text-neutral-400 leading-tight">${katList.slice(0, 2).join(', ') || '-'}</div>
                             <div class="mt-0.5">
-                                <span class="font-mono text-[9px] font-bold ${g.aktif ? 'text-emerald-400' : 'text-neutral-500'}">
+                                <span class="font-mono text-[10px] font-bold ${g.aktif ? 'text-emerald-400' : 'text-neutral-500'}">
                                     ${g.aktif ? '● AKTIF' : '○ NONAKTIF'}
                                 </span>
                             </div>
                         </td>
                         <!-- Col 3: Aksi (20% text-center) -->
-                        <td class="px-1.5 py-1.5 text-center align-middle overflow-hidden remote-hide-action">
+                        <td class="px-2 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 text-center align-middle overflow-hidden remote-hide-action">
                             <div class="flex items-center justify-center gap-1">
                                 <button onclick="GameManagement.openEditModal(${JSON.stringify(g).replace(/"/g, '&quot;')})" 
-                                    class="w-6 h-6 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center shadow-sm" title="Edit">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    class="w-6 h-6 sm:w-7 sm:h-7 2xl:w-8 2xl:h-8 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center shadow-sm" title="Edit">
+                                    <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 </button>
                                 <button onclick="GameManagement.archiveGame(${g.id})" 
-                                    class="w-6 h-6 rounded bg-[#171717] border border-[#262626] text-amber-400 hover:bg-amber-500 hover:text-black transition-colors flex items-center justify-center shadow-sm" title="Arsipkan">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7v13H4V7m16 0H4m16 0l-1.5-3h-13L4 7m5 5v5m6-5v5"></path></svg>
+                                    class="w-6 h-6 sm:w-7 sm:h-7 2xl:w-8 2xl:h-8 rounded bg-[#171717] border border-[#262626] text-amber-400 hover:bg-amber-500 hover:text-black transition-colors flex items-center justify-center shadow-sm" title="Arsipkan">
+                                    <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7v13H4V7m16 0H4m16 0l-1.5-3h-13L4 7m5 5v5m6-5v5"></path></svg>
                                 </button>
                                 <button onclick="GameManagement.deleteGame(${g.id}, '${g.nama.replace(/'/g, "\\'")}')" 
-                                    class="w-6 h-6 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center shadow-sm" title="Hapus permanen">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    class="w-6 h-6 sm:w-7 sm:h-7 2xl:w-8 2xl:h-8 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center shadow-sm" title="Hapus permanen">
+                                    <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
                             </div>
                         </td>
@@ -291,9 +291,9 @@ const GameManagement = {
             } else {
                 // ===== DESKTOP / TABLET (>= 768px): 5 Kolom Proporsional =====
                 html += `
-                    <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs lg:text-[10px] xl:text-xs 2xl:text-sm">
+                    <tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs 2xl:text-sm">
                         <!-- Col 1: Cover + Nama + Path (36%) -->
-                        <td class="px-2.5 py-1.5 align-middle overflow-hidden">
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 align-middle overflow-hidden">
                             <div class="flex items-center gap-3">
                                 <img src="${iconUrl}" alt="${g.nama}" 
                                     class="w-8 h-11 xl:w-9 xl:h-12 rounded object-cover border border-[#1c1c1c] bg-[#141414] shadow-sm flex-shrink-0 ${g.icon ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}" 
@@ -301,46 +301,46 @@ const GameManagement = {
                                     ${g.icon ? `onclick="GameManagement.openLightbox('${iconUrl}', '${g.nama.replace(/'/g, "\\'")}', '${(g.tipe || 'game')}', '${(g.kategori || '').replace(/'/g, "\\'")}')" title="Klik untuk lihat ukuran penuh"` : ''}>
                                 <div class="min-w-0 flex-1">
                                     <div class="font-bold text-neutral-100 text-xs 2xl:text-sm truncate">${g.nama}</div>
-                                    <div class="text-[9.5px] xl:text-[10px] 2xl:text-xs text-neutral-500 font-mono mt-0.5 truncate max-w-xs" title="${g.exe_path || '-'}">${g.exe_path || '-'}</div>
+                                    <div class="text-[10px] 2xl:text-xs text-neutral-500 font-mono mt-0.5 truncate max-w-xs" title="${g.exe_path || '-'}">${g.exe_path || '-'}</div>
                                 </div>
                             </div>
                         </td>
                         <!-- Col 2: Jenis (w-20 text-center) -->
-                        <td class="px-2 py-1.5 align-middle text-center overflow-hidden">
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 align-middle text-center overflow-hidden">
                             ${tipeBadge}
                         </td>
                         <!-- Col 3: Kategori / Genre (26%) -->
-                        <td class="px-2.5 py-1.5 align-middle overflow-hidden">
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 align-middle overflow-hidden">
                             <div class="flex flex-wrap gap-1 items-center">
                                 ${tagsHtml}
                             </div>
                         </td>
                         <!-- Col 4: Publik (w-16 text-center) -->
-                        <td class="px-2 py-1.5 align-middle text-center overflow-hidden">
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 align-middle text-center overflow-hidden">
                             <span class="font-bold text-xs ${g.aktif ? 'text-emerald-400' : 'text-neutral-500'}">
                                 ${g.aktif ? 'YA' : 'TIDAK'}
                             </span>
                         </td>
                         <!-- Col 5: Aksi (w-24 text-center) -->
-                        <td class="px-2 py-1.5 align-middle text-center overflow-hidden remote-hide-action">
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 align-middle text-center overflow-hidden remote-hide-action">
                             <div class="flex justify-center items-center gap-1.5">
                                 ${g.icon ? `
                                 <button onclick="GameManagement.openLightbox('${iconUrl}', '${g.nama.replace(/'/g, "\\'")}', '${(g.tipe || 'game')}', '${(g.kategori || '').replace(/'/g, "\\'")}')" 
-                                    class="w-6 h-6 xl:w-7 xl:h-7 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center shadow-sm" title="Lihat Fullscreen">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    class="w-6 h-6 sm:w-7 sm:h-7 2xl:w-8 2xl:h-8 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center shadow-sm" title="Lihat Fullscreen">
+                                    <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                 </button>
                                 ` : ''}
                                 <button onclick="GameManagement.openEditModal(${JSON.stringify(g).replace(/"/g, '&quot;')})" 
-                                    class="w-6 h-6 xl:w-7 xl:h-7 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center shadow-sm" title="Edit">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    class="w-6 h-6 sm:w-7 sm:h-7 2xl:w-8 2xl:h-8 rounded bg-[#171717] border border-[#262626] text-neutral-300 hover:bg-neutral-100 hover:text-black transition-colors flex items-center justify-center shadow-sm" title="Edit">
+                                    <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 </button>
                                 <button onclick="GameManagement.archiveGame(${g.id})" 
-                                    class="w-6 h-6 xl:w-7 xl:h-7 rounded bg-[#171717] border border-[#262626] text-amber-400 hover:bg-amber-500 hover:text-black transition-colors flex items-center justify-center shadow-sm" title="Arsipkan">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7v13H4V7m16 0H4m16 0l-1.5-3h-13L4 7m5 5v5m6-5v5"></path></svg>
+                                    class="w-6 h-6 sm:w-7 sm:h-7 2xl:w-8 2xl:h-8 rounded bg-[#171717] border border-[#262626] text-amber-400 hover:bg-amber-500 hover:text-black transition-colors flex items-center justify-center shadow-sm" title="Arsipkan">
+                                    <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7v13H4V7m16 0H4m16 0l-1.5-3h-13L4 7m5 5v5m6-5v5"></path></svg>
                                 </button>
                                 <button onclick="GameManagement.deleteGame(${g.id}, '${g.nama.replace(/'/g, "\\'")}')" 
-                                    class="w-6 h-6 xl:w-7 xl:h-7 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center shadow-sm" title="Hapus permanen">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    class="w-6 h-6 sm:w-7 sm:h-7 2xl:w-8 2xl:h-8 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center shadow-sm" title="Hapus permanen">
+                                    <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
                             </div>
                         </td>

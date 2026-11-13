@@ -67,9 +67,9 @@ const Arsip = {
 
         const button = (id, arg, label, color, on) => `
             <button type="button" id="${id}" ${arg === null ? '' : `data-grup="${arg}"`} onclick="Arsip.switchGrup(${arg})"
-                class="px-2.5 sm:px-3 py-1.5 rounded-md text-[11px] 2xl:text-xs font-bold tracking-wide uppercase whitespace-nowrap transition-colors border flex items-center gap-1.5 ${on
-                    ? 'bg-neutral-100 text-black font-bold border-neutral-100'
-                    : 'text-neutral-400 hover:text-neutral-200 border-transparent hover:bg-[#171717]'}">
+                class="px-2.5 sm:px-3 py-1.5 rounded text-xs font-bold tracking-wide uppercase whitespace-nowrap transition-colors border flex items-center gap-1.5 ${on
+                    ? 'bg-[#161616] text-white border-neutral-400 shadow-sm'
+                    : 'bg-[#0a0a0a] text-neutral-400 border-[#1f1f1f] hover:border-[#333] hover:text-neutral-200'}">
                 ${color ? `<span class="w-1.5 h-1.5 rounded-full" style="background-color: ${color};"></span>` : ''}
                 ${ArsipList.esc(label)}
             </button>`;
@@ -94,27 +94,15 @@ const Arsip = {
             const count = (data[k.key] || []).filter(i => ArsipList.match(i)).length;
             const on = k.key === this.active;
             return `<button type="button" id="arsip-pill-${k.key}" onclick="Arsip.switchKategori('${k.key}')"
-                class="px-2.5 sm:px-3 py-1.5 rounded-md text-[11px] 2xl:text-xs font-bold uppercase tracking-wide whitespace-nowrap border flex items-center gap-1.5 shrink-0 ${on ? 'bg-neutral-100 text-black border-neutral-100' : 'bg-[#0f0f0f] text-neutral-400 border-[#1f1f1f] hover:text-neutral-200 hover:border-[#333]'}">
-                ${k.label} <span id="arsip-count-${k.key}" class="px-1.5 py-0.5 rounded text-[9px] font-mono ${on ? 'bg-black/15 text-black' : 'bg-[#1a1a1a] text-neutral-500'}">${count}</span>
+                class="px-2.5 sm:px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wide whitespace-nowrap border flex items-center gap-1.5 shrink-0 ${on ? 'bg-[#161616] text-white border-neutral-400 shadow-sm' : 'bg-[#0a0a0a] text-neutral-400 border-[#1f1f1f] hover:border-[#333] hover:text-neutral-200'}">
+                ${k.label} <span id="arsip-count-${k.key}" class="px-1.5 py-0.5 rounded text-[10px] 2xl:text-xs font-mono ${on ? 'bg-black/15 text-black' : 'bg-[#1a1a1a] text-neutral-500'}">${count}</span>
             </button>`;
         }).join('');
     },
 
     renderPanel() {
         ArsipList.setGrup(this.grupFilter);
-        const kat = this.kategori.find(k => k.key === this.active);
-        const title = document.getElementById('arsip-panel-title');
-        if (title) title.textContent = kat ? kat.label : this.active;
-        const target = document.getElementById('arsip-panel-target');
-        if (target) {
-            const g = (this.grupList || []).find(x => Number(x.id) === Number(this.grupFilter));
-            target.textContent = g ? 'GRUP: ' + String(g.nama).toUpperCase() : 'SEMUA GRUP';
-        }
-        ArsipList.mount({
-            res: this.active,
-            container: 'arsip-panel',
-            items: (this.data || {})[this.active] || []
-        });
+        ArsipList.mount({ res: this.active, container: 'arsip-panel', items: (this.data || {})[this.active] || [] });
         ArsipList.onChanged(() => this.load());
     }
 };

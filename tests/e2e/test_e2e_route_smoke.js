@@ -325,7 +325,7 @@ async function runRouteSmokeE2ETest(page) {
     await page.waitForSelector('#arsip-pill-pc', { state: 'visible', timeout: 10000 });
     await page.click('#arsip-pill-pc');
     const pillClass = await page.getAttribute('#arsip-pill-pc', 'class');
-    assert.ok(/bg-neutral-100/.test(pillClass || ''), 'pill PC harus aktif setelah diklik');
+    assert.ok(/bg-\[#161616\]/.test(pillClass || ''), 'pill PC harus aktif setelah diklik');
     const panelText = await page.locator('#arsip-panel').innerText();
     assert.ok(!panelText.includes('Grup PC / Zona'), 'panel PC tidak boleh menampilkan seksi grup');
   });
@@ -463,7 +463,7 @@ async function runRouteSmokeE2ETest(page) {
     const grupPill = page.locator(`#arsip-grup-pills button[data-grup="${paket.grup_id}"]`);
     await grupPill.click();
     await page.waitForTimeout(300);
-    assert.ok(/bg-neutral-100/.test(await grupPill.getAttribute('class') || ''), 'pill grup terpilih harus ditandai');
+    assert.ok(/bg-\[#161616\]/.test(await grupPill.getAttribute('class') || ''), 'pill grup terpilih harus ditandai');
     assert.ok(await page.locator('#arsip-panel').isVisible());
 
     await page.click('#arsip-pill-user');

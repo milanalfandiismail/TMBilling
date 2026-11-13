@@ -1,34 +1,24 @@
 <!-- ===== TAB: ARSIP ===== -->
 <div id="tab-arsip" class="tab-content hidden space-y-2 sm:space-y-2.5">
-    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-lg overflow-hidden">
-        <div class="flex flex-wrap items-center gap-2 sm:gap-3 px-2.5 sm:px-3 xl:px-4 py-2.5 sm:py-3 border-b border-[#1c1c1c] bg-[#0f0f0f]">
-            <div class="min-w-0 flex-1">
+    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 xl:p-3.5 2xl:p-5 space-y-2.5 2xl:space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 2xl:pb-3 border-b border-[#1c1c1c]">
+            <div>
                 <h3 class="text-xs sm:text-sm 2xl:text-base font-bold text-neutral-100 uppercase tracking-wider">Data Diarsipkan</h3>
-                <p class="text-[10px] sm:text-xs 2xl:text-sm text-neutral-500 mt-0.5">Pulihkan data ke daftar aktif atau hapus permanen</p>
+                <p class="text-[10px] sm:text-xs 2xl:text-sm text-neutral-500">Data yang dinonaktifkan; pulihkan atau hapus permanen</p>
             </div>
-            <span id="arsip-total-badge" class="px-2 py-1 rounded bg-[#171717] border border-[#262626] text-[10px] font-mono font-bold text-neutral-300 shrink-0">0 ITEM</span>
-            <button onclick="Arsip.load()"
-                class="px-2.5 sm:px-3 2xl:px-4 py-1.5 2xl:py-2 bg-[#171717] border border-[#262626] hover:bg-[#222222] text-neutral-200 text-xs 2xl:text-sm font-bold rounded transition-colors shrink-0">
-                Muat Ulang
-            </button>
+            <div class="flex items-center gap-2 shrink-0">
+                <span id="arsip-total-badge" class="px-2 py-1 rounded bg-[#171717] border border-[#262626] text-[10px] 2xl:text-xs font-mono font-bold text-neutral-300">0 ITEM</span>
+                <button onclick="Arsip.load()" class="px-2.5 sm:px-3 2xl:px-4 py-1.5 2xl:py-2 bg-[#171717] border border-[#262626] hover:bg-[#222222] text-neutral-200 text-xs 2xl:text-sm font-bold rounded transition-colors flex items-center gap-1.5">
+                    <svg class="w-3 h-3 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    Muat Ulang
+                </button>
+            </div>
         </div>
-
-        <div class="p-2.5 sm:p-3 xl:p-3.5 2xl:p-4 space-y-2.5">
-            <div class="space-y-1.5">
-                <p class="text-[10px] font-bold uppercase tracking-widest text-neutral-600">Kategori</p>
-                <div id="arsip-pills" class="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5"></div>
-            </div>
-
-            <div id="arsip-grup-pills" class="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-2.5 border-t border-[#1c1c1c] pb-0.5"></div>
-
-            <div class="border border-[#1c1c1c] rounded-md overflow-hidden bg-[#050505]">
-                <div class="flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 bg-[#0c0c0c] border-b border-[#1c1c1c]">
-                    <h4 id="arsip-panel-title" class="text-[11px] font-bold uppercase tracking-wider text-neutral-200">Grup PC / Zona</h4>
-                    <span id="arsip-panel-target" class="text-[10px] font-mono text-neutral-500">SEMUA GRUP</span>
-                </div>
-                <div id="arsip-panel">
-                    <div class="h-10 bg-[#202020] rounded m-2"></div>
-                </div>
+        <div class="space-y-2.5 2xl:space-y-4">
+            <div id="arsip-pills" class="flex items-center gap-1.5 2xl:gap-2.5 overflow-x-auto scrollbar-none py-0.5 2xl:py-1"></div>
+            <div id="arsip-grup-pills" class="flex items-center gap-1.5 2xl:gap-2.5 overflow-x-auto scrollbar-none py-2.5 2xl:py-3 border-t border-[#1c1c1c]"></div>
+            <div id="arsip-panel" class="space-y-2">
+                <div class="h-10 bg-[#202020] rounded m-2"></div>
             </div>
         </div>
     </div>

@@ -20,24 +20,24 @@ const ArsipList = {
                     const color = g.warna || '#3b82f6';
                     const ket = ArsipList.esc(g.keterangan || '-');
                     return `<tr class="hover:bg-[#121212] transition-colors">
-                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center font-mono text-neutral-500 text-xs 2xl:text-sm">#${g.id}</td>
-                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left">
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center font-mono text-neutral-500 text-xs 2xl:text-sm">#${g.id}</td>
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left">
                             <div class="flex items-center gap-2">
                                 <span class="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style="background-color: ${color};"></span>
                                 <span class="px-2 py-0.5 rounded text-[11px] sm:text-xs 2xl:text-sm font-bold tracking-wide uppercase inline-block font-mono" style="background-color: ${color}18; color: ${color}; border: 1px solid ${color}33;">${nama}</span>
                             </div>
                         </td>
-                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left">
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left">
                             <span class="text-neutral-300 text-xs 2xl:text-sm truncate max-w-[150px] sm:max-w-xs xl:max-w-md">${ket}</span>
                         </td>
-                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-right remote-hide-action">${ArsipList.actions('grup', g, g.nama, 'table')}</td>
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-right remote-hide-action">${ArsipList.actions('grup', g, g.nama, 'table')}</td>
                     </tr>`;
                 }).join('');
                 return ArsipList.tableShell(`
-                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center w-12 font-bold">ID</th>
-                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left font-bold">Nama Grup / Zona</th>
-                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left font-bold">Keterangan & PC</th>
-                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-right font-bold w-24 sm:w-28 remote-hide-action">Aksi</th>`,
+                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center w-12 font-bold">ID</th>
+                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left font-bold">Nama Grup / Zona</th>
+                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left font-bold">Keterangan & PC</th>
+                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-right font-bold w-24 sm:w-28 remote-hide-action">Aksi</th>`,
                     rows, 'text-[10px] sm:text-xs 2xl:text-sm text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c] bg-[#0c0c0c]');
             }
         },
@@ -77,43 +77,43 @@ const ArsipList = {
                     const grupNama = (typeof m.grup === 'object' ? m.grup.nama : m.grup) || 'reguler';
                     const warna = m.grup_warna || '#3b82f6';
                     return `<tr class="hover:bg-[#141414] transition-colors">
-                        <td class="px-2.5 sm:px-3 py-2 text-left">
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 text-left">
                             <div class="flex items-center gap-2">
                                 <div class="w-7 h-7 sm:w-8 sm:h-8 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-200 font-bold text-xs shrink-0">${ArsipList.esc((m.username || '?').charAt(0).toUpperCase())}</div>
                                 <div class="min-w-0">
                                     <div class="font-bold text-neutral-200 text-xs sm:text-sm truncate max-w-[85px] sm:max-w-[140px] md:max-w-none" title="${ArsipList.esc(m.username)}">${ArsipList.esc(m.username)}</div>
                                     <div class="flex items-center gap-1.5 mt-0.5">
-                                        <span class="sm:hidden px-1.5 py-0.2 rounded text-[9px] font-semibold uppercase shrink-0" style="background-color: ${warna}15; color: ${warna}; border: 1px solid ${warna}30;">${ArsipList.esc(grupNama)}</span>
+                                        <span class="sm:hidden px-1.5 py-0.2 rounded text-[10px] font-semibold uppercase shrink-0" style="background-color: ${warna}15; color: ${warna}; border: 1px solid ${warna}30;">${ArsipList.esc(grupNama)}</span>
                                         <span class="hidden sm:inline text-[10px] text-neutral-500 truncate max-w-[120px] xl:max-w-[160px]">${ArsipList.esc(m.nama_lengkap || '-')}</span>
                                     </div>
                                 </div>
                             </div>
                         </td>
-                        <td class="hidden sm:table-cell px-2.5 sm:px-3 py-2 text-center">
+                        <td class="hidden sm:table-cell px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 text-center">
                             <span class="px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold uppercase inline-block" style="background-color: ${warna}15; color: ${warna}; border: 1px solid ${warna}25;">${ArsipList.esc(grupNama)}</span>
                         </td>
-                        <td class="px-2.5 sm:px-3 py-2 text-center font-mono">
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 text-center font-mono">
                             <div class="inline-flex flex-col items-center">
                                 <span class="text-neutral-200 font-bold text-xs sm:text-sm">${Utils.formatMenit(m.waktu_tersimpan)}</span>
-                                <span class="sm:hidden text-[9px] font-sans flex items-center gap-1 mt-0.5 text-neutral-500"><span class="w-1.5 h-1.5 rounded-full bg-neutral-600"></span>Kunci</span>
+                                <span class="sm:hidden text-[10px] font-sans flex items-center gap-1 mt-0.5 text-neutral-500"><span class="w-1.5 h-1.5 rounded-full bg-neutral-600"></span>Kunci</span>
                             </div>
                         </td>
-                        <td class="hidden md:table-cell px-2.5 sm:px-3 py-2 text-center font-mono">
+                        <td class="hidden md:table-cell px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 text-center font-mono">
                             <span class="text-neutral-400 text-xs">${ArsipList.esc(m.kadaluarsa_pada_display || '-')}</span>
                         </td>
-                        <td class="hidden sm:table-cell px-2.5 sm:px-3 py-2 text-center">
+                        <td class="hidden sm:table-cell px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 text-center">
                             <span class="inline-flex items-center gap-1 text-[10px] sm:text-xs text-neutral-500 bg-[#0c0c0c] border border-[#1c1c1c] px-2 py-0.5 rounded font-bold"><span class="w-1.5 h-1.5 rounded-full bg-neutral-600"></span>Terkunci</span>
                         </td>
-                        <td class="px-2.5 sm:px-3 py-2 text-right">${ArsipList.actions('member', m, m.username, 'table')}</td>
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 text-right">${ArsipList.actions('member', m, m.username, 'table')}</td>
                     </tr>`;
                 }).join('');
                 return ArsipList.tableShell(`
-                    <th class="px-2.5 sm:px-3 py-2 text-left font-semibold">Member</th>
-                    <th class="hidden sm:table-cell px-2.5 sm:px-3 py-2 text-center font-semibold">Grup</th>
-                    <th class="px-2.5 sm:px-3 py-2 text-center font-semibold">Waktu</th>
-                    <th class="hidden md:table-cell px-2.5 sm:px-3 py-2 text-center font-semibold">Berlaku Sampai</th>
-                    <th class="hidden sm:table-cell px-2.5 sm:px-3 py-2 text-center font-semibold">Status</th>
-                    <th class="px-2.5 sm:px-3 py-2 text-right font-semibold">Aksi</th>`,
+                    <th class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 text-left font-semibold">Member</th>
+                    <th class="hidden sm:table-cell px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 text-center font-semibold">Grup</th>
+                    <th class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 text-center font-semibold">Waktu</th>
+                    <th class="hidden md:table-cell px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 text-center font-semibold">Berlaku Sampai</th>
+                    <th class="hidden sm:table-cell px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 text-center font-semibold">Status</th>
+                    <th class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 text-right font-semibold">Aksi</th>`,
                     rows, 'text-[10px] sm:text-xs text-neutral-400 uppercase border-b border-[#1c1c1c] bg-[#0c0c0c] tracking-wider select-none', 'w-full text-xs');
             }
         },
@@ -133,7 +133,7 @@ const ArsipList = {
                            </div>`
                         : '<span class="text-neutral-600 text-xs font-mono">-</span>';
                     return `<tr class="hover:bg-[#121212] transition-colors">
-                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left">
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left">
                             <div class="flex items-center gap-2 sm:gap-2.5">
                                 <div class="w-6 h-6 sm:w-7 sm:h-7 2xl:w-8 2xl:h-8 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-200 font-bold text-xs 2xl:text-sm shrink-0">${ArsipList.esc((u.username || '?').charAt(0).toUpperCase())}</div>
                                 <div class="min-w-0">
@@ -142,18 +142,18 @@ const ArsipList = {
                                 </div>
                             </div>
                         </td>
-                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center">${roleBadge}</td>
-                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left">${kuota}</td>
-                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center"><span class="inline-flex items-center gap-1.5 text-[11px] sm:text-xs text-neutral-500 font-mono"><span class="w-1.5 h-1.5 rounded-full bg-neutral-600"></span>Nonaktif</span></td>
-                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-right">${ArsipList.actions('user', u, u.username, 'table')}</td>
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center">${roleBadge}</td>
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left">${kuota}</td>
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center"><span class="inline-flex items-center gap-1.5 text-[11px] sm:text-xs text-neutral-500 font-mono"><span class="w-1.5 h-1.5 rounded-full bg-neutral-600"></span>Nonaktif</span></td>
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-right">${ArsipList.actions('user', u, u.username, 'table')}</td>
                     </tr>`;
                 }).join('');
                 return ArsipList.tableShell(`
-                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left font-bold">Operator</th>
-                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center font-bold">Role</th>
-                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left font-bold">Benefit Bermain</th>
-                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center font-bold">Status</th>
-                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-right font-bold w-24 sm:w-28">Kelola</th>`,
+                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left font-bold">Operator</th>
+                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center font-bold">Role</th>
+                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left font-bold">Benefit Bermain</th>
+                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center font-bold">Status</th>
+                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-right font-bold w-24 sm:w-28">Kelola</th>`,
                     rows, 'text-[10px] sm:text-xs 2xl:text-sm text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c] bg-[#0c0c0c]');
             }
         },
@@ -171,29 +171,29 @@ const ArsipList = {
                     const tipe = g.tipe ? `<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#171717] border border-[#262626] text-neutral-400 uppercase">${ArsipList.esc(g.tipe)}</span>` : '';
                     const cover = icon
                         ? `<img src="${icon}" alt="${ArsipList.esc(g.nama)}" class="w-8 h-11 xl:w-9 xl:h-12 rounded object-cover border border-[#1c1c1c] bg-[#141414] shadow-sm flex-shrink-0">`
-                        : `<div class="w-8 h-11 xl:w-9 xl:h-12 rounded border border-[#1c1c1c] bg-[#141414] flex items-center justify-center text-[9px] text-neutral-600 flex-shrink-0">-</div>`;
-                    return `<tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs lg:text-[10px] xl:text-xs 2xl:text-sm">
-                        <td class="px-2.5 py-1.5 align-middle overflow-hidden">
+                        : `<div class="w-8 h-11 xl:w-9 xl:h-12 rounded border border-[#1c1c1c] bg-[#141414] flex items-center justify-center text-[10px] text-neutral-600 flex-shrink-0">-</div>`;
+                    return `<tr class="hover:bg-[#141414] transition-colors border-b border-[#1c1c1c] text-xs 2xl:text-sm">
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 align-middle overflow-hidden">
                             <div class="flex items-center gap-3">
                                 ${cover}
                                 <div class="min-w-0 flex-1">
                                     <div class="font-bold text-neutral-100 text-xs 2xl:text-sm truncate">${ArsipList.esc(g.nama)}</div>
-                                    <div class="text-[9.5px] xl:text-[10px] 2xl:text-xs text-neutral-500 font-mono mt-0.5 truncate max-w-xs" title="${ArsipList.esc(g.exe_path || '-')}">${ArsipList.esc(g.exe_path || '-')}</div>
+                                    <div class="text-[10px] 2xl:text-xs text-neutral-500 font-mono mt-0.5 truncate max-w-xs" title="${ArsipList.esc(g.exe_path || '-')}">${ArsipList.esc(g.exe_path || '-')}</div>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-2 py-1.5 align-middle text-center overflow-hidden">${tipe}</td>
-                        <td class="px-2.5 py-1.5 align-middle overflow-hidden"><div class="flex flex-wrap gap-1 items-center">${tags}</div></td>
-                        <td class="px-2 py-1.5 align-middle text-center overflow-hidden"><span class="font-bold text-xs text-neutral-500">TIDAK</span></td>
-                        <td class="px-2 py-1.5 align-middle text-center overflow-hidden remote-hide-action">${ArsipList.actions('game', g, g.nama, 'small')}</td>
+                        <td class="px-2 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 align-middle text-center overflow-hidden">${tipe}</td>
+                        <td class="px-2.5 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 align-middle overflow-hidden"><div class="flex flex-wrap gap-1 items-center">${tags}</div></td>
+                        <td class="px-2 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 align-middle text-center overflow-hidden"><span class="font-bold text-xs text-neutral-500">TIDAK</span></td>
+                        <td class="px-2 sm:px-3 2xl:px-4 py-1.5 sm:py-2 2xl:py-3 align-middle text-center overflow-hidden remote-hide-action">${ArsipList.actions('game', g, g.nama, 'table')}</td>
                     </tr>`;
                 }).join('');
                 return ArsipList.tableShell(`
-                    <th class="px-2.5 py-2 text-left font-bold">Item, Cover &amp; Path</th>
-                    <th class="px-2 py-2 text-center font-bold w-20">Jenis</th>
-                    <th class="px-2.5 py-2 text-left font-bold">Kategori / Genre</th>
-                    <th class="px-2 py-2 text-center font-bold w-16">Publik</th>
-                    <th class="px-2 py-2 text-center font-bold w-24 remote-hide-action">Aksi</th>`,
+                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left font-bold">Item, Cover &amp; Path</th>
+                    <th class="px-2 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center font-bold w-20">Jenis</th>
+                    <th class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left font-bold">Kategori / Genre</th>
+                    <th class="px-2 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center font-bold w-16">Publik</th>
+                    <th class="px-2 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-center font-bold w-24 remote-hide-action">Aksi</th>`,
                     rows, 'text-[10px] sm:text-xs 2xl:text-sm text-neutral-500 uppercase tracking-wider border-b border-[#1c1c1c] bg-[#0c0c0c]');
             }
         },
@@ -210,11 +210,11 @@ const ArsipList = {
                         </div>
                         <span class="w-2 h-2 2xl:w-2.5 2xl:h-2.5 rounded-full bg-neutral-500 shrink-0" title="ARSIP"></span>
                     </div>
-                    <div class="text-[9px] sm:text-[10px] 2xl:text-xs text-neutral-400 font-mono my-1 flex items-center justify-between gap-1.5 min-w-0">
+                    <div class="text-[10px] sm:text-[10px] 2xl:text-xs text-neutral-400 font-mono my-1 flex items-center justify-between gap-1.5 min-w-0">
                         <span class="truncate min-w-0 flex-1">${ArsipList.esc(pc.ip_address || '-')}</span>
                     </div>
                     <div class="flex items-center justify-between gap-1">
-                        <span class="text-[8px] sm:text-[9px] 2xl:text-[10px] font-bold px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-500 shrink-0">ARSIP</span>
+                        <span class="text-[8px] sm:text-[10px] 2xl:text-[10px] font-bold px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-500 shrink-0">ARSIP</span>
                         ${ArsipList.actions('pc', pc, pc.kode, 'card')}
                     </div>
                 </div>`).join('');
@@ -234,12 +234,12 @@ const ArsipList = {
                     const imgHtml = img
                         ? `<div class="w-full aspect-[4/3] rounded-lg overflow-hidden border border-[#1f1f1f] bg-[#0c0c0c] relative">
                              <img src="${img}" alt="${ArsipList.esc(m.nama)}" class="w-full h-full object-cover object-center" loading="lazy">
-                             <span class="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/90 border border-[#2a2a2a] ${stokColor} rounded text-[9px] font-mono shadow">${stokText}</span>
+                             <span class="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/90 border border-[#2a2a2a] ${stokColor} rounded text-[10px] font-mono shadow">${stokText}</span>
                            </div>`
                         : `<div class="w-full aspect-[4/3] rounded-lg border border-[#1f1f1f] bg-[#090909] flex flex-col items-center justify-center text-neutral-600 relative">
                              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"></path></svg>
-                             <span class="text-[9px] text-neutral-600 mt-1 font-medium">No Image</span>
-                             <span class="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/90 border border-[#2a2a2a] ${stokColor} rounded text-[9px] font-mono shadow">${stokText}</span>
+                             <span class="text-[10px] text-neutral-600 mt-1 font-medium">No Image</span>
+                             <span class="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/90 border border-[#2a2a2a] ${stokColor} rounded text-[10px] font-mono shadow">${stokText}</span>
                            </div>`;
                     return `<div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between group relative select-none" title="${ArsipList.esc(m.nama)}">
                         <div class="space-y-1.5 sm:space-y-2">
@@ -250,7 +250,7 @@ const ArsipList = {
                         </div>
                         <div class="mt-2 pt-1.5 border-t border-[#181818] flex items-center justify-between gap-1">
                             <span class="text-xs font-bold font-mono text-neutral-200 tabular-nums">${Utils.formatRupiah(m.harga)}</span>
-                            <span class="text-[9px] font-mono text-neutral-500">${m.transaksi_count || 0} transaksi historis</span>
+                            <span class="text-[10px] font-mono text-neutral-500">${m.transaksi_count || 0} transaksi historis</span>
                         </div>
                         <div class="mt-1.5 flex items-center justify-end gap-1">${ArsipList.actions('menu', m, m.nama, 'menu')}</div>
                     </div>`;
@@ -334,8 +334,8 @@ const ArsipList = {
             const list = (items || await this.fetch(res)).filter(i => this.match(i));
             el.innerHTML = list.length
                 ? this.render({ items: list, res }) + this.totalFooter(list.length, res)
-                : `<div class="flex flex-col items-center justify-center py-10 text-neutral-500 bg-[#050505] border border-dashed border-[#1c1c1c] rounded">
-                       <p class="text-xs font-bold uppercase tracking-wider text-neutral-400">${this.esc(this.schemaOf(res).emptyText)}</p>
+                : `<div class="flex flex-col items-center justify-center py-10 sm:py-14 2xl:py-20 text-neutral-500 bg-[#050505] border border-dashed border-[#1c1c1c] rounded">
+                       <svg class="w-8 h-8 2xl:w-10 2xl:h-10 mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg><p class="text-xs 2xl:text-sm font-bold uppercase tracking-wider text-neutral-400">${this.esc(this.schemaOf(res).emptyText)}</p><p class="text-[10px] 2xl:text-xs text-neutral-600 mt-0.5">Data yang dipulihkan akan kembali ke tab aslinya</p>
                    </div>`;
         } catch (e) {
             el.innerHTML = `<p class="text-xs text-red-400 px-2.5 py-3">${this.esc(e.message || 'Gagal memuat data arsip')}</p>`;
@@ -348,7 +348,7 @@ const ArsipList = {
 
     totalFooter(n, res) {
         const unit = this.schemaOf(res).unit || 'Item';
-        return `<div id="arsip-total-${res}" class="flex items-center justify-between py-1.5 px-2.5 mt-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs font-mono">
+        return `<div id="arsip-total-${res}" class="flex items-center justify-between py-1.5 2xl:py-2.5 px-2.5 2xl:px-4 mt-2 2xl:mt-3 bg-[#050505] border border-[#1c1c1c] rounded text-xs 2xl:text-sm font-mono">
             <span>Total <strong class="text-neutral-100">${n}</strong> ${this.esc(unit)} arsip</span>
         </div>`;
     },
