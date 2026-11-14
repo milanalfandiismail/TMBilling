@@ -315,7 +315,10 @@ class TransaksiRepository:
         query = db.session.query(
             Transaksi.metode_pembayaran,
             func.sum(case((Transaksi.jenis != "refund_paket", 1), else_=0)),
-            func.sum(Transaksi.jumlah)
+            func.sum(Transaksi.jumlah),
+            func.sum(case((Transaksi.jenis == "refund_paket", -Transaksi.jumlah), else_=0)),
+            func.sum(case((Transaksi.jenis != "refund_paket", Transaksi.jumlah), else_=0)),
+            func.sum(case((Transaksi.jenis == "refund_paket", 1), else_=0))
         ).filter(Transaksi.no_nota != None)
 
         if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
@@ -353,12 +356,15 @@ class TransaksiRepository:
         results = query.all()
 
         breakdown = {}
-        for method, count, total in results:
+        for method, count, total, refund, gross, refund_count in results:
             norm_method = "Tunai" if not method or method in ["Tunai", "Cash"] else method
             if norm_method not in breakdown:
-                breakdown[norm_method] = {"count": 0, "total": 0}
+                breakdown[norm_method] = {"count": 0, "total": 0, "refund": 0, "gross": 0, "refund_count": 0}
             breakdown[norm_method]["count"] += count or 0
             breakdown[norm_method]["total"] += int(total or 0)
+            breakdown[norm_method]["refund"] += int(refund or 0)
+            breakdown[norm_method]["gross"] += int(gross or 0)
+            breakdown[norm_method]["refund_count"] += int(refund_count or 0)
         return breakdown
 
 

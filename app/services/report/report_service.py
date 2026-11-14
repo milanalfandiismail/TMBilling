@@ -58,12 +58,6 @@ class ReportService:
             total_pendapatan_menu = MenuRepository.get_total_pemasukan_by_date(tanggal, kasir_id, metode_pembayaran)
             total_pendapatan_gabungan = total_pendapatan_billing + total_pendapatan_menu
 
-            if kasir_id:
-                total_guest = SesiRepository.count_by_tanggal_tipe_kasir(tanggal, kasir_id, 'guest')
-                total_member = SesiRepository.count_by_tanggal_tipe_kasir(tanggal, kasir_id, 'member')
-            else:
-                total_guest = SesiRepository.count_by_tanggal_dan_tipe(tanggal, 'guest')
-                total_member = SesiRepository.count_by_tanggal_dan_tipe(tanggal, 'member')
 
             pagination = TransaksiRepository.get_history_nota_paginated(tanggal, page, per_page, kasir_id, metode_pembayaran, q)
             history_struk = pagination.items
@@ -82,9 +76,7 @@ class ReportService:
                 "total_pendapatan_billing_gross": total_pendapatan_billing_gross,
                 "total_pendapatan_menu": total_pendapatan_menu,
                 "total_refund": total_refund,
-                "total_sesi": total_guest + total_member,
-                "total_guest": total_guest,
-                "total_member": total_member,
+
                 "pendapatan_guest": ReportService.get_pendapatan_kategori(tanggal, 'guest', kasir_id, metode_pembayaran),
                 "pendapatan_member": ReportService.get_pendapatan_kategori(tanggal, 'member', kasir_id, metode_pembayaran),
                 "sesi_aktif": SesiRepository.count_aktif(),

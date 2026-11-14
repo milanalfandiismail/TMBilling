@@ -192,15 +192,17 @@ const Laporan = {
                 <span class="text-[11px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 font-bold uppercase tracking-wider mr-1">Metode:</span>
                 ${sortedEntries.map(([method, d]) => {
                     const mLower = (method || '').toLowerCase();
+                    const refund = d.refund || 0;
                     let colorClass = 'text-sky-400';
                     if (mLower === 'tunai') colorClass = 'text-amber-400';
                     else if (mLower === 'qris') colorClass = 'text-emerald-400';
 
                     return `
-                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#111] border border-[#262626] text-xs xl:text-xs 2xl:text-sm font-mono">
+                        <div class="inline-flex flex-wrap items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded bg-[#111] border border-[#262626] text-[11px] sm:text-xs 2xl:text-sm font-mono min-w-0">
                             <span class="${colorClass} font-sans font-bold">${Utils.escapeHtml(method)}</span>
-                            <span class="text-neutral-100 font-bold">${Utils.formatRupiah(d.total || 0)}</span>
+                            <span class="text-neutral-100 font-bold">${Utils.formatRupiah(d.gross != null ? d.gross : (d.total || 0))}</span>
                             <span class="text-neutral-500 text-[10px] sm:text-[11px] xl:text-xs">(${d.count})</span>
+                            ${refund > 0 ? `<span class="text-[9px] sm:text-[10px] 2xl:text-xs text-neutral-500 font-sans">| Refund</span><span class="text-rose-400 font-bold whitespace-nowrap">${Utils.formatRupiah(refund)}</span><span class="text-neutral-500 text-[10px] sm:text-[11px] xl:text-xs">(${d.refund_count || 0})</span>` : ''}
                         </div>
                     `;
                 }).join('')}
@@ -221,22 +223,14 @@ const Laporan = {
 
         // Ringkasan cards untuk Billing saja
         html += `
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2 lg:mb-2 xl:mb-3">
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 lg:p-1.5 xl:p-2.5 2xl:p-3 flex flex-col justify-between h-auto min-h-[2.8rem] lg:min-h-[3rem] 2xl:min-h-[3.5rem]">
-                    <span class="text-[9px] xl:text-[10px] 2xl:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Total Pendapatan Billing</span>
-                    <span class="text-xs sm:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-100 font-mono mt-0.5 truncate" title="${Utils.formatRupiah(data.total_pendapatan_billing || 0)}">${Utils.formatRupiah(data.total_pendapatan_billing || 0)}</span>
+            <div class="grid grid-cols-2 gap-2 mb-2 lg:mb-2 xl:mb-3">
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 sm:p-2.5 lg:p-1.5 xl:p-2.5 2xl:p-3 flex flex-col justify-between h-auto min-h-[2.8rem] sm:min-h-[3rem] lg:min-h-[3rem] xl:min-h-[3.25rem] 2xl:min-h-[3.5rem]">
+                    <span class="text-[9px] sm:text-[10px] xl:text-[10px] 2xl:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Total Pendapatan Billing</span>
+                    <span class="text-xs sm:text-sm md:text-base xl:text-base 2xl:text-lg font-bold text-neutral-100 font-mono mt-0.5 truncate" title="${Utils.formatRupiah(data.total_pendapatan_billing || 0)}">${Utils.formatRupiah(data.total_pendapatan_billing || 0)}</span>
                 </div>
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 lg:p-1.5 xl:p-2.5 2xl:p-3 flex flex-col justify-between h-auto min-h-[2.8rem] lg:min-h-[3rem] 2xl:min-h-[3.5rem]">
-                    <span class="text-[9px] xl:text-[10px] 2xl:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Total Sesi</span>
-                    <span class="text-xs sm:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-100 font-mono mt-0.5 truncate" title="${data.total_sesi || 0}">${data.total_sesi || 0}</span>
-                </div>
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 lg:p-1.5 xl:p-2.5 2xl:p-3 flex flex-col justify-between h-auto min-h-[2.8rem] lg:min-h-[3rem] 2xl:min-h-[3.5rem]">
-                    <span class="text-[9px] xl:text-[10px] 2xl:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Sesi Member</span>
-                    <span class="text-xs sm:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-100 font-mono mt-0.5 truncate" title="${data.total_member || 0}">${data.total_member || 0}</span>
-                </div>
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 lg:p-1.5 xl:p-2.5 2xl:p-3 flex flex-col justify-between h-auto min-h-[2.8rem] lg:min-h-[3rem] 2xl:min-h-[3.5rem]">
-                    <span class="text-[9px] xl:text-[10px] 2xl:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Sesi Guest</span>
-                    <span class="text-xs sm:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-100 font-mono mt-0.5 truncate" title="${data.total_guest || 0}">${data.total_guest || 0}</span>
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2 sm:p-2.5 lg:p-1.5 xl:p-2.5 2xl:p-3 flex flex-col justify-between h-auto min-h-[2.8rem] sm:min-h-[3rem] lg:min-h-[3rem] xl:min-h-[3.25rem] 2xl:min-h-[3.5rem]">
+                    <span class="text-[9px] sm:text-[10px] xl:text-[10px] 2xl:text-xs text-neutral-500 uppercase font-bold tracking-wider leading-tight">Total Refund</span>
+                    <span class="text-xs sm:text-sm md:text-base xl:text-base 2xl:text-lg font-bold text-rose-400 font-mono mt-0.5 truncate" title="${Utils.formatRupiah(data.total_refund || 0)}">${Utils.formatRupiah(data.total_refund || 0)}</span>
                 </div>
             </div>`;
 
