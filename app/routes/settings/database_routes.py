@@ -92,8 +92,10 @@ def _qris_upload_dir():
 def _normalize_qris(file):
     """Kembalikan (ext, bytes) gambar QRIS yang sudah divalidasi & dikecilkan."""
     from PIL import Image
+    from app.utils.images import reject_oversized
     try:
         img = Image.open(file.stream)
+        reject_oversized(img)
         img.load()
     except Exception:
         raise ValueError("File bukan gambar yang valid")

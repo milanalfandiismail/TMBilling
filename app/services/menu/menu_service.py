@@ -15,8 +15,20 @@ from app.services import idempotency
 from app.utils.logger import write_log
 from app.utils.validators import validate_string_length, validate_integer_range, validate_choice, validate_payment_method
 
+GAMBAR_PATH_PREFIX = "/static/uploads/menu/"
+
+
 class MenuService:
     """Service class untuk memproses data Menu dan Transaksinya."""
+
+    @staticmethod
+    def _validate_gambar_path(path):
+        if path is None or str(path).strip() == "":
+            return None
+        nilai = str(path).strip()
+        if not nilai.startswith(GAMBAR_PATH_PREFIX):
+            raise ValueError("Path gambar menu tidak valid")
+        return nilai
 
     @staticmethod
     def get_all_menu():
@@ -32,6 +44,7 @@ class MenuService:
         histori transaksi lama tetap konsisten dan kasir tidak perlu
         'hapus permanen' dulu sebelum buat menu dengan nama sama.
         """
+        gambar_path = MenuService._validate_gambar_path(data.get("gambar_path"))
         try:
             nama = validate_string_length(data.get("nama", ""), min_len=2, max_len=100, field_name="Nama menu", required=True)
             harga = validate_integer_range(data.get("harga", 0), 0, 1_000_000_000, "Harga menu")
@@ -48,8 +61,8 @@ class MenuService:
                 archived_dup.is_active = True
                 archived_dup.harga = harga
                 archived_dup.stok = stok
-                if data.get("gambar_path"):
-                    archived_dup.gambar_path = data["gambar_path"]
+                if gambar_path:
+                    archived_dup.gambar_path = gambar_path
                 db.session.commit()
                 detail_restore = {
                     "nama": nama,
@@ -69,7 +82,7 @@ class MenuService:
                 nama=nama,
                 harga=harga,
                 stok=stok,
-                gambar_path=data.get("gambar_path")
+                gambar_path=gambar_path
             )
             MenuRepository.save(menu)
             db.session.commit()
@@ -132,7 +145,7 @@ class MenuService:
             if "stok" in data:
                 menu.stok = validate_integer_range(data["stok"], -1, 1_000_000, "Stok menu")
             if "gambar_path" in data:
-                new_gambar = data["gambar_path"]
+                new_gambar = MenuService._validate_gambar_path(data["gambar_path"])
                 # Hapus file gambar lama jika gambar diubah atau dihapus (None / path berbeda)
                 if menu.gambar_path and menu.gambar_path != new_gambar:
                     MenuService._delete_image_file(menu.gambar_path)

@@ -12,6 +12,7 @@ import time
 from datetime import datetime, timezone
 from flask import request, jsonify, session, current_app, send_from_directory
 from PIL import Image
+from app.utils.images import reject_oversized
 from app.middleware.auth import login_required, admin_required, shift_required
 from app.routes.client.client_routes import api_key_required
 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
@@ -110,6 +111,7 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
 
             try:
                 with Image.open(io.BytesIO(image_data)) as img:
+                    reject_oversized(img)
                     img.verify()
                 with Image.open(io.BytesIO(image_data)) as img:
                     img.thumbnail((1280, 1280))

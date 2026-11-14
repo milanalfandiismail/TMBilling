@@ -14,6 +14,7 @@ Fitur:
 import os
 import sys
 import zipfile
+from install_scripts.extract_update import check_archive_size
 import subprocess
 import threading
 import json
@@ -265,6 +266,7 @@ def update_github():
             try:
                 with zipfile.ZipFile(pending_path, "r") as zf:
                     all_files = zf.namelist()
+                    check_archive_size(zf.infolist())
                     norm_files = [f.replace("\\", "/") for f in all_files]
                     has_run = any(f == "run.py" for f in norm_files)
                     has_app = any(f.startswith("app/") for f in norm_files)
@@ -331,6 +333,7 @@ def upload_update():
             try:
                 with zipfile.ZipFile(pending_path, "r") as zf:
                     all_files = zf.namelist()
+                    check_archive_size(zf.infolist())
                     norm_files = [f.replace("\\", "/") for f in all_files]
                     has_run = any(f == "run.py" for f in norm_files)
                     has_app = any(f.startswith("app/") for f in norm_files)

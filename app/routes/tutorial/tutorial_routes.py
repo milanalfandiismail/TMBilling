@@ -81,6 +81,7 @@ import os
 import uuid
 from flask import current_app
 from PIL import Image
+from app.utils.images import reject_oversized
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
@@ -131,7 +132,9 @@ def upload_tutorial_image():
             return jsonify({"error": "Format file tidak didukung (.png, .jpg, .jpeg, .webp, .gif)"}), 400
 
         try:
-            Image.open(file.stream).verify()
+            img = Image.open(file.stream)
+            reject_oversized(img)
+            img.verify()
         except Exception:
             raise ValueError("File gambar tidak valid")
         file.stream.seek(0)

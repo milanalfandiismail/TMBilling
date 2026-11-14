@@ -9,6 +9,7 @@ dan riwayat transaksi penjualan makanan/minuman.
 import os
 from flask import Blueprint, request, jsonify, current_app, session
 from PIL import Image
+from app.utils.images import reject_oversized
 from werkzeug.utils import secure_filename
 from app.services import MenuService
 from app.middleware.auth import login_required, admin_required, shift_required
@@ -26,7 +27,9 @@ def handle_image_upload(file):
     validate_filename(file.filename, allowed_extensions=ALLOWED_EXTENSIONS, field_name="Gambar Menu")
 
     try:
-        Image.open(file.stream).verify()
+        img = Image.open(file.stream)
+        reject_oversized(img)
+        img.verify()
     except Exception:
         raise ValueError("File gambar tidak valid")
     file.stream.seek(0)

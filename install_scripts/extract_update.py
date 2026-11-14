@@ -20,6 +20,17 @@ db_path = os.path.join(instance_dir, "warnet.db")
 
 SKIP_PREFIXES = (".env", "instance/", "backups/", ".git/")
 
+MAX_EXTRACT_BYTES = 1024 * 1024 * 1024
+MIN_FREE_BYTES = 512 * 1024 * 1024
+
+
+def check_archive_size(infolist, limit=MAX_EXTRACT_BYTES):
+    total = sum(i.file_size for i in infolist)
+    if total > limit:
+        raise ValueError(f"Paket pembaruan terlalu besar setelah diekstrak ({total} byte, batas {limit})")
+    return total
+
+
 def is_safe_path(base, path):
     base_abs = os.path.abspath(base)
     target_abs = os.path.abspath(os.path.join(base, path))
@@ -198,6 +209,15 @@ def main():
 
             if not has_run or not has_app or not has_config:
                 print("[UPDATER ERROR] ZIP bukan paket rilis TMBilling yang valid (wajib memuat run.py dan app/config.py).")
+                return 1
+
+            try:
+                total = check_archive_size(zf.infolist())
+                sisa = shutil.disk_usage(staging_dir).free
+                if sisa < total + MIN_FREE_BYTES:
+                    raise ValueError(f"Ruang disk tidak cukup (tersedia {sisa} byte, butuh {total + MIN_FREE_BYTES})")
+            except ValueError as e:
+                print(f"[UPDATER ERROR] {e}")
                 return 1
 
             for member in all_files:
