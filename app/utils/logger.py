@@ -20,8 +20,8 @@ import json
 import gzip
 import threading
 import tempfile
-from datetime import datetime
 from flask import has_request_context, request
+from app.utils.timezone_utils import format_local_now
 
 LOG_DIR = "logs"
 LOG_ARCHIVE_DIR = os.path.join(LOG_DIR, "archives")
@@ -217,7 +217,7 @@ def write_log(aksi, detail, user="kasir", detail_json=None, category=None):
         >>> write_log("LOGIN", "Kasir admin login", user="admin")
         # Output: {"timestamp": "2026-04-12 18:30:00", "user": "admin", ...}
     """
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = format_local_now()
     
     ip_address = "-"
     browser_agent = "-"
@@ -321,7 +321,7 @@ def normalize_legacy_log_line(line: str) -> dict:
         }
     
     return {
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "timestamp": format_local_now(),
         "user": "system",
         "action": "RAW_LOG",
         "detail": line_str,
@@ -337,7 +337,7 @@ def archive_logs(archive_dir: str = LOG_ARCHIVE_DIR) -> dict:
         return {"archived": False, "archive_path": None, "total_lines": 0}
 
     os.makedirs(archive_dir, exist_ok=True)
-    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp_str = format_local_now("%Y%m%d_%H%M%S")
     archive_filename = f"warnet_{timestamp_str}.jsonl.gz"
     archive_path = os.path.join(archive_dir, archive_filename)
 

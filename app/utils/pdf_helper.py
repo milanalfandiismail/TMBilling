@@ -1,10 +1,10 @@
 import io
-from datetime import datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.units import cm
+from app.utils.timezone_utils import format_local_now
 
 class PdfHelper:
     """Helper class untuk pembuatan PDF menggunakan ReportLab."""
@@ -140,7 +140,7 @@ class PdfHelper:
 
         meta_data = [
             [Paragraph(f"<b>Tanggal Laporan:</b> {tanggal}", styles["meta"]), Paragraph(f"<b>Kasir:</b> {nama_kasir}", styles["meta"])],
-            [Paragraph(f"<b>Waktu Cetak:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles["meta"]), Paragraph("", styles["meta"])]
+            [Paragraph(f"<b>Waktu Cetak:</b> {format_local_now()}", styles["meta"]), Paragraph("", styles["meta"])]
         ]
         meta_table = Table(meta_data, colWidths=col_widths)
         meta_table.setStyle(TableStyle([

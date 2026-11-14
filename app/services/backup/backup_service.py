@@ -11,9 +11,9 @@ import sqlite3
 import time
 import tempfile
 import threading
-from datetime import datetime
 from app.utils.logger import write_log
 from app.services.write_lock import WRITE_LOCK
+from app.utils.timezone_utils import format_local_now
 
 # Backup terjadwal dan restore tidak boleh berjalan bersamaan.
 _BACKUP_LOCK = threading.RLock()
@@ -217,7 +217,7 @@ class BackupService:
         if not HealthService.has_free_space(self.backup_dir):
             raise RuntimeError("Ruang disk backup tidak cukup (< 512 MB)")
 
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = format_local_now("%Y%m%d_%H%M%S")
         backup_filename = f"warnet_backup_{timestamp}.zip"
         dest_path = os.path.join(self.backup_dir, backup_filename)
         tmp_path = dest_path + ".tmp"

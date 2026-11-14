@@ -8,10 +8,10 @@ pembersihan log, serta penghapusan riwayat audit.
 
 import re
 import json
-from datetime import datetime
 from app.models import db
 from app.repositories import TransaksiRepository, SesiRepository, MenuRepository
 from app.services.write_lock import WRITE_LOCK
+from app.utils.timezone_utils import format_local_now
 from app.utils.logger import read_logs, write_log, clear_logs
 from app.utils.timezone_utils import get_local_date_range_utc
 
@@ -235,5 +235,5 @@ class LogAuditService:
         """Siapkan data log untuk di-export ke file eksternal."""
         logs = read_logs(5000, filter_text if filter_text else None)
         content = "\n".join(logs)
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = format_local_now("%Y%m%d_%H%M%S")
         return content, timestamp

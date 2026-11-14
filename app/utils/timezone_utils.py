@@ -118,6 +118,11 @@ def format_display(dt, tz_name=None, fmt="%d/%m/%Y %H:%M"):
     return f"{local.strftime(fmt)} {tz_label}"
 
 
+def format_local_now(fmt="%Y-%m-%d %H:%M:%S", tz_name=None):
+    """Jam sekarang dalam zona tampilan (tanpa label), untuk struk, log, dan nama berkas."""
+    return display_in_tz(now_utc(), tz_name).strftime(fmt)
+
+
 def get_tz_short_name(tz_name=None):
     """Dapatkan label singkat timezone (WIB/WITA/WIT/dll).
     

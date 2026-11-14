@@ -14,6 +14,7 @@ import secrets
 import socket
 from app.services.settings.settings_service import SettingsService
 from app.utils.logger import write_log
+from app.utils.timezone_utils import now_utc
 
 
 class IpWhitelistService:
@@ -145,10 +146,9 @@ class IpWhitelistService:
         if any(e['ip'] == clean_ip for e in entries):
             raise ValueError(f"IP '{clean_ip}' sudah ada di whitelist.")
 
-        import datetime
         entries.append({
             'ip': clean_ip,
-            'added_at': datetime.datetime.now().isoformat(),
+            'added_at': now_utc().isoformat(),
             'label': clean_label
         })
         IpWhitelistService._save_entries(entries)
@@ -235,7 +235,6 @@ class IpWhitelistService:
     @staticmethod
     def seed_defaults(app):
         """Seed IP whitelist default saat first-run. Idempotent."""
-        import datetime
         with app.app_context():
             if SettingsService.get(IpWhitelistService.ENABLED_KEY) is None:
                 SettingsService.set(IpWhitelistService.ENABLED_KEY, 'true')
@@ -254,7 +253,7 @@ class IpWhitelistService:
                     except Exception:
                         pass
 
-                now_iso = datetime.datetime.now().isoformat()
+                now_iso = now_utc().isoformat()
                 default_list = [
                     {'ip': '127.0.0.1', 'added_at': now_iso, 'label': 'localhost'}
                 ]

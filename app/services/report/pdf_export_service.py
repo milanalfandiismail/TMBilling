@@ -7,7 +7,6 @@ agar ReportService tetap ringan dan terfokus pada data aggregation.
 """
 
 import io
-from datetime import datetime
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.lib.units import cm
@@ -15,6 +14,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from app.repositories import SettingsRepository
 from app.utils.pdf_helper import PdfHelper
+from app.utils.timezone_utils import format_local_now
 
 
 class PdfExportService:
@@ -218,7 +218,7 @@ class PdfExportService:
 
         meta_data = [
             [Paragraph(f"<b>Tanggal Laporan:</b> {tanggal}", style_meta)],
-            [Paragraph(f"<b>Waktu Cetak:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", style_meta)]
+            [Paragraph(f"<b>Waktu Cetak:</b> {format_local_now()}", style_meta)]
         ]
         meta_table = Table(meta_data, colWidths=[17.0 * cm])
         meta_table.setStyle(TableStyle([
@@ -450,7 +450,7 @@ class PdfExportService:
 
         meta_data = [
             [Paragraph(f"<b>Filter Pencarian:</b> {filter_text or 'Semua Logs'}", style_meta)],
-            [Paragraph(f"<b>Waktu Cetak:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", style_meta)]
+            [Paragraph(f"<b>Waktu Cetak:</b> {format_local_now()}", style_meta)]
         ]
         meta_table = Table(meta_data, colWidths=[19.0 * cm])
         meta_table.setStyle(TableStyle([
@@ -625,6 +625,6 @@ class PdfExportService:
         doc.build(story)
         pdf_bytes = buffer.getvalue()
 
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = format_local_now("%Y%m%d_%H%M%S")
         filename = f"Audit_Log_{timestamp}.pdf"
         return pdf_bytes, filename

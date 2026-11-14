@@ -8,6 +8,7 @@ dashboard web untuk mengelola billing.
 """
 
 from app.models import db, now_local
+from app.utils.timezone_utils import display_in_tz, now_utc
 
 
 class User(db.Model):
@@ -73,7 +74,7 @@ class User(db.Model):
         Returns:
             bool: True jika reset terjadi, False jika masih di bulan yang sama.
         """
-        bulan_sekarang = now_local().strftime("%Y-%m")
+        bulan_sekarang = display_in_tz(now_utc()).strftime("%Y-%m")
         if self.terakhir_reset_kuota != bulan_sekarang:
             self.sisa_kuota_menit = self.kuota_main_bulanan or 0
             self.terakhir_reset_kuota = bulan_sekarang
@@ -92,7 +93,7 @@ class User(db.Model):
     def reset_kuota_manual(self):
         """Mereset sisa kuota kembali ke nilai kuota_main_bulanan dasar secara manual oleh admin."""
         self.sisa_kuota_menit = self.kuota_main_bulanan or 0
-        self.terakhir_reset_kuota = now_local().strftime("%Y-%m")
+        self.terakhir_reset_kuota = display_in_tz(now_utc()).strftime("%Y-%m")
         db.session.commit()
         return self.sisa_kuota_menit
 
