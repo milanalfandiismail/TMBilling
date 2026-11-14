@@ -14,10 +14,7 @@ const MigrationModule = {
     _latestRelease: null,
 
     async init() {
-        this._setupDropzone();
-        this._setupSearch();
-        this._setupResizeListener();
-        this._setupModalEvents();
+        // Listener dipasang sekali di DOMContentLoaded; init() hanya memuat data.
         await this.load();
     },
 

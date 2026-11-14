@@ -117,10 +117,10 @@ class MaintenanceService:
         return ticket.to_dict()
 
     @staticmethod
-    def get_report_data(start_date=None, end_date=None, pc_id=None, grup=None, kategori=None):
-        """Data laporan keuangan & analisis kerusakan."""
+    def _report_query(start_date=None, end_date=None, pc_id=None, grup=None, kategori=None):
+        """Query dasar tiket SELESAI sesuai filter laporan."""
         query = MaintenanceTicket.query.filter_by(status="SELESAI")
-        
+
         from app.utils.timezone_utils import get_local_date_range_utc
 
         if start_date and end_date and start_date == end_date:
@@ -138,32 +138,36 @@ class MaintenanceService:
         elif grup:
             from app.models.grup.grup import Grup
             query = query.join(PC).join(Grup).filter(Grup.nama == grup)
-            
         if kategori:
             query = query.filter_by(kategori=kategori)
+        return query
 
-        tickets = query.order_by(MaintenanceTicket.resolved_at.desc()).all()
+    @staticmethod
+    def get_report_data(start_date=None, end_date=None, pc_id=None, grup=None, kategori=None, page=1, per_page=5):
+        """Ringkasan global + satu halaman tiket agar riwayat besar tidak dimuat sekaligus."""
+        query = MaintenanceService._report_query(start_date, end_date, pc_id, grup, kategori)
 
-        total_biaya = sum(t.biaya for t in tickets)
-        total_kasus = len(tickets)
+        total_kasus = query.count()
+        total_biaya = int(query.with_entities(func.coalesce(func.sum(MaintenanceTicket.biaya), 0)).scalar() or 0)
         rata_rata_biaya = int(total_biaya / total_kasus) if total_kasus > 0 else 0
 
-        # Breakdown kategori
         breakdown = {"HARDWARE": 0, "SOFTWARE": 0, "JARINGAN": 0, "LAINNYA": 0}
-        for t in tickets:
-            if t.kategori in breakdown:
-                breakdown[t.kategori] += 1
-            else:
-                breakdown[t.kategori] = breakdown.get(t.kategori, 0) + 1
+        for kategori_nama, jumlah in query.with_entities(
+            MaintenanceTicket.kategori, func.count(MaintenanceTicket.id)
+        ).group_by(MaintenanceTicket.kategori).all():
+            breakdown[kategori_nama] = breakdown.get(kategori_nama, 0) + jumlah
 
-        # Top 5 PC paling sering rusak
-        pc_counts = {}
-        for t in tickets:
-            pc_kode = t.pc.kode if t.pc else "N/A"
-            pc_counts[pc_kode] = pc_counts.get(pc_kode, 0) + 1
-        
-        top_pcs = sorted(pc_counts.items(), key=lambda x: x[1], reverse=True)[:5]
-        top_pcs_list = [{"pc_kode": k, "jumlah": v} for k, v in top_pcs]
+        pc_ids = query.with_entities(MaintenanceTicket.pc_id).subquery()
+        top_rows = db.session.query(
+            func.coalesce(PC.kode, "N/A"), func.count()
+        ).select_from(pc_ids).outerjoin(PC, PC.id == pc_ids.c.pc_id).group_by(
+            func.coalesce(PC.kode, "N/A")
+        ).order_by(func.count().desc()).limit(5).all()
+
+        page = max(1, int(page or 1))
+        pages = max(1, -(-total_kasus // per_page))
+        tickets = query.order_by(MaintenanceTicket.resolved_at.desc()) \
+            .offset((page - 1) * per_page).limit(per_page).all()
 
         return {
             "list_tiket": [t.to_dict() for t in tickets],
@@ -171,7 +175,8 @@ class MaintenanceService:
             "total_kasus": total_kasus,
             "rata_rata_biaya": rata_rata_biaya,
             "breakdown_kategori": breakdown,
-            "pc_paling_sering_rusak": top_pcs_list
+            "pc_paling_sering_rusak": [{"pc_kode": k, "jumlah": v} for k, v in top_rows],
+            "pagination": {"page": page, "per_page": per_page, "total": total_kasus, "pages": pages},
         }
 
     @staticmethod

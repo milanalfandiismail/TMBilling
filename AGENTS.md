@@ -31,6 +31,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `CHANGELOG.md` | Riwayat log perubahan dan rilis versi aplikasi (*Keep a Changelog standard*). |
 | `README.md` | Ringkasan proyek publik, sorotan fitur, dan panduan instalasi cepat. |
 | `docs/superpowers/plans/` | Rencana implementasi agent; direktori kerja yang di-ignore Git dan bukan bagian runtime aplikasi. |
+| `docs/superpowers/specs/` | Dokumen desain untuk rencana implementasi agent; direktori kerja yang di-ignore Git dan bukan bagian runtime aplikasi. |
 | `AGENTS.md` | Dokumen panduan navigasi arsitektur terpadu bagi AI Coding Agent (file ini). |
 | `LICENSE` | Lisensi open-source software (MIT License). |
 

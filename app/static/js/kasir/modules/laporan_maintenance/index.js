@@ -66,11 +66,13 @@ const LaporanMaintenance = {
             if (tanggal) url += `&tanggal=${tanggal}`;
             if (kategori) url += `&kategori=${kategori}`;
             if (pcId) url += `&pc_id=${pcId}`;
+            url += `&page=${this.currentPage || 1}`;
 
             const res = await API.request(url);
             if (res && res.success) {
                 const report = res.report || {};
                 const newFingerprint = JSON.stringify({
+                    page: this.currentPage,
                     tanggal,
                     kategori,
                     pcId,
@@ -125,11 +127,13 @@ const LaporanMaintenance = {
         if (!tbody) return;
 
         const listTiket = this.reportData.list_tiket || [];
+        const pagination = this.reportData.pagination || {};
         this.currentTickets = listTiket;
-        this.totalPages = Math.ceil(listTiket.length / this.perPage) || 1;
+        this.totalPages = pagination.pages || 1;
+        this.totalItems = pagination.total || 0;
         this.currentPage = Math.max(1, Math.min(this.currentPage, this.totalPages));
 
-        if (listTiket.length === 0) {
+        if (this.totalItems === 0) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="4" class="py-4 text-center text-neutral-500 text-xs lg:text-[10px] xl:text-[11px] 2xl:text-sm">Belum ada riwayat perbaikan pada periode ini.</td>
@@ -139,8 +143,7 @@ const LaporanMaintenance = {
             return;
         }
 
-        const startIndex = (this.currentPage - 1) * this.perPage;
-        const pageTickets = listTiket.slice(startIndex, startIndex + this.perPage);
+        const pageTickets = listTiket;
 
         tbody.innerHTML = pageTickets.map((t, idx) => {
             const compactResolved = (t.resolved_at || '').replace(/\s*WITA|\s*WIB|\s*WIT/gi, '').replace(/\/20\d\d/, '');
@@ -167,7 +170,7 @@ const LaporanMaintenance = {
                     </div>
                 </td>
                 <td class="py-1.5 lg:py-1 xl:py-1.5 2xl:py-2 px-1 sm:px-2.5 xl:px-3 2xl:px-4 text-center whitespace-nowrap">
-                    <button type="button" onclick="LaporanMaintenance.openDetailModal('${this.escapeHtml(t.id || '')}', ${startIndex + idx})"
+                    <button type="button" onclick="LaporanMaintenance.openDetailModal('${this.escapeHtml(t.id || '')}', ${idx})"
                         class="inline-flex items-center gap-1 p-1 sm:px-2 sm:py-0.5 lg:px-2 lg:py-0.5 xl:px-2.5 xl:py-1 2xl:px-3.5 2xl:py-1.5 bg-[#171717] hover:bg-[#242424] border border-[#2a2a2a] hover:border-neutral-500 text-neutral-300 hover:text-white rounded text-xs lg:text-[9px] xl:text-xs 2xl:text-sm font-semibold transition-colors shadow-sm" title="Lihat detail laporan">
                         <svg class="w-3.5 h-3.5 2xl:w-4 2xl:h-4 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -180,7 +183,7 @@ const LaporanMaintenance = {
         `;
         }).join('');
 
-        this.renderPagination(listTiket.length);
+        this.renderPagination(this.totalItems);
     },
 
     openDetailModal(ticketId, index) {
@@ -283,14 +286,14 @@ const LaporanMaintenance = {
     prevPage() {
         if (this.currentPage > 1) {
             this.currentPage--;
-            this.renderReport();
+            this.loadReport();
         }
     },
 
     nextPage() {
         if (this.currentPage < this.totalPages) {
             this.currentPage++;
-            this.renderReport();
+            this.loadReport();
         }
     },
 

@@ -57,11 +57,9 @@ class OwnerAnalyticsService:
     @staticmethod
     def get_pendapatan_harian(start, end):
         start, end = OwnerAnalyticsService._normalize_range(start, end)
-        # Omzet net: pembelian yang direfund tidak dihitung dan refund tidak tampil sebagai baris.
-        # Kebijakan ini dikunci tests/test_owner_refund_accounting.py.
+        # Arus kas bertanda per tanggal transaksi; refund mengurangi tanggal refund tercatat.
         billing = db.session.query(Transaksi.dibuat_pada, Transaksi.jumlah)\
-            .filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada < end, Transaksi.jumlah > 0,
-                    Transaksi.is_refunded == False).all()
+            .filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada < end, Transaksi.jumlah != 0).all()
 
         kantin = db.session.query(TransaksiMenu.tanggal, TransaksiMenu.total_harga)\
             .filter(TransaksiMenu.tanggal >= start, TransaksiMenu.tanggal < end).all()
@@ -167,8 +165,7 @@ class OwnerAnalyticsService:
     def get_pendapatan_per_kasir(start, end):
         r = db.session.query(User.nama_lengkap, func.coalesce(func.sum(Transaksi.jumlah), 0).label('total')
         ).join(Transaksi, Transaksi.user_id == User.id
-        ).filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada < end, Transaksi.jumlah > 0,
-                 Transaksi.is_refunded == False
+        ).filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada < end, Transaksi.jumlah != 0
         ).group_by(User.id, User.nama_lengkap).order_by(func.sum(Transaksi.jumlah).desc()).all()
         return {'labels': [x.nama_lengkap for x in r], 'data': [x.total for x in r]}
 

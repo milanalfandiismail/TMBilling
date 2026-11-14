@@ -8,8 +8,9 @@ serta mengunduh laporan analitik biaya perbaikan warnet.
 
 import csv
 from io import StringIO
-from flask import Blueprint, request, jsonify, session, make_response
+from flask import Blueprint, request, jsonify, session, Response, stream_with_context
 from app.routes.auth.auth_kasir_routes import login_required
+from app.models import MaintenanceTicket
 from app.services import MaintenanceService
 
 maintenance_api_bp = Blueprint("maintenance", __name__)
@@ -102,12 +103,14 @@ def get_report():
             start_date = tanggal.strip()
             end_date = tanggal.strip()
 
+        page = request.args.get("page", type=int) or 1
         report_data = MaintenanceService.get_report_data(
             start_date=start_date,
             end_date=end_date,
             pc_id=pc_id,
             grup=grup,
-            kategori=kategori
+            kategori=kategori,
+            page=page
         )
         return jsonify({"success": True, "report": report_data}), 200
     except ValueError as e:
@@ -130,39 +133,37 @@ def export_report():
             start_date = tanggal.strip()
             end_date = tanggal.strip()
 
-        report_data = MaintenanceService.get_report_data(
-            start_date=start_date,
-            end_date=end_date,
-            pc_id=pc_id,
-            grup=grup,
-            kategori=kategori
-        )
-        
-        # Create CSV in memory
-        si = StringIO()
-        cw = csv.writer(si)
-        cw.writerow(["ID Tiket", "Kode PC", "Pelapor", "Kategori", "Prioritas", "Judul Masalah", "Deskripsi", "Status", "Resolusi/Catatan", "Biaya (Rp)", "Tanggal Lapor", "Tanggal Selesai", "Teknisi"])
-        
-        for t in report_data["list_tiket"]:
-            cw.writerow([
-                t["id"],
-                t["pc_kode"],
-                t["reporter"],
-                t["kategori"],
-                t["prioritas"],
-                t["judul"],
-                t["deskripsi"],
-                t["status"],
-                t["resolusi"],
-                t["biaya"],
-                t["created_at"],
-                t["resolved_at"],
-                t["resolved_by"]
-            ])
+        query = MaintenanceService._report_query(start_date, end_date, pc_id, grup, kategori) \
+            .order_by(MaintenanceTicket.resolved_at.desc())
 
-        response = make_response(si.getvalue())
+        def generate():
+            buf = StringIO()
+            writer = csv.writer(buf)
+            writer.writerow(["ID Tiket", "Kode PC", "Pelapor", "Kategori", "Prioritas", "Judul Masalah", "Deskripsi", "Status", "Resolusi/Catatan", "Biaya (Rp)", "Tanggal Lapor", "Tanggal Selesai", "Teknisi"])
+            yield buf.getvalue()
+            for ticket in query.yield_per(200):
+                t = ticket.to_dict()
+                buf.seek(0)
+                buf.truncate(0)
+                writer.writerow([
+                    t["id"],
+                    t["pc_kode"],
+                    t["reporter"],
+                    t["kategori"],
+                    t["prioritas"],
+                    t["judul"],
+                    t["deskripsi"],
+                    t["status"],
+                    t["resolusi"],
+                    t["biaya"],
+                    t["created_at"],
+                    t["resolved_at"],
+                    t["resolved_by"]
+                ])
+                yield buf.getvalue()
+
+        response = Response(stream_with_context(generate()), mimetype="text/csv")
         response.headers["Content-Disposition"] = "attachment; filename=laporan_perawatan.csv"
-        response.headers["Content-type"] = "text/csv"
         return response
     except Exception as e:
         return jsonify({"error": str(e)}), 500
