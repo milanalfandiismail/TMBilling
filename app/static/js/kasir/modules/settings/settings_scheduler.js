@@ -165,7 +165,7 @@ const SettingsScheduler = {
             const fmt = (id) => {
                 const r = runs[id];
                 if (!r) return 'belum';
-                return `${String(r.at).replace('T', ' ')} ${r.ok ? 'OK' : 'GAGAL'}`;
+                return `${String(r.at).replace('T', ' ')} ${r.skipped ? 'DILEWATI' : (r.ok ? 'OK' : 'GAGAL')}`;
             };
             el.textContent = `Backup: ${fmt('database_backup')} · Cleanup: ${fmt('cleanup_logs')} · Screenshot: ${fmt('auto_screenshots')}`;
         } catch (_) {
@@ -215,13 +215,6 @@ const SettingsScheduler = {
             });
 
             if (res && res.success) {
-                // Trigger background scheduler restart silently
-                try {
-                    await API.request('/api/v1/kasir/settings/scheduler/restart', { method: 'POST' });
-                } catch (_) {
-                    // Ignored: Server restart will briefly disrupt socket or HTTP connection
-                }
-
                 if (typeof Toast !== 'undefined') {
                     Toast.success('Konfigurasi penjadwalan otomatis berhasil disimpan & diterapkan!');
                 }

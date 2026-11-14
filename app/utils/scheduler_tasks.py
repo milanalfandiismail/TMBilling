@@ -23,9 +23,36 @@ _SETTINGS_KEY = "scheduler_last_runs"
 _LAST_RUN = {}
 
 
-def record_run(job_id, ok=True):
+def get_scheduler_interval(settings_key, settings_unit_key, default_value, default_unit):
+    """Baca interval scheduler (detik) dari tabel settings."""
+    try:
+        from app.services import SettingsService
+        value = int(SettingsService.get(settings_key, default_value))
+        unit = SettingsService.get(settings_unit_key, default_unit)
+        return value * UNIT_MULTIPLIER.get(unit, UNIT_MULTIPLIER[default_unit])
+    except Exception:
+        return default_value * UNIT_MULTIPLIER[default_unit]
+
+
+def apply_scheduler_intervals(scheduler):
+    """Terapkan ulang interval job dinamis pada scheduler yang sedang berjalan."""
+    if not scheduler or not getattr(scheduler, "running", False):
+        return False
+    pairs = (
+        ("database_backup", get_scheduler_interval("auto_backup_value", "auto_backup_unit", 60, "menit")),
+        ("auto_screenshots", get_scheduler_interval("screenshot_auto_value", "screenshot_auto_unit", 60, "detik")),
+    )
+    changed = False
+    for job_id, seconds in pairs:
+        if scheduler.get_job(job_id):
+            scheduler.reschedule_job(job_id, trigger="interval", seconds=seconds)
+            changed = True
+    return changed
+
+
+def record_run(job_id, ok=True, skipped=False):
     """Catat eksekusi terakhir per job di memori dan simpan ke Settings."""
-    _LAST_RUN[job_id] = {"at": format_local_now("%Y-%m-%dT%H:%M:%S"), "ok": bool(ok)}
+    _LAST_RUN[job_id] = {"at": format_local_now("%Y-%m-%dT%H:%M:%S"), "ok": bool(ok), "skipped": bool(skipped)}
     try:
         from app.services import SettingsService
         SettingsService.set(_SETTINGS_KEY, json.dumps(_LAST_RUN))
@@ -148,7 +175,7 @@ def run_auto_screenshots(app):
         screenshot_dir = os.path.join(app.instance_path, "uploads", "screenshots")
         if not HealthService.has_free_space(screenshot_dir):
             write_log("SCHEDULER", "Screenshot otomatis dilewati: ruang disk < 512 MB", user="SYSTEM")
-            record_run("auto_screenshots", True)
+            record_run("auto_screenshots", True, skipped=True)
             return
         
         try:

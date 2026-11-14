@@ -2,15 +2,13 @@
 Termasuk auto-shutdown, client polling, apikey, timezone, dan scheduler.
 """
 import os
-import sys
-import subprocess
-import time
 from flask import request, jsonify, session, current_app
 from app.services import SettingsService
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.utils.logger import write_log
 from app.utils.scheduler_tasks import UNIT_MULTIPLIER
 from app.utils.validators import validate_string_length
+from app.routes.client.client_routes import api_key_required
 from app.routes.settings.settings_routes import settings_api_bp
 
 # =========================================================================
@@ -319,12 +317,26 @@ def update_scheduler_config():
         SettingsService.set("screenshot_auto_value", str(screenshot_value))
         SettingsService.set("screenshot_auto_unit", screenshot_unit)
 
+        from app.utils.scheduler_tasks import apply_scheduler_intervals
+        apply_scheduler_intervals(current_app.extensions.get("scheduler"))
+
         operator = session.get("kasir_username", "admin")
         write_log("SCHEDULER_CONFIG", f"Backup: {backup_value} {backup_unit}, Cleanup: {cleanup_value} {cleanup_unit}, Screenshot: {'On' if screenshot_enabled == '1' else 'Off'} ({screenshot_value} {screenshot_unit})", user=operator)
 
-        return jsonify({"success": True, "message": "Konfigurasi scheduler disimpan"}), 200
+        return jsonify({"success": True, "message": "Konfigurasi scheduler disimpan dan diterapkan"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@settings_api_bp.route("/uptime/flush", methods=["POST"])
+@api_key_required
+def flush_uptime():
+    """Tulis delta uptime RAM ke SQLite sebelum server dihentikan paksa."""
+    if request.remote_addr not in ("127.0.0.1", "::1"):
+        return jsonify({"error": "Hanya dapat dipanggil dari loopback"}), 403
+    from app.utils.scheduler_tasks import run_flush_uptime
+    run_flush_uptime(current_app._get_current_object())
+    return jsonify({"success": True}), 200
 
 
 @settings_api_bp.route("/scheduler/status", methods=["GET"])
@@ -336,48 +348,16 @@ def scheduler_status():
     return jsonify({"last_runs": get_last_runs()}), 200
 
 
-def _restart_server(app) -> bool:
-    """Jalankan proses baru; hanya keluar bila proses itu hidup setelah 2 detik."""
-    from app.utils.scheduler_tasks import run_flush_uptime
-
-    run_flush_uptime(app)
-    env = os.environ.copy()
-    env.pop('WERKZEUG_SERVER_FD', None)
-    env.pop('WERKZEUG_RUN_MAIN', None)
-    proc = subprocess.Popen([sys.executable] + sys.argv, env=env)
-    time.sleep(2)
-    if proc.poll() is not None:
-        write_log(
-            "SCHEDULER_RESTART_ERROR",
-            f"Proses baru berhenti (exit {proc.returncode}); server lama tetap berjalan",
-            user="SYSTEM",
-        )
-        return False
-    os._exit(0)
-    return True
-
-
 @settings_api_bp.route("/scheduler/restart", methods=["POST"])
 @login_required
 @admin_required
 def restart_scheduler():
-    """Restart aplikasi agar scheduler menggunakan interval baru."""
+    """Terapkan ulang interval job pada scheduler yang sedang berjalan."""
     try:
-        operator = session.get("kasir_username", "admin")
-        write_log("SCHEDULER_RESTART", "Restart aplikasi untuk menerapkan interval baru", user=operator)
-
-        # Kirim response dulu sebelum matiin server
-        resp = jsonify({"success": True, "message": "Server akan restart dalam 1 detik..."})
-
-        # Schedule restart setelah response terkirim
-        import threading
-        def _do_restart():
-            import time
-            time.sleep(1.5)
-            _restart_server(current_app._get_current_object())
-
-        threading.Thread(target=_do_restart, daemon=True).start()
-        return resp
+        from app.utils.scheduler_tasks import apply_scheduler_intervals
+        applied = apply_scheduler_intervals(current_app.extensions.get("scheduler"))
+        write_log("SCHEDULER_RESTART", f"Interval scheduler diterapkan ulang (aktif={applied})", user=session.get("kasir_username", "admin"))
+        return jsonify({"success": True, "message": "Konfigurasi scheduler diterapkan"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

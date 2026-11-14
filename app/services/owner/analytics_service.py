@@ -21,7 +21,8 @@ class OwnerAnalyticsService:
         
         if end_str:
             try:
-                end_dt = datetime.strptime(end_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, tzinfo=tz)
+                # Batas eksklusif: tengah malam lokal setelah tanggal akhir.
+                end_dt = datetime.strptime(end_str, '%Y-%m-%d').replace(tzinfo=tz) + timedelta(days=1)
             except ValueError:
                 raise ValueError("Format tanggal harus YYYY-MM-DD")
         else:
@@ -35,6 +36,11 @@ class OwnerAnalyticsService:
         else:
             start_dt = (end_dt - timedelta(days=6)).replace(hour=0, minute=0, second=0)
             
+        if start_dt >= end_dt:
+            raise ValueError("Tanggal awal harus sebelum tanggal akhir")
+        if end_dt - start_dt > timedelta(days=366):
+            raise ValueError("Rentang tanggal maksimal 366 hari")
+
         start_utc = start_dt.astimezone(UTC).replace(tzinfo=None)
         end_utc = end_dt.astimezone(UTC).replace(tzinfo=None)
         return start_utc, end_utc
@@ -54,11 +60,11 @@ class OwnerAnalyticsService:
         # Omzet net: pembelian yang direfund tidak dihitung dan refund tidak tampil sebagai baris.
         # Kebijakan ini dikunci tests/test_owner_refund_accounting.py.
         billing = db.session.query(Transaksi.dibuat_pada, Transaksi.jumlah)\
-            .filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end, Transaksi.jumlah > 0,
+            .filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada < end, Transaksi.jumlah > 0,
                     Transaksi.is_refunded == False).all()
 
         kantin = db.session.query(TransaksiMenu.tanggal, TransaksiMenu.total_harga)\
-            .filter(TransaksiMenu.tanggal >= start, TransaksiMenu.tanggal <= end).all()
+            .filter(TransaksiMenu.tanggal >= start, TransaksiMenu.tanggal < end).all()
 
         b_map, k_map = {}, {}
         
@@ -76,7 +82,7 @@ class OwnerAnalyticsService:
 
         labels, bd, kd = [], [], []
         start_local = display_in_tz(start).date()
-        end_local = display_in_tz(end).date()
+        end_local = display_in_tz(end - timedelta(microseconds=1)).date()
         
         total_days = (end_local - start_local).days + 1
         for i in range(total_days):
@@ -91,7 +97,7 @@ class OwnerAnalyticsService:
     @staticmethod
     def get_heatmap_jam_sibuk(start, end):
         start, end = OwnerAnalyticsService._normalize_range(start, end)
-        sessions = Sesi.query.filter(Sesi.mulai_pada >= start, Sesi.mulai_pada <= end).all()
+        sessions = Sesi.query.filter(Sesi.mulai_pada >= start, Sesi.mulai_pada < end).all()
         jam_counts = {}
         for s in sessions:
             if s.mulai_pada:
@@ -108,25 +114,25 @@ class OwnerAnalyticsService:
     def get_member_trend(start, end):
         start, end = OwnerAnalyticsService._normalize_range(start, end)
         members = Member.query.filter(
-            ((Member.dibuat_pada >= start) & (Member.dibuat_pada <= end)) |
-            ((Member.kadaluarsa_pada >= start) & (Member.kadaluarsa_pada <= end))
+            ((Member.dibuat_pada >= start) & (Member.dibuat_pada < end)) |
+            ((Member.kadaluarsa_pada >= start) & (Member.kadaluarsa_pada < end))
         ).all()
         
         b_map, k_map = {}, {}
         for m in members:
-            if m.dibuat_pada and start <= m.dibuat_pada <= end:
+            if m.dibuat_pada and start <= m.dibuat_pada < end:
                 local_dt = display_in_tz(m.dibuat_pada)
                 dt_iso = local_dt.date().isoformat()
                 b_map[dt_iso] = b_map.get(dt_iso, 0) + 1
                 
-            if m.kadaluarsa_pada and start <= m.kadaluarsa_pada <= end:
+            if m.kadaluarsa_pada and start <= m.kadaluarsa_pada < end:
                 local_dt = display_in_tz(m.kadaluarsa_pada)
                 dt_iso = local_dt.date().isoformat()
                 k_map[dt_iso] = k_map.get(dt_iso, 0) + 1
 
         labels, bd, kd = [], [], []
         start_local = display_in_tz(start).date()
-        end_local = display_in_tz(end).date()
+        end_local = display_in_tz(end - timedelta(microseconds=1)).date()
         
         total_days = (end_local - start_local).days + 1
         for i in range(total_days):
@@ -143,7 +149,7 @@ class OwnerAnalyticsService:
         rows = db.session.query(
             Transaksi.paket_id, func.count(Transaksi.id)
         ).filter(
-            Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end,
+            Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada < end,
             Transaksi.paket_id.isnot(None),
             Transaksi.is_refunded == False, Transaksi.jenis != "refund_paket"
         ).group_by(Transaksi.paket_id).order_by(func.count(Transaksi.id).desc()).all()
@@ -161,7 +167,7 @@ class OwnerAnalyticsService:
     def get_pendapatan_per_kasir(start, end):
         r = db.session.query(User.nama_lengkap, func.coalesce(func.sum(Transaksi.jumlah), 0).label('total')
         ).join(Transaksi, Transaksi.user_id == User.id
-        ).filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end, Transaksi.jumlah > 0,
+        ).filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada < end, Transaksi.jumlah > 0,
                  Transaksi.is_refunded == False
         ).group_by(User.id, User.nama_lengkap).order_by(func.sum(Transaksi.jumlah).desc()).all()
         return {'labels': [x.nama_lengkap for x in r], 'data': [x.total for x in r]}
@@ -170,7 +176,7 @@ class OwnerAnalyticsService:
     def get_refund_rate(start, end):
         base_filter = (
             Transaksi.dibuat_pada >= start,
-            Transaksi.dibuat_pada <= end,
+            Transaksi.dibuat_pada < end,
             Transaksi.paket_id.isnot(None),
             Transaksi.jenis != "refund_paket",
         )

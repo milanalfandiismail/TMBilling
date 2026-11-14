@@ -7,6 +7,20 @@ echo ==========================================================
 echo    TMBilling Server - Menghentikan Server...
 echo ==========================================================
 
+:: Simpan delta uptime RAM ke SQLite sebelum proses dimatikan paksa
+powershell -NoProfile -Command "if (-not (Get-NetTCPConnection -LocalPort 7015 -State Listen -ErrorAction SilentlyContinue)) { exit 1 }" >nul 2>&1
+if errorlevel 1 goto :lewati_flush
+"%~dp0.venv\Scripts\python.exe" "%~dp0install_scripts\flush_uptime.py"
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Delta uptime tidak dapat disimpan.
+    echo         Server TIDAK dihentikan agar data tidak hilang.
+    echo ==========================================================
+    exit /b 1
+)
+
+:lewati_flush
+
 :: Hentikan proses background start.bat, proses run.py apa pun, dan pemilik port 7015
 powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { ($_.Name -eq 'python.exe' -or $_.Name -eq 'pythonw.exe') -and $_.CommandLine -like '*run.py*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" >nul 2>&1
 powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 7015 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }" >nul 2>&1

@@ -24,7 +24,7 @@ from app.utils.scheduler_tasks import (
     run_auto_screenshots,
     run_flush_uptime,
     run_cleanup_vnc_proxies,
-    UNIT_MULTIPLIER,
+    get_scheduler_interval,
 )
 import os
 import atexit
@@ -34,20 +34,10 @@ from datetime import datetime
 app = create_app()
 
 
-def get_scheduler_interval(settings_key, settings_unit_key, default_value, default_unit):
-    """Baca interval scheduler dari tabel settings."""
-    try:
-        from app.services import SettingsService
-        value = int(SettingsService.get(settings_key, default_value))
-        unit = SettingsService.get(settings_unit_key, default_unit)
-        return value * UNIT_MULTIPLIER.get(unit, UNIT_MULTIPLIER[default_unit])
-    except Exception:
-        return default_value * UNIT_MULTIPLIER[default_unit]
-
-
 def start_scheduler(app, autostart=True):
     """Buat dan start scheduler dengan interval dari DB."""
     scheduler = BackgroundScheduler()
+    app.extensions["scheduler"] = scheduler
 
     # Task 1: Cleanup expired sessions every minute
     scheduler.add_job(
@@ -119,12 +109,12 @@ _scheduler_autostart = (
     os.environ.get("TM_DISABLE_SCHEDULER") != "1"
     and (not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true")
 )
-scheduler = start_scheduler(app, autostart=_scheduler_autostart)
+scheduler = start_scheduler(app, autostart=False)
 
 if __name__ == "__main__":
     version = app.config.get("VERSION", "1.5.0")
-    if scheduler.running:
-        print(f"[v{version}] Background Tasks Started (Cleanup & Backup)")
+    if _scheduler_autostart:
+        print(f"[v{version}] Background Tasks siap dijalankan")
     else:
         print(f"[v{version}] Background Tasks tidak aktif (debug reloader parent)")
     
@@ -142,6 +132,8 @@ if __name__ == "__main__":
     # Mode produksi menggunakan Waitress jika DEBUG_MODE = False
     is_debug = app.config.get("DEBUG_MODE", False)
     if is_debug:
+        if _scheduler_autostart and not scheduler.running:
+            scheduler.start()
         is_gui = "pythonw" in sys.executable.lower()
         app.run(debug=True, host=server_host, port=server_port, use_reloader=not is_gui)
     else:
@@ -152,6 +144,8 @@ if __name__ == "__main__":
             print("[ERROR] Server TMBilling sudah berjalan. Hentikan proses lama dulu.")
             sys.exit(1)
         atexit.register(release)
+        if _scheduler_autostart and not scheduler.running:
+            scheduler.start()
         threads_count = app.config.get("WAITRESS_THREADS", 8)
         from waitress import serve
         print("* [PRODUCTION] Menjalankan server TMBilling menggunakan WSGI Waitress...")
