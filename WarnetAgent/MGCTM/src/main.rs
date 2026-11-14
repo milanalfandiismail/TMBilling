@@ -4,7 +4,6 @@ use std::thread;
 use std::time::Duration;
 use std::fs::File;
 use std::fs;
-use std::path::Path;
 use std::io::{Read, Write};
 use std::env;
 use serde::Deserialize;
@@ -25,30 +24,6 @@ const CREATE_BREAKAWAY_FROM_JOB: u32 = 0x01000000;
 #[derive(Deserialize)]
 struct TokenResponse {
     uninstall_token: String,
-}
-
-// =========================================================================
-// 1. HEX-XOR OBFUSCATION FOR SECURE REGISTRY & CONFIG STORAGE
-// =========================================================================
-fn obfuscate(input: &str) -> String {
-    let key = b"TMBillingSecretKey2026SecureObfuscation";
-    let hex_chars: Vec<String> = input.as_bytes().iter().enumerate().map(|(i, &b)| {
-        format!("{:02x}", b ^ key[i % key.len()])
-    }).collect();
-    hex_chars.join("")
-}
-
-fn deobfuscate(hex_input: &str) -> String {
-    let key = b"TMBillingSecretKey2026SecureObfuscation";
-    let mut bytes = Vec::new();
-    for i in (0..hex_input.len()).step_by(2) {
-        if i + 2 <= hex_input.len() {
-            if let Ok(b) = u8::from_str_radix(&hex_input[i..i+2], 16) {
-                bytes.push(b ^ key[(i/2) % key.len()]);
-            }
-        }
-    }
-    String::from_utf8(bytes).unwrap_or_default()
 }
 
 // =========================================================================
@@ -125,21 +100,6 @@ fn verify_file_integrity() -> Result<(), String> {
     }
 }
 
-fn is_obfuscated(input: &str) -> bool {
-    let input = input.trim();
-    if input.is_empty() || input.len() % 2 != 0 {
-        return false;
-    }
-    if !input.chars().all(|c| c.is_ascii_hexdigit()) {
-        return false;
-    }
-    let deobf = deobfuscate(input);
-    if deobf.is_empty() {
-        return false;
-    }
-    deobf.chars().all(|c| c.is_ascii() && !c.is_control())
-}
-
 fn sha256_hex(input: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(input.as_bytes());
@@ -152,21 +112,12 @@ fn to_sha256_hash(val: &str) -> String {
     if val.len() == 64 && val.chars().all(|c| c.is_ascii_hexdigit()) {
         return val.to_lowercase();
     }
-    // XOR-obfuscated (format lama registry) — decode dulu
-    if is_obfuscated(val) {
-        let deobf = deobfuscate(val);
-        // Jika hasil decode sudah 64-char hex (SHA256 ter-obfuscate), return as-is
-        if deobf.len() == 64 && deobf.chars().all(|c| c.is_ascii_hexdigit()) {
-            return deobf.to_lowercase();
-        }
-        return sha256_hex(&deobf);
-    }
     // Plain text — hash langsung
     sha256_hex(val)
 }
 
 // Memuat konfigurasi hibrida (Registry -> config.ini -> default)
-// Jika terdeteksi plain text, langsung dikonversi menjadi hash SHA-256 ter-obfuscate kembali!
+// Jika terdeteksi plain text, langsung dikonversi menjadi hash SHA-256 dan disimpan kembali!
 fn load_config() -> (String, String, String, String) {
     let mut reg_url = None;
     let mut reg_api_key = None;
@@ -186,7 +137,7 @@ fn load_config() -> (String, String, String, String) {
         if let Ok(k) = subkey.get_value::<String, _>("ApiKey") {
             let k_trimmed = k.trim().to_string();
             if !k_trimmed.is_empty() {
-                reg_api_key = Some(if is_obfuscated(&k_trimmed) { deobfuscate(&k_trimmed) } else { k_trimmed });
+                reg_api_key = Some(k_trimmed);
             }
         }
     }
@@ -227,11 +178,7 @@ fn load_config() -> (String, String, String, String) {
                     }
                 } else if key == "apikey" || key == "api_key" {
                     if !val.is_empty() {
-                        if is_obfuscated(&val) {
-                            ini_api_key = Some(deobfuscate(&val));
-                        } else {
-                            ini_api_key = Some(val.clone());
-                        }
+                        ini_api_key = Some(val);
                     }
                 } else if key == "emergencyuser" || key == "emergency_user" {
                     if !val.is_empty() {
@@ -248,19 +195,17 @@ fn load_config() -> (String, String, String, String) {
 
     // 3. Priority: REG > INI (Registry sumber kebenaran)
     let url = reg_url.or(ini_url).unwrap_or_else(|| "http://127.0.0.1:7015".to_string());
-    let api_key = reg_api_key.or(ini_api_key).unwrap_or_else(|| "TM2026QWERTY-api-key".to_string());
+    let api_key = reg_api_key.or(ini_api_key).unwrap_or_default();
     let em_user = reg_em_user.or(ini_em_user).unwrap_or_default();
     let em_token = reg_em_token.or(ini_em_token).unwrap_or_default();
 
     // 4. Sinkronisasi: hanya tulis Url & ApiKey ke HKLM.
     // EmergencyUser/Token TIDAK ditimpa — sudah diset oleh write_config.ps1 dalam format SHA256.
-    // Menimpa dengan XOR-obfuscated akan membuat Tauri client tidak bisa login.
-    let obf_api_key = obfuscate(&api_key);
-
+    // Jangan menimpa config.ini milik client Tauri saat sinkronisasi.
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
     if let Ok(subkey) = hklm.create_subkey("Software\\TMBilling") {
         let _ = subkey.set_value("Url", &url);
-        let _ = subkey.set_value("ApiKey", &obf_api_key);
+        let _ = subkey.set_value("ApiKey", &api_key);
         // EmergencyUser & EmergencyToken sengaja tidak ditulis ulang di sini
     }
 
@@ -289,20 +234,28 @@ fn sync_uninstall_token() {
 }
 
 // Membaca uninstall token pembanding dari Folder Temp
-fn get_uninstall_token_from_temp() -> String {
+fn get_uninstall_token_from_temp() -> Option<String> {
     let mut temp_path = env::temp_dir();
     temp_path.push("tmb_uninstall.token");
-    
+
     if let Ok(mut file) = File::open(temp_path) {
         let mut contents = String::new();
         if file.read_to_string(&mut contents).is_ok() {
             let clean = contents.trim().to_string();
             if !clean.is_empty() {
-                return clean;
+                return Some(clean);
             }
         }
     }
-    "TM_UNINSTALL_SAFE_2026".to_string() // Fallback default
+    None
+}
+
+// Token stop hanya sah bila berasal dari server; tidak ada fallback.
+fn token_matches(content: &str, token: Option<&str>) -> bool {
+    match token {
+        Some(t) if !t.is_empty() => content == t,
+        _ => false,
+    }
 }
 
 fn check_stop_token() -> bool {
@@ -324,15 +277,7 @@ fn check_stop_token() -> bool {
                 let mut contents = String::new();
                 if file.read_to_string(&mut contents).is_ok() {
                     let clean_content = contents.trim();
-                    let secret_token = get_uninstall_token_from_temp();
-                    if clean_content == secret_token {
-                        return true;
-                    }
-
-                    // Cek juga kecocokan dengan token darurat (Emergency Token)
-                    let (_, _, _, em_token) = load_config();
-                    let clean_hash = sha256_hex(clean_content);
-                    if clean_hash.eq_ignore_ascii_case(&em_token.trim()) || clean_content == em_token.trim() {
+                    if token_matches(clean_content, get_uninstall_token_from_temp().as_deref()) {
                         return true;
                     }
                 }
@@ -514,10 +459,29 @@ fn main() {
             }
         }
 
-        // Pastikan konfigurasi lokal & registry selalu sinkron & ter-obfuscate
+        // Pastikan konfigurasi lokal & registry selalu sinkron
         let _ = load_config();
 
         // Seragam: Polling & Main loop tepat 5 detik sekali!
         thread::sleep(Duration::from_secs(5));
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::token_matches;
+
+    #[test]
+    fn token_cocok_diterima() {
+        assert!(token_matches("token-server", Some("token-server")));
+    }
+
+    #[test]
+    fn fallback_hardcoded_ditolak() {
+        assert!(!token_matches("TM_UNINSTALL_SAFE_2026", None));
+    }
+
+    #[test]
+    fn hash_emergency_tidak_diterima() {
+        assert!(!token_matches("deadbeef", Some("cafebabe")));
     }
 }

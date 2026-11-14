@@ -93,34 +93,6 @@ fn resolve_qris_source(base_url: &str, qris_path: Option<&str>, qris_url: Option
     }
 }
 
-fn deobfuscate(hex_input: &str) -> String {
-    let key = b"TMBillingSecretKey2026SecureObfuscation";
-    let mut bytes = Vec::new();
-    for i in (0..hex_input.len()).step_by(2) {
-        if i + 2 <= hex_input.len() {
-            if let Ok(b) = u8::from_str_radix(&hex_input[i..i+2], 16) {
-                bytes.push(b ^ key[(i/2) % key.len()]);
-            }
-        }
-    }
-    String::from_utf8(bytes).unwrap_or_default()
-}
-
-fn is_obfuscated(input: &str) -> bool {
-    let input = input.trim();
-    if input.is_empty() || input.len() % 2 != 0 {
-        return false;
-    }
-    if !input.chars().all(|c| c.is_ascii_hexdigit()) {
-        return false;
-    }
-    let deobf = deobfuscate(input);
-    if deobf.is_empty() {
-        return false;
-    }
-    deobf.chars().all(|c| c.is_ascii() && !c.is_control())
-}
-
 fn sha256_hex(input: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(input.as_bytes());
@@ -135,6 +107,10 @@ fn to_sha256_hash(val: &str) -> String {
     }
     // Plain text — hash langsung (emergency creds tidak di-XOR-obfuscate)
     sha256_hex(val)
+}
+
+pub fn is_emergency_response(status: &str, nama: Option<&str>) -> bool {
+    status == "system" && nama == Some("SYSTEM")
 }
 
 #[derive(Clone)]
@@ -185,11 +161,7 @@ impl ApiService {
             if let Ok(k) = subkey.get_value::<String, _>("ApiKey") {
                 let k = k.trim().to_string();
                 if !k.is_empty() {
-                    if is_obfuscated(&k) {
-                        reg_api_key = Some(deobfuscate(&k));
-                    } else {
-                        reg_api_key = Some(k);
-                    }
+                    reg_api_key = Some(k);
                 }
             }
             if let Ok(user) = subkey.get_value::<String, _>("EmergencyUser") {
@@ -231,11 +203,7 @@ impl ApiService {
                         if key == "url" {
                             ini_url = Some(val);
                         } else if key == "apikey" || key == "api_key" {
-                            if is_obfuscated(&val) {
-                                ini_api_key = Some(deobfuscate(&val));
-                            } else {
-                                ini_api_key = Some(val);
-                            }
+                            ini_api_key = Some(val);
                         } else if key == "emergencyuser" || key == "emergency_user" {
                             ini_em_user = Some(to_sha256_hash(&val));
                         } else if key == "emergencytoken" || key == "emergency_token" {
@@ -250,7 +218,7 @@ impl ApiService {
         }
 
         let url = reg_url.or(ini_url).unwrap_or_else(|| "http://127.0.0.1:7015".to_string());
-        let api_key = reg_api_key.or(ini_api_key).unwrap_or_else(|| "TM2026".to_string());
+        let api_key = reg_api_key.or(ini_api_key).unwrap_or_default();
         let em_user = reg_em_user.or(ini_em_user).unwrap_or_default();
         let em_token = reg_em_token.or(ini_em_token).unwrap_or_default();
 
@@ -665,5 +633,30 @@ mod tests {
             Some("https://cdn.example.com/a.png"),
         );
         assert_eq!(resolve_qris_source("http://srv", None, None), None);
+    }
+}
+
+
+#[cfg(test)]
+mod secret_tests {
+    use super::{is_emergency_response, to_sha256_hash};
+
+    #[test]
+    fn hash_64_hex_dipertahankan_lowercase() {
+        let h = "A".repeat(64);
+        assert_eq!(to_sha256_hash(&h), "a".repeat(64));
+    }
+
+    #[test]
+    fn plaintext_di_hash() {
+        assert_eq!(to_sha256_hash("TMBilling").len(), 64);
+    }
+
+    #[test]
+    fn darurat_hanya_bila_keduanya() {
+        assert!(is_emergency_response("system", Some("SYSTEM")));
+        assert!(!is_emergency_response("system", None));
+        assert!(!is_emergency_response("system", Some("Member")));
+        assert!(!is_emergency_response("aktif", Some("SYSTEM")));
     }
 }

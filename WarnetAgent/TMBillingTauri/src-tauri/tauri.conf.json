@@ -11,9 +11,7 @@
     "version": "1.6.5"
   },
   "tauri": {
-    "allowlist": {
-      "all": true
-    },
+    "allowlist": {},
     "bundle": {
       "active": true,
       "category": "DeveloperTool",
@@ -34,7 +32,7 @@
       "targets": "all"
     },
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' data: http: https:; style-src 'self' 'unsafe-inline'"
     },
     "windows": [
       {

@@ -1,4 +1,4 @@
-# TMBilling Config Writer with Obfuscation
+# TMBilling Config Writer
 param(
     [string]$InstallDir,
     [string]$ServerUrl,
@@ -6,21 +6,6 @@ param(
     [string]$EmergencyUser,
     [string]$EmergencyToken
 )
-
-function Obfuscate {
-    param([string]$text)
-
-    $key = [byte[]][char[]]'TMBillingSecretKey2026SecureObfuscation'
-    $bytes = [System.Text.Encoding]::UTF8.GetBytes($text)
-    $result = ''
-
-    for ($i = 0; $i -lt $bytes.Length; $i++) {
-        $xored = $bytes[$i] -bxor $key[$i % $key.Length]
-        $result += '{0:x2}' -f $xored
-    }
-
-    return $result
-}
 
 function Compute-Sha256 {
     param([string]$text)
@@ -32,10 +17,9 @@ function Compute-Sha256 {
 }
 
 try {
-    # Obfuscate ApiKey, Hash Emergency Credentials with SHA-256
+    # Hash Emergency Credentials dengan SHA-256
     $hashUser  = Compute-Sha256 -text $EmergencyUser
     $hashToken = Compute-Sha256 -text $EmergencyToken
-    $obfApiKey = Obfuscate -text $ApiKey
 
     # STEP 1: Write to Registry
     # HKCU selalu ditulis (tidak butuh admin) agar agent yang berjalan
@@ -50,7 +34,7 @@ try {
             New-Item -Path $regPathUser -Force | Out-Null
         }
         Set-ItemProperty -Path $regPathUser -Name "Url"            -Value $ServerUrl  -Type String -Force
-        Set-ItemProperty -Path $regPathUser -Name "ApiKey"         -Value $obfApiKey  -Type String -Force
+        Set-ItemProperty -Path $regPathUser -Name "ApiKey"         -Value $ApiKey  -Type String -Force
         Set-ItemProperty -Path $regPathUser -Name "EmergencyUser"  -Value $hashUser   -Type String -Force
         Set-ItemProperty -Path $regPathUser -Name "EmergencyToken" -Value $hashToken  -Type String -Force
         $regSuccess = $true
@@ -66,7 +50,7 @@ try {
             New-Item -Path $regPath -Force | Out-Null
         }
         Set-ItemProperty -Path $regPath -Name "Url"            -Value $ServerUrl  -Type String -Force
-        Set-ItemProperty -Path $regPath -Name "ApiKey"         -Value $obfApiKey  -Type String -Force
+        Set-ItemProperty -Path $regPath -Name "ApiKey"         -Value $ApiKey  -Type String -Force
         Set-ItemProperty -Path $regPath -Name "EmergencyUser"  -Value $hashUser   -Type String -Force
         Set-ItemProperty -Path $regPath -Name "EmergencyToken" -Value $hashToken  -Type String -Force
         Write-Host "Registry (HKLM) updated successfully"
@@ -83,7 +67,7 @@ try {
     $content = @(
         "[TMBilling]",
         "url=$ServerUrl",
-        "apikey=$obfApiKey",
+        "apikey=$ApiKey",
         "emergency_user=$hashUser",
         "emergency_token=$hashToken"
     )
