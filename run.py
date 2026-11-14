@@ -27,6 +27,7 @@ from app.utils.scheduler_tasks import (
     UNIT_MULTIPLIER,
 )
 import os
+import atexit
 import time
 from datetime import datetime
 
@@ -146,6 +147,11 @@ if __name__ == "__main__":
     else:
         # Menjalankan server dalam mode produksi menggunakan Waitress (direkomendasikan untuk Windows)
         # Mengambil konfigurasi threads dari app.config (default: 8)
+        from app.utils.instance_lock import claim, release
+        if not claim(app.instance_path):
+            print("[ERROR] Server TMBilling sudah berjalan. Hentikan proses lama dulu.")
+            sys.exit(1)
+        atexit.register(release)
         threads_count = app.config.get("WAITRESS_THREADS", 8)
         from waitress import serve
         print("* [PRODUCTION] Menjalankan server TMBilling menggunakan WSGI Waitress...")

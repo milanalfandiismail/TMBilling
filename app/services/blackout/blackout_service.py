@@ -38,6 +38,7 @@ class BlackoutService:
         batas_waktu = now_local() - timedelta(minutes=threshold)
 
         count = 0
+        log_rows = []
         with WRITE_LOCK:
             sesi_list = SesiRepository.get_aktif_belum_suspect_lama_sync(batas_waktu)
             for sesi in sesi_list:
@@ -64,14 +65,18 @@ class BlackoutService:
                 sesi.status = "selesai"
                 sesi.selesai_pada = waktu_referensi
 
+                log_rows.append((sesi.id, sisa_dashboard, sisa_audit))
+                count += 1
+
+            if log_rows:
                 db.session.commit()
 
-                label = f"Member:{sesi.member.username}" if sesi.member else f"Guest:{sesi.nama_guest or '?'}"
-                write_log("BLACKOUT_DETECT", f"#{sesi.id} | Dash: {sisa_dashboard}m | Audit: {sisa_audit}m", user="kasir")
-                count += 1
+        for sesi_id, sisa_dashboard, sisa_audit in log_rows:
+            write_log("BLACKOUT_DETECT", f"#{sesi_id} | Dash: {sisa_dashboard}m | Audit: {sisa_audit}m", user="kasir")
 
         write_log("BLACKOUT_DETECT", f"Total terdeteksi: {count} sesi", user="kasir")
         return count
+
 
     @staticmethod
     def get_audit_list(selected_date=None):

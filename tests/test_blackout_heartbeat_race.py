@@ -70,3 +70,49 @@ def test_deteksi_tidak_menutup_sesi_yang_baru_sync(app_ctx, monkeypatch):
     assert BlackoutService.deteksi(menit_threshold=1) == 0
     db.session.refresh(sesi)
     assert sesi.status == "aktif"
+
+
+def test_deteksi_satu_commit_dan_log_di_luar_lock(app_ctx, monkeypatch):
+    from app.services.blackout import blackout_service as module
+    from app.services.write_lock import WRITE_LOCK as asli
+
+    for nama in ("Tamu A", "Tamu B"):
+        db.session.add(Sesi(
+            tipe="guest", nama_guest=nama, status="aktif",
+            mulai_pada=now_local() - timedelta(minutes=90),
+            last_sync=now_local() - timedelta(minutes=30),
+            durasi_beli_menit=60, total_bayar=6000,
+        ))
+    db.session.commit()
+
+    state = {"held": False, "log_di_dalam_lock": []}
+    commits = []
+    commit_asli = db.session.commit
+
+    def commit_palsu():
+        commits.append(1)
+        commit_asli()
+
+    def write_log_palsu(aksi, detail, **kwargs):
+        state["log_di_dalam_lock"].append(state["held"])
+
+    class TrackingLock:
+        def __enter__(self):
+            state["held"] = True
+            asli.acquire()
+
+        def __exit__(self, *exc):
+            asli.release()
+            state["held"] = False
+
+    monkeypatch.setattr(db.session, "commit", commit_palsu)
+    monkeypatch.setattr(module, "write_log", write_log_palsu)
+    monkeypatch.setattr(module, "WRITE_LOCK", TrackingLock())
+
+    jumlah = BlackoutService.deteksi(menit_threshold=1)
+
+    assert jumlah == 2
+    assert len(commits) == 1
+    assert state["log_di_dalam_lock"] == [False, False, False]
+    assert BlackoutService.deteksi(menit_threshold=1) == 0
+    assert len(commits) == 1

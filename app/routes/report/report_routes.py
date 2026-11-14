@@ -8,7 +8,7 @@ system logs, dan manajemen struk/nota.
 
 from flask import Blueprint, request, jsonify, Response, session
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
-from app.services import ReportService
+from app.services import ReportService, maintenance_mode
 
 report_api_bp = Blueprint("report", __name__)
 
@@ -242,7 +242,9 @@ def clear_date_transactions_endpoint(tanggal):
     """Hapus seluruh transaksi pada tanggal tertentu."""
     try:
         kasir = session.get("kasir_username", "kasir")
-        if ReportService.clear_transactions_by_date(tanggal, operator=kasir):
+        with maintenance_mode.restoring():
+            hasil = ReportService.clear_transactions_by_date(tanggal, operator=kasir)
+        if hasil:
             return jsonify({"success": True, "message": f"Transaksi tanggal {tanggal} berhasil dihapus"}), 200
         return jsonify({"error": "Gagal menghapus transaksi"}), 500
     except ValueError as e:
