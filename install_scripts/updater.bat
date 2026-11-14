@@ -84,6 +84,14 @@ if errorlevel 1 (
     goto :fail
 )
 
+:: 5b. Pastikan paket benar-benar terpasang di versi yang dipatok
+"%TM_PY%" "install_scripts\verify_versions.py"
+if errorlevel 1 (
+    echo [ERROR] Versi dependensi tidak sesuai requirements.txt setelah upgrade.
+    echo         Server TIDAK dinyalakan; jalankan ulang pembaruan setelah memperbaiki paket.
+    goto :fail
+)
+
 :: 6. Migrasi skema database setelah kode & dependensi baru terpasang
 "%TM_PY%" "install_scripts\run_migration.py"
 if errorlevel 1 (

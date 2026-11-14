@@ -18,4 +18,7 @@ waitress==3.0.2
 APScheduler==3.11.3
 reportlab==5.1.0
 websockify==0.13.0
-Pillow>=12.0.0
+Pillow==13.0.0
+certifi==2026.10.23
+urllib3==2.8.0
+Mako==1.4.3
