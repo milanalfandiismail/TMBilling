@@ -787,8 +787,9 @@ async function runPCBillingLifecycleE2ETest(page) {
 
         const trxBefore = (await dbQuery('SELECT COUNT(*) AS n, COALESCE(MAX(id), 0) AS maxId FROM transaksi'))[0];
 
+        await tab(page, 'blackout');
         page.once('dialog', (dialog) => dialog.accept());
-        await page.evaluate(() => Blackout.forceAllAndDetect());
+        await page.click('#blackout-force-all-btn');
 
         const deadline = Date.now() + 5000;
         let sisa = null;

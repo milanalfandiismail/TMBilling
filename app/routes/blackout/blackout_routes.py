@@ -151,6 +151,7 @@ def resolve_guest_tutup(sesi_id):
 # =========================================================================
 # Fokus: Pembersihan data audit dan penutupan massal saat server mati.
 
+# Kasir ber-shift boleh menutup semua sesi saat mati lampu (temuan audit #4).
 @blackout_api_bp.route("/force-all-and-detect", methods=["POST"])
 @login_required
 @shift_required

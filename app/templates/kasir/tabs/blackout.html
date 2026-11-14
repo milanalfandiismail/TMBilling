@@ -34,6 +34,14 @@
                         <option value="60" selected>60m</option>
                     </select>
 
+                    <!-- Tutup paksa semua sesi (kasir ber-shift / admin) -->
+                    <button id="blackout-force-all-btn" onclick="Blackout.forceAllAndDetect()"
+                        class="px-2 sm:px-3 py-1 bg-red-700 hover:bg-red-600 text-white text-[10px] sm:text-xs font-bold rounded transition-colors flex items-center gap-1 sm:gap-1.5 shadow-sm shrink-0 whitespace-nowrap"
+                        title="Tutup semua sesi aktif saat mati lampu">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <span>Tutup Semua</span>
+                    </button>
+
                     <!-- Tombol Deteksi Blackout -->
                     <button onclick="Blackout.deteksi()"
                         class="px-2 sm:px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white text-[10px] sm:text-xs font-bold rounded transition-colors flex items-center gap-1 sm:gap-1.5 shadow-sm shrink-0 whitespace-nowrap">
