@@ -2,12 +2,13 @@
 """
 import io
 import os
-from datetime import datetime
 from flask import request, jsonify, session, current_app, send_file
 from app.services import SettingsService, BackupService
 from app.services.backup.backup_service import default_backup_dir, default_db_path
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.utils.logger import write_log
+from app.utils.timezone_utils import format_local_now
+from app.utils.helpers import remove_quiet
 from app.routes.settings.settings_routes import settings_api_bp
 
 @settings_api_bp.route("/backup/manual", methods=["POST"])
@@ -65,16 +66,13 @@ def download_db():
 
         @after_this_request
         def _remove_snapshot(response):
-            try:
-                os.remove(snapshot_path)
-            except OSError:
-                pass
+            remove_quiet(snapshot_path)
             return response
 
         return send_file(
             snapshot_path,
             as_attachment=True,
-            download_name=f"warnet_manual_backup_{datetime.now().strftime('%Y%m%d')}.db",
+            download_name=f"warnet_manual_backup_{format_local_now('%Y%m%d')}.db",
             mimetype='application/x-sqlite3'
         )
     except Exception as e:

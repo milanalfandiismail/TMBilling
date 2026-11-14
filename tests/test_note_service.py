@@ -208,3 +208,14 @@ def test_notes_dir_honors_env_override(tmp_path, monkeypatch):
     monkeypatch.setenv("TM_NOTES_DIR", str(target))
     assert NoteService.get_notes_dir() == os.path.realpath(str(target))
     assert target.is_dir()
+
+
+def test_toggle_pin_gagal_simpan_melempar_error(app):
+    note = NoteService.create_note("Catatan Gagal Pin", "isi catatan")
+    pinned_path = NoteService._get_pinned_file_path()
+    os.makedirs(pinned_path)
+    try:
+        with pytest.raises(OSError):
+            NoteService.toggle_pin(note["filename"])
+    finally:
+        shutil.rmtree(pinned_path, ignore_errors=True)

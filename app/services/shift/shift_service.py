@@ -559,6 +559,7 @@ class ShiftService:
         lines.append(row("Pend.Kantin :", f"Rp {shift.total_kantin or 0:,.0f}"))
 
         tunai_total = None
+        rincian_rusak = False
         if shift.detail_metode_json:
             try:
                 detail = json.loads(shift.detail_metode_json)
@@ -569,7 +570,10 @@ class ShiftService:
                         label = f"{m_name[:14]}:"
                         lines.append(row(label, f"Rp {item['total']:,.0f}"))
             except Exception:
-                pass
+                rincian_rusak = True
+
+        if rincian_rusak:
+            lines.append(row("RINCIAN BAYAR:", "TIDAK TERBACA"))
 
         if tunai_total is None:
             if (shift.total_qris or 0) > 0:

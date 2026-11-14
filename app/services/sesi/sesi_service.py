@@ -482,16 +482,13 @@ class SesiService:
                 sesi.afk_pin = None
                 sesi.afk_sejak = None
 
-                try:
-                    transaksi = Transaksi(
-                        sesi_id=sesi.id, member_id=sesi.member_id,
-                        jenis="tutup_sesi", keterangan=f"Sesi {sesi.tipe} habis otomatis (Auto-cleanup)",
-                        user_id=None,
-                        operator="system"
-                    )
-                    db.session.add(transaksi)
-                except Exception:
-                    pass
+                transaksi = Transaksi(
+                    sesi_id=sesi.id, member_id=sesi.member_id,
+                    jenis="tutup_sesi", keterangan=f"Sesi {sesi.tipe} habis otomatis (Auto-cleanup)",
+                    user_id=None,
+                    operator="system"
+                )
+                db.session.add(transaksi)
 
                 count += 1
         if count > 0: db.session.commit()

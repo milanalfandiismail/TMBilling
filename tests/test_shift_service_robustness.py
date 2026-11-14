@@ -147,3 +147,32 @@ def test_generate_shift_receipt_text(app_ctx):
     assert "Andi Pratama" in receipt
     assert "Modal Awal" in receipt
     assert "Selisih" in receipt
+
+
+def test_struk_shift_rincian_rusak_ditandai(app_ctx):
+    kasir = User(username="kasir_rusak", nama_lengkap="Kasir Rusak", role="kasir")
+    kasir.set_password("x")
+    db.session.add(kasir)
+    db.session.commit()
+    shift = ShiftService.start_shift("kasir_rusak", modal_awal=100000, operator="admin")
+    shift.detail_metode_json = "{bukan json"
+    shift.total_billing = 50000
+    db.session.commit()
+    teks = ShiftService.generate_shift_receipt_text(shift.id)
+    assert "TIDAK TERBACA" in teks
+    assert "Uang Seharusnya" in teks
+
+
+def test_struk_shift_rincian_valid_tanpa_penanda(app_ctx):
+    import json
+    kasir = User(username="kasir_valid", nama_lengkap="Kasir Valid", role="kasir")
+    kasir.set_password("x")
+    db.session.add(kasir)
+    db.session.commit()
+    shift = ShiftService.start_shift("kasir_valid", modal_awal=100000, operator="admin")
+    shift.detail_metode_json = json.dumps({"tunai": {"total": 10000}, "non_tunai": []})
+    shift.total_billing = 10000
+    db.session.commit()
+    teks = ShiftService.generate_shift_receipt_text(shift.id)
+    assert "TIDAK TERBACA" not in teks
+    assert "Uang Seharusnya" in teks

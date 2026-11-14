@@ -174,3 +174,19 @@ def test_validate_filename():
     with pytest.raises(ValueError, match="Nama Berkas tidak boleh kosong"):
         validate_filename("")
 
+
+
+def test_payment_methods_gagal_baca_dicatat(monkeypatch):
+    from app.utils import validators
+    from app.services.settings.settings_service import SettingsService
+
+    def gagal_get(*args, **kwargs):
+        raise RuntimeError("settings rusak")
+
+    monkeypatch.setattr(SettingsService, "get", staticmethod(gagal_get))
+    tercatat = []
+    monkeypatch.setattr("app.utils.logger.write_log",
+                        lambda kode, pesan, **kw: tercatat.append(kode))
+    hasil = validators.get_allowed_payment_methods()
+    assert "Tunai" in hasil
+    assert tercatat == ["PAYMENT_METHODS_ERROR"]

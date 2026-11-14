@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 from app.repositories.game.game_repository import GameRepository
 from app.models.game.game import Game
 from app.utils.logger import write_log
+from app.utils.helpers import remove_quiet
 
 from app.utils.validators import validate_string_length, validate_choice, validate_filename
 
@@ -42,13 +43,9 @@ class GameService:
         """Menghapus file fisik icon/cover game dari disk secara aman."""
         if not icon_filename or not isinstance(icon_filename, str):
             return
-        try:
-            filename = os.path.basename(icon_filename.replace("\\", "/"))
-            filepath = os.path.join(_upload_folder(), filename)
-            if os.path.exists(filepath):
-                os.remove(filepath)
-        except Exception:
-            pass
+        filename = os.path.basename(icon_filename.replace("\\", "/"))
+        filepath = os.path.join(_upload_folder(), filename)
+        remove_quiet(filepath)
 
     @staticmethod
     def _normalize_kategori(kat_val):

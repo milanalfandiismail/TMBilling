@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify
 from app.middleware.auth import login_required, admin_required
 import os
 import subprocess
+from app.utils.helpers import remove_quiet
 
 server_monitor_bp = Blueprint('server_monitor_api', __name__, url_prefix='/api/v1/kasir')
 
@@ -40,11 +41,7 @@ def stop_lhm_service():
         
         tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "tmp"))
         json_path = os.path.join(tmp_dir, "lhm_metrics.json")
-        if os.path.exists(json_path):
-            try:
-                os.remove(json_path)
-            except:
-                pass
+        remove_quiet(json_path)
             
         return jsonify({"success": True, "message": "LHM Service dimatikan."})
     except Exception as e:

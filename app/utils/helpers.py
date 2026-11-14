@@ -7,6 +7,8 @@ bagian aplikasi, termasuk validasi dan formatting nominal/durasi.
 """
 
 import re
+import os
+
 
 
 def validate_ip(ip):
@@ -253,3 +255,12 @@ def parse_google_maps_info(gmaps_input, warnet_address=""):
         "is_valid": is_valid
     }
 
+
+def remove_quiet(path):
+    """Hapus berkas tanpa melempar; kegagalan dicatat ke log audit."""
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+    except OSError as e:
+        from app.utils.logger import write_log
+        write_log("FILE_REMOVE_ERROR", f"Gagal menghapus berkas {path}: {e}")

@@ -12,7 +12,7 @@ from app.models import PC, Sesi, db, now_local
 from app.repositories import PCRepository
 from app.repositories import SesiRepository
 from app.repositories import GrupRepository
-from app.utils.helpers import natural_sort_key
+from app.utils.helpers import natural_sort_key, remove_quiet
 from app.utils.logger import write_log
 from app.utils.validators import validate_string_length, validate_integer_range, validate_ip_address, validate_mac_address
 
@@ -341,12 +341,8 @@ class PCService:
                 pass
 
             # 6. Cleanup screenshot file di filesystem jika ada
-            try:
-                screenshot_path = os.path.join(current_app.instance_path, 'uploads', 'screenshots', f"{kode}.png")
-                if os.path.exists(screenshot_path):
-                    os.remove(screenshot_path)
-            except Exception:
-                pass
+            screenshot_path = os.path.join(current_app.instance_path, 'uploads', 'screenshots', f"{kode}.png")
+            remove_quiet(screenshot_path)
 
             write_log("HAPUS_PC", f"PC:{kode} dihapus permanen beserta seluruh dependensinya", user=operator, detail_json={"kode": kode, "pc_id": pc_id})
             return {"success": True, "message": f"PC {kode} berhasil dihapus"}

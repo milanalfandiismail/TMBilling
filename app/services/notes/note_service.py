@@ -90,11 +90,8 @@ class NoteService:
     def _save_pinned_set(cls, pinned_set: set[str]):
         """Menyimpan daftar nama berkas yang disematkan ke .pinned.json."""
         pinned_path = cls._get_pinned_file_path()
-        try:
-            with open(pinned_path, 'w', encoding='utf-8') as f:
-                json.dump(sorted(list(pinned_set)), f, indent=2)
-        except Exception:
-            pass
+        with open(pinned_path, 'w', encoding='utf-8') as f:
+            json.dump(sorted(list(pinned_set)), f, indent=2)
 
     @classmethod
     def toggle_pin(cls, filename: str) -> dict:

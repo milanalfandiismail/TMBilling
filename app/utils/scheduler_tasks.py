@@ -6,6 +6,7 @@ import json
 import os
 import re
 from datetime import datetime, timedelta
+from app.utils.timezone_utils import format_local_now
 from app.services import SesiService
 from app.utils.logger import write_log
 
@@ -24,12 +25,12 @@ _LAST_RUN = {}
 
 def record_run(job_id, ok=True):
     """Catat eksekusi terakhir per job di memori dan simpan ke Settings."""
-    _LAST_RUN[job_id] = {"at": datetime.now().isoformat(timespec="seconds"), "ok": bool(ok)}
+    _LAST_RUN[job_id] = {"at": format_local_now("%Y-%m-%dT%H:%M:%S"), "ok": bool(ok)}
     try:
         from app.services import SettingsService
         SettingsService.set(_SETTINGS_KEY, json.dumps(_LAST_RUN))
-    except Exception:
-        pass
+    except Exception as e:
+        write_log("SCHEDULER_STATUS_ERROR", f"Gagal menyimpan status job {job_id}: {e}")
 
 
 def get_last_runs():
@@ -115,7 +116,7 @@ def run_cleanup_logs(app):
             value = int(SettingsService.get("auto_cleanup_value", 30))
             unit = SettingsService.get("auto_cleanup_unit", "hari")
             seconds = value * UNIT_MULTIPLIER.get(unit, 86400)
-            cutoff = datetime.now() - timedelta(seconds=seconds)
+            cutoff = datetime.strptime(format_local_now(), "%Y-%m-%d %H:%M:%S") - timedelta(seconds=seconds)
             
             def should_keep(data):
                 ts = data.get("timestamp")

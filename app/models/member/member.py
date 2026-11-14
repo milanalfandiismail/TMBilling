@@ -123,7 +123,7 @@ class Member(db.Model):
                 (s for s in self.sesi_list if s.status == 'aktif'), None)
             if sesi_aktif:
                 waktu_tampil = sesi_aktif.sisa_menit()
-        except:
+        except Exception:
             pass
 
         return {

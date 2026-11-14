@@ -305,8 +305,9 @@ def get_allowed_payment_methods():
                     merged.append(c)
                     existing_lower.add(c.lower())
             return merged
-    except Exception:
-        pass
+    except Exception as e:
+        from app.utils.logger import write_log
+        write_log("PAYMENT_METHODS_ERROR", f"Gagal membaca payment_methods: {e}")
     return defaults
 
 
