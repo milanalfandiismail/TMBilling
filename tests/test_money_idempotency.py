@@ -1,8 +1,9 @@
 import pytest
 
 from app import create_app
-from app.models import db, Grup, MenuItem, Paket, PC, Sesi, Transaksi, User
+from app.models import db, Grup, Member, MenuItem, Paket, PC, Sesi, Transaksi, User
 from app.services import idempotency
+from app.services.member.member_service import MemberService
 from app.services.menu.menu_service import MenuService
 from app.services.sesi.sesi_service import SesiService
 
@@ -18,6 +19,7 @@ def bersihkan_kunci():
 def ctx(tmp_path):
     app = create_app({
         "TESTING": True,
+        "WTF_CSRF_ENABLED": False,
         "SQLALCHEMY_DATABASE_URI": "sqlite:///" + str(tmp_path / "idem.db"),
     })
     with app.app_context():
@@ -52,6 +54,54 @@ def test_tambah_waktu_tanpa_kunci_tetap_jalan(ctx):
         SesiService.tambah_waktu_sesi(ctx["sesi_id"], paket, operator="kasir")
         SesiService.tambah_waktu_sesi(ctx["sesi_id"], paket, operator="kasir")
         assert Transaksi.query.filter_by(jenis="tambah_waktu_guest").count() == 2
+
+
+def test_tambah_waktu_member_duplikat_ditolak(ctx):
+    with ctx["app"].app_context():
+        paket = db.session.get(Paket, ctx["paket_id"])
+        member = Member(username="member_idem", nama_lengkap="M", password_hash="x",
+                        grup_id=paket.grup_id, aktif=True, waktu_tersimpan=0)
+        db.session.add(member)
+        db.session.commit()
+        MemberService.tambah_waktu_batch(member.id, [(paket, 1)], operator="kasir", client_request_id="mt-1")
+        with pytest.raises(ValueError, match="sudah diproses"):
+            MemberService.tambah_waktu_batch(member.id, [(paket, 1)], operator="kasir", client_request_id="mt-1")
+        assert Transaksi.query.filter_by(jenis="beli_paket_member").count() == 1
+
+
+def test_route_tambah_waktu_duplikat_ditolak(ctx):
+    app = ctx["app"]
+    with app.app_context():
+        kasir = User(username="admin_idem", password_hash="x", role="admin")
+        paket = db.session.get(Paket, ctx["paket_id"])
+        member = Member(username="member_route", nama_lengkap="M", password_hash="x",
+                        grup_id=paket.grup_id, aktif=True, waktu_tersimpan=0)
+        db.session.add_all([kasir, member])
+        db.session.commit()
+        kasir_id, member_id = kasir.id, member.id
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["kasir_id"] = kasir_id
+            sess["kasir_role"] = "admin"
+            sess["kasir_username"] = "admin_idem"
+
+        payload = {
+            "member_id": member_id,
+            "selections": [{"paket_id": ctx["paket_id"], "qty": 1}],
+            "metode_pembayaran": "Tunai",
+            "client_request_id": "route-dup-1",
+        }
+        pertama = client.post("/api/v1/kasir/member/tambah-waktu", json=payload)
+        kedua = client.post("/api/v1/kasir/member/tambah-waktu", json=payload)
+
+    assert pertama.status_code == 200
+    assert kedua.status_code == 400
+    assert "sudah diproses" in kedua.get_json()["error"]
+
+    with app.app_context():
+        assert Transaksi.query.filter_by(jenis="beli_paket_member").count() == 1
+        assert db.session.get(Member, member_id).waktu_tersimpan == 60
 
 
 def test_checkout_duplikat_ditolak(ctx):

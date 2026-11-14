@@ -120,12 +120,12 @@ const API = {
         update: (id, data) => API.request(`/api/v1/kasir/member/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
         delete: (id, confirm) => API.request(`/api/v1/kasir/member/${id}`, { method: 'DELETE', body: JSON.stringify({ confirm }) }),
         archive: id => API.request(`/api/v1/kasir/member/${id}/archive`, { method: 'POST' }),
-        tambahWaktu: (memberId, paketIdOrPayload, qty = 1, metodePembayaran = 'Tunai') => {
+        tambahWaktu: (memberId, paketIdOrPayload, qty = 1, metodePembayaran = 'Tunai', clientRequestId = null) => {
             if (paketIdOrPayload && typeof paketIdOrPayload === 'object') {
-                const payload = { metode_pembayaran: metodePembayaran, ...paketIdOrPayload };
+                const payload = { metode_pembayaran: metodePembayaran, ...paketIdOrPayload, client_request_id: clientRequestId };
                 return API.request('/api/v1/kasir/member/tambah-waktu', { method: 'POST', body: JSON.stringify(payload) });
             }
-            return API.request('/api/v1/kasir/member/tambah-waktu', { method: 'POST', body: JSON.stringify({ member_id: memberId, paket_id: paketIdOrPayload, qty, metode_pembayaran: metodePembayaran }) });
+            return API.request('/api/v1/kasir/member/tambah-waktu', { method: 'POST', body: JSON.stringify({ member_id: memberId, paket_id: paketIdOrPayload, qty, metode_pembayaran: metodePembayaran, client_request_id: clientRequestId }) });
         },
         refundPaket: (memberId, transaksiId) => API.request('/api/v1/kasir/member/refund-paket', {
             method: 'POST',

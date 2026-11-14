@@ -200,13 +200,42 @@ async function runMemberPaketE2ETest(page) {
 
     await check(report, CHECK_NAMES[1], async () => {
         const paket = await paketByNama('1 Jam Reguler');
+        const bodies = [];
+        let gagalkanSekali = true;
+        await page.route('**/api/v1/kasir/member/tambah-waktu', async (route) => {
+            bodies.push(JSON.parse(route.request().postData() || '{}'));
+            if (gagalkanSekali) {
+                gagalkanSekali = false;
+                await route.fulfill({
+                    status: 400,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ error: 'uji paksa' }),
+                });
+                return;
+            }
+            await route.continue();
+        });
+
         await memberSearch(page, state.memberName);
         await clickRowButton(page, '#member-table', state.memberName, 'Tambah Waktu');
 
         await page.waitForSelector(`#mem-chk-paket-${paket.id}`, { state: 'visible' });
         await page.check(`#mem-chk-paket-${paket.id}`);
         await page.click('button[onclick^="Member.doAddWaktu("]');
+
+        // Submit pertama dipaksa gagal: modal wajib tetap terbuka agar kasir bisa mengulang.
+        await page.click('#modal-confirm-submit-btn');
+        await waitKasirToast(page, 'uji paksa');
+        assert.strictEqual(await page.isVisible('#modal-confirm-submit-btn'), true,
+            'modal konfirmasi harus tetap terbuka setelah server menolak');
+
         await clickConfirm(page, '#modal-confirm-submit-btn');
+        await page.unroute('**/api/v1/kasir/member/tambah-waktu');
+
+        assert.strictEqual(bodies.length, 2, 'harus ada dua request: satu gagal, satu sukses');
+        assert.ok(bodies[0].client_request_id, 'request top-up wajib membawa client_request_id');
+        assert.strictEqual(bodies[1].client_request_id, bodies[0].client_request_id,
+            'retry dalam modal yang sama wajib memakai client_request_id yang sama');
 
         await dbWait(
             'SELECT waktu_tersimpan FROM member WHERE id = ?',

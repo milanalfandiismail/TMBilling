@@ -490,6 +490,9 @@ const Member = {
 
         if (selections.length === 0) return Toast.error('Pilih minimal satu paket terlebih dahulu');
 
+        // ID tetap per niat top-up: retry di modal yang sama tidak menambah saldo dua kali.
+        const clientRequestId = Utils.requestId();
+
         try {
             const memberInfo = await API.member.get(memberId);
             const member = memberInfo.member || memberInfo;
@@ -530,7 +533,7 @@ const Member = {
                 dataLines: dataLines,
                 onConfirm: async () => {
                     try {
-                        await API.member.tambahWaktu(memberId, { member_id: memberId, selections: selections }, 1, metodePembayaran);
+                        await API.member.tambahWaktu(memberId, { member_id: memberId, selections: selections }, 1, metodePembayaran, clientRequestId);
                         Toast.success('Saldo ditambahkan');
                         Modal.closeModal();
                         if (typeof Member !== 'undefined' && typeof Member.load === 'function' && (typeof App === 'undefined' || App.currentTab === 'member')) {
@@ -541,6 +544,7 @@ const Member = {
                         }
                     } catch (err) {
                         Toast.error(err.message);
+                        return false;
                     }
                 }
             });

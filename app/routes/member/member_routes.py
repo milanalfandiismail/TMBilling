@@ -189,7 +189,10 @@ def tambah_waktu():
                 raise ValueError("Kuantitas harus minimal 1")
             items.append((PaketService.get_by_id(paket_id), qty))
 
-        MemberService.tambah_waktu_batch(member_id, items, operator=kasir, metode_pembayaran=metode_pembayaran)
+        MemberService.tambah_waktu_batch(
+            member_id, items, operator=kasir, metode_pembayaran=metode_pembayaran,
+            client_request_id=data.get("client_request_id"),
+        )
             
         return jsonify({"success": True, "message": "Waktu berhasil ditambah"}), 200
     except ValueError as e:

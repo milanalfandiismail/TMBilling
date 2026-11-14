@@ -17,6 +17,7 @@ from app.repositories import GrupRepository
 from app.repositories import TransaksiRepository
 from app.services.transaksi.transaksi_service import TransaksiService
 from app.services.write_lock import WRITE_LOCK
+from app.services import idempotency
 from app.utils.logger import write_log
 from app.models import db, now_local
 from app.models.mikrotik.mikrotik import MikroTikConfig
@@ -327,8 +328,10 @@ class MemberService:
             return member
 
     @staticmethod
-    def tambah_waktu_batch(member_id, selections, operator="system", metode_pembayaran="Tunai"):
+    def tambah_waktu_batch(member_id, selections, operator="system", metode_pembayaran="Tunai", client_request_id=None):
         """Tambah beberapa paket sekaligus; satu commit, rollback penuh bila satu item gagal."""
+        if not idempotency.claim(client_request_id):
+            raise ValueError("Permintaan ini sudah diproses")
         with WRITE_LOCK:
             members = []
             logs = []
