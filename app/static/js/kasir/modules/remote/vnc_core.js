@@ -562,7 +562,9 @@ class VNCSession {
                     if (!text && navigator.clipboard && navigator.clipboard.readText) {
                         try {
                             text = await navigator.clipboard.readText();
-                        } catch (err) { }
+                        } catch (err) {
+                            Toast.warning("Browser tidak mengizinkan baca clipboard. Gunakan Ctrl+V manual di layar remote.");
+                        }
                     }
                     if (text) {
                         this.handlePastedText(text);

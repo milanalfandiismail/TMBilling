@@ -24,7 +24,7 @@
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
-const { BASE_URL, CLIENT_API_KEY, login, logout, tab, settingsTab, unique, check } = require('./lib/harness');
+const { BASE_URL, CLIENT_API_KEY, api, login, logout, tab, settingsTab, unique, check } = require('./lib/harness');
 const { dbQuery, dbExec } = require('./lib/db');
 const { createReport, finish } = require('./lib/report');
 
@@ -525,7 +525,32 @@ async function runSettingsAdminLogsE2ETest(page) {
         assert.match(disposition, /attachment/i, `header unduhan tidak sesuai: ${disposition}`);
     });
 
+    await check(report, "Kategori tutorial berisi HTML tetap teks dan tidak membuat elemen", async () => {
+        const payload = '<img src=x onerror="window.__tutXss=1">';
+        const created = await api(page, `API.request("/api/v1/kasir/tutorials", {
+            method: "POST",
+            body: JSON.stringify({ title: "Uji Kategori E2E", content: "<p>isi</p>", category: ${JSON.stringify(payload)} })
+        })`);
+        try {
+            await page.goto(new URL("/kasir/documentation", page.url()).href);
+            const res = await page.evaluate(async () => {
+                window.__tutXss = 0;
+                await Tutorials.loadCategories();
+                const sel = document.getElementById("tutorial-category-select");
+                return { hasImg: !!sel.querySelector("img"), texts: [...sel.options].map(o => o.textContent), values: [...sel.options].map(o => o.value), probe: window.__tutXss };
+            });
+            assert.strictEqual(res.hasImg, false);
+            assert.strictEqual(res.probe, 0, JSON.stringify(res));
+            assert.ok(res.texts.includes(payload), "label kategori harus utuh sebagai teks");
+            assert.ok(res.values.includes("__NEW__"), "sentinel kategori baru tetap ada");
+        } finally {
+            await page.evaluate((id) => API.request("/api/v1/kasir/tutorials/" + id, { method: "DELETE" }), created.tutorial.id);
+            await page.goto(new URL("/kasir/", page.url()).href);
+        }
+    });
+
     await logout(page);
+
     return finish(report);
 }
 

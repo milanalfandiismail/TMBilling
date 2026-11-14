@@ -455,6 +455,13 @@ def create_app(config_override=None):
         return response
 
     @app.after_request
+    def _add_security_headers(response):
+        response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
+        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+        response.headers.setdefault('Referrer-Policy', 'same-origin')
+        return response
+
+    @app.after_request
     def _cache_versioned_static_assets(response):
         # Hanya folder aset ber-versi & QRIS (screenshot menimpa nama file yang sama).
         if request.path.startswith(("/static/js/", "/static/css/", "/static/vendor/",

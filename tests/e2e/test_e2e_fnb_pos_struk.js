@@ -542,6 +542,19 @@ async function runFnBPosStrukE2ETest(page) {
         assert.strictEqual(res.rincian.reduce((sum, r) => sum + Number(r.harga), 0), expectedTotal);
     });
 
+
+    await check(report, "Toast merender pesan error sebagai teks, bukan HTML", async () => {
+        const payload = '<img src=x onerror="window.__toastXss=1">';
+        const result = await page.evaluate((msg) => {
+            window.__toastXss = 0;
+            Toast.show(msg, 'error');
+            const toast = Toast.container.lastElementChild;
+            return { injected: !!toast.querySelector('img'), probe: window.__toastXss, text: toast.innerText };
+        }, payload);
+        assert.strictEqual(result.injected, false, "payload tidak boleh menjadi elemen img");
+        assert.strictEqual(result.probe, 0, "onerror tidak boleh dieksekusi");
+        assert.ok(result.text.includes("<img"), "teks asli tetap tampil apa adanya");
+    });
     return finish(report);
 }
 

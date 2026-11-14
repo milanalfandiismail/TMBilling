@@ -111,10 +111,10 @@ const Tutorials = {
             html += `
                 <div class="space-y-2">
                     <div class="group flex items-center justify-between px-2 pb-1 border-b border-[#1c1c1c]">
-                        <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">${icon} ${cat}</span>
+                        <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">${icon} ${Utils.escapeHtml(cat)}</span>
                         ${isAdmin && cat !== 'Kosong' ? `
-                        <button onclick="Tutorials.deleteCategory('${cat}')"
-                            title="Hapus Kategori '${cat}'"
+                        <button data-cat="${Utils.escapeHtml(cat)}" onclick="Tutorials.deleteCategory(this.dataset.cat)"
+                            title="Hapus Kategori '${Utils.escapeHtml(cat)}'"
                             class="opacity-0 group-hover:opacity-100 text-[10px] text-neutral-500 hover:text-rose-400 transition-opacity">
                             🗑️
                         </button>
@@ -130,7 +130,7 @@ const Tutorials = {
                                             ? 'bg-neutral-800 text-white border border-[#262626]'
                                             : 'text-neutral-400 hover:bg-neutral-900/60 hover:text-white border border-transparent'
                                     }">
-                                    ${t.icon || '🌐'} ${t.title}
+                                    ${t.icon || '🌐'} ${Utils.escapeHtml(t.title)}
                                 </button>
                             `;
                         }).join('')}
@@ -167,8 +167,8 @@ const Tutorials = {
                     <div class="flex items-center gap-3">
                         <span class="text-2xl lg:max-xl:text-3xl xl:text-4xl p-2 lg:max-xl:p-2.5 xl:p-2.5 bg-neutral-900 border border-[#262626] rounded-xl">${tutorial.icon || '🌐'}</span>
                         <div>
-                            <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">${tutorial.category}</span>
-                            <h2 class="text-sm lg:max-xl:text-xl xl:text-2xl font-bold text-neutral-100 tracking-wide mt-0.5">${tutorial.title}</h2>
+                            <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">${Utils.escapeHtml(tutorial.category)}</span>
+                            <h2 class="text-sm lg:max-xl:text-xl xl:text-2xl font-bold text-neutral-100 tracking-wide mt-0.5">${Utils.escapeHtml(tutorial.title)}</h2>
                         </div>
                     </div>
 
@@ -234,8 +234,13 @@ const Tutorials = {
             const newInp = document.getElementById('tutorial-new-category-input');
             if (select && newInp) {
                 const categories = res.categories || ['Umum'];
-                select.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('') +
-                    '<option value="__NEW__">➕ Tambah Kategori Baru...</option>';
+                select.innerHTML = "";
+                [...categories, "__NEW__"].forEach((c) => {
+                    const opt = document.createElement("option");
+                    opt.value = c;
+                    opt.textContent = c === "__NEW__" ? "\u2795 Tambah Kategori Baru..." : c;
+                    select.appendChild(opt);
+                });
                 
                 if (categories.includes(selectedCategory)) {
                     select.value = selectedCategory;

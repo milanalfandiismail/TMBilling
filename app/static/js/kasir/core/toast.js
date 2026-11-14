@@ -32,7 +32,11 @@ const Toast = {
                     : '<svg class="w-4 h-4 shrink-0 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'));
         
         toast.className = `pointer-events-auto px-4 py-3 rounded ${colors} shadow-lg flex items-center gap-3 min-w-[300px] transform translate-x-full opacity-0 transition-all duration-300`;
-        toast.innerHTML = `${icon}<span class="text-sm font-medium">${msg}</span>`;
+        toast.innerHTML = icon;
+        const body = document.createElement('span');
+        body.className = 'text-sm font-medium';
+        body.textContent = msg;
+        toast.appendChild(body);
         
         this.container.appendChild(toast);
         
