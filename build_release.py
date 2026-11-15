@@ -1,57 +1,111 @@
 # -*- coding: utf-8 -*-
 import os
-import zipfile
 import re
+import shutil
 import subprocess
-import re
+import sys
+import zipfile
+
+REQUIRED = (
+    'run.py',
+    'requirements.txt',
+    'install.bat',
+    'update.bat',
+    'start.bat',
+    'stop.bat',
+    '.env.example',
+    'app/config.py',
+    'app/static/css/tailwind.css',
+    'app/services/server_monitor/TMLHMService.exe',
+    'install_scripts/updater.bat',
+    'install_scripts/verify_versions.py',
+    'install_scripts/flush_uptime.py',
+    'migrations',
+)
+
 
 def get_version():
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app', 'config.py')
     with open(config_path, 'r', encoding='utf-8') as f:
         content = f.read()
-    match = re.search(r'VERSION\s*=\s*[\'"]([^\'"]+)[\'"]', content)
+    match = re.search(r'VERSION\s*=\s*[\'\"]([^\'\"]+)[\'\"]', content)
     if match:
         return match.group(1)
-    return "unknown"
+    return 'unknown'
 
-def compile_csharp_monitor():
-    print("Mengkompilasi TMLHMService (C# Microservice)...")
-    project_dir = os.path.dirname(os.path.abspath(__file__))
+
+def missing_required(project_dir):
+    return [nama for nama in REQUIRED if not os.path.exists(os.path.join(project_dir, nama))]
+
+
+def stale_css(project_dir):
+    css = os.path.join(project_dir, 'app', 'static', 'css', 'tailwind.css')
+    if not os.path.exists(css):
+        return True
+    batas = os.path.getmtime(css)
+    sumber = (
+        os.path.join(project_dir, 'app', 'static', 'css', 'input.css'),
+        os.path.join(project_dir, 'tailwind.config.js'),
+    )
+    return any(os.path.exists(s) and os.path.getmtime(s) > batas for s in sumber)
+
+def compile_csharp(project_dir):
+    """Kompilasi TMLHMService bila compiler tersedia; pakai EXE lama bila tidak."""
     service_dir = os.path.join(project_dir, 'app', 'services', 'server_monitor')
-    
-    csc_path = r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-    if not os.path.exists(csc_path):
-        print(f"[ERROR] Compiler C# tidak ditemukan di {csc_path}")
+    exe = os.path.join(service_dir, 'TMLHMService.exe')
+    csc_path = None
+    for kandidat in (
+        r'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe',
+        r'C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe',
+        shutil.which('csc'),
+    ):
+        if kandidat and os.path.exists(kandidat):
+            csc_path = kandidat
+            break
+
+    if not csc_path:
+        if os.path.exists(exe):
+            print('[INFO] csc.exe tidak ditemukan; memakai TMLHMService.exe yang sudah ada.')
+            return True
+        print('[ERROR] csc.exe tidak ditemukan dan TMLHMService.exe belum ada.')
+        print('[ERROR] Jalankan build_and_deploy.bat di mesin dengan .NET Framework.')
         return False
-        
+
+    print('Mengkompilasi TMLHMService (C# Microservice)...')
     cmd = [
         csc_path,
-        "/target:winexe",
-        "/out:TMLHMService.exe",
-        "/reference:LibreHardwareMonitorLib.dll",
-        "/reference:System.Management.dll",
-        "TMLHMService.cs"
+        '/target:winexe',
+        '/out:TMLHMService.exe',
+        '/reference:LibreHardwareMonitorLib.dll',
+        '/reference:System.Management.dll',
+        'TMLHMService.cs',
     ]
-    
-    try:
-        result = subprocess.run(cmd, cwd=service_dir, capture_output=True, text=True)
-        if result.returncode != 0:
-            print("[ERROR] Kompilasi gagal!")
-            print(result.stdout)
-            print(result.stderr)
-            return False
-        print("[OK] Kompilasi TMLHMService berhasil.")
-        return True
-    except Exception as e:
-        print(f"[ERROR] Terjadi kesalahan saat kompilasi: {e}")
+    result = subprocess.run(cmd, cwd=service_dir, capture_output=True, text=True)
+    if result.returncode != 0:
+        print('[ERROR] Kompilasi TMLHMService gagal.')
+        print(result.stdout)
+        print(result.stderr)
         return False
+    print('[OK] Kompilasi TMLHMService berhasil.')
+    return True
+
 
 def main():
-    if not compile_csharp_monitor():
-        print("Membatalkan rilis karena kompilasi C# gagal.")
-        return
-
     project_dir = os.path.dirname(os.path.abspath(__file__))
+
+    if not compile_csharp(project_dir):
+        return 1
+
+    hilang = missing_required(project_dir)
+    if hilang:
+        print('[ERROR] Berkas wajib tidak ditemukan: ' + ', '.join(hilang))
+        return 1
+
+    if stale_css(project_dir):
+        print('[ERROR] app/static/css/tailwind.css lebih lama dari sumbernya.')
+        print('[ERROR] Jalankan: npm run build:css')
+        return 2
+
     version = get_version()
     zip_filename = f"TMBilling_Server_v{version}.zip"
     zip_filepath = os.path.join(project_dir, zip_filename)
@@ -119,5 +173,7 @@ def main():
     print(f"\nSukses! Berhasil mengemas {count_files} berkas ke dalam {zip_filename}")
     print(f"Lokasi berkas: {zip_filepath}")
 
+    return 0
+
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

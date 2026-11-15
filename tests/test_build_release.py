@@ -16,7 +16,9 @@ def test_release_zip_excludes_legacy_screenshots(tmp_path, monkeypatch):
     (project / "migrations").mkdir()
 
     monkeypatch.setattr(build_release, "__file__", str(project / "build_release.py"))
-    monkeypatch.setattr(build_release, "compile_csharp_monitor", lambda: True)
+    monkeypatch.setattr(build_release, "compile_csharp", lambda project_dir: True)
+    monkeypatch.setattr(build_release, "missing_required", lambda project_dir: [])
+    monkeypatch.setattr(build_release, "stale_css", lambda project_dir: False)
 
     build_release.main()
 
