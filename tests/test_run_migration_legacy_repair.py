@@ -59,7 +59,11 @@ def test_repair_legacy_menambah_semua_kolom_dan_backfill(tmp_path):
                 text("SELECT version_num FROM alembic_version")
             ).scalar()
         assert metode == "Tunai"
-        assert revision == "a1b2c3d4e5f6"
+        from alembic.config import Config
+        from alembic.script import ScriptDirectory
+        cfg = Config("migrations/alembic.ini")
+        cfg.set_main_option("script_location", "migrations")
+        assert revision == ScriptDirectory.from_config(cfg).get_heads()[0]
 
 
 def test_repair_legacy_idempoten(tmp_path):
