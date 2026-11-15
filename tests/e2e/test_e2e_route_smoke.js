@@ -102,7 +102,6 @@ const KASIR_GROUPS = [
     ['DELETE', `/api/v1/kasir/member/${ID}`],
   ]],
   ['menu lanjutan', [
-    ['GET', '/api/v1/kasir/menu/transaksi'],
     ['GET', '/api/v1/kasir/menu/stock-logs/dates'],
     ['PUT', `/api/v1/kasir/menu/${ID}`, { nama: 'menu-smoke' }],
     ['DELETE', `/api/v1/kasir/menu/${ID}/permanent`],

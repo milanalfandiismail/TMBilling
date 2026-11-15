@@ -1,4 +1,4 @@
-﻿# app/services/menu_service.py
+# app/services/menu_service.py
 
 """Service untuk menangani business logic POS Makanan & Minuman.
 
@@ -502,7 +502,3 @@ class MenuService:
                 idempotency.release(client_request_id)
             raise e
 
-    @staticmethod
-    def get_all_transactions():
-        """Mengambil seluruh riwayat transaksi menu."""
-        return MenuRepository.get_transaksi_all()

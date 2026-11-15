@@ -99,11 +99,6 @@ class MenuRepository:
         db.session.delete(obj)
 
     @staticmethod
-    def get_transaksi_all():
-        """Mengambil semua riwayat transaksi penjualan menu."""
-        return TransaksiMenu.query.order_by(TransaksiMenu.tanggal.desc()).all()
-
-    @staticmethod
     def get_transaksi_by_id(t_id):
         """Mengambil data transaksi menu berdasarkan ID."""
         return TransaksiMenu.query.get(t_id)

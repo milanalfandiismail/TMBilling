@@ -323,8 +323,7 @@ const API = {
         checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0, metodePembayaran = 'Tunai', clientRequestId = null) => API.request('/api/v1/kasir/menu/checkout', {
             method: 'POST',
             body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode, tunai, kembalian, metode_pembayaran: metodePembayaran, client_request_id: clientRequestId })
-        }),
-        transaksi: () => API.request('/api/v1/kasir/menu/transaksi')
+        })
     },
 
     // ???? UPTIME TRACKER

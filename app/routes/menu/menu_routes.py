@@ -283,17 +283,6 @@ def checkout_order():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@menu_api_bp.route("/transaksi", methods=["GET"])
-@login_required
-def get_all_transactions():
-    """Mendapatkan riwayat seluruh transaksi menu."""
-    try:
-        transactions = MenuService.get_all_transactions()
-        return jsonify({"success": True, "data": [t.to_dict() for t in transactions]}), 200
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-
 @menu_api_bp.route("/stock-logs", methods=["GET"])
 @login_required
 def get_stock_logs():
