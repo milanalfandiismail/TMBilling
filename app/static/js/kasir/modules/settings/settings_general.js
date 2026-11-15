@@ -601,11 +601,37 @@ const SettingsGeneral = {
         try {
             const res = await API.request('/api/v1/kasir/backup/trigger', { method: 'POST' });
             if (res.success) {
-                Toast.success('Backup berhasil diselesaikan!');
-                this.loadBackupFiles();
+                await this.pollBackupStatus();
             }
         } catch (err) {
             Toast.error('Gagal melakukan backup: ' + err.message);
+        }
+    },
+
+    async pollBackupStatus() {
+        for (;;) {
+            await new Promise(r => setTimeout(r, 2000));
+            let res;
+            try {
+                res = await API.request('/api/v1/kasir/backup/manual/status');
+            } catch (err) {
+                Toast.error('Gagal memantau status backup: ' + err.message);
+                return;
+            }
+            if (res.status === 'succeeded') {
+                Toast.success('Backup berhasil diselesaikan!');
+                this.loadBackupFiles();
+                return;
+            }
+            if (res.status === 'partial') {
+                Toast.warning(res.message || 'Backup lokal selesai, unggah cloud gagal');
+                this.loadBackupFiles();
+                return;
+            }
+            if (res.status === 'failed') {
+                Toast.error(res.message || 'Backup gagal');
+                return;
+            }
         }
     },
 

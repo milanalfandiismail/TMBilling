@@ -1,14 +1,12 @@
 """Service untuk backup otomatis database SQLite.
 
-Module ini menyediakan mekanisme backup database secara periodik
-menggunakan background thread. Mendukung auto-cleanup file backup
-yang sudah melewati batas waktu penyimpanan.
+Module ini menyediakan backup database terjadwal (APScheduler) dan backup
+manual di background. Mendukung auto-cleanup file backup lama.
 """
 
 import os
 import shutil
 import sqlite3
-import time
 import tempfile
 import threading
 from app.utils.logger import write_log
@@ -17,6 +15,11 @@ from app.utils.timezone_utils import format_local_now
 
 # Backup terjadwal dan restore tidak boleh berjalan bersamaan.
 _BACKUP_LOCK = threading.RLock()
+
+# Status backup manual (in-memory; hanya untuk diagnosa UI).
+_MANUAL_LOCK = threading.Lock()
+_MANUAL_STATUS = {"status": "idle", "filename": None, "message": ""}
+
 
 
 def default_db_path(app=None):
@@ -165,42 +168,53 @@ class BackupService:
         """
         self.db_path = db_path or default_db_path()
         self.backup_dir = backup_dir
-        self.interval = interval 
         
         if not os.path.exists(self.backup_dir):
             os.makedirs(self.backup_dir)
 
-    def start(self):
-        """Memulai background thread untuk backup periodik.
-        
-        Thread berjalan sebagai daemon sehingga akan otomatis berhenti
-        ketika main thread dihentikan.
-        """
-        thread = threading.Thread(target=self._run, daemon=True)
-        thread.start()
-        from app.config import Config
-        print(f"[v{Config.VERSION}] Backup Service Active | Interval: {self.interval}s")
+    @classmethod
+    def start_manual(cls, app, operator: str = "admin") -> tuple:
+        """Jalankan backup manual di background; satu job per proses."""
+        if not _MANUAL_LOCK.acquire(blocking=False):
+            # Lock dipegang berarti job masih berjalan.
+            _MANUAL_STATUS.update(status="running", message="Backup sedang berjalan")
+            return False, cls.get_manual_status()
 
-    def _run(self):
-        """Loop utama backup yang berjalan di background thread.
-        
-        Setiap iterasi akan:
-        1. Memeriksa keberadaan file database.
-        2. Membuat salinan backup.
-        3. Membersihkan backup lama (mempertahankan maksimal 5 file terbaru).
-        4. Menunggu selama interval sebelum iterasi berikutnya.
-        """
-        while True:
+        _MANUAL_STATUS.update(status="running", filename=None, message="Backup sedang berjalan")
+
+        def worker():
+            report = {}
             try:
-                if os.path.exists(self.db_path):
-                    self.create_backup()
-                    self.cleanup_old_backups(max_keep=5)
+                with app.app_context():
+                    manager = cls(db_path=default_db_path(app), backup_dir=default_backup_dir(app))
+                    zip_path = manager.create_backup(report=report)
+                    manager.cleanup_old_backups(max_keep=5)
+                gagal = report.get("failed") or []
+                nama = os.path.basename(zip_path)
+                if gagal:
+                    _MANUAL_STATUS.update(status="partial", filename=nama,
+                                          message="Backup lokal selesai, unggah cloud gagal: " + ", ".join(gagal))
                 else:
-                    print(f"[BACKUP] File {self.db_path} tidak ditemukan!")
+                    _MANUAL_STATUS.update(status="succeeded", filename=nama,
+                                          message="Backup berhasil diselesaikan")
             except Exception as e:
-                print(f"[BACKUP] Error: {e}")
-            
-            time.sleep(self.interval)
+                write_log("BACKUP_ERROR", f"Backup manual gagal: {str(e)}", user=operator)
+                _MANUAL_STATUS.update(status="failed", message="Backup manual gagal. Periksa log server.")
+            finally:
+                _MANUAL_LOCK.release()
+
+        try:
+            threading.Thread(target=worker, daemon=True).start()
+        except Exception:
+            _MANUAL_LOCK.release()
+            _MANUAL_STATUS.update(status="failed", message="Gagal memulai backup")
+            return False, cls.get_manual_status()
+
+        return True, cls.get_manual_status()
+
+    @classmethod
+    def get_manual_status(cls) -> dict:
+        return dict(_MANUAL_STATUS)
 
     def create_backup(self, report: dict | None = None) -> str:
         """Membuat salinan database terkompresi (.zip) dan mengunggahnya ke cloud provider aktif."""

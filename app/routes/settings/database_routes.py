@@ -15,27 +15,16 @@ from app.routes.settings.settings_routes import settings_api_bp
 @login_required
 @admin_required
 def trigger_manual_backup():
-    """Trigger backup database secara manual dari UI."""
-    try:
-        # 1. Tentukan path (disesuaikan dengan folder instance Flask)
-        backup_dir = default_backup_dir()
-
-        # 2. Eksekusi Backup (path DB diturunkan dari engine SQLAlchemy aktif)
-        backup_manager = BackupService(backup_dir=backup_dir)
-        backup_manager.create_backup()
-        backup_manager.cleanup_old_backups(max_keep=5)
-        
-        # 3. Log manual action
-        operator = session.get("kasir_username", "admin")
+    """Trigger backup database secara manual dari UI (background)."""
+    operator = session.get("kasir_username", "admin")
+    started, status = BackupService.start_manual(current_app._get_current_object(), operator)
+    if started:
         write_log("MANUAL_BACKUP", "User memicu backup database ke server", user=operator)
-        
-        return jsonify({
-            "success": True, 
-            "message": "Backup berhasil dibuat! Cek folder backups di server."
-        }), 200
-    except Exception as e:
-        return jsonify({"error": f"Gagal melakukan backup: {str(e)}"}), 500
-    
+        return jsonify({"success": True, "message": status["message"], "job": status}), 202
+    if status["status"] == "running":
+        return jsonify({"success": False, "error": "Backup manual sedang berjalan."}), 409
+    return jsonify({"success": False, "error": status["message"]}), 500
+
 @settings_api_bp.route("/backup/download", methods=["GET"])
 @login_required
 @admin_required

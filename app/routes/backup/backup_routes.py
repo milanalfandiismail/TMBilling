@@ -2,7 +2,7 @@
 
 import os
 from datetime import datetime
-from flask import Blueprint, request, jsonify, current_app, send_file
+from flask import Blueprint, request, jsonify, current_app, send_file, session
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 from app.services import BackupService
 from app.services.backup.backup_service import default_backup_dir
@@ -14,25 +14,23 @@ backup_api_bp = Blueprint("backup", __name__)
 @login_required
 @admin_required
 def trigger_backup():
-    """Trigger manual database backup and upload to active cloud providers."""
-    try:
-        backup_dir = default_backup_dir()
-        backup_manager = BackupService(backup_dir=backup_dir)
-        zip_path = backup_manager.create_backup()
-        backup_manager.cleanup_old_backups(max_keep=5)
-        
-        filename = os.path.basename(zip_path)
-        write_log("MANUAL_BACKUP", f"User memicu backup cloud: {filename}", user="admin")
-        
-        return jsonify({
-            "success": True,
-            "message": "Backup manual dan upload cloud berhasil diproses!",
-            "filename": filename
-        }), 200
-    except Exception as e:
-        write_log("BACKUP_ERROR", f"Gagal manual backup: {str(e)}", user="admin")
-        return jsonify({"success": False, "error": str(e)}), 500
+    """Trigger manual database backup and upload to active cloud providers (background)."""
+    started, status = BackupService.start_manual(
+        current_app._get_current_object(), session.get("kasir_username", "admin")
+    )
+    if started:
+        return jsonify({"success": True, "message": status["message"], "job": status}), 202
+    if status["status"] == "running":
+        return jsonify({"success": False, "error": "Backup manual sedang berjalan."}), 409
+    return jsonify({"success": False, "error": status["message"]}), 500
 
+
+@backup_api_bp.route("/manual/status", methods=["GET"])
+@login_required
+@admin_required
+def manual_backup_status():
+    """Status job backup manual yang berjalan di background."""
+    return jsonify(BackupService.get_manual_status()), 200
 
 @backup_api_bp.route("/test-connection", methods=["POST"])
 @login_required
