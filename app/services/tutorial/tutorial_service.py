@@ -5,6 +5,7 @@ import re
 import shutil
 from flask import current_app
 from app.repositories import TutorialRepository
+from app.utils.helpers import sanitize_html
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ class TutorialService:
             clean_data["urutan"] = validate_integer_range(data["urutan"], min_val=0, max_val=10000, field_name="Urutan Panduan")
 
         if "content" in clean_data and clean_data["content"]:
-            clean_data["content"] = move_temp_images(clean_data["content"])
+            clean_data["content"] = sanitize_html(move_temp_images(clean_data["content"]))
         return TutorialRepository.create(clean_data)
 
     @staticmethod
@@ -84,7 +85,7 @@ class TutorialService:
             clean_data["urutan"] = validate_integer_range(data["urutan"], min_val=0, max_val=10000, field_name="Urutan Panduan")
 
         if "content" in clean_data and clean_data["content"]:
-            clean_data["content"] = move_temp_images(clean_data["content"])
+            clean_data["content"] = sanitize_html(move_temp_images(clean_data["content"]))
         return TutorialRepository.update(tutorial_id, clean_data)
 
     @staticmethod
