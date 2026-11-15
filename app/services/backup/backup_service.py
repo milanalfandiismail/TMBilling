@@ -14,6 +14,9 @@ from app.services.write_lock import WRITE_LOCK
 from app.utils.timezone_utils import format_local_now
 
 # Backup terjadwal dan restore tidak boleh berjalan bersamaan.
+
+AUTO_BACKUP_PREFIX = "warnet_backup_"
+MANUAL_BACKUP_PREFIX = "warnet_backup_manual_"
 _BACKUP_LOCK = threading.RLock()
 
 # Status backup manual (in-memory; hanya untuk diagnosa UI).
@@ -187,7 +190,7 @@ class BackupService:
             try:
                 with app.app_context():
                     manager = cls(db_path=default_db_path(app), backup_dir=default_backup_dir(app))
-                    zip_path = manager.create_backup(report=report)
+                    zip_path = manager.create_backup(report=report, manual=True)
                     manager.cleanup_old_backups(max_keep=5)
                 gagal = report.get("failed") or []
                 nama = os.path.basename(zip_path)
@@ -216,7 +219,7 @@ class BackupService:
     def get_manual_status(cls) -> dict:
         return dict(_MANUAL_STATUS)
 
-    def create_backup(self, report: dict | None = None) -> str:
+    def create_backup(self, report: dict | None = None, manual: bool = False) -> str:
         """Membuat salinan database terkompresi (.zip) dan mengunggahnya ke cloud provider aktif."""
         import zipfile
         from app.services.settings.settings_service import SettingsService
@@ -232,7 +235,8 @@ class BackupService:
             raise RuntimeError("Ruang disk backup tidak cukup (< 512 MB)")
 
         timestamp = format_local_now("%Y%m%d_%H%M%S")
-        backup_filename = f"warnet_backup_{timestamp}.zip"
+        prefix = MANUAL_BACKUP_PREFIX if manual else AUTO_BACKUP_PREFIX
+        backup_filename = f"{prefix}{timestamp}.zip"
         dest_path = os.path.join(self.backup_dir, backup_filename)
         tmp_path = dest_path + ".tmp"
 
@@ -394,7 +398,8 @@ class BackupService:
         """
         try:
             # Cari semua file backup yang polanya warnet_backup_*.zip
-            files = [f for f in os.listdir(self.backup_dir) if f.startswith("warnet_backup_") and f.endswith(".zip")]
+            files = [f for f in os.listdir(self.backup_dir) if f.startswith(AUTO_BACKUP_PREFIX)
+                     and not f.startswith(MANUAL_BACKUP_PREFIX) and f.endswith(".zip")]
             
             # Urutkan berdasarkan waktu modifikasi secara descending (paling baru di awal)
             files.sort(key=lambda x: os.path.getmtime(os.path.join(self.backup_dir, x)), reverse=True)

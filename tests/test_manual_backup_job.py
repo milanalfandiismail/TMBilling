@@ -29,7 +29,7 @@ def app(tmp_path, monkeypatch):
 
 
 def test_manual_backup_runs_once(app, monkeypatch):
-    monkeypatch.setattr(BackupService, "create_backup", lambda self, report=None: "/tmp/x.zip")
+    monkeypatch.setattr(BackupService, "create_backup", lambda self, report=None, manual=False: "/tmp/x.zip")
     monkeypatch.setattr(BackupService, "cleanup_old_backups", lambda self, max_keep=5: None)
     assert backup_service._MANUAL_LOCK.acquire(blocking=False)
     try:
@@ -41,7 +41,7 @@ def test_manual_backup_runs_once(app, monkeypatch):
 
 
 def test_cloud_failure_marks_partial(app, monkeypatch):
-    def fake_create(self, report=None):
+    def fake_create(self, report=None, manual=False):
         report["failed"] = ["Discord Webhook"]
         return "/tmp/partial.zip"
     monkeypatch.setattr(BackupService, "create_backup", fake_create)
@@ -59,7 +59,7 @@ def test_worker_failure_releases_guard(app, monkeypatch):
     monkeypatch.setattr(
         BackupService,
         "create_backup",
-        lambda self, report=None: (_ for _ in ()).throw(RuntimeError("disk penuh")),
+        lambda self, report=None, manual=False: (_ for _ in ()).throw(RuntimeError("disk penuh")),
     )
 
     started, status = BackupService.start_manual(app, "admin")
