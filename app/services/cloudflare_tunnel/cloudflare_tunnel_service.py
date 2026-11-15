@@ -30,7 +30,7 @@ class CloudflareTunnelService:
         try:
             with open(cls.PID_PATH, "r", encoding="utf-8") as f:
                 return int(f.read().strip())
-        except Exception:
+        except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
             return None
 
     @classmethod
@@ -74,7 +74,7 @@ class CloudflareTunnelService:
             logger.warning("[CloudflareTunnel] File cloudflared.exe terpotong/rusak. Mengunduh ulang...")
             try:
                 os.remove(cls.BIN_PATH)
-            except Exception:
+            except Exception:  # noqa: silent - pembersihan best-effort; kegagalan tidak mengubah hasil operasi
                 pass
 
         try:
@@ -241,7 +241,7 @@ class CloudflareTunnelService:
                     with open(log_file_path, "r", encoding="utf-8", errors="ignore") as f:
                         lines = f.readlines()
                         err_str = "".join(lines[-15:]).strip()
-                except Exception:
+                except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
                     pass
                 if "token is not valid" in err_str.lower() or "invalid tunnel token" in err_str.lower():
                     return False, "Token Cloudflare Tunnel tidak valid."
@@ -271,7 +271,7 @@ class CloudflareTunnelService:
                 except Exception:
                     try:
                         cls._process.kill()
-                    except Exception:
+                    except Exception:  # noqa: silent - pembersihan best-effort; kegagalan tidak mengubah hasil operasi
                         pass
                 berhenti = True
             cls._process = None

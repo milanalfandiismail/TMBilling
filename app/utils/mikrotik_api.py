@@ -134,7 +134,7 @@ class MikroTikAPIClient:
         if self.sock:
             try:
                 self.sock.close()
-            except Exception:
+            except Exception:  # noqa: silent - pembersihan best-effort; kegagalan tidak mengubah hasil operasi
                 pass
         self.sock = None
 

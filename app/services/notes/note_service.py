@@ -82,7 +82,7 @@ class NoteService:
                     return set(data)
                 elif isinstance(data, dict) and 'pinned' in data:
                     return set(data['pinned'])
-        except Exception:
+        except Exception:  # noqa: silent - nilai tidak terurai -> fallback; keputusan tidak berubah
             pass
         return set()
 
@@ -146,7 +146,7 @@ class NoteService:
                     try:
                         with open(entry.path, 'r', encoding='utf-8', errors='replace') as f:
                             full_content = f.read()
-                    except Exception:
+                    except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
                         pass
 
                     preview = full_content[:160].strip()

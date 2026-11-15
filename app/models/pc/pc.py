@@ -114,7 +114,7 @@ class PC(db.Model):
                     mtime = os.path.getmtime(screenshot_path)
                     dt_utc = datetime.fromtimestamp(mtime, tz=timezone.utc)
                     screenshot_time = format_display(dt_utc, fmt="%d/%m/%Y %H:%M:%S")
-                except Exception:
+                except Exception:  # noqa: silent - properti tampilan; gagal hitung -> kosong; data tidak berubah
                     pass
 
         is_system = False

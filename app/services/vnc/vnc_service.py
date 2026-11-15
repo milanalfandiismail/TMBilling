@@ -156,7 +156,7 @@ class VNCService:
                     with open(log_file_path, "r", encoding="utf-8", errors="ignore") as f:
                         lines = f.readlines()
                         err_msg = "".join(lines[-10:]).strip()
-                except Exception:
+                except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
                     pass
                 return False, f"Proses websockify gagal berjalan: {err_msg or 'Unknown error'}"
 
@@ -219,7 +219,7 @@ class VNCClientProxyService:
             try:
                 from app.services import ClientService
                 ClientService.queue_fast_command(pc_id, "vnc_stop")
-            except Exception:
+            except Exception:  # noqa: silent - perintah/cache PC sudah tidak ada -> tidak ada yang perlu dilakukan
                 pass
             return True, "Proxy tidak aktif"
             
@@ -276,7 +276,7 @@ class VNCClientProxyService:
                 try:
                     from app.services.cache import OnlineStatusStore
                     is_pc_offline = not OnlineStatusStore.is_online(pc_id, timeout_seconds=45)
-                except Exception:
+                except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
                     pass
 
                 if is_pc_offline:

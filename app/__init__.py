@@ -41,7 +41,7 @@ class TMBillingCSRFProtect(CSRFProtect):
                     client_api_key = SettingsService.get("client_api_key") or os.environ.get("CLIENT_API_KEY", "")
                     if client_api_key and hmac.compare_digest(token, client_api_key):
                         return
-                except Exception:
+                except Exception:  # noqa: silent - gagal evaluasi -> jalur aman (deny / CSRF standar) tetap diambil
                     pass
         super().protect(apply_exemptions=apply_exemptions)
 

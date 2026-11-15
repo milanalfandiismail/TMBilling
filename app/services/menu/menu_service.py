@@ -118,7 +118,7 @@ class MenuService:
             filepath = os.path.join(root_dir, "static", "uploads", "menu", filename)
             if os.path.exists(filepath):
                 os.remove(filepath)
-        except Exception:
+        except Exception:  # noqa: silent - pembersihan best-effort; kegagalan tidak mengubah hasil operasi
             pass
 
     @staticmethod

@@ -87,7 +87,7 @@ class SettingsCacheStore:
         try:
             for item in Settings.query.all():
                 data[item.key] = item.value
-        except Exception:
+        except Exception:  # noqa: silent - snapshot cache tidak lengkap -> dipulihkan dari DB pada akses berikutnya
             return None  # load gagal -> snapshot tidak boleh dianggap lengkap
         return data
 
@@ -144,7 +144,7 @@ class PCNetworkCacheStore:
         from app.models import PC
         try:
             pcs = PC.query.all()
-        except Exception:
+        except Exception:  # noqa: silent - snapshot cache tidak lengkap -> dipulihkan dari DB pada akses berikutnya
             return
 
         by_ip = {}

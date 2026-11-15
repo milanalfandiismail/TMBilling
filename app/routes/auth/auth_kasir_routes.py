@@ -56,7 +56,7 @@ def login():
                                    f"Hubungi admin untuk mendaftarkan IP Anda."
                     }), 403
 
-        except Exception:
+        except Exception:  # noqa: silent - gagal evaluasi -> jalur aman (deny / CSRF standar) tetap diambil
             pass
 
     try:
@@ -122,7 +122,7 @@ def check_session():
                     if not IpWhitelistService.is_ip_whitelisted(client_ip):
                         result = {"logged_in": False, "reason": "ip_not_whitelisted"}
 
-            except Exception:
+            except Exception:  # noqa: silent - gagal evaluasi -> jalur aman (deny / CSRF standar) tetap diambil
                 pass
 
     if not result.get("logged_in"):

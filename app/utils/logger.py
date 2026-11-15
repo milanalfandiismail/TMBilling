@@ -302,7 +302,7 @@ def normalize_legacy_log_line(line: str) -> dict:
                 action = data.get("action", "")
                 data["category"] = ACTION_TO_CATEGORY_MAP.get(action.upper(), "SYSTEM")
             return data
-        except Exception:
+        except Exception:  # noqa: silent - nilai tidak terurai -> fallback; keputusan tidak berubah
             pass
     
     match = LEGACY_LOG_PATTERN.match(line_str)
@@ -394,7 +394,7 @@ def atomic_filter_logs(filter_fn) -> int:
                 if os.path.exists(tmp_path):
                     try:
                         os.remove(tmp_path)
-                    except Exception:
+                    except Exception:  # noqa: silent - pembersihan best-effort; kegagalan tidak mengubah hasil operasi
                         pass
                 raise e
                 

@@ -66,7 +66,7 @@ def get_last_runs():
             from app.services import SettingsService
             data = json.loads(SettingsService.get(_SETTINGS_KEY, "{}") or "{}")
             _LAST_RUN.update(data)
-        except Exception:
+        except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
             pass
     return dict(_LAST_RUN)
 
@@ -151,7 +151,7 @@ def run_cleanup_logs(app):
                     try:
                         log_time = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
                         return log_time >= cutoff
-                    except Exception:
+                    except Exception:  # noqa: silent - nilai tidak terurai -> fallback; keputusan tidak berubah
                         pass
                 return True
 

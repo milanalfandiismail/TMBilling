@@ -266,12 +266,12 @@ class PCService:
         try:
             from app.services.hardware.hardware_service import TELEMETRY_HISTORY
             TELEMETRY_HISTORY.pop(pc_id, None)
-        except Exception:
+        except Exception:  # noqa: silent - perintah/cache PC sudah tidak ada -> tidak ada yang perlu dilakukan
             pass
         try:
             from app.services.client.client_service import PENDING_COMMANDS
             PENDING_COMMANDS.pop(pc_id, None)
-        except Exception:
+        except Exception:  # noqa: silent - perintah/cache PC sudah tidak ada -> tidak ada yang perlu dilakukan
             pass
         write_log("ARSIP_PC", f"PC:{kode} diarsipkan", user=operator, detail_json={"kode": kode, "pc_id": pc_id})
         return {"success": True, "message": f"PC {kode} diarsipkan"}
@@ -331,18 +331,18 @@ class PCService:
             try:
                 from app.services.cache import cleanup_pc_cache
                 cleanup_pc_cache(pc_id)
-            except Exception:
+            except Exception:  # noqa: silent - perintah/cache PC sudah tidak ada -> tidak ada yang perlu dilakukan
                 pass
             try:
                 from app.services.hardware.hardware_service import TELEMETRY_HISTORY
                 TELEMETRY_HISTORY.pop(pc_id, None)
-            except Exception:
+            except Exception:  # noqa: silent - perintah/cache PC sudah tidak ada -> tidak ada yang perlu dilakukan
                 pass
 
             try:
                 from app.services.client.client_service import PENDING_COMMANDS
                 PENDING_COMMANDS.pop(pc_id, None)
-            except Exception:
+            except Exception:  # noqa: silent - perintah/cache PC sudah tidak ada -> tidak ada yang perlu dilakukan
                 pass
 
             # 6. Cleanup screenshot file di filesystem jika ada

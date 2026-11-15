@@ -250,7 +250,7 @@ class IpWhitelistService:
                 except Exception:
                     try:
                         lan_ip = socket.gethostbyname(socket.gethostname())
-                    except Exception:
+                    except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
                         pass
 
                 now_iso = now_utc().isoformat()

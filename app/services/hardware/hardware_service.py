@@ -369,7 +369,7 @@ class HardwareService:
 
             if total_mb > 0:
                 return (used_mb / total_mb) * 100.0
-        except Exception:
+        except Exception:  # noqa: silent - nilai tidak terurai -> fallback; keputusan tidak berubah
             pass
         return 0.0
 

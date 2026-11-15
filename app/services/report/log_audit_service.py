@@ -159,7 +159,7 @@ class LogAuditService:
         except Exception as e:
             try:
                 db.session.rollback()
-            except Exception:
+            except Exception:  # noqa: silent - gagal rollback; error asli sudah dicatat oleh handler luar
                 pass
             write_log("ERROR", f"Gagal hapus seluruh riwayat: {str(e)}", user=operator, detail_json={"error": str(e)})
             return False
@@ -193,7 +193,7 @@ class LogAuditService:
         except Exception as e:
             try:
                 db.session.rollback()
-            except Exception:
+            except Exception:  # noqa: silent - gagal rollback; error asli sudah dicatat oleh handler luar
                 pass
             write_log("ERROR", f"Gagal hapus struk {t_id}: {str(e)}", user=operator, detail_json={"error": str(e)})
             return False
@@ -219,7 +219,7 @@ class LogAuditService:
             except Exception as e:
                 try:
                     db.session.rollback()
-                except Exception:
+                except Exception:  # noqa: silent - gagal rollback; error asli sudah dicatat oleh handler luar
                     pass
                 write_log("ERROR", f"Gagal hapus riwayat tanggal {tanggal}: {str(e)}", user=operator, detail_json={"error": str(e), "tanggal_target": tanggal})
                 return False

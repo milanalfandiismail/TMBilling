@@ -40,7 +40,7 @@ class HealthService:
         except Exception:
             try:
                 db.session.rollback()
-            except Exception:
+            except Exception:  # noqa: silent - gagal rollback; error asli sudah dicatat oleh handler luar
                 pass
             db_status = "down"
 

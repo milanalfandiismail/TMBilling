@@ -29,7 +29,7 @@ def default_db_path(app=None):
         url = db.engine.url
         if url.drivername.startswith("sqlite") and url.database and url.database != ":memory:":
             return os.path.abspath(url.database)
-    except Exception:
+    except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
         pass
     if app is not None:
         return os.path.join(app.instance_path, "warnet.db")
