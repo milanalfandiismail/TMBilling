@@ -63,6 +63,43 @@ class UptimeMemoryStore:
         with cls._lock:
             return cls._billing.get(pc_id, False)
 
+    RETENSI_HARI = 366
+
+    @classmethod
+    def retention_cutoff(cls):
+        """Tanggal lokal paling awal yang masih disimpan (366 hari termasuk hari ini)."""
+        return now_utc().astimezone(get_display_tz()).date() - timedelta(days=cls.RETENSI_HARI - 1)
+
+    @classmethod
+    def prune_old_logs(cls, app=None):
+        """Hapus log di luar retensi; sisakan baris last_seen terbaru per PC sebagai jangkar deteksi hardware."""
+        from sqlalchemy import func
+        from app.models import db, PCUptimeLog
+
+        cutoff = cls.retention_cutoff()
+        terakhir = dict(
+            db.session.query(PCUptimeLog.pc_id, func.max(PCUptimeLog.last_seen))
+            .filter(PCUptimeLog.tanggal < cutoff, PCUptimeLog.last_seen.isnot(None))
+            .group_by(PCUptimeLog.pc_id)
+            .all()
+        )
+        jangkar = []
+        for pc_id, last_seen in terakhir.items():
+            baris = (
+                PCUptimeLog.query.filter_by(pc_id=pc_id, last_seen=last_seen)
+                .order_by(PCUptimeLog.id.desc())
+                .first()
+            )
+            if baris:
+                jangkar.append(baris.id)
+
+        hapus = PCUptimeLog.query.filter(PCUptimeLog.tanggal < cutoff)
+        if jangkar:
+            hapus = hapus.filter(PCUptimeLog.id.notin_(jangkar))
+        jumlah = hapus.delete(synchronize_session=False)
+        db.session.commit()
+        return jumlah
+
     @classmethod
     def flush_to_database(cls, app=None):
         """Batch update akumulasi uptime dan billing dari RAM ke SQLite (pc_uptime_log)."""

@@ -24,6 +24,7 @@ from app.utils.scheduler_tasks import (
     run_auto_screenshots,
     run_flush_uptime,
     run_cleanup_vnc_proxies,
+    run_cleanup_uptime_logs,
     get_scheduler_interval,
 )
 import os
@@ -95,6 +96,17 @@ def start_scheduler(app, autostart=True):
         seconds=120,
         id="cleanup_vnc_proxies"
     )
+
+    # Task 7: Retensi log uptime (harian, run pertama langsung)
+    scheduler.add_job(
+        func=run_cleanup_uptime_logs,
+        args=[app],
+        trigger="interval",
+        seconds=86400,
+        id="cleanup_uptime_logs",
+        next_run_time=datetime.now()
+    )
+
 
     import atexit
     atexit.register(lambda: run_flush_uptime(app))

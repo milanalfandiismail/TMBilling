@@ -221,3 +221,20 @@ def run_cleanup_vnc_proxies(app):
             record_run("cleanup_vnc_proxies", False)
             return
         record_run("cleanup_vnc_proxies", True)
+
+
+
+def run_cleanup_uptime_logs(app):
+    """Wrapper harian untuk memangkas log uptime di luar retensi 366 hari."""
+    with app.app_context():
+        try:
+            from app.services.cache.uptime_store import UptimeMemoryStore
+            jumlah = UptimeMemoryStore.prune_old_logs(app=app)
+        except Exception as e:
+            write_log("SCHEDULER_ERROR", f"Error prune uptime: {str(e)}", user="SYSTEM")
+            record_run("cleanup_uptime_logs", False)
+            return
+        if jumlah:
+            write_log("UPTIME_RETENTION", f"{jumlah} baris log uptime lama dihapus.", user="SYSTEM")
+        record_run("cleanup_uptime_logs", True)
+

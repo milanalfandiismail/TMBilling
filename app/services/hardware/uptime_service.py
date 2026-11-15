@@ -62,9 +62,11 @@ class UptimeService:
         try:
             # Akumulasi RAM sudah di-flush scheduler run_flush_uptime tiap 60 detik
             # (run.py); GET tidak boleh menulis.
+            from app.services.cache.uptime_store import UptimeMemoryStore
+            cutoff = UptimeMemoryStore.retention_cutoff()
             logs = PCUptimeLog.query.options(
                 joinedload(PCUptimeLog.pc).joinedload(PC.grup)
-            ).filter_by(tanggal=tanggal).all()
+            ).filter(PCUptimeLog.tanggal == tanggal, PCUptimeLog.tanggal >= cutoff).all()
             # Urutkan berdasarkan grup_id dan kode PC secara natural
             logs_sorted = sorted(logs, key=lambda log: (log.pc.grup_id if (log.pc and log.pc.grup_id) else 0, natural_sort_key(log.pc.kode if log.pc else "")))
             return [log.to_dict() for log in logs_sorted]
@@ -87,12 +89,18 @@ class UptimeService:
             # Akumulasi RAM sudah di-flush scheduler run_flush_uptime tiap 60 detik
             # (run.py); GET tidak boleh menulis.
 
+            from app.services.cache.uptime_store import UptimeMemoryStore
+            cutoff = UptimeMemoryStore.retention_cutoff()
+            if end_date < cutoff:
+                return {"summary": {}, "pcs": []}
+
             # Query log dalam rentang tanggal
             logs = PCUptimeLog.query.options(
                 joinedload(PCUptimeLog.pc).joinedload(PC.grup)
             ).filter(
                 PCUptimeLog.tanggal >= start_date,
-                PCUptimeLog.tanggal <= end_date
+                PCUptimeLog.tanggal <= end_date,
+                PCUptimeLog.tanggal >= cutoff
             ).all()
 
             # Agregasikan data per PC
