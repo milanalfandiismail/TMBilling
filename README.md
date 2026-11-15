@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/Version-v1.6.5--rc2-blue.svg?style=flat-square" />
+  <img alt="Version" src="https://img.shields.io/badge/Version-v1.6.5--rc3-blue.svg?style=flat-square" />
   <img alt="Python" src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python" />
   <img alt="Flask" src="https://img.shields.io/badge/Flask-3.1-000000?style=flat-square&logo=flask" />
   <img alt="Tauri" src="https://img.shields.io/badge/Tauri-v1.5-FFC131?style=flat-square&logo=tauri" />
