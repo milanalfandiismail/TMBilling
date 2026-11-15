@@ -334,13 +334,10 @@ class ReportService:
 
     @staticmethod
     def get_pendapatan_kategori(tanggal, kategori, kasir_id=None, metode_pembayaran=None):
-        """Menhitung pendapatan per kategori."""
-        if kategori == 'guest':
-            jenis = ["beli_paket_guest", "tambah_waktu_guest"]
-        else:
-            jenis = ["beli_paket_member", "tambah_waktu_sesi"]
-
-        return TransaksiRepository.get_total_pendapatan_by_tanggal(tanggal, jenis, kasir_id, metode_pembayaran)
+        """Pendapatan bersih per kategori: pembelian dikurangi refund kategori itu."""
+        return TransaksiRepository.get_total_pendapatan_kategori(
+            tanggal, kategori, kasir_id, metode_pembayaran
+        )
 
     @staticmethod
     def _format_history_struk(transaksi_list):

@@ -250,6 +250,43 @@ class TransaksiRepository:
         return query.scalar() or 0
 
     @staticmethod
+    def get_total_pendapatan_kategori(tanggal=None, kategori="guest", kasir_id=None, metode_pembayaran=None):
+        """Total bersih billing per kategori: pembelian ditambah refund milik kategori itu."""
+        from sqlalchemy import and_, or_
+        from app.utils.timezone_utils import get_local_date_range_utc
+
+        if kategori == "guest":
+            jenis = ["beli_paket_guest", "tambah_waktu_guest"]
+            filter_refund = and_(
+                Transaksi.jenis == "refund_paket",
+                Transaksi.sesi_id.isnot(None),
+                Transaksi.member_id.is_(None),
+            )
+        else:
+            jenis = ["beli_paket_member", "tambah_waktu_sesi"]
+            filter_refund = and_(
+                Transaksi.jenis == "refund_paket",
+                Transaksi.member_id.isnot(None),
+            )
+
+        query = db.session.query(func.sum(Transaksi.jumlah)).filter(
+            or_(Transaksi.jenis.in_(jenis), filter_refund)
+        )
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            query = query.filter(Transaksi.dibuat_pada >= start_utc, Transaksi.dibuat_pada < end_utc)
+        query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
+        if metode_pembayaran:
+            if metode_pembayaran == "Tunai":
+                query = query.filter(
+                    (Transaksi.metode_pembayaran.in_(["Tunai", "Cash"]))
+                    | (Transaksi.metode_pembayaran == None)
+                )
+            else:
+                query = query.filter(Transaksi.metode_pembayaran == metode_pembayaran)
+        return query.scalar() or 0
+
+    @staticmethod
     def get_total_pendapatan_by_tanggal(tanggal=None, jenis_list=None, kasir_id=None, metode_pembayaran=None):
         """Total pendapatan berdasarkan tanggal dan jenis transaksi tertentu."""
         query = db.session.query(func.sum(Transaksi.jumlah))
