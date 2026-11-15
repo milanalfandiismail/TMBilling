@@ -701,10 +701,13 @@ const SettingsGeneral = {
         if (!confirm(`Restore database dari "${filename}"?\n\nData saat ini akan diganti dengan isi berkas backup. Backup pengaman dibuat otomatis sebelum proses restore.`)) {
             return;
         }
+        if (!confirm("PERINGATAN: seluruh sesi PC yang sedang berjalan akan hilang dan tidak tercatat pada database hasil restore. Lanjutkan?")) {
+            return;
+        }
         try {
             const res = await API.request(`/api/v1/kasir/backup/restore/${filename}`, {
                 method: 'POST',
-                body: JSON.stringify({ confirm: true })
+                body: JSON.stringify({ confirm: true, confirm_active_sessions: true })
             });
             if (res.success) {
                 Toast.success(`Database direstore. Backup pengaman: ${res.safety_backup}`);

@@ -180,8 +180,20 @@ def restore_backup(filename):
         from flask import session
         operator = session.get("kasir_username", "admin")
 
-        if (request.get_json(silent=True) or {}).get("confirm") is not True:
+        payload = request.get_json(silent=True) or {}
+        if payload.get("confirm") is not True:
             return jsonify({"success": False, "error": "Konfirmasi restore diperlukan"}), 400
+        from app.repositories.sesi.sesi_repository import SesiRepository
+        try:
+            aktif = SesiRepository.count_aktif()
+        except Exception:  # noqa: silent - database rusak: restore adalah jalur pemulihan, jangan dikunci
+            aktif = 0
+        if aktif > 0 and payload.get("confirm_active_sessions") is not True:
+            return jsonify({
+                "success": False,
+                "error": f"Masih ada {aktif} sesi aktif. Tutup sesi lebih dulu, atau konfirmasi bahwa sesi akan hilang.",
+                "active_sessions": aktif,
+            }), 409
 
         clean_filename = validate_filename(filename, allowed_extensions={"zip"}, field_name="Berkas Backup")
         backup_dir = default_backup_dir()
