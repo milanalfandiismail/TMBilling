@@ -1,4 +1,4 @@
-# app/services/grup_service.py
+﻿# app/services/grup_service.py
 
 """Service untuk manajemen grup/kategori.
 
@@ -10,7 +10,7 @@ import re
 from app.models import db
 from app.models import Grup, Member, Paket, PC, Sesi
 from app.repositories import GrupRepository
-from app.services.write_lock import WRITE_LOCK
+from app.services.write_lock import WRITE_LOCK, with_write_lock
 from app.utils.logger import write_log
 from app.utils.validators import validate_hex_color, validate_string_length
 
@@ -75,6 +75,7 @@ class GrupService:
         return grup
 
     @staticmethod
+    @with_write_lock
     def create(data, operator="system"):
         """Buat grup baru dengan validasi keunikan nama."""
         nama = GrupService._validate_nama_grup(data.get("nama", ""))
@@ -108,6 +109,7 @@ class GrupService:
     # Fokus: Menjamin integritas data dengan menolak penghapusan grup yang masih terikat.
 
     @staticmethod
+    @with_write_lock
     def delete(grup_id, operator="system"):
         """Hapus grup dengan validasi relasi (Member, PC, dan Paket)."""
         grup = GrupRepository.get_by_id(grup_id)
@@ -134,6 +136,7 @@ class GrupService:
         return True
 
     @staticmethod
+    @with_write_lock
     def update(grup_id, data, operator="system"):
         """Update data grup dengan validasi keunikan nama."""
         grup = GrupRepository.get_by_id(grup_id)

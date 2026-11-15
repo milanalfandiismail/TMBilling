@@ -1,4 +1,4 @@
-# app/services/hardware_service.py
+﻿# app/services/hardware_service.py
 
 """Service untuk monitoring hardware PC client.
 
@@ -26,6 +26,7 @@ from app.services.cache.memory_store import (
     UptimeMemoryStore,
     AntiTheftGraceTracker
 )
+from app.services.write_lock import with_write_lock
 
 # Alias backward compatibility
 TELEMETRY_HISTORY = TelemetryHistoryStore._store
@@ -61,7 +62,7 @@ class HardwareService:
         return HardwareRepository.get_by_pc_id_eager(pc_id)
 
     @staticmethod
-    def process_hardware_metric(client_ip, data):
+    def process_hardware_metric(client_ip, data):  # lock: telemetri per detik; upsert idempoten di jalur polling
         """Memproses data metrics dan menyimpannya di In-Memory Store & Database.
         
         Zero Disk I/O Polling:
@@ -409,6 +410,7 @@ class HardwareService:
         return [p.to_dict() if hasattr(p, "to_dict") else p for p in processes]
 
     @staticmethod
+    @with_write_lock
     def delete_hardware(hardware_id, operator="system"):
         """Menghapus data hardware monitor berdasarkan ID dan melakukan commit database."""
         try:
@@ -428,6 +430,7 @@ class HardwareService:
             raise e
 
     @staticmethod
+    @with_write_lock
     def update_pc_baseline(pc_id, operator="admin"):
         """Mengambil data current specs dari telemetry terakhir dan menyimpannya sebagai baseline resmi."""
         try:

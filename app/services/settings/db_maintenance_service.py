@@ -1,4 +1,4 @@
-# app/services/settings/db_maintenance_service.py
+﻿# app/services/settings/db_maintenance_service.py
 
 """Service untuk pembersihan histori operasional database dan optimasi fisik SQLite.
 
@@ -12,6 +12,7 @@ from datetime import timedelta, datetime
 from sqlalchemy import text
 from app.models import db, now_local
 from app.services.backup.backup_service import default_backup_dir, _snapshot_db, _integrity_ok
+from app.services.write_lock import with_write_lock
 
 
 class DBMaintenanceService:
@@ -90,6 +91,7 @@ class DBMaintenanceService:
         }
 
     @staticmethod
+    @with_write_lock
     def purge_and_vacuum(retention_months: int) -> dict:
         """Membersihkan histori operasional berumur lebih tua dari retention_months
         dan mengompresi fisik file database SQLite via VACUUM.

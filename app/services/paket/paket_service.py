@@ -1,4 +1,4 @@
-# app/services/paket_service.py
+﻿# app/services/paket_service.py
 
 """Service untuk manajemen paket harga.
 
@@ -13,6 +13,7 @@ from app.repositories import SesiRepository
 from app.repositories import GrupRepository
 from app.utils.logger import write_log
 from app.utils.validators import validate_string_length, validate_integer_range
+from app.services.write_lock import with_write_lock
 
 
 class PaketService:
@@ -64,6 +65,7 @@ class PaketService:
             return None
 
     @staticmethod
+    @with_write_lock
     def create(data, operator="system"):
         """Buat paket baru dengan validasi nama unik dan grup yang tersedia."""
         nama = validate_string_length(data.get("nama", ""), min_len=2, max_len=50, field_name="Nama paket", required=True)
@@ -110,6 +112,7 @@ class PaketService:
     # Fokus: Mengubah data paket dan menghapus paket dengan proteksi integritas sesi.
 
     @staticmethod
+    @with_write_lock
     def update(paket_id, data, operator="system"):
         """Update detail paket (harga, durasi, status aktif, dll)."""
         paket = PaketRepository.get_by_id(paket_id)
@@ -163,6 +166,7 @@ class PaketService:
         return paket
 
     @staticmethod
+    @with_write_lock
     def archive(paket_id, operator="system"):
         """Nonaktifkan paket agar tidak muncul di pilihan tanpa menghapus riwayatnya."""
         paket = PaketRepository.get_by_id(paket_id)
@@ -177,6 +181,7 @@ class PaketService:
         return True
 
     @staticmethod
+    @with_write_lock
     def restore(paket_id, operator="system"):
         """Pulihkan paket dari arsip agar bisa dipilih kembali."""
         paket = PaketRepository.get_by_id(paket_id)

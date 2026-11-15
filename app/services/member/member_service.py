@@ -1,4 +1,4 @@
-# app/services/member_service.py
+﻿# app/services/member_service.py
 
 """Service untuk manajemen member/pelanggan warnet.
 
@@ -16,7 +16,7 @@ from app.repositories import SesiRepository
 from app.repositories import GrupRepository
 from app.repositories import TransaksiRepository
 from app.services.transaksi.transaksi_service import TransaksiService
-from app.services.write_lock import WRITE_LOCK
+from app.services.write_lock import WRITE_LOCK, with_write_lock
 from app.services import idempotency
 from app.utils.logger import write_log
 from app.models import db, now_local
@@ -144,6 +144,7 @@ class MemberService:
         return MemberRepository.get_by_username(username)
 
     @staticmethod
+    @with_write_lock
     def create(data, operator="system"):
         """Buat akun member baru dengan validasi grup & username unik."""
         username = validate_username(data.get("username", ""), min_len=3, max_len=30, lowercase_only=True)
@@ -190,6 +191,7 @@ class MemberService:
         return member
 
     @staticmethod
+    @with_write_lock
     def update(member_id, data, operator="system"):
         """Perbarui profil member (nama, email, grup)."""
         member = MemberRepository.get_by_id(member_id)
@@ -235,6 +237,7 @@ class MemberService:
         return member
 
     @staticmethod
+    @with_write_lock
     def archive(member_id, operator="system"):
         """Nonaktifkan member tanpa menghapus riwayat sesi/transaksi."""
         member = MemberRepository.get_by_id(member_id)
@@ -251,6 +254,7 @@ class MemberService:
         return True
 
     @staticmethod
+    @with_write_lock
     def restore(member_id, operator="system"):
         """Pulihkan member dari arsip agar bisa bermain/menambah saldo lagi."""
         member = MemberRepository.get_by_id(member_id)

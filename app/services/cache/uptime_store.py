@@ -1,4 +1,4 @@
-"""In-memory store untuk kalkulasi dan akumulasi uptime & billing PC client.
+﻿"""In-memory store untuk kalkulasi dan akumulasi uptime & billing PC client.
 
 Menyediakan:
 1. UptimeMemoryStore: Menghitung akumulasi detik online dan billing di RAM dengan delta,
@@ -11,6 +11,7 @@ import logging
 import threading
 from datetime import datetime, timedelta
 from app.utils.timezone_utils import now_utc, get_display_tz
+from app.services.write_lock import with_write_lock
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +72,7 @@ class UptimeMemoryStore:
         return now_utc().astimezone(get_display_tz()).date() - timedelta(days=cls.RETENSI_HARI - 1)
 
     @classmethod
-    def prune_old_logs(cls, app=None):
+    def prune_old_logs(cls, app=None):  # lock: retensi log uptime; hapus idempoten tanpa baca-lalu-tulis
         """Hapus log di luar retensi; sisakan baris last_seen terbaru per PC sebagai jangkar deteksi hardware."""
         from sqlalchemy import func
         from app.models import db, PCUptimeLog
@@ -101,6 +102,7 @@ class UptimeMemoryStore:
         return jumlah
 
     @classmethod
+    @with_write_lock
     def flush_to_database(cls, app=None):
         """Batch update akumulasi uptime dan billing dari RAM ke SQLite (pc_uptime_log)."""
         from app.models import db, PCUptimeLog
@@ -133,7 +135,7 @@ class UptimeMemoryStore:
         if not to_flush:
             return
 
-        def _do_flush():
+        def _do_flush():  # lock: dipanggil flush_to_database yang memegang lock
             try:
                 pc_ids = list({item[0] for item in to_flush})
                 dates = list({item[1] for item in to_flush})

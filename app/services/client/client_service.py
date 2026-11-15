@@ -1,4 +1,4 @@
-# app/services/client_service.py
+﻿# app/services/client_service.py
 
 """Service untuk komunikasi dengan client C#.
 
@@ -16,7 +16,7 @@ from app.repositories import PCRepository
 from app.repositories import SesiRepository
 from app.services.sesi.sesi_service import SesiService
 from app.services.settings.settings_service import SettingsService
-from app.services.write_lock import WRITE_LOCK
+from app.services.write_lock import WRITE_LOCK, with_write_lock
 from app.utils.logger import write_log
 
 
@@ -75,7 +75,7 @@ class ClientService:
         return ":".join(clean[i:i+2] for i in range(0, 12, 2))
 
     @staticmethod
-    def identify(ip_address, mac_address, role=None):
+    def identify(ip_address, mac_address, role=None):  # lock: heartbeat identitas PC; UPDATE bersyarat idempoten di jalur polling
         """Identifikasi PC pertama kali saat client startup."""
         write_log("IDENTIFY_START", f"PC coba kenalan: IP={ip_address}, MAC={mac_address}")
         
@@ -314,6 +314,7 @@ class ClientService:
     # Emergency login selalu diterima server, dan mengaktifkan is_admin_mode.
 
     @staticmethod
+    @with_write_lock
     def emergency_login(ip_address, mac_address, username="SYSTEM", token=None, request_ip=None):
         """Login emergency dari PC client.
 
@@ -368,6 +369,7 @@ class ClientService:
     # Fokus: Menangani login admin langsung dari PC client untuk maintenance.
 
     @staticmethod
+    @with_write_lock
     def admin_login(ip_address, mac_address, username, password):
         """Login admin dari PC client (Force login bypass)."""
         from app.repositories import UserRepository
@@ -431,6 +433,7 @@ class ClientService:
     # Fokus: Menutup sesi atas permintaan dari aplikasi client.
 
     @staticmethod
+    @with_write_lock
     def tutup_sesi(ip_address, mac_address):
         """Request penutupan sesi yang dipicu dari tombol 'Logout' di Client."""
         try:
@@ -473,7 +476,7 @@ class ClientService:
     # Fokus: Mengunci layar PC sementara dan membuka kunci dengan PIN/Password.
 
     @staticmethod
-    def afk_lock(ip_address, mac_address, pin=None):
+    def afk_lock(ip_address, mac_address, pin=None):  # lock: flag AFK; UPDATE idempoten di jalur polling
         """Mengunci PC untuk istirahat (AFK)."""
         pc = PCRepository.get_by_ip(ip_address)
         if not pc and mac_address:
@@ -506,7 +509,7 @@ class ClientService:
         return {"success": True, "message": "PC berhasil dikunci untuk AFK"}
 
     @staticmethod
-    def afk_unlock(ip_address, mac_address, credential):
+    def afk_unlock(ip_address, mac_address, credential):  # lock: flag AFK; UPDATE idempoten di jalur polling
         """Membuka kunci PC yang sedang AFK."""
         pc = PCRepository.get_by_ip(ip_address)
         if not pc and mac_address:

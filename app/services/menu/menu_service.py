@@ -1,4 +1,4 @@
-# app/services/menu_service.py
+﻿# app/services/menu_service.py
 
 """Service untuk menangani business logic POS Makanan & Minuman.
 
@@ -14,6 +14,7 @@ from app.repositories import UserRepository
 from app.services import idempotency
 from app.utils.logger import write_log
 from app.utils.validators import validate_string_length, validate_integer_range, validate_choice, validate_payment_method
+from app.services.write_lock import with_write_lock
 
 GAMBAR_PATH_PREFIX = "/static/uploads/menu/"
 
@@ -36,6 +37,7 @@ class MenuService:
         return MenuRepository.get_all()
 
     @staticmethod
+    @with_write_lock
     def create_menu(data, operator="system"):
         """Membuat menu baru, atau me-restore menu arsip dengan nama yang sama.
 
@@ -120,6 +122,7 @@ class MenuService:
             pass
 
     @staticmethod
+    @with_write_lock
     def update_menu(menu_id, data, operator="system"):
         """Mengupdate data menu di katalog."""
         try:
@@ -165,6 +168,7 @@ class MenuService:
             raise e
 
     @staticmethod
+    @with_write_lock
     def tambah_stok(menu_id, jumlah_tambah, operator="system", catatan=None):
         """Menambahkan stok item menu dan mencatat log aktivitas audit secara rinci."""
         try:
@@ -264,6 +268,7 @@ class MenuService:
         return result
 
     @staticmethod
+    @with_write_lock
     def restore_menu(menu_id, operator="system"):
         """Memulihkan menu dari arsip kembali ke katalog aktif."""
         try:
@@ -297,6 +302,7 @@ class MenuService:
             raise e
 
     @staticmethod
+    @with_write_lock
     def delete_menu(menu_id, operator="system"):
         """Mengarsipkan menu dari katalog (soft-delete).
         
@@ -332,6 +338,7 @@ class MenuService:
             raise e
 
     @staticmethod
+    @with_write_lock
     def hard_delete_menu(menu_id, operator="system"):
         """Menghapus menu permanen BERSAMA seluruh transaksi F&B terkait.
 
@@ -381,6 +388,7 @@ class MenuService:
         return f"{prefix}{str(new_num).zfill(3)}-{secrets.token_hex(3)}"
 
     @staticmethod
+    @with_write_lock
     def checkout_menu_order(cart_items, pc_kode, kasir_username, operator="system", tunai=0, kembalian=0, metode_pembayaran="Tunai", client_request_id=None):
         """Memproses transaksi pembelian F&B terpisah dari billing PC."""
         if not idempotency.claim(client_request_id):

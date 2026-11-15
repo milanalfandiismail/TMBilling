@@ -1,4 +1,4 @@
-# app/services/settings_service.py
+﻿# app/services/settings_service.py
 
 """Service untuk manajemen pengaturan sistem.
 
@@ -112,7 +112,7 @@ class SettingsService:
         return val
 
     @staticmethod
-    def set(key, value):
+    def set(key, value):  # lock: upsert satu baris setting; idempoten
         """Menyimpan atau memperbarui nilai pengaturan (Write-Through DB & RAM)."""
         SettingsRepository.set(key, value)
         db.session.commit()

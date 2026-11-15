@@ -1,4 +1,4 @@
-# app/services/game/game_service.py
+﻿# app/services/game/game_service.py
 
 import os
 from flask import current_app
@@ -9,6 +9,7 @@ from app.utils.logger import write_log
 from app.utils.helpers import remove_quiet
 
 from app.utils.validators import validate_string_length, validate_choice, validate_filename
+from app.services.write_lock import with_write_lock
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'ico'}
 
@@ -153,6 +154,7 @@ class GameService:
         return result
 
     @staticmethod
+    @with_write_lock
     def archive(game_id, operator=None):
         """Sembunyikan game dari katalog tanpa menghapus ikon/riwayatnya."""
         from app.models import db
@@ -170,6 +172,7 @@ class GameService:
         return {"success": True, "message": f"Game '{game.nama}' berhasil diarsipkan"}
 
     @staticmethod
+    @with_write_lock
     def restore(game_id, operator=None):
         """Tampilkan kembali game yang diarsipkan di katalog dan daftar."""
         from app.models import db

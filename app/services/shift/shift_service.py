@@ -1,4 +1,4 @@
-"""Service untuk manajemen shift kasir (Handover).
+﻿"""Service untuk manajemen shift kasir (Handover).
 
 Modul ini menangani business logic shift: buka shift, hitung pendapatan,
 tutup shift dengan hitung buta, dan cetak struk handover.
@@ -9,7 +9,7 @@ from functools import wraps
 from sqlalchemy.exc import IntegrityError
 from app.models import db, now_local
 from app.models import ShiftRecord, Transaksi, TransaksiMenu, User
-from app.services.write_lock import WRITE_LOCK
+from app.services.write_lock import WRITE_LOCK, with_write_lock
 from app.utils.timezone_utils import format_display, get_local_date_range_utc
 
 
@@ -301,6 +301,7 @@ class ShiftService:
 
     @staticmethod
     @_serialized
+    @with_write_lock
     def end_shift(shift_id, uang_fisik, catatan=None, operator="system"):
         """Tutup shift dengan hitung buta dan serah terima.
 
@@ -400,6 +401,7 @@ class ShiftService:
 
     @staticmethod
     @_serialized
+    @with_write_lock
     def force_close_shift(shift_id, admin_username, alasan=""):
         """Emergency force-close shift aktif oleh admin.
 

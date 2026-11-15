@@ -1,4 +1,4 @@
-# app/services/user_service.py
+﻿# app/services/user_service.py
 
 """Service untuk mengelola User (Kasir/Admin).
 
@@ -11,6 +11,7 @@ from app.models import db, ShiftRecord, Transaksi
 from app.repositories import UserRepository
 from app.utils.logger import write_log
 from app.utils.validators import validate_username, validate_password, validate_string_length
+from app.services.write_lock import with_write_lock
 
 class UserService:
     """Service untuk manajemen data User kasir/admin."""
@@ -30,6 +31,7 @@ class UserService:
         return user.to_dict()
 
     @staticmethod
+    @with_write_lock
     def create_user(data, operator="admin"):
         """Buat user / kasir baru."""
         username = validate_username(data.get("username", ""), min_len=3, max_len=30, lowercase_only=False)
@@ -85,6 +87,7 @@ class UserService:
         return new_user.to_dict()
 
     @staticmethod
+    @with_write_lock
     def update_user(user_id, data, operator="admin"):
         """Perbarui data user yang ada."""
         user = UserRepository.get_by_id(user_id)
@@ -152,6 +155,7 @@ class UserService:
         return user.to_dict()
 
     @staticmethod
+    @with_write_lock
     def archive_user(user_id, operator="admin"):
         """Nonaktifkan user tanpa menghapus riwayat shift/transaksi."""
         from app.models import db
@@ -171,6 +175,7 @@ class UserService:
         return {"success": True, "message": "User berhasil diarsipkan"}
 
     @staticmethod
+    @with_write_lock
     def restore_user(user_id, operator="admin"):
         """Aktifkan kembali user yang diarsipkan."""
         from app.models import db

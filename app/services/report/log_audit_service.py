@@ -1,4 +1,4 @@
-# app/services/report/log_audit_service.py
+﻿# app/services/report/log_audit_service.py
 
 """Service khusus pemrosesan & pembersihan log audit sistem.
 
@@ -10,7 +10,7 @@ import re
 import json
 from app.models import db
 from app.repositories import TransaksiRepository, SesiRepository, MenuRepository
-from app.services.write_lock import WRITE_LOCK
+from app.services.write_lock import WRITE_LOCK, with_write_lock
 from app.utils.timezone_utils import format_local_now
 from app.utils.logger import read_logs, write_log, clear_logs
 from app.utils.timezone_utils import get_local_date_range_utc
@@ -139,6 +139,7 @@ class LogAuditService:
         return {"success": False, "total_dibersihkan": 0, "archive_path": None}
 
     @staticmethod
+    @with_write_lock
     def clear_all_transactions(operator="system"):
         """Menghapus seluruh riwayat transaksi & sesi (Maintenance)."""
         if SesiRepository.get_all_aktif():
@@ -164,6 +165,7 @@ class LogAuditService:
             return False
 
     @staticmethod
+    @with_write_lock
     def delete_transaction(t_id, operator="system"):
         """Menghapus satu transaksi (Audit)."""
         t = TransaksiRepository.get_by_id(t_id)

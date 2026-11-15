@@ -1,4 +1,4 @@
-# app/services/maintenance/maintenance_service.py
+﻿# app/services/maintenance/maintenance_service.py
 
 """Service layer untuk mengelola tiket perawatan dan pelaporan masalah PC.
 
@@ -12,10 +12,12 @@ from app.models import db, PC, MaintenanceTicket
 from app.utils.timezone_utils import format_display
 from app.utils.logger import write_log
 from app.utils.validators import validate_choice, validate_string_length, validate_integer_range
+from app.services.write_lock import with_write_lock
 
 class MaintenanceService:
 
     @staticmethod
+    @with_write_lock
     def create_ticket(pc_id, reporter, kategori, prioritas, judul, deskripsi=None):
         """Buat tiket masalah baru.
         - Jika prioritas KRITIS -> PC dinonaktifkan otomatis.
@@ -73,6 +75,7 @@ class MaintenanceService:
         return [t.to_dict() for t in tickets]
 
     @staticmethod
+    @with_write_lock
     def update_status(ticket_id, status, resolved_by=None, resolusi=None, biaya=0):
         """Update status perbaikan tiket.
         - Jika status SELESAI -> re-enable PC otomatis.
@@ -180,6 +183,7 @@ class MaintenanceService:
         }
 
     @staticmethod
+    @with_write_lock
     def delete_ticket(ticket_id):
         """Hapus tiket perawatan."""
         ticket = MaintenanceTicket.query.get(ticket_id)

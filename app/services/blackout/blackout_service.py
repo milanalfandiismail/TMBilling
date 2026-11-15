@@ -1,4 +1,4 @@
-# app/services/blackout_service.py
+﻿# app/services/blackout_service.py
 
 """Service untuk penanganan insiden mati lampu (blackout).
 
@@ -16,7 +16,7 @@ from app.repositories import MemberRepository
 from app.repositories import PCRepository
 from app.utils.logger import write_log
 from app.services.transaksi.transaksi_service import TransaksiService
-from app.services.write_lock import WRITE_LOCK
+from app.services.write_lock import WRITE_LOCK, with_write_lock
 from app.config import Config
 from datetime import timedelta
 import secrets
@@ -95,6 +95,7 @@ class BlackoutService:
     # Fokus: Mengembalikan saldo waktu ke akun member.
 
     @staticmethod
+    @with_write_lock
     def resolve_member(sesi_id, operator="kasir"):
         """Kembalikan sisa saldo waktu saat mati lampu ke akun member."""
         sesi = SesiRepository.get_by_id(sesi_id)
@@ -137,6 +138,7 @@ class BlackoutService:
     # Fokus: Melanjutkan sesi guest di PC yang sama, PC lain, atau tutup total.
 
     @staticmethod
+    @with_write_lock
     def resolve_guest_sama(sesi_id, operator="kasir"):
         """Lanjutkan sesi guest di PC yang sama (Tutup lama, Buka baru)."""
         sesi = SesiRepository.get_by_id(sesi_id)
@@ -170,6 +172,7 @@ class BlackoutService:
         return {"pc": pc.kode, "sisa_menit": sisa, "nama_guest": sesi.nama_guest}
 
     @staticmethod
+    @with_write_lock
     def resolve_guest_lanjut(sesi_id, pc_baru_id, operator="kasir"):
         """Pindahkan sesi guest ke PC lain yang satu grup."""
         sesi = SesiRepository.get_by_id(sesi_id)
@@ -207,6 +210,7 @@ class BlackoutService:
         return {"pc_baru": pc_baru.kode, "sisa_menit": sisa, "nama_guest": sesi.nama_guest}
 
     @staticmethod
+    @with_write_lock
     def resolve_tutup_tanpa_kompensasi(sesi_id, operator="kasir"):
         """Tutup catatan blackout tanpa memberikan kompensasi apa pun (Guest/Member)."""
         sesi = SesiRepository.get_by_id(sesi_id)
@@ -243,7 +247,7 @@ class BlackoutService:
     # Fokus: Membersihkan data lama dan penutupan paksa massal.
 
     @staticmethod
-    def clear_resolved(selected_date, operator="kasir"):
+    def clear_resolved(selected_date, operator="kasir"):  # lock: hapus baris audit yang sudah dipulihkan; idempoten
         """Menghapus record blackout yang sudah di-resolve pada tanggal tertentu."""
         deleted = SesiRepository.delete_resolved_blackout(selected_date)
         db.session.commit()

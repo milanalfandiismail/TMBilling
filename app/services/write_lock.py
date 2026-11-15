@@ -1,3 +1,4 @@
+import functools
 import threading
 import time
 
@@ -33,3 +34,14 @@ class _WriteLock:
 
 
 WRITE_LOCK = _WriteLock()
+
+
+def with_write_lock(fn):
+    """Bungkus satu fungsi service agar seluruh baca-lalu-tulis-nya berjalan di bawah WRITE_LOCK."""
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        with WRITE_LOCK:
+            return fn(*args, **kwargs)
+
+    return wrapper

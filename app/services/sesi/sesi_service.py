@@ -1,4 +1,4 @@
-# app/services/sesi_service.py
+﻿# app/services/sesi_service.py
 
 """Service untuk manajemen sesi bermain.
 
@@ -19,7 +19,7 @@ from app.repositories import (
 )
 from app.services.transaksi.transaksi_service import TransaksiService
 from app.services import idempotency
-from app.services.write_lock import WRITE_LOCK
+from app.services.write_lock import WRITE_LOCK, with_write_lock
 from app.utils.logger import write_log
 from app.utils.validators import (
     validate_string_length,
@@ -154,6 +154,7 @@ class SesiService:
         return sesi
 
     @staticmethod
+    @with_write_lock
     def buka_admin(pc_id, token_sesi, admin_nama="ADMIN"):
         """Membuka sesi khusus admin untuk maintenance PC."""
         sesi_baru = Sesi(
@@ -496,6 +497,7 @@ class SesiService:
 
 
     @staticmethod
+    @with_write_lock
     def cleanup_inactive_admin_sessions():
         """Reset status is_admin_mode di DB jika PC sudah tidak aktif (Heartbeat mati)."""
         from app.services.cache.client_state_store import OnlineStatusStore
@@ -666,4 +668,4 @@ class SesiService:
             "durasi_beli_sebelum": sebelum,
             "durasi_beli_sesudah": sesi.durasi_beli_menit,
             "durasi_dikurangi": durasi_dikurangi
-        }
+        }

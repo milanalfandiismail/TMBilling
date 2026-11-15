@@ -1,4 +1,4 @@
-# app/services/pc_service.py
+﻿# app/services/pc_service.py
 
 """Service untuk manajemen PC/unit komputer.
 
@@ -15,6 +15,7 @@ from app.repositories import GrupRepository
 from app.utils.helpers import natural_sort_key, remove_quiet
 from app.utils.logger import write_log
 from app.utils.validators import validate_string_length, validate_integer_range, validate_ip_address, validate_mac_address
+from app.services.write_lock import with_write_lock
 
 
 class PCService:
@@ -108,6 +109,7 @@ class PCService:
     # Fokus: Operasi standar untuk mengelola unit PC secara individu.
 
     @staticmethod
+    @with_write_lock
     def create(data, operator="system"):
         """Daftarkan unit PC baru dengan validasi kode dan IP unik."""
         kode = data.get("kode", "").strip().upper()
@@ -178,6 +180,7 @@ class PCService:
         return pc
 
     @staticmethod
+    @with_write_lock
     def update(pc_id, data, operator="system"):
         """Perbarui informasi teknis PC (Kode, Nama, IP, MAC, Grup) dengan validasi duplikasi."""
         pc = PCRepository.get_by_id(pc_id)
@@ -244,6 +247,7 @@ class PCService:
         return pc
 
     @staticmethod
+    @with_write_lock
     def archive(pc_id, operator="system"):
         """Arsipkan PC (soft delete) tanpa menyentuh riwayat sesi."""
         from app.services.cache import PCNetworkCacheStore, cleanup_pc_cache
@@ -273,6 +277,7 @@ class PCService:
         return {"success": True, "message": f"PC {kode} diarsipkan"}
 
     @staticmethod
+    @with_write_lock
     def restore(pc_id, operator="system"):
         """Pulihkan PC dari arsip agar kembali muncul di denah dan daftar."""
         from app.services.cache import PCNetworkCacheStore
@@ -353,6 +358,7 @@ class PCService:
             raise e
 
     @staticmethod
+    @with_write_lock
     def update_position(pc_id, pos_x, pos_y):
         """Update posisi PC di floor plan."""
         pc = PCRepository.get_by_id(pc_id)
@@ -370,6 +376,7 @@ class PCService:
     # Fokus: Penambahan unit PC dalam jumlah besar secara otomatis.
 
     @staticmethod
+    @with_write_lock
     def reset_admin_mode(pc_id, operator="system"):
         """Matiin mode admin secara paksa di database dan kirim perintah lock ke client."""
         pc = PCRepository.get_by_id(pc_id)
@@ -395,6 +402,7 @@ class PCService:
         return True
 
     @staticmethod
+    @with_write_lock
     def create_batch(data, operator="system"):
         """Tambah PC massal dengan IP Range Start & End serta validasi duplikasi IP dan keselarasan jumlah unit."""
         import ipaddress

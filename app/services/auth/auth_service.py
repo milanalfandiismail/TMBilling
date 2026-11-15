@@ -1,4 +1,4 @@
-# app/services/auth_service.py
+﻿# app/services/auth_service.py
 
 """Service untuk autentikasi client C#.
 
@@ -14,7 +14,7 @@ from app.models import Sesi
 from app.repositories import MemberRepository
 from app.repositories import PCRepository
 from app.repositories import SesiRepository
-from app.services.write_lock import WRITE_LOCK
+from app.services.write_lock import WRITE_LOCK, with_write_lock
 from app.utils.logger import write_log
 
 
@@ -160,6 +160,7 @@ class AuthService:
     # Fokus: Validasi token dan penutupan sesi aktif secara aman.
 
     @staticmethod
+    @with_write_lock
     def logout(ip_address, mac_address, token_sesi=None):
         """Logout member atau kasir dan menutup sesi aktif di database."""
         pc = PCRepository.get_by_ip_and_mac(ip_address, mac_address)
