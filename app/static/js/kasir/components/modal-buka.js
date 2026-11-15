@@ -226,7 +226,7 @@ const BukaModal = {
             }
         } catch (err) {
             console.error(err);
-            if (grid) grid.innerHTML = `<div class="text-center py-12 text-red-400 text-xs lg:text-base">Gagal memuat paket: ${err.message}</div>`;
+            if (grid) grid.innerHTML = `<div class="text-center py-12 text-red-400 text-xs lg:text-base">Gagal memuat paket: ${Utils.escapeHtml(err.message)}</div>`;
         }
     },
 

@@ -129,7 +129,7 @@ const Member = {
 
             const addGrupSelect = document.getElementById('inp-mem-grup');
             if (addGrupSelect && !isSilent) {
-                addGrupSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+                addGrupSelect.innerHTML = groups.map(g => `<option value="${Utils.escapeHtml(g.nama)}">${Utils.escapeHtml(g.nama.toUpperCase())}</option>`).join('');
             }
 
             this.render(this.allMembers, memberData);

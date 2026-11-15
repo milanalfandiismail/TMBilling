@@ -558,7 +558,7 @@ const Catatan = {
                 statusBtn.title = 'Gagal menyimpan. Klik untuk coba lagi.';
             } else { // ready
                 statusBtn.className = 'px-3 py-1.5 lg:max-xl:px-3 lg:max-xl:py-1.5 xl:px-3.5 xl:py-1.5 rounded text-xs lg:max-xl:text-xs xl:text-sm font-semibold transition-all flex items-center gap-1.5 bg-neutral-900 text-neutral-500 border border-[#262626]';
-                statusBtn.innerHTML = `<i class="fa-regular fa-file text-neutral-500 text-xs"></i><span>${customText || 'Siap'}</span>`;
+                statusBtn.innerHTML = `<i class="fa-regular fa-file text-neutral-500 text-xs"></i><span>${customText || 'Siap'}</span>`;  // xss-reviewed: teks berasal dari konstanta internal, bukan data server
                 statusBtn.title = 'Belum ada berkas yang diedit';
             }
         }

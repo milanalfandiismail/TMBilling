@@ -137,7 +137,7 @@ const CompactGrid = {
             }
         }
         if (navLabel) {
-            navLabel.innerHTML = `Bagian Denah: Kolom <strong class="text-neutral-100">${startCol}–${endCol}</strong> dari <strong class="text-neutral-100">${cols}</strong> <span class="text-neutral-500 font-normal hidden sm:inline">(Hal ${currentPage}/${totalPages})</span>`;
+            navLabel.innerHTML = `Bagian Denah: Kolom <strong class="text-neutral-100">${startCol}–${endCol}</strong> dari <strong class="text-neutral-100">${cols}</strong> <span class="text-neutral-500 font-normal hidden sm:inline">(Hal ${currentPage}/${totalPages})</span>`;  // xss-reviewed: hanya angka kolom denah yang dihitung lokal
         }
         if (navDots) {
             let dotsHtml = '';

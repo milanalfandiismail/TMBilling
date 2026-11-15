@@ -689,7 +689,7 @@ const SettingsGeneral = {
                     </tr>`).join('');
             }
         } catch (err) {
-            tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-red-500 font-sans">Gagal memuat berkas: ${err.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-red-500 font-sans">Gagal memuat berkas: ${Utils.escapeHtml(err.message)}</td></tr>`;
         }
     },
 
@@ -1286,7 +1286,7 @@ const SettingsGeneral = {
             statusBadge.textContent = 'Embed Aktif';
             statusBadge.className = 'text-[9px] font-mono text-emerald-400';
             const safeEmbed = window.Utils && Utils.escapeHtml ? Utils.escapeHtml(embedUrl) : embedUrl.replace(/"/g, '&quot;');
-            iframeWrapper.innerHTML = `<iframe src="${safeEmbed}" class="w-full h-full border-0 rounded" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+            iframeWrapper.innerHTML = `<iframe src="${safeEmbed}" class="w-full h-full border-0 rounded" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;  // xss-reviewed: URL sudah di-escape ke safeEmbed sebelum disisipkan
         } else if (navUrl) {
             statusBadge.textContent = 'Link Navigasi';
             statusBadge.className = 'text-[9px] font-mono text-sky-400';

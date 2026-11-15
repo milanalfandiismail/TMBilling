@@ -27,7 +27,7 @@ async function fetchPCStatus() {
         const vacant = allPCs.filter(pc => pc.status === 'kosong').length;
 
         counter.className = "px-3 py-2 bg-emerald-950/40 border border-emerald-800/30 text-emerald-400 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5";
-        counter.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ${vacant} / ${total} PC Tersedia`;
+        counter.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ${vacant} / ${total} PC Tersedia`;  // xss-reviewed: hanya angka hitungan status meja
     } catch (err) {
         console.error(err);
         const container = document.getElementById('pc-container');

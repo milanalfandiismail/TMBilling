@@ -215,7 +215,7 @@ const MemberRefill = {
         });
         
         if (checkedCount > 0) {
-            previewEl.innerHTML = `<div class="text-sm font-black text-neutral-100 font-mono">${Utils.formatDurasiFriendly(totalMenit)}</div><div class="text-xs lg:text-base font-bold text-emerald-400 font-mono mt-0.5">${Utils.formatRupiah(totalHarga)}</div>`;
+            previewEl.innerHTML = `<div class="text-sm font-black text-neutral-100 font-mono">${Utils.formatDurasiFriendly(totalMenit)}</div><div class="text-xs lg:text-base font-bold text-emerald-400 font-mono mt-0.5">${Utils.formatRupiah(totalHarga)}</div>`;  // xss-reviewed: hasil Utils.format* berupa angka terformat
         } else {
             previewEl.innerText = 'Pilih paket terlebih dahulu';
         }

@@ -142,7 +142,7 @@ const Tournament = {
 
         } catch (err) {
             if (!isSilent) {
-                grid.innerHTML = `<div class="col-span-full py-12 text-center text-red-400 text-xs lg:text-base">Gagal memuat turnamen: ${err.message}</div>`;
+                grid.innerHTML = `<div class="col-span-full py-12 text-center text-red-400 text-xs lg:text-base">Gagal memuat turnamen: ${Utils.escapeHtml(err.message)}</div>`;
             }
         }
     },
@@ -213,7 +213,7 @@ const Tournament = {
 
         } catch (err) {
             if (!isSilent) {
-                stageContent.innerHTML = `<div class="py-16 text-center text-red-400 text-xs lg:text-base">Gagal memuat detail turnamen: ${err.message}</div>`;
+                stageContent.innerHTML = `<div class="py-16 text-center text-red-400 text-xs lg:text-base">Gagal memuat detail turnamen: ${Utils.escapeHtml(err.message)}</div>`;
             }
         }
     },

@@ -48,7 +48,7 @@ const Dashboard = {
         } catch (err) {
             console.error('[Dashboard] Error:', err);
             if (container && !this.lastData) {
-                container.innerHTML = `<div class="text-center py-20 text-red-400 text-sm">Gagal memuat dashboard: ${err.message}<br><button onclick="Dashboard.load()" class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs lg:text-base font-semibold">Coba Lagi</button></div>`;
+                container.innerHTML = `<div class="text-center py-20 text-red-400 text-sm">Gagal memuat dashboard: ${Utils.escapeHtml(err.message)}<br><button onclick="Dashboard.load()" class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs lg:text-base font-semibold">Coba Lagi</button></div>`;
             }
         } finally {
             this._loading = false;

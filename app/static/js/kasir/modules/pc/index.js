@@ -118,19 +118,19 @@ const PC = {
 
             const addSelect = document.getElementById('inp-pc-grup');
             if (addSelect && !isSilent) {
-                addSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+                addSelect.innerHTML = groups.map(g => `<option value="${Utils.escapeHtml(g.nama)}">${Utils.escapeHtml(g.nama.toUpperCase())}</option>`).join('');
             }
             const modalAddSelect = document.getElementById('modal-pc-grup');
             if (modalAddSelect && !isSilent) {
-                modalAddSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+                modalAddSelect.innerHTML = groups.map(g => `<option value="${Utils.escapeHtml(g.nama)}">${Utils.escapeHtml(g.nama.toUpperCase())}</option>`).join('');
             }
             const batchSelect = document.getElementById('inp-batch-grup');
             if (batchSelect && !isSilent) {
-                batchSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+                batchSelect.innerHTML = groups.map(g => `<option value="${Utils.escapeHtml(g.nama)}">${Utils.escapeHtml(g.nama.toUpperCase())}</option>`).join('');
             }
             const modalBatchSelect = document.getElementById('modal-batch-grup');
             if (modalBatchSelect && !isSilent) {
-                modalBatchSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+                modalBatchSelect.innerHTML = groups.map(g => `<option value="${Utils.escapeHtml(g.nama)}">${Utils.escapeHtml(g.nama.toUpperCase())}</option>`).join('');
             }
 
             this.renderTabs();

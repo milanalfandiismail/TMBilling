@@ -115,11 +115,11 @@ const Paket = {
             // Update dropdown grup pada modal tambah jika ada
             const addSelect = document.getElementById('inp-paket-grup');
             if (addSelect && !isSilent) {
-                addSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+                addSelect.innerHTML = groups.map(g => `<option value="${Utils.escapeHtml(g.nama)}">${Utils.escapeHtml(g.nama.toUpperCase())}</option>`).join('');
             }
             const modalAddSelect = document.getElementById('modal-paket-grup');
             if (modalAddSelect && !isSilent) {
-                modalAddSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+                modalAddSelect.innerHTML = groups.map(g => `<option value="${Utils.escapeHtml(g.nama)}">${Utils.escapeHtml(g.nama.toUpperCase())}</option>`).join('');
             }
 
             // Render Tab Pills Grup & Konten Tabel Grup Aktif

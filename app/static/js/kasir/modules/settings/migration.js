@@ -382,7 +382,7 @@ const MigrationModule = {
         }
         const content = document.getElementById('migration-status-content');
         if (content) {
-            content.innerHTML = `<div class="col-span-full text-center py-4 text-red-400 text-xs">${msg}</div>`;
+            content.innerHTML = `<div class="col-span-full text-center py-4 text-red-400 text-xs">${Utils.escapeHtml(msg)}</div>`;
         }
     },
 

@@ -110,12 +110,12 @@ const SettingsScheduler = {
         // Update Text Previews
         const bPrev = document.getElementById('scheduler-backup-preview');
         if (bPrev) {
-            bPrev.innerHTML = `Backup otomatis setiap <strong class="text-neutral-200">${bVal} ${this._capitalize(bUnit)}</strong>.`;
+            bPrev.innerHTML = `Backup otomatis setiap <strong class="text-neutral-200">${Utils.escapeHtml(String(bVal))} ${Utils.escapeHtml(this._capitalize(bUnit))}</strong>.`;
         }
 
         const cPrev = document.getElementById('scheduler-cleanup-preview');
         if (cPrev) {
-            cPrev.innerHTML = `Hapus log lebih dari <strong class="text-neutral-200">${cVal} ${this._capitalize(cUnit)}</strong>.`;
+            cPrev.innerHTML = `Hapus log lebih dari <strong class="text-neutral-200">${Utils.escapeHtml(String(cVal))} ${Utils.escapeHtml(this._capitalize(cUnit))}</strong>.`;
         }
 
         // Toggle Screenshot Status & Controls
@@ -144,9 +144,9 @@ const SettingsScheduler = {
         const sPrev = document.getElementById('scheduler-screenshot-preview');
         if (sPrev) {
             if (sEnabled) {
-                sPrev.innerHTML = `Screenshot otomatis setiap <strong class="text-neutral-200">${sVal} ${this._capitalize(sUnit)}</strong>.`;
+                sPrev.innerHTML = `Screenshot otomatis setiap <strong class="text-neutral-200">${Utils.escapeHtml(String(sVal))} ${Utils.escapeHtml(this._capitalize(sUnit))}</strong>.`;
             } else {
-                sPrev.innerHTML = `Screenshot otomatis setiap <strong class="text-neutral-200">${sVal} ${this._capitalize(sUnit)}</strong> <span class="text-neutral-500">(Nonaktif)</span>.`;
+                sPrev.innerHTML = `Screenshot otomatis setiap <strong class="text-neutral-200">${Utils.escapeHtml(String(sVal))} ${Utils.escapeHtml(this._capitalize(sUnit))}</strong> <span class="text-neutral-500">(Nonaktif)</span>.`;
             }
         }
 

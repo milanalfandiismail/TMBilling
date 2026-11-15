@@ -65,7 +65,7 @@ const Laporan = {
 
         select.innerHTML = '<option value="">Semua Metode</option>';
         paymentMethods.forEach(m => {
-            select.innerHTML += `<option value="${m}">${m}</option>`;
+            select.innerHTML += `<option value="${Utils.escapeHtml(m)}">${Utils.escapeHtml(m)}</option>`;
         });
     },
 
@@ -79,7 +79,7 @@ const Laporan = {
 
             if (window.App && App.user && App.user.role === 'kasir') {
                 select.classList.add('hidden');
-                select.innerHTML = `<option value="${App.user.id}">${App.user.nama_lengkap || App.user.username}</option>`;
+                select.innerHTML = `<option value="${Utils.escapeHtml(App.user.id)}">${Utils.escapeHtml(App.user.nama_lengkap || App.user.username)}</option>`;
                 select.value = App.user.id;
                 return;
             }
@@ -87,7 +87,7 @@ const Laporan = {
             select.classList.remove('hidden');
             select.innerHTML = '<option value="">Semua Kasir</option>';
             kasirList.forEach(k => {
-                select.innerHTML += `<option value="${k.id}">${k.nama}</option>`;
+                select.innerHTML += `<option value="${Utils.escapeHtml(k.id)}">${Utils.escapeHtml(k.nama)}</option>`;
             });
         } catch (err) {
             console.error('Gagal memuat kasir', err);
@@ -116,7 +116,7 @@ const Laporan = {
 
             select.innerHTML = '<option value="">Semua Tanggal</option>';
             tanggalList.forEach(tgl => {
-                select.innerHTML += `<option value="${tgl}">${tgl}</option>`;
+                select.innerHTML += `<option value="${Utils.escapeHtml(tgl)}">${Utils.escapeHtml(tgl)}</option>`;
             });
 
             const firstDate = tanggalList[0];

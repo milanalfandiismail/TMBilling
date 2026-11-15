@@ -32,7 +32,7 @@ const LaporanMaintenance = {
 
             select.innerHTML = '<option value="">Semua Tanggal</option>';
             tanggalList.forEach(tgl => {
-                select.innerHTML += `<option value="${tgl}">${tgl}</option>`;
+                select.innerHTML += `<option value="${Utils.escapeHtml(tgl)}">${Utils.escapeHtml(tgl)}</option>`;
             });
         } catch (err) {
             console.error('Gagal memuat list tanggal laporan maintenance:', err);

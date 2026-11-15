@@ -145,7 +145,7 @@ window.ShiftHistory = {
 
             select.innerHTML = '<option value="">Semua Kasir</option>';
             kasirList.forEach(k => {
-                select.innerHTML += `<option value="${k.id}">${Utils.escapeHtml(k.nama || k.username || 'Kasir #' + k.id)}</option>`;
+                select.innerHTML += `<option value="${Utils.escapeHtml(k.id)}">${Utils.escapeHtml(k.nama || k.username || 'Kasir #' + k.id)}</option>`;
             });
 
             if (currentVal) {
@@ -189,7 +189,7 @@ window.ShiftHistory = {
         const endIdx = Math.min(this.historyCurrentPage * this.historyPerPage, totalCount);
 
         if (pageInfo) {
-            pageInfo.innerHTML = `Menampilkan <span class="font-bold text-neutral-200">${startIdx}</span> - <span class="font-bold text-neutral-200">${endIdx}</span> dari <span class="font-bold text-neutral-200">${totalCount}</span> shift`;
+            pageInfo.innerHTML = `Menampilkan <span class="font-bold text-neutral-200">${startIdx}</span> - <span class="font-bold text-neutral-200">${endIdx}</span> dari <span class="font-bold text-neutral-200">${totalCount}</span> shift`;  // xss-reviewed: hanya penghitung angka
         }
 
         if (prevBtn) {
@@ -423,7 +423,7 @@ window.ShiftHistory = {
         const endIdx = Math.min(this.userLogsCurrentPage * this.userLogsPerPage, totalCount);
 
         if (pageInfo) {
-            pageInfo.innerHTML = `Menampilkan <span class="font-bold text-neutral-200">${startIdx}</span> - <span class="font-bold text-neutral-200">${endIdx}</span> dari <span class="font-bold text-neutral-200">${totalCount}</span> log`;
+            pageInfo.innerHTML = `Menampilkan <span class="font-bold text-neutral-200">${startIdx}</span> - <span class="font-bold text-neutral-200">${endIdx}</span> dari <span class="font-bold text-neutral-200">${totalCount}</span> log`;  // xss-reviewed: hanya penghitung angka
         }
 
         if (prevBtn) {
