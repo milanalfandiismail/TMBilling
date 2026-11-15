@@ -199,7 +199,7 @@ const MikrotikModule = {
                 }
             })
             .catch(err => {
-                Toast.show('Terjadi kesalahan jaringan', 'error');
+                Toast.show(err.message || 'Terjadi kesalahan jaringan', 'error');
             });
     },
 

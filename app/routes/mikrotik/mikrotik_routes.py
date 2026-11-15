@@ -100,53 +100,70 @@ def test_mikrotik_connection():
 @admin_required
 def sync_all_mikrotik_members():
     """Sinkronisasi semua member dari database TMBilling ke MikroTik (Background)."""
-    try:
-        from app.services.member.member_service import MemberService
-        
-        config = MikroTikConfig.get_instance()
-        if not config.enabled:
-            return jsonify({"error": "Integrasi MikroTik belum diaktifkan."}), 400
+    from app.services.member.member_service import MemberService
 
-        host = config.host
-        port = config.port
-        username = config.username
-        mikrotik_password = config.password
-        profile = config.hotspot_profile
-        
-        # Test connection first
+    config = MikroTikConfig.get_instance()
+    if not config.enabled:
+        return jsonify({"error": "Integrasi MikroTik belum diaktifkan."}), 400
+
+    host = config.host
+    port = config.port
+    username = config.username
+    mikrotik_password = config.password
+    profile = config.hotspot_profile
+
+    # Satu job massal per proses: klaim ditolak bila masih berjalan.
+    if not _sync_lock.acquire(blocking=False):
+        return jsonify({"error": "Sinkronisasi massal sedang berjalan."}), 409
+
+    try:
         client = MikroTikAPIClient(host, username, mikrotik_password, port)
         success, msg = client.test_connection()
         if not success:
+            _sync_lock.release()
             return jsonify({"error": f"Koneksi gagal: {msg}"}), 400
 
-        # Ambil semua member (hanya id dan username untuk meminimalisir memory)
-        members = MemberService.get_all()
-        # Ambil data sederhana
-        member_data = [{"username": m.username} for m in members]
-        
-        def background_sync(member_list, h, p, u, mp, prof):
-            cli = None
-            try:
-                cli = MikroTikAPIClient(h, u, mp, p)
-                if cli.login():
-                    success_count = 0
-                    for mem in member_list:
-                        # Password set default to username since we don't have plaintext passwords
-                        try:
-                            cli.add_user(mem["username"], mem["username"], prof)
-                            success_count += 1
-                        except Exception:
-                            pass # User mungkin sudah ada
-                    write_log("MIKROTIK_SYNC", f"Sinkronisasi massal selesai. {success_count}/{len(member_list)} member ditambahkan.")
-            except Exception as e:
-                write_log("MIKROTIK_ERROR", f"Gagal sinkronisasi massal: {str(e)}")
-            finally:
-                if cli:
-                    cli.close()
+        # Ambil semua member (hanya username untuk meminimalisir memory)
+        member_data = [{"username": m.username} for m in MemberService.get_all()]
 
-        threading.Thread(target=background_sync, args=(member_data, host, port, username, mikrotik_password, profile), daemon=True).start()
-
-        return jsonify({"success": True, "message": f"Sinkronisasi massal {len(member_data)} member sedang berjalan di latar belakang."}), 200
-
+        threading.Thread(
+            target=_sync_members_background,
+            args=(member_data, host, port, username, mikrotik_password, profile),
+            daemon=True,
+        ).start()
     except Exception as e:
+        _sync_lock.release()
         return jsonify({"error": str(e)}), 500
+
+    return jsonify({"success": True, "message": f"Sinkronisasi massal {len(member_data)} member sedang berjalan di latar belakang."}), 200
+
+
+_sync_lock = threading.Lock()
+
+
+def _sync_members_background(member_list, host, port, username, password, profile):
+    """Menambahkan member ke hotspot MikroTik dan mencatat hasil sebenarnya."""
+    cli = None
+    sukses = 0
+    gagal = 0
+    try:
+        cli = MikroTikAPIClient(host, username, password, port)
+        if not cli.login():
+            write_log("MIKROTIK_ERROR", "Gagal login saat sinkronisasi massal.")
+            return
+        for mem in member_list:
+            try:
+                if cli.add_user(mem["username"], mem["username"], profile):
+                    sukses += 1
+                else:
+                    gagal += 1
+            except Exception as e:
+                gagal += 1
+                write_log("MIKROTIK_SYNC_FAIL", f"Gagal menambah member {mem['username']}: {type(e).__name__}", user="SYSTEM")
+        write_log("MIKROTIK_SYNC", f"Sinkronisasi massal selesai. {sukses} berhasil, {gagal} gagal dari {len(member_list)} member.")
+    except Exception as e:
+        write_log("MIKROTIK_ERROR", f"Gagal sinkronisasi massal: {str(e)}")
+    finally:
+        if cli:
+            cli.close()
+        _sync_lock.release()
