@@ -20,7 +20,8 @@ from app.services.cache.telemetry_store import (
 from app.services.cache.client_state_store import (
     OnlineStatusStore,
     AntiTheftGraceTracker,
-    ApiKeyMismatchStore
+    ApiKeyMismatchStore,
+    ClientAuditThrottle
 )
 from app.services.cache.command_store import (
     CommandQueueStore,
@@ -61,6 +62,7 @@ def reset_all_cache():
     OnlineStatusStore.clear()
     AntiTheftGraceTracker.clear_all()
     ApiKeyMismatchStore.clear_all()
+    ClientAuditThrottle.clear()
     CommandQueueStore.clear()
     UptimeMemoryStore.clear()
     SettingsCacheStore.invalidate()
@@ -74,6 +76,7 @@ __all__ = [
     "OnlineStatusStore",
     "AntiTheftGraceTracker",
     "ApiKeyMismatchStore",
+    "ClientAuditThrottle",
     "CommandQueueStore",
     "CommandQueueDict",
     "PENDING_COMMANDS",

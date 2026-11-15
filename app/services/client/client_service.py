@@ -20,6 +20,7 @@ from app.services.write_lock import WRITE_LOCK, with_write_lock
 from app.utils.logger import write_log
 
 
+from app.services.cache.client_state_store import ClientAuditThrottle
 from app.services.cache.command_store import (
     MAX_COMMAND_QUEUE_PER_PC,
     CommandQueueStore,
@@ -28,6 +29,12 @@ from app.services.cache.command_store import (
     PENDING_FAST_COMMANDS,
     PENDING_VNC_COMMANDS
 )
+
+
+def _log_repeated(event, key, message):
+    """Catat event polling sekali per (event, key) per TTL agar log tidak dibanjiri polling 1-10 detik."""
+    if ClientAuditThrottle.should_log(event, key or "-"):
+        write_log(event, message)
 
 
 class ClientService:
@@ -83,7 +90,7 @@ class ClientService:
         pc = PCRepository.find_by_ip(ip_address)
         
         if not pc:
-            write_log("IDENTIFY_FAIL", f"IP {ip_address} tidak ada di database")
+            _log_repeated("IDENTIFY_FAIL", ip_address, f"IP {ip_address} tidak ada di database")
             raise ValueError(f"IP {ip_address} tidak dikenal server")
 
         norm_client_mac = ClientService._normalize_mac(mac_address)
@@ -99,7 +106,7 @@ class ClientService:
         else:
             norm_db_mac = ClientService._normalize_mac(pc.mac_address)
             if norm_client_mac != norm_db_mac:
-                write_log("IDENTIFY_REJECTED", f"Akses ditolak! IP {ip_address} sudah terikat MAC {norm_db_mac}, tapi client kirim {norm_client_mac}")
+                _log_repeated("IDENTIFY_REJECTED", ip_address, f"Akses ditolak! IP {ip_address} sudah terikat MAC {norm_db_mac}, tapi client kirim {norm_client_mac}")
                 raise ValueError("PC tidak cocok (Security Mismatch)")
 
         write_log("IDENTIFY_SUCCESS", f"PC {pc.kode} berhasil diidentifikasi")
@@ -121,13 +128,13 @@ class ClientService:
             if not pc:
                 pc = PCRepository.find_by_mac(mac_address)
                 if pc and not pc.aktif:
-                    write_log("CLIENT_STATUS_INACTIVE",
-                              f"PC {pc.kode} nonaktif/arsip ditolak: IP={ip_address} MAC={mac_address}")
+                    _log_repeated("CLIENT_STATUS_INACTIVE", pc.kode,
+                                  f"PC {pc.kode} nonaktif/arsip ditolak: IP={ip_address} MAC={mac_address}")
                     pc = None
                 if not pc:
                     # ❌ MAC ga ketemu / PC arsip → PC beneran ga terdaftar
-                    write_log("CLIENT_STATUS_UNKNOWN",
-                              f"PC tidak dikenal: IP={ip_address} MAC={mac_address}")
+                    _log_repeated("CLIENT_STATUS_UNKNOWN", ip_address,
+                                  f"PC tidak dikenal: IP={ip_address} MAC={mac_address}")
                     return {
                         "status": "kosong",
                         "message": "PC tidak dikenal",
@@ -135,8 +142,8 @@ class ClientService:
                     }
                 # ✅ Ketemu via MAC! IP client berubah (DHCP renew).
                 # ⚠️ IP di DB TETAP — jangan diupdate otomatis. Security dulu.
-                write_log("CLIENT_STATUS_MAC_FALLBACK",
-                          f"PC {pc.kode} IP={ip_address} via MAC fallback (DB IP={pc.ip_address})")
+                _log_repeated("CLIENT_STATUS_MAC_FALLBACK", pc.kode,
+                              f"PC {pc.kode} IP={ip_address} via MAC fallback (DB IP={pc.ip_address})")
 
             # Kondisi A: MAC di DB masih kosong -> Langsung isi otomatis (Auto-register pasif)
             if not pc.mac_address:
@@ -150,7 +157,7 @@ class ClientService:
                 norm_client_mac = ClientService._normalize_mac(mac_address)
                 norm_db_mac = ClientService._normalize_mac(pc.mac_address)
                 if norm_client_mac != norm_db_mac:
-                    write_log("STATUS_REJECTED", f"Polling ditolak: {ip_address} mismatch MAC. DB:{norm_db_mac} Client:{norm_client_mac}")
+                    _log_repeated("STATUS_REJECTED", ip_address, f"Polling ditolak: {ip_address} mismatch MAC. DB:{norm_db_mac} Client:{norm_client_mac}")
                     raise ValueError("Identitas PC tidak valid (MAC Mismatch)")
 
             # Update Last Activity in RAM Store (DB pc.last_activity bukan sumber kebenaran)
@@ -303,7 +310,7 @@ class ClientService:
                 db.session.rollback()
             except Exception:  # noqa: silent - gagal rollback; error asli sudah dicatat oleh handler luar
                 pass
-            write_log("CLIENT_STATUS_CRASH", f"Error fatal polling {ip_address}: {e}")
+            _log_repeated("CLIENT_STATUS_CRASH", ip_address, f"Error fatal polling {ip_address}: {e}")
             return {"status": "error", "message": "Server error"}
 
 

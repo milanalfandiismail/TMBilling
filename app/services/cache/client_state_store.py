@@ -166,3 +166,31 @@ class ApiKeyMismatchStore:
     def clear(cls):
         cls.clear_all()
 
+
+
+class ClientAuditThrottle:
+    """Store in-memory penahan baris audit berulang dari polling client.
+
+    Polling berjalan tiap 1-10 detik, jadi PC yang salah konfigurasi bisa menulis
+    ribuan baris log per hari untuk kegagalan yang sama. Satu event per
+    (event, key) hanya dicatat sekali setiap TTL.
+    """
+
+    _lock = threading.Lock()
+    _last_seen = {}  # "event:key" -> float (time.time())
+
+    @classmethod
+    def should_log(cls, event: str, key: str, ttl_seconds: int = 300) -> bool:
+        ts = time.time()
+        entry = f"{event}:{key}"
+        with cls._lock:
+            last = cls._last_seen.get(entry)
+            if last is not None and (ts - last) < ttl_seconds:
+                return False
+            cls._last_seen[entry] = ts
+            return True
+
+    @classmethod
+    def clear(cls):
+        with cls._lock:
+            cls._last_seen.clear()
