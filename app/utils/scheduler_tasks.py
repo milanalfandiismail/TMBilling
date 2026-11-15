@@ -126,7 +126,6 @@ def run_database_backup(app):
             write_log("BACKUP_ERROR", f"Error backup: {str(e)}", user="SYSTEM")
             record_run("database_backup", False)
             return
-        record_run("database_backup", True)
 
 
 def run_cleanup_logs(app):
