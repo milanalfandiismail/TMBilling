@@ -37,6 +37,20 @@ async function http(page, method, url, body) {
     }, { method, url, body });
 }
 
+/** Trigger backup manual (async, 202) lalu tunggu job selesai dan kembalikan status akhir. */
+async function manualBackup(page) {
+    const trig = await http(page, 'POST', '/api/v1/kasir/backup/trigger');
+    assert.ok([200, 202].includes(trig.status), trig.text);
+    let current = trig.json.job || (trig.json.filename ? { status: 'succeeded', filename: trig.json.filename } : {});
+    for (let i = 0; i < 120 && current.status === 'running'; i++) {
+        await page.waitForTimeout(250);
+        current = (await http(page, 'GET', '/api/v1/kasir/backup/manual/status')).json;
+    }
+    assert.ok(['succeeded', 'partial'].includes(current.status), JSON.stringify(current));
+    assert.ok(String(current.filename).endsWith('.zip'), JSON.stringify(current));
+    return current;
+}
+
 function listDir(dir) {
     try { return fs.readdirSync(dir).sort(); } catch (err) { return []; }
 }
@@ -55,10 +69,9 @@ async function runBackupRestoreE2ETest(page) {
 
     await check(report, 'Trigger backup membuat satu arsip di direktori sandbox', async () => {
         const before = listDir(SANDBOX_BACKUP_DIR);
-        const res = await http(page, 'POST', '/api/v1/kasir/backup/trigger');
-        assert.strictEqual(res.status, 200, res.text);
-        archiveName = res.json.filename;
-        assert.ok(archiveName.startsWith('warnet_backup_') && archiveName.endsWith('.zip'));
+        const job = await manualBackup(page);
+        archiveName = job.filename;
+        assert.ok(archiveName.startsWith('warnet_backup_'));
         assert.ok(listDir(SANDBOX_BACKUP_DIR).includes(archiveName));
         assert.ok(listDir(SANDBOX_BACKUP_DIR).length >= before.length + 1);
     });

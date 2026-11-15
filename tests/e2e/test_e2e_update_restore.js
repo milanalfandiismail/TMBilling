@@ -69,6 +69,20 @@ async function http(page, method, url, body) {
     }, { method, url, body });
 }
 
+/** Trigger backup manual (async, 202) lalu tunggu job selesai dan kembalikan status akhir. */
+async function manualBackup(page) {
+    const trig = await http(page, 'POST', '/api/v1/kasir/backup/trigger');
+    assert.ok([200, 202].includes(trig.status), trig.text);
+    let current = trig.json.job || (trig.json.filename ? { status: 'succeeded', filename: trig.json.filename } : {});
+    for (let i = 0; i < 120 && current.status === 'running'; i++) {
+        await page.waitForTimeout(250);
+        current = (await http(page, 'GET', '/api/v1/kasir/backup/manual/status')).json;
+    }
+    assert.ok(['succeeded', 'partial'].includes(current.status), JSON.stringify(current));
+    assert.ok(String(current.filename).endsWith('.zip'), JSON.stringify(current));
+    return current;
+}
+
 /** Unggah berkas lewat multipart dari dalam halaman (butuh sesi + CSRF). */
 async function uploadUpdate(page, name, bytes) {
     return page.evaluate(async ({ name, bytes }) => {
@@ -164,11 +178,10 @@ async function runUpdateRestoreE2ETest(page) {
     });
 
     await check(report, 'Restore arsip sandbox sendiri berhasil dan DB tetap bisa ditulis', async () => {
-        const trig = await http(page, 'POST', '/api/v1/kasir/backup/trigger');
-        assert.strictEqual(trig.status, 200, trig.text);
-        const res = await http(page, 'POST', `/api/v1/kasir/backup/restore/${trig.json.filename}`, { confirm: true });
+        const job = await manualBackup(page);
+        const res = await http(page, 'POST', `/api/v1/kasir/backup/restore/${job.filename}`, { confirm: true });
         assert.strictEqual(res.status, 200, res.text);
-        assert.strictEqual(res.json.restored, trig.json.filename);
+        assert.strictEqual(res.json.restored, job.filename);
         const after = unique('e2e-restore-ok');
         await dbExec('INSERT INTO grup (nama) VALUES (?)', [after]);
         assert.strictEqual((await dbQuery('SELECT id FROM grup WHERE nama = ?', [after])).length, 1);
