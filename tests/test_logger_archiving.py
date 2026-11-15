@@ -45,3 +45,25 @@ def test_clear_logs_with_archive():
     with open(LOG_FILE, "r", encoding="utf-8") as f:
         content = f.read()
     assert content == ""
+
+def test_archive_logs_menyisakan_arsip_terbaru(tmp_path, monkeypatch):
+    import json
+    import os
+    from app.utils import logger as logmod
+
+    log_file = tmp_path / "warnet.log"
+    log_file.write_text(json.dumps({"action": "TEST"}) + "\n", encoding="utf-8")
+    monkeypatch.setattr(logmod, "LOG_FILE", str(log_file))
+
+    archive_dir = tmp_path / "archives"
+    archive_dir.mkdir()
+    for i in range(3):
+        berkas = archive_dir / f"warnet_2026010{i}_000000.jsonl.gz"
+        berkas.write_bytes(b"x")
+        os.utime(berkas, (1000 + i, 1000 + i))
+
+    logmod.archive_logs(archive_dir=str(archive_dir), max_archives=2)
+
+    sisa = sorted(os.listdir(archive_dir))
+    assert "warnet_20260100_000000.jsonl.gz" not in sisa
+    assert len(sisa) == 2

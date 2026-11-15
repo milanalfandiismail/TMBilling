@@ -331,7 +331,20 @@ def normalize_legacy_log_line(line: str) -> dict:
         "detail_json": None
     }
 
-def archive_logs(archive_dir: str = LOG_ARCHIVE_DIR) -> dict:
+def _prune_archives(archive_dir: str, max_archives: int) -> None:
+    """Sisakan hanya arsip .jsonl.gz terbaru sebanyak max_archives."""
+    files = [f for f in os.listdir(archive_dir) if f.startswith("warnet_") and f.endswith(".jsonl.gz")]
+    if len(files) <= max_archives:
+        return
+    files.sort(key=lambda f: os.path.getmtime(os.path.join(archive_dir, f)), reverse=True)
+    for f in files[max_archives:]:
+        try:
+            os.remove(os.path.join(archive_dir, f))
+        except OSError:  # noqa: silent - arsip sedang dibuka proses lain, coba lagi di rotasi berikutnya
+            pass
+
+
+def archive_logs(archive_dir: str = LOG_ARCHIVE_DIR, max_archives: int = 30) -> dict:
     """Mengompresi dan mengarsipkan file log saat ini ke format .jsonl.gz."""
     if not os.path.exists(LOG_FILE) or os.path.getsize(LOG_FILE) == 0:
         return {"archived": False, "archive_path": None, "total_lines": 0}
@@ -349,6 +362,8 @@ def archive_logs(archive_dir: str = LOG_ARCHIVE_DIR) -> dict:
                 if normalized:
                     f_out.write(json.dumps(normalized) + "\n")
                     lines_count += 1
+
+    _prune_archives(archive_dir, max_archives)
 
     return {
         "archived": True,
