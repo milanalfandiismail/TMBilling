@@ -384,7 +384,7 @@ def _render_public_specs_page():
     body = render_template(
         "public/specs/index.html",
         groups=groups_with_pcs,
-        specs_catalog_json=json.dumps(specs_catalog),
+        specs_catalog_json=json.dumps(specs_catalog).replace("<", "\\u003c"),
     )
     cache["body"] = body
     cache["expires"] = now + 5.0
