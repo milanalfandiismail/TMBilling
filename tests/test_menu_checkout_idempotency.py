@@ -53,3 +53,17 @@ def test_stok_kurang_tidak_membakar_kunci(app_ctx):
     hasil = MenuService.checkout_menu_order(
         _cart(app_ctx["menu_id"], 1), None, "kasir1", tunai=5000, client_request_id="req-3")
     assert len(hasil) == 1
+
+
+def test_penolakan_duplikat_tidak_melepas_kunci(app_ctx):
+    """Retry ketiga dengan kunci sama tetap ditolak.
+
+    Kunci hanya boleh dilepas bila request yang memegang kunci gagal,
+    bukan oleh request duplikat yang justru ditolak karena kunci itu.
+    """
+    cart = _cart(app_ctx["menu_id"])
+    MenuService.checkout_menu_order(cart, None, "kasir1", tunai=5000, client_request_id="req-4")
+    with pytest.raises(ValueError, match="sudah diproses"):
+        MenuService.checkout_menu_order(cart, None, "kasir1", tunai=5000, client_request_id="req-4")
+    with pytest.raises(ValueError, match="sudah diproses"):
+        MenuService.checkout_menu_order(cart, None, "kasir1", tunai=5000, client_request_id="req-4")

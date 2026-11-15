@@ -391,6 +391,7 @@ class MenuService:
     @with_write_lock
     def checkout_menu_order(cart_items, pc_kode, kasir_username, operator="system", tunai=0, kembalian=0, metode_pembayaran="Tunai", client_request_id=None):
         """Memproses transaksi pembelian F&B terpisah dari billing PC."""
+        claimed = False
         try:
             if not cart_items or not isinstance(cart_items, list):
                 raise ValueError("Daftar belanjaan kosong atau tidak valid")
@@ -438,7 +439,8 @@ class MenuService:
                 kembalian_val = tunai_val - total_tagihan
 
             # Klaim idempotensi setelah validasi: request yang ditolak tidak membakar kunci retry.
-            if not idempotency.claim(client_request_id):
+            claimed = idempotency.claim(client_request_id)
+            if not claimed:
                 raise ValueError("Permintaan ini sudah diproses")
 
             transaksi_list = []
@@ -492,9 +494,12 @@ class MenuService:
                 write_log("TRANSAKSI_MENU", f"Penjualan {detail['nama_menu']} x{detail['jumlah_qty']} (Total: Rp{detail['total_harga']:,}) sukses via {no_nota}", user=operator, detail_json=detail)
 
             return hasil
+
         except Exception as e:
             db.session.rollback()
-            idempotency.release(client_request_id)
+            # Hanya request pemegang kunci yang melepasnya; penolakan duplikat tidak.
+            if claimed:
+                idempotency.release(client_request_id)
             raise e
 
     @staticmethod
