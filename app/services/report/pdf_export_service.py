@@ -16,6 +16,11 @@ from app.repositories import SettingsRepository
 from app.utils.pdf_helper import PdfHelper
 from app.utils.timezone_utils import format_local_now
 
+def _format_rupiah(nilai) -> str:
+    """Format rupiah dengan titik ribuan, dipakai semua laporan PDF."""
+    return "Rp " + f"{nilai:,.0f}".replace(",", ".")
+
+
 
 class PdfExportService:
     """Service untuk ekspor laporan ke format dokumen PDF."""
@@ -65,7 +70,7 @@ class PdfExportService:
             ket = t.get("keterangan") or "-"
             metode = t.get("metode_pembayaran") or "Tunai"
             jumlah_raw = t.get("jumlah", 0)
-            jumlah = f"Rp {jumlah_raw:,.0f}"
+            jumlah = _format_rupiah(jumlah_raw)
 
             row = [
                 Paragraph(str(idx), styles["table_cell_center"]),
@@ -88,7 +93,7 @@ class PdfExportService:
         story.append(Spacer(1, 0.4 * cm))
 
         total_omzet_raw = data.get("total_pendapatan_billing", 0)
-        total_omzet = f"Rp {total_omzet_raw:,.0f}"
+        total_omzet = _format_rupiah(total_omzet_raw)
 
         total_data = [
             ["", "", Paragraph("<b>TOTAL OMZET BILLING:</b>", styles["total"]), Paragraph(total_omzet, styles["total"])]
@@ -238,13 +243,13 @@ class PdfExportService:
         table_data = [
             [Paragraph("Deskripsi", style_table_header), Paragraph("Rincian", style_table_header), Paragraph("Total", style_table_header)],
             [Paragraph("<b>1. PENDAPATAN (INFLOW)</b>", style_table_cell_bold), "", ""],
-            [Paragraph("   Pendapatan Billing", style_table_cell), Paragraph(f"Rp {billing_rev:,.0f}", style_table_cell_right), ""],
-            [Paragraph("   Pendapatan Kantin / F&B", style_table_cell), Paragraph(f"Rp {canteen_rev:,.0f}", style_table_cell_right), ""],
-            [Paragraph("<b>Total Pendapatan</b>", style_table_cell_bold), "", Paragraph(f"Rp {total_rev:,.0f}", style_table_cell_right_bold)],
+            [Paragraph("   Pendapatan Billing", style_table_cell), Paragraph(_format_rupiah(billing_rev), style_table_cell_right), ""],
+            [Paragraph("   Pendapatan Kantin / F&B", style_table_cell), Paragraph(_format_rupiah(canteen_rev), style_table_cell_right), ""],
+            [Paragraph("<b>Total Pendapatan</b>", style_table_cell_bold), "", Paragraph(_format_rupiah(total_rev), style_table_cell_right_bold)],
             [Paragraph("<b>2. PENGURANG / REFUND (OUTFLOW)</b>", style_table_cell_bold), "", ""],
-            [Paragraph("   Total Refund / Pembatalan Sesi", style_table_cell), Paragraph(f"Rp {refund_val:,.0f}", style_table_cell_right), ""],
-            [Paragraph("<b>Total Pengurangan</b>", style_table_cell_bold), "", Paragraph(f"Rp {refund_val:,.0f}", style_table_cell_right_bold)],
-            [Paragraph("<b>LABA / RUGI BERSIH (NET PROFIT)</b>", style_table_cell_profit), "", Paragraph(f"Rp {net_profit:,.0f}", style_table_cell_profit_right)]
+            [Paragraph("   Total Refund / Pembatalan Sesi", style_table_cell), Paragraph(_format_rupiah(refund_val), style_table_cell_right), ""],
+            [Paragraph("<b>Total Pengurangan</b>", style_table_cell_bold), "", Paragraph(_format_rupiah(refund_val), style_table_cell_right_bold)],
+            [Paragraph("<b>LABA / RUGI BERSIH (NET PROFIT)</b>", style_table_cell_profit), "", Paragraph(_format_rupiah(net_profit), style_table_cell_profit_right)]
         ]
 
         col_widths = [9.0 * cm, 4.0 * cm, 4.0 * cm]
@@ -318,7 +323,7 @@ class PdfExportService:
             menu_nama = tm.get("menu_nama") or "-"
             jumlah = str(tm.get("jumlah", 0))
             total_raw = tm.get("total_harga", 0)
-            total = f"Rp {total_raw:,.0f}"
+            total = _format_rupiah(total_raw)
             metode = tm.get("metode_pembayaran") or "Tunai"
             pemesanan = "Tempat" if tm.get("pc_kode") == "Tempat" else "Take Away"
             kasir_nama = tm.get("kasir_nama") or "-"
@@ -342,7 +347,7 @@ class PdfExportService:
         story.append(Spacer(1, 0.4 * cm))
 
         total_omzet_raw = data.get("total_pendapatan_menu", 0)
-        total_omzet = f"Rp {total_omzet_raw:,.0f}"
+        total_omzet = _format_rupiah(total_omzet_raw)
 
         total_data = [
             ["", "", "", Paragraph("<b>TOTAL OMZET KANTIN:</b>", styles["total"]), Paragraph(total_omzet, styles["total"])]
@@ -502,10 +507,10 @@ class PdfExportService:
                         kl = k.lower()
                         if any(x in kl for x in ["jumlah", "harga", "amount", "modal", "total", "saldo"]):
                             try:
-                                return f"Rp {int(v):,}".replace(",", ".")
+                                return _format_rupiah(v)
                             except ValueError:
                                 try:
-                                    return f"Rp {float(v):,}".replace(",", ".")
+                                    return _format_rupiah(v)
                                 except Exception:
                                     return str(v)
                         if any(x in kl for x in ["durasi", "menit"]):
