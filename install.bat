@@ -1,6 +1,7 @@
-@echo off
+﻿@echo off
 title TMBilling Server Installer
 color 0E
+cd /d "%~dp0"
 
 echo ==========================================================
 echo    TMBilling Server - Setup dan Instalasi
