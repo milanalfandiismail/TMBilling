@@ -46,5 +46,6 @@ def now_local():
         di seluruh model aplikasi.
         Data existing (sebelum fitur ini) diasumsikan WIB.
         Migration script akan konversi WIB → UTC.
+        Nama fungsi dipertahankan demi kompatibilitas impor; nilainya UTC naive, bukan waktu lokal.
     """
     return datetime.now(timezone.utc).replace(tzinfo=None)

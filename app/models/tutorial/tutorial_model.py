@@ -1,6 +1,5 @@
 # app/models/tutorial/tutorial_model.py
-from app.models.base.base import db
-from datetime import datetime
+from app.models.base.base import db, now_local
 
 class SystemTutorial(db.Model):
     __tablename__ = 'system_tutorials'
@@ -11,8 +10,8 @@ class SystemTutorial(db.Model):
     category = db.Column(db.String(50), default="Umum")
     content = db.Column(db.Text, nullable=False)
     urutan = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_local)
+    updated_at = db.Column(db.DateTime, default=now_local, onupdate=now_local)
 
     def to_dict(self):
         return {
