@@ -32,3 +32,11 @@ def reset():
     """Kosongkan semua kunci. Dipakai tes."""
     with _lock:
         _seen.clear()
+
+
+def release(key):
+    """Lepaskan kunci agar percobaan ulang tidak diblokir setelah request gagal."""
+    if not key:
+        return
+    with _lock:
+        _seen.pop(key, None)
