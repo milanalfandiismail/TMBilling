@@ -389,29 +389,28 @@ class BackupService:
             "safety_backup": os.path.basename(safety_backup),
         }
 
-    def cleanup_old_backups(self, max_keep=5):
+    def cleanup_old_backups(self, max_keep=5, manual_max_keep=10):
         """Menghapus file backup lama dan mempertahankan maksimal N file backup terbaru.
-        
+
         Args:
-            max_keep (int): Jumlah file backup terbaru yang ingin disimpan (default: 5).
-                           File yang lebih tua akan dihapus otomatis.
+            max_keep (int): Jumlah file backup otomatis terbaru yang disimpan (default: 5).
+            manual_max_keep (int): Jumlah file backup manual terbaru yang disimpan (default: 10).
         """
         try:
-            # Cari semua file backup yang polanya warnet_backup_*.zip
-            files = [f for f in os.listdir(self.backup_dir) if f.startswith(AUTO_BACKUP_PREFIX)
-                     and not f.startswith(MANUAL_BACKUP_PREFIX) and f.endswith(".zip")]
-            
-            # Urutkan berdasarkan waktu modifikasi secara descending (paling baru di awal)
-            files.sort(key=lambda x: os.path.getmtime(os.path.join(self.backup_dir, x)), reverse=True)
-            
-            # Hapus file yang melebihi limit
-            if len(files) > max_keep:
-                files_to_delete = files[max_keep:]
-                for f in files_to_delete:
+            pasangan = (
+                ([f for f in os.listdir(self.backup_dir) if f.startswith(AUTO_BACKUP_PREFIX)
+                  and not f.startswith(MANUAL_BACKUP_PREFIX) and f.endswith(".zip")], max_keep),
+                ([f for f in os.listdir(self.backup_dir)
+                  if f.startswith(MANUAL_BACKUP_PREFIX) and f.endswith(".zip")], manual_max_keep),
+            )
+            for files, batas in pasangan:
+                # Urutkan berdasarkan waktu modifikasi secara descending (paling baru di awal)
+                files.sort(key=lambda x: os.path.getmtime(os.path.join(self.backup_dir, x)), reverse=True)
+                for f in files[batas:]:
                     path = os.path.join(self.backup_dir, f)
                     if os.path.exists(path):
                         os.remove(path)
-                        print(f"🧹 [BACKUP] File lama dibuang karena melebihi limit {max_keep}: {f}")
-                        write_log("BACKUP_CLEANUP", f"Menghapus file lama (limit {max_keep}): {f}", user="SYSTEM")
+                        print(f"[BACKUP] File lama dibuang karena melebihi limit {batas}: {f}")
+                        write_log("BACKUP_CLEANUP", f"Menghapus file lama (limit {batas}): {f}", user="SYSTEM")
         except Exception as e:
             print(f"[BACKUP] Gagal melakukan cleanup: {e}")
