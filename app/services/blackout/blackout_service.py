@@ -45,7 +45,7 @@ class BlackoutService:
                 # Baca ulang: heartbeat bisa saja baru menyimpan last_sync setelah query di atas.
                 sesi = SesiRepository.get_by_id(sesi.id)
                 if (not sesi or sesi.status != "aktif" or sesi.is_blackout_suspect
-                        or not sesi.last_sync or sesi.last_sync >= batas_waktu):
+                        or (sesi.last_sync and sesi.last_sync >= batas_waktu)):
                     continue
                 # 1. Hitung sisa waktu Dashboard (Real-time jam sekarang)
                 sisa_dashboard = sesi.sisa_menit()

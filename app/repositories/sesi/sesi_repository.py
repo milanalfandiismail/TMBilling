@@ -13,7 +13,7 @@ from app.models import Sesi
 from app.models import Member
 from app.models import Transaksi
 from app.utils.logger import write_log
-from sqlalchemy import func, select
+from sqlalchemy import func, select, or_, and_
 from sqlalchemy.orm import joinedload
 
 
@@ -176,12 +176,15 @@ class SesiRepository:
     
     @staticmethod
     def get_aktif_belum_suspect_lama_sync(batas_waktu):
-        """Ambil sesi aktif yang macet dengan validasi last_sync (wajib pernah sync)."""
+        """Ambil sesi aktif yang macet berdasarkan last_sync atau waktu mulai."""
+        # Sesi yang mati sebelum heartbeat pertama tidak punya last_sync.
         return Sesi.query.filter(
             Sesi.status == "aktif",
             Sesi.is_blackout_suspect == False,
-            Sesi.last_sync.isnot(None),  # WAJIB sudah pernah sync minimal sekali
-            Sesi.last_sync < batas_waktu
+            or_(
+                Sesi.last_sync < batas_waktu,
+                and_(Sesi.last_sync.is_(None), Sesi.mulai_pada < batas_waktu),
+            ),
         ).all()
 
     @staticmethod
