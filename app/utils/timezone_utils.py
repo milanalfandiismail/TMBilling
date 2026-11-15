@@ -221,3 +221,11 @@ def convert_utc_datetimes_to_distinct_dates(utc_datetimes, tz_name=None):
         dates_set.add(local_dt.date().isoformat())
     return sorted(list(dates_set), reverse=True)
 
+
+def local_date_modifier(tz_name=None):
+    """Modifier SQLite untuk menggeser UTC ke tanggal lokal.
+
+    shortcut: zona DST tidak didukung, Indonesia tidak memakainya.
+    """
+    offset = get_display_tz(tz_name).utcoffset(datetime.now())
+    return f"{int(offset.total_seconds() // 3600):+d} hours"

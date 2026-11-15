@@ -147,18 +147,18 @@ class SesiRepository:
     # get_total_menit_terbang dipindah ke ReportService (Logic Calculation)
 
     @staticmethod
-    def get_distinct_tanggal():
+    def get_distinct_tanggal(tz_name=None):
         """Mengambil daftar tanggal unik dari sesi, transaksi, dan penjualan menu untuk filter laporan (dalam display timezone)."""
-        from app.utils.timezone_utils import convert_utc_datetimes_to_distinct_dates
+        from app.utils.timezone_utils import local_date_modifier
         from app.models import TransaksiMenu
-        
-        # Ambil semua timestamp
-        dt_sesi = [r[0] for r in db.session.query(Sesi.mulai_pada).filter(Sesi.mulai_pada != None).all()]
-        dt_trans = [r[0] for r in db.session.query(Transaksi.dibuat_pada).filter(Transaksi.dibuat_pada != None).all()]
-        dt_menu = [r[0] for r in db.session.query(TransaksiMenu.tanggal).filter(TransaksiMenu.tanggal != None).all()]
-        
-        all_dts = dt_sesi + dt_trans + dt_menu
-        return convert_utc_datetimes_to_distinct_dates(all_dts)
+
+        mod = local_date_modifier(tz_name)
+        tanggal = set()
+        for kolom in (Sesi.mulai_pada, Transaksi.dibuat_pada, TransaksiMenu.tanggal):
+            rows = (db.session.query(func.date(kolom, mod))
+                    .filter(kolom.isnot(None)).distinct().all())
+            tanggal.update(r[0] for r in rows if r[0])
+        return sorted(tanggal, reverse=True)
 
     
     @staticmethod
