@@ -1,8 +1,8 @@
-﻿@echo off
+@echo off
 setlocal
 title TMBilling Server - Update
 color 0B
-cd /d "%~dp0"
+if not defined TM_ROOT set "TM_ROOT=%~dp0"
 if defined TM_UPDATE_SELF goto :siap_update
 set "TM_UPDATE_SELF=1"
 set "TM_SELF_COPY=%TEMP%\tmb_update_%RANDOM%%RANDOM%.bat"
@@ -14,6 +14,7 @@ del "%TM_SELF_COPY%" >nul 2>&1
 exit /b %TM_RC%
 
 :siap_update
+cd /d "%TM_ROOT%"
 if not defined TM_PY set "TM_PY=.venv\Scripts\python.exe"
 if not exist "%TM_PY%" set "TM_PY=python"
 
@@ -65,7 +66,7 @@ exit /b 1
 :run_updater
 echo [INFO] Menjalankan proses pembaruan aman...
 :: Jalankan dari salinan %TEMP% agar swap install_scripts tidak membunuh batch ini.
-set "TM_ROOT=%~dp0"
+if not defined TM_ROOT set "TM_ROOT=%~dp0"
 set "TM_UPDATER_COPY=%TEMP%\tmb_updater_%RANDOM%%RANDOM%.bat"
 copy /y "install_scripts\updater.bat" "%TM_UPDATER_COPY%" >nul
 if errorlevel 1 goto :fallback_updater
