@@ -30,7 +30,7 @@ class PCUptimeLog(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     pc_id = db.Column(db.Integer, db.ForeignKey("pc.id"), nullable=False)
-    tanggal = db.Column(db.Date, nullable=False)
+    tanggal = db.Column(db.Date, nullable=False, index=True)
     total_online_seconds = db.Column(db.Integer, default=0, nullable=False)
     total_billing_seconds = db.Column(db.Integer, default=0, nullable=False)
     first_seen = db.Column(db.DateTime, nullable=True)

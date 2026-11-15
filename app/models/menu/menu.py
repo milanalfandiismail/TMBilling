@@ -88,7 +88,7 @@ class MenuStockLog(db.Model):
     __tablename__ = "menu_stock_log"
 
     id = db.Column(db.Integer, primary_key=True)
-    menu_id = db.Column(db.Integer, db.ForeignKey("menu_item.id", ondelete="SET NULL"), nullable=True)
+    menu_id = db.Column(db.Integer, db.ForeignKey("menu_item.id", ondelete="SET NULL"), nullable=True, index=True)
     menu_nama = db.Column(db.String(100), nullable=False)
     tipe = db.Column(db.String(20), default="RESTOCK", nullable=False)
     jumlah_masuk = db.Column(db.Integer, nullable=False, default=0)
@@ -96,7 +96,7 @@ class MenuStockLog(db.Model):
     stok_sesudah = db.Column(db.Integer, nullable=False, default=0)
     operator = db.Column(db.String(100), nullable=False)
     catatan = db.Column(db.String(255), nullable=True)
-    created_at = db.Column(db.DateTime, default=now_local, nullable=False)
+    created_at = db.Column(db.DateTime, default=now_local, nullable=False, index=True)
 
     menu = db.relationship("MenuItem", backref=db.backref("stock_logs", lazy=True))
 
