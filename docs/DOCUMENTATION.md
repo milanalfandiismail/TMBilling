@@ -1188,6 +1188,7 @@ Endpoint dashboard (GitHub 1-Klik maupun Upload ZIP) juga memakai klaim yang sam
 
 **Kapan `run_migration.py` wajib?** Wajib bila rilis mengubah skema (cek `CHANGELOG.md` atau `migrations/versions/`). Untuk rilis kode/CSS saja tidak wajib, tetapi migrasi bersifat idempoten sehingga aman dijalankan setiap update. Jangan menjalankan migrasi saat server masih hidup.
 
+**Jangan jalankan `flask db upgrade` mentah pada database legacy.** Database hasil `db.create_all()` tidak punya tabel `alembic_version`, sehingga Alembic mengulang seluruh revisi dari awal dan gagal pada revisi pertama yang menambah kolom yang sudah ada (`duplicate column name: active_window`). `run_migration.py` melakukan safety sync kolom lebih dulu lalu men-stamp revisi `head`; test `tests/test_migration_fresh_database.py` menjaga agar skema hasilnya tetap identik dengan model.
 **Rollback bila update gagal:** `stop.bat` → salin `backups/manual_pre_update.db` (atau `warnet_backup_before_update_*.db`) menjadi `instance/warnet.db` → ekstrak ulang ZIP versi lama → `start.bat`. Update tidak zero-downtime: client terputus beberapa detik, tetapi sesi tersimpan di database dan pulih lewat heartbeat/blackout.
 
 ---
