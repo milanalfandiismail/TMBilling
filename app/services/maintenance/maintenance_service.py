@@ -1,4 +1,4 @@
-﻿# app/services/maintenance/maintenance_service.py
+# app/services/maintenance/maintenance_service.py
 
 """Service layer untuk mengelola tiket perawatan dan pelaporan masalah PC.
 
@@ -22,7 +22,7 @@ class MaintenanceService:
         """Buat tiket masalah baru.
         - Jika prioritas KRITIS -> PC dinonaktifkan otomatis.
         """
-        pc = PC.query.get(pc_id)
+        pc = db.session.get(PC, pc_id)
         if not pc:
             raise ValueError(f"PC dengan ID {pc_id} tidak ditemukan.")
 
@@ -80,7 +80,7 @@ class MaintenanceService:
         """Update status perbaikan tiket.
         - Jika status SELESAI -> re-enable PC otomatis.
         """
-        ticket = MaintenanceTicket.query.get(ticket_id)
+        ticket = db.session.get(MaintenanceTicket, ticket_id)
         if not ticket:
             raise ValueError(f"Tiket dengan ID {ticket_id} tidak ditemukan.")
 
@@ -186,7 +186,7 @@ class MaintenanceService:
     @with_write_lock
     def delete_ticket(ticket_id):
         """Hapus tiket perawatan."""
-        ticket = MaintenanceTicket.query.get(ticket_id)
+        ticket = db.session.get(MaintenanceTicket, ticket_id)
         if not ticket:
             raise ValueError(f"Tiket dengan ID {ticket_id} tidak ditemukan.")
 
@@ -204,7 +204,7 @@ class MaintenanceService:
                 MaintenanceTicket.status.in_(["BARU", "DIPROSES"]),
             ).first()
             if not kritis_lain:
-                pc = PC.query.get(pc_id)
+                pc = db.session.get(PC, pc_id)
                 if pc:
                     pc.aktif = True
                     db.session.commit()

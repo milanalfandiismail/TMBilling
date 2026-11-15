@@ -1,4 +1,4 @@
-﻿"""Service untuk manajemen shift kasir (Handover).
+"""Service untuk manajemen shift kasir (Handover).
 
 Modul ini menangani business logic shift: buka shift, hitung pendapatan,
 tutup shift dengan hitung buta, dan cetak struk handover.
@@ -127,7 +127,7 @@ class ShiftService:
         Returns:
             dict: Ringkasan pendapatan shift.
         """
-        shift = ShiftRecord.query.get(shift_id)
+        shift = db.session.get(ShiftRecord, shift_id)
         if not shift:
             raise ValueError("Shift tidak ditemukan")
 
@@ -325,7 +325,7 @@ class ShiftService:
         if catatan:
             catatan = validate_string_length(catatan, min_len=0, max_len=255, field_name="Catatan Shift", required=False)
 
-        shift = ShiftRecord.query.get(shift_id)
+        shift = db.session.get(ShiftRecord, shift_id)
         if not shift:
             raise ValueError("Shift tidak ditemukan")
         if shift.status != "AKTIF":
@@ -419,7 +419,7 @@ class ShiftService:
         if len(alasan_clean) > 255:
             raise ValueError("Alasan force-close shift maksimal 255 karakter")
 
-        shift = ShiftRecord.query.get(shift_id)
+        shift = db.session.get(ShiftRecord, shift_id)
         if not shift:
             raise ValueError("Shift tidak ditemukan")
         if shift.status != "AKTIF":
@@ -525,7 +525,7 @@ class ShiftService:
         Returns:
             str: Teks struk terformat siap cetak.
         """
-        shift = ShiftRecord.query.get(shift_id)
+        shift = db.session.get(ShiftRecord, shift_id)
         if not shift:
             raise ValueError("Shift tidak ditemukan")
 

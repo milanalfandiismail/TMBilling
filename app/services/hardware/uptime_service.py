@@ -34,7 +34,7 @@ class UptimeService:
         try:
             from app.services.cache.uptime_store import UptimeMemoryStore
             if is_billing is None:
-                pc = PC.query.get(pc_id)
+                pc = db.session.get(PC, pc_id)
                 is_billing = bool(pc and pc.sesi_aktif)
             UptimeMemoryStore.record_heartbeat(pc_id, is_billing=is_billing)
         except Exception as e:

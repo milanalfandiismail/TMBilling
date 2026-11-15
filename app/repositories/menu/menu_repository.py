@@ -20,7 +20,7 @@ class MenuRepository:
     @staticmethod
     def get_by_id_including_archived(menu_id):
         """Mengambil data menu berdasarkan ID, termasuk yang sudah diarsipkan."""
-        return MenuItem.query.get(menu_id)
+        return db.session.get(MenuItem, menu_id)
 
     @staticmethod
     def get_by_name(nama):
@@ -101,7 +101,7 @@ class MenuRepository:
     @staticmethod
     def get_transaksi_by_id(t_id):
         """Mengambil data transaksi menu berdasarkan ID."""
-        return TransaksiMenu.query.get(t_id)
+        return db.session.get(TransaksiMenu, t_id)
 
     @staticmethod
     def count_transactions_today():

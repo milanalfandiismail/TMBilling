@@ -29,7 +29,7 @@ class GrupRepository:
     @staticmethod
     def get_by_id(id):
         """Mengambil grup berdasarkan ID (Primary Key)."""
-        return Grup.query.get(id)
+        return db.session.get(Grup, id)
 
 
     # =========================================================================

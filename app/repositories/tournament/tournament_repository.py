@@ -21,7 +21,7 @@ class TournamentRepository:
     @staticmethod
     def get_by_id(t_id):
         """Ambil turnamen berdasarkan ID."""
-        return Turnamen.query.get(t_id)
+        return db.session.get(Turnamen, t_id)
 
     @staticmethod
     def get_by_nama(nama):
@@ -31,12 +31,12 @@ class TournamentRepository:
     @staticmethod
     def get_stage_by_id(stage_id):
         """Ambil stage/tahap turnamen berdasarkan ID."""
-        return TurnamenTahap.query.get(stage_id)
+        return db.session.get(TurnamenTahap, stage_id)
 
     @staticmethod
     def get_match_by_id(match_id):
         """Ambil match/pertandingan berdasarkan ID."""
-        return TurnamenMatch.query.get(match_id)
+        return db.session.get(TurnamenMatch, match_id)
 
     @staticmethod
     def get_matches_by_stage(stage_id):

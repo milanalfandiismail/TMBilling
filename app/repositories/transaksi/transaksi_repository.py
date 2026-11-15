@@ -26,7 +26,7 @@ class TransaksiRepository:
     @staticmethod
     def get_by_id(transaksi_id):
         """Ambil transaksi berdasarkan ID."""
-        return Transaksi.query.get(transaksi_id)
+        return db.session.get(Transaksi, transaksi_id)
 
     @staticmethod
     def claim_refund(transaksi_id):
@@ -418,7 +418,7 @@ class TransaksiRepository:
     @staticmethod
     def delete_by_id(t_id):
         """Menghapus satu transaksi (Tanpa Commit)."""
-        t = Transaksi.query.get(t_id)
+        t = db.session.get(Transaksi, t_id)
         if t:
             db.session.delete(t)
             return True

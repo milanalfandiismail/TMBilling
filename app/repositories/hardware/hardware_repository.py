@@ -45,7 +45,7 @@ class HardwareRepository:
     @staticmethod
     def get_by_id(hardware_id):
         """Mengambil data hardware monitor berdasarkan ID."""
-        return HardwareMonitor.query.get(hardware_id)
+        return db.session.get(HardwareMonitor, hardware_id)
 
     @staticmethod
     def delete(hardware):

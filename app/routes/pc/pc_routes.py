@@ -122,8 +122,8 @@ def edit_pc(pc_id):
 def hapus_pc(pc_id):
     """Hapus unit PC permanen (riwayat sesi dilepas, bukan dihapus)."""
     try:
-        from app.models import PC
-        pc = PC.query.get(pc_id)
+        from app.models import db, PC
+        pc = db.session.get(PC, pc_id)
         if not pc:
             return jsonify({"error": "PC tidak ditemukan"}), 404
         confirm = str((request.get_json(silent=True) or {}).get("confirm", "")).strip().lower()

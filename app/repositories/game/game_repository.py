@@ -35,7 +35,7 @@ class GameRepository:
 
     @staticmethod
     def get_by_id(game_id):
-        return Game.query.get(game_id)
+        return db.session.get(Game, game_id)
 
     @staticmethod
     def add(game):
