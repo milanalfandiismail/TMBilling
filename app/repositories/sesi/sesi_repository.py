@@ -144,19 +144,6 @@ class SesiRepository:
             )
         return query.count()
 
-    @staticmethod
-    def get_selesai_by_tanggal(tanggal=None):
-        """Mengambil sesi yang sudah selesai pada tanggal tertentu atau semua sesi selesai jika None."""
-        query = Sesi.query.filter(Sesi.status == "selesai")
-        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
-            from app.utils.timezone_utils import get_local_date_range_utc
-            start_utc, end_utc = get_local_date_range_utc(tanggal)
-            query = query.filter(
-                Sesi.mulai_pada >= start_utc,
-                Sesi.mulai_pada < end_utc
-            )
-        return query.all()
-
     # get_total_menit_terbang dipindah ke ReportService (Logic Calculation)
 
     @staticmethod
