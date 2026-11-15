@@ -58,9 +58,10 @@ echo.
 :install_deps
 echo [INFO] Memperbarui pip...
 .venv\Scripts\python.exe -m pip install --upgrade pip --quiet
+if errorlevel 1 echo [PERINGATAN] Gagal memutakhirkan pip; memakai versi yang terpasang.
 echo [INFO] Memasang dependensi dari requirements.txt...
 echo        (Membutuhkan koneksi internet, harap tunggu...)
-.venv\Scripts\pip install -r requirements.txt
+.venv\Scripts\python.exe -m pip install -r requirements.txt
 if errorlevel 1 goto :pip_error
 echo [OK] Semua dependensi berhasil dipasang.
 echo.
@@ -90,6 +91,7 @@ echo.
 :init_db
 echo [INFO] Menginisialisasi database...
 .venv\Scripts\python.exe install_scripts\init_db.py
+if errorlevel 1 goto :db_error
 echo.
 
 echo ==========================================================
@@ -113,3 +115,9 @@ echo     5. Login lalu ubah password di menu: Manajemen Staff ^> Akun Kasir ^& A
 echo.
 echo ==========================================================
 pause
+
+:db_error
+echo.
+echo [ERROR] Inisialisasi database gagal. Periksa pesan di atas.
+pause
+exit /b 1
