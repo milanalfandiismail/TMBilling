@@ -1,13 +1,24 @@
 @echo off
+:: Bootstrap: salin diri ke %TEMP% agar swap install_scripts tidak membunuh proses ini.
+if defined TM_UPDATER_COPY goto :lanjut
+
+set "TM_ROOT=%~dp0.."
+set "TM_UPDATER_COPY=%TEMP%\tmb_updater_%RANDOM%%RANDOM%.bat"
+:: Bersihkan salinan %TEMP% dari pembaruan sebelumnya (tidak bisa menghapus diri sendiri saat berjalan).
+forfiles /P "%TEMP%" /M tmb_updater_*.bat /D -0 /C "cmd /c del @path" >nul 2>&1
+copy /y "%~f0" "%TM_UPDATER_COPY%" >nul
+if errorlevel 1 goto :lanjut
+"%COMSPEC%" /c "%TM_UPDATER_COPY%" %* & del "%TM_UPDATER_COPY%" >nul 2>&1 & exit /b
+
+:lanjut
 setlocal
-cd /d "%~dp0.."
+cd /d "%TM_ROOT%"
 
 :: Port server standar (run.py: PORT env, default 7015)
-set "TM_PORT=7015"
-set "TM_PY=.venv\Scripts\python.exe"
+if not defined TM_PORT set "TM_PORT=7015"
+if not defined TM_PY set "TM_PY=.venv\Scripts\python.exe"
 if not exist "%TM_PY%" set "TM_PY=python"
 set "TM_EXIT=0"
-
 echo ==========================================================
 echo    TMBilling Server - Menjalankan Pembaruan Sistem...
 echo ==========================================================
@@ -32,6 +43,8 @@ if errorlevel 1 (
 )
 
 :: 1c. Klaim pembaruan tunggal: satu updater saja, termasuk yang dipicu dashboard
+:: update.bat sudah memegang klaim untuk jalur manual; jangan klaim dua kali.
+if "%TM_CLAIM_HELD%"=="1" goto :klaim_ok
 "%TM_PY%" "install_scripts\update_claim.py" claim
 if errorlevel 1 (
     echo [ERROR] Pembaruan lain sedang berjalan atau belum selesai.
@@ -39,6 +52,8 @@ if errorlevel 1 (
     echo ==========================================================
     exit /b 1
 )
+
+:klaim_ok
 
 :: 2. Beri jeda 2 detik agar respon HTTP 200 sampai ke browser kasir
 timeout /t 2 /nobreak >nul 2>&1 || ping 127.0.0.1 -n 2 >nul
@@ -99,11 +114,15 @@ if errorlevel 1 (
 )
 
 :: 5b. Pastikan paket benar-benar terpasang di versi yang dipatok
-"%TM_PY%" "install_scripts\verify_versions.py"
-if errorlevel 1 (
-    echo [ERROR] Versi dependensi tidak sesuai requirements.txt setelah upgrade.
-    echo         Server TIDAK dinyalakan; jalankan ulang pembaruan setelah memperbaiki paket.
-    goto :fail
+if exist "install_scripts\verify_versions.py" (
+    "%TM_PY%" "install_scripts\verify_versions.py"
+    if errorlevel 1 (
+        echo [ERROR] Versi dependensi tidak sesuai requirements.txt setelah upgrade.
+        echo         Server TIDAK dinyalakan; jalankan ulang pembaruan setelah memperbaiki paket.
+        goto :fail
+    )
+) else (
+    echo [PERINGATAN] Paket tidak menyertakan verify_versions.py; verifikasi versi dilewati.
 )
 
 :: 6. Migrasi skema database setelah kode & dependensi baru terpasang

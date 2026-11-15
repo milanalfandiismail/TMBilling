@@ -3,6 +3,8 @@ setlocal
 title TMBilling Server - Update
 color 0B
 cd /d "%~dp0"
+if not defined TM_PY set "TM_PY=.venv\Scripts\python.exe"
+if not exist "%TM_PY%" set "TM_PY=python"
 
 echo ==========================================================
 echo    TMBilling Server - Pembaruan Manual
@@ -13,8 +15,8 @@ if "%~1"=="" goto :check_instance_zip
 if exist "%~1" (
     echo [INFO] Menyiapkan paket pembaruan dari: "%~1"
     if not exist "instance" mkdir "instance"
-    set "TM_PY=.venv\Scripts\python.exe"
     if not exist "%TM_PY%" set "TM_PY=python"
+    set "TM_CLAIM_HELD=1"
     "%TM_PY%" "install_scripts\update_claim.py" claim
     if errorlevel 1 (
         echo [ERROR] Pembaruan lain sedang berjalan atau belum selesai.
@@ -51,5 +53,17 @@ exit /b 1
 
 :run_updater
 echo [INFO] Menjalankan proses pembaruan aman...
-call install_scripts\updater.bat
+:: Jalankan dari salinan %TEMP% agar swap install_scripts tidak membunuh batch ini.
+set "TM_ROOT=%~dp0"
+set "TM_UPDATER_COPY=%TEMP%\tmb_updater_%RANDOM%%RANDOM%.bat"
+copy /y "install_scripts\updater.bat" "%TM_UPDATER_COPY%" >nul
+if errorlevel 1 goto :fallback_updater
+call "%TM_UPDATER_COPY%"
+set "TM_RC=%errorlevel%"
+if "%TM_CLAIM_HELD%"=="1" "%TM_PY%" "install_scripts\update_claim.py" release >nul 2>&1
+del "%TM_UPDATER_COPY%" >nul 2>&1
+exit /b %TM_RC%
+
+:fallback_updater
+call "install_scripts\updater.bat"
 exit /b %errorlevel%

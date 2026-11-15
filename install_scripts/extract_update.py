@@ -18,7 +18,9 @@ journal_path = os.path.join(instance_dir, "update_journal.json")
 backups_dir = os.path.join(root_dir, "backups")
 db_path = os.path.join(instance_dir, "warnet.db")
 
-SKIP_PREFIXES = (".env", "instance/", "backups/", ".git/")
+SKIP_PREFIXES = ("instance/", "backups/", ".git/")
+# `.env` dilewati persis; `.env.example` tetap ikut diperbarui.
+SKIP_EXACT = (".env",)
 
 MAX_EXTRACT_BYTES = 1024 * 1024 * 1024
 MIN_FREE_BYTES = 512 * 1024 * 1024
@@ -222,7 +224,7 @@ def main():
 
             for member in all_files:
                 norm = member.replace("\\", "/")
-                if norm.startswith(SKIP_PREFIXES):
+                if norm in SKIP_EXACT or norm.startswith(SKIP_PREFIXES):
                     continue
                 if not is_safe_path(staging_dir, member):
                     continue
@@ -242,6 +244,8 @@ def main():
                 os.remove(temp_zip)
             except Exception:
                 pass
+        if success:
+            shutil.rmtree(staging_dir, ignore_errors=True)
 
     return 0
 

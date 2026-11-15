@@ -33,7 +33,11 @@ def flush(port=None, timeout=5, env_path=".env"):
     request = urllib.request.Request(
         f"http://127.0.0.1:{port}/api/v1/kasir/settings/uptime/flush",
         method="POST",
-        headers={"X-Client-Key": key},
+        headers={
+            "X-Client-Key": key,
+            # Bearer membebaskan request dari verifikasi CSRF (lihat TMBillingCSRFProtect).
+            "Authorization": f"Bearer {key}",
+        },
     )
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:

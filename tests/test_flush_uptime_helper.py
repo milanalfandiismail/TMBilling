@@ -46,3 +46,27 @@ def test_http_401_dianggap_gagal(monkeypatch):
     finally:
         server.server_close()
 
+
+def test_mengirim_bearer_agar_bebas_csrf(monkeypatch):
+    diterima = {}
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            diterima["x"] = self.headers.get("X-Client-Key")
+            diterima["auth"] = self.headers.get("Authorization")
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.handle_request, daemon=True)
+    thread.start()
+    try:
+        monkeypatch.setenv("CLIENT_API_KEY", "kunci-bearer")
+        assert flush_uptime.flush(port=server.server_port, timeout=2) == 0
+    finally:
+        server.server_close()
+    assert diterima["x"] == "kunci-bearer"
+    assert diterima["auth"] == "Bearer kunci-bearer"
