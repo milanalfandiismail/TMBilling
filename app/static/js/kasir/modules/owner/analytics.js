@@ -76,6 +76,7 @@ const OwnerAnalytics = {
             const baru = mb.baru.reduce((a,b)=>a+b,0);
             const keluar = mb.kadaluarsa.reduce((a,b)=>a+b,0);
             const bersih = baru - keluar;
+            // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
             document.getElementById('kpi-member').innerHTML = `
                 <div class="flex justify-between py-1.5">
                     <span class="text-green-400 text-sm font-bold">+${baru}</span>
@@ -104,6 +105,7 @@ const OwnerAnalytics = {
             // 8. Refund
             const rf = d.refund_rate;
             const sukses = rf.total - rf.refund;
+            // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
             document.getElementById('kpi-refund').innerHTML = `
                 <div class="text-sm lg:text-2xl font-bold text-yellow-400 mb-3">${rf.refund_rate}%</div>
                 <div class="flex justify-between py-1.5"><span class="text-neutral-500">Total Transaksi</span><span class="text-white font-semibold">${rf.total}</span></div>

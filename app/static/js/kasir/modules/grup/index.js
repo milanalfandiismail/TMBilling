@@ -313,6 +313,7 @@ const Grup = {
         }
 
         if (filtered.length === 0) {
+            // xss-reviewed: hanya angka dan kelas CSS dari state internal
             area.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-10 sm:py-14 2xl:py-20 text-neutral-500 bg-[#050505] border border-dashed border-[#1c1c1c] rounded">
                     <svg class="w-8 h-8 2xl:w-10 2xl:h-10 mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 01-2-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
@@ -401,6 +402,7 @@ const Grup = {
             `;
         }
 
+        // xss-reviewed: HTML dihasilkan builder internal yang meng-escape nilai dinamis
         area.innerHTML = `
             <div class="overflow-x-auto w-full border border-[#1c1c1c] rounded">
                 <table class="w-full text-xs 2xl:text-sm">

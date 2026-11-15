@@ -135,6 +135,7 @@ const User = {
         }
 
         if (filtered.length === 0) {
+            // xss-reviewed: hanya angka dan kelas CSS dari state internal
             area.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-10 sm:py-14 2xl:py-20 text-neutral-500 bg-[#050505] border border-dashed border-[#1c1c1c] rounded">
                     <svg class="w-8 h-8 2xl:w-10 2xl:h-10 mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
@@ -238,6 +239,7 @@ const User = {
             `;
         }
 
+        // xss-reviewed: HTML dihasilkan builder internal yang meng-escape nilai dinamis
         area.innerHTML = `
             <div class="overflow-x-auto w-full border border-[#1c1c1c] rounded">
                 <table class="w-full text-xs 2xl:text-sm">

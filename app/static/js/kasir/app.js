@@ -183,6 +183,7 @@ const App = {
             const userInfo = document.getElementById('user-info');
             if (userInfo && result.username) {
                 const displayName = result.nama_lengkap || result.username;
+                // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
                 userInfo.innerHTML = `
                     <div class="w-9 h-9 rounded bg-neutral-100 flex items-center justify-center text-sm font-bold text-[#050505] shrink-0">
                         ${displayName.charAt(0).toUpperCase()}

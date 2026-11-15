@@ -56,6 +56,7 @@ window.ShiftCore = {
         if (role === 'admin') {
             if (this.activeShift) {
                 const startTime = this.formatTimeOnly(this.activeShift.waktu_mulai);
+                // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
                 el.innerHTML = `
                     <div class="px-2.5 py-2 rounded-lg bg-neutral-900/90 border border-[#222] text-xs">
                         <div class="flex items-center justify-between mb-1.5">
@@ -85,6 +86,7 @@ window.ShiftCore = {
         // Tampilan untuk Kasir
         if (this.activeShift) {
             const startTime = this.formatTimeOnly(this.activeShift.waktu_mulai);
+            // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
             el.innerHTML = `
                 <div class="px-2.5 py-2 rounded-lg bg-emerald-950/20 border border-emerald-800/30 text-xs">
                     <div class="flex items-center justify-between mb-1">

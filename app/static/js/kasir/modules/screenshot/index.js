@@ -198,6 +198,7 @@ const Screenshot = {
                         if (existingImg) {
                             existingImg.src = `${resolvedUrl}?t=${new Date().getTime()}`;
                         } else {
+                            // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
                             imgContainer.innerHTML = `
                                 <img src="${resolvedUrl}?t=${new Date().getTime()}" class="w-full h-full object-cover opacity-85 group-hover:opacity-100 transition-opacity" alt="Screenshot ${pc.pc_kode}">
                                 <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">

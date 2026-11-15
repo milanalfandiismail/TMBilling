@@ -80,6 +80,7 @@ const PaketTable = {
             `;
         }
 
+        // xss-reviewed: HTML dihasilkan builder internal yang meng-escape nilai dinamis
         container.innerHTML = `
             <div class="overflow-x-auto w-full border border-[#1c1c1c] rounded">
                 <table class="w-full text-xs 2xl:text-sm">

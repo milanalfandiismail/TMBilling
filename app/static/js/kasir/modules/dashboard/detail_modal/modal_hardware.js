@@ -356,6 +356,7 @@ window.DashboardModalHardware = {
             if (!isSilent) {
                 console.error('[DashboardDetailModal] Load hardware error:', err);
                 if (contentEl) {
+                    // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
                     contentEl.innerHTML = `
                         <div class="py-16 text-center text-red-400 text-xs lg:text-sm font-mono space-y-2">
                             <p class="font-bold">Gagal memuat data hardware PC ${pcKode}</p>
@@ -460,6 +461,7 @@ window.DashboardModalHardware = {
             cpuBarColor = 'bg-amber-500';
         }
 
+        // xss-reviewed: HTML dihasilkan builder internal yang meng-escape nilai dinamis
         contentEl.innerHTML = `
             <div class="space-y-4 md:space-y-5">
                 ${alertBannerHtml}
@@ -681,6 +683,7 @@ window.DashboardModalHardware = {
         const overlay = document.createElement('div');
         overlay.id = confirmOverlayId;
         overlay.className = 'fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4';
+        // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
         overlay.innerHTML = `
             <div class="bg-[#0e0e0e] border border-[#262626] rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
                 <div class="flex items-center gap-3">

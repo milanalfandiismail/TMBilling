@@ -350,6 +350,7 @@ const DashboardSelection = {
         const selectedPcs = this.getSelectedPcs();
         const pcKodeSummary = selectedPcs.slice(0, 5).map(p => p.kode).join(', ') + (selectedPcs.length > 5 ? ` +${selectedPcs.length - 5}` : '');
 
+        // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
         toolbar.innerHTML = `
             <div class="flex items-center gap-2.5">
                 <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
@@ -393,6 +394,7 @@ const DashboardSelection = {
         menu.id = 'pc-context-menu';
         menu.className = 'fixed z-[9999] w-56 lg:w-60 xl:w-64 max-w-[280px] py-1.5 bg-[#141414] border border-[#2a2a2a] rounded-xl shadow-2xl overflow-hidden select-none';
 
+        // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
         menu.innerHTML = `
             <div class="px-3.5 py-2 border-b border-[#222] mb-1 min-w-0">
                 <div class="text-xs lg:text-sm font-bold text-indigo-300 font-mono flex items-center gap-1.5 truncate">

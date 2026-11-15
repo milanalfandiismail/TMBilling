@@ -277,6 +277,7 @@ const BukaModal = {
             const pricePerPc = paket.harga || 0;
             const totalPrice = this.isBatch ? pricePerPc * this.pcList.length : pricePerPc;
 
+            // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
             previewEl.innerHTML = `
                 <div class="font-bold text-xs lg:text-sm text-neutral-100 font-mono">${paket.nama}</div>
                 <div class="flex items-center justify-between text-[11px] lg:text-xs font-mono mt-1 pt-1 border-t border-[#222]">

@@ -190,6 +190,7 @@ Object.assign(window.Dashboard, {
             return;
         }
 
+        // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
         container.innerHTML = `
             <span class="text-[11px] sm:text-xs text-neutral-500 font-mono">Halaman ${currentPage} dari ${totalPages}</span>
             <div class="flex gap-2">

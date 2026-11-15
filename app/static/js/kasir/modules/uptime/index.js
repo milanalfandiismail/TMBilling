@@ -218,6 +218,7 @@ const UptimeTracker = {
         } catch (err) {
             if (!isSilent) {
                 console.error('UptimeTracker Error:', err);
+                // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="4" class="text-center py-10 text-red-500 font-medium">

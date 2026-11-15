@@ -446,6 +446,7 @@ const Log = {
         this.currentPage = Math.max(1, Math.min(this.currentPage, totalPages));
 
         if (total === 0) {
+            // xss-reviewed: hanya angka dan kelas CSS dari state internal
             tbody.innerHTML = `
                 <tr>
                     <td colspan="${isMobile ? 3 : 8}" class="text-center py-8 text-neutral-500 text-xs sm:text-sm">

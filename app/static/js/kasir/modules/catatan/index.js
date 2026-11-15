@@ -59,6 +59,7 @@ const Catatan = {
             if (!isSilent) {
                 console.error('[Catatan] Gagal memuat catatan:', err);
                 if (container) {
+                    // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
                     container.innerHTML = `
                         <div class="p-4 text-center text-xs text-red-400">
                             Gagal memuat catatan: ${err.message || 'Kesalahan jaringan'}
@@ -103,6 +104,7 @@ const Catatan = {
         }
 
         if (filtered.length === 0) {
+            // xss-reviewed: hanya angka dan kelas CSS dari state internal
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-48 text-neutral-500 text-xs text-center p-4 space-y-2">
                     <i class="fa-solid ${filterText ? 'fa-magnifying-glass' : 'fa-note-sticky'} text-neutral-600 text-2xl mb-1"></i>

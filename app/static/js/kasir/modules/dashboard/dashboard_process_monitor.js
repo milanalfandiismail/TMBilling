@@ -88,6 +88,7 @@ const DashboardProcessMonitor = {
             return;
         }
 
+        // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
         container.innerHTML = processes.map(p => `
             <div class="flex items-center justify-between p-3 bg-[#141414] hover:bg-[#181818] border border-[#222] hover:border-neutral-500 rounded-xl transition-all gap-3 select-none group">
                 <div class="min-w-0 flex-1 font-mono">
@@ -148,6 +149,7 @@ const DashboardProcessMonitor = {
             if (btn) {
                 btn.disabled = true;
                 btn.classList.add('opacity-50', 'cursor-not-allowed');
+                // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
                 btn.innerHTML = `
                     <span class="inline-flex items-center gap-1.5">
                         <svg class="animate-spin -ml-0.5 h-3.5 w-3.5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -339,6 +341,7 @@ const DashboardProcessMonitor = {
         if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const overlay = document.createElement('div');
         overlay.className = 'fixed inset-0 z-[60] flex items-center justify-center bg-black/90';
+        // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
         overlay.innerHTML = `
             <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-sm flex flex-col overflow-hidden shadow-2xl">
                 <div class="p-6 text-center">

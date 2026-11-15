@@ -72,6 +72,7 @@ const Toast = {
         }
 
         const safePercent = Math.min(100, Math.max(0, percent || 0));
+        // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
         toast.innerHTML = `
             <div class="flex items-center justify-between text-xs lg:text-sm font-semibold text-amber-400 gap-4">
                 <span class="flex items-center gap-2 mr-2">

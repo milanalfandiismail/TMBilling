@@ -278,6 +278,7 @@ const SettingsGeneral = {
             if (available.length === 0) {
                 presetsEl.innerHTML = `<span class="text-[10px] text-neutral-500 italic">Semua preset populer sudah aktif</span>`;
             } else {
+                // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
                 presetsEl.innerHTML = available.map(p => `
                     <button type="button" onclick="Settings.addPaymentMethod('${p}')"
                         class="px-2 xl:px-2.5 2xl:px-3 py-0.5 xl:py-1 2xl:py-1.5 rounded bg-[#111] hover:bg-[#1f1f1f] border border-[#262626] hover:border-neutral-500 text-[10px] sm:text-xs xl:text-xs 2xl:text-sm font-medium text-neutral-300 hover:text-neutral-100 transition-all flex items-center gap-1 active:scale-95 shadow-sm">
@@ -653,34 +654,34 @@ const SettingsGeneral = {
                             <div class="flex items-center gap-2 min-w-0">
                                 <i class="fa-solid fa-file-zipper text-emerald-400 text-xs xl:text-sm shrink-0"></i>
                                 <div class="min-w-0 flex-1">
-                                    <div class="font-bold font-mono text-xs xl:text-sm 2xl:text-base truncate max-w-[calc(100vw-165px)] md:max-w-none md:whitespace-nowrap" title="${b.filename}">
-                                        ${b.filename}
+                                    <div class="font-bold font-mono text-xs xl:text-sm 2xl:text-base truncate max-w-[calc(100vw-165px)] md:max-w-none md:whitespace-nowrap" title="__D__Utils.escapeHtml(b.filename)}">
+                                        __D__Utils.escapeHtml(b.filename)}
                                     </div>
                                     <div class="md:hidden flex items-center gap-1.5 mt-0.5 text-[10px] text-neutral-400 font-mono">
-                                        <span>${b.created_at}</span>
+                                        <span>__D__Utils.escapeHtml(b.created_at)}</span>
                                         <span class="text-neutral-600">&bull;</span>
-                                        <span class="text-neutral-300 font-semibold">${b.size_mb} MB</span>
+                                        <span class="text-neutral-300 font-semibold">__D__Utils.escapeHtml(b.size_mb)} MB</span>
                                     </div>
                                 </div>
                             </div>
                         </td>
                         <td class="hidden md:table-cell py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4 text-neutral-400 text-[10px] sm:text-xs xl:text-xs 2xl:text-sm font-mono whitespace-nowrap">
-                            ${b.created_at}
+                            __D__Utils.escapeHtml(b.created_at)}
                         </td>
                         <td class="hidden md:table-cell py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4 text-neutral-300 text-[10px] sm:text-xs xl:text-sm 2xl:text-base font-mono whitespace-nowrap">
-                            ${b.size_mb} MB
+                            __D__Utils.escapeHtml(b.size_mb)} MB
                         </td>
                         <td class="py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4 text-right whitespace-nowrap shrink-0">
                             <div class="flex items-center justify-end gap-1 sm:gap-1.5 xl:gap-2">
-                                <button onclick="Settings.downloadBackup('${b.filename}')" class="p-1.5 md:px-2.5 md:py-1 xl:px-3 xl:py-1.5 bg-neutral-200 hover:bg-neutral-300 text-black text-xs xl:text-xs 2xl:text-sm font-bold rounded transition-colors active:scale-95 shadow-sm inline-flex items-center gap-1.5" title="Unduh Berkas Backup">
+                                <button onclick="Settings.downloadBackup('__D__Utils.escapeHtml(b.filename)}')" class="p-1.5 md:px-2.5 md:py-1 xl:px-3 xl:py-1.5 bg-neutral-200 hover:bg-neutral-300 text-black text-xs xl:text-xs 2xl:text-sm font-bold rounded transition-colors active:scale-95 shadow-sm inline-flex items-center gap-1.5" title="Unduh Berkas Backup">
                                     <i class="fa-solid fa-download text-[11px] xl:text-xs"></i>
                                     <span class="hidden md:inline">Unduh</span>
                                 </button>
-                                <button onclick="Settings.restoreBackup('${b.filename}')" class="p-1.5 md:px-2.5 md:py-1 xl:px-3 xl:py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-neutral-200 text-xs xl:text-xs 2xl:text-sm font-bold rounded transition-colors active:scale-95 inline-flex items-center gap-1.5" title="Restore Database dari Berkas Ini">
+                                <button onclick="Settings.restoreBackup('__D__Utils.escapeHtml(b.filename)}')" class="p-1.5 md:px-2.5 md:py-1 xl:px-3 xl:py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-neutral-200 text-xs xl:text-xs 2xl:text-sm font-bold rounded transition-colors active:scale-95 inline-flex items-center gap-1.5" title="Restore Database dari Berkas Ini">
                                     <i class="fa-solid fa-rotate-left text-[11px] xl:text-xs"></i>
                                     <span class="hidden md:inline">Restore</span>
                                 </button>
-                                <button onclick="Settings.deleteBackup('${b.filename}')" class="p-1.5 md:px-2.5 md:py-1 xl:px-3 xl:py-1.5 bg-red-950/40 hover:bg-red-900/40 border border-red-900/50 text-red-400 text-xs xl:text-xs 2xl:text-sm font-bold rounded transition-colors active:scale-95 inline-flex items-center gap-1.5" title="Hapus Berkas Backup">
+                                <button onclick="Settings.deleteBackup('__D__Utils.escapeHtml(b.filename)}')" class="p-1.5 md:px-2.5 md:py-1 xl:px-3 xl:py-1.5 bg-red-950/40 hover:bg-red-900/40 border border-red-900/50 text-red-400 text-xs xl:text-xs 2xl:text-sm font-bold rounded transition-colors active:scale-95 inline-flex items-center gap-1.5" title="Hapus Berkas Backup">
                                     <i class="fa-solid fa-trash-can text-[11px] xl:text-xs"></i>
                                     <span class="hidden md:inline">Hapus</span>
                                 </button>
@@ -1294,6 +1295,7 @@ const SettingsGeneral = {
             statusBadge.textContent = 'Link Navigasi';
             statusBadge.className = 'text-[9px] font-mono text-sky-400';
             const safeNav = window.Utils && Utils.escapeHtml ? Utils.escapeHtml(navUrl) : navUrl.replace(/"/g, '&quot;');
+            // xss-reviewed: HTML dihasilkan builder internal yang meng-escape nilai dinamis
             iframeWrapper.innerHTML = `
                 <div class="text-center p-4 space-y-2">
                     <p class="text-xs text-neutral-300 font-medium">Link share Google Maps terdeteksi.</p>

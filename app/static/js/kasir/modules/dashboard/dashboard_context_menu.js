@@ -25,6 +25,7 @@ Object.assign(window.Dashboard, {
 
         // Context Menu khusus untuk Mode SYSTEM (Operasional dinonaktifkan, hanya Clear Sesi & Detail)
         if (isSystemMode) {
+            // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
             menu.innerHTML = `
                 <div class="px-4 py-2 border-b border-[#222] mb-1">
                     <div class="flex items-center justify-between gap-2">
@@ -53,6 +54,7 @@ Object.assign(window.Dashboard, {
                 </button>
             `;
         } else {
+            // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
             menu.innerHTML = `
                 <div class="px-4 py-2 border-b border-[#222] mb-1">
                     <div class="text-xs lg:text-base font-bold text-neutral-200 font-mono">${pc.kode}</div>

@@ -8,6 +8,7 @@ window.DashboardModalRemote = {
         const overlay = document.createElement('div');
         overlay.className = 'fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4 cursor-pointer';
         overlay.onclick = () => overlay.remove();
+        // xss-reviewed: HTML dihasilkan builder internal yang meng-escape nilai dinamis
         overlay.innerHTML = `
             <div class="relative w-full h-full flex items-center justify-center">
                 <button class="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 border border-white/10 text-white/60 hover:text-white hover:bg-black/70 flex items-center justify-center text-xl leading-none transition-all z-10">&times;</button>

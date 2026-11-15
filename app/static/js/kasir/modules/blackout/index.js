@@ -201,6 +201,7 @@ const Blackout = {
         if (!container) return;
 
         const st = this.currentStatusFilter;
+        // xss-reviewed: hanya angka dan kelas CSS dari state internal
         container.innerHTML = `
             <button type="button" onclick="Blackout.setStatusFilter('all')" data-status="all"
                 class="blackout-status-pill px-2 py-0.5 sm:px-2.5 sm:py-1 rounded text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${st === 'all' ? 'bg-[#161616] text-white border border-neutral-400 shadow-sm' : 'bg-[#0a0a0a] text-neutral-400 border border-[#1f1f1f] hover:border-[#333] hover:text-neutral-200'}">
@@ -381,6 +382,7 @@ const Blackout = {
         const hasPrev = this.currentPage > 1;
         const hasNext = this.currentPage < this.totalPages;
 
+        // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
         container.innerHTML = `
             <div class="flex items-center justify-between gap-1 text-[10px] sm:text-xs font-mono">
                 <div class="text-neutral-400 truncate">

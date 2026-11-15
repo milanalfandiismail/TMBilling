@@ -123,6 +123,7 @@ const PCGrid = {
             `;
         }
 
+        // xss-reviewed: HTML dihasilkan builder internal yang meng-escape nilai dinamis
         container.innerHTML = `
             <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-2.5 2xl:gap-3">
                 ${cardsHtml}

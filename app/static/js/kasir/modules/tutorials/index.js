@@ -160,6 +160,7 @@ const Tutorials = {
             return;
         }
 
+        // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
         area.innerHTML = `
             <div class="space-y-6">
                 <!-- Reader Header -->

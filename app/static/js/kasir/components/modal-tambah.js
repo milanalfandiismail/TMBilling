@@ -313,6 +313,7 @@ const TambahModal = {
             previewEl.innerHTML = '<span class="text-xs text-neutral-500 italic font-normal">Pilih paket terlebih dahulu</span>';
         } else {
             const totalTagihan = this.isBatch ? totalHargaPerPc * this.pcList.length : totalHargaPerPc;
+            // xss-reviewed: hanya angka dan kelas CSS dari state internal
             previewEl.innerHTML = `
                 <div class="text-emerald-400 font-mono text-sm lg:text-base font-black">+${Utils.formatDurasiFriendly(totalMenit)}</div>
                 <div class="text-xs lg:text-sm font-mono text-neutral-300 font-bold mt-0.5">${Utils.formatRupiah(totalTagihan)}</div>

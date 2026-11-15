@@ -292,6 +292,7 @@ const Monitor = {
             });
         });
 
+        // xss-reviewed: hanya angka dan kelas CSS dari state internal
         container.innerHTML = `
             <!-- Unified 1-Row Table Layout di Semua Breakpoint (sm, md, lg, xl, 2xl) -->
             <div class="overflow-x-auto w-full border border-[#1c1c1c] rounded scrollbar-thin">
