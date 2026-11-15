@@ -126,7 +126,7 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
             return jsonify({"success": True, "message": "Screenshot berhasil diunggah"}), 200
         except Exception as e:
             write_log("SCREENSHOT_UPLOAD_ERROR", f"Gagal simpan screenshot: {str(e)}")
-            return jsonify({"error": str(e)}), 500
+            return jsonify({"error": "Gagal memproses screenshot"}), 500
 
     @kasir_bp.route("/screenshot/status/<int:pc_id>", methods=["GET"])
     @login_required
@@ -168,7 +168,8 @@ def register_screenshot_routes(kasir_bp, client_bp, natural_sort_key):
                     "mtime": 0
                 }), 200
         except Exception as e:
-            return jsonify({"success": False, "error": str(e)}), 500
+            write_log("SCREENSHOT_STATUS_ERROR", f"Gagal baca status screenshot: {str(e)}")
+            return jsonify({"success": False, "error": "Gagal membaca status screenshot"}), 500
 
     @kasir_bp.route("/screenshot/image/<int:pc_id>", methods=["GET"])
     @login_required
