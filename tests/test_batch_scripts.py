@@ -18,3 +18,13 @@ def test_perintah_kill_terbatas_pada_proyek_ini():
         line = _read(name)[line_no - 1]
         assert "$_.ExecutablePath" in line, name
         assert "%CD%" in line, name
+
+
+def test_update_bat_berjalan_dari_salinan_temp():
+    lines = _read("update.bat")
+    guard = next(i for i, l in enumerate(lines) if 'if defined TM_UPDATE_SELF' in l)
+    copy = next(i for i, l in enumerate(lines) if 'copy /y "%~f0"' in l)
+    call = next(i for i, l in enumerate(lines) if 'call "%TM_SELF_COPY%"' in l)
+    claim = next(i for i, l in enumerate(lines) if 'update_claim.py" claim' in l)
+    assert guard < copy < call < claim
+    assert next(i for i, l in enumerate(lines) if l.strip() == ':siap_update') > call

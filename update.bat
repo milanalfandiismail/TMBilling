@@ -1,8 +1,19 @@
-@echo off
+﻿@echo off
 setlocal
 title TMBilling Server - Update
 color 0B
 cd /d "%~dp0"
+if defined TM_UPDATE_SELF goto :siap_update
+set "TM_UPDATE_SELF=1"
+set "TM_SELF_COPY=%TEMP%\tmb_update_%RANDOM%%RANDOM%.bat"
+copy /y "%~f0" "%TM_SELF_COPY%" >nul
+if errorlevel 1 goto :siap_update
+call "%TM_SELF_COPY%" %*
+set "TM_RC=%errorlevel%"
+del "%TM_SELF_COPY%" >nul 2>&1
+exit /b %TM_RC%
+
+:siap_update
 if not defined TM_PY set "TM_PY=.venv\Scripts\python.exe"
 if not exist "%TM_PY%" set "TM_PY=python"
 
