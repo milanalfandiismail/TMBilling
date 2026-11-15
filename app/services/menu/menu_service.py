@@ -454,11 +454,11 @@ class MenuService:
 
                 transaksi = TransaksiMenu(
                     no_nota=no_nota,
-                    menu_id=menu.id,
+                    menu=menu,
                     jumlah=jumlah,
                     total_harga=subtotal,
                     pc_kode=pc_kode if pc_kode else None,
-                    kasir_id=kasir.id,
+                    kasir=kasir,
                     operator=real_operator,
                     tunai=tunai_val if tunai_val else None,
                     kembalian=kembalian_val if tunai_val else None,
@@ -467,10 +467,12 @@ class MenuService:
                 MenuRepository.save(transaksi)
                 transaksi_list.append(transaksi)
 
-            db.session.commit()
-            
-            for t in transaksi_list:
-                order_details = {
+            # Serialisasi sebelum commit: setelah commit objek expired dan setiap akses
+            # relasi memicu SELECT ulang per item.
+            db.session.flush()
+            hasil = [t.to_dict() for t in transaksi_list]
+            detail_log = [
+                {
                     "no_nota": no_nota,
                     "nama_menu": t.menu.nama,
                     "jumlah_qty": t.jumlah,
@@ -480,9 +482,16 @@ class MenuService:
                     "tunai": tunai_val if tunai_val else None,
                     "kembalian": kembalian_val if tunai_val else None
                 }
-                write_log("TRANSAKSI_MENU", f"Penjualan {t.menu.nama} x{t.jumlah} (Total: Rp{t.total_harga:,}) sukses via {no_nota}", user=operator, detail_json=order_details)
+                for t in transaksi_list
+            ]
 
-            return [t.to_dict() for t in transaksi_list]
+            db.session.commit()
+
+            # Setelah commit objek expired: pesan log disusun dari detail, bukan dari atribut ORM.
+            for detail in detail_log:
+                write_log("TRANSAKSI_MENU", f"Penjualan {detail['nama_menu']} x{detail['jumlah_qty']} (Total: Rp{detail['total_harga']:,}) sukses via {no_nota}", user=operator, detail_json=detail)
+
+            return hasil
         except Exception as e:
             db.session.rollback()
             idempotency.release(client_request_id)
