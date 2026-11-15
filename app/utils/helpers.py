@@ -74,6 +74,7 @@ def natural_sort_key(value):
             for text in re.split(r'(\d+)', value)]
 
 
+from html import escape
 from html.parser import HTMLParser
 
 
@@ -128,7 +129,7 @@ class SafeHTMLParser(HTMLParser):
                             continue
                     cleaned_attrs.append((attr_name, attr_val))
 
-            attrs_str = "".join(f' {k}="{v}"' for k, v in cleaned_attrs) if cleaned_attrs else ""
+            attrs_str = "".join(f' {k}="{escape(str(v), quote=True)}"' for k, v in cleaned_attrs) if cleaned_attrs else ""
             if tag_lower in ('br', 'hr', 'img'):
                 self.result.append(f"<{tag_lower}{attrs_str} />")
             else:

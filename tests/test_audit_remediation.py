@@ -263,3 +263,9 @@ def test_refund_member_rejects_transaction_already_claimed(ctx):
         MemberService.refund_paket(member.id, transaksi.id)
 
     assert Transaksi.query.filter_by(member_id=member.id, jenis="refund_paket").count() == 0
+
+
+def test_sanitize_html_escapes_attribute_quotes():
+    hasil = sanitize_html('<a href=\'https://ok.example" onmouseover="alert(1)\'>x</a>')
+    assert hasil == '<a href="https://ok.example&quot; onmouseover=&quot;alert(1)">x</a>'
+
