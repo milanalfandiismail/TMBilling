@@ -23,6 +23,46 @@ class CloudflareTunnelService:
     BIN_PATH = os.path.join(BIN_DIR, "cloudflared.exe")
     DOWNLOAD_URL = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe"
 
+    PID_PATH = os.path.join(BIN_DIR, "cloudflared.pid")
+
+    @classmethod
+    def _read_pid(cls):
+        try:
+            with open(cls.PID_PATH, "r", encoding="utf-8") as f:
+                return int(f.read().strip())
+        except Exception:
+            return None
+
+    @classmethod
+    def _stop_pid(cls, pid):
+        """Hentikan cloudflared sisa restart; abaikan PID yang sudah dipakai proses lain."""
+        if not pid or os.name != "nt":
+            return
+        try:
+            hasil = subprocess.run(
+                ["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+                capture_output=True, text=True, timeout=5,
+            ).stdout
+        except Exception as e:
+            logger.warning(f"Gagal memeriksa pid cloudflared {pid}: {e}")
+            return
+        if "cloudflared" not in hasil.lower():
+            return
+        try:
+            subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, timeout=5)
+            logger.info(f"[CloudflareTunnel] Proses cloudflared sisa (pid {pid}) dihentikan.")
+        except Exception as e:
+            logger.warning(f"Gagal menghentikan cloudflared pid {pid}: {e}")
+
+    @classmethod
+    def _cleanup_orphan(cls):
+        cls._stop_pid(cls._read_pid())
+        try:
+            os.remove(cls.PID_PATH)
+        except OSError:
+            pass
+
+
     @classmethod
     def ensure_binary(cls):
         """Memastikan bin/cloudflared.exe tersedia & utuh (>45MB). Jika terpotong/belum ada, unduh dari rilis resmi."""
@@ -130,6 +170,7 @@ class CloudflareTunnelService:
             if cls._process is not None and cls._process.poll() is None:
                 return True, "Cloudflare Tunnel sudah berjalan"
 
+            cls._cleanup_orphan()
             token = SettingsService.get("cloudflare_tunnel_token", "").strip()
             if not token:
                 return False, "Cloudflare Tunnel Token belum dikonfigurasi"
@@ -206,6 +247,12 @@ class CloudflareTunnelService:
                     return False, "Token Cloudflare Tunnel tidak valid."
                 return False, f"Proses tunnel gagal start: {err_str or 'Unknown error'}"
             
+            try:
+                with open(cls.PID_PATH, "w", encoding="utf-8") as f:
+                    f.write(str(cls._process.pid))
+            except Exception as e:
+                logger.warning(f"Gagal menyimpan pid cloudflared: {e}")
+
             SettingsService.set("cloudflare_tunnel_enabled", "true")
             return True, "Cloudflare Tunnel berhasil dijalankan"
         except Exception as e:
@@ -216,6 +263,7 @@ class CloudflareTunnelService:
         """Menghentikan daemon cloudflared."""
         with cls._lock:
             SettingsService.set("cloudflare_tunnel_enabled", "false")
+            berhenti = False
             if cls._process is not None and cls._process.poll() is None:
                 try:
                     cls._process.terminate()
@@ -225,10 +273,11 @@ class CloudflareTunnelService:
                         cls._process.kill()
                     except Exception:
                         pass
-                cls._process = None
-                return True, "Cloudflare Tunnel dihentikan"
+                berhenti = True
             cls._process = None
-            return True, "Cloudflare Tunnel sudah nonaktif"
+            cls._cleanup_orphan()
+            pesan = "Cloudflare Tunnel dihentikan" if berhenti else "Cloudflare Tunnel sudah nonaktif"
+            return True, pesan
 
     @classmethod
     def init_app(cls, app):
