@@ -22,14 +22,14 @@ class TestMenuStockAtomic(unittest.TestCase):
         self.ctx.pop()
 
     def test_second_decrement_fails_when_stock_exhausted(self):
-        self.assertTrue(MenuRepository.decrement_stok_if_available(self.menu.id, 1))
+        self.assertTrue(MenuRepository.decrement_stok_if_available(self.menu, 1))
         db.session.commit()
-        self.assertFalse(MenuRepository.decrement_stok_if_available(self.menu.id, 1))
+        self.assertFalse(MenuRepository.decrement_stok_if_available(self.menu, 1))
         db.session.rollback()
         self.assertEqual(MenuItem.query.get(self.menu.id).stok, 0)
 
     def test_unlimited_stock_is_untouched(self):
         self.menu.stok = -1
         db.session.commit()
-        self.assertTrue(MenuRepository.decrement_stok_if_available(self.menu.id, 5))
+        self.assertTrue(MenuRepository.decrement_stok_if_available(self.menu, 5))
         self.assertEqual(MenuItem.query.get(self.menu.id).stok, -1)

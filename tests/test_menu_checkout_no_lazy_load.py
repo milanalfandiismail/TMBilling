@@ -47,6 +47,6 @@ def test_tiga_item_tidak_memuat_ulang_menu(app_ctx):
     assert [h["menu_nama"] for h in hasil] == ["Menu-0", "Menu-1", "Menu-2"]
     # 2 query per item: lookup validasi + guard atomik decrement_stok_if_available.
     # Yang diuji di sini: tidak ada muat ulang pasca-commit (dulu 3 extra).
-    assert sum(1 for q in queries if "FROM menu_item " in q) == 6
+    assert sum(1 for q in queries if "FROM menu_item " in q) == 3
     # Satu-satunya SELECT transaksi_menu yang sah adalah generator nomor nota (MAX).
     assert not any(q.lstrip().startswith("SELECT transaksi_menu") for q in queries), "tidak boleh ada muat ulang transaksi pasca-commit"
