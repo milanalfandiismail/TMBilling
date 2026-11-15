@@ -46,8 +46,10 @@ class UptimeService:
         try:
             from app.services.cache.uptime_store import UptimeMemoryStore
             UptimeMemoryStore.flush_to_database(app=app)
+            return True
         except Exception as e:
             write_log("UPTIME_SERVICE_ERROR", f"Gagal flush uptime ke database: {str(e)}")
+            return False
 
     @staticmethod
     def get_daily_report(tanggal):

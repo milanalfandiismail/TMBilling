@@ -8,6 +8,7 @@ import re
 from datetime import datetime, timedelta
 from app.utils.timezone_utils import format_local_now
 from app.services import SesiService
+from app.services.write_lock import with_write_lock
 from app.utils.logger import write_log
 
 UNIT_MULTIPLIER = {
@@ -193,14 +194,12 @@ def run_auto_screenshots(app):
         record_run("auto_screenshots", True)
 
 
+@with_write_lock
 def run_flush_uptime(app):
     """Wrapper untuk batch flush akumulasi uptime PC ke SQLite yang dijalankan setiap 1 menit."""
     with app.app_context():
-        try:
-            from app.services.hardware.uptime_service import UptimeService
-            UptimeService.flush_uptime_to_db(app=app)
-        except Exception as e:
-            write_log("SCHEDULER_ERROR", f"Error flush uptime: {str(e)}", user="SYSTEM")
+        from app.services.hardware.uptime_service import UptimeService
+        if not UptimeService.flush_uptime_to_db(app=app):
             record_run("flush_uptime", False)
             return
         record_run("flush_uptime", True)
@@ -223,6 +222,7 @@ def run_cleanup_vnc_proxies(app):
 
 
 
+@with_write_lock
 def run_cleanup_uptime_logs(app):
     """Wrapper harian untuk memangkas log uptime di luar retensi 366 hari."""
     with app.app_context():
