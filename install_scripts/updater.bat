@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 :: Bootstrap: salin diri ke %TEMP% agar swap install_scripts tidak membunuh proses ini.
 if defined TM_UPDATER_COPY goto :lanjut
 
@@ -73,7 +73,7 @@ if errorlevel 1 (
 :lewati_flush
 
 :: 3. Matikan server: proses run.py apa pun + pemilik port
-powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { ($_.Name -eq 'python.exe' -or $_.Name -eq 'pythonw.exe') -and $_.CommandLine -like '*run.py*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" >nul 2>&1
+powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { (($_.ExecutablePath -like '%CD%\*') -or ($_.CommandLine -like '*%CD%\run.py*')) -and $_.CommandLine -like '*run.py*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" >nul 2>&1
 powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort %TM_PORT% -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }" >nul 2>&1
 
 :: Tunggu port benar-benar lepas; bila masih dipakai, batalkan SEBELUM menyentuh berkas
