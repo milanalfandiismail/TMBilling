@@ -295,6 +295,29 @@ pub async fn create(st: &AppState, manual: bool) -> Result<String> {
 }
 
 /// Nama provider mengikuti Python: Discord Webhook / WebDAV / Google Drive / NAS.
+/// Usia arsip backup non-manual terbaru (jam); `None` bila belum ada.
+pub fn latest_age_hours(st: &AppState) -> Option<f64> {
+    let dir = dir(st);
+    let mut terbaru: Option<std::time::SystemTime> = None;
+    for entry in std::fs::read_dir(&dir).ok()?.flatten() {
+        let nama = entry.file_name().to_string_lossy().to_string();
+        if !nama.ends_with(".zip") || nama.starts_with(MANUAL_PREFIX) {
+            continue;
+        }
+        if let Ok(meta) = entry.metadata() {
+            if let Ok(waktu) = meta.modified() {
+                terbaru = Some(terbaru.map_or(waktu, |t| t.max(waktu)));
+            }
+        }
+    }
+    terbaru.map(|t| {
+        std::time::SystemTime::now()
+            .duration_since(t)
+            .map(|d| d.as_secs_f64() / 3600.0)
+            .unwrap_or(0.0)
+    })
+}
+
 pub fn provider_name(kind: &str) -> Option<&'static str> {
     match kind {
         "webhook" => Some("Discord Webhook"),

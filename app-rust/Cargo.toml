@@ -81,6 +81,15 @@ hex = "0.4"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
 
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_LibraryLoader",
+] }
+
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
 http-body-util = "0.1"
@@ -104,3 +113,7 @@ path = "tests/contract/public_cms_test.rs"
 [[test]]
 name = "ops_test"
 path = "tests/contract/ops_test.rs"
+
+[[test]]
+name = "scheduler_test"
+path = "tests/unit/scheduler_test.rs"

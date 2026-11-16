@@ -50,6 +50,10 @@ impl VncRegistry {
         self.ready.lock().unwrap().get(&pc_id).cloned()
     }
 
+    pub fn ids(&self) -> Vec<i64> {
+        self.proxies.lock().unwrap().keys().copied().collect()
+    }
+
     fn daftar_token(&self, token: &str, host: &str, port: u16) {
         self.tokens
             .lock()
@@ -111,6 +115,15 @@ pub fn stop_proxy(st: &Arc<crate::state::AppState>, pc_id: i64) {
         st.vnc.hapus_token(&p.token);
     }
     st.vnc.reset(pc_id);
+}
+
+/// Reaper: matikan proxy milik PC yang tidak online.
+pub fn reap(st: &Arc<crate::state::AppState>) {
+    for pc_id in st.vnc.ids() {
+        if !st.online.is_online(pc_id) {
+            stop_proxy(st, pc_id);
+        }
+    }
 }
 
 static LISTENER: OnceLock<()> = OnceLock::new();

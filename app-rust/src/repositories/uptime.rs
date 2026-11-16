@@ -77,6 +77,46 @@ pub async fn range(pool: &SqlitePool, start: &str, end: &str) -> Result<Vec<Bari
     .await
 }
 
+/// Tambahkan delta uptime hasil `UptimeStore::drain` ke log harian.
+pub async fn flush(
+    pool: &SqlitePool,
+    tanggal: &str,
+    rows: &[(i64, i64, i64)],
+) -> Result<(), sqlx::Error> {
+    let now = time::now_db().format("%Y-%m-%d %H:%M:%S").to_string();
+    for (pc_id, online, billing) in rows {
+        if *online <= 0 && *billing <= 0 {
+            continue;
+        }
+        sqlx::query(
+            "INSERT INTO pc_uptime_log (pc_id, tanggal, total_online_seconds, total_billing_seconds, first_seen, last_seen)
+             VALUES (?, ?, ?, ?, ?, ?)
+             ON CONFLICT(pc_id, tanggal) DO UPDATE SET
+               total_online_seconds = total_online_seconds + excluded.total_online_seconds,
+               total_billing_seconds = total_billing_seconds + excluded.total_billing_seconds,
+               last_seen = excluded.last_seen",
+        )
+        .bind(pc_id)
+        .bind(tanggal)
+        .bind(online)
+        .bind(billing)
+        .bind(&now)
+        .bind(&now)
+        .execute(pool)
+        .await?;
+    }
+    Ok(())
+}
+
+/// Hapus log lebih tua dari tanggal batas (retensi 366 hari).
+pub async fn prune(pool: &SqlitePool, batas_tanggal: &str) -> Result<u64, sqlx::Error> {
+    let res = sqlx::query("DELETE FROM pc_uptime_log WHERE tanggal < ?")
+        .bind(batas_tanggal)
+        .execute(pool)
+        .await?;
+    Ok(res.rows_affected())
+}
+
 fn menit(sec: i64) -> f64 {
     (sec as f64 / 60.0 * 10.0).round() / 10.0
 }

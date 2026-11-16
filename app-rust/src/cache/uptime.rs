@@ -51,6 +51,17 @@ impl UptimeStore {
         }
     }
 
+    /// Ambil akumulator lalu kosongkan (dipakai scheduler saat flush ke DB).
+    pub fn drain(&self) -> Vec<(i64, UptimeAcc)> {
+        let mut map = self.inner.lock().unwrap();
+        let hasil = map.iter().map(|(k, v)| (*k, *v)).collect();
+        for acc in map.values_mut() {
+            acc.online = 0;
+            acc.billing = 0;
+        }
+        hasil
+    }
+
     pub fn snapshot(&self) -> Vec<(i64, UptimeAcc)> {
         self.inner
             .lock()

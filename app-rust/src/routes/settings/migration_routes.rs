@@ -165,6 +165,19 @@ pub async fn check_github(State(st): State<Arc<AppState>>, k: Kasir) -> Response
     )
 }
 
+/// Jalankan penerap pembaruan dari salinan biner di %TEMP%, lalu hentikan proses ini.
+fn mulai_pembaruan(st: &Arc<AppState>) {
+    let (zip, root) = crate::update::coords(st);
+    if let Err(e) = crate::update::spawn_apply(&zip, &root) {
+        tracing::warn!("gagal menjalankan penerap pembaruan: {e}");
+        return;
+    }
+    tokio::spawn(async {
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        std::process::exit(0);
+    });
+}
+
 pub async fn update_github(State(st): State<Arc<AppState>>, k: Kasir) -> Response {
     if let Err(res) = admin_only(&k) {
         return res;
@@ -214,8 +227,8 @@ pub async fn update_github(State(st): State<Arc<AppState>>, k: Kasir) -> Respons
         .and_then(|bytes| tulis_paket(&st, &bytes));
     crate::utils::idempotency::release("update_zip");
     match hasil {
-        // shortcut: paket sudah tervalidasi di temp_update.zip; swap + restart dijalankan updater Task 14.
         Ok(_) => {
+            mulai_pembaruan(&st);
             crate::utils::logger::rec(
                 "admin",
                 "APPLICATION_UPDATE",
@@ -263,10 +276,13 @@ pub async fn upload(
     let hasil = tulis_paket(&st, &payload);
     crate::utils::idempotency::release("update_zip");
     match hasil {
-        Ok(_) => http::json(
-            202,
-            json!({"success": true, "message": "Berkas berhasil diunggah. Server sedang memperbarui dan akan dimulai ulang..."}),
-        ),
+        Ok(_) => {
+            mulai_pembaruan(&st);
+            http::json(
+                202,
+                json!({"success": true, "message": "Berkas berhasil diunggah. Server sedang memperbarui dan akan dimulai ulang..."}),
+            )
+        }
         Err(e) => http::json(400, json!({"error": e})),
     }
 }
