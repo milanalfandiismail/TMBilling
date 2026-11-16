@@ -1,0 +1,36 @@
+[package]
+name = "tmbilling-server"
+version = "2.0.0"
+edition = "2021"
+
+[lib]
+name = "tmbilling_server"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tmbilling-server"
+path = "src/main.rs"
+
+[[test]]
+name = "config_test"
+path = "tests/unit/config_test.rs"
+
+[[test]]
+name = "logger_test"
+path = "tests/unit/logger_test.rs"
+
+[[test]]
+name = "idempotency_test"
+path = "tests/unit/idempotency_test.rs"
+
+[dependencies]
+anyhow = "1"
+tokio = { version = "1", features = ["full"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+chrono-tz = "0.10"
+rand = "0.9"
+flate2 = "1"
+tracing = "0.1"
