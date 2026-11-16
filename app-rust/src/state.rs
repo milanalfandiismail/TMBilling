@@ -28,6 +28,8 @@ pub struct AppState {
     pub processes: ProcessMemoryStore,
     pub history: TelemetryHistoryStore,
     pub vnc: VncRegistry,
+    pub backup_status: std::sync::Mutex<crate::services::backup::backup_service::ManualStatus>,
+    pub cloudflared: std::sync::Mutex<Option<std::process::Child>>,
     write: WriteLock,
 }
 
@@ -61,6 +63,8 @@ impl AppState {
             processes: ProcessMemoryStore::default(),
             history: TelemetryHistoryStore::default(),
             vnc: VncRegistry::default(),
+            backup_status: std::sync::Mutex::new(Default::default()),
+            cloudflared: std::sync::Mutex::new(None),
             write: WriteLock::new(),
         };
         crate::services::settings::ip_whitelist::seed_defaults(&state).await?;

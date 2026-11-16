@@ -4,6 +4,7 @@ use crate::assets::StaticAssets;
 use crate::middleware::{csrf, whitelist};
 use crate::routes::arsip::arsip_routes;
 use crate::routes::auth::auth_kasir;
+use crate::routes::backup::backup_routes;
 use crate::routes::blackout::blackout_routes;
 use crate::routes::client::client_routes;
 use crate::routes::dashboard::dashboard_routes;
@@ -23,6 +24,9 @@ use crate::routes::public::tv_public_routes;
 use crate::routes::report::report_routes;
 use crate::routes::server_monitor::server_monitor_routes;
 use crate::routes::sesi::sesi_routes;
+use crate::routes::settings::database_routes;
+use crate::routes::settings::migration_routes;
+use crate::routes::settings::network_routes;
 use crate::routes::settings::settings_routes;
 use crate::routes::shift::shift_routes;
 use crate::routes::tournament::tournament_routes;
@@ -529,12 +533,109 @@ pub fn router(state: Arc<AppState>) -> Router {
             post(tutorial_routes::export_json),
         );
 
+    let ops_api = Router::new()
+        .route("/api/v1/kasir/backup/trigger", post(backup_routes::trigger))
+        .route(
+            "/api/v1/kasir/backup/manual/status",
+            get(backup_routes::status),
+        )
+        .route(
+            "/api/v1/kasir/backup/test-connection",
+            post(backup_routes::test_connection),
+        )
+        .route("/api/v1/kasir/backup/list", get(backup_routes::list))
+        .route(
+            "/api/v1/kasir/backup/download/{filename}",
+            get(backup_routes::download),
+        )
+        .route(
+            "/api/v1/kasir/backup/restore/{filename}",
+            post(backup_routes::restore),
+        )
+        .route(
+            "/api/v1/kasir/backup/delete/{filename}",
+            axum::routing::delete(backup_routes::hapus),
+        )
+        .route(
+            "/api/v1/kasir/settings/backup/manual",
+            post(database_routes::manual_backup),
+        )
+        .route(
+            "/api/v1/kasir/settings/backup/download",
+            get(database_routes::download_db),
+        )
+        .route(
+            "/api/v1/kasir/settings/qris",
+            post(database_routes::upload_qris),
+        )
+        .route(
+            "/api/v1/kasir/settings/uninstall-token/client",
+            get(database_routes::uninstall_token_client),
+        )
+        .route(
+            "/api/v1/kasir/settings/database/stats",
+            get(database_routes::database_stats),
+        )
+        .route(
+            "/api/v1/kasir/settings/database/purge-and-vacuum",
+            post(database_routes::purge_and_vacuum),
+        )
+        .route(
+            "/api/v1/kasir/settings/migration/status",
+            get(migration_routes::status),
+        )
+        .route(
+            "/api/v1/kasir/settings/check_github",
+            get(migration_routes::check_github),
+        )
+        .route(
+            "/api/v1/kasir/settings/update_github",
+            post(migration_routes::update_github),
+        )
+        .route(
+            "/api/v1/kasir/settings/update/upload",
+            post(migration_routes::upload),
+        )
+        .route(
+            "/api/v1/kasir/settings/ip-whitelist",
+            get(network_routes::list_whitelist).post(network_routes::add_whitelist),
+        )
+        .route(
+            "/api/v1/kasir/settings/ip-whitelist/{ip}",
+            axum::routing::delete(network_routes::remove_whitelist),
+        )
+        .route(
+            "/api/v1/kasir/settings/ip-whitelist/toggle",
+            post(network_routes::toggle_whitelist),
+        )
+        .route(
+            "/api/v1/kasir/settings/ip-whitelist/status",
+            get(network_routes::whitelist_status),
+        )
+        .route(
+            "/api/v1/kasir/settings/app-public-url",
+            post(network_routes::set_app_public_url),
+        )
+        .route(
+            "/api/v1/kasir/settings/cloudflare-tunnel/status",
+            get(network_routes::tunnel_status),
+        )
+        .route(
+            "/api/v1/kasir/settings/cloudflare-tunnel/save-token",
+            post(network_routes::save_tunnel_token),
+        )
+        .route(
+            "/api/v1/kasir/settings/cloudflare-tunnel/toggle",
+            post(network_routes::toggle_tunnel),
+        );
+
     let guarded = Router::new()
         .route("/kasir/", get(shell_placeholder))
         .route("/kasir/login", get(auth_kasir::login_page))
         .merge(kasir_api)
         .merge(report_api)
         .merge(konten_api)
+        .merge(ops_api)
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             csrf::guard,

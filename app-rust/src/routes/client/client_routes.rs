@@ -18,7 +18,7 @@ use crate::utils::logger;
 
 type St = State<Arc<AppState>>;
 
-fn kunci_sama(kirim: &str, harapan: &str) -> bool {
+pub(crate) fn kunci_sama(kirim: &str, harapan: &str) -> bool {
     if kirim.is_empty() || harapan.is_empty() {
         return false;
     }
@@ -31,7 +31,7 @@ fn kunci_sama(kirim: &str, harapan: &str) -> bool {
 }
 
 /// IP peer: header proxy hanya dipercaya dari loopback.
-fn peer_ip(headers: &HeaderMap, peer: SocketAddr) -> String {
+pub(crate) fn peer_ip(headers: &HeaderMap, peer: SocketAddr) -> String {
     let remote = peer.ip().to_string();
     if headers.get("host").is_some() && (peer.ip().is_loopback()) {
         for name in ["cf-connecting-ip", "x-forwarded-for"] {

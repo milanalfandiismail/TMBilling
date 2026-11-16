@@ -1,5 +1,6 @@
 pub mod arsip;
 pub mod auth;
+pub mod backup;
 pub mod blackout;
 pub mod client;
 pub mod dashboard;

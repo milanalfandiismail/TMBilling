@@ -78,6 +78,7 @@ sha2 = "0.10"
 scrypt = "0.11"
 pbkdf2 = "0.12"
 hex = "0.4"
+zip = { version = "2", default-features = false, features = ["deflate"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
 
 [dev-dependencies]
@@ -99,3 +100,7 @@ path = "tests/contract/device_test.rs"
 [[test]]
 name = "public_cms_test"
 path = "tests/contract/public_cms_test.rs"
+
+[[test]]
+name = "ops_test"
+path = "tests/contract/ops_test.rs"
