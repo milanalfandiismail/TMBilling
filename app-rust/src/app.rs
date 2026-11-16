@@ -1,23 +1,42 @@
 //! Router aplikasi: aset embed, health publik, dan guard whitelist.
 
 use crate::assets::StaticAssets;
-use crate::middleware::whitelist;
+use crate::middleware::{csrf, whitelist};
+use crate::routes::auth::auth_kasir;
 use crate::routes::public::health;
+use crate::routes::user::user_routes;
 use crate::state::AppState;
 use axum::body::Body;
 use axum::extract::Path;
 use axum::http::{header, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::Router;
 use std::sync::Arc;
 
 const IMMUTABLE: &str = "public, max-age=31536000, immutable";
 
 pub fn router(state: Arc<AppState>) -> Router {
+    let kasir_api = Router::new()
+        .route("/api/v1/kasir/auth/login", post(auth_kasir::login))
+        .route("/api/v1/kasir/auth/logout", post(auth_kasir::logout))
+        .route("/api/v1/kasir/auth/check", get(auth_kasir::check))
+        .route("/api/v1/kasir/auth/admin-check", post(auth_kasir::admin_check))
+        .route("/api/v1/kasir/user", get(user_routes::list).post(user_routes::create))
+        .route("/api/v1/kasir/user/", get(user_routes::list).post(user_routes::create))
+        .route(
+            "/api/v1/kasir/user/{id}",
+            get(user_routes::get_one).put(user_routes::update).delete(user_routes::delete),
+        )
+        .route("/api/v1/kasir/user/{id}/archive", post(user_routes::archive))
+        .route("/api/v1/kasir/user/{id}/restore", post(user_routes::restore))
+        .route("/api/v1/kasir/user/{id}/reset-kuota", post(user_routes::reset_kuota));
+
     let guarded = Router::new()
         .route("/kasir/", get(shell_placeholder))
-        .route("/kasir/login", get(shell_placeholder))
+        .route("/kasir/login", get(auth_kasir::login_page))
+        .merge(kasir_api)
+        .layer(axum::middleware::from_fn_with_state(state.clone(), csrf::guard))
         .layer(axum::middleware::from_fn_with_state(state.clone(), whitelist::guard));
 
     Router::new()

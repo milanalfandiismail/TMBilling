@@ -1,3 +1,3 @@
-//! Handler HTTP.
-
+pub mod auth;
 pub mod public;
+pub mod user;

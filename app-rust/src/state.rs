@@ -29,7 +29,9 @@ impl AppState {
                 "skema database disiapkan"
             );
         }
-        Ok(Self { cfg, pool, write: WriteLock::new() })
+        let state = Self { cfg, pool, write: WriteLock::new() };
+        crate::services::auth::bootstrap::ensure_initial_admin(&state).await?;
+        Ok(state)
     }
 
     /// Seluruh jalur baca-lalu-tulis memakai gerbang ini.

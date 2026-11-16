@@ -12,6 +12,10 @@ name = "tmbilling-server"
 path = "src/main.rs"
 
 [[test]]
+name = "auth_test"
+path = "tests/contract/auth_test.rs"
+
+[[test]]
 name = "http_test"
 path = "tests/contract/http_test.rs"
 
@@ -46,6 +50,12 @@ axum = "0.8"
 rust-embed = "8"
 minijinja = "2"
 fs2 = "0.4"
+base64 = "0.22"
+hmac = "0.12"
+sha2 = "0.10"
+scrypt = "0.11"
+pbkdf2 = "0.12"
+hex = "0.4"
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
