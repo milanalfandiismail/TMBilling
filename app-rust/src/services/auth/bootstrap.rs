@@ -11,7 +11,11 @@ pub async fn ensure_initial_admin(state: &AppState) -> Result<()> {
     if user_repo::count_all(&state.pool).await? > 0 {
         return Ok(());
     }
-    let password: String = rand::rng().sample_iter(&Alphanumeric).take(12).map(char::from).collect();
+    let password: String = rand::rng()
+        .sample_iter(&Alphanumeric)
+        .take(12)
+        .map(char::from)
+        .collect();
     sqlx::query(
         "INSERT INTO user (username, password_hash, nama_lengkap, role, aktif, dibuat_pada) \
          VALUES ('admin', ?, 'Administrator', 'admin', 1, datetime('now'))",

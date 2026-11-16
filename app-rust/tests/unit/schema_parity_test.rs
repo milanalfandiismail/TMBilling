@@ -56,7 +56,10 @@ async fn assert_matches_head(pool: &SqlitePool) {
         assert!(present.iter().any(|n| n == table), "tabel {table} hilang");
         let actual = columns(pool, table).await;
         for col in cols {
-            assert!(actual.iter().any(|n| n == col), "kolom {table}.{col} hilang");
+            assert!(
+                actual.iter().any(|n| n == col),
+                "kolom {table}.{col} hilang"
+            );
         }
     }
     let (version,): (String,) = sqlx::query_as("SELECT version_num FROM alembic_version")
@@ -71,7 +74,9 @@ async fn fresh_database_builds_head_schema() {
     let dir = TempDir::new("fresh");
     let db_path = dir.path().join("warnet.db");
     let pool = open(&db_path).await.unwrap();
-    let report = migrate::ensure_schema(&pool, &db_path, &dir.path().join("backups")).await.unwrap();
+    let report = migrate::ensure_schema(&pool, &db_path, &dir.path().join("backups"))
+        .await
+        .unwrap();
     assert!(report.fresh);
     assert!(report.created_tables > 0);
     // skema tanpa data: hanya skema head + alembic_version
@@ -86,10 +91,16 @@ async fn legacy_database_is_upgraded_and_snapshotted() {
     std::fs::copy("tests/fixtures/warnet_legacy.db", &db_path).unwrap();
     let pool = open(&db_path).await.unwrap();
     let before = tables(&pool).await.len();
-    let report = migrate::ensure_schema(&pool, &db_path, &dir.path().join("backups")).await.unwrap();
+    let report = migrate::ensure_schema(&pool, &db_path, &dir.path().join("backups"))
+        .await
+        .unwrap();
     assert!(!report.fresh);
     assert!(report.created_tables > 0, "tabel baru harus ditambahkan");
-    assert!(report.snapshot.as_ref().map(|p| p.exists()).unwrap_or(false));
+    assert!(report
+        .snapshot
+        .as_ref()
+        .map(|p| p.exists())
+        .unwrap_or(false));
     assert!(tables(&pool).await.len() > before);
     assert_matches_head(&pool).await;
 }
@@ -100,8 +111,12 @@ async fn second_start_changes_nothing() {
     let db_path = dir.path().join("warnet.db");
     let backups = dir.path().join("backups");
     let pool = open(&db_path).await.unwrap();
-    migrate::ensure_schema(&pool, &db_path, &backups).await.unwrap();
-    let report = migrate::ensure_schema(&pool, &db_path, &backups).await.unwrap();
+    migrate::ensure_schema(&pool, &db_path, &backups)
+        .await
+        .unwrap();
+    let report = migrate::ensure_schema(&pool, &db_path, &backups)
+        .await
+        .unwrap();
     assert!(!report.changed());
     assert!(report.snapshot.is_none());
     assert_matches_head(&pool).await;

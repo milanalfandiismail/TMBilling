@@ -11,7 +11,9 @@ use std::str::FromStr;
 use std::time::Duration;
 
 pub async fn open(path: &Path) -> Result<SqlitePool> {
-    if let Some(parent) = path.parent() { std::fs::create_dir_all(parent)?; }
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
     let opts = SqliteConnectOptions::from_str(&format!("sqlite://{}", path.display()))?
         .create_if_missing(true)
         .journal_mode(SqliteJournalMode::Wal)

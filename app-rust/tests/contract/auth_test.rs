@@ -15,15 +15,24 @@ use tmbilling_server::repositories::settings as settings_repo;
 use tmbilling_server::state::AppState;
 use tower::ServiceExt;
 
-const LAN: SocketAddr = SocketAddr::new(std::net::IpAddr::V4(std::net::Ipv4Addr::new(192, 168, 1, 50)), 5000);
+const LAN: SocketAddr = SocketAddr::new(
+    std::net::IpAddr::V4(std::net::Ipv4Addr::new(192, 168, 1, 50)),
+    5000,
+);
 
 struct TempDir(PathBuf);
 
 impl TempDir {
     fn new(tag: &str) -> Self {
         let mut path = std::env::temp_dir();
-        path.push(format!("tm_auth_{tag}_{}_{}", std::process::id(), std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        path.push(format!(
+            "tm_auth_{tag}_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
         std::fs::create_dir_all(&path).unwrap();
         Self(path)
     }
@@ -39,7 +48,14 @@ async fn state(tag: &str) -> (TempDir, Arc<AppState>) {
     let dir = TempDir::new(tag);
     let cfg = Config::load(&dir.0).unwrap();
     let st = Arc::new(AppState::new(cfg).await.unwrap());
-    settings_repo::set(&st.pool, "ip_whitelist_enabled", "false").await.unwrap();
+    // Lewat service agar cache write-through ikut diperbarui (seed_defaults sudah mengisi "true").
+    tmbilling_server::services::settings::settings_service::set(
+        &st,
+        "ip_whitelist_enabled",
+        "false",
+    )
+    .await
+    .unwrap();
     sqlx::query("UPDATE user SET password_hash = ? WHERE username = 'admin'")
         .bind(hash_password("rahasia123"))
         .execute(&st.pool)
@@ -75,10 +91,21 @@ fn cookie_of(headers: &HeaderMap, name: &str) -> Option<String> {
         .filter_map(|v| v.to_str().ok())
         .find(|c| c.starts_with(&format!("{name}=")))
         .and_then(|c| c.split(';').next())
-        .map(|c| c.split_once('=').map(|(_, v)| v.to_string()).unwrap_or_default())
+        .map(|c| {
+            c.split_once('=')
+                .map(|(_, v)| v.to_string())
+                .unwrap_or_default()
+        })
 }
 
-async fn send(st: Arc<AppState>, method: &str, uri: &str, cookies: &str, csrf: Option<&str>, body: Option<Value>) -> Reply {
+async fn send(
+    st: Arc<AppState>,
+    method: &str,
+    uri: &str,
+    cookies: &str,
+    csrf: Option<&str>,
+    body: Option<Value>,
+) -> Reply {
     let mut builder = Request::builder().method(method).uri(uri);
     if !cookies.is_empty() {
         builder = builder.header("cookie", cookies);
@@ -99,7 +126,11 @@ async fn send(st: Arc<AppState>, method: &str, uri: &str, cookies: &str, csrf: O
     let status = res.status();
     let headers = res.headers().clone();
     let body = res.into_body().collect().await.unwrap().to_bytes();
-    Reply { status, headers, body: String::from_utf8_lossy(&body).to_string() }
+    Reply {
+        status,
+        headers,
+        body: String::from_utf8_lossy(&body).to_string(),
+    }
 }
 
 async fn csrf_token(st: Arc<AppState>) -> String {
@@ -129,7 +160,15 @@ async fn login_benar_memberi_cookie_sesi_dan_cek_logged_in() {
     let session = cookie_of(&reply.headers, "tm_session").expect("cookie sesi");
     let csrf = cookie_of(&reply.headers, "csrf_token").expect("csrf baru");
 
-    let check = send(st, "GET", "/api/v1/kasir/auth/check", &format!("tm_session={session}"), None, None).await;
+    let check = send(
+        st,
+        "GET",
+        "/api/v1/kasir/auth/check",
+        &format!("tm_session={session}"),
+        None,
+        None,
+    )
+    .await;
     assert_eq!(check.status, StatusCode::OK);
     assert!(check.body.contains("\"logged_in\":true"), "{}", check.body);
     assert!(check.body.contains("\"role\":\"admin\""));
@@ -143,10 +182,20 @@ async fn lima_password_salah_berujung_429() {
     add_user(&st, "throttle1", "kasir").await;
     for i in 1..=5 {
         let reply = login(st.clone(), "throttle1", "salah").await;
-        assert_eq!(reply.status, StatusCode::UNAUTHORIZED, "percobaan {i}: {}", reply.body);
+        assert_eq!(
+            reply.status,
+            StatusCode::UNAUTHORIZED,
+            "percobaan {i}: {}",
+            reply.body
+        );
     }
     let reply = login(st.clone(), "throttle1", "salah").await;
-    assert_eq!(reply.status, StatusCode::TOO_MANY_REQUESTS, "{}", reply.body);
+    assert_eq!(
+        reply.status,
+        StatusCode::TOO_MANY_REQUESTS,
+        "{}",
+        reply.body
+    );
 }
 
 #[tokio::test]
@@ -207,8 +256,17 @@ async fn admin_terakhir_dan_user_ber_shift_tidak_bisa_dihapus() {
         Some(json!({"confirm": "admin"})),
     )
     .await;
-    assert_eq!(last_admin.status, StatusCode::BAD_REQUEST, "{}", last_admin.body);
-    assert!(last_admin.body.contains("satu-satunya Admin"), "{}", last_admin.body);
+    assert_eq!(
+        last_admin.status,
+        StatusCode::BAD_REQUEST,
+        "{}",
+        last_admin.body
+    );
+    assert!(
+        last_admin.body.contains("satu-satunya Admin"),
+        "{}",
+        last_admin.body
+    );
 
     add_user(&st, "kasir2", "kasir").await;
     let kasir_id: (i64,) = sqlx::query_as("SELECT id FROM user WHERE username = 'kasir2'")
@@ -233,8 +291,17 @@ async fn admin_terakhir_dan_user_ber_shift_tidak_bisa_dihapus() {
         Some(json!({"confirm": "kasir2"})),
     )
     .await;
-    assert_eq!(with_shift.status, StatusCode::BAD_REQUEST, "{}", with_shift.body);
-    assert!(with_shift.body.contains("riwayat shift"), "{}", with_shift.body);
+    assert_eq!(
+        with_shift.status,
+        StatusCode::BAD_REQUEST,
+        "{}",
+        with_shift.body
+    );
+    assert!(
+        with_shift.body.contains("riwayat shift"),
+        "{}",
+        with_shift.body
+    );
 }
 
 #[tokio::test]

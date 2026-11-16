@@ -18,6 +18,7 @@ pub struct Config {
     pub backup_dir: PathBuf,
     pub notes_dir: PathBuf,
     pub timezone: String,
+    pub client_api_key: String,
 }
 
 impl Config {
@@ -38,18 +39,31 @@ impl Config {
             version: env!("CARGO_PKG_VERSION").to_string(),
             secret_key,
             timezone,
+            client_api_key: env_get(&env, "CLIENT_API_KEY").unwrap_or_default(),
             root,
         })
     }
 
     /// Angka versi untuk cache-busting aset, setara `Config.get_cache_version()`.
     pub fn cache_version(&self) -> String {
-        let digits: String = self.version.chars().filter(|c| c.is_ascii_digit()).collect();
-        if digits.is_empty() { "1".into() } else { digits }
+        let digits: String = self
+            .version
+            .chars()
+            .filter(|c| c.is_ascii_digit())
+            .collect();
+        if digits.is_empty() {
+            "1".into()
+        } else {
+            digits
+        }
     }
 
     pub fn version_tag(&self) -> String {
-        if self.version.starts_with('v') { self.version.clone() } else { format!("v{}", self.version) }
+        if self.version.starts_with('v') {
+            self.version.clone()
+        } else {
+            format!("v{}", self.version)
+        }
     }
 }
 
@@ -64,12 +78,36 @@ pub mod paths {
             cfg.logs_dir.join("archives"),
             cfg.backup_dir.clone(),
             cfg.notes_dir.clone(),
-            cfg.root.join("instance").join("uploads").join("screenshots"),
-            cfg.root.join("app").join("static").join("uploads").join("games"),
-            cfg.root.join("app").join("static").join("uploads").join("menu"),
-            cfg.root.join("app").join("static").join("uploads").join("qris"),
-            cfg.root.join("app").join("static").join("uploads").join("screenshots"),
-            cfg.root.join("app").join("static").join("assets").join("tutorials").join("temp"),
+            cfg.root
+                .join("instance")
+                .join("uploads")
+                .join("screenshots"),
+            cfg.root
+                .join("app")
+                .join("static")
+                .join("uploads")
+                .join("games"),
+            cfg.root
+                .join("app")
+                .join("static")
+                .join("uploads")
+                .join("menu"),
+            cfg.root
+                .join("app")
+                .join("static")
+                .join("uploads")
+                .join("qris"),
+            cfg.root
+                .join("app")
+                .join("static")
+                .join("uploads")
+                .join("screenshots"),
+            cfg.root
+                .join("app")
+                .join("static")
+                .join("assets")
+                .join("tutorials")
+                .join("temp"),
         ];
         for d in dirs {
             fs::create_dir_all(&d).with_context(|| format!("gagal membuat {}", d.display()))?;
@@ -79,20 +117,45 @@ pub mod paths {
     }
 }
 
+/// Tulis satu key ke `.env`, mempertahankan baris lain.
+pub fn write_env_value(root: &Path, key: &str, value: &str) -> std::io::Result<()> {
+    let path = root.join(".env");
+    let content = fs::read_to_string(&path).unwrap_or_default();
+    let mut lines: Vec<String> = content.lines().map(str::to_string).collect();
+    let prefix = format!("{key}=");
+    match lines
+        .iter()
+        .position(|l| l.trim_start().starts_with(&prefix))
+    {
+        Some(i) => lines[i] = format!("{key}={value}"),
+        None => lines.push(format!("{key}={value}")),
+    }
+    fs::write(&path, lines.join("\n") + "\n")
+}
+
 fn read_env(path: &Path) -> Vec<(String, String)> {
-    let Ok(text) = fs::read_to_string(path) else { return Vec::new() };
+    let Ok(text) = fs::read_to_string(path) else {
+        return Vec::new();
+    };
     text.lines()
         .filter_map(|line| {
             let line = line.trim();
-            if line.is_empty() || line.starts_with('#') { return None; }
+            if line.is_empty() || line.starts_with('#') {
+                return None;
+            }
             let (k, v) = line.split_once('=')?;
-            Some((k.trim().to_string(), v.trim().trim_matches('"').trim_matches('\'').to_string()))
+            Some((
+                k.trim().to_string(),
+                v.trim().trim_matches('"').trim_matches('\'').to_string(),
+            ))
         })
         .collect()
 }
 
 fn env_get(env: &[(String, String)], key: &str) -> Option<String> {
-    std::env::var(key).ok().filter(|v| !v.trim().is_empty())
+    std::env::var(key)
+        .ok()
+        .filter(|v| !v.trim().is_empty())
         .or_else(|| env.iter().find(|(k, _)| k == key).map(|(_, v)| v.clone()))
         .filter(|v| !v.trim().is_empty())
 }
@@ -100,13 +163,22 @@ fn env_get(env: &[(String, String)], key: &str) -> Option<String> {
 /// Ambil `SECRET_KEY` yang ada; bila kosong/default, buat baru dan tulis balik ke `.env`.
 fn get_or_create_secret_key(root: &Path, env: &[(String, String)]) -> Result<String> {
     let existing = env_get(env, "SECRET_KEY").filter(|v| v != INSECURE_DEFAULT);
-    if let Some(key) = existing { return Ok(key); }
+    if let Some(key) = existing {
+        return Ok(key);
+    }
 
-    let key = rand::rng().sample_iter(rand::distr::Alphanumeric).take(64).map(char::from).collect::<String>();
+    let key = rand::rng()
+        .sample_iter(rand::distr::Alphanumeric)
+        .take(64)
+        .map(char::from)
+        .collect::<String>();
     let path = root.join(".env");
     let content = fs::read_to_string(&path).unwrap_or_default();
     let mut lines: Vec<String> = content.lines().map(str::to_string).collect();
-    match lines.iter().position(|l| l.trim_start().starts_with("SECRET_KEY=")) {
+    match lines
+        .iter()
+        .position(|l| l.trim_start().starts_with("SECRET_KEY="))
+    {
         Some(i) => lines[i] = format!("SECRET_KEY={key}"),
         None => lines.push(format!("SECRET_KEY={key}")),
     }

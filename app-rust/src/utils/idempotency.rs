@@ -15,21 +15,30 @@ fn seen() -> &'static Mutex<HashMap<String, Instant>> {
 
 /// `true` bila kunci baru, `false` bila sudah dipakai dalam TTL. Kunci kosong selalu `true`.
 pub fn claim(key: &str) -> bool {
-    if key.is_empty() { return true; }
+    if key.is_empty() {
+        return true;
+    }
     let now = Instant::now();
     let ttl = Duration::from_secs(IDEMPOTENCY_TTL_SECONDS);
     let mut map = seen().lock().unwrap();
     map.retain(|_, ts| now.duration_since(*ts) <= ttl);
-    if map.len() > IDEMPOTENCY_MAX_KEYS { map.clear(); }
+    if map.len() > IDEMPOTENCY_MAX_KEYS {
+        map.clear();
+    }
     match map.get(key) {
         Some(_) => false,
-        None => { map.insert(key.to_string(), now); true }
+        None => {
+            map.insert(key.to_string(), now);
+            true
+        }
     }
 }
 
 /// Lepaskan kunci agar percobaan ulang tidak diblokir setelah request gagal.
 pub fn release(key: &str) {
-    if !key.is_empty() { seen().lock().unwrap().remove(key); }
+    if !key.is_empty() {
+        seen().lock().unwrap().remove(key);
+    }
 }
 
 /// Kosongkan semua kunci. Dipakai tes.

@@ -26,10 +26,16 @@ pub struct SessionData {
     pub role: String,
     pub nama: Option<String>,
     pub exp: i64,
+    /// Bypass IP whitelist lewat `?token=` (setara `ip_wh_authenticated`).
+    #[serde(default)]
+    pub ipwh: bool,
+    #[serde(default)]
+    pub ipwhv: u32,
 }
 
 fn mac(cfg: &Config, payload: &str) -> String {
-    let mut h = <Hmac<Sha256> as Mac>::new_from_slice(cfg.secret_key.as_bytes()).expect("kunci HMAC");
+    let mut h =
+        <Hmac<Sha256> as Mac>::new_from_slice(cfg.secret_key.as_bytes()).expect("kunci HMAC");
     h.update(payload.as_bytes());
     hex::encode(h.finalize().into_bytes())
 }
@@ -72,6 +78,8 @@ pub fn build_session(user: &User) -> SessionData {
         role: user.role().to_string(),
         nama: user.nama_lengkap.clone(),
         exp: chrono::Utc::now().timestamp() + SESSION_TTL_SECONDS,
+        ipwh: false,
+        ipwhv: 0,
     }
 }
 
@@ -83,7 +91,10 @@ pub struct Kasir {
 impl FromRequestParts<Arc<AppState>> for Kasir {
     type Rejection = Response;
 
-    async fn from_request_parts(parts: &mut Parts, state: &Arc<AppState>) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &Arc<AppState>,
+    ) -> Result<Self, Self::Rejection> {
         let raw = http::cookie(&parts.headers, COOKIE)
             .ok_or_else(|| http::err(401, "Silakan login terlebih dahulu"))?;
         let session = decode(&state.cfg, &raw)
@@ -129,7 +140,15 @@ mod tests {
     #[test]
     fn cookie_bertanda_tangan_bolak_balik() {
         let c = cfg();
-        let data = SessionData { uid: 7, uname: "admin".into(), role: "admin".into(), nama: None, exp: chrono::Utc::now().timestamp() + 60 };
+        let data = SessionData {
+            uid: 7,
+            uname: "admin".into(),
+            role: "admin".into(),
+            nama: None,
+            exp: chrono::Utc::now().timestamp() + 60,
+            ipwh: false,
+            ipwhv: 0,
+        };
         let raw = encode(&c, &data);
         assert_eq!(decode(&c, &raw).unwrap().uid, 7);
         let mut c2 = c.clone();
@@ -141,7 +160,15 @@ mod tests {
     #[test]
     fn sesi_kedaluwarsa_ditolak() {
         let c = cfg();
-        let data = SessionData { uid: 1, uname: "a".into(), role: "kasir".into(), nama: None, exp: 1 };
+        let data = SessionData {
+            uid: 1,
+            uname: "a".into(),
+            role: "kasir".into(),
+            nama: None,
+            exp: 1,
+            ipwh: false,
+            ipwhv: 0,
+        };
         assert!(decode(&c, &encode(&c, &data)).is_none());
     }
 }

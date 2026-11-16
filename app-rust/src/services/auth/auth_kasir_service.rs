@@ -12,7 +12,11 @@ use std::net::SocketAddr;
 
 fn format_shift_time(raw: &str) -> String {
     let trimmed = raw.trim();
-    for fmt in ["%Y-%m-%d %H:%M:%S%.f", "%Y-%m-%dT%H:%M:%S%.f", "%Y-%m-%d %H:%M:%S"] {
+    for fmt in [
+        "%Y-%m-%d %H:%M:%S%.f",
+        "%Y-%m-%dT%H:%M:%S%.f",
+        "%Y-%m-%d %H:%M:%S",
+    ] {
         if let Ok(dt) = NaiveDateTime::parse_from_str(trimmed, fmt) {
             return dt.format("%d/%m/%Y %H:%M").to_string();
         }
@@ -40,12 +44,23 @@ async fn active_shift_holder(pool: &SqlitePool) -> Option<(i64, String, String)>
     })
 }
 
-pub async fn validate_credentials_only(pool: &SqlitePool, username: &str, password: &str) -> Option<User> {
+pub async fn validate_credentials_only(
+    pool: &SqlitePool,
+    username: &str,
+    password: &str,
+) -> Option<User> {
     if username.is_empty() || password.is_empty() {
         return None;
     }
-    let user = user_repo::get_by_username(pool, username).await.ok().flatten()?;
-    if user.check_password(password).await { Some(user) } else { None }
+    let user = user_repo::get_by_username(pool, username)
+        .await
+        .ok()
+        .flatten()?;
+    if user.check_password(password).await {
+        Some(user)
+    } else {
+        None
+    }
 }
 
 pub async fn login(
@@ -58,13 +73,30 @@ pub async fn login(
     if username.is_empty() || password.is_empty() {
         return Err(AuthError::new(401, "Username dan password wajib diisi"));
     }
-    let user = user_repo::get_by_username(pool, username).await.ok().flatten();
+    let user = user_repo::get_by_username(pool, username)
+        .await
+        .ok()
+        .flatten();
     let Some(user) = user.filter(|_| true) else {
-        audit(username, "LOGIN_GAGAL", &format!("Username:{username} - Password salah / tidak ditemukan"), None, ip, agent);
+        audit(
+            username,
+            "LOGIN_GAGAL",
+            &format!("Username:{username} - Password salah / tidak ditemukan"),
+            None,
+            ip,
+            agent,
+        );
         return Err(AuthError::new(401, "Username atau password salah"));
     };
     if !user.check_password(password).await {
-        audit(username, "LOGIN_GAGAL", &format!("Username:{username} - Password salah / tidak ditemukan"), None, ip, agent);
+        audit(
+            username,
+            "LOGIN_GAGAL",
+            &format!("Username:{username} - Password salah / tidak ditemukan"),
+            None,
+            ip,
+            agent,
+        );
         return Err(AuthError::new(401, "Username atau password salah"));
     }
 
@@ -75,7 +107,9 @@ pub async fn login(
                 audit(
                     username,
                     "LOGIN_DITOLAK_SHIFT",
-                    &format!("Kasir {username} ditolak masuk karena shift aktif dipegang oleh {nama}"),
+                    &format!(
+                        "Kasir {username} ditolak masuk karena shift aktif dipegang oleh {nama}"
+                    ),
                     None,
                     ip,
                     agent,
@@ -94,7 +128,10 @@ pub async fn login(
     audit(
         username,
         "LOGIN",
-        &format!("Kasir:{username} ({}) login", user.nama_lengkap.clone().unwrap_or_default()),
+        &format!(
+            "Kasir:{username} ({}) login",
+            user.nama_lengkap.clone().unwrap_or_default()
+        ),
         None,
         ip,
         agent,
@@ -103,7 +140,14 @@ pub async fn login(
 }
 
 pub async fn logout(username: &str, ip: &str, agent: &str) {
-    audit(username, "LOGOUT", &format!("Kasir {username} logout"), None, ip, agent);
+    audit(
+        username,
+        "LOGOUT",
+        &format!("Kasir {username} logout"),
+        None,
+        ip,
+        agent,
+    );
 }
 
 pub async fn check_session(pool: &SqlitePool, user_id: Option<i64>) -> Option<User> {
@@ -124,20 +168,51 @@ pub async fn validate_admin(
     if username.is_empty() || password.is_empty() {
         return Err(AuthError::new(401, "Kredensial wajib diisi"));
     }
-    let user = user_repo::find_by_username(pool, username).await.ok().flatten();
+    let user = user_repo::find_by_username(pool, username)
+        .await
+        .ok()
+        .flatten();
     let Some(user) = user else {
-        audit(username, "ADMIN_CHECK_FAILED", &format!("Username:{username} - Salah password / tidak ditemukan"), None, ip, agent);
+        audit(
+            username,
+            "ADMIN_CHECK_FAILED",
+            &format!("Username:{username} - Salah password / tidak ditemukan"),
+            None,
+            ip,
+            agent,
+        );
         return Err(AuthError::new(401, "Username atau password salah"));
     };
     if !user.check_password(password).await {
-        audit(username, "ADMIN_CHECK_FAILED", &format!("Username:{username} - Salah password / tidak ditemukan"), None, ip, agent);
+        audit(
+            username,
+            "ADMIN_CHECK_FAILED",
+            &format!("Username:{username} - Salah password / tidak ditemukan"),
+            None,
+            ip,
+            agent,
+        );
         return Err(AuthError::new(401, "Username atau password salah"));
     }
     if user.role() != "admin" {
-        audit(username, "ADMIN_CHECK_DENIED", &format!("User:{username} bukan admin"), None, ip, agent);
+        audit(
+            username,
+            "ADMIN_CHECK_DENIED",
+            &format!("User:{username} bukan admin"),
+            None,
+            ip,
+            agent,
+        );
         return Err(AuthError::new(403, "Akses ditolak. Perlu hak akses Admin."));
     }
-    audit(username, "ADMIN_CHECK_SUCCESS", &format!("User:{username} berhasil verifikasi admin"), None, ip, agent);
+    audit(
+        username,
+        "ADMIN_CHECK_SUCCESS",
+        &format!("User:{username} berhasil verifikasi admin"),
+        None,
+        ip,
+        agent,
+    );
     Ok(user)
 }
 

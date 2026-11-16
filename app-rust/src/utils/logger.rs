@@ -21,23 +21,68 @@ pub fn init(log_dir: impl Into<PathBuf>, tz_name: impl Into<String>) -> bool {
 }
 
 fn log_path() -> PathBuf {
-    LOG_DIR.get().cloned().unwrap_or_else(|| PathBuf::from("logs")).join("warnet.log")
+    LOG_DIR
+        .get()
+        .cloned()
+        .unwrap_or_else(|| PathBuf::from("logs"))
+        .join("warnet.log")
 }
 
 fn tz_name() -> &'static str {
-    TZ.get().map(String::as_str).unwrap_or(crate::utils::time::DEFAULT_TZ)
+    TZ.get()
+        .map(String::as_str)
+        .unwrap_or(crate::utils::time::DEFAULT_TZ)
 }
 
 /// Tulis satu entri audit. `category` kosong di-resolve dari tabel aksi.
-pub fn audit(user: &str, action: &str, detail: &str, category: Option<&str>, ip_address: &str, browser_agent: &str) {
-    write_entry(user, action, detail, category, ip_address, browser_agent, None);
+pub fn audit(
+    user: &str,
+    action: &str,
+    detail: &str,
+    category: Option<&str>,
+    ip_address: &str,
+    browser_agent: &str,
+) {
+    write_entry(
+        user,
+        action,
+        detail,
+        category,
+        ip_address,
+        browser_agent,
+        None,
+    );
 }
 
-pub fn audit_json(user: &str, action: &str, detail: &str, category: Option<&str>, ip_address: &str, browser_agent: &str, detail_json: Value) {
-    write_entry(user, action, detail, category, ip_address, browser_agent, Some(detail_json));
+pub fn audit_json(
+    user: &str,
+    action: &str,
+    detail: &str,
+    category: Option<&str>,
+    ip_address: &str,
+    browser_agent: &str,
+    detail_json: Value,
+) {
+    write_entry(
+        user,
+        action,
+        detail,
+        category,
+        ip_address,
+        browser_agent,
+        Some(detail_json),
+    );
 }
 
-fn write_entry(user: &str, action: &str, detail: &str, category: Option<&str>, ip_address: &str, browser_agent: &str, detail_json: Option<Value>) {
+fn write_entry(
+    user: &str,
+    action: &str,
+    detail: &str,
+    category: Option<&str>,
+    ip_address: &str,
+    browser_agent: &str,
+    detail_json: Option<Value>,
+) {
     let category = category
         .filter(|c| !c.is_empty())
         .map(str::to_string)
@@ -55,7 +100,9 @@ fn write_entry(user: &str, action: &str, detail: &str, category: Option<&str>, i
     let line = format!("{entry}\n");
     let path = log_path();
     let _guard = WRITE.lock().unwrap();
-    if let Some(parent) = path.parent() { let _ = fs::create_dir_all(parent); }
+    if let Some(parent) = path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
     if let Ok(mut f) = OpenOptions::new().create(true).append(true).open(&path) {
         let _ = f.write_all(line.as_bytes());
     }
@@ -73,13 +120,18 @@ pub fn resolve_category(action: &str) -> &'static str {
 /// Arsipkan `warnet.log` ke `archives/warnet_<stamp>.log.gz`, sisakan `max_archives` arsip terbaru.
 pub fn archive(max_archives: usize) -> anyhow::Result<Option<PathBuf>> {
     let path = log_path();
-    if !path.exists() { return Ok(None); }
+    if !path.exists() {
+        return Ok(None);
+    }
     let dir = path.parent().unwrap_or(Path::new(".")).join("archives");
     fs::create_dir_all(&dir)?;
-    let stamp = time::now_local(tz_name()).format("%Y%m%d_%H%M%S").to_string();
+    let stamp = time::now_local(tz_name())
+        .format("%Y%m%d_%H%M%S")
+        .to_string();
     let target = dir.join(format!("warnet_{stamp}.log.gz"));
     let mut input = File::open(&path)?;
-    let mut out = flate2::write::GzEncoder::new(File::create(&target)?, flate2::Compression::default());
+    let mut out =
+        flate2::write::GzEncoder::new(File::create(&target)?, flate2::Compression::default());
     std::io::copy(&mut input, &mut out)?;
     out.finish()?;
     File::create(&path)?;

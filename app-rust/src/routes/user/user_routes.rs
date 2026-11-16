@@ -19,7 +19,11 @@ fn guard(kasir: &Kasir) -> Option<Response> {
     admin_only(kasir).err()
 }
 
-pub async fn list(State(state): State<Arc<AppState>>, kasir: Kasir, Query(q): Query<HashMap<String, String>>) -> Response {
+pub async fn list(
+    State(state): State<Arc<AppState>>,
+    kasir: Kasir,
+    Query(q): Query<HashMap<String, String>>,
+) -> Response {
     if let Some(res) = guard(&kasir) {
         return res;
     }
@@ -30,7 +34,11 @@ pub async fn list(State(state): State<Arc<AppState>>, kasir: Kasir, Query(q): Qu
     }
 }
 
-pub async fn get_one(State(state): State<Arc<AppState>>, kasir: Kasir, Path(id): Path<i64>) -> Response {
+pub async fn get_one(
+    State(state): State<Arc<AppState>>,
+    kasir: Kasir,
+    Path(id): Path<i64>,
+) -> Response {
     if let Some(res) = guard(&kasir) {
         return res;
     }
@@ -46,23 +54,38 @@ pub async fn create(State(state): State<Arc<AppState>>, kasir: Kasir, body: Byte
     }
     let data = http::parse_json(&body);
     match user_service::create(&state, &data, &kasir.user.username).await {
-        Ok(user) => http::json(201, json!({"success": true, "user": user, "message": "User berhasil ditambahkan"})),
+        Ok(user) => http::json(
+            201,
+            json!({"success": true, "user": user, "message": "User berhasil ditambahkan"}),
+        ),
         Err(e) => bad_request(e),
     }
 }
 
-pub async fn update(State(state): State<Arc<AppState>>, kasir: Kasir, Path(id): Path<i64>, body: Bytes) -> Response {
+pub async fn update(
+    State(state): State<Arc<AppState>>,
+    kasir: Kasir,
+    Path(id): Path<i64>,
+    body: Bytes,
+) -> Response {
     if let Some(res) = guard(&kasir) {
         return res;
     }
     let data = http::parse_json(&body);
     match user_service::update(&state, id, &data, &kasir.user.username).await {
-        Ok(user) => http::json(200, json!({"success": true, "user": user, "message": "Data staff diperbarui"})),
+        Ok(user) => http::json(
+            200,
+            json!({"success": true, "user": user, "message": "Data staff diperbarui"}),
+        ),
         Err(e) => bad_request(e),
     }
 }
 
-pub async fn archive(State(state): State<Arc<AppState>>, kasir: Kasir, Path(id): Path<i64>) -> Response {
+pub async fn archive(
+    State(state): State<Arc<AppState>>,
+    kasir: Kasir,
+    Path(id): Path<i64>,
+) -> Response {
     if let Some(res) = guard(&kasir) {
         return res;
     }
@@ -72,7 +95,11 @@ pub async fn archive(State(state): State<Arc<AppState>>, kasir: Kasir, Path(id):
     }
 }
 
-pub async fn restore(State(state): State<Arc<AppState>>, kasir: Kasir, Path(id): Path<i64>) -> Response {
+pub async fn restore(
+    State(state): State<Arc<AppState>>,
+    kasir: Kasir,
+    Path(id): Path<i64>,
+) -> Response {
     if let Some(res) = guard(&kasir) {
         return res;
     }
@@ -82,17 +109,31 @@ pub async fn restore(State(state): State<Arc<AppState>>, kasir: Kasir, Path(id):
     }
 }
 
-pub async fn delete(State(state): State<Arc<AppState>>, kasir: Kasir, Path(id): Path<i64>, body: Bytes) -> Response {
+pub async fn delete(
+    State(state): State<Arc<AppState>>,
+    kasir: Kasir,
+    Path(id): Path<i64>,
+    body: Bytes,
+) -> Response {
     if let Some(res) = guard(&kasir) {
         return res;
     }
     let data = http::parse_json(&body);
-    let confirm = data.get("confirm").and_then(|v| v.as_str()).unwrap_or("").trim().to_lowercase();
+    let confirm = data
+        .get("confirm")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
     let target = match user_service::get(&state, id).await {
         Ok(user) => user,
         Err(e) => return http::err(404, e),
     };
-    let username = target.get("username").and_then(|v| v.as_str()).unwrap_or("").to_lowercase();
+    let username = target
+        .get("username")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_lowercase();
     if confirm != username {
         return http::err(400, "Ketik username untuk konfirmasi hapus permanen");
     }
@@ -102,12 +143,19 @@ pub async fn delete(State(state): State<Arc<AppState>>, kasir: Kasir, Path(id): 
     }
 }
 
-pub async fn reset_kuota(State(state): State<Arc<AppState>>, kasir: Kasir, Path(id): Path<i64>) -> Response {
+pub async fn reset_kuota(
+    State(state): State<Arc<AppState>>,
+    kasir: Kasir,
+    Path(id): Path<i64>,
+) -> Response {
     if let Some(res) = guard(&kasir) {
         return res;
     }
     match user_service::reset_kuota(&state, id, &kasir.user.username).await {
-        Ok(user) => http::json(200, json!({"success": true, "user": user, "message": "Kuota bermain kasir berhasil direset"})),
+        Ok(user) => http::json(
+            200,
+            json!({"success": true, "user": user, "message": "Kuota bermain kasir berhasil direset"}),
+        ),
         Err(e) => bad_request(e),
     }
 }

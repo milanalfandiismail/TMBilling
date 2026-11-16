@@ -12,7 +12,13 @@ pub struct TemplateAssets;
 
 /// Content-Type dari ekstensi berkas; cukup untuk aset yang dipakai dashboard.
 pub fn content_type(path: &str) -> &'static str {
-    match path.rsplit('.').next().unwrap_or("").to_ascii_lowercase().as_str() {
+    match path
+        .rsplit('.')
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase()
+        .as_str()
+    {
         "css" => "text/css; charset=utf-8",
         "js" | "mjs" => "text/javascript; charset=utf-8",
         "json" | "map" => "application/json",

@@ -27,7 +27,11 @@ fn month_now(tz: &str) -> String {
 }
 
 pub async fn list(state: &AppState, aktif_only: bool) -> Result<Vec<Value>> {
-    Ok(user_repo::get_all(&state.pool, aktif_only).await?.iter().map(User::to_json).collect())
+    Ok(user_repo::get_all(&state.pool, aktif_only)
+        .await?
+        .iter()
+        .map(User::to_json)
+        .collect())
 }
 
 pub async fn get(state: &AppState, id: i64) -> Result<Value, String> {
@@ -40,15 +44,30 @@ pub async fn get(state: &AppState, id: i64) -> Result<Value, String> {
 pub async fn create(state: &AppState, data: &Value, operator: &str) -> Result<Value, String> {
     let username = validators::username(str_field(data, "username"), 3, 30)?;
     let password = validators::password(str_field(data, "password"), 6, 32)?;
-    let nama = validators::text(str_field(data, "nama_lengkap"), 0, 100, "Nama lengkap", false)?;
+    let nama = validators::text(
+        str_field(data, "nama_lengkap"),
+        0,
+        100,
+        "Nama lengkap",
+        false,
+    )?;
     let role = str_field(data, "role").trim().to_lowercase();
-    let role = if role.is_empty() { "kasir".to_string() } else { role };
+    let role = if role.is_empty() {
+        "kasir".to_string()
+    } else {
+        role
+    };
     if role != "admin" && role != "kasir" {
         return Err("Role harus 'admin' atau 'kasir'".into());
     }
     let aktif = bool_field(data, "aktif", true);
 
-    if user_repo::find_by_username(&state.pool, &username).await.ok().flatten().is_some() {
+    if user_repo::find_by_username(&state.pool, &username)
+        .await
+        .ok()
+        .flatten()
+        .is_some()
+    {
         return Err("Username sudah terdaftar".into());
     }
 
@@ -89,8 +108,13 @@ pub async fn create(state: &AppState, data: &Value, operator: &str) -> Result<Va
         });
     }
 
-    let created = user_repo::find_by_username(&state.pool, &username).await.ok().flatten();
-    let Some(user) = created else { return Err("User tidak ditemukan".into()) };
+    let created = user_repo::find_by_username(&state.pool, &username)
+        .await
+        .ok()
+        .flatten();
+    let Some(user) = created else {
+        return Err("User tidak ditemukan".into());
+    };
     audit(
         operator,
         "TAMBAH_USER",
@@ -102,7 +126,12 @@ pub async fn create(state: &AppState, data: &Value, operator: &str) -> Result<Va
     Ok(user.to_json())
 }
 
-pub async fn update(state: &AppState, id: i64, data: &Value, operator: &str) -> Result<Value, String> {
+pub async fn update(
+    state: &AppState,
+    id: i64,
+    data: &Value,
+    operator: &str,
+) -> Result<Value, String> {
     let _guard = state.write().await;
     let Some(user) = user_repo::get_by_id(&state.pool, id).await.ok().flatten() else {
         return Err("User tidak ditemukan".into());
@@ -113,9 +142,17 @@ pub async fn update(state: &AppState, id: i64, data: &Value, operator: &str) -> 
     } else {
         user.role().to_string()
     };
-    let new_aktif = if data.get("aktif").is_some() { bool_field(data, "aktif", user.active()) } else { user.active() };
+    let new_aktif = if data.get("aktif").is_some() {
+        bool_field(data, "aktif", user.active())
+    } else {
+        user.active()
+    };
     if user.role() == "admin" && user.active() && (new_role != "admin" || !new_aktif) {
-        if user_repo::count_active_admins(&state.pool).await.unwrap_or(0) <= 1 {
+        if user_repo::count_active_admins(&state.pool)
+            .await
+            .unwrap_or(0)
+            <= 1
+        {
             return Err("Tidak dapat menonaktifkan satu-satunya Admin tersisa!".into());
         }
     }
@@ -124,7 +161,12 @@ pub async fn update(state: &AppState, id: i64, data: &Value, operator: &str) -> 
     if !str_field(data, "username").is_empty() {
         let candidate = validators::username(str_field(data, "username"), 3, 30)?;
         if candidate != user.username {
-            if user_repo::find_by_username(&state.pool, &candidate).await.ok().flatten().is_some() {
+            if user_repo::find_by_username(&state.pool, &candidate)
+                .await
+                .ok()
+                .flatten()
+                .is_some()
+            {
                 return Err("Username sudah dipakai oleh orang lain".into());
             }
             username = candidate;
@@ -132,7 +174,13 @@ pub async fn update(state: &AppState, id: i64, data: &Value, operator: &str) -> 
     }
 
     let nama = if data.get("nama_lengkap").is_some() {
-        validators::text(str_field(data, "nama_lengkap"), 0, 100, "Nama lengkap", false)?
+        validators::text(
+            str_field(data, "nama_lengkap"),
+            0,
+            100,
+            "Nama lengkap",
+            false,
+        )?
     } else {
         user.nama_lengkap.clone().unwrap_or_default()
     };
@@ -160,15 +208,27 @@ pub async fn update(state: &AppState, id: i64, data: &Value, operator: &str) -> 
         )?;
         let selisih = baru - kuota;
         kuota = baru;
-        sisa = if sisa == 0 { baru } else { (sisa + selisih).clamp(0, baru) };
+        sisa = if sisa == 0 {
+            baru
+        } else {
+            (sisa + selisih).clamp(0, baru)
+        };
         if reset.is_none() {
             reset = Some(month_now(&state.cfg.timezone));
         }
     }
 
-    let aktif = if data.get("aktif").is_some() { new_aktif } else { user.active() };
+    let aktif = if data.get("aktif").is_some() {
+        new_aktif
+    } else {
+        user.active()
+    };
     let password_hash = if !str_field(data, "password").is_empty() {
-        Some(hash_password(&validators::password(str_field(data, "password"), 6, 32)?))
+        Some(hash_password(&validators::password(
+            str_field(data, "password"),
+            6,
+            32,
+        )?))
     } else {
         None
     };
@@ -191,7 +251,14 @@ pub async fn update(state: &AppState, id: i64, data: &Value, operator: &str) -> 
     .await
     .map_err(|e| e.to_string())?;
 
-    audit(operator, "UPDATE_USER", &format!("ID:{id} | User:{username}"), None, "", "");
+    audit(
+        operator,
+        "UPDATE_USER",
+        &format!("ID:{id} | User:{username}"),
+        None,
+        "",
+        "",
+    );
     get(state, id).await
 }
 
@@ -200,19 +267,38 @@ pub async fn archive(state: &AppState, id: i64, operator: &str) -> Result<(u16, 
     let Some(user) = user_repo::get_by_id(&state.pool, id).await.ok().flatten() else {
         return Err("User tidak ditemukan".into());
     };
-    if user.role() == "admin" && user.active() && user_repo::count_active_admins(&state.pool).await.unwrap_or(0) <= 1 {
+    if user.role() == "admin"
+        && user.active()
+        && user_repo::count_active_admins(&state.pool)
+            .await
+            .unwrap_or(0)
+            <= 1
+    {
         return Err("Tidak dapat menonaktifkan satu-satunya Admin tersisa!".into());
     }
     if !user.active() {
-        return Ok((200, serde_json::json!({"success": true, "message": "User sudah nonaktif"})));
+        return Ok((
+            200,
+            serde_json::json!({"success": true, "message": "User sudah nonaktif"}),
+        ));
     }
     sqlx::query("UPDATE user SET aktif = 0 WHERE id = ?")
         .bind(id)
         .execute(&state.pool)
         .await
         .map_err(|e| e.to_string())?;
-    audit(operator, "ARSIP_USER", &format!("User:{} dinonaktifkan", user.username), None, "", "");
-    Ok((200, serde_json::json!({"success": true, "message": "User berhasil diarsipkan"})))
+    audit(
+        operator,
+        "ARSIP_USER",
+        &format!("User:{} dinonaktifkan", user.username),
+        None,
+        "",
+        "",
+    );
+    Ok((
+        200,
+        serde_json::json!({"success": true, "message": "User berhasil diarsipkan"}),
+    ))
 }
 
 pub async fn restore(state: &AppState, id: i64, operator: &str) -> Result<(u16, Value), String> {
@@ -228,8 +314,18 @@ pub async fn restore(state: &AppState, id: i64, operator: &str) -> Result<(u16, 
         .execute(&state.pool)
         .await
         .map_err(|e| e.to_string())?;
-    audit(operator, "RESTORE_USER", &format!("User:{} dipulihkan dari arsip", user.username), None, "", "");
-    Ok((200, serde_json::json!({"success": true, "message": "User berhasil dipulihkan"})))
+    audit(
+        operator,
+        "RESTORE_USER",
+        &format!("User:{} dipulihkan dari arsip", user.username),
+        None,
+        "",
+        "",
+    );
+    Ok((
+        200,
+        serde_json::json!({"success": true, "message": "User berhasil dipulihkan"}),
+    ))
 }
 
 pub async fn delete(state: &AppState, id: i64, operator: &str) -> Result<Value, String> {
@@ -237,7 +333,13 @@ pub async fn delete(state: &AppState, id: i64, operator: &str) -> Result<Value, 
     let Some(user) = user_repo::get_by_id(&state.pool, id).await.ok().flatten() else {
         return Err("User tidak ditemukan".into());
     };
-    if user.role() == "admin" && user.active() && user_repo::count_active_admins(&state.pool).await.unwrap_or(0) <= 1 {
+    if user.role() == "admin"
+        && user.active()
+        && user_repo::count_active_admins(&state.pool)
+            .await
+            .unwrap_or(0)
+            <= 1
+    {
         return Err("Tidak dapat menghapus satu-satunya Admin tersisa!".into());
     }
     let (shift_count,): (i64,) =
@@ -268,7 +370,14 @@ pub async fn delete(state: &AppState, id: i64, operator: &str) -> Result<Value, 
         .map_err(|e| e.to_string())?;
     tx.commit().await.map_err(|e| e.to_string())?;
 
-    audit(operator, "HAPUS_USER", &format!("User:{} dihapus secara permanen", user.username), None, "", "");
+    audit(
+        operator,
+        "HAPUS_USER",
+        &format!("User:{} dihapus secara permanen", user.username),
+        None,
+        "",
+        "",
+    );
     Ok(serde_json::json!({"success": true, "message": "User berhasil dihapus"}))
 }
 

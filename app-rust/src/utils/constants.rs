@@ -6,7 +6,13 @@ pub const IDEMPOTENCY_MAX_KEYS: usize = 5000;
 pub const HEARTBEAT_PERSIST_SECONDS: i64 = 30;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PcStatus { Kosong, Terpakai, Offline, Maintenance, Admin }
+pub enum PcStatus {
+    Kosong,
+    Terpakai,
+    Offline,
+    Maintenance,
+    Admin,
+}
 
 impl PcStatus {
     pub fn as_str(self) -> &'static str {
@@ -21,27 +27,48 @@ impl PcStatus {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SesiType { Guest, Member, Admin }
+pub enum SesiType {
+    Guest,
+    Member,
+    Admin,
+}
 
 impl SesiType {
     pub fn as_str(self) -> &'static str {
-        match self { SesiType::Guest => "guest", SesiType::Member => "member", SesiType::Admin => "admin" }
+        match self {
+            SesiType::Guest => "guest",
+            SesiType::Member => "member",
+            SesiType::Admin => "admin",
+        }
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SesiStatus { Aktif, Selesai, Terkunci }
+pub enum SesiStatus {
+    Aktif,
+    Selesai,
+    Terkunci,
+}
 
 impl SesiStatus {
     pub fn as_str(self) -> &'static str {
-        match self { SesiStatus::Aktif => "aktif", SesiStatus::Selesai => "selesai", SesiStatus::Terkunci => "terkunci" }
+        match self {
+            SesiStatus::Aktif => "aktif",
+            SesiStatus::Selesai => "selesai",
+            SesiStatus::Terkunci => "terkunci",
+        }
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TransaksiJenis {
-    BeliPaketGuest, TambahWaktuGuest, BeliPaketMember, TambahWaktuSesi,
-    RefundGuest, RefundMember, TransaksiMenu,
+    BeliPaketGuest,
+    TambahWaktuGuest,
+    BeliPaketMember,
+    TambahWaktuSesi,
+    RefundGuest,
+    RefundMember,
+    TransaksiMenu,
 }
 
 impl TransaksiJenis {
@@ -59,7 +86,12 @@ impl TransaksiJenis {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PaymentMethod { Tunai, Qris, Transfer, Deposit }
+pub enum PaymentMethod {
+    Tunai,
+    Qris,
+    Transfer,
+    Deposit,
+}
 
 impl PaymentMethod {
     pub fn as_str(self) -> &'static str {

@@ -64,7 +64,9 @@ fn ct_eq(a: &[u8], b: &[u8]) -> bool {
 pub fn hash_password(password: &str) -> String {
     let salt: String = {
         let mut rng = rand::rng();
-        (0..16).map(|_| SALT_CHARS[rng.random_range(0..SALT_CHARS.len())] as char).collect()
+        (0..16)
+            .map(|_| SALT_CHARS[rng.random_range(0..SALT_CHARS.len())] as char)
+            .collect()
     };
     let mut out = [0u8; 64];
     let params = scrypt::Params::new(15, 8, 1, 64).expect("parameter scrypt tetap");
@@ -75,7 +77,8 @@ pub fn hash_password(password: &str) -> String {
 /// Menerima hash scrypt Werkzeug maupun pbkdf2 lama agar DB 1.4/1.5 tetap bisa login.
 pub fn verify_password(stored: &str, password: &str) -> bool {
     let mut parts = stored.splitn(3, '$');
-    let (Some(method), Some(salt), Some(hex_hash)) = (parts.next(), parts.next(), parts.next()) else {
+    let (Some(method), Some(salt), Some(hex_hash)) = (parts.next(), parts.next(), parts.next())
+    else {
         return false;
     };
     let expected = match hex::decode(hex_hash.trim()) {
@@ -107,7 +110,12 @@ pub fn verify_password(stored: &str, password: &str) -> bool {
                 return false;
             }
             let mut out = vec![0u8; expected.len()];
-            pbkdf2::pbkdf2_hmac::<sha2::Sha256>(password.as_bytes(), salt.as_bytes(), iterations, &mut out);
+            pbkdf2::pbkdf2_hmac::<sha2::Sha256>(
+                password.as_bytes(),
+                salt.as_bytes(),
+                iterations,
+                &mut out,
+            );
             out
         }
         _ => return false,

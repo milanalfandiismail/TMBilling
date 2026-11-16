@@ -10,7 +10,10 @@ pub fn parse_json(body: &Bytes) -> Value {
 }
 
 pub fn json(status: u16, value: Value) -> Response {
-    (StatusCode::from_u16(status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), axum::Json(value))
+    (
+        StatusCode::from_u16(status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+        axum::Json(value),
+    )
         .into_response()
 }
 

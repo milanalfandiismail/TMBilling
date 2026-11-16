@@ -1,9 +1,12 @@
 //! Guard IP whitelist untuk `/kasir/` dan `/api/v1/kasir/`.
 //!
-//! Sama seperti versi Python, kecuali token bypass berbasis sesi yang menyusul
-//! di Task 4. `CF-Connecting-IP` hanya dipercaya bila peer TCP adalah loopback.
+//! Urutan sama seperti versi Python: token bypass `?token=` → pengecualian auth →
+//! whitelist mati → admin/sesi token → cek IP → blokir. `CF-Connecting-IP` hanya
+//! dipercaya bila peer TCP adalah loopback.
 
-use crate::repositories::settings as settings_repo;
+use crate::middleware::auth::{self, SessionData, SESSION_TTL_SECONDS};
+use crate::repositories::user as user_repo;
+use crate::services::settings::ip_whitelist;
 use crate::state::AppState;
 use axum::body::Body;
 use axum::extract::{ConnectInfo, Request, State};
@@ -11,7 +14,7 @@ use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use serde_json::json;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 const SCOPED_PREFIXES: [&str; 2] = ["/kasir/", "/api/v1/kasir/"];
@@ -32,7 +35,10 @@ fn exempt(path: &str) -> bool {
 pub fn client_ip(headers: &HeaderMap, peer: Option<SocketAddr>) -> String {
     let peer_ip = peer.map(|p| p.ip());
     if matches!(peer_ip, Some(ip) if ip.is_loopback()) {
-        if let Some(v) = headers.get("cf-connecting-ip").and_then(|v| v.to_str().ok()) {
+        if let Some(v) = headers
+            .get("cf-connecting-ip")
+            .and_then(|v| v.to_str().ok())
+        {
             let v = v.trim();
             if !v.is_empty() {
                 return v.to_string();
@@ -47,46 +53,51 @@ pub fn client_ip(headers: &HeaderMap, peer: Option<SocketAddr>) -> String {
             }
         }
     }
-    peer_ip.map(|ip| ip.to_string()).unwrap_or_else(|| "0.0.0.0".into())
+    peer_ip
+        .map(|ip| ip.to_string())
+        .unwrap_or_else(|| "0.0.0.0".into())
 }
 
-fn ipv4_of(ip: &str) -> Option<Ipv4Addr> {
-    match ip.parse::<IpAddr>() {
-        Ok(IpAddr::V4(v4)) => Some(v4),
-        Ok(IpAddr::V6(v6)) => v6.to_ipv4_mapped(),
-        Err(_) => None,
-    }
+fn query_token(query: Option<&str>) -> Option<String> {
+    query?.split('&').find_map(|pair| {
+        let (k, v) = pair.split_once('=')?;
+        (k == "token" && !v.is_empty()).then(|| v.to_string())
+    })
 }
 
-fn in_cidr(addr: Ipv4Addr, cidr: &str) -> bool {
-    let (net, bits) = match cidr.split_once('/') {
-        Some((net, bits)) => (net, bits.parse::<u32>().ok()),
-        None => (cidr, Some(32)),
-    };
-    let (Some(bits), Ok(net)) = (bits, net.parse::<Ipv4Addr>()) else {
-        return false;
-    };
-    if bits > 32 {
+fn same_token(a: &str, b: &str) -> bool {
+    if a.len() != b.len() || a.is_empty() {
         return false;
     }
-    let mask = if bits == 0 { 0 } else { u32::MAX << (32 - bits) };
-    (u32::from(addr) & mask) == (u32::from(net) & mask)
+    a.bytes()
+        .zip(b.bytes())
+        .fold(0u8, |acc, (x, y)| acc | (x ^ y))
+        == 0
 }
 
-pub fn is_ip_whitelisted(entries: &[String], ip: &str) -> bool {
-    match ipv4_of(ip) {
-        Some(addr) => entries.iter().any(|e| in_cidr(addr, e.trim())),
-        None => false,
+fn wants_json(path: &str, headers: &HeaderMap) -> bool {
+    path.starts_with("/api/")
+        || headers
+            .get(header::ACCEPT)
+            .and_then(|v| v.to_str().ok())
+            .is_some_and(|v| v.contains("json"))
+}
+
+fn redirect(to: &str, cookies: &[String]) -> Response {
+    let mut res = (StatusCode::FOUND, Body::empty()).into_response();
+    if let Ok(value) = HeaderValue::from_str(to) {
+        res.headers_mut().insert(header::LOCATION, value);
     }
+    for cookie in cookies {
+        if let Ok(value) = cookie.parse() {
+            res.headers_mut().append(header::SET_COOKIE, value);
+        }
+    }
+    res
 }
 
-async fn whitelist_entries(state: &AppState) -> Vec<String> {
-    let raw = settings_repo::get(&state.pool, "ip_whitelist", "[]").await;
-    let parsed: Vec<serde_json::Value> = serde_json::from_str(&raw).unwrap_or_default();
-    parsed
-        .iter()
-        .filter_map(|e| e.get("ip").and_then(|v| v.as_str()).map(|s| s.to_string()))
-        .collect()
+fn session_of(state: &AppState, headers: &HeaderMap) -> Option<SessionData> {
+    crate::utils::http::cookie(headers, auth::COOKIE).and_then(|raw| auth::decode(&state.cfg, &raw))
 }
 
 pub async fn guard(State(state): State<Arc<AppState>>, req: Request, next: Next) -> Response {
@@ -94,49 +105,108 @@ pub async fn guard(State(state): State<Arc<AppState>>, req: Request, next: Next)
     if !in_scope(&path) || exempt(&path) {
         return next.run(req).await;
     }
-    let enabled = settings_repo::get(&state.pool, "ip_whitelist_enabled", "true").await == "true";
-    if !enabled {
+
+    let headers = req.headers().clone();
+    let peer = req
+        .extensions()
+        .get::<ConnectInfo<SocketAddr>>()
+        .map(|c| c.0);
+    let ip = client_ip(&headers, peer);
+
+    if ip_whitelist::is_enabled(&state).await {
+        let current = ip_whitelist::token(&state).await;
+        if let Some(url_token) = query_token(req.uri().query()) {
+            if same_token(&url_token, &current) {
+                let session = SessionData {
+                    uid: 0,
+                    uname: String::new(),
+                    role: String::new(),
+                    nama: None,
+                    exp: chrono::Utc::now().timestamp() + SESSION_TTL_SECONDS,
+                    ipwh: true,
+                    ipwhv: ip_whitelist::token_version(&state).await,
+                };
+                return redirect(&path, &[auth::session_cookie(&state.cfg, &session)]);
+            }
+        }
+    }
+
+    if !ip_whitelist::is_enabled(&state).await {
         return next.run(req).await;
     }
 
-    let peer = req.extensions().get::<ConnectInfo<SocketAddr>>().map(|c| c.0);
-    let ip = client_ip(req.headers(), peer);
-    let entries = whitelist_entries(&state).await;
-    if is_ip_whitelisted(&entries, &ip) {
+    let session = session_of(&state, &headers);
+    if let Some(s) = &session {
+        if s.role == "admin" {
+            if let Ok(Some(user)) = user_repo::get_by_id(&state.pool, s.uid).await {
+                if user.active() && user.role() == "admin" {
+                    return next.run(req).await;
+                }
+            }
+        }
+        if ip_whitelist::is_session_token_valid(
+            s.ipwh,
+            s.ipwhv,
+            ip_whitelist::token_version(&state).await,
+        ) {
+            return next.run(req).await;
+        }
+    }
+
+    if ip_whitelist::is_allowed(&state, &ip).await {
         return next.run(req).await;
     }
 
+    let logged_in = session.as_ref().is_some_and(|s| s.uid > 0);
+    let mut cookies = Vec::new();
+    if logged_in {
+        let username = session
+            .as_ref()
+            .map(|s| s.uname.clone())
+            .unwrap_or_else(|| "anonymous".into());
+        let role = session.as_ref().map(|s| s.role.clone()).unwrap_or_default();
+        crate::utils::logger::audit(
+            &username,
+            "IP_WHITELIST_SESSION_DESTROY",
+            &format!("Session user {username} ({role}) dari IP {ip} dihancurkan karena IP dihapus dari whitelist"),
+            None,
+            &ip,
+            "",
+        );
+        cookies.push(auth::clear_session_cookie());
+    }
     crate::utils::logger::audit(
         "anonymous",
         "IP_WHITELIST_BLOCK",
-        &format!("IP {ip} diblokir mengakses {path}"),
+        &format!(
+            "IP {ip} diblokir mengakses {path} (method: {})",
+            req.method()
+        ),
         None,
         &ip,
         "",
     );
 
-    if path.starts_with("/api/") {
-        (StatusCode::FORBIDDEN, axum::Json(json!({"error": "forbidden", "ip": ip}))).into_response()
-    } else {
-        let mut res = (StatusCode::FOUND, Body::empty()).into_response();
-        res.headers_mut()
-            .insert(header::LOCATION, HeaderValue::from_static("/kasir/login"));
+    if wants_json(&path, &headers) {
+        let mut res = (
+            StatusCode::FORBIDDEN,
+            axum::Json(json!({"error": "forbidden", "ip": ip})),
+        )
+            .into_response();
+        for cookie in cookies {
+            if let Ok(value) = cookie.parse() {
+                res.headers_mut().append(header::SET_COOKIE, value);
+            }
+        }
         res
+    } else {
+        redirect("/kasir/login", &cookies)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn cidr_dan_ip_tunggal_cocok() {
-        let entries = vec!["192.168.1.10".to_string(), "10.0.0.0/8".to_string()];
-        assert!(is_ip_whitelisted(&entries, "192.168.1.10"));
-        assert!(is_ip_whitelisted(&entries, "10.9.9.9"));
-        assert!(!is_ip_whitelisted(&entries, "192.168.1.11"));
-        assert!(!is_ip_whitelisted(&entries, "bukan-ip"));
-    }
 
     #[test]
     fn header_proxy_hanya_dari_loopback() {
@@ -146,5 +216,17 @@ mod tests {
         let lan = Some(SocketAddr::from(([192, 168, 1, 5], 5000)));
         assert_eq!(client_ip(&headers, loopback), "1.2.3.4");
         assert_eq!(client_ip(&headers, lan), "192.168.1.5");
+    }
+
+    #[test]
+    fn token_query_dibaca_dan_dibandingkan_konstan() {
+        assert_eq!(
+            query_token(Some("a=1&token=rahasia")),
+            Some("rahasia".into())
+        );
+        assert_eq!(query_token(Some("token=")), None);
+        assert!(same_token("rahasia", "rahasia"));
+        assert!(!same_token("rahasia", "rahasib"));
+        assert!(!same_token("", ""));
     }
 }

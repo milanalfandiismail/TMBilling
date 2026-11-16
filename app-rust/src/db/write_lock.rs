@@ -12,14 +12,23 @@ pub struct WriteLock {
 }
 
 impl WriteLock {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub async fn acquire(&self) -> MutexGuard<'_, ()> {
         let mulai = Instant::now();
         let guard = self.inner.lock().await;
         let tunggu = mulai.elapsed().as_secs_f64();
         if tunggu >= WRITE_LOCK_SLOW_SECONDS {
-            logger::audit("SYSTEM", "WRITE_LOCK_SLOW", &format!("Menunggu lock {tunggu:.2} detik"), None, "-", "SYSTEM");
+            logger::audit(
+                "SYSTEM",
+                "WRITE_LOCK_SLOW",
+                &format!("Menunggu lock {tunggu:.2} detik"),
+                None,
+                "-",
+                "SYSTEM",
+            );
         }
         guard
     }

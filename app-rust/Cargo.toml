@@ -12,6 +12,14 @@ name = "tmbilling-server"
 path = "src/main.rs"
 
 [[test]]
+name = "cache_test"
+path = "tests/unit/cache_test.rs"
+
+[[test]]
+name = "settings_test"
+path = "tests/contract/settings_test.rs"
+
+[[test]]
 name = "auth_test"
 path = "tests/contract/auth_test.rs"
 
@@ -46,6 +54,7 @@ chrono-tz = "0.10"
 rand = "0.9"
 flate2 = "1"
 tracing = "0.1"
+ammonia = "4"
 axum = "0.8"
 rust-embed = "8"
 minijinja = "2"

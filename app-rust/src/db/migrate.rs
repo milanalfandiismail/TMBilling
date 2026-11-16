@@ -85,7 +85,9 @@ pub async fn ensure_schema(pool: &SqlitePool, db_path: &Path, backup_dir: &Path)
     let mut report = Report::default();
 
     if existing.is_empty() {
-        exec_script(pool, HEAD_SQL).await.context("membuat skema head awal")?;
+        exec_script(pool, HEAD_SQL)
+            .await
+            .context("membuat skema head awal")?;
         stamp(pool).await?;
         report.fresh = true;
         report.created_tables = head.tables.len();
@@ -125,21 +127,28 @@ pub async fn ensure_schema(pool: &SqlitePool, db_path: &Path, backup_dir: &Path)
     }
 
     for table in &missing_tables {
-        exec_script(pool, &table.create_sql).await
+        exec_script(pool, &table.create_sql)
+            .await
             .with_context(|| format!("membuat tabel {}", table.name))?;
         report.created_tables += 1;
     }
     for (table, col) in &missing_columns {
-        let mut ddl = format!("ALTER TABLE \"{table}\" ADD COLUMN \"{}\" {}", col.name, col.ty);
+        let mut ddl = format!(
+            "ALTER TABLE \"{table}\" ADD COLUMN \"{}\" {}",
+            col.name, col.ty
+        );
         if let Some(default) = &col.default {
             ddl.push_str(&format!(" DEFAULT {default}"));
         }
-        sqlx::query(&ddl).execute(pool).await
+        sqlx::query(&ddl)
+            .execute(pool)
+            .await
             .with_context(|| format!("menambah kolom {table}.{}", col.name))?;
         report.added_columns += 1;
     }
     for index in &missing_indexes {
-        exec_script(pool, &index.sql).await
+        exec_script(pool, &index.sql)
+            .await
             .with_context(|| format!("membuat index {}", index.name))?;
         report.created_indexes += 1;
     }
@@ -165,10 +174,11 @@ async fn column_names(pool: &SqlitePool, table: &str) -> Result<Vec<String>> {
 }
 
 async fn index_names(pool: &SqlitePool) -> Result<Vec<String>> {
-    let rows: Vec<(String,)> =
-        sqlx::query_as("SELECT name FROM sqlite_master WHERE type='index' AND name NOT LIKE 'sqlite_%'")
-            .fetch_all(pool)
-            .await?;
+    let rows: Vec<(String,)> = sqlx::query_as(
+        "SELECT name FROM sqlite_master WHERE type='index' AND name NOT LIKE 'sqlite_%'",
+    )
+    .fetch_all(pool)
+    .await?;
     Ok(rows.into_iter().map(|r| r.0).collect())
 }
 
@@ -187,7 +197,10 @@ async fn snapshot(pool: &SqlitePool, db_path: &Path, backup_dir: &Path) -> Resul
         .with_context(|| format!("snapshot database ke {}", dest.display()))?;
     let src_len = std::fs::metadata(db_path).map(|m| m.len()).unwrap_or(0);
     let dest_len = std::fs::metadata(&dest).map(|m| m.len()).unwrap_or(0);
-    anyhow::ensure!(dest_len > 0 && dest_len >= src_len / 2, "snapshot database tidak lengkap");
+    anyhow::ensure!(
+        dest_len > 0 && dest_len >= src_len / 2,
+        "snapshot database tidak lengkap"
+    );
     Ok(dest)
 }
 
@@ -199,7 +212,9 @@ async fn stamp(pool: &SqlitePool) -> Result<()> {
     )
     .execute(pool)
     .await?;
-    sqlx::query("DELETE FROM alembic_version").execute(pool).await?;
+    sqlx::query("DELETE FROM alembic_version")
+        .execute(pool)
+        .await?;
     sqlx::query("INSERT INTO alembic_version (version_num) VALUES (?)")
         .bind(HEAD_REVISION)
         .execute(pool)

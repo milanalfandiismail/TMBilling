@@ -43,7 +43,11 @@ pub fn check(ip: &str, username: &str) -> bool {
 pub fn fail(ip: &str, username: &str) {
     let now = Instant::now();
     let mut map = store().lock().unwrap();
-    map.retain(|_, list| list.last().map(|t| now.duration_since(*t) < WINDOW).unwrap_or(false));
+    map.retain(|_, list| {
+        list.last()
+            .map(|t| now.duration_since(*t) < WINDOW)
+            .unwrap_or(false)
+    });
     map.entry(pair_key(ip, username)).or_default().push(now);
     map.entry(ip_key(ip)).or_default().push(now);
 }

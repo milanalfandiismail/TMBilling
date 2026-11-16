@@ -53,8 +53,14 @@ async fn get(st: Arc<AppState>, uri: &str, peer: SocketAddr) -> (StatusCode, Str
     (status, String::from_utf8_lossy(&body).to_string())
 }
 
-const LAN: SocketAddr = SocketAddr::new(std::net::IpAddr::V4(std::net::Ipv4Addr::new(192, 168, 1, 50)), 5000);
-const LOCAL: SocketAddr = SocketAddr::new(std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)), 5000);
+const LAN: SocketAddr = SocketAddr::new(
+    std::net::IpAddr::V4(std::net::Ipv4Addr::new(192, 168, 1, 50)),
+    5000,
+);
+const LOCAL: SocketAddr = SocketAddr::new(
+    std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)),
+    5000,
+);
 
 #[tokio::test]
 async fn health_tanpa_angka_atau_path() {
@@ -63,7 +69,10 @@ async fn health_tanpa_angka_atau_path() {
     assert_eq!(status, StatusCode::OK);
     assert!(body.contains("\"status\""));
     assert!(body.contains("\"db\"") && body.contains("\"disk\"") && body.contains("\"backup\""));
-    assert!(!body.contains("warnet.db"), "path database tidak boleh bocor: {body}");
+    assert!(
+        !body.contains("warnet.db"),
+        "path database tidak boleh bocor: {body}"
+    );
 }
 
 #[tokio::test]
@@ -107,11 +116,19 @@ async fn whitelist_mengizinkan_ip_terdaftar_dan_bypass_login() {
     settings_repo::set(&st.pool, "ip_whitelist", "[{\"ip\":\"192.168.1.50\"}]")
         .await
         .unwrap();
+    st.settings.invalidate();
     let (status, _) = get(st.clone(), "/kasir/", LAN).await;
     assert_eq!(status, StatusCode::OK);
     // wholescope check: rute api di luar whitelist → 403 JSON dengan field ip
-    let (status, body) = get(st, "/api/v1/kasir/whatever", SocketAddr::new(
-        std::net::IpAddr::V4(std::net::Ipv4Addr::new(192, 168, 1, 99)), 5000)).await;
+    let (status, body) = get(
+        st,
+        "/api/v1/kasir/whatever",
+        SocketAddr::new(
+            std::net::IpAddr::V4(std::net::Ipv4Addr::new(192, 168, 1, 99)),
+            5000,
+        ),
+    )
+    .await;
     assert_eq!(status, StatusCode::FORBIDDEN);
     assert!(body.contains("\"error\":\"forbidden\""));
 }

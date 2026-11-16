@@ -2,9 +2,8 @@
 
 use crate::middleware::auth::{self, Kasir};
 use crate::middleware::csrf;
-use crate::middleware::whitelist;
-use crate::repositories::settings as settings_repo;
 use crate::services::auth::{auth_kasir_service, login_throttle};
+use crate::services::settings::ip_whitelist;
 use crate::state::AppState;
 use crate::utils::http;
 use axum::body::Bytes;
@@ -16,16 +15,11 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 fn str_of(data: &serde_json::Value, key: &str) -> String {
-    data.get(key).and_then(|v| v.as_str()).unwrap_or("").trim().to_string()
-}
-
-async fn ip_whitelist_entries(state: &AppState) -> Vec<String> {
-    let raw = settings_repo::get(&state.pool, "ip_whitelist", "[]").await;
-    serde_json::from_str::<Vec<serde_json::Value>>(&raw)
-        .unwrap_or_default()
-        .iter()
-        .filter_map(|e| e.get("ip").and_then(|v| v.as_str()).map(str::to_string))
-        .collect()
+    data.get(key)
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string()
 }
 
 pub async fn login(
@@ -36,23 +30,31 @@ pub async fn login(
 ) -> Response {
     let data = http::parse_json(&body);
     let username = str_of(&data, "username");
-    let password = data.get("password").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let password = data
+        .get("password")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let ip = auth_kasir_service::request_ip(&headers, peer);
     let agent = auth_kasir_service::user_agent(&headers);
 
     if login_throttle::check(&ip, &username) {
-        return http::err(429, "Terlalu banyak percobaan login. Coba lagi dalam 5 menit.");
+        return http::err(
+            429,
+            "Terlalu banyak percobaan login. Coba lagi dalam 5 menit.",
+        );
     }
 
-    let Some(pre_user) = auth_kasir_service::validate_credentials_only(&state.pool, &username, &password).await else {
+    let Some(pre_user) =
+        auth_kasir_service::validate_credentials_only(&state.pool, &username, &password).await
+    else {
         login_throttle::fail(&ip, &username);
         return http::err(401, "Username atau password salah");
     };
 
-    // shortcut: bypass token whitelist (?token=...) menyusul di Task 5 bersama pengaturan.
     if pre_user.role() != "admin"
-        && settings_repo::get(&state.pool, "ip_whitelist_enabled", "true").await == "true"
-        && !whitelist::is_ip_whitelisted(&ip_whitelist_entries(&state).await, &ip)
+        && ip_whitelist::is_enabled(&state).await
+        && !ip_whitelist::is_allowed(&state, &ip).await
     {
         crate::utils::logger::audit(
             "system",
@@ -75,7 +77,10 @@ pub async fn login(
         Ok(user) => {
             login_throttle::ok(&ip, &username);
             let session = auth::build_session(&user);
-            let cookies = vec![auth::session_cookie(&state.cfg, &session), csrf::cookie_header(&csrf::new_token())];
+            let cookies = vec![
+                auth::session_cookie(&state.cfg, &session),
+                csrf::cookie_header(&csrf::new_token()),
+            ];
             http::json_with_cookies(
                 200,
                 json!({
@@ -90,7 +95,11 @@ pub async fn login(
     }
 }
 
-pub async fn logout(State(state): State<Arc<AppState>>, kasir: Kasir, headers: HeaderMap) -> Response {
+pub async fn logout(
+    State(state): State<Arc<AppState>>,
+    kasir: Kasir,
+    headers: HeaderMap,
+) -> Response {
     let ip = headers
         .get("x-forwarded-for")
         .and_then(|v| v.to_str().ok())
@@ -119,7 +128,11 @@ pub async fn check(State(state): State<Arc<AppState>>, headers: HeaderMap) -> Re
                 "nama_lengkap": user.nama_lengkap,
             }),
         ),
-        None => http::json_with_cookies(200, json!({"logged_in": false}), &[auth::clear_session_cookie()]),
+        None => http::json_with_cookies(
+            200,
+            json!({"logged_in": false}),
+            &[auth::clear_session_cookie()],
+        ),
     }
 }
 
@@ -131,12 +144,19 @@ pub async fn admin_check(
 ) -> Response {
     let data = http::parse_json(&body);
     let username = str_of(&data, "username");
-    let password = data.get("password").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let password = data
+        .get("password")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let ip = auth_kasir_service::request_ip(&headers, peer);
     let agent = auth_kasir_service::user_agent(&headers);
 
     if login_throttle::check(&ip, &username) {
-        return http::err(429, "Terlalu banyak percobaan login. Coba lagi dalam 5 menit.");
+        return http::err(
+            429,
+            "Terlalu banyak percobaan login. Coba lagi dalam 5 menit.",
+        );
     }
     match auth_kasir_service::validate_admin(&state.pool, &username, &password, &ip, &agent).await {
         Ok(user) => {
