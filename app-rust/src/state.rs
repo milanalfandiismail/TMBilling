@@ -1,8 +1,11 @@
 //! State global yang dibagikan ke setiap handler.
 
+use crate::cache::command::Queues;
+use crate::cache::mismatch::MismatchStore;
 use crate::cache::online::OnlineStatusStore;
 use crate::cache::pc_network::PcNetworkCache;
 use crate::cache::settings::SettingsCache;
+use crate::cache::uptime::UptimeStore;
 use crate::config::{paths, Config};
 use crate::db::write_lock::WriteLock;
 use crate::utils::logger;
@@ -16,6 +19,9 @@ pub struct AppState {
     pub settings: SettingsCache,
     pub online: OnlineStatusStore,
     pub pc_network: PcNetworkCache,
+    pub commands: Queues,
+    pub mismatch: MismatchStore,
+    pub uptime: UptimeStore,
     write: WriteLock,
 }
 
@@ -42,6 +48,9 @@ impl AppState {
             settings: SettingsCache::new(),
             online: OnlineStatusStore::new(),
             pc_network: PcNetworkCache::new(),
+            commands: Queues::default(),
+            mismatch: MismatchStore::default(),
+            uptime: UptimeStore::default(),
             write: WriteLock::new(),
         };
         crate::services::settings::ip_whitelist::seed_defaults(&state).await?;

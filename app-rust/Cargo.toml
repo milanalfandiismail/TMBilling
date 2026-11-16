@@ -82,3 +82,7 @@ http-body-util = "0.1"
 [[test]]
 name = "member_shift_notes_test"
 path = "tests/contract/member_shift_notes_test.rs"
+
+[[test]]
+name = "client_agent_test"
+path = "tests/contract/client_agent_test.rs"

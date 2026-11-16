@@ -19,7 +19,6 @@ use crate::utils::time::{db_str, now_db, parse_dt};
 use crate::utils::validators::{email, int_range, password, phone, text, username_lower};
 
 struct GrupInfo {
-    id: i64,
     nama: String,
     warna: String,
 }
@@ -30,7 +29,6 @@ async fn grup_info(pool: &SqlitePool, id: i64) -> Result<GrupInfo, String> {
         .map_err(|e| e.to_string())?
         .ok_or("Grup member tidak valid")?;
     Ok(GrupInfo {
-        id: grup.id,
         nama: grup.nama,
         warna: grup.warna.clone().unwrap_or_else(|| "#888888".into()),
     })

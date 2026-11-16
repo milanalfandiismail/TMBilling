@@ -4,6 +4,7 @@ use crate::assets::StaticAssets;
 use crate::middleware::{csrf, whitelist};
 use crate::routes::auth::auth_kasir;
 use crate::routes::blackout::blackout_routes;
+use crate::routes::client::client_routes;
 use crate::routes::game::{game_public_routes, game_routes};
 use crate::routes::grup::grup_routes;
 use crate::routes::member::member_routes;
@@ -380,8 +381,53 @@ pub fn router(state: Arc<AppState>) -> Router {
             whitelist::guard,
         ));
 
+    let client_api = Router::new()
+        .route(
+            "/api/v1/public/client/identify",
+            post(client_routes::identify),
+        )
+        .route("/api/v1/public/client/status", post(client_routes::status))
+        .route(
+            "/api/v1/public/client/selesai",
+            post(client_routes::selesai),
+        )
+        .route(
+            "/api/v1/public/client/admin-login",
+            post(client_routes::admin_login),
+        )
+        .route(
+            "/api/v1/public/client/emergency-login",
+            post(client_routes::emergency_login),
+        )
+        .route(
+            "/api/v1/public/client/afk-lock",
+            post(client_routes::afk_lock),
+        )
+        .route(
+            "/api/v1/public/client/afk-unlock",
+            post(client_routes::afk_unlock),
+        )
+        .route("/api/v1/public/client/warnet", get(client_routes::warnet))
+        .route(
+            "/api/v1/public/client/vnc_ready",
+            post(client_routes::vnc_ready),
+        )
+        .route(
+            "/api/v1/public/client/vnc_stopped",
+            post(client_routes::vnc_stopped),
+        )
+        .route(
+            "/api/v1/public/client/fast_poll",
+            post(client_routes::fast_poll),
+        )
+        .route(
+            "/api/v1/public/client/vnc_poll",
+            post(client_routes::fast_poll),
+        );
+
     Router::new()
         .route("/api/health", get(health::health))
+        .merge(client_api)
         .merge(guarded)
         .route("/static/{*path}", get(static_file))
         .with_state(state)

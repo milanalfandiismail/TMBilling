@@ -1,5 +1,6 @@
 pub mod auth;
 pub mod blackout;
+pub mod client;
 pub mod game;
 pub mod grup;
 pub mod member;

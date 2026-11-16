@@ -118,3 +118,22 @@ pub async fn count_aktif_sesi(pool: &SqlitePool, pc_id: i64) -> anyhow::Result<i
             .await?;
     Ok(row.0)
 }
+
+pub async fn set_mac(pool: &SqlitePool, pc_id: i64, mac: &str) -> sqlx::Result<()> {
+    sqlx::query("UPDATE pc SET mac_address = ? WHERE id = ?")
+        .bind(mac)
+        .bind(pc_id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+pub async fn set_admin_mode(pool: &SqlitePool, pc_id: i64, aktif: bool) -> sqlx::Result<()> {
+    sqlx::query("UPDATE pc SET is_admin_mode = ?, last_activity = ? WHERE id = ?")
+        .bind(if aktif { 1 } else { 0 })
+        .bind(crate::utils::time::db_str(crate::utils::time::now_db()))
+        .bind(pc_id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
