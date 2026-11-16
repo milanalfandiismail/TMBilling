@@ -3,6 +3,11 @@
 use crate::assets::StaticAssets;
 use crate::middleware::{csrf, whitelist};
 use crate::routes::auth::auth_kasir;
+use crate::routes::game::{game_public_routes, game_routes};
+use crate::routes::grup::grup_routes;
+use crate::routes::menu::menu_routes;
+use crate::routes::paket::paket_routes;
+use crate::routes::pc::pc_routes;
 use crate::routes::public::health;
 use crate::routes::settings::settings_routes;
 use crate::routes::user::user_routes;
@@ -77,6 +82,138 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route(
             "/api/v1/kasir/settings/{key}",
             get(settings_routes::get_one).put(settings_routes::put_one),
+        )
+        .route(
+            "/api/v1/kasir/grup",
+            get(grup_routes::list).post(grup_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/grup/",
+            get(grup_routes::list).post(grup_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/grup/{id}",
+            put(grup_routes::update).delete(grup_routes::hapus),
+        )
+        .route(
+            "/api/v1/kasir/grup/{id}/archive",
+            post(grup_routes::archive),
+        )
+        .route(
+            "/api/v1/kasir/grup/{id}/restore",
+            post(grup_routes::restore),
+        )
+        .route(
+            "/api/v1/kasir/paket",
+            get(paket_routes::list).post(paket_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/paket/",
+            get(paket_routes::list).post(paket_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/paket/{id}",
+            put(paket_routes::update).delete(paket_routes::hapus),
+        )
+        .route(
+            "/api/v1/kasir/paket/{id}/archive",
+            post(paket_routes::archive),
+        )
+        .route(
+            "/api/v1/kasir/paket/{id}/restore",
+            post(paket_routes::restore),
+        )
+        .route(
+            "/api/v1/kasir/pc",
+            get(pc_routes::list).post(pc_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/pc/",
+            get(pc_routes::list).post(pc_routes::create),
+        )
+        .route("/api/v1/kasir/pc/batch", post(pc_routes::batch))
+        .route("/api/v1/kasir/pc/wol", post(pc_routes::wol))
+        .route(
+            "/api/v1/kasir/pc/{id}",
+            get(pc_routes::get_one)
+                .put(pc_routes::update)
+                .delete(pc_routes::hapus),
+        )
+        .route("/api/v1/kasir/pc/{id}/archive", post(pc_routes::archive))
+        .route("/api/v1/kasir/pc/{id}/restore", post(pc_routes::restore))
+        .route("/api/v1/kasir/pc/{id}/position", put(pc_routes::position))
+        .route(
+            "/api/v1/kasir/pc/reset-admin/{id}",
+            post(pc_routes::reset_admin),
+        )
+        .route(
+            "/api/v1/kasir/game",
+            get(game_routes::list).post(game_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/game/",
+            get(game_routes::list).post(game_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/game/kategori",
+            get(game_routes::kategori_list).post(game_routes::kategori_create),
+        )
+        .route(
+            "/api/v1/kasir/game/kategori/{id}",
+            axum::routing::delete(game_routes::kategori_hapus),
+        )
+        .route(
+            "/api/v1/kasir/game/{id}",
+            post(game_routes::update)
+                .put(game_routes::update)
+                .delete(game_routes::hapus),
+        )
+        .route(
+            "/api/v1/kasir/game/{id}/archive",
+            post(game_routes::archive),
+        )
+        .route(
+            "/api/v1/kasir/game/{id}/restore",
+            post(game_routes::restore),
+        )
+        .route(
+            "/api/v1/kasir/menu",
+            get(menu_routes::list).post(menu_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/menu/",
+            get(menu_routes::list).post(menu_routes::create),
+        )
+        .route("/api/v1/kasir/menu/archived", get(menu_routes::archived))
+        .route("/api/v1/kasir/menu/checkout", post(menu_routes::checkout))
+        .route(
+            "/api/v1/kasir/menu/stock-logs",
+            get(menu_routes::stock_logs),
+        )
+        .route(
+            "/api/v1/kasir/menu/stock-logs/dates",
+            get(menu_routes::stock_log_dates),
+        )
+        .route(
+            "/api/v1/kasir/menu/{id}",
+            put(menu_routes::update).delete(menu_routes::hapus),
+        )
+        .route(
+            "/api/v1/kasir/menu/{id}/tambah-stok",
+            post(menu_routes::tambah_stok),
+        )
+        .route(
+            "/api/v1/kasir/menu/{id}/restore",
+            post(menu_routes::restore),
+        )
+        .route(
+            "/api/v1/kasir/menu/{id}/permanent",
+            axum::routing::delete(menu_routes::permanent),
+        )
+        .route("/api/v1/public/game/all", get(game_public_routes::list))
+        .route(
+            "/api/v1/public/game/kategori",
+            get(game_public_routes::kategori_list),
         );
 
     let guarded = Router::new()

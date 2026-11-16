@@ -121,3 +121,35 @@ mod tests {
         assert!(int_range(&serde_json::json!("abc"), 0, 100, "x").is_err());
     }
 }
+
+/// IPv4 opsional: kosong → Ok(None), format salah → pesan Python.
+pub fn ip_address(raw: &str) -> Result<Option<String>, String> {
+    let cleaned = raw.trim();
+    if cleaned.is_empty() {
+        return Ok(None);
+    }
+    match cleaned.parse::<std::net::Ipv4Addr>() {
+        Ok(ip) => Ok(Some(ip.to_string())),
+        Err(_) => Err("Format alamat IP tidak valid (contoh: 192.168.1.100)".into()),
+    }
+}
+
+/// MAC opsional, dinormalkan ke `AA:BB:CC:DD:EE:FF`.
+pub fn mac_address(raw: &str) -> Result<Option<String>, String> {
+    let cleaned: String = raw
+        .trim()
+        .chars()
+        .filter(|c| !matches!(c, ':' | '-' | '.'))
+        .collect::<String>()
+        .to_uppercase();
+    if cleaned.is_empty() {
+        return Ok(None);
+    }
+    if cleaned.len() != 12 || !cleaned.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err("Format alamat MAC address tidak valid (contoh: AA:BB:CC:DD:EE:FF)".into());
+    }
+    let pasangan: Vec<String> = (0..6)
+        .map(|i| cleaned[i * 2..i * 2 + 2].to_string())
+        .collect();
+    Ok(Some(pasangan.join(":")))
+}
