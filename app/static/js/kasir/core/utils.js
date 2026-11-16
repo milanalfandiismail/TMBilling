@@ -46,8 +46,8 @@ const Utils = {
         return tgl.toLocaleDateString('id-ID');
     },
     escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m] || m));
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m] || m));
     },
     debounce(func, wait = 500) {
         let timeout;
