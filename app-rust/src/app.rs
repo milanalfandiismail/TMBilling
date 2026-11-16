@@ -7,16 +7,21 @@ use crate::routes::blackout::blackout_routes;
 use crate::routes::client::client_routes;
 use crate::routes::game::{game_public_routes, game_routes};
 use crate::routes::grup::grup_routes;
+use crate::routes::hardware::uptime_routes;
 use crate::routes::member::member_routes;
 use crate::routes::menu::menu_routes;
+use crate::routes::mikrotik::mikrotik_routes;
+use crate::routes::monitor::monitor_routes;
 use crate::routes::notes::note_routes;
 use crate::routes::paket::paket_routes;
 use crate::routes::pc::pc_routes;
 use crate::routes::public::health;
+use crate::routes::server_monitor::server_monitor_routes;
 use crate::routes::sesi::sesi_routes;
 use crate::routes::settings::settings_routes;
 use crate::routes::shift::shift_routes;
 use crate::routes::user::user_routes;
+use crate::routes::vnc::vnc_routes;
 use crate::state::AppState;
 use axum::body::Body;
 use axum::extract::Path;
@@ -381,7 +386,125 @@ pub fn router(state: Arc<AppState>) -> Router {
             whitelist::guard,
         ));
 
+    let kasir_monitor = Router::new()
+        .route("/api/v1/kasir/monitor/all", get(monitor_routes::all))
+        .route(
+            "/api/v1/kasir/monitor/hardware/{pc_id}",
+            get(monitor_routes::one),
+        )
+        .route(
+            "/api/v1/kasir/monitor/{hardware_id}",
+            axum::routing::delete(monitor_routes::hapus),
+        )
+        .route(
+            "/api/v1/kasir/monitor/processes/{pc_id}",
+            get(monitor_routes::proses),
+        )
+        .route(
+            "/api/v1/kasir/monitor/processes/{pc_id}/trigger",
+            post(monitor_routes::trigger_proses),
+        )
+        .route(
+            "/api/v1/kasir/monitor/processes/{pc_id}/kill",
+            post(monitor_routes::kill_proses),
+        )
+        .route(
+            "/api/v1/kasir/monitor/register/{pc_id}",
+            post(monitor_routes::baseline),
+        )
+        .route(
+            "/api/v1/kasir/monitor/screenshot/trigger/{pc_id}",
+            post(monitor_routes::screenshot_trigger),
+        )
+        .route(
+            "/api/v1/kasir/monitor/screenshot/status/{pc_id}",
+            get(monitor_routes::screenshot_status),
+        )
+        .route(
+            "/api/v1/kasir/monitor/screenshot/image/{pc_id}",
+            get(monitor_routes::screenshot_image),
+        )
+        .route(
+            "/api/v1/kasir/monitor/screenshot/all",
+            get(monitor_routes::screenshot_all),
+        )
+        .route(
+            "/api/v1/kasir/monitor/remote/{pc_id}/afk-lock",
+            post(monitor_routes::remote_afk_lock),
+        )
+        .route(
+            "/api/v1/kasir/monitor/remote/{pc_id}/afk-unlock",
+            post(monitor_routes::remote_afk_unlock),
+        )
+        .route(
+            "/api/v1/kasir/monitor/remote/batch",
+            post(monitor_routes::remote_batch),
+        )
+        .route(
+            "/api/v1/kasir/monitor/remote/{pc_id}/{action}",
+            post(monitor_routes::remote_action),
+        )
+        .route("/api/v1/kasir/vnc/status", get(vnc_routes::status))
+        .route("/api/v1/kasir/vnc/start", post(vnc_routes::start))
+        .route(
+            "/api/v1/kasir/vnc/client/{pc_id}/start",
+            post(vnc_routes::client_start),
+        )
+        .route(
+            "/api/v1/kasir/vnc/client/{pc_id}/stop",
+            post(vnc_routes::client_stop),
+        )
+        .route(
+            "/api/v1/kasir/vnc/client/{pc_id}/status",
+            get(vnc_routes::client_status),
+        )
+        .route(
+            "/api/v1/kasir/monitor/vnc_client/{pc_id}/start",
+            post(vnc_routes::client_start),
+        )
+        .route(
+            "/api/v1/kasir/monitor/vnc_client/{pc_id}/stop",
+            post(vnc_routes::client_stop),
+        )
+        .route(
+            "/api/v1/kasir/monitor/vnc_client/{pc_id}/status",
+            get(vnc_routes::client_status),
+        )
+        .route(
+            "/api/v1/kasir/mikrotik/config",
+            get(mikrotik_routes::get_config).post(mikrotik_routes::save_config),
+        )
+        .route("/api/v1/kasir/mikrotik/test", post(mikrotik_routes::test))
+        .route(
+            "/api/v1/kasir/mikrotik/sync_all",
+            post(mikrotik_routes::sync_all),
+        )
+        .route(
+            "/api/v1/kasir/server-monitor",
+            get(server_monitor_routes::metrics),
+        )
+        .route(
+            "/api/v1/kasir/server-monitor/lhm/start",
+            post(server_monitor_routes::lhm_start),
+        )
+        .route(
+            "/api/v1/kasir/server-monitor/lhm/stop",
+            post(server_monitor_routes::lhm_stop),
+        )
+        .route(
+            "/api/v1/kasir/server-monitor/lhm/status",
+            get(server_monitor_routes::lhm_status),
+        )
+        .route("/api/v1/kasir/uptime/daily", get(uptime_routes::daily))
+        .route("/api/v1/kasir/uptime/range", get(uptime_routes::range));
+
     let client_api = Router::new()
+        .route("/api/v1/public/monitor/", post(monitor_routes::receive))
+        .route("/api/v1/public/monitor", post(monitor_routes::receive))
+        .route(
+            "/api/v1/public/client/screenshot/upload",
+            post(monitor_routes::screenshot_upload),
+        )
         .route(
             "/api/v1/public/client/identify",
             post(client_routes::identify),
@@ -428,6 +551,17 @@ pub fn router(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/api/health", get(health::health))
         .merge(client_api)
+        .merge(
+            kasir_monitor
+                .layer(axum::middleware::from_fn_with_state(
+                    state.clone(),
+                    csrf::guard,
+                ))
+                .layer(axum::middleware::from_fn_with_state(
+                    state.clone(),
+                    whitelist::guard,
+                )),
+        )
         .merge(guarded)
         .route("/static/{*path}", get(static_file))
         .with_state(state)

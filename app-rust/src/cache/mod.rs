@@ -5,4 +5,5 @@ pub mod mismatch;
 pub mod online;
 pub mod pc_network;
 pub mod settings;
+pub mod telemetry;
 pub mod uptime;

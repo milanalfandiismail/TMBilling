@@ -5,9 +5,11 @@ use crate::cache::mismatch::MismatchStore;
 use crate::cache::online::OnlineStatusStore;
 use crate::cache::pc_network::PcNetworkCache;
 use crate::cache::settings::SettingsCache;
+use crate::cache::telemetry::{HardwareMetricsStore, ProcessMemoryStore, TelemetryHistoryStore};
 use crate::cache::uptime::UptimeStore;
 use crate::config::{paths, Config};
 use crate::db::write_lock::WriteLock;
+use crate::services::vnc::vnc_service::VncRegistry;
 use crate::utils::logger;
 use anyhow::Result;
 use sqlx::SqlitePool;
@@ -22,6 +24,10 @@ pub struct AppState {
     pub commands: Queues,
     pub mismatch: MismatchStore,
     pub uptime: UptimeStore,
+    pub metrics: HardwareMetricsStore,
+    pub processes: ProcessMemoryStore,
+    pub history: TelemetryHistoryStore,
+    pub vnc: VncRegistry,
     write: WriteLock,
 }
 
@@ -51,6 +57,10 @@ impl AppState {
             commands: Queues::default(),
             mismatch: MismatchStore::default(),
             uptime: UptimeStore::default(),
+            metrics: HardwareMetricsStore::default(),
+            processes: ProcessMemoryStore::default(),
+            history: TelemetryHistoryStore::default(),
+            vnc: VncRegistry::default(),
             write: WriteLock::new(),
         };
         crate::services::settings::ip_whitelist::seed_defaults(&state).await?;

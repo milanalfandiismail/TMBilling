@@ -63,7 +63,7 @@ rand = "0.9"
 flate2 = "1"
 tracing = "0.1"
 ammonia = "4"
-axum = { version = "0.8", features = ["multipart"] }
+axum = { version = "0.8", features = ["multipart", "ws"] }
 rust-embed = "8"
 minijinja = "2"
 fs2 = "0.4"
@@ -86,3 +86,7 @@ path = "tests/contract/member_shift_notes_test.rs"
 [[test]]
 name = "client_agent_test"
 path = "tests/contract/client_agent_test.rs"
+
+[[test]]
+name = "device_test"
+path = "tests/contract/device_test.rs"

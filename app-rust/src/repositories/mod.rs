@@ -1,11 +1,14 @@
 pub mod game;
 pub mod grup;
+pub mod hardware;
 pub mod member;
 pub mod menu;
+pub mod mikrotik;
 pub mod paket;
 pub mod pc;
 pub mod sesi;
 pub mod settings;
 pub mod shift;
 pub mod transaksi;
+pub mod uptime;
 pub mod user;

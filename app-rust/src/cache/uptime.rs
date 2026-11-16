@@ -13,6 +13,7 @@ pub struct UptimeAcc {
 #[derive(Default)]
 pub struct UptimeStore {
     inner: Mutex<HashMap<i64, UptimeAcc>>,
+    last_tick: Mutex<HashMap<i64, i64>>,
 }
 
 impl UptimeStore {
@@ -28,6 +29,25 @@ impl UptimeStore {
         acc.online += seconds;
         if acc.billing_active {
             acc.billing += seconds;
+        }
+    }
+
+    /// Satu detak telemetri: selisih waktu sejak detak terakhir (maks 60 s).
+    pub fn heartbeat(&self, pc_id: i64, billing: bool, now: i64) {
+        let prev = {
+            let mut ticks = self.last_tick.lock().unwrap();
+            let prev = ticks.insert(pc_id, now);
+            prev
+        };
+        let mut map = self.inner.lock().unwrap();
+        let acc = map.entry(pc_id).or_default();
+        acc.billing_active = billing;
+        if let Some(p) = prev {
+            let delta = (now - p).clamp(0, 60);
+            acc.online += delta;
+            if billing {
+                acc.billing += delta;
+            }
         }
     }
 

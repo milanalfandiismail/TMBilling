@@ -1,5 +1,6 @@
 pub mod game;
 pub mod grup;
+pub mod hardware;
 pub mod member;
 pub mod menu;
 pub mod paket;

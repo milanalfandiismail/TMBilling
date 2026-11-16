@@ -284,7 +284,12 @@ pub async fn status(
         );
         if !map.contains_key("command") {
             if let Some(cmd) = st.commands.regular.pop(pc.id) {
-                map.insert("command".into(), json!(cmd));
+                // Perintah berstruktur (VNC) dikirim sebagai objek, bukan string.
+                let nilai = serde_json::from_str::<serde_json::Value>(&cmd)
+                    .ok()
+                    .filter(|v| v.is_object())
+                    .unwrap_or_else(|| json!(cmd));
+                map.insert("command".into(), nilai);
             }
         }
     }

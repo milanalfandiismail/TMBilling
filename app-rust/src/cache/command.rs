@@ -27,6 +27,11 @@ impl CommandQueue {
         }
     }
 
+    /// Perintah berstruktur (mis. VNC start) disimpan sebagai JSON string.
+    pub fn push_json(&self, pc_id: i64, cmd: serde_json::Value) {
+        self.push(pc_id, &cmd.to_string());
+    }
+
     pub fn pop(&self, pc_id: i64) -> Option<String> {
         let mut map = self.inner.lock().unwrap();
         map.get_mut(&pc_id).and_then(|q| q.pop_front())
